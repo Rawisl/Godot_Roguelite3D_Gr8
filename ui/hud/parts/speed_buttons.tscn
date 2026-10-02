@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://csopdaxvf7sac"]
+
+[ext_resource type="Script" uid="uid://da6u3bayg63r3" path="res://ui/hud/parts/speed_buttons.gd" id="1_guc8t"]
+
+[node name="SpeedButtons" type="HBoxContainer" unique_id=1199262953]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 36.0
+offset_bottom = 8.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("1_guc8t")
+
+[node name="Button" type="Button" parent="." unique_id=595896115]
+layout_mode = 2
+
+[node name="Button2" type="Button" parent="." unique_id=1362937404]
+layout_mode = 2
+
+[node name="Button3" type="Button" parent="." unique_id=1127845285]
+layout_mode = 2

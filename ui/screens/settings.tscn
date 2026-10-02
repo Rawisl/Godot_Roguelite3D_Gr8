@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://dquoo3cs1dwqx"]
+
+[ext_resource type="PackedScene" uid="uid://c6wy7kvpvwrtf" path="res://ui/screens/tab_accessibility.tscn" id="1_6ryl3"]
+[ext_resource type="PackedScene" uid="uid://de2hmepwb0yla" path="res://ui/screens/tab_audio.tscn" id="2_yofeh"]
+[ext_resource type="PackedScene" uid="uid://b8yr4rg1emyc6" path="res://ui/screens/tab_controls.tscn" id="3_6lic8"]
+[ext_resource type="PackedScene" uid="uid://5yvo7mfq56kr" path="res://ui/screens/tab_data.tscn" id="4_471q0"]
+[ext_resource type="PackedScene" uid="uid://ce1ndafvk0cow" path="res://ui/screens/tab_gameplay.tscn" id="5_wpins"]
+[ext_resource type="PackedScene" uid="uid://bbg0ghrmn2br1" path="res://ui/screens/tab_graphics.tscn" id="6_204y2"]
+
+[node name="Settings" type="TabContainer" unique_id=2093397581]
+current_tab = 0
+
+[node name="TabAccessibility" parent="." unique_id=985882398 instance=ExtResource("1_6ryl3")]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="TabAudio" parent="." unique_id=1002876253 instance=ExtResource("2_yofeh")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="TabControls" parent="." unique_id=1315742488 instance=ExtResource("3_6lic8")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="TabData" parent="." unique_id=17649404 instance=ExtResource("4_471q0")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="Control" parent="." unique_id=500120670 instance=ExtResource("5_wpins")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 4
+
+[node name="TabGraphics" parent="." unique_id=1662895451 instance=ExtResource("6_204y2")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 5

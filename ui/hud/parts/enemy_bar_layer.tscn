@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://b0j2regl1w6bn"]
+
+[ext_resource type="Script" uid="uid://c6svl036o0ku7" path="res://ui/hud/parts/enemy_bar_layer.gd" id="1_tvquj"]
+
+[node name="EnemyBarLayer" type="Control" unique_id=1455219063]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_tvquj")

@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bvid8rvs1jvsc"]
+
+[ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_72e2d"]
+[ext_resource type="Resource" uid="uid://ywhqu1yuhudw" path="res://data/enemies/bulwark.tres" id="2_5mda6"]
+[ext_resource type="Script" uid="uid://baoeh56vabt6s" path="res://entities/enemy/bulwark.gd" id="2_j8uxv"]
+
+[node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_72e2d")]
+script = ExtResource("2_j8uxv")
+data = ExtResource("2_5mda6")
+
+[node name="PhaseController" type="Node" parent="." index="6" unique_id=1288198212]
+
+[node name="StompArea" type="Area3D" parent="." index="7" unique_id=2081881949]

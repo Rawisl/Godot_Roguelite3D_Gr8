@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://cr0cm1thifi8i"]
+
+[ext_resource type="Script" uid="uid://5mka8v25ohw4" path="res://entities/fortress/fortress.gd" id="1_7es0g"]
+[ext_resource type="Script" uid="uid://81hjayhjt6to" path="res://common/health_component.gd" id="1_m4jee"]
+[ext_resource type="Resource" uid="uid://c0i4gm2hhnx6f" path="res://data/config/fortress_stats.tres" id="2_g8rok"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g8rok"]
+size = Vector3(4, 3, 6)
+
+[node name="Fortress" type="StaticBody3D" unique_id=387325725 groups=["fortress"]]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_7es0g")
+stats = ExtResource("2_g8rok")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2096315634]
+shape = SubResource("BoxShape3D_g8rok")
+
+[node name="Model" type="Node3D" parent="." unique_id=902862184]
+
+[node name="Health" type="Node" parent="." unique_id=1654607228 groups=["fortress"]]
+unique_name_in_owner = true
+script = ExtResource("1_m4jee")
+
+[node name="AttackSlots" type="Node3D" parent="." unique_id=1514927465]
+
+[node name="A1" type="Marker3D" parent="AttackSlots" unique_id=1301915844]
+
+[node name="A2" type="Marker3D" parent="AttackSlots" unique_id=907445257]
+
+[node name="A3" type="Marker3D" parent="AttackSlots" unique_id=2033832751]
+
+[node name="A4" type="Marker3D" parent="AttackSlots" unique_id=1424586951]
+
+[node name="A5" type="Marker3D" parent="AttackSlots" unique_id=1674164372]
+
+[node name="A6" type="Marker3D" parent="AttackSlots" unique_id=686317797]
+
+[node name="A7" type="Marker3D" parent="AttackSlots" unique_id=1383535304]
+
+[node name="A8" type="Marker3D" parent="AttackSlots" unique_id=157322975]
+
+[node name="A9" type="Marker3D" parent="AttackSlots" unique_id=1504045448]
+
+[node name="A10" type="Marker3D" parent="AttackSlots" unique_id=1966271364]
+
+[node name="A11" type="Marker3D" parent="AttackSlots" unique_id=797474355]
+
+[node name="A12" type="Marker3D" parent="AttackSlots" unique_id=724906939]

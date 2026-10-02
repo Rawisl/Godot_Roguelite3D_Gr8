@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://b0ncj75b0jni1"]
+
+[ext_resource type="PackedScene" uid="uid://cbnuvwg1yjryl" path="res://ui/hud/parts/boss_bar.tscn" id="1_4d6w6"]
+[ext_resource type="PackedScene" uid="uid://dx1yjttn4bkfe" path="res://ui/hud/parts/alert_layer.tscn" id="1_xmswo"]
+[ext_resource type="PackedScene" uid="uid://bplnw3dwp8nlw" path="res://ui/hud/parts/commander_status.tscn" id="3_e0nub"]
+[ext_resource type="PackedScene" uid="uid://daiai1f0exqp0" path="res://ui/hud/parts/emergency_repair.tscn" id="4_w75iv"]
+[ext_resource type="PackedScene" uid="uid://b0j2regl1w6bn" path="res://ui/hud/parts/enemy_bar_layer.tscn" id="5_kwc50"]
+[ext_resource type="PackedScene" uid="uid://ckn53m8u1tj1p" path="res://ui/hud/parts/fortress_bar.tscn" id="6_o2lis"]
+[ext_resource type="PackedScene" uid="uid://c7ac3jyr50isa" path="res://ui/hud/parts/gold_label.tscn" id="7_o2lis"]
+[ext_resource type="PackedScene" uid="uid://dt46xx58li850" path="res://ui/hud/parts/offscreen_indicators.tscn" id="8_gfles"]
+[ext_resource type="PackedScene" uid="uid://csopdaxvf7sac" path="res://ui/hud/parts/speed_buttons.tscn" id="9_aixkq"]
+[ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="10_cxhb7"]
+
+[node name="Hud" type="CanvasLayer" unique_id=1623823647]
+layer = 10
+
+[node name="Root" type="Control" parent="." unique_id=1902627919]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BossBar" parent="Root" unique_id=615647234 instance=ExtResource("1_4d6w6")]
+layout_mode = 1
+
+[node name="AlertLayer" parent="Root" unique_id=328027326 instance=ExtResource("1_xmswo")]
+layout_mode = 1
+
+[node name="CommanderStatus" parent="Root" unique_id=602541407 instance=ExtResource("3_e0nub")]
+layout_mode = 1
+offset_top = -58.0
+offset_bottom = 0.0
+
+[node name="EmergencyRepair" parent="Root" unique_id=311037426 instance=ExtResource("4_w75iv")]
+layout_mode = 1
+
+[node name="EnemyBarLayer" parent="Root" unique_id=1455219063 instance=ExtResource("5_kwc50")]
+layout_mode = 1
+
+[node name="FortressBar" parent="Root" unique_id=1658010275 instance=ExtResource("6_o2lis")]
+layout_mode = 1
+
+[node name="GoldLabel" parent="Root" unique_id=947301039 instance=ExtResource("7_o2lis")]
+layout_mode = 1
+
+[node name="OffscreenIndicators" parent="Root" unique_id=352408765 instance=ExtResource("8_gfles")]
+layout_mode = 1
+
+[node name="SpeedButtons" parent="Root" unique_id=1199262953 instance=ExtResource("9_aixkq")]
+layout_mode = 1
+
+[node name="WaveCounter" parent="Root" unique_id=1849850089 instance=ExtResource("10_cxhb7")]
+layout_mode = 1

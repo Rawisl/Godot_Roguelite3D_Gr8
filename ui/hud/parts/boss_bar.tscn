@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://cbnuvwg1yjryl"]
+
+[ext_resource type="Script" uid="uid://bt1ys01cdjyws" path="res://ui/hud/parts/boss_bar.gd" id="1_8sfhq"]
+
+[node name="BossBar" type="VBoxContainer" unique_id=615647234]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_8sfhq")
+
+[node name="ProgressBar" type="ProgressBar" parent="." unique_id=1960063032]
+layout_mode = 2
+
+[node name="ProgressBar2" type="ProgressBar" parent="." unique_id=1588035000]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="." unique_id=1081849974]
+layout_mode = 2

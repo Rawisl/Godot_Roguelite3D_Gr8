@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://og55jctucxje"]
+
+[ext_resource type="PackedScene" uid="uid://ekgmjmchm13f" path="res://levels/corridor/level.tscn" id="1_0xm2m"]
+[ext_resource type="PackedScene" uid="uid://b0ncj75b0jni1" path="res://ui/hud/hud.tscn" id="1_ig7tw"]
+
+[node name="Main" type="Node" unique_id=631834920]
+
+[node name="LevelHolder" type="Node3D" parent="." unique_id=1116750832]
+
+[node name="Level" parent="LevelHolder" unique_id=1239096197 instance=ExtResource("1_0xm2m")]
+
+[node name="Gameplay" type="Node3D" parent="." unique_id=471339749]
+
+[node name="Enemy" type="Node3D" parent="Gameplay" unique_id=936214685]
+
+[node name="Tower" type="Node3D" parent="Gameplay" unique_id=457164759]
+
+[node name="Projectiles" type="Node3D" parent="Gameplay" unique_id=1359556574]
+
+[node name="Effects" type="Node3D" parent="Gameplay" unique_id=74705817]
+
+[node name="Hud" parent="." unique_id=1623823647 instance=ExtResource("1_ig7tw")]

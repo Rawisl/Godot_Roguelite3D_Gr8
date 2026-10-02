@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://df67r1vo5yws8"]
+
+[ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_a8ugr"]
+[ext_resource type="Script" uid="uid://p7jqjxl8yng4" path="res://entities/enemy/archer.gd" id="2_lfvlt"]
+[ext_resource type="Resource" uid="uid://ca08sj3da7flm" path="res://data/enemies/archer.tres" id="2_tigow"]
+
+[node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_a8ugr")]
+script = ExtResource("2_lfvlt")
+data = ExtResource("2_tigow")
+
+[node name="Muzzle" type="Marker3D" parent="." index="6" unique_id=1479221221]

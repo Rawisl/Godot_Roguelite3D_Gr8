@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://c47peuux5sxbx"]
+
+[ext_resource type="PackedScene" uid="uid://c8i7qjsqqke46" path="res://entities/tower/tower.tscn" id="1_tq3d3"]
+[ext_resource type="Resource" uid="uid://bm0wnqjyjmnq8" path="res://data/towers/cannon.tres" id="2_thygs"]
+
+[node name="Cannon" unique_id=457661571 instance=ExtResource("1_tq3d3")]
+data = ExtResource("2_thygs")

@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://daiai1f0exqp0"]
+
+[ext_resource type="Script" uid="uid://c3afrps05ehb5" path="res://ui/hud/parts/emergency_repair.gd" id="1_rgcab"]
+
+[node name="EmergencyRepair" type="Control" unique_id=311037426]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -6.125
+offset_bottom = -6.125
+grow_vertical = 0
+script = ExtResource("1_rgcab")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1944566056]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=256115510]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureRect2" type="TextureRect" parent="." unique_id=1466855703]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureRect3" type="TextureRect" parent="." unique_id=1630506888]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Label" type="Label" parent="." unique_id=1672954219]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0

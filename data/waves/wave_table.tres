@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="WaveTable" format=3 uid="uid://clcuq2474iqev"]
+
+[ext_resource type="Resource" uid="uid://squ7eu0cinai" path="res://data/enemies/grunt.tres" id="1_77civ"]
+[ext_resource type="Script" uid="uid://bykknpph6d0of" path="res://common/wave_table.gd" id="1_yya70"]
+[ext_resource type="Script" uid="uid://c4n48ya7fbgkf" path="res://common/wave_group.gd" id="2_0y014"]
+[ext_resource type="Resource" uid="uid://ca08sj3da7flm" path="res://data/enemies/archer.tres" id="3_tfp00"]
+[ext_resource type="Resource" uid="uid://e7bep37g0mum" path="res://data/enemies/brute.tres" id="4_ufkje"]
+
+[sub_resource type="Resource" id="Resource_qtorv"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("1_77civ")
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_ejb6e"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("3_tfp00")
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_pgu2a"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("4_ufkje")
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[resource]
+script = ExtResource("1_yya70")
+groups = Array[Resource]([SubResource("Resource_qtorv"), SubResource("Resource_ejb6e"), SubResource("Resource_pgu2a")])
+metadata/_custom_type_script = "uid://bykknpph6d0of"

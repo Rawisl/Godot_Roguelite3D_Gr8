@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://c7ac3jyr50isa"]
+
+[ext_resource type="Script" uid="uid://bp08aedqc8ytc" path="res://ui/hud/parts/gold_label.gd" id="1_l8fob"]
+
+[node name="GoldLabel" type="HBoxContainer" unique_id=947301039]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_right = 9.0
+offset_bottom = 23.0
+grow_horizontal = 0
+script = ExtResource("1_l8fob")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1649748621]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="." unique_id=791004369]
+layout_mode = 2

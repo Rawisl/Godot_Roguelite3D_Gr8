@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://c88o7toy6kiy5"]
+
+[ext_resource type="Script" uid="uid://81hjayhjt6to" path="res://common/health_component.gd" id="1_ms8n4"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xepy2"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_tbhne"]
+
+[node name="Commander" type="CharacterBody3D" unique_id=1106804585]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1061114779]
+shape = SubResource("CapsuleShape3D_xepy2")
+
+[node name="Model" type="Node3D" parent="." unique_id=664941032]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Model" unique_id=1734746235]
+root_node = NodePath("../..")
+
+[node name="HurtBox" type="Area3D" parent="." unique_id=1683221690]
+collision_layer = 0
+collision_mask = 32
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtBox" unique_id=1710944290]
+shape = SubResource("CapsuleShape3D_tbhne")
+
+[node name="SwordArea" type="Area3D" parent="." unique_id=52479625]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SwordArea" unique_id=1923382067]
+
+[node name="Health" type="Node" parent="." unique_id=296872647 groups=["commander"]]
+script = ExtResource("1_ms8n4")
+
+[node name="AimPivot" type="Node3D" parent="." unique_id=969437287]

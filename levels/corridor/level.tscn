@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://ekgmjmchm13f"]
+
+[ext_resource type="PackedScene" uid="uid://btoa1luqsnhh5" path="res://systems/build/slot.tscn" id="1_41ihd"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_xepy2"]
+size = Vector2(40, 20)
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_41ihd"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qc24j"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8dto7"]
+
+[node name="Level" type="Node3D" unique_id=1239096197]
+
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=1456785376]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=922132887]
+
+[node name="CameraRig" type="Node3D" parent="." unique_id=965123961]
+transform = Transform3D(0.70710677, -0.49999997, 0.49999997, 0, 0.70710677, 0.70710677, -0.70710677, -0.49999997, 0.49999997, 0, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1985541732]
+projection = 1
+size = 20.0
+
+[node name="Geometry" type="Node3D" parent="." unique_id=1439378570]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Geometry" unique_id=1958924904]
+mesh = SubResource("PlaneMesh_xepy2")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Geometry" unique_id=1058267805]
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=481712762]
+navigation_mesh = SubResource("NavigationMesh_41ihd")
+
+[node name="Slots" type="Node3D" parent="." unique_id=1229477472]
+
+[node name="W1" parent="Slots" unique_id=995670275 instance=ExtResource("1_41ihd")]
+slot_id = &"W1"
+zone = 0
+
+[node name="W2" parent="Slots" unique_id=392996667 instance=ExtResource("1_41ihd")]
+slot_id = &"W2"
+zone = 0
+
+[node name="W3" parent="Slots" unique_id=1361793867 instance=ExtResource("1_41ihd")]
+slot_id = &"W3"
+zone = 0
+
+[node name="W4" parent="Slots" unique_id=981873432 instance=ExtResource("1_41ihd")]
+slot_id = &"W4"
+zone = 0
+
+[node name="W5" parent="Slots" unique_id=1240733026 instance=ExtResource("1_41ihd")]
+slot_id = &"W5"
+zone = 0
+
+[node name="W6" parent="Slots" unique_id=769643092 instance=ExtResource("1_41ihd")]
+slot_id = &"W6"
+zone = 0
+
+[node name="N1" parent="Slots" unique_id=249274379 instance=ExtResource("1_41ihd")]
+slot_id = &"N1"
+
+[node name="N2" parent="Slots" unique_id=1918855279 instance=ExtResource("1_41ihd")]
+slot_id = &"N2"
+
+[node name="N3" parent="Slots" unique_id=998406386 instance=ExtResource("1_41ihd")]
+slot_id = &"N3"
+
+[node name="N4" parent="Slots" unique_id=436172443 instance=ExtResource("1_41ihd")]
+slot_id = &"N4"
+
+[node name="F1" parent="Slots" unique_id=428482230 instance=ExtResource("1_41ihd")]
+slot_id = &"F1"
+zone = 2
+
+[node name="F2" parent="Slots" unique_id=122091872 instance=ExtResource("1_41ihd")]
+slot_id = &"F2"
+zone = 2
+
+[node name="F3" parent="Slots" unique_id=1988940985 instance=ExtResource("1_41ihd")]
+slot_id = &"F3"
+zone = 2
+
+[node name="F4" parent="Slots" unique_id=177784305 instance=ExtResource("1_41ihd")]
+slot_id = &"F4"
+zone = 2
+
+[node name="Markers" type="Node3D" parent="." unique_id=969002018]
+
+[node name="ReturnZone" type="Area3D" parent="Markers" unique_id=1031908054]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Markers/ReturnZone" unique_id=749994832]
+shape = SubResource("BoxShape3D_xepy2")
+
+[node name="RetreatZone" type="Area3D" parent="Markers" unique_id=898048777]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Markers/RetreatZone" unique_id=1223678777]
+shape = SubResource("BoxShape3D_qc24j")
+
+[node name="DeployPoint" type="Marker3D" parent="Markers" unique_id=488986395]
+
+[node name="CommandPost" type="Marker3D" parent="Markers" unique_id=2075346717]
+
+[node name="SpawnZone" type="Area3D" parent="." unique_id=232184628 groups=["level"]]
+collision_layer = 0
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SpawnZone" unique_id=363129922]
+shape = SubResource("BoxShape3D_8dto7")
+
+[node name="FortressSpawn" type="Marker3D" parent="." unique_id=1763631995]

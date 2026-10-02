@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://csq0ub35xqnvl"]
+
+[ext_resource type="Script" uid="uid://5pl6vtsj5kxr" path="res://entities/projectile/projectile.gd" id="1_iqisb"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_xepy2"]
+radius = 0.15
+
+[node name="Projectile" type="Area3D" unique_id=1242304004]
+collision_layer = 16
+collision_mask = 4
+script = ExtResource("1_iqisb")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1130240779]
+shape = SubResource("SphereShape3D_xepy2")
+
+[node name="Model" type="Node3D" parent="." unique_id=1420644310]
+
+[node name="LifeTimer" type="Timer" parent="." unique_id=1836131941]
+wait_time = 5.0
+one_shot = true

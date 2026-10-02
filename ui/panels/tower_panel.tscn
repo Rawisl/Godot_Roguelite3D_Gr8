@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://cmf1pspoewu74"]
+
+[ext_resource type="PackedScene" uid="uid://bgpfww5ejjq45" path="res://ui/panels/panel_base.tscn" id="1_m73ch"]
+
+[node name="PanelBase" unique_id=800506704 instance=ExtResource("1_m73ch")]
