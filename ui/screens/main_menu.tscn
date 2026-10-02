@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://csat6u6lpoh24"]
+
+[node name="MarginContainer" type="MarginContainer" unique_id=1116123521]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=381682760]
+layout_mode = 2
+
+[node name="Play" type="Button" parent="VBoxContainer" unique_id=1417147528]
+layout_mode = 2
+
+[node name="MetaShop" type="Button" parent="VBoxContainer" unique_id=343663515]
+layout_mode = 2
+
+[node name="Settings" type="Button" parent="VBoxContainer" unique_id=294000506]
+layout_mode = 2
+
+[node name="Quit" type="Button" parent="VBoxContainer" unique_id=112135320]
+layout_mode = 2

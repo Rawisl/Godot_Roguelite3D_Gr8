@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://ckn53m8u1tj1p"]
+
+[ext_resource type="Script" uid="uid://fhar4qyuyntd" path="res://ui/hud/parts/fortress_bar.gd" id="1_ffkjh"]
+
+[node name="FortressBar" type="MarginContainer" unique_id=1658010275]
+offset_right = 4.0
+offset_bottom = 27.0
+script = ExtResource("1_ffkjh")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1959007196]
+layout_mode = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="." unique_id=1628100303]
+layout_mode = 2

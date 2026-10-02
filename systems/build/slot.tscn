@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://btoa1luqsnhh5"]
+
+[ext_resource type="Script" uid="uid://ctxooa2xiyua7" path="res://systems/build/slot.gd" id="1_k2eom"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_k2eom"]
+size = Vector2(1.6, 1.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
+size = Vector3(1.6, 0.5, 1.6)
+
+[node name="Slot" type="Node3D" unique_id=995670275]
+script = ExtResource("1_k2eom")
+
+[node name="Marker" type="MeshInstance3D" parent="." unique_id=440419306 groups=["slot"]]
+unique_name_in_owner = true
+mesh = SubResource("PlaneMesh_k2eom")
+
+[node name="ClickArea" type="Area3D" parent="." unique_id=1850647318 groups=["slot"]]
+unique_name_in_owner = true
+collision_layer = 64
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ClickArea" unique_id=54570873]
+shape = SubResource("BoxShape3D_xepy2")
+
+[node name="Preview" type="Node3D" parent="." unique_id=864280636]
+
+[node name="TowerAnchor" type="Marker3D" parent="." unique_id=1766215520 groups=["slot"]]
+unique_name_in_owner = true

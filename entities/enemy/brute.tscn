@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://c80jcl10mmetb"]
+
+[ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_2gr2f"]
+[ext_resource type="Resource" uid="uid://e7bep37g0mum" path="res://data/enemies/brute.tres" id="2_b260c"]
+
+[node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_2gr2f")]
+data = ExtResource("2_b260c")

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TowerData" format=3 uid="uid://bm0wnqjyjmnq8"]
+
+[ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_t20fp"]
+[ext_resource type="Resource" uid="uid://beoejy0vpkyjb" path="res://data/towers/cannon_l1.tres" id="2_7luwv"]
+[ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="2_yxcx4"]
+[ext_resource type="Resource" uid="uid://drnqhtvrwrwyc" path="res://data/towers/cannon_l2.tres" id="3_dxqy6"]
+[ext_resource type="Resource" uid="uid://bpj2rucbr4p5j" path="res://data/towers/cannon_l3.tres" id="4_s70g0"]
+
+[resource]
+script = ExtResource("2_yxcx4")
+allowed_zones = Array[int]([0, 1, 2])
+min_range = 4.0
+levels = Array[ExtResource("1_t20fp")]([ExtResource("2_7luwv"), ExtResource("3_dxqy6"), ExtResource("4_s70g0")])
+metadata/_custom_type_script = "uid://dpqaacof5680d"

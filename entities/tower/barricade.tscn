@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://ds7n2omekdjqx"]
+
+[ext_resource type="PackedScene" uid="uid://c8i7qjsqqke46" path="res://entities/tower/tower.tscn" id="1_ea0mi"]
+[ext_resource type="Resource" uid="uid://bakx85mq5louq" path="res://data/towers/barricade.tres" id="2_cwq22"]
+
+[node name="Barricade" unique_id=457661571 instance=ExtResource("1_ea0mi")]
+data = ExtResource("2_cwq22")
+
+[node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="." index="7" unique_id=1436039338]
+affect_navigation_mesh = true

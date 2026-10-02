@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://c8i7qjsqqke46"]
+
+[ext_resource type="Script" uid="uid://cudfty4wymw3h" path="res://entities/tower/tower.gd" id="1_uvpmh"]
+[ext_resource type="Script" uid="uid://81hjayhjt6to" path="res://common/health_component.gd" id="2_uvpmh"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_xepy2"]
+
+[node name="TowerBase" type="StaticBody3D" unique_id=457661571]
+script = ExtResource("1_uvpmh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=668314301]
+
+[node name="Model" type="Node3D" parent="." unique_id=155594529]
+
+[node name="RangeArea" type="Area3D" parent="." unique_id=666926964]
+unique_name_in_owner = true
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeArea" unique_id=49393706]
+shape = SubResource("SphereShape3D_xepy2")
+
+[node name="Muzzle" type="Marker3D" parent="." unique_id=1818894019]
+unique_name_in_owner = true
+
+[node name="ClickArea" type="Area3D" parent="." unique_id=521694951]
+collision_layer = 64
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ClickArea" unique_id=444085316]
+
+[node name="Health" type="Node" parent="." unique_id=330410723]
+unique_name_in_owner = true
+script = ExtResource("2_uvpmh")
+
+[node name="ScanTimer" type="Timer" parent="." unique_id=567333275]
+unique_name_in_owner = true

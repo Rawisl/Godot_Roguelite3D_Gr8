@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://dx1yjttn4bkfe"]
+
+[ext_resource type="Script" uid="uid://b0m1aaxkgovw8" path="res://ui/hud/parts/alert_layer.gd" id="1_e8v0x"]
+
+[node name="AlertLayer" type="Control" unique_id=328027326]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_e8v0x")
+
+[node name="Banner" type="PanelContainer" parent="." unique_id=1615290743]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ToastTop" type="VBoxContainer" parent="." unique_id=514554512]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ToastBottom" type="VBoxContainer" parent="." unique_id=1252747203]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

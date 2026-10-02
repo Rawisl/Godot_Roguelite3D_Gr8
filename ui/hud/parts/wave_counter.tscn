@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://cq44hfvyi502b"]
+
+[ext_resource type="Script" uid="uid://drcvppewnldl2" path="res://ui/hud/parts/wave_counter.gd" id="1_57oc4"]
+
+[node name="WaveCounter" type="HBoxContainer" unique_id=1849850089]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_right = 10.0
+offset_bottom = 23.0
+grow_horizontal = 2
+script = ExtResource("1_57oc4")
+
+[node name="Label" type="Label" parent="." unique_id=999281154]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="." unique_id=2115319662]
+layout_mode = 2

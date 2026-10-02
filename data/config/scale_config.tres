@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="ScaleConfig" format=3 uid="uid://3kk7veft258b"]
+
+[ext_resource type="Script" uid="uid://c61cgcrte8flj" path="res://common/scale_config.gd" id="1_g62l7"]
+
+[resource]
+script = ExtResource("1_g62l7")
+metadata/_custom_type_script = "uid://c61cgcrte8flj"

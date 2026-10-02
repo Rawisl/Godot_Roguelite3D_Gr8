@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="BossData" format=3 uid="uid://dmtjvtt64ofto"]
+
+[ext_resource type="Script" uid="uid://bhfhlrn5orfb" path="res://common/boss_data.gd" id="1_00uft"]
+
+[resource]
+script = ExtResource("1_00uft")
+id = &"bulwark"
+metadata/_custom_type_script = "uid://bhfhlrn5orfb"

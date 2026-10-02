@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://dacb3qoymaicw"]
+
+[ext_resource type="Script" uid="uid://b8lsi5dot3545" path="res://entities/enemy/enemy.gd" id="1_ksmh7"]
+[ext_resource type="Script" uid="uid://81hjayhjt6to" path="res://common/health_component.gd" id="2_im2q6"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ilwqg"]
+
+[node name="EnemyBase" type="CharacterBody3D" unique_id=829913656]
+script = ExtResource("1_ksmh7")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=427987062]
+shape = SubResource("CapsuleShape3D_ilwqg")
+
+[node name="Model" type="Node3D" parent="." unique_id=1049866202]
+
+[node name="NavAgent" type="NavigationAgent3D" parent="." unique_id=1474221130]
+unique_name_in_owner = true
+
+[node name="HurtBox" type="Area3D" parent="." unique_id=1842004067]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtBox" unique_id=755120625]
+
+[node name="Health" type="Node" parent="." unique_id=515624164]
+unique_name_in_owner = true
+script = ExtResource("2_im2q6")
+
+[node name="StateMachine" type="Node" parent="." unique_id=472927744]
