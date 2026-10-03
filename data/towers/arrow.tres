@@ -8,6 +8,9 @@
 
 [resource]
 script = ExtResource("2_6htap")
+id = &"arrow"
+display_name = "tower.arrow"
 allowed_zones = Array[int]([0, 1, 2])
+targets_air = true
 levels = Array[ExtResource("1_6itpn")]([ExtResource("2_apq65"), ExtResource("3_bj2q4"), ExtResource("4_s3nix")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"

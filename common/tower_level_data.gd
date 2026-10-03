@@ -5,5 +5,6 @@ extends Resource
 @export var max_hp: int = 100
 @export var damage: int = 0
 @export var attack_range: float = 8.0
-@export var attack_interval: float = 1.0
+@export var fire_rate: float = 1.0 # shots per second (instead attack_interval)
 @export var splash_radius: float = 0.0
+@export var aggro_weight: float = 1.0

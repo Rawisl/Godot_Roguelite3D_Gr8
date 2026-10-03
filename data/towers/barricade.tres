@@ -8,6 +8,9 @@
 
 [resource]
 script = ExtResource("2_vbqcx")
+id = &"barricade"
+display_name = "tower.barricade"
 allowed_zones = Array[int]([1, 2])
+targets_ground = false
 levels = Array[ExtResource("1_l87fw")]([ExtResource("2_uhiiq"), ExtResource("3_edo0w"), ExtResource("4_q017b")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"

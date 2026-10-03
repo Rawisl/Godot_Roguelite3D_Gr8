@@ -23,4 +23,5 @@ func apply_level(new_level: int) -> void:
 	health.max_hp = lv.max_hp
 	health.hp = lv.max_hp
 	(range_shape.shape as SphereShape3D).radius = lv.attack_range
-	scan_timer.wait_time = lv.attack_interval
+	if lv.fire_rate > 0.0:
+		scan_timer.wait_time = 1.0 / lv.fire_rate
