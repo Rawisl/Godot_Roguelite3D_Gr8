@@ -2,6 +2,15 @@
 
 [ext_resource type="PackedScene" uid="uid://btoa1luqsnhh5" path="res://systems/build/slot.tscn" id="1_41ihd"]
 
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
+
+[sub_resource type="Sky" id="Sky_41ihd"]
+sky_material = SubResource("ProceduralSkyMaterial_1fbt3")
+
+[sub_resource type="Environment" id="Environment_72mue"]
+background_mode = 2
+sky = SubResource("Sky_41ihd")
+
 [sub_resource type="PlaneMesh" id="PlaneMesh_xepy2"]
 size = Vector2(40, 20)
 
@@ -16,14 +25,19 @@ size = Vector2(40, 20)
 [node name="Level" type="Node3D" unique_id=1239096197]
 
 [node name="Environment" type="WorldEnvironment" parent="." unique_id=1456785376]
+environment = SubResource("Environment_72mue")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=922132887]
+transform = Transform3D(1, 0, 0, 0, 0.18738134, 0.9822872, 0, -0.9822872, 0.18738134, 0, 12, 0)
+shadow_enabled = true
 
 [node name="CameraRig" type="Node3D" parent="." unique_id=965123961]
-transform = Transform3D(0.70710677, -0.49999997, 0.49999997, 0, 0.70710677, 0.70710677, -0.70710677, -0.49999997, 0.49999997, 0, 0, 0)
+transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1985541732]
+transform = Transform3D(0.9396926, -0.24184474, 0.24184474, 0, 0.70710677, 0.70710677, -0.34202012, -0.664463, 0.664463, 5, 14, 13)
 projection = 1
+current = true
 size = 20.0
 
 [node name="Geometry" type="Node3D" parent="." unique_id=1439378570]
