@@ -1,6 +1,50 @@
 [gd_scene format=3 uid="uid://espparcujp3l"]
 
 [ext_resource type="Script" uid="uid://crpatbmbbrs26" path="res://test.gd" id="1_37kl0"]
+[ext_resource type="PackedScene" uid="uid://c88o7toy6kiy5" path="res://entities/commander/commander.tscn" id="2_8uh7m"]
 
-[node name="Test" type="Node" unique_id=1464960178]
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_pv86h"]
+sky_top_color = Color(0.68633634, 0.6506461, 0.45609266, 1)
+
+[sub_resource type="Sky" id="Sky_8dto7"]
+sky_material = SubResource("ProceduralSkyMaterial_pv86h")
+
+[sub_resource type="Environment" id="Environment_qc24j"]
+background_mode = 2
+sky = SubResource("Sky_8dto7")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
+size = Vector3(60, 0.5, 60)
+
+[sub_resource type="BoxMesh" id="BoxMesh_xepy2"]
+size = Vector3(60, 0.5, 60)
+
+[node name="TestWorld" type="Node3D" unique_id=908633190]
 script = ExtResource("1_37kl0")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1412590547]
+transform = Transform3D(1, 0, 0, 0, -0.50302005, 0.86427474, 0, -0.86427474, -0.50302005, -17, 29, -45)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1995988753]
+environment = SubResource("Environment_qc24j")
+
+[node name="TestGround" type="StaticBody3D" parent="." unique_id=181269606]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestGround" unique_id=340789772]
+shape = SubResource("BoxShape3D_xepy2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TestGround" unique_id=142947123]
+mesh = SubResource("BoxMesh_xepy2")
+
+[node name="Commander" parent="." unique_id=1106804585 instance=ExtResource("2_8uh7m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0)
+
+[node name="CameraRig" type="Node3D" parent="." unique_id=294239690]
+transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=790449658]
+transform = Transform3D(1.0000001, 0, 0, 0, 0.6560591, 0.7547097, 0, -0.7547097, 0.6560591, 1.979183, 18.449755, 14.449739)
+projection = 1
+current = true
+size = 31.104893
