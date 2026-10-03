@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://c88o7toy6kiy5"]
 
+[ext_resource type="Script" uid="uid://c1fr6bsdn0jhv" path="res://entities/commander/commander.gd" id="1_3wjli"]
 [ext_resource type="Script" uid="uid://81hjayhjt6to" path="res://common/health_component.gd" id="1_ms8n4"]
+[ext_resource type="Resource" uid="uid://dsl0yhckk2q4f" path="res://data/config/commander_stats.tres" id="2_72mue"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xepy2"]
 radius = 0.4
@@ -9,6 +11,8 @@ height = 1.8
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_tbhne"]
 
 [node name="Commander" type="CharacterBody3D" unique_id=1106804585]
+script = ExtResource("1_3wjli")
+stats = ExtResource("2_72mue")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1061114779]
 shape = SubResource("CapsuleShape3D_xepy2")
