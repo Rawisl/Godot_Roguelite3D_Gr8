@@ -8,7 +8,11 @@
 
 [resource]
 script = ExtResource("2_yxcx4")
+id = &"cannon"
+display_name = "tower.cannon"
 allowed_zones = Array[int]([0, 1, 2])
+damage_type = 1
+default_priority = 1
 min_range = 4.0
 levels = Array[ExtResource("1_t20fp")]([ExtResource("2_7luwv"), ExtResource("3_dxqy6"), ExtResource("4_s70g0")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"
