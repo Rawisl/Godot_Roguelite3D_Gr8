@@ -109,25 +109,25 @@ Quy tắc đặt tên file:
 
 ### 5.1 Xử lý nhánh
 
-Mỗi thành viên làm việc trên một nhánh riêng với tên nhánh được đặt theo cú pháp `tvN/chu-de`:
+Mỗi thành viên làm việc trên một nhánh riêng với tên nhánh được đặt theo cú pháp `week<n>/chu-de`:
 
 ```
-tv1/battle-cry
-tv2/wave-spawner
-tv3/cannon-tower
-tv4/hud-fortress-bar
-tv5/level-blockout
+week1/battle-cry
+week1/wave-spawner
+week3/cannon-tower
+week4/hud-fortress-bar
+week4/level-blockout
 
 ```
 
-Mỗi nhánh chỉ phục vụ một chủ đề duy nhất và nên được hoàn thành nhanh chóng trong vài ngày. Sau khi code xong, hãy tạo Pull Request để gộp vào nhánh `main`. Khi đã merge thành công thì tiến hành xóa nhánh phụ đó.
+Mỗi nhánh chỉ phục vụ một chủ đề duy nhất và nên được hoàn thành nhanh chóng trong vài ngày. Sau khi code xong, hãy tạo Pull Request để gộp vào nhánh `main`.
 
 ### 5.2 Thao tác hằng ngày
 
 ```
 git checkout main
 git pull origin main
-git checkout tv1/chu-de
+git checkout <target branch>
 git rebase main          # hoặc: git merge main
 
 ```
@@ -154,13 +154,13 @@ Mỗi khi hoàn thành một phần việc nhỏ, hãy thực hiện commit, đ�
 
 ## 6. Quy ước viết commit
 
-Sử dụng định dạng: `<loại>(<phạm vi>): <mô tả ngắn>`
+Sử dụng định dạng: `[loại]: <mô tả ngắn thay đổi trong phạm vi nào>`
 
 ```
-feat(tower): thêm Cannon cấp 1-3 và nổ lan (TWR-05)
-fix(enemy): Archer dừng sai khoảng cách 11 m
-data(wave): chỉnh budget wave 5 theo bảng 3.7.6
-ui(hud): thêm thanh HP Fortress đổi hình dưới 30% (HUD-01)
+[feat]: add Cannon level 1-3 for tower
+[fix]: fix Archer's range
+[data]: set budget wave 5 (3.7.6)
+[ui]: add HP Fortress in hud
 
 ```
 
