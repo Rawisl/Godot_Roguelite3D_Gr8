@@ -4,4 +4,8 @@
 
 [resource]
 script = ExtResource("1_pi2lp")
+build_cost = 50
+max_hp = 120
+damage = 10
+attack_range = 14.0
 metadata/_custom_type_script = "uid://dhh3dg0ixuheg"

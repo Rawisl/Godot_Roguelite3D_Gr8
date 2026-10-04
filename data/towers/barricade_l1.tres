@@ -4,4 +4,8 @@
 
 [resource]
 script = ExtResource("1_kwwvv")
+build_cost = 40
+max_hp = 300
+attack_range = 0.0
+fire_rate = 0.0
 metadata/_custom_type_script = "uid://dhh3dg0ixuheg"

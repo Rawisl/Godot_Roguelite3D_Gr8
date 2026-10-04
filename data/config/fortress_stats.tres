@@ -4,4 +4,9 @@
 
 [resource]
 script = ExtResource("1_5s8qf")
+max_hp = 1000
+armor_pct = 0.0
+melee_slots = 12
+repair_gold_per_pct = 4
+low_hp_warning_pct = 0.3
 metadata/_custom_type_script = "uid://dq6eilyrw4q8n"
