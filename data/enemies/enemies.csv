@@ -1,0 +1,4 @@
+id,display_name_key,base_hp,base_damage,attack_interval,attack_range,move_speed,damage_type,spawn_cost,is_flying,is_ranged,knockback_immune,aggro_range,avoid_radius,avoid_priority,gold_reward,prestige_reward
+grunt,enemy.grunt,40,6,1.0,1.5,3.5,2,1,false,false,false,10.0,0.5,1,4,1
+archer,enemy.archer,30,8,1.5,11.0,3.0,0,2,false,true,false,11.0,0.5,1,7,2
+brute,enemy.brute,250,25,2.0,2.0,2.0,2,6,false,false,true,4.0,0.9,3,20,5

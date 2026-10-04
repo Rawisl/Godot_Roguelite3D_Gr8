@@ -4,4 +4,25 @@
 
 [resource]
 script = ExtResource("1_g62l7")
+budget_base = 8.0
+budget_linear = 2.2
+budget_quadratic = 0.05
+scale_soft_cap_wave = 40
+spawn_duration_base = 15.0
+spawn_duration_linear = 0.5
+spawn_duration_min = 15.0
+spawn_duration_max = 45.0
+max_alive = 70
+hp_mult_base = 1.0
+hp_mult_linear = 0.1
+hp_mult_quadratic = 0.004
+dmg_mult_base = 1.0
+dmg_mult_linear = 0.06
+dmg_mult_quadratic = 0.002
+speed_mult_base = 1.0
+speed_mult_linear = 0.005
+speed_mult_max = 1.25
+gold_growth_per_wave = 0.04
+hp_growth_per_wave = 0.08
+damage_growth_per_wave = 0.05
 metadata/_custom_type_script = "uid://c61cgcrte8flj"

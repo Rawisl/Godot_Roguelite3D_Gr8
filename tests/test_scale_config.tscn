@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://dg5n5y8k6g6e4"]
+
+[ext_resource type="Script" uid="uid://bix1nbr3n3n5p" path="res://tests/test_scale_config.gd" id="1_test"]
+[ext_resource type="Resource" uid="uid://3kk7veft258b" path="res://data/config/scale_config.tres" id="2_cfg"]
+
+[node name="TestScaleConfig" type="Node"]
+script = ExtResource("1_test")
+scale_config = ExtResource("2_cfg")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="Panel" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 18
+text = "Running ScaleConfig Tests..."
+autowrap_mode = 2
