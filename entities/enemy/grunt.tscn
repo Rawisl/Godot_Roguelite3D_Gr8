@@ -3,5 +3,18 @@
 [ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_715x1"]
 [ext_resource type="Resource" uid="uid://squ7eu0cinai" path="res://data/enemies/grunt.tres" id="2_tms1j"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_grunt"]
+albedo_color = Color(0.85, 0.22, 0.2, 1)
+roughness = 0.5
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_grunt"]
+material = SubResource("StandardMaterial3D_grunt")
+radius = 0.4
+height = 1.8
+
 [node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_715x1")]
 data = ExtResource("2_tms1j")
+
+[node name="GruntMesh" type="MeshInstance3D" parent="Model" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_grunt")
