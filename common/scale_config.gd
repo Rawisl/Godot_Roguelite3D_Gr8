@@ -1,10 +1,10 @@
 class_name ScaleConfig
 extends Resource
 
-## Scale config for Endless Wave (SRS 3.7.6, v1.4).
-## READ-ONLY at runtime: parameters are tuned in the .tres file (SCL-01).
+## Endless wave difficulty scale configuration (SRS 3.7.6).
+## Tunable in .tres resource file (SCL-01).
 
-@export_group("Budget & Wave Duration")
+@export_group("Budget & Duration")
 @export var budget_base: float = 8.0
 @export var budget_linear: float = 2.2
 @export var budget_quadratic: float = 0.05
@@ -31,23 +31,17 @@ extends Resource
 @export_group("Reward Scale")
 @export var gold_growth_per_wave: float = 0.04
 
-# Backward compatibility fields if referenced elsewhere
+# Backward compatibility
 @export var hp_growth_per_wave: float = 0.08
 @export var damage_growth_per_wave: float = 0.05
 
 
-## ===================================================================
-## FUNCTIONS (Thêm ở cuối file theo quy ước nhóm)
-## ===================================================================
-
-## budget(w) = round(8 + 2.2(w-1) + 0.05(w-1)^2) (SRS 3.7.6)
-## SCL-02: Sau wave 40 (scale_soft_cap_wave), tốc độ tăng budget giảm còn một nửa.
+## budget(w) = round(8 + 2.2(w-1) + 0.05(w-1)^2) (SRS 3.7.6, SCL-02)
 func get_budget(wave: int) -> int:
 	var w: int = maxi(1, wave)
 	if w <= scale_soft_cap_wave:
 		var x: float = float(w - 1)
-		var raw_budget: float = budget_base + budget_linear * x + budget_quadratic * (x * x)
-		return int(round(raw_budget))
+		return int(round(budget_base + budget_linear * x + budget_quadratic * (x * x)))
 	else:
 		var cap_x: float = float(scale_soft_cap_wave - 1)
 		var base_at_cap: float = budget_base + budget_linear * cap_x + budget_quadratic * (cap_x * cap_x)
@@ -55,37 +49,31 @@ func get_budget(wave: int) -> int:
 		var extra_growth: float = (budget_linear * extra_x + budget_quadratic * (extra_x * extra_x)) * 0.5
 		return int(round(base_at_cap + extra_growth))
 
-## spawn_duration(w) = clamp(15 + 0.5(w-1), 15, 45) s (SRS 3.7.6)
+## spawn_duration(w) = clamp(15 + 0.5(w-1), 15, 45) (SRS 3.7.6)
 func get_spawn_duration(wave: int) -> float:
-	var w: int = maxi(1, wave)
-	var x: float = float(w - 1)
+	var x: float = float(maxi(1, wave) - 1)
 	return clampf(spawn_duration_base + spawn_duration_linear * x, spawn_duration_min, spawn_duration_max)
 
 ## hp_mult(w) = 1 + 0.10(w-1) + 0.004(w-1)^2 (SRS 3.7.6)
 func get_hp_mult(wave: int) -> float:
-	var w: int = maxi(1, wave)
-	var x: float = float(w - 1)
+	var x: float = float(maxi(1, wave) - 1)
 	return hp_mult_base + hp_mult_linear * x + hp_mult_quadratic * (x * x)
 
 ## dmg_mult(w) = 1 + 0.06(w-1) + 0.002(w-1)^2 (SRS 3.7.6)
 func get_dmg_mult(wave: int) -> float:
-	var w: int = maxi(1, wave)
-	var x: float = float(w - 1)
+	var x: float = float(maxi(1, wave) - 1)
 	return dmg_mult_base + dmg_mult_linear * x + dmg_mult_quadratic * (x * x)
 
 ## speed_mult(w) = min(1.25, 1 + 0.005(w-1)) (SRS 3.7.6)
 func get_speed_mult(wave: int) -> float:
-	var w: int = maxi(1, wave)
-	var x: float = float(w - 1)
+	var x: float = float(maxi(1, wave) - 1)
 	return minf(speed_mult_max, speed_mult_base + speed_mult_linear * x)
 
-## gold_reward(w) = gold_reward_gốc * (1 + 0.04(w-1)) (SRS 3.7.7, RWD-02)
+## gold_reward(w) = gold_reward_base * (1 + 0.04(w-1)) (RWD-02)
 func get_gold_reward(base_gold: int, wave: int) -> int:
-	var w: int = maxi(1, wave)
-	var mult: float = 1.0 + gold_growth_per_wave * float(w - 1)
+	var mult: float = 1.0 + gold_growth_per_wave * float(maxi(1, wave) - 1)
 	return int(round(float(base_gold) * mult))
 
-## Lấy thông tin tóm tắt toàn bộ chỉ số scale của một wave
 func get_scale_summary(wave: int) -> Dictionary:
 	return {
 		"wave": wave,
@@ -95,4 +83,3 @@ func get_scale_summary(wave: int) -> Dictionary:
 		"dmg_mult": get_dmg_mult(wave),
 		"speed_mult": get_speed_mult(wave)
 	}
-

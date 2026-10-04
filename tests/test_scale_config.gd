@@ -1,7 +1,6 @@
 extends Node
 
-## Unit test kiểm tra ScaleConfig khớp bảng SRS 3.7.6
-## Chạy scene này bằng F6 trong Godot để tự kiểm tra.
+## Unit test verifying ScaleConfig formulas against SRS 3.7.6 table and SCL-01/SCL-02 rules.
 
 @export var scale_config: ScaleConfig
 
@@ -10,7 +9,6 @@ extends Node
 func _ready() -> void:
 	if scale_config == null:
 		scale_config = load("res://data/config/scale_config.tres") as ScaleConfig
-	
 	run_tests()
 
 func run_tests() -> void:
@@ -18,7 +16,6 @@ func run_tests() -> void:
 	print("\n=== UNIT TEST: SCALECONFIG (SRS 3.7.6) ===")
 	
 	var table_data := [
-		# wave, expected_budget, expected_duration, expected_hp_mult, expected_dmg_mult, expected_speed_mult
 		{"wave": 1, "budget": 8, "duration": 15.0, "hp": 1.00, "dmg": 1.00, "speed": 1.000},
 		{"wave": 5, "budget": 18, "duration": 17.0, "hp": 1.46, "dmg": 1.27, "speed": 1.020},
 		{"wave": 10, "budget": 32, "duration": 19.5, "hp": 2.22, "dmg": 1.70, "speed": 1.045},
@@ -54,50 +51,42 @@ func run_tests() -> void:
 		print(line)
 		output_text += line + "\n"
 	
-	# Test SCL-01: Thay đổi chỉ số Resource không sửa code
-	output_text += "\n--- TEST SCL-01: RESOURCE DRIVEN TUNING ---\n"
-	print("\n--- TEST SCL-01: RESOURCE DRIVEN TUNING ---")
+	# SCL-01 test: runtime resource parameter modification
 	var custom_cfg: ScaleConfig = scale_config.duplicate() as ScaleConfig
 	custom_cfg.budget_base = 20.0
 	custom_cfg.budget_linear = 5.0
 	custom_cfg.budget_quadratic = 0.0
-	# Với custom_cfg: wave 1 = 20, wave 2 = 20 + 5(1) = 25
 	var scl01_ok: bool = (custom_cfg.get_budget(1) == 20 and custom_cfg.get_budget(2) == 25)
 	if scl01_ok:
-		var line := "[PASS] SCL-01: Thay đổi tham số trong Resource thay đổi kết quả tính toán động, không cần sửa code."
+		var line := "[PASS] SCL-01: Runtime resource tuning alters calculation without code changes"
 		print(line)
-		output_text += line + "\n"
+		output_text += "\n" + line + "\n"
 	else:
 		all_passed = false
-		var line := "[FAIL] SCL-01: Thay đổi tham số trong Resource không có tác dụng!"
+		var line := "[FAIL] SCL-01: Resource parameter change had no effect"
 		print(line)
-		output_text += line + "\n"
+		output_text += "\n" + line + "\n"
 	
-	# Test SCL-02: Soft cap wave 40
-	output_text += "\n--- TEST SCL-02: SOFT CAP AFTER WAVE 40 ---\n"
-	print("\n--- TEST SCL-02: SOFT CAP AFTER WAVE 40 ---")
-	var budget_39: int = scale_config.get_budget(39)
-	var budget_40: int = scale_config.get_budget(40)
-	var budget_41: int = scale_config.get_budget(41)
-	var diff_pre_cap: int = budget_40 - budget_39
-	var diff_post_cap: int = budget_41 - budget_40
+	# SCL-02 test: budget growth rate halved after wave 40
+	var diff_pre_cap: int = scale_config.get_budget(40) - scale_config.get_budget(39)
+	var diff_post_cap: int = scale_config.get_budget(41) - scale_config.get_budget(40)
 	var scl02_ok: bool = (diff_post_cap < diff_pre_cap)
 	if scl02_ok:
-		var line := "[PASS] SCL-02: Tốc độ tăng budget sau wave 40 đã giảm một nửa (W39->W40: +%d, W40->W41: +%d)." % [diff_pre_cap, diff_post_cap]
+		var line := "[PASS] SCL-02: Soft cap active after wave 40 (+%d vs +%d)" % [diff_pre_cap, diff_post_cap]
 		print(line)
 		output_text += line + "\n"
 	else:
 		all_passed = false
-		var line := "[FAIL] SCL-02: Tốc độ tăng budget sau wave 40 không giảm!"
+		var line := "[FAIL] SCL-02: Soft cap failed after wave 40"
 		print(line)
 		output_text += line + "\n"
 		
 	if all_passed:
-		output_text += "\n===> KẾT QUẢ: TẤT CẢ TEST ĐỀU ĐẠT CHUẨN SRS 3.7.6 & SCL-01! <==="
-		print("\n===> KẾT QUẢ: TẤT CẢ TEST ĐỀU ĐẠT CHUẨN SRS 3.7.6 & SCL-01! <===\n")
+		output_text += "\nResult: ALL TESTS PASSED (SRS 3.7.6, SCL-01, SCL-02)"
+		print("\nResult: ALL TESTS PASSED (SRS 3.7.6, SCL-01, SCL-02)\n")
 	else:
-		output_text += "\n===> KẾT QUẢ: CÓ TEST BỊ LỖI! <==="
-		push_error("Test ScaleConfig thất bại!")
+		output_text += "\nResult: SOME TESTS FAILED"
+		push_error("ScaleConfig unit test failed")
 	
 	if label:
 		label.text = output_text

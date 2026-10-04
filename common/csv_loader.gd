@@ -1,19 +1,15 @@
 class_name CsvLoader
 extends RefCounted
 
-## CsvLoader: Tiện ích đọc và ghi bảng dữ liệu CSV cho cân bằng game (SRS SCL-01, 5.5).
-## Thuộc quyền quản lý của TV2 (Enemy & Wave).
+## Utility for reading and parsing balance CSV tables.
 
-## Đọc file CSV và trả về mảng các Dictionary (khóa là tên cột ở dòng đầu)
 static func load_csv_as_dicts(file_path: String) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	if not FileAccess.file_exists(file_path):
-		push_warning("CsvLoader: Không tìm thấy file tại %s" % file_path)
 		return result
 		
 	var file := FileAccess.open(file_path, FileAccess.READ)
 	if file == null:
-		push_error("CsvLoader: Không thể mở file %s (lỗi: %d)" % [file_path, FileAccess.get_open_error()])
 		return result
 		
 	var headers: PackedStringArray = []
@@ -31,36 +27,15 @@ static func load_csv_as_dicts(file_path: String) -> Array[Dictionary]:
 		if line_num == 0:
 			headers = tokens
 		else:
-			if tokens.size() != headers.size():
-				push_warning("CsvLoader: Dòng %d có số cột (%d) không khớp header (%d)" % [line_num + 1, tokens.size(), headers.size()])
 			var row_dict: Dictionary = {}
 			for i in range(mini(headers.size(), tokens.size())):
-				var key: String = headers[i]
-				row_dict[key] = tokens[i]
+				row_dict[headers[i]] = tokens[i]
 			result.append(row_dict)
 		line_num += 1
 		
 	file.close()
 	return result
 
-## Ghi mảng Dictionary thành file CSV
-static func save_dicts_as_csv(file_path: String, rows: Array[Dictionary], headers: Array[String]) -> bool:
-	var file := FileAccess.open(file_path, FileAccess.WRITE)
-	if file == null:
-		push_error("CsvLoader: Không thể ghi file %s" % file_path)
-		return false
-		
-	file.store_line(",".join(headers))
-	for row in rows:
-		var line_tokens: PackedStringArray = []
-		for h in headers:
-			line_tokens.append(str(row.get(h, "")))
-		file.store_line(",".join(line_tokens))
-		
-	file.close()
-	return true
-
-## Đọc danh sách EnemyData từ file CSV
 static func load_enemy_data_from_csv(file_path: String) -> Array[EnemyData]:
 	var dicts := load_csv_as_dicts(file_path)
 	var enemies: Array[EnemyData] = []
