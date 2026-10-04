@@ -10,3 +10,10 @@ extends Resource
 @export var default_priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
 @export var min_range: float = 0.0
 @export var levels: Array[TowerLevelData] = []
+
+## Total gold to reach `level` from nothing: build + every upgrade up to it.
+func get_total_cost(level: int) -> int:
+	var total := 0
+	for i in clampi(level, 0, levels.size()):
+		total += levels[i].build_cost
+	return total
