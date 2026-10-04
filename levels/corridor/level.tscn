@@ -11,16 +11,51 @@ sky_material = SubResource("ProceduralSkyMaterial_1fbt3")
 background_mode = 2
 sky = SubResource("Sky_41ihd")
 
+[sub_resource type="NavigationMesh" id="NavigationMesh_41ihd"]
+vertices = PackedVector3Array(-19.5, 4.5, -7.5, -19.5, 4.5, 7.5, -15.5, 4.5, 7.5, -15.5, 4.5, -7.5)
+polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1)]
+geometry_parsed_geometry_type = 1
+
 [sub_resource type="PlaneMesh" id="PlaneMesh_xepy2"]
 size = Vector2(40, 20)
 
-[sub_resource type="NavigationMesh" id="NavigationMesh_41ihd"]
+[sub_resource type="BoxMesh" id="BoxMesh_ocplc"]
+size = Vector3(40, 1, 20)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_ocplc"]
+size = Vector3(40, 1, 20)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_qc24j"]
+[sub_resource type="BoxMesh" id="BoxMesh_wall_back"]
+size = Vector3(40, 3, 1)
+
+[sub_resource type="BoxShape3D" id="Box_wall_back"]
+size = Vector3(40, 3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_front"]
+size = Vector3(40, 1, 1)
+
+[sub_resource type="BoxShape3D" id="Box_wall_front"]
+size = Vector3(40, 3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fortress"]
+size = Vector3(5, 4, 16)
+
+[sub_resource type="BoxShape3D" id="Box_fortress"]
+size = Vector3(5, 4, 16)
+
+[sub_resource type="BoxMesh" id="BoxMesh_gate"]
+size = Vector3(0.2, 3, 4)
+
+[sub_resource type="CylinderShape3D" id="Cyl_return"]
+height = 4.0
+radius = 5.0
+
+[sub_resource type="CylinderShape3D" id="Cyl_retreat"]
+height = 4.0
+radius = 5.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_8dto7"]
+size = Vector3(12, 4, 16)
 
 [node name="Level" type="Node3D" unique_id=1239096197]
 
@@ -35,96 +70,154 @@ shadow_enabled = true
 transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1985541732]
-transform = Transform3D(0.9396926, -0.24184474, 0.24184474, 0, 0.70710677, 0.70710677, -0.34202012, -0.664463, 0.664463, 5, 14, 13)
+transform = Transform3D(0.93969256, -0.24184471, 0.24184467, 0, 0.70710665, 0.70710677, -0.34202006, -0.664463, 0.6644629, 7.255, 21.213, 19.934)
 projection = 1
 current = true
-size = 20.0
-
-[node name="Geometry" type="Node3D" parent="." unique_id=1439378570]
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Geometry" unique_id=1958924904]
-mesh = SubResource("PlaneMesh_xepy2")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Geometry" unique_id=1058267805]
+size = 26.0
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=481712762]
 navigation_mesh = SubResource("NavigationMesh_41ihd")
 
+[node name="Geometry" type="Node3D" parent="NavigationRegion3D" unique_id=1439378570]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/Geometry" unique_id=1958924904]
+visible = false
+mesh = SubResource("PlaneMesh_xepy2")
+
+[node name="Floor" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=869922010]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/Floor" unique_id=1208446119]
+mesh = SubResource("BoxMesh_ocplc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/Floor" unique_id=285541768]
+shape = SubResource("BoxShape3D_ocplc")
+
+[node name="WallBack" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=524161426]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -8.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/WallBack" unique_id=940552965]
+mesh = SubResource("BoxMesh_wall_back")
+
+[node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/WallBack" unique_id=2134558612]
+shape = SubResource("Box_wall_back")
+
+[node name="WallFront" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=1866284497]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 8.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/WallFront" unique_id=1529551795]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+mesh = SubResource("BoxMesh_wall_front")
+
+[node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/WallFront" unique_id=125180418]
+shape = SubResource("Box_wall_front")
+
+[node name="Fortress" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=792113795]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 2, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/Fortress" unique_id=1056555563]
+mesh = SubResource("BoxMesh_fortress")
+
+[node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/Fortress" unique_id=3406688]
+shape = SubResource("Box_fortress")
+
+[node name="GateVisual" type="MeshInstance3D" parent="NavigationRegion3D/Geometry" unique_id=1693307904]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.9, 1.5, 0)
+mesh = SubResource("BoxMesh_gate")
+
 [node name="Slots" type="Node3D" parent="." unique_id=1229477472]
 
 [node name="W1" parent="Slots" unique_id=995670275 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -6)
 slot_id = &"W1"
 zone = 0
 
 [node name="W2" parent="Slots" unique_id=392996667 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -3.6)
 slot_id = &"W2"
 zone = 0
 
 [node name="W3" parent="Slots" unique_id=1361793867 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -1.2)
 slot_id = &"W3"
 zone = 0
 
 [node name="W4" parent="Slots" unique_id=981873432 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 1.2)
 slot_id = &"W4"
 zone = 0
 
 [node name="W5" parent="Slots" unique_id=1240733026 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 3.6)
 slot_id = &"W5"
 zone = 0
 
 [node name="W6" parent="Slots" unique_id=769643092 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 6)
 slot_id = &"W6"
 zone = 0
 
 [node name="N1" parent="Slots" unique_id=249274379 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -6.5)
 slot_id = &"N1"
 
 [node name="N2" parent="Slots" unique_id=1918855279 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -3.5)
 slot_id = &"N2"
 
 [node name="N3" parent="Slots" unique_id=998406386 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 3.5)
 slot_id = &"N3"
 
 [node name="N4" parent="Slots" unique_id=436172443 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 6.5)
 slot_id = &"N4"
 
 [node name="F1" parent="Slots" unique_id=428482230 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -6.5)
 slot_id = &"F1"
 zone = 2
 
 [node name="F2" parent="Slots" unique_id=122091872 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -3.5)
 slot_id = &"F2"
 zone = 2
 
 [node name="F3" parent="Slots" unique_id=1988940985 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 3.5)
 slot_id = &"F3"
 zone = 2
 
 [node name="F4" parent="Slots" unique_id=177784305 instance=ExtResource("1_41ihd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 6.5)
 slot_id = &"F4"
 zone = 2
 
 [node name="Markers" type="Node3D" parent="." unique_id=969002018]
 
 [node name="ReturnZone" type="Area3D" parent="Markers" unique_id=1031908054]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2, 0)
 collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Markers/ReturnZone" unique_id=749994832]
-shape = SubResource("BoxShape3D_xepy2")
+shape = SubResource("Cyl_return")
 
 [node name="RetreatZone" type="Area3D" parent="Markers" unique_id=898048777]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2, 0)
 collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Markers/RetreatZone" unique_id=1223678777]
-shape = SubResource("BoxShape3D_qc24j")
+shape = SubResource("Cyl_retreat")
 
 [node name="DeployPoint" type="Marker3D" parent="Markers" unique_id=488986395]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
 
 [node name="CommandPost" type="Marker3D" parent="Markers" unique_id=2075346717]
 
 [node name="SpawnZone" type="Area3D" parent="." unique_id=232184628 groups=["level"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, 0)
 collision_layer = 0
 collision_mask = 0
 
@@ -132,3 +225,4 @@ collision_mask = 0
 shape = SubResource("BoxShape3D_8dto7")
 
 [node name="FortressSpawn" type="Marker3D" parent="." unique_id=1763631995]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 0, 0)
