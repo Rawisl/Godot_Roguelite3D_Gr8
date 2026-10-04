@@ -12,8 +12,8 @@ background_mode = 2
 sky = SubResource("Sky_41ihd")
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_41ihd"]
-vertices = PackedVector3Array(-19.5, 4.5, -7.5, -19.5, 4.5, 7.5, -15.5, 4.5, 7.5, -15.5, 4.5, -7.5)
-polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1)]
+vertices = PackedVector3Array(-19.5, 4.5, -7.5, -19.5, 4.5, 7.5, -15.5, 4.5, 7.5, -15.5, 4.5, -7.5, -19.25, 0.5, -7.25, -19.25, 0.5, 7.5, -15.5, 0.5, 7.5, -15.5, 0.5, -7.25, -14.25, 0.5, -7.25, -14.25, 0.5, 7.5, 19.5, 0.5, 7.5, 19.5, 0.5, -7.25)
+polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9)]
 geometry_parsed_geometry_type = 1
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_xepy2"]
@@ -215,6 +215,7 @@ shape = SubResource("Cyl_retreat")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
 
 [node name="CommandPost" type="Marker3D" parent="Markers" unique_id=2075346717]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 5, 0)
 
 [node name="SpawnZone" type="Area3D" parent="." unique_id=232184628 groups=["level"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, 0)
