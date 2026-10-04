@@ -8,14 +8,20 @@ size = Vector2(1.6, 1.6)
 [sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
 size = Vector3(1.6, 0.5, 1.6)
 
+[sub_resource type="BoxMesh" id="BoxMesh_rubble"]
+size = Vector3(1.2, 0.3, 1.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rubble"]
+size = Vector3(1.2, 0.6, 1.2)
+
 [node name="Slot" type="Node3D" unique_id=995670275]
 script = ExtResource("1_k2eom")
 
-[node name="Marker" type="MeshInstance3D" parent="." unique_id=440419306 groups=["slot"]]
+[node name="Marker" type="MeshInstance3D" parent="." unique_id=440419306]
 unique_name_in_owner = true
 mesh = SubResource("PlaneMesh_k2eom")
 
-[node name="ClickArea" type="Area3D" parent="." unique_id=1850647318 groups=["slot"]]
+[node name="ClickArea" type="Area3D" parent="." unique_id=1850647318]
 unique_name_in_owner = true
 collision_layer = 64
 collision_mask = 0
@@ -25,5 +31,23 @@ shape = SubResource("BoxShape3D_xepy2")
 
 [node name="Preview" type="Node3D" parent="." unique_id=864280636]
 
-[node name="TowerAnchor" type="Marker3D" parent="." unique_id=1766215520 groups=["slot"]]
+[node name="TowerAnchor" type="Marker3D" parent="." unique_id=1766215520]
 unique_name_in_owner = true
+
+[node name="Rubble" type="StaticBody3D" parent="." unique_id=1520394817]
+unique_name_in_owner = true
+collision_mask = 0
+
+[node name="RubbleMesh" type="MeshInstance3D" parent="Rubble" unique_id=1520394818]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+mesh = SubResource("BoxMesh_rubble")
+
+[node name="RubbleShape" type="CollisionShape3D" parent="Rubble" unique_id=1520394819]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+shape = SubResource("BoxShape3D_rubble")
+disabled = true
+
+[node name="RubbleObstacle" type="NavigationObstacle3D" parent="Rubble" unique_id=1520394820]
+unique_name_in_owner = true
+radius = 0.85
