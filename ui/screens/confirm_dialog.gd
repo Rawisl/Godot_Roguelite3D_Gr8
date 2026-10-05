@@ -54,6 +54,6 @@ func _on_confirm_pressed() -> void:
 func _on_wave_state_changed(new_state: StringName, _old_state: StringName = &"") -> void:
 	if new_state == &"PREP":
 		return
-	# TODO(EVB-20): SRS 6.9 uses alert_requested(tier, key, params); drop the id arg when EventBus is updated.
-	EventBus.alert_requested.emit(Enums.AlertTier.T2, &"prep_over", &"toast.prep_over", {})
+	# PREP ended: close as cancel and show the toast (SCR-14 rule 1).
+	EventBus.alert_requested.emit(Enums.AlertTier.T2, &"toast.prep_over", {})
 	cancel()

@@ -60,5 +60,5 @@ func _open(is_transaction: bool) -> void:
 	var focus := get_viewport().gui_get_focus_owner()
 	print("[test] opened transaction=%s, focus=%s" % [is_transaction, focus.name if focus else "none"])
 
-func _on_alert(tier: int, id: StringName, text_key: StringName, _params: Dictionary) -> void:
-	print("[test] alert tier=%d id=%s -> %s" % [tier, id, tr(text_key)])
+func _on_alert(tier: int, key: StringName, _params: Dictionary) -> void:
+	print("[test] alert tier=%d key=%s -> %s" % [tier, key, tr(key)])
