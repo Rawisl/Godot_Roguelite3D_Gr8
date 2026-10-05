@@ -93,7 +93,7 @@ signal settings_changed(key: StringName, value: Variant)
 
 
 #------------------Warning, sfx, audio, tutorial,...------------------#
-signal alert_requested(tier: int, id: StringName, text_key: StringName, params: Dictionary)  # tier 1 | 2 | 3 (ALR-13, ALR-14)
+signal alert_requested(tier: int, key: StringName, params: Dictionary)  # tier 1 | 2 | 3; key = locale key
 signal screen_shake_requested(intensity: float, source: StringName)  # FBK-03, ACC-05
 signal sfx_requested(sound_id: StringName, position: Vector3, priority: int)  # AUD-02, AUD-03
 signal duck_requested(amount_db: float, duration: float)  # AUD-05
