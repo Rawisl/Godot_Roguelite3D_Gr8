@@ -9,3 +9,22 @@ menu.quit,Thoát
 dialog.confirm,Xác nhận
 dialog.cancel,Hủy
 toast.prep_over,Hết giờ chuẩn bị
+menu.back,Quay lại
+menu.resume,Tiếp tục
+menu.abandon,Bỏ cuộc
+loading.tip.1,Sửa Fortress trong lúc chuẩn bị để giữ máu thành
+dialog.abandon.title,Bỏ cuộc?
+dialog.abandon.body,Lượt chơi sẽ kết thúc ngay và được tính là bỏ cuộc.
+dialog.quit_run.title,Thoát game?
+dialog.quit_run.body,Lượt chơi hiện tại sẽ được tính là bỏ cuộc rồi thoát game.
+run_end.play_again,Chơi lại
+run_end.main_menu,Về menu chính
+run_end.type.fortress_destroyed,Fortress bị phá hủy
+run_end.type.commander_died,Chỉ huy đã ngã xuống
+run_end.type.abandoned,Đã bỏ cuộc
+settings.tab.gameplay,Gameplay
+settings.tab.controls,Điều khiển
+settings.tab.audio,Âm thanh
+settings.tab.graphics,Đồ họa
+settings.tab.accessibility,Tiếp cận
+settings.tab.data,Dữ liệu
