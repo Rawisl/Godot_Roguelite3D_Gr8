@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://255psr2byxet"]
+
+[ext_resource type="Script" uid="uid://c87gv28r5erhv" path="res://ui/screens/boot.gd" id="1_rc4oh"]
+
+[node name="Boot" type="Control" unique_id=687887003]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_rc4oh")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=175170479]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="CenterContainer" unique_id=1671752786]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+indeterminate = true
+editor_preview_indeterminate = false
