@@ -60,8 +60,12 @@ func change_scene(scene_path: String) -> void:
 func is_fading() -> bool:
 	return _is_fading
 
-func open_dialog(dialog: Control) -> void:
+func open_dialog(dialog: Control) -> bool:
+	if has_dialog():
+		dialog.queue_free()
+		return false
 	_dialog_holder.add_child(dialog)
+	return true
 
 func has_dialog() -> bool:
 	return _dialog_holder.get_child_count() > 0
