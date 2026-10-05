@@ -1,26 +1,145 @@
 [gd_scene format=3 uid="uid://cfefbxrhymxoj"]
 
-[node name="PanelContainer" type="PanelContainer" unique_id=1164406094]
+[ext_resource type="Script" uid="uid://c6j0alsjo1dst" path="res://ui/screens/confirm_dialog.gd" id="1_bcfhv"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bcfhv"]
+bg_color = Color(0.16862746, 0.16862746, 0.16862746, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.21562499, 0.21360351, 0.21360351, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dkmyi"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.22745098, 0.22745098, 0.22745098, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pk71r"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.16470589, 0.16470589, 0.16470589, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8x2un"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.2901961, 0.2901961, 0.2901961, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ev10o"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 1)
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="ConfirmDialog" type="Control" unique_id=293811443]
+texture_filter = 2
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_bcfhv")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1240286992]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.5019608)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1069234080]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1331133397]
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=933321407]
+custom_minimum_size = Vector2(800, 240)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bcfhv")
 
-[node name="Label" type="Label" parent="VBoxContainer" unique_id=1982944810]
+[node name="Margin" type="MarginContainer" parent="Center/Panel" unique_id=1279321288]
 layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
-[node name="Label2" type="Label" parent="VBoxContainer" unique_id=2025588901]
+[node name="Content" type="VBoxContainer" parent="Center/Panel/Margin" unique_id=1331133397]
 layout_mode = 2
+theme_override_constants/separation = 24
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1482136529]
+[node name="Title" type="Label" parent="Center/Panel/Margin/Content" unique_id=1982944810]
+unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 
-[node name="Button" type="Button" parent="HBoxContainer" unique_id=177008450]
+[node name="Body" type="Label" parent="Center/Panel/Margin/Content" unique_id=2025588901]
+unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
+autowrap_mode = 3
 
-[node name="Button2" type="Button" parent="HBoxContainer" unique_id=1818185999]
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/Content" unique_id=1482136529]
 layout_mode = 2
+alignment = 2
+
+[node name="Cancel" type="Button" parent="Center/Panel/Margin/Content/Buttons" unique_id=177008450]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_dkmyi")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pk71r")
+theme_override_styles/hover = SubResource("StyleBoxFlat_8x2un")
+theme_override_styles/focus = SubResource("StyleBoxFlat_ev10o")
+
+[node name="Confirm" type="Button" parent="Center/Panel/Margin/Content/Buttons" unique_id=1818185999]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_dkmyi")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pk71r")
+theme_override_styles/hover = SubResource("StyleBoxFlat_8x2un")
+theme_override_styles/focus = SubResource("StyleBoxFlat_ev10o")
