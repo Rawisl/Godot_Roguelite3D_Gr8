@@ -40,13 +40,13 @@ jobs:
             exit 1
           fi
 
-      # 3. Chặn dùng Time.get_ticks_msec() / usec()
-      - name: Verify No Time.get_ticks
+      # 3. Chặn dùng Time.get_ticks_msec() trong gameplay (bỏ qua thư mục tests/)
+      - name: Verify No Time.get_ticks in Gameplay
         run: |
-          echo "Checking for forbidden engine tick functions..."
-          TICKS=$(git grep -E "Time\.get_ticks_msec|Time\.get_ticks_usec" -- '*.gd' || true)
+          echo "Checking for forbidden engine tick functions in gameplay..."
+          TICKS=$(git grep -E "Time\.get_ticks_msec|Time\.get_ticks_usec" -- '*.gd' ':!tests/*' || true)
           if [ -n "$TICKS" ]; then
-            echo "::error::Do NOT use Time.get_ticks_msec(). Use delta or TimeManager to support time scales (x2, x3) and pause:"
+            echo "::error::Do NOT use Time.get_ticks_msec() in gameplay. Use delta or TimeManager to support time scales (x2, x3) and pause:"
             echo "$TICKS"
             exit 1
           fi
@@ -62,7 +62,7 @@ jobs:
             exit 1
           fi
 
-  # JOB 2: Kiểm tra biên dịch dự án Godot (tương đương F5 không báo lỗi đỏ)
+  # JOB 2: Kiểm tra biên dịch dự án Godot (Import UID cache trước khi check)
   godot-syntax-check:
     name: Godot 4 Engine & Syntax Check
     runs-on: ubuntu-latest
@@ -71,6 +71,11 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Initialize Godot Project and Build UID Cache
+        run: |
+          echo "Importing project assets and generating UID cache in headless mode..."
+          godot -v --headless --editor --quit || true
 
       - name: Check Godot Project Compilation & Missing Files
         run: |
