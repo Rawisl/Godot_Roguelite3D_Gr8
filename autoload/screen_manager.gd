@@ -10,8 +10,8 @@ signal screen_changed(scene_path: String)
 
 var _is_fading: bool = false
 
-@onready var _fade: ColorRect = $Fade
-@onready var _dialog_holder: Control = $DialogHolder
+@onready var _fade: ColorRect = %Fade
+@onready var _dialog_holder: Control = %DialogHolder
 
 func _input(event: InputEvent) -> void:
 	# Lock all input while fading

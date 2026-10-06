@@ -3,20 +3,21 @@
 [ext_resource type="Script" uid="uid://bix1nbr3n3n5p" path="res://tests/test_scale_config.gd" id="1_test"]
 [ext_resource type="Resource" uid="uid://3kk7veft258b" path="res://data/config/scale_config.tres" id="2_cfg"]
 
-[node name="TestScaleConfig" type="Node"]
+[node name="TestScaleConfig" type="Node" unique_id=2067731724]
 script = ExtResource("1_test")
 scale_config = ExtResource("2_cfg")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1193429096]
 
-[node name="Panel" type="Panel" parent="CanvasLayer"]
+[node name="Panel" type="Panel" parent="CanvasLayer" unique_id=1788221283]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/Panel"]
+[node name="Label" type="Label" parent="CanvasLayer/Panel" unique_id=389113261]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
