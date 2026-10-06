@@ -1,0 +1,78 @@
+name: Project Quality & Build Checker
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  # JOB 1: Quét nhanh các quy tắc cốt lõi (chạy trong 5 giây)
+  rules-check:
+    name: Check Project Rules & Forbidden Patterns
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 1. Chặn file rác (.godot, file tạm, file nén)
+      - name: Verify No Forbidden Junk Files
+        run: |
+          echo "Scanning for .godot folder, temp files, or archives..."
+          FORBIDDEN=$(git ls-files | grep -E '^\.godot/|\.tmp$|\.bak$|\.zip$' || true)
+          if [ -n "$FORBIDDEN" ]; then
+            echo "::error::Found forbidden junk files committed to repository:"
+            echo "$FORBIDDEN"
+            echo "Please remove them and update .gitignore."
+            exit 1
+          fi
+
+      # 2. Chặn đặt file code vào thư mục data/
+      - name: Verify No GDScript in data/
+        run: |
+          echo "Checking data/ directory..."
+          GD_IN_DATA=$(git ls-files | grep -E '^data/.*\.gd$' || true)
+          if [ -n "$GD_IN_DATA" ]; then
+            echo "::error::.gd script files are NOT allowed inside data/ (only .tres and .csv):"
+            echo "$GD_IN_DATA"
+            exit 1
+          fi
+
+      # 3. Chặn dùng Time.get_ticks_msec() / usec()
+      - name: Verify No Time.get_ticks
+        run: |
+          echo "Checking for forbidden engine tick functions..."
+          TICKS=$(git grep -E "Time\.get_ticks_msec|Time\.get_ticks_usec" -- '*.gd' || true)
+          if [ -n "$TICKS" ]; then
+            echo "::error::Do NOT use Time.get_ticks_msec(). Use delta or TimeManager to support time scales (x2, x3) and pause:"
+            echo "$TICKS"
+            exit 1
+          fi
+
+      # 4. Chặn dùng đường dẫn cứng $Path/To/Node (Bắt buộc dùng %)
+      - name: Verify Unique Names (%) Instead of Hardcoded Deep Paths ($)
+        run: |
+          echo "Checking for hardcoded deep node paths ($Node/Child)..."
+          HARD_PATHS=$(git grep -E '\$["'\'']?[a-zA-Z0-9_]+/[a-zA-Z0-9_]+' -- '*.gd' || true)
+          if [ -n "$HARD_PATHS" ]; then
+            echo "::error::Found hardcoded multi-level node paths. Use Access as Unique Name (%) instead to prevent null reference crashes:"
+            echo "$HARD_PATHS"
+            exit 1
+          fi
+
+  # JOB 2: Kiểm tra biên dịch dự án Godot (tương đương F5 không báo lỗi đỏ)
+  godot-syntax-check:
+    name: Godot 4 Engine & Syntax Check
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check Godot Project Compilation & Missing Files
+        run: |
+          echo "Checking for GDScript syntax errors and broken scene links..."
+          godot -v --headless --quit --check-only
