@@ -2,66 +2,6 @@
 
 [ext_resource type="Script" uid="uid://kektgv000ide" path="res://ui/screens/run_end.gd" id="1_v82ie"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2rw2s"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.22745098, 0.22745098, 0.22745098, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_unuxb"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.16470589, 0.16470589, 0.16470589, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dmxbn"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.2901961, 0.2901961, 0.2901961, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1ruqp"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.22745098, 0.22745098, 0.22745098, 0.39215687)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_500fi"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 1, 1, 1)
-draw_center = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [node name="MarginContainer" type="MarginContainer" unique_id=297996740]
 texture_filter = 2
 anchors_preset = 15
@@ -69,7 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 96
+theme_type_variation = &"SafeArea"
 script = ExtResource("1_v82ie")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=163728926]
@@ -81,37 +21,19 @@ alignment = 1
 [node name="Result" type="Label" parent="VBoxContainer" unique_id=822675748]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 40
+theme_type_variation = &"TitleLabel"
 
 [node name="PlayAgain" type="Button" parent="VBoxContainer" unique_id=1741688518]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_2rw2s")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_unuxb")
-theme_override_styles/hover = SubResource("StyleBoxFlat_dmxbn")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_1ruqp")
-theme_override_styles/focus = SubResource("StyleBoxFlat_500fi")
 
 [node name="MetaShop" type="Button" parent="VBoxContainer" unique_id=652915547]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_2rw2s")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_unuxb")
-theme_override_styles/hover = SubResource("StyleBoxFlat_dmxbn")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_1ruqp")
-theme_override_styles/focus = SubResource("StyleBoxFlat_500fi")
 
 [node name="MainMenu" type="Button" parent="VBoxContainer" unique_id=1230801325]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_2rw2s")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_unuxb")
-theme_override_styles/hover = SubResource("StyleBoxFlat_dmxbn")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_1ruqp")
-theme_override_styles/focus = SubResource("StyleBoxFlat_500fi")

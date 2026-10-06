@@ -2,55 +2,6 @@
 
 [ext_resource type="Script" uid="uid://co7lhvwbt2cjv" path="res://ui/screens/main_menu.gd" id="1_iacjs"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iacjs"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.22745098, 0.22745098, 0.22745098, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yo8r3"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.16470589, 0.16470589, 0.16470589, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0qgu1"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.2901961, 0.2901961, 0.2901961, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0rstm"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 1, 1, 1)
-draw_center = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [node name="MarginContainer" type="MarginContainer" unique_id=1116123521]
 texture_filter = 2
 anchors_preset = 15
@@ -58,7 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 96
+theme_type_variation = &"SafeArea"
 script = ExtResource("1_iacjs")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=381682760]
@@ -71,38 +22,18 @@ alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_iacjs")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_yo8r3")
-theme_override_styles/hover = SubResource("StyleBoxFlat_0qgu1")
-theme_override_styles/focus = SubResource("StyleBoxFlat_0rstm")
 
 [node name="MetaShop" type="Button" parent="VBoxContainer" unique_id=343663515]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_iacjs")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_yo8r3")
-theme_override_styles/hover = SubResource("StyleBoxFlat_0qgu1")
-theme_override_styles/focus = SubResource("StyleBoxFlat_0rstm")
 
 [node name="Settings" type="Button" parent="VBoxContainer" unique_id=294000506]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_iacjs")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_yo8r3")
-theme_override_styles/hover = SubResource("StyleBoxFlat_0qgu1")
-theme_override_styles/focus = SubResource("StyleBoxFlat_0rstm")
 
 [node name="Quit" type="Button" parent="VBoxContainer" unique_id=112135320]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_iacjs")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_yo8r3")
-theme_override_styles/hover = SubResource("StyleBoxFlat_0qgu1")
-theme_override_styles/focus = SubResource("StyleBoxFlat_0rstm")
