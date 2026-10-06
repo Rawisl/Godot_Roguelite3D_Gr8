@@ -1,6 +1,5 @@
 extends PanelContainer
-## Settings (SCR-05, 4.6). From MainMenu it is a screen; from Pause it is an
-## overlay and the run stays frozen (SET-05).
+## A screen when opened from MainMenu, an overlay when opened from Pause.
 
 signal closed
 
@@ -21,8 +20,7 @@ func _ready() -> void:
 	_back.pressed.connect(go_back)
 	_back.grab_focus()
 
-## Back and Esc do the same (SCR-13).
-## TODO(SET-06): save settings.cfg when leaving the screen.
+## TODO: save settings.cfg when leaving the screen.
 func go_back() -> void:
 	if is_overlay:
 		closed.emit()

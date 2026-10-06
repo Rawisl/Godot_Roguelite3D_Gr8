@@ -1,5 +1,4 @@
 extends MarginContainer
-## RunEnd (SCR-11). Full 3.2.4 fields come in week 11.
 
 @onready var _result: Label = %Result
 @onready var _play_again: Button = %PlayAgain
@@ -16,11 +15,11 @@ func _ready() -> void:
 	_main_menu.pressed.connect(_go.bind(GameState.AppState.MAIN_MENU))
 	_play_again.grab_focus()
 
-## Esc goes to MainMenu (SCR-13).
+## Esc goes to MainMenu.
 func go_back() -> void:
 	_go(GameState.AppState.MAIN_MENU)
 
-## Accept one press only and lock the buttons until the screen changes (END-04).
+## Accepts one press only and locks the buttons until the screen changes.
 func _go(state: GameState.AppState) -> void:
 	if GameState.change_state(state):
 		for button in [_play_again, _meta_shop, _main_menu]:

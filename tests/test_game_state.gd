@@ -1,11 +1,11 @@
 extends Control
-## Manual test for GameState transitions (SRS 3.1). Not shipped.
+## Manual test for GameState transitions. Not shipped.
 
 func _ready() -> void:
 	var S := GameState.AppState
 	var cases := [
 		[S.BOOT, S.MAIN_MENU, true],
-		[S.MAIN_MENU, S.RUN_LOADING, true],   # FLOW-06
+		[S.MAIN_MENU, S.RUN_LOADING, true],
 		[S.MAIN_MENU, S.RUN, false],          # must go through RunLoading
 		[S.RUN, S.MAIN_MENU, false],          # only via RunEnd
 		[S.RUN_END, S.META_SHOP, true],

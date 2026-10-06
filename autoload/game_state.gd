@@ -13,7 +13,7 @@ const SCENES := {
 	AppState.SETTINGS: "res://ui/screens/settings.tscn",
 }
 
-## Allowed transitions (SRS 3.1). MVP: Play goes straight to RunLoading (FLOW-06).
+## Allowed transitions. Play goes straight to RunLoading (no StartSelect yet).
 const TRANSITIONS := {
 	AppState.BOOT: [AppState.MAIN_MENU],
 	AppState.MAIN_MENU: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.SETTINGS],
@@ -27,7 +27,7 @@ const TRANSITIONS := {
 const PAUSE_MENU_SCENE := preload("res://ui/screens/pause_menu.tscn")
 
 var current: AppState = AppState.BOOT
-## Result of the last run, read by the RunEnd screen (3.2.4).
+## Result of the last run, read by the RunEnd screen.
 var last_run_end_type: StringName = &""
 var last_run_summary: Dictionary = {}
 
@@ -46,19 +46,19 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if current != AppState.RUN or not event.is_action_pressed(&"pause"):
 		return
-	# INP-03 step 4: reached only when no dialog, panel or selection used Esc first.
+	# Reached only when no dialog, panel or selection used Esc first.
 	if _pause_menu == null:
 		open_pause()
 	else:
 		_pause_menu.go_back()
 	get_viewport().set_input_as_handled()
 
-## Returns false if the transition is not in SRS 3.1 or a fade is running.
+## Returns false if the transition is not allowed or a fade is running.
 func change_state(new_state: AppState) -> bool:
 	if ScreenManager.is_fading():
 		return false
 	if new_state not in TRANSITIONS[current]:
-		push_warning("GameState: %s -> %s is not allowed (SRS 3.1)"
+		push_warning("GameState: %s -> %s is not allowed"
 				% [AppState.keys()[current], AppState.keys()[new_state]])
 		return false
 	var old_state := current
@@ -70,7 +70,7 @@ func change_state(new_state: AppState) -> bool:
 	return true
 
 func open_pause() -> void:
-	# TODO(TIME-02): pause through TimeManager once it exists.
+	# TODO: pause through TimeManager once it exists.
 	get_tree().paused = true
 	_pause_menu = PAUSE_MENU_SCENE.instantiate()
 	_pause_layer.add_child(_pause_menu)
@@ -81,13 +81,12 @@ func resume() -> void:
 		_pause_menu = null
 	get_tree().paused = false
 
-## Abandon from Pause (SCR-08).
-## TODO: request it from RunState (TV2, systems/run) so it emits run_ended (EVB-21).
+## TODO: request it from RunState so it emits run_ended.
 func abandon_run() -> void:
 	_on_run_ended(&"ABANDONED", {})
 
-## Quit during Run (FLOW-04): settle the run as ABANDONED, then exit.
-## TODO(FLOW-04): settle through RunState and wait for the save before quitting.
+## Settles the run as ABANDONED, then exits.
+## TODO: settle through RunState and wait for the save before quitting.
 func quit_from_run() -> void:
 	last_run_end_type = &"ABANDONED"
 	get_tree().quit()

@@ -1,8 +1,7 @@
 extends Control
-## Boot / Splash (SCR-01). Reads save and recovers an interrupted run (3.12.4)
-## before MainMenu.
+## Reads the save and recovers an interrupted run before MainMenu.
 
 func _ready() -> void:
-	# TODO(3.12.4, TV3): SaveManager load + interrupted run recovery here.
+	# TODO: SaveManager load and interrupted run recovery.
 	await get_tree().process_frame
 	GameState.change_state(GameState.AppState.MAIN_MENU)

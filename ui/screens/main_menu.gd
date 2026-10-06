@@ -1,6 +1,5 @@
 extends MarginContainer
-## MainMenu (SCR-02). MVP: Play goes straight to RunLoading (FLOW-06).
-## TODO(SCR-02): prestige balance and record labels once SaveManager exists.
+## TODO: prestige balance and record labels once SaveManager exists.
 
 @onready var _play: Button = %Play
 @onready var _meta_shop: Button = %MetaShop

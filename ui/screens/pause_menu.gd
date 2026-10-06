@@ -1,5 +1,5 @@
 extends MarginContainer
-## PauseMenu (SCR-08). Lives on GameState's pause layer while the tree is paused.
+## Lives on GameState's pause layer while the tree is paused.
 
 const SETTINGS_SCENE := preload("res://ui/screens/settings.tscn")
 const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
@@ -22,7 +22,7 @@ func _ready() -> void:
 	_quit.pressed.connect(_confirm.bind(&"dialog.quit_run.title", &"dialog.quit_run.body", GameState.quit_from_run))
 	_resume.grab_focus()
 
-## Esc inside Pause: close Settings first, then resume (INP-03).
+## Esc closes Settings first, then resumes.
 func go_back() -> void:
 	if is_instance_valid(_settings_overlay):
 		_settings_overlay.queue_free()
@@ -31,14 +31,14 @@ func go_back() -> void:
 	else:
 		GameState.resume()
 
-## Settings from Pause keeps the run frozen (SET-05).
+## The run stays frozen while Settings is open.
 func _open_settings() -> void:
 	_settings_overlay = SETTINGS_SCENE.instantiate()
 	_settings_overlay.is_overlay = true
 	_settings_overlay.closed.connect(go_back)
 	get_parent().add_child(_settings_overlay)
 
-## System dialog: not bound to PREP rules (SCR-14).
+## System dialog: not bound to PREP rules.
 func _confirm(title_key: StringName, body_key: StringName, on_confirm: Callable) -> void:
 	var dialog := DIALOG_SCENE.instantiate()
 	dialog.setup(title_key, body_key)
