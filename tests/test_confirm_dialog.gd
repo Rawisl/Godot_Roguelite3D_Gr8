@@ -1,16 +1,16 @@
 extends Control
 
-## Manual test for ConfirmDialog (SCR-14). Not shipped.
+## Manual test for ConfirmDialog. Not shipped.
 ## S: system dialog   X: transaction dialog   E: simulate PREP end (state -> COMBAT)
 ## V: toggle validate result   Esc: cancel top dialog (via ScreenManager)
-## Fake PREP clock logs every second and ends PREP at 0 (rule 1, rule 4).
+## Fake PREP clock logs every second and ends PREP at 0.
 
 const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
 
 var _validate_ok: bool = true
 
 ## Fake PREP clock (no real wave FSM yet): checks a dialog never pauses
-## or slows time (SCR-14 rule 4), and ends PREP at 0 like the real clock (rule 1).
+## or slows time, and ends PREP at 0 like the real clock.
 var _fake_prep_left: float = 30.0
 var _log_timer: float = 0.0
 

@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cp2obq01mc0rc"]
+
+[ext_resource type="Script" uid="uid://b1pib1p4kpjxw" path="res://tests/test_game_state.gd" id="1_n36g5"]
+
+[node name="TestGameState" type="Control" unique_id=769259311]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_n36g5")
