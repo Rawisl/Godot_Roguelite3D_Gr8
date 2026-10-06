@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Group 8 Project"
-run/main_scene="uid://og55jctucxje"
+run/main_scene="uid://255psr2byxet"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
