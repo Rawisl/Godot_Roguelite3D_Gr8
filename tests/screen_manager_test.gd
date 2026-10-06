@@ -1,5 +1,5 @@
 extends Control
-## Manual test for ScreenManager (SCR-13, SCR-15). Not shipped.
+## Manual test for ScreenManager. Not shipped.
 ## F: fade-change scene   D: open a dummy dialog   T: toggle x3 time scale
 ## P: toggle pause        Esc / BackButton: should both call go_back()
 
@@ -22,7 +22,7 @@ func _ready() -> void:
 		_wait_fade_end()
 
 
-## Called by both Esc (via ScreenManager) and BackButton (SCR-13).
+## Called by both Esc (via ScreenManager) and BackButton
 func go_back() -> void:
 	_back_count += 1
 	print("[test] go_back called, count=%d, has_dialog=%s, fading=%s" % [_back_count, ScreenManager.has_dialog(), ScreenManager.is_fading()])

@@ -1,11 +1,11 @@
 extends CanvasLayer
 ## Switches screens with a fade and owns the system dialog layer.
-## Screens that support Back implement go_back(); Esc calls the same function (SCR-13).
+## Screens that support Back implement go_back(); Esc calls the same function
 ## Dialogs that support Esc implement cancel(); otherwise they are freed.
 
 signal screen_changed(scene_path: String)
 
-## Fade duration of each half (out, then in), in real time (SCR-15).
+## Fade duration of each half (out, then in), in real time
 @export var fade_duration: float = 0.25
 
 var _is_fading: bool = false
@@ -14,7 +14,7 @@ var _is_fading: bool = false
 @onready var _dialog_holder: Control = $DialogHolder
 
 func _input(event: InputEvent) -> void:
-	# Lock all input while fading (SCR-15).
+	# Lock all input while fading
 	if _is_fading:
 		get_viewport().set_input_as_handled()
 		return
@@ -22,14 +22,14 @@ func _input(event: InputEvent) -> void:
 	if not event.is_action_pressed(&"ui_cancel"):
 		return
 
-	# Esc closes the top dialog first (INP-03 step 1), one step per press.
+	# Esc closes the top dialog first, one step per press.
 	if has_dialog():
 		close_top_dialog()
 		get_viewport().set_input_as_handled()
 		return
 
-	# Outside Run, Esc does the same as the screen's Back button (SCR-13).
-	# The Run scene has no go_back(), so Esc falls through to INP-03 handling.
+	# Outside Run, Esc does the same as the screen's Back button
+	# The Run scene has no go_back(), so Esc falls through to handling.
 	var screen := get_tree().current_scene
 	if screen != null and screen.has_method(&"go_back"):
 		screen.go_back()
@@ -84,7 +84,7 @@ func close_all_dialogs() -> void:
 		dialog.queue_free()
 
 func _tween_fade(target_alpha: float) -> void:
-	# Real time: ignores Engine.time_scale (x2/x3) and keeps running while paused (UI-02).
+	# Real time: ignores Engine.time_scale (x2/x3) and keeps running while paused.
 	var tween := create_tween()
 	tween.set_ignore_time_scale(true)
 	tween.tween_property(_fade, "color:a", target_alpha, fade_duration)
