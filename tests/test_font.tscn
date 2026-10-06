@@ -1,0 +1,70 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/test_font.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://ba6867t0wt701" path="res://ui/theme/fonts/BeVietnamPro-Regular.ttf" id="2_regular"]
+[ext_resource type="FontFile" uid="uid://c5eh65su1iw4t" path="res://ui/theme/fonts/BeVietnamPro-Bold.ttf" id="3_bold"]
+
+[node name="TestFont" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_script")
+regular = ExtResource("2_regular")
+bold = ExtResource("3_bold")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.11, 0.12, 0.15, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 48.0
+offset_right = -48.0
+offset_bottom = -48.0
+theme_override_constants/separation = 16
+
+[node name="RegularSample" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_regular")
+theme_override_font_sizes/font_size = 48
+text = "ằ ẫ ộ ữ đ Ằ Ẫ Ộ Ữ Đ"
+
+[node name="BoldSample" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 48
+text = "ằ ẫ ộ ữ đ Ằ Ẫ Ộ Ữ Đ"
+
+[node name="RegularSentence" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_regular")
+theme_override_font_sizes/font_size = 24
+text = "Đồng hồ tự bạo: lực lượng quân địch đã tiến sát cổng thành!"
+autowrap_mode = 3
+
+[node name="BoldSentence" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 24
+text = "Đồng hồ tự bạo: lực lượng quân địch đã tiến sát cổng thành!"
+autowrap_mode = 3
+
+[node name="Small14" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_regular")
+theme_override_font_sizes/font_size = 14
+text = "Cỡ 14 px (ACC-02): ằ ẫ ộ ữ đ – Đồng hồ tự bạo"
+
+[node name="Small14Bold" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 14
+text = "Cỡ 14 px đậm: ằ ẫ ộ ữ đ – Đồng hồ tự bạo"
