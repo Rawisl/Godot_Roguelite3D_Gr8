@@ -9,7 +9,7 @@ on:
 jobs:
   # JOB 1: Quét nhanh các quy tắc cốt lõi & kiểm tra UID (chạy trong vài giây)
   rules-check:
-    name: Check Project Rules & UID Integrity
+    name: Check Project Rules & Forbidden Patterns
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
