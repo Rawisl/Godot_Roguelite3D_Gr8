@@ -2,13 +2,15 @@ extends Node3D
 
 ## Test environment generator for Commander Combat & Movement mechanics.
 
+const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
+
 
 func _ready() -> void:
 	_spawn_test_wall()
 	_spawn_dummy_enemies()
 
 
-## Spawns a physical wall on Layer 1 (World) to test Dodge blocking (CMB-06).
+## Spawns a physical wall on Layer 1 (World) to test Dodge blocking.
 func _spawn_test_wall() -> void:
 	var wall := StaticBody3D.new()
 	wall.name = "TestWall"
@@ -34,42 +36,39 @@ func _spawn_test_wall() -> void:
 	add_child(wall)
 
 
-## Spawns 4 dummy targets on Layer 3 (Enemy) to verify cleave limit and damage types.
+## Spawns 4 Grunts as test dummies to verify cleave limit, knockback, and damage types.
 func _spawn_dummy_enemies() -> void:
-	# 4 targets spaced closely to test max_targets = 3 (CMB-09)
+	# 4 Grunt đặt san sát nhau trước mặt Commander để test cleave cap = 3
 	var x_offsets: Array[float] = [-1.5, -0.5, 0.5, 1.5]
 
 	for i in range(x_offsets.size()):
-		var dummy := CharacterBody3D.new()
-		dummy.name = "DummyEnemy_%d" % (i + 1)
-		dummy.add_to_group("enemy")
-		dummy.collision_layer = 4 # Layer 3: enemy (1 << 2 = 4)
-		dummy.collision_mask = 1
-		dummy.position = Vector3(x_offsets[i], 0.9, -2.0)
-
-		# Custom health tracking for test verification
-		dummy.set_meta("hp", 40)
-		dummy.set_meta("max_hp", 40)
-
-		var shape := CollisionShape3D.new()
-		var cap_shape := CapsuleShape3D.new()
-		cap_shape.radius = 0.35
-		cap_shape.height = 1.8
-		shape.shape = cap_shape
-		dummy.add_child(shape)
-
-		var mesh_inst := MeshInstance3D.new()
-		var cap_mesh := CapsuleMesh.new()
-		cap_mesh.radius = 0.35
-		cap_mesh.height = 1.8
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.85, 0.2, 0.2) # Red enemy
-		cap_mesh.material = mat
-		mesh_inst.mesh = cap_mesh
-		dummy.add_child(mesh_inst)
-
-		# Attach damage handling method dynamically
-		dummy.set_script(preload("res://tests/dummy_target.gd") if ResourceLoader.exists("res://tests/dummy_target.gd") else null)
-
-		# Fallback if no separate script: provide take_damage via dynamic callable
+		var dummy: Enemy = GRUNT_SCENE.instantiate() as Enemy
+		dummy.name = "DummyGrunt_%d" % (i + 1)
+		dummy.position = Vector3(x_offsets[i], 0.0, -2.0)
+		# Phải add_child trước để các biến @onready (như dummy.health) được khởi tạo
 		add_child(dummy)
+		dummy.speed_multiplier = 0.0
+		
+		dummy.health.max_hp = 99999
+		dummy.health.hp = 99999
+
+		dummy.health.damaged.connect(func(amount: int, info: DamageInfo):
+			var type_str := "SLASH"
+			if info != null:
+				match info.damage_type:
+					Enums.DamageType.PIERCE: type_str = "PIERCE"
+					Enums.DamageType.BLAST: type_str = "BLAST"
+					Enums.DamageType.SLASH: type_str = "SLASH"
+					Enums.DamageType.TRUE: type_str = "TRUE"
+
+			print("[HIT] %s trúng đòn! Sát thương: %d | Loại: %s | Knockback: %.1f m | HP: %d/%d | Vị trí: (%.2f, %.2f)" % [
+				dummy.name,
+				amount,
+				type_str,
+				info.knockback_force if info != null else 0.0,
+				dummy.health.hp,
+				dummy.health.max_hp,
+				dummy.global_position.x,
+				dummy.global_position.z
+			])
+		)
