@@ -2,10 +2,10 @@ extends Node3D
 
 ## Visual verification scene for Grunt NavigationAgent3D pathfinding.
 
-@onready var grunt: Enemy = $Grunt
-@onready var target_marker: Marker3D = $TargetMarker
-@onready var status_label: Label = $CanvasLayer/Panel/StatusLabel
-@onready var nav_region: NavigationRegion3D = $NavigationRegion3D
+@onready var grunt: Enemy = %Grunt
+@onready var target_marker: Marker3D = %TargetMarker
+@onready var status_label: Label = %StatusLabel
+@onready var nav_region: NavigationRegion3D = %NavigationRegion3D
 
 func _ready() -> void:
 	var nav_mesh := NavigationMesh.new()

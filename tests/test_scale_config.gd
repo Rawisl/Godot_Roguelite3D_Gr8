@@ -4,7 +4,7 @@ extends Node
 
 @export var scale_config: ScaleConfig
 
-@onready var label: Label = $CanvasLayer/Panel/Label
+@onready var label: Label = %Label
 
 func _ready() -> void:
 	if scale_config == null:

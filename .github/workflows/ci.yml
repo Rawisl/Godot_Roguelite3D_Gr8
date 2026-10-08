@@ -1,0 +1,193 @@
+name: Project Quality & Build Checker
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  # JOB 1: Quét nhanh các quy tắc cốt lõi & kiểm tra UID (chạy trong vài giây)
+  rules-check:
+    name: Check Project Rules & Forbidden Patterns
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 1. Chặn file rác (.godot, file tạm, file nén)
+      - name: Verify No Forbidden Junk Files
+        run: |
+          echo "Scanning for .godot folder, temp files, or archives..."
+          FORBIDDEN=$(git ls-files | grep -E '^\.godot/|\.tmp$|\.bak$|\.zip$' || true)
+          if [ -n "$FORBIDDEN" ]; then
+            echo "::error::Found forbidden junk files committed to repository:"
+            echo "$FORBIDDEN"
+            echo "Please remove them and update .gitignore."
+            exit 1
+          fi
+
+      # 2. Chặn đặt file code vào thư mục data/
+      - name: Verify No GDScript in data/
+        run: |
+          echo "Checking data/ directory..."
+          GD_IN_DATA=$(git ls-files | grep -E '^data/.*\.gd$' || true)
+          if [ -n "$GD_IN_DATA" ]; then
+            echo "::error::.gd script files are NOT allowed inside data/ (only .tres and .csv):"
+            echo "$GD_IN_DATA"
+            exit 1
+          fi
+
+      # 3. Chặn dùng Time.get_ticks_msec() trong gameplay (bỏ qua thư mục tests/)
+      - name: Verify No Time.get_ticks in Gameplay
+        run: |
+          echo "Checking for forbidden engine tick functions in gameplay..."
+          TICKS=$(git grep -E "Time\.get_ticks_msec|Time\.get_ticks_usec" -- '*.gd' ':!tests/*' || true)
+          if [ -n "$TICKS" ]; then
+            echo "::error::Do NOT use Time.get_ticks_msec() in gameplay. Use delta or TimeManager to support time scales (x2, x3) and pause:"
+            echo "$TICKS"
+            exit 1
+          fi
+
+      # 4. Chặn dùng đường dẫn cứng $Path/To/Node (Bắt buộc dùng %)
+      - name: Verify Unique Names (%) Instead of Hardcoded Deep Paths ($)
+        run: |
+          echo "Checking for hardcoded deep node paths ($Node/Child)..."
+          HARD_PATHS=$(git grep -E '\$["'\'']?[a-zA-Z0-9_]+/[a-zA-Z0-9_]+' -- '*.gd' || true)
+          if [ -n "$HARD_PATHS" ]; then
+            echo "::error::Found hardcoded multi-level node paths. Use Access as Unique Name (%) instead to prevent null reference crashes:"
+            echo "$HARD_PATHS"
+            exit 1
+          fi
+
+      # 5. UID Rule 1: Script <-> .uid Pairing
+      - name: Verify Script and .uid Pairing
+        run: |
+          echo "Checking that every .gd and .gdshader has a committed .uid file..."
+          HAS_ERRORS=0
+
+          # Check every script has its .uid file committed
+          for script in $(git ls-files '*.gd' '*.gdshader'); do
+            uid_file="${script}.uid"
+            if ! git ls-files --error-unmatch "$uid_file" >/dev/null 2>&1; then
+              echo "::error::Missing committed .uid file for script: $script (Expected $uid_file)"
+              HAS_ERRORS=1
+            fi
+          done
+
+          # Check no orphan .uid file exists without its script
+          for uid_file in $(git ls-files '*.uid'); do
+            script="${uid_file%.uid}"
+            if ! git ls-files --error-unmatch "$script" >/dev/null 2>&1; then
+              echo "::error::Orphan .uid file found without corresponding script: $uid_file (Expected $script)"
+              HAS_ERRORS=1
+            fi
+          done
+
+          if [ "$HAS_ERRORS" -ne 0 ]; then
+            exit 1
+          fi
+
+      # 6. UID Rule 2: Immutability of Existing .uid Files
+      - name: Verify Existing .uid Files Are Not Modified or Orphaned
+        run: |
+          echo "Checking that existing .uid files are not modified or deleted while scripts exist..."
+          # Determine base commit for comparison
+          if [ -n "${{ github.base_ref }}" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+          elif git rev-parse --verify "HEAD~1" >/dev/null 2>&1; then
+            BASE_REF="HEAD~1"
+          else
+            BASE_REF=""
+          fi
+
+          if [ -z "$BASE_REF" ]; then
+            echo "No base ref found for diff comparison (initial commit). Skipping Rule 2 check."
+            exit 0
+          fi
+
+          HAS_ERRORS=0
+
+          # Existing .uid files must not change content
+          MODIFIED_UIDS=$(git diff --name-only --diff-filter=M "$BASE_REF"...HEAD -- '*.uid' || true)
+          if [ -n "$MODIFIED_UIDS" ]; then
+            echo "::error::Existing .uid files must NEVER have their content modified:"
+            echo "$MODIFIED_UIDS"
+            HAS_ERRORS=1
+          fi
+
+          # Existing .uid files must not be deleted while their script still exists
+          DELETED_UIDS=$(git diff --name-only --diff-filter=D "$BASE_REF"...HEAD -- '*.uid' || true)
+          for uid_file in $DELETED_UIDS; do
+            script="${uid_file%.uid}"
+            if git ls-files --error-unmatch "$script" >/dev/null 2>&1; then
+              echo "::error::Deleted .uid file while its script still exists: $uid_file"
+              HAS_ERRORS=1
+            fi
+          done
+
+          # Renamed .uid files must retain identical content (100% similarity)
+          CHANGED_RENAMES=$(git diff -M --name-status "$BASE_REF"...HEAD -- '*.uid' | grep -E '^R[0-9]{1,2}[[:space:]]' || true)
+          if [ -n "$CHANGED_RENAMES" ]; then
+            echo "::error::Renamed .uid files must keep original UID content:"
+            echo "$CHANGED_RENAMES"
+            HAS_ERRORS=1
+          fi
+
+          if [ "$HAS_ERRORS" -ne 0 ]; then
+            exit 1
+          fi
+
+      # 7. UID Rule 3: No Duplicate UIDs
+      - name: Verify No Duplicate UIDs
+        run: |
+          echo "Checking for duplicate UID values across all .uid files..."
+          DUPLICATES=$(git ls-files '*.uid' | while read -r f; do
+            uid=$(tr -d '\r\n ' < "$f")
+            if [ -n "$uid" ]; then
+              echo "$uid $f"
+            fi
+          done | sort | awk '
+            {
+              uid = $1
+              file = $2
+              count[uid]++
+              files[uid] = (files[uid] ? files[uid] ", " : "") file
+            }
+            END {
+              for (u in count) {
+                if (count[u] > 1) {
+                  print "Duplicate UID [" u "] found in: " files[u]
+                }
+              }
+            }
+          ')
+
+          if [ -n "$DUPLICATES" ]; then
+            echo "::error::Duplicate UIDs detected (catches files duplicated/copied in Explorer):"
+            echo "$DUPLICATES"
+            exit 1
+          fi
+          echo "All UIDs are unique."
+
+  # JOB 2: Kiểm tra biên dịch dự án Godot (Sử dụng Godot 4.7 khớp với project.godot)
+  godot-syntax-check:
+    name: Godot 4 Engine & Syntax Check
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.7
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize Godot Project and Build UID Cache
+        run: |
+          echo "Importing project assets and generating UID cache in headless mode..."
+          godot -v --headless --editor --quit || true
+
+      - name: Check Godot Project Compilation & Missing Files
+        run: |
+          echo "Checking for GDScript syntax errors and broken scene links..."
+          godot -v --headless --quit --check-only

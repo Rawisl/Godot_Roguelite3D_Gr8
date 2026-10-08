@@ -8,7 +8,7 @@ const TARGET_SCENE := "res://tests/screen_manager_test.tscn"
 static var _fade_start_ms: int = 0
 var _back_count: int = 0
 
-@onready var _back_button: Button = $BackButton
+@onready var _back_button: Button = %BackButton
 
 func _ready() -> void:
 	# Keep receiving keys while the tree is paused.
