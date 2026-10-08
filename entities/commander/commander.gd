@@ -2,35 +2,34 @@ extends CharacterBody3D
 
 @export var stats: CharacterStats
 
-## Debug sphere placed at the aim hit point. Leave empty when merging.
 @export var debug_aim_marker: Node3D
-
-## Prints the horizontal speed every 0.5s. Turn off when merging.
 @export var debug_print_speed: bool = false
 
-## Current aim direction on the XZ plane.
 var aim_dir: Vector3 = Vector3.FORWARD
 var is_commander_mode: bool = false
 
-# Dodge state variables
+# Dodge state
 var is_dodging: bool = false
 var _dodge_timer: float = 0.0
 var _dodge_cooldown_timer: float = 0.0
 var _dodge_dir: Vector3 = Vector3.ZERO
 
-# Combat & Combo state variables
+# Combat & Combo state
 var is_attacking: bool = false
 var current_combo_hit: int = 1
 var _attack_timer: float = 0.0
+var _strike_timer: float = 0.0
+var _has_struck: bool = false
 var _combo_reset_timer: float = 0.0
 var _has_buffered_attack: bool = false
-var _input_buffer_timer: float = 0.0
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _debug_last_pos: Vector3
 var _debug_timer: float = 0.0
 
-# Unique Name node references
+const COLLISION_LAYER_ENEMY: int = 3
+const WIND_UP_RATIO: float = 0.25 
+
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
 @onready var _anim_player: AnimationPlayer = %AnimationPlayer
@@ -39,6 +38,7 @@ var _debug_timer: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group(&"commander")
 	_debug_last_pos = global_position
 	_setup_health()
 
@@ -59,7 +59,11 @@ func _physics_process(delta: float) -> void:
 
 	_update_cooldowns_and_timers(delta)
 
-	# Handle dodge or normal movement
+	if is_commander_mode:
+		velocity = Vector3.ZERO
+		move_and_slide()
+		return
+
 	if is_dodging:
 		_update_dodge_movement(delta)
 	else:
@@ -68,8 +72,6 @@ func _physics_process(delta: float) -> void:
 		_update_movement(camera, delta)
 
 	move_and_slide()
-
-	# Aim after moving to use current frame position
 	_update_aim(camera)
 
 	if debug_print_speed:
@@ -77,29 +79,30 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_cooldowns_and_timers(delta: float) -> void:
-	# Dodge cooldown timer
+	# Dodge cooldown
 	if _dodge_cooldown_timer > 0.0:
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
 		var total_cd := stats.dodge_cooldown if stats else 1.5
 		EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
 
-	# Attack action timer
+	# Active strike timer
+	if is_attacking and not _has_struck:
+		_strike_timer -= delta
+		if _strike_timer <= 0.0:
+			_has_struck = true
+			_execute_sword_strike(current_combo_hit)
+
+	# Attack action total timer
 	if is_attacking:
 		_attack_timer -= delta
 		if _attack_timer <= 0.0:
 			_end_attack()
 
-	# Combo expiration reset timer
+	# Combo expiration timer
 	if not is_attacking and _combo_reset_timer > 0.0:
 		_combo_reset_timer -= delta
 		if _combo_reset_timer <= 0.0:
 			current_combo_hit = 1
-
-	# Input buffer window timer
-	if _has_buffered_attack:
-		_input_buffer_timer -= delta
-		if _input_buffer_timer <= 0.0:
-			_has_buffered_attack = false
 
 
 func _check_dodge_input(camera: Camera3D) -> void:
@@ -107,7 +110,6 @@ func _check_dodge_input(camera: Camera3D) -> void:
 		return
 
 	if Input.is_action_just_pressed(&"dodge"):
-		# Dodge immediately cancels active attack
 		if is_attacking:
 			_interrupt_attack()
 		_start_dodge(camera)
@@ -128,7 +130,7 @@ func _start_dodge(camera: Camera3D) -> void:
 	_dodge_timer = stats.dodge_iframe if stats else 0.3
 	_dodge_cooldown_timer = stats.dodge_cooldown if stats else 1.5
 
-	set_collision_mask_value(3, false)
+	set_collision_mask_value(COLLISION_LAYER_ENEMY, false)
 
 	var total_cd := stats.dodge_cooldown if stats else 1.5
 	EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
@@ -153,11 +155,10 @@ func _update_dodge_movement(delta: float) -> void:
 func _end_dodge() -> void:
 	is_dodging = false
 	_dodge_timer = 0.0
-	set_collision_mask_value(3, true)
+	set_collision_mask_value(COLLISION_LAYER_ENEMY, true)
 
 
 func _update_movement(camera: Camera3D, delta: float) -> void:
-	# Movement is locked during active attack swing
 	if is_attacking:
 		velocity.x = 0.0
 		velocity.z = 0.0
@@ -166,19 +167,15 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 		return
 
 	var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+	var speed := stats.move_speed if stats else 6.0
 
 	var cam_basis := camera.global_transform.basis
-	var right := cam_basis.x
-	right.y = 0.0
-	right = right.normalized()
-
-	var forward := -cam_basis.z
-	forward.y = 0.0
-	forward = forward.normalized()
+	var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
+	var forward := Vector3(-cam_basis.z.x, 0.0, -cam_basis.z.z).normalized()
 
 	var dir := right * input.x + forward * (-input.y)
-	velocity.x = dir.x * stats.move_speed
-	velocity.z = dir.z * stats.move_speed
+	velocity.x = dir.x * speed
+	velocity.z = dir.z * speed
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
@@ -220,29 +217,31 @@ func _check_attack_input() -> void:
 		if not is_attacking:
 			_start_attack(current_combo_hit)
 		else:
-			# Check combo window and buffer next hit
+			# Cho phép buffer trong combo window mà không lo timeout sớm
 			var window := stats.combo_window if stats else 0.35
 			if _attack_timer <= window:
 				_has_buffered_attack = true
-				_input_buffer_timer = stats.input_buffer_time if stats else 0.15
 
 
 func _start_attack(hit_index: int) -> void:
 	is_attacking = true
 	current_combo_hit = hit_index
 	_has_buffered_attack = false
-	_attack_timer = stats.attack_interval if stats else 0.45
+	_has_struck = false
+	
+	var interval := stats.attack_interval if stats else 0.45
+	_attack_timer = interval
+	_strike_timer = interval * WIND_UP_RATIO
 	_combo_reset_timer = 0.0
 
 	_play_attack_animation(current_combo_hit)
-	_execute_sword_strike(current_combo_hit)
 
 
 func _end_attack() -> void:
 	is_attacking = false
 	_attack_timer = 0.0
+	_has_struck = false
 
-	# Chain into buffered combo attack if present
 	if _has_buffered_attack:
 		_has_buffered_attack = false
 		var next_hit := (current_combo_hit % 3) + 1
@@ -258,12 +257,11 @@ func _end_attack() -> void:
 func _interrupt_attack() -> void:
 	is_attacking = false
 	_attack_timer = 0.0
+	_has_struck = false
 	_has_buffered_attack = false
 	_combo_reset_timer = stats.combo_reset_time if stats else 0.6
 
 
-## For Kim: Name attack clips as "attack_1", "attack_2", "attack_3".
-## Hitbox activation is synchronized with attack_interval.
 func _play_attack_animation(combo_step: int) -> void:
 	var anim_name := "attack_%d" % combo_step
 	if _anim_player != null and _anim_player.has_animation(anim_name):
@@ -272,7 +270,6 @@ func _play_attack_animation(combo_step: int) -> void:
 		_procedural_attack_feedback(combo_step)
 
 
-## Procedural visual feedback distinguishing combo hits 1, 2, and 3.
 func _procedural_attack_feedback(combo_step: int) -> void:
 	if _facing_mesh == null:
 		return
@@ -282,22 +279,18 @@ func _procedural_attack_feedback(combo_step: int) -> void:
 
 	match combo_step:
 		1:
-			# Slash 1: Leftward diagonal lunge
 			tween.tween_property(_facing_mesh, "position", base_pos + Vector3(-0.15, 0.0, -0.35), 0.08)
 			tween.tween_property(_facing_mesh, "position", base_pos, 0.12)
 		2:
-			# Slash 2: Rightward diagonal lunge
 			tween.tween_property(_facing_mesh, "position", base_pos + Vector3(0.15, 0.0, -0.35), 0.08)
 			tween.tween_property(_facing_mesh, "position", base_pos, 0.12)
 		3:
-			# Slash 3: Heavy forward finisher with scale pulse
 			tween.tween_property(_facing_mesh, "position", base_pos + Vector3(0.0, 0.0, -0.55), 0.10)
 			tween.parallel().tween_property(_facing_mesh, "scale", Vector3(1.3, 1.3, 1.3), 0.10)
 			tween.tween_property(_facing_mesh, "position", base_pos, 0.15)
 			tween.parallel().tween_property(_facing_mesh, "scale", Vector3.ONE, 0.15)
 
 
-## Executes arc sector check (120 deg) and deterministic target sorting
 func _execute_sword_strike(combo_step: int) -> void:
 	if _sword_area == null or stats == null:
 		return
@@ -306,7 +299,6 @@ func _execute_sword_strike(combo_step: int) -> void:
 	var half_arc_rad: float = deg_to_rad(stats.sword_arc_deg * 0.5)
 	var max_targets: int = stats.sword_max_targets
 
-	# Calculate damage and knockback for current combo hit
 	var damage_amount: int = stats.sword_damage
 	var knockback: float = 0.0
 
@@ -332,19 +324,19 @@ func _execute_sword_strike(combo_step: int) -> void:
 		if not to_target.is_zero_approx():
 			angle = aim_dir.angle_to(to_target.normalized())
 
-		# Discard enemies outside the 120-degree sector
 		if angle > half_arc_rad:
 			continue
 
+		var entity_id: int = body.get("entity_id") if "entity_id" in body else body.get_instance_id()
 		candidates.append({
 			"body": body,
 			"distance": dist,
 			"angle": angle,
-			"id": body.get_instance_id(),
+			"id": entity_id,
 			"dir": to_target.normalized() if not to_target.is_zero_approx() else aim_dir
 		})
 
-	# Sort deterministically: closest distance -> smallest angle -> lowest instance ID
+	# Sort tie-break
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if not is_equal_approx(a.distance, b.distance):
 			return a.distance < b.distance
@@ -353,7 +345,6 @@ func _execute_sword_strike(combo_step: int) -> void:
 		return a.id < b.id
 	)
 
-	# Deliver damage once to each valid target, up to max_targets
 	var target_count := mini(candidates.size(), max_targets)
 	for i in range(target_count):
 		var target_data: Dictionary = candidates[i]
@@ -367,29 +358,33 @@ func _execute_sword_strike(combo_step: int) -> void:
 			knockback,
 			hit_dir
 		)
-		
-		# Support both DamageInfo signature and (amount, damage_type) signature
-		if target_node.has_method("take_damage_info"):
-			target_node.take_damage_info(info)
-		elif target_node.has_method("take_damage"):
-			target_node.take_damage(damage_amount, stats.sword_damage_type)
+
+		if target_node.has_method("take_damage"):
+			target_node.take_damage(info)
 
 
-## Processes incoming damage with i-frame, armor reduction, and mode checks.
-func take_damage(info: DamageInfo) -> void:
+func take_damage(damage_input: Variant) -> void:
 	if is_commander_mode:
+		return
+
+	var info: DamageInfo = null
+	if damage_input is DamageInfo:
+		info = damage_input
+	elif damage_input is int:
+		info = DamageInfo.new(damage_input, Enums.DamageType.SLASH)
+	else:
 		return
 
 	if is_dodging and info.damage_type != Enums.DamageType.TRUE:
 		return
 
 	var final_amount: int = info.amount
-
 	if info.damage_type != Enums.DamageType.TRUE and stats != null:
 		var effective_armor: float = clampf(stats.armor_pct, 0.0, 0.75)
 		final_amount = maxi(1, ceili(float(info.amount) * (1.0 - effective_armor)))
 
-	health.take_damage(final_amount)
+	info.amount = final_amount
+	health.take_damage(info)
 
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
@@ -411,4 +406,4 @@ func _debug_report_speed(delta: float) -> void:
 
 	_debug_timer = 0.0
 	print("velocity: %.3f m/s | moved: %.3f m/s | expected: %.3f m/s" % [
-		flat_velocity.length(), moved.length() / delta, stats.move_speed])
+		flat_velocity.length(), moved.length() / delta, stats.move_speed if stats else 6.0])
