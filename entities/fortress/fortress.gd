@@ -19,5 +19,27 @@ func _on_died() -> void:
 	_destroyed = true
 	EventBus.fortress_destroyed.emit()
 
-func take_damage(amount: int) -> void:
-	health.take_damage(amount)
+func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
+	if _destroyed:
+		return
+	var info: DamageInfo = null
+	if damage_input is DamageInfo:
+		info = damage_input
+	elif damage_input is int:
+		info = DamageInfo.new(damage_input, p_damage_type)
+
+	if info == null:
+		return
+
+	var taken := health.take_damage(info)
+	var type_name := &"SLASH"
+	match info.damage_type:
+		Enums.DamageType.PIERCE: type_name = &"PIERCE"
+		Enums.DamageType.BLAST: type_name = &"BLAST"
+		Enums.DamageType.SLASH: type_name = &"SLASH"
+		Enums.DamageType.MAGIC: type_name = &"MAGIC"
+		Enums.DamageType.TRAP: type_name = &"TRAP"
+		Enums.DamageType.TRUE: type_name = &"TRUE"
+
+	var src_name := StringName(info.source.name if info.source != null else "")
+	EventBus.fortress_damaged.emit(taken, type_name, src_name)
