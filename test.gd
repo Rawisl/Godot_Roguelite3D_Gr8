@@ -38,14 +38,12 @@ func _spawn_test_wall() -> void:
 
 ## Spawns 4 Grunts as test dummies to verify cleave limit, knockback, and damage types.
 func _spawn_dummy_enemies() -> void:
-	# 4 Grunt đặt san sát nhau trước mặt Commander để test cleave cap = 3
 	var x_offsets: Array[float] = [-1.5, -0.5, 0.5, 1.5]
 
 	for i in range(x_offsets.size()):
 		var dummy: Enemy = GRUNT_SCENE.instantiate() as Enemy
 		dummy.name = "DummyGrunt_%d" % (i + 1)
 		dummy.position = Vector3(x_offsets[i], 0.0, -2.0)
-		# Phải add_child trước để các biến @onready (như dummy.health) được khởi tạo
 		add_child(dummy)
 		dummy.speed_multiplier = 0.0
 		
