@@ -2,6 +2,36 @@
 
 [ext_resource type="PackedScene" uid="uid://c8i7qjsqqke46" path="res://entities/tower/tower.tscn" id="1_b83ug"]
 [ext_resource type="Resource" uid="uid://dghlbllbxkb05" path="res://data/towers/arrow.tres" id="2_1d1k7"]
+[ext_resource type="Script" uid="uid://b74gxrugag0jg" path="res://entities/tower/tower_model.gd" id="3_d7nuf"]
+[ext_resource type="PackedScene" uid="uid://bkdowfr7p4s8f" path="res://contents/models/towers/placeholder_arrow_tower.glb" id="4_sbbfw"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_body"]
+height = 1.8
+radius = 0.6
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_d7nuf"]
+resource_local_to_scene = true
+height = 20.0
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_click"]
+height = 2.1
+radius = 0.7
 
 [node name="Arrow" unique_id=457661571 instance=ExtResource("1_b83ug")]
 data = ExtResource("2_1d1k7")
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=668314301]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CylinderShape3D_body")
+
+[node name="Model" parent="." index="1" unique_id=155594529]
+script = ExtResource("3_d7nuf")
+
+[node name="arrow_tower" parent="Model" index="0" unique_id=1585061567 instance=ExtResource("4_sbbfw")]
+
+[node name="CollisionShape3D" parent="RangeArea" parent_id_path=PackedInt32Array(666926964) index="0" unique_id=49393706]
+shape = SubResource("CylinderShape3D_d7nuf")
+
+[node name="CollisionShape3D" parent="ClickArea" parent_id_path=PackedInt32Array(521694951) index="0" unique_id=444085316]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+shape = SubResource("CylinderShape3D_click")

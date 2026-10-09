@@ -5,6 +5,7 @@
 [ext_resource type="Resource" uid="uid://cbi3q06kejq53" path="res://data/towers/arrow_l1.tres" id="2_apq65"]
 [ext_resource type="Resource" uid="uid://cun2pomcpaxpm" path="res://data/towers/arrow_l2.tres" id="3_bj2q4"]
 [ext_resource type="Resource" uid="uid://d1c6qgnycahoh" path="res://data/towers/arrow_l3.tres" id="4_s3nix"]
+[ext_resource type="PackedScene" uid="uid://c2xfvhwotmyk1" path="res://entities/projectile/arrow_projectile.tscn" id="5_arrowprj"]
 
 [resource]
 script = ExtResource("2_6htap")
@@ -12,5 +13,8 @@ id = &"arrow"
 display_name = "tower.arrow"
 allowed_zones = Array[int]([0, 1, 2])
 targets_air = true
+projectile_scene = ExtResource("5_arrowprj")
+projectile_speed = 30.0
+release_delay = 0.08
 levels = Array[ExtResource("1_6itpn")]([ExtResource("2_apq65"), ExtResource("3_bj2q4"), ExtResource("4_s3nix")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"
