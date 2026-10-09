@@ -41,6 +41,7 @@ func _ready() -> void:
 	add_to_group(&"commander")
 	_debug_last_pos = global_position
 	_setup_health()
+	EventBus.mode_changed.connect(_on_mode_changed)
 
 
 func _setup_health() -> void:
@@ -383,8 +384,14 @@ func take_damage(damage_input: Variant) -> void:
 		var effective_armor: float = clampf(stats.armor_pct, 0.0, 0.75)
 		final_amount = maxi(1, ceili(float(info.amount) * (1.0 - effective_armor)))
 
-	info.amount = final_amount
-	health.take_damage(info)
+	var processed_info := DamageInfo.new(
+		final_amount,
+		info.damage_type,
+		info.source,
+		info.knockback_force,
+		info.hit_direction
+	)
+	health.take_damage(processed_info)
 
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
@@ -407,3 +414,6 @@ func _debug_report_speed(delta: float) -> void:
 	_debug_timer = 0.0
 	print("velocity: %.3f m/s | moved: %.3f m/s | expected: %.3f m/s" % [
 		flat_velocity.length(), moved.length() / delta, stats.move_speed if stats else 6.0])
+
+func _on_mode_changed(mode: StringName) -> void:
+	is_commander_mode = (mode == &"COMMANDER")
