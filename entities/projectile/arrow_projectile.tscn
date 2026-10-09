@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://c2xfvhwotmyk1"]
+
+[ext_resource type="PackedScene" uid="uid://csq0ub35xqnvl" path="res://entities/projectile/projectile.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://cy30q2rfhviau" path="res://entities/projectile/arrow_projectile.gd" id="2_arrow"]
+[ext_resource type="PackedScene" uid="uid://bnkxdc2iwy3y7" path="res://contents/models/towers/placeholder_arrow_bolt.glb" id="3_bolt"]
+
+[node name="ArrowProjectile" instance=ExtResource("1_base")]
+script = ExtResource("2_arrow")
+
+[node name="ArrowBolt" parent="Model" index="0" instance=ExtResource("3_bolt")]
