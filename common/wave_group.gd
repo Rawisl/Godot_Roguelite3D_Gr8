@@ -1,7 +1,7 @@
 class_name WaveGroup
 extends Resource
 
-## Wave enemy spawn group definition (SRS 3.7.5).
+## Wave enemy spawn group definition
 
 @export var enemy: EnemyData
 @export var weight: float = 10.0

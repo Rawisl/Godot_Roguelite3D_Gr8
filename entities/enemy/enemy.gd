@@ -1,7 +1,7 @@
 class_name Enemy
 extends CharacterBody3D
 
-## Base enemy controller with NavigationAgent3D pathfinding (SRS 3.7.1, 3.7.4).
+## Base enemy controller with NavigationAgent3D pathfinding
 
 @export var data: EnemyData
 
@@ -14,7 +14,7 @@ var is_dead: bool = false
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _path_timer: float = 0.0
-const PATH_UPDATE_INTERVAL: float = 0.3  # SRS 3.7.4
+const PATH_UPDATE_INTERVAL: float = 0.3
 
 @onready var health: HealthComponent = %Health
 @onready var nav: NavigationAgent3D = %NavAgent
@@ -107,10 +107,26 @@ func set_target_position(target_pos: Vector3) -> void:
 	has_target_position = true
 	nav.target_position = target_pos
 
-func take_damage(amount: int, _damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
+func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
 	if is_dead:
 		return
-	health.take_damage(amount)
+
+	var info: DamageInfo = null
+	if damage_input is DamageInfo:
+		info = damage_input
+	elif damage_input is int:
+		info = DamageInfo.new(damage_input, p_damage_type)
+
+	if info == null:
+		return
+
+	# apply knockback
+	if info.knockback_force > 0.0 and (data == null or not data.knockback_immune):
+		var kb_dir := info.hit_direction
+		kb_dir.y = 0.0
+		velocity += kb_dir.normalized() * (info.knockback_force / 0.1)
+
+	health.take_damage(info)
 
 func _on_died() -> void:
 	if is_dead:

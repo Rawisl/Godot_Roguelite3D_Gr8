@@ -1,7 +1,7 @@
 class_name WaveTable
 extends Resource
 
-## Table containing enemy spawn rules and boss intervals (SRS 3.7.5).
+## Table containing enemy spawn rules and boss intervals
 
 @export var groups: Array[WaveGroup] = []
 @export var boss_every: int = 5

@@ -39,6 +39,7 @@ mesh = SubResource("BoxMesh_xepy2")
 
 [node name="Commander" parent="." unique_id=1106804585 instance=ExtResource("2_8uh7m")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0)
+debug_print_speed = null
 
 [node name="CameraRig" type="Node3D" parent="." unique_id=294239690]
 transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
