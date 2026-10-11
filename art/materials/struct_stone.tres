@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bseh2kw3vpopx"]
+
+[ext_resource type="Shader" uid="uid://ca0wvrr2vyyy3" path="res://art/shaders/toon.gdshader" id="1_toon"]
+
+[resource]
+resource_name = "struct_stone"
+shader = ExtResource("1_toon")
+shader_parameter/albedo_color = Color(0.749, 0.624, 0.459, 1)
+shader_parameter/light_strength = 0.6
+shader_parameter/ambient_strength = 0.4

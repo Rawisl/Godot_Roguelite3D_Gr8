@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cdjvuors5qdls"]
+
+[ext_resource type="Shader" uid="uid://ca0wvrr2vyyy3" path="res://art/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Texture2D" uid="uid://djuamdrc828dh" path="res://contents/assets/characters/commander/Textures/knight_texture.png" id="2_tex"]
+
+[resource]
+resource_name = "commander"
+shader = ExtResource("1_toon")
+shader_parameter/albedo_texture = ExtResource("2_tex")
