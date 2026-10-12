@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://w8verunnertscn"]
+
+[ext_resource type="Script" uid="uid://w8verunner001" path="res://tests/test_wave_fsm_runner.gd" id="1_runner"]
+
+[node name="TestWaveFsmRunner" type="Node" unique_id=981240182]
+script = ExtResource("1_runner")

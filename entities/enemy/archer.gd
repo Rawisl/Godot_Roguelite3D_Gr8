@@ -1,28 +1,35 @@
+class_name Archer
 extends Enemy
 
+## Archer enemy archetype with parabolic ranged attacks (AI-02).
+## Prioritizes targets based on data.target_rules (PLAYER, TOWER_WALL, TOWER_GROUND, BARRICADE, FORTRESS).
 
-const SPEED = 5.0
-const JUMP_VELOCITY = 4.5
+const ARROW_SCENE: PackedScene = preload("res://entities/projectile/enemy_projectile.tscn")
 
+func _ready() -> void:
+	super._ready()
 
-func _physics_process(delta: float) -> void:
-	# Add the gravity.
-	if not is_on_floor():
-		velocity += get_gravity() * delta
+func _execute_attack_action() -> void:
+	if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
+		return
 
-	# Handle jump.
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
-		velocity.y = JUMP_VELOCITY
+	var muzzle := get_node_or_null("Muzzle") as Marker3D
+	var spawn_pos: Vector3 = muzzle.global_position if muzzle != null else global_position + Vector3(0.0, 1.2, 0.0)
 
-	# Get the input direction and handle the movement/deceleration.
-	# As good practice, you should replace UI actions with custom gameplay actions.
-	var input_dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-	if direction:
-		velocity.x = direction.x * SPEED
-		velocity.z = direction.z * SPEED
-	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
-		velocity.z = move_toward(velocity.z, 0, SPEED)
+	var target_center: Vector3 = current_target.global_position
+	if current_target is CharacterBody3D or current_target is StaticBody3D:
+		target_center.y += 0.9
 
-	move_and_slide()
+	var arrow := ARROW_SCENE.instantiate() as Projectile
+	if arrow != null:
+		var root := get_tree().current_scene if get_tree() else null
+		if root != null:
+			root.add_child(arrow)
+		elif get_parent() != null:
+			get_parent().add_child(arrow)
+		else:
+			add_child(arrow)
+
+		var dmg: int = data.base_damage if data else 8
+		var dmg_type: Enums.DamageType = data.damage_type if data else Enums.DamageType.PIERCE
+		arrow.launch(spawn_pos, target_center, dmg, self, dmg_type, true, 2.5)
