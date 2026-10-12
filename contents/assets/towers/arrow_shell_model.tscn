@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://lijfm7ctt2v2"]
+
+[ext_resource type="PackedScene" uid="uid://ce3tkwlrmtfe1" path="res://contents/assets/towers/fbx/Shells/Archer_shell_LVL_1.fbx" id="1_cgy4u"]
+[ext_resource type="Material" uid="uid://bxe45ets47rmf" path="res://contents/assets/towers/texture/tower_material.tres" id="2_dnqiq"]
+[ext_resource type="PackedScene" uid="uid://d0j8xoqcv0ut0" path="res://contents/assets/towers/fbx/Shells/Archer_shell_LVL_2.fbx" id="3_il77n"]
+[ext_resource type="PackedScene" uid="uid://b72ev56cu0wdy" path="res://contents/assets/towers/fbx/Shells/Archer_shell_LVL_4.fbx" id="4_eahsi"]
+
+[node name="ArrowShellModel" type="Node3D" unique_id=2019422427]
+
+[node name="Level1" parent="." unique_id=155374345 instance=ExtResource("1_cgy4u")]
+visible = false
+
+[node name="Archer_tower_LVL_1" parent="Level1" index="0" unique_id=1717571627]
+material_override = ExtResource("2_dnqiq")
+
+[node name="Level2" parent="." unique_id=1932706127 instance=ExtResource("3_il77n")]
+visible = false
+
+[node name="Archer_shell_LVL_2" parent="Level2" index="0" unique_id=1768725818]
+material_override = ExtResource("2_dnqiq")
+
+[node name="Level3" parent="." unique_id=259952934 instance=ExtResource("4_eahsi")]
+visible = false
+
+[node name="Archer_shell_LVL_4" parent="Level3" index="0" unique_id=1637223588]
+material_override = ExtResource("2_dnqiq")
+
+[editable path="Level1"]
+[editable path="Level2"]
+[editable path="Level3"]

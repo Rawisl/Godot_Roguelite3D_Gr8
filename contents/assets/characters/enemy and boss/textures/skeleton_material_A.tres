@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c8fdqqscpfttr"]
+
+[ext_resource type="Shader" path="res://art/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Texture2D" uid="uid://c5ey7768e3vt2" path="res://contents/assets/characters/enemy and boss/textures/skeleton_texture_A.png" id="2_tex"]
+
+[resource]
+resource_name = "skeleton_A"
+shader = ExtResource("1_toon")
+shader_parameter/albedo_texture = ExtResource("2_tex")

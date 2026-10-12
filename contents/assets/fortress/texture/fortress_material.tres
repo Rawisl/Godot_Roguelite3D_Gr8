@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bsw053arn2t03"]
+
+[ext_resource type="Shader" path="res://art/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Texture2D" uid="uid://cxnwfnbxxxcsq" path="res://contents/assets/fortress/texture/Texture_MAp_ELfs.png" id="2_tex"]
+
+[resource]
+resource_name = "fortress"
+shader = ExtResource("1_toon")
+shader_parameter/albedo_texture = ExtResource("2_tex")

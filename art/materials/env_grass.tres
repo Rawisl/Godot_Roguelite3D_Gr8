@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dbp4ls6jc8erk"]
+
+[ext_resource type="Shader" uid="uid://ca0wvrr2vyyy3" path="res://art/shaders/toon.gdshader" id="1_toon"]
+
+[resource]
+resource_name = "env_grass"
+shader = ExtResource("1_toon")
+shader_parameter/albedo_color = Color(0.498, 0.627, 0.353, 1)
+shader_parameter/light_strength = 0.6
+shader_parameter/ambient_strength = 0.4

@@ -121,9 +121,14 @@ func test_commander_scene_and_groups() -> void:
 	assert_true(commander.collision_layer == 2, "Commander collision_layer == 2 (Layer 2: commander)")
 	assert_true(commander.collision_mask == 13, "Commander collision_mask == 13 (Layers 1, 3, 4)")
 
-	# Verify sword area mask
+	# Verify sword area mask and shape radius covering range + padding
 	var sword_area: Area3D = commander.get_node_or_null("%SwordArea")
 	assert_true(sword_area != null and sword_area.collision_mask == 4, "SwordArea collision_mask == 4 (Layer 3: enemy)")
+	var sword_col: CollisionShape3D = sword_area.get_node_or_null("CollisionShape3D") if sword_area else null
+	assert_true(sword_col != null and sword_col.shape is CylinderShape3D, "SwordArea has CylinderShape3D")
+	if sword_col and sword_col.shape is CylinderShape3D:
+		var cyl := sword_col.shape as CylinderShape3D
+		assert_true(cyl.radius >= 2.59, "SwordArea radius (%.2f) covers range + padding (>= 2.6m)" % cyl.radius)
 
 	commander.queue_free()
 
@@ -231,6 +236,54 @@ func test_combo_and_cleave() -> void:
 	var max_targets: int = stats.sword_max_targets
 	var hit_count := mini(candidates.size(), max_targets)
 	assert_true(hit_count == 3, "Cleave strictly limits to maximum %d targets" % max_targets)
+
+	# Test unbuffered 3-hit combo progression
+	commander.call("_start_attack", 1)
+	assert_true(commander.get("is_attacking") == true, "Combo Hit 1 starts is_attacking = true")
+	commander.call("_end_attack")
+	assert_true(commander.get("is_attacking") == false, "Combo Hit 1 ends is_attacking = false")
+	assert_true(commander.get("current_combo_hit") == 2, "Combo step advances to Hit 2 after Hit 1 completion")
+	assert_true(is_equal_approx(commander.get("_combo_reset_timer"), stats.combo_reset_time), "Combo reset timer initialized to 0.6s")
+
+	commander.call("_start_attack", commander.get("current_combo_hit"))
+	commander.call("_end_attack")
+	assert_true(commander.get("current_combo_hit") == 3, "Combo step advances to Hit 3 after Hit 2 completion")
+
+	commander.call("_start_attack", commander.get("current_combo_hit"))
+	commander.call("_end_attack")
+	assert_true(commander.get("current_combo_hit") == 1, "Combo step resets to 1 after Hit 3 finisher completion")
+
+	# Test combo reset on idle timeout (> 0.6s)
+	commander.call("_start_attack", 1)
+	commander.call("_end_attack")
+	assert_true(commander.get("current_combo_hit") == 2, "Combo is at Hit 2 before timeout")
+	commander.call("_update_cooldowns_and_timers", 0.65)
+	assert_true(commander.get("current_combo_hit") == 1, "Combo reset timer expiration resets combo back to Hit 1")
+
+	# Test mode switch during dodge cleanup
+	var cam := Camera3D.new()
+	add_child(cam)
+	commander.call("_start_dodge", cam)
+	assert_true(commander.get("is_dodging") == true, "Dodge active before mode switch")
+	commander.call("_on_mode_changed", &"COMMANDER")
+	assert_true(commander.get("is_dodging") == false, "Mode switch to COMMANDER ends active dodge")
+	assert_true(commander.get_collision_mask_value(3), "Enemy collision mask re-enabled after mode switch ends dodge")
+
+	# Test mode switch during attack cleanup
+	commander.call("_on_mode_changed", &"FRONTLINE")
+	commander.call("_start_attack", 1)
+	assert_true(commander.get("is_attacking") == true, "Attack active before mode switch")
+	commander.call("_on_mode_changed", &"COMMANDER")
+	assert_true(commander.get("is_attacking") == false, "Mode switch to COMMANDER interrupts active attack")
+
+	# Test death during dodge cleanup
+	commander.call("_on_mode_changed", &"FRONTLINE")
+	commander.call("_start_dodge", cam)
+	assert_true(commander.get("is_dodging") == true, "Dodge active before death")
+	commander.call("_on_died")
+	assert_true(commander.get("is_dodging") == false, "Death cleanly ends active dodge")
+	assert_true(commander.get_collision_mask_value(3), "Enemy collision mask re-enabled on death")
+	cam.queue_free()
 
 	commander.queue_free()
 

@@ -1,0 +1,236 @@
+[gd_scene format=3 uid="uid://dpw4gutm2w1wm"]
+
+[ext_resource type="PackedScene" uid="uid://cuoxmnktu1r8b" path="res://contents/assets/fortress/fbx/full/_TOWER_2.fbx" id="1_h3ii2"]
+[ext_resource type="PackedScene" uid="uid://dgqly7hm7t7if" path="res://contents/assets/fortress/fbx/full/_minnor_gates_4.fbx" id="1_n55o6"]
+[ext_resource type="Material" uid="uid://bsw053arn2t03" path="res://contents/assets/fortress/texture/fortress_material.tres" id="2_n55o6"]
+[ext_resource type="PackedScene" uid="uid://browq5o5vjq6o" path="res://contents/assets/fortress/fbx/parts/_TOWER_4_UP_1.fbx" id="3_n55o6"]
+[ext_resource type="PackedScene" uid="uid://dwux2nq3acwf1" path="res://contents/assets/fortress/fbx/full/wall_1_full.fbx" id="4_yeoui"]
+
+[node name="FortressModel" type="Node3D" unique_id=1707895074]
+
+[node name="Visual" type="Node3D" parent="."]
+transform = Transform3D(0.307692, 0, 0, 0, 0.307692, 0, 0, 0, 0.307692, 0, 0, 0)
+
+[node name="Gate" parent="Visual" unique_id=735844502 instance=ExtResource("1_n55o6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, 0)
+
+[node name="minnor_gates_1" parent="Visual/Gate" index="0" unique_id=1912804477]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.31230974, 3.1363777e-16)
+material_override = ExtResource("2_n55o6")
+
+[node name="Keep" parent="Visual" unique_id=1072815513 instance=ExtResource("1_h3ii2")]
+
+[node name="TOWER_2" parent="Visual/Keep" index="0" unique_id=1502571595]
+material_override = ExtResource("2_n55o6")
+
+[node name="RightWall" type="Node3D" parent="Visual" unique_id=501693324]
+
+[node name="WallSegment1" parent="Visual/RightWall" unique_id=1382850661 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 2.795611)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment1" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment1" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment2" parent="Visual/RightWall" unique_id=2017657487 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 5.67427)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment2" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment2" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment3" parent="Visual/RightWall" unique_id=1712156466 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 8.569141)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment3" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment3" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment4" parent="Visual/RightWall" unique_id=1305672481 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 11.50147)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment4" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment4" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment5" parent="Visual/RightWall" unique_id=484561517 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 14.425586)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment5" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment5" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment6" parent="Visual/RightWall" unique_id=1714002478 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 17.298443)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment6" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment6" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment7" parent="Visual/RightWall" unique_id=1292364504 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 20.284554)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment7" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment7" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment8" parent="Visual/RightWall" unique_id=880813505 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 23.22946)
+
+[node name="wall_1_part_02" parent="Visual/RightWall/WallSegment8" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/RightWall/WallSegment8" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="LeftWall" type="Node3D" parent="Visual" unique_id=1096005211]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -28.590322)
+
+[node name="WallSegment1" parent="Visual/LeftWall" unique_id=1106644067 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 2.795611)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment1" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment1" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment2" parent="Visual/LeftWall" unique_id=1968211220 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 5.67427)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment2" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment2" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment3" parent="Visual/LeftWall" unique_id=1215600422 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 8.569141)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment3" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment3" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment4" parent="Visual/LeftWall" unique_id=694600502 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 11.50147)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment4" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment4" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment5" parent="Visual/LeftWall" unique_id=1993155326 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 14.425586)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment5" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment5" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment6" parent="Visual/LeftWall" unique_id=564607092 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 17.298443)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment6" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment6" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment7" parent="Visual/LeftWall" unique_id=1853771564 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 20.284554)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment7" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment7" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallSegment8" parent="Visual/LeftWall" unique_id=825600239 instance=ExtResource("4_yeoui")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 5, 0, 23.22946)
+
+[node name="wall_1_part_02" parent="Visual/LeftWall/WallSegment8" index="0" unique_id=1129963120]
+material_override = ExtResource("2_n55o6")
+
+[node name="WALL_1_part_01" parent="Visual/LeftWall/WallSegment8" index="1" unique_id=1630640079]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallTowers" type="Node3D" parent="Visual" unique_id=489228500]
+
+[node name="WallTower1" parent="Visual/WallTowers" unique_id=1990633403 instance=ExtResource("3_n55o6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -7.2)
+
+[node name="TOWER_4_UP_1" parent="Visual/WallTowers/WallTower1" index="0" unique_id=266432083]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallTower2" parent="Visual/WallTowers" unique_id=1321951668 instance=ExtResource("3_n55o6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -14)
+
+[node name="TOWER_4_UP_1" parent="Visual/WallTowers/WallTower2" index="0" unique_id=266432083]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallTower3" parent="Visual/WallTowers" unique_id=579808952 instance=ExtResource("3_n55o6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -21)
+
+[node name="TOWER_4_UP_1" parent="Visual/WallTowers/WallTower3" index="0" unique_id=266432083]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallTower4" parent="Visual/WallTowers" unique_id=1635446723 instance=ExtResource("3_n55o6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7.2)
+
+[node name="TOWER_4_UP_1" parent="Visual/WallTowers/WallTower4" index="0" unique_id=266432083]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallTower5" parent="Visual/WallTowers" unique_id=47237726 instance=ExtResource("3_n55o6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+
+[node name="TOWER_4_UP_1" parent="Visual/WallTowers/WallTower5" index="0" unique_id=266432083]
+material_override = ExtResource("2_n55o6")
+
+[node name="WallTower6" parent="Visual/WallTowers" unique_id=531176263 instance=ExtResource("3_n55o6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 21)
+
+[node name="TOWER_4_UP_1" parent="Visual/WallTowers/WallTower6" index="0" unique_id=266432083]
+material_override = ExtResource("2_n55o6")
+
+[editable path="Visual/Gate"]
+[editable path="Visual/Keep"]
+[editable path="Visual/RightWall/WallSegment1"]
+[editable path="Visual/RightWall/WallSegment2"]
+[editable path="Visual/RightWall/WallSegment3"]
+[editable path="Visual/RightWall/WallSegment4"]
+[editable path="Visual/RightWall/WallSegment5"]
+[editable path="Visual/RightWall/WallSegment6"]
+[editable path="Visual/RightWall/WallSegment7"]
+[editable path="Visual/RightWall/WallSegment8"]
+[editable path="Visual/LeftWall/WallSegment1"]
+[editable path="Visual/LeftWall/WallSegment2"]
+[editable path="Visual/LeftWall/WallSegment3"]
+[editable path="Visual/LeftWall/WallSegment4"]
+[editable path="Visual/LeftWall/WallSegment5"]
+[editable path="Visual/LeftWall/WallSegment6"]
+[editable path="Visual/LeftWall/WallSegment7"]
+[editable path="Visual/LeftWall/WallSegment8"]
+[editable path="Visual/WallTowers/WallTower1"]
+[editable path="Visual/WallTowers/WallTower2"]
+[editable path="Visual/WallTowers/WallTower3"]
+[editable path="Visual/WallTowers/WallTower4"]
+[editable path="Visual/WallTowers/WallTower5"]
+[editable path="Visual/WallTowers/WallTower6"]
