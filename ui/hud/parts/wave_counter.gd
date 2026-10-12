@@ -1,4 +1,4 @@
-extends HBoxContainer
+extends VBoxContainer
 
 const STATE_KEYS := {
 	&"PREP": &"hud.state.prep",
@@ -13,6 +13,7 @@ const STATE_KEYS := {
 @onready var _countdown: Label = %Countdown
 @onready var _enemies_title: Label = %EnemiesTitle
 @onready var _enemies: Label = %Enemies
+@onready var _enemies_row: HBoxContainer = %EnemiesRow
 
 func _ready() -> void:
 	_enemies_title.text = tr(&"hud.enemies")
@@ -30,8 +31,7 @@ func _on_state_changed(new_state: StringName) -> void:
 	_set_enemies_visible(new_state == &"COMBAT" or new_state == &"BOSS_COMBAT")
 
 func _set_enemies_visible(value: bool) -> void:
-	_enemies_title.visible = value
-	_enemies.visible = value
+	_enemies_row.visible = value
 
 # TODO: show the upcoming wave during PREP once wave_preview_ready is emitted.
 func _on_wave_started(wave_index: int) -> void:

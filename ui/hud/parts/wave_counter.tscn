@@ -2,33 +2,51 @@
 
 [ext_resource type="Script" uid="uid://drcvppewnldl2" path="res://ui/hud/parts/wave_counter.gd" id="1_57oc4"]
 
-[node name="WaveCounter" type="HBoxContainer" unique_id=1849850089]
+[node name="WaveCounter" type="VBoxContainer" unique_id=1024785064]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_right = 10.0
-offset_bottom = 23.0
+offset_left = -7.0
+offset_right = 7.0
+offset_bottom = 125.0
 grow_horizontal = 2
 mouse_filter = 2
-theme_override_constants/separation = 24
+alignment = 1
 script = ExtResource("1_57oc4")
 
 [node name="Wave" type="Label" parent="." unique_id=999281154]
 unique_name_in_owner = true
 layout_mode = 2
+theme_type_variation = &"TitleLabel"
+horizontal_alignment = 1
 
-[node name="State" type="Label" parent="." unique_id=2115319662]
+[node name="StatusRow" type="HBoxContainer" parent="." unique_id=362338397]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="State" type="Label" parent="StatusRow" unique_id=2115319662]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Countdown" type="Label" parent="." unique_id=265254188]
+[node name="Countdown" type="Label" parent="StatusRow" unique_id=265254188]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="EnemiesTitle" type="Label" parent="." unique_id=1744267074]
+[node name="EnemiesRow" type="HBoxContainer" parent="." unique_id=1061184712]
 unique_name_in_owner = true
 layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
 
-[node name="Enemies" type="Label" parent="." unique_id=1367545860]
+[node name="EnemiesTitle" type="Label" parent="EnemiesRow" unique_id=1744267074]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
+
+[node name="Enemies" type="Label" parent="EnemiesRow" unique_id=1367545860]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
