@@ -1,9 +1,13 @@
 class_name Enemy
 extends CharacterBody3D
 
-## Base enemy controller with state machine, navigation, spawn grace, and melee attack.
+## Base enemy controller with state machine, navigation, spawn grace, and combat behaviors.
+## Supports melee and ranged archetypes, prioritized targeting rules (ETG-01), and crowd optimizations.
 
 signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
+
+const PATH_UPDATE_INTERVAL: float = 0.3
+const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
 
 @export var data: EnemyData
 
@@ -20,7 +24,7 @@ var _previous_state: Enums.EnemyState = Enums.EnemyState.ADVANCE
 var spawn_grace: bool = true
 var is_in_spawn_zone: bool = true
 var spawn_grace_timer: float = 0.0
-var spawn_zone_min_x: float = 8.0
+var _spawn_zone_min_x: float = 8.0
 
 var attack_windup_timer: float = 0.0
 var attack_recovery_timer: float = 0.0
@@ -33,18 +37,27 @@ var knockback_immunity_timer: float = 0.0
 
 var life_timer: float = 0.0
 var straggler_marked: bool = false
+var is_frenzied: bool = false
 var wait_timer: float = 0.0
 var _retarget_timer: float = 0.0
+var _path_timer: float = 0.0
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
-var _path_timer: float = 0.0
-const PATH_UPDATE_INTERVAL: float = 0.3
+
+# Shared node cache per physics frame to avoid get_nodes_in_group garbage collection overhead
+static var _cached_barricades: Array[Node] = []
+static var _cached_towers: Array[Node] = []
+static var _last_cache_frame: int = -1
 
 @onready var health: HealthComponent = %Health
 @onready var nav: NavigationAgent3D = %NavAgent
 
 func _ready() -> void:
-	add_to_group("enemy")
+	add_to_group(&"enemy")
+
+	# Phase-offset timers to prevent frame spikes across groups
+	_path_timer = randf_range(0.0, PATH_UPDATE_INTERVAL)
+	_retarget_timer = randf_range(0.0, GameConfig.retarget_interval)
 
 	if data == null:
 		push_warning("Enemy missing EnemyData resource")
@@ -58,7 +71,22 @@ func _ready() -> void:
 	nav.path_desired_distance = 0.5
 	nav.target_desired_distance = data.attack_range if data else 1.0
 
+	_init_spawn_zone_bounds()
 	_setup_navigation.call_deferred()
+
+func _init_spawn_zone_bounds() -> void:
+	var sz := get_tree().get_first_node_in_group(&"spawn_zone") as Area3D
+	if sz == null:
+		var root := get_tree().current_scene
+		if root != null:
+			sz = root.find_child("SpawnZone", true, false) as Area3D
+	if sz != null:
+		var col := sz.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if col != null and col.shape is BoxShape3D:
+			var box := col.shape as BoxShape3D
+			_spawn_zone_min_x = sz.global_position.x - (box.size.x * 0.5)
+		else:
+			_spawn_zone_min_x = sz.global_position.x - 6.0
 
 func _setup_navigation() -> void:
 	await get_tree().physics_frame
@@ -97,8 +125,10 @@ func change_state(new_state: Enums.EnemyState) -> void:
 			wait_timer = 0.0
 			velocity = Vector3.ZERO
 		Enums.EnemyState.FRENZY:
+			if not is_frenzied:
+				is_frenzied = true
+				EventBus.frenzy_started.emit(self)
 			speed_multiplier = GameConfig.frenzy_speed_mult
-			EventBus.frenzy_started.emit(self)
 			_find_default_target()
 		Enums.EnemyState.DEAD:
 			set_physics_process(false)
@@ -124,7 +154,8 @@ func _update_timers(delta: float) -> void:
 		straggler_marked = true
 		EventBus.straggler_marker_shown.emit(self)
 
-	if life_timer >= GameConfig.frenzy_time and current_state != Enums.EnemyState.FRENZY and current_state != Enums.EnemyState.DEAD:
+	if life_timer >= GameConfig.frenzy_time and not is_frenzied and current_state != Enums.EnemyState.DEAD:
+		is_frenzied = true
 		change_state(Enums.EnemyState.FRENZY)
 
 	if knockback_immunity_timer > 0.0:
@@ -139,7 +170,7 @@ func _update_state(delta: float) -> void:
 	match current_state:
 		Enums.EnemyState.SPAWN:
 			spawn_grace_timer += delta
-			var exited_zone: bool = (global_position.x < spawn_zone_min_x)
+			var exited_zone: bool = (global_position.x < _spawn_zone_min_x)
 			var expired: bool = (spawn_grace_timer >= GameConfig.spawn_grace_max_time)
 			if exited_zone or expired:
 				spawn_grace = false
@@ -198,7 +229,7 @@ func _update_state(delta: float) -> void:
 				if attack_windup_timer >= GameConfig.enemy_windup_time:
 					is_attacking_active = true
 					attack_windup_timer = 0.0
-					_execute_melee_strike()
+					_execute_attack_action()
 					var total_interval: float = data.attack_interval if data else 1.0
 					attack_recovery_timer = maxf(0.0, total_interval - GameConfig.enemy_windup_time)
 			else:
@@ -206,7 +237,10 @@ func _update_state(delta: float) -> void:
 				if attack_recovery_timer <= 0.0:
 					is_attacking_active = false
 					if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
-						change_state(Enums.EnemyState.ADVANCE)
+						if is_frenzied:
+							change_state(Enums.EnemyState.FRENZY)
+						else:
+							change_state(Enums.EnemyState.ADVANCE)
 					else:
 						var diff_after := current_target.global_position - global_position
 						diff_after.y = 0.0
@@ -223,7 +257,9 @@ func _update_state(delta: float) -> void:
 			stagger_timer -= delta
 			if stagger_timer <= 0.0:
 				knockback_immunity_timer = GameConfig.enemy_knockback_immunity_time
-				if _previous_state == Enums.EnemyState.CHASE and current_target != null and is_instance_valid(current_target) and _is_target_valid(current_target):
+				if is_frenzied or _previous_state == Enums.EnemyState.FRENZY:
+					change_state(Enums.EnemyState.FRENZY)
+				elif _previous_state == Enums.EnemyState.CHASE and current_target != null and is_instance_valid(current_target) and _is_target_valid(current_target):
 					change_state(Enums.EnemyState.CHASE)
 				else:
 					change_state(Enums.EnemyState.ADVANCE)
@@ -237,7 +273,7 @@ func _update_state(delta: float) -> void:
 				change_state(Enums.EnemyState.ADVANCE)
 
 		Enums.EnemyState.FRENZY:
-			if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group("fortress"):
+			if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"fortress"):
 				_find_default_target()
 			if current_target != null and is_instance_valid(current_target):
 				var diff_f := current_target.global_position - global_position
@@ -250,6 +286,9 @@ func _update_state(delta: float) -> void:
 
 		Enums.EnemyState.DEAD:
 			velocity = Vector3.ZERO
+
+func _execute_attack_action() -> void:
+	_execute_melee_strike()
 
 func _execute_melee_strike() -> void:
 	if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
@@ -317,6 +356,19 @@ func _update_navigation_movement(_delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
 
+func _update_node_cache() -> void:
+	var cur_frame := Engine.get_physics_frames()
+	if _last_cache_frame != cur_frame or cur_frame <= 1:
+		_last_cache_frame = cur_frame
+		_cached_barricades = get_tree().get_nodes_in_group(&"barricade")
+		_cached_towers = get_tree().get_nodes_in_group(&"tower")
+
+func _is_target_ahead(target_pos: Vector3, tolerance: float = 0.5) -> bool:
+	var advance_dir := Vector3(-1.0, 0.0, 0.0)
+	var to_target := (target_pos - global_position)
+	to_target.y = 0.0
+	return to_target.dot(advance_dir) >= -tolerance
+
 func _is_target_valid(t: Node3D) -> bool:
 	if t == null or not is_instance_valid(t):
 		return false
@@ -339,63 +391,150 @@ func _is_target_valid(t: Node3D) -> bool:
 		return true
 
 	if t.is_in_group(&"tower"):
-		if "slot" in t and t.slot != null and "zone" in t.slot:
-			if t.slot.zone == Enums.SlotZone.WALL:
-				return false
+		var is_wall: bool = false
+		if t.has_meta("is_wall"):
+			is_wall = bool(t.get_meta("is_wall"))
+		elif "slot" in t and t.slot != null and "zone" in t.slot:
+			is_wall = (t.slot.zone == Enums.SlotZone.WALL)
+		elif t.get_parent() != null and "zone" in t.get_parent():
+			is_wall = (t.get_parent().zone == Enums.SlotZone.WALL)
+		elif t.get_parent() != null and t.get_parent().get_parent() != null and "zone" in t.get_parent().get_parent():
+			is_wall = (t.get_parent().get_parent().zone == Enums.SlotZone.WALL)
+		elif t.global_position.y >= 3.0:
+			is_wall = true
+
+		# Melee ground units cannot target wall towers (ETG-01)
+		var can_target_wall := (data != null and (data.is_ranged or data.is_flying))
+		if is_wall and not can_target_wall:
+			return false
 		if "health" in t and t.health != null and t.health.hp <= 0:
 			return false
 		return true
 
 	return false
 
+func _get_valid_commander() -> Node3D:
+	var cmd := get_tree().get_first_node_in_group(&"commander") as Node3D
+	if cmd != null and _is_target_valid(cmd):
+		return cmd
+	return null
+
+func _get_valid_fortress() -> Node3D:
+	var fortress := get_tree().get_first_node_in_group(&"fortress") as Node3D
+	if fortress != null and _is_target_valid(fortress):
+		return fortress
+	return null
+
+func _find_closest_valid_barricade() -> Node3D:
+	_update_node_cache()
+	var closest: Node3D = null
+	var min_dist: float = INF
+	for b in _cached_barricades:
+		var b_node := b as Node3D
+		if b_node != null and is_instance_valid(b_node) and _is_target_valid(b_node):
+			if not _is_target_ahead(b_node.global_position):
+				continue
+			var d := global_position.distance_to(b_node.global_position)
+			if d < min_dist:
+				min_dist = d
+				closest = b_node
+	return closest
+
+func _find_closest_valid_tower(wall_only: bool) -> Node3D:
+	_update_node_cache()
+	var closest: Node3D = null
+	var min_dist: float = INF
+	for tw in _cached_towers:
+		var tw_node := tw as Node3D
+		if tw_node != null and is_instance_valid(tw_node) and _is_target_valid(tw_node):
+			var is_wall: bool = false
+			if "slot" in tw_node and tw_node.slot != null and "zone" in tw_node.slot:
+				is_wall = (tw_node.slot.zone == Enums.SlotZone.WALL)
+			if wall_only != is_wall:
+				continue
+			if not _is_target_ahead(tw_node.global_position):
+				continue
+			var d := global_position.distance_to(tw_node.global_position)
+			if d < min_dist:
+				min_dist = d
+				closest = tw_node
+	return closest
+
 func _find_best_target() -> void:
 	if current_state == Enums.EnemyState.FRENZY:
 		_find_default_target()
 		return
 
-	var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
-	if commander != null and _is_target_valid(commander):
-		var dist_to_cmd := global_position.distance_to(commander.global_position)
-		if (provoked_by_player or "is_battle_crying" in commander) and dist_to_cmd <= (data.aggro_range if data else 10.0):
-			set_target(commander)
-			return
+	# Aggro / Provocation overrides regular rules (AGG-01)
+	if provoked_by_player:
+		var cmd := _get_valid_commander()
+		if cmd != null:
+			var dist_to_cmd := global_position.distance_to(cmd.global_position)
+			if dist_to_cmd <= (data.aggro_range if data else 10.0):
+				set_target(cmd)
+				return
 
-	var barricades := get_tree().get_nodes_in_group(&"barricade")
-	var closest_barricade: Node3D = null
-	var min_barricade_dist: float = INF
-	for b in barricades:
-		var b_node := b as Node3D
-		if b_node != null and _is_target_valid(b_node):
-			var d := global_position.distance_to(b_node.global_position)
-			if d < min_barricade_dist:
-				min_barricade_dist = d
-				closest_barricade = b_node
-	if closest_barricade != null:
-		set_target(closest_barricade)
+	if data == null or data.target_rules.is_empty():
+		_find_default_target()
 		return
 
-	var towers := get_tree().get_nodes_in_group(&"tower")
-	var closest_tower: Node3D = null
-	var min_tower_dist: float = INF
-	for tw in towers:
-		var tw_node := tw as Node3D
-		if tw_node != null and _is_target_valid(tw_node):
-			var d := global_position.distance_to(tw_node.global_position)
-			if d < min_tower_dist:
-				min_tower_dist = d
-				closest_tower = tw_node
-	if closest_tower != null:
-		set_target(closest_tower)
-		return
+	# Evaluate targets in prioritized order from data.target_rules (ETG-01)
+	for rule in data.target_rules:
+		match rule:
+			&"PLAYER":
+				var cmd := _get_valid_commander()
+				if cmd != null:
+					var dist_to_cmd := global_position.distance_to(cmd.global_position)
+					if dist_to_cmd <= data.aggro_range:
+						set_target(cmd)
+						return
+
+			&"BARRICADE":
+				var closest_barricade := _find_closest_valid_barricade()
+				if closest_barricade != null:
+					set_target(closest_barricade)
+					return
+
+			&"TOWER_GROUND":
+				var closest_tower := _find_closest_valid_tower(false)
+				if closest_tower != null:
+					set_target(closest_tower)
+					return
+
+			&"TOWER_WALL":
+				if data.is_ranged or data.is_flying:
+					var closest_wall_tower := _find_closest_valid_tower(true)
+					if closest_wall_tower != null:
+						set_target(closest_wall_tower)
+						return
+
+			&"FORTRESS":
+				var fortress := _get_valid_fortress()
+				if fortress != null:
+					set_target(fortress)
+					return
 
 	_find_default_target()
 
 func _find_default_target() -> void:
-	var fortress := get_tree().get_first_node_in_group(&"fortress") as Node3D
-	if fortress != null and _is_target_valid(fortress):
+	var fortress := _get_valid_fortress()
+	if fortress != null:
 		set_target(fortress)
 	else:
-		set_target_position(Vector3(-17.5, global_position.y, 0.0))
+		set_target_position(_get_fortress_fallback_position())
+
+func _get_fortress_fallback_position() -> Vector3:
+	var fortress_marker := get_tree().get_first_node_in_group(&"fortress_spawn") as Node3D
+	if fortress_marker == null:
+		var root := get_tree().current_scene
+		if root != null:
+			fortress_marker = root.find_child("FortressSpawn", true, false) as Node3D
+	if fortress_marker != null:
+		return fortress_marker.global_position
+	var fortress_node := get_tree().get_first_node_in_group(&"fortress") as Node3D
+	if fortress_node != null:
+		return fortress_node.global_position
+	return Vector3(-17.5, global_position.y, 0.0)
 
 func set_target(target_node: Node3D) -> void:
 	current_target = target_node
@@ -430,11 +569,11 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		if knockback_immunity_timer <= 0.0:
 			var kb_dir := info.hit_direction
 			kb_dir.y = 0.0
-			velocity += kb_dir.normalized() * (info.knockback_force / 0.1)
+			velocity += kb_dir.normalized() * (info.knockback_force * KNOCKBACK_IMPULSE_SCALE)
 			if current_state == Enums.EnemyState.ATTACK:
 				attack_windup_timer = 0.0
 				is_attacking_active = false
-			_previous_state = current_state if current_state != Enums.EnemyState.STAGGER else Enums.EnemyState.ADVANCE
+			_previous_state = current_state if current_state != Enums.EnemyState.STAGGER else _previous_state
 			change_state(Enums.EnemyState.STAGGER)
 			stagger_timer = GameConfig.enemy_stagger_time
 

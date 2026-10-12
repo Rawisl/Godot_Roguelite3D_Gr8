@@ -31,6 +31,7 @@ func _ready() -> void:
 	EventBus.early_call_requested.connect(_on_early_call_requested)
 	EventBus.enemy_died.connect(_on_enemy_died)
 	_setup_container.call_deferred()
+	start_prep()
 
 func _setup_container() -> void:
 	if enemy_container == null:
@@ -63,6 +64,9 @@ func start_prep() -> void:
 
 func call_early() -> void:
 	if wave_state == Enums.WaveState.PREP:
+		var bonus_gold := mini(GameConfig.early_call_cap, int(floor(prep_timer * float(GameConfig.early_call_gold_per_sec))))
+		if bonus_gold > 0:
+			EventBus.gold_delta.emit(bonus_gold)
 		start_combat()
 
 func _on_early_call_requested() -> void:
