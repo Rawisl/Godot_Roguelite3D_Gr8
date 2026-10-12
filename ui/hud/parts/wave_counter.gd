@@ -17,6 +17,7 @@ const STATE_KEYS := {
 func _ready() -> void:
 	_enemies_title.text = tr(&"hud.enemies")
 	_countdown.visible = false
+	_set_enemies_visible(false)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.wave_started.connect(_on_wave_started)
 	EventBus.prep_timer_changed.connect(_on_prep_timer_changed)
@@ -26,6 +27,11 @@ func _on_state_changed(new_state: StringName) -> void:
 	_state.text = tr(STATE_KEYS.get(new_state, &""))
 	# TODO: clear time in COMBAT and the boss timer.
 	_countdown.visible = new_state == &"PREP"
+	_set_enemies_visible(new_state == &"COMBAT" or new_state == &"BOSS_COMBAT")
+
+func _set_enemies_visible(value: bool) -> void:
+	_enemies_title.visible = value
+	_enemies.visible = value
 
 # TODO: show the upcoming wave during PREP once wave_preview_ready is emitted.
 func _on_wave_started(wave_index: int) -> void:
