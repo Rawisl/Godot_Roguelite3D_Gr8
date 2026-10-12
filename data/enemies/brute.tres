@@ -4,4 +4,22 @@
 
 [resource]
 script = ExtResource("1_enbfl")
+id = &"brute"
+display_name_key = "enemy.brute"
+base_hp = 250
+base_damage = 25
+attack_interval = 2.0
+attack_range = 2.0
+move_speed = 2.0
+damage_type = 2
+spawn_cost = 6
+is_flying = false
+is_ranged = false
+knockback_immune = true
+aggro_range = 4.0
+avoid_radius = 0.9
+avoid_priority = 3
+target_rules = Array[StringName]([&"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
+gold_reward = 20
+prestige_reward = 5
 metadata/_custom_type_script = "uid://b5nxx0eyswlc0"
