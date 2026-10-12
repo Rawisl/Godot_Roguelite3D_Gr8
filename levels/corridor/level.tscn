@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://ekgmjmchm13f"]
 
 [ext_resource type="PackedScene" uid="uid://btoa1luqsnhh5" path="res://systems/build/slot.tscn" id="1_41ihd"]
+[ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="9_grass"]
+[ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
+[ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -10,6 +13,9 @@ sky_material = SubResource("ProceduralSkyMaterial_1fbt3")
 [sub_resource type="Environment" id="Environment_72mue"]
 background_mode = 2
 sky = SubResource("Sky_41ihd")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 3
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_41ihd"]
 vertices = PackedVector3Array(-19.5, 4.5, -7.5, -19.5, 4.5, 7.5, -15.5, 4.5, 7.5, -15.5, 4.5, -7.5, -19.25, 0.5, -7.25, -19.25, 0.5, 7.5, -15.5, 0.5, 7.5, -15.5, 0.5, -7.25, -14.25, 0.5, -7.25, -14.25, 0.5, 7.5, 19.5, 0.5, 7.5, 19.5, 0.5, -7.25)
@@ -78,7 +84,8 @@ size = Vector3(12, 4, 16)
 environment = SubResource("Environment_72mue")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=922132887]
-transform = Transform3D(1, 0, 0, 0, 0.18738134, 0.9822872, 0, -0.9822872, 0.18738134, 0, 12, 0)
+transform = Transform3D(0.926673, 0.2786682, -0.25223216, 0.11164967, 0.43669602, 0.89265394, 0.35890308, -0.8553599, 0.37356114, 0, 12, 0)
+light_energy = 0.9
 shadow_enabled = true
 
 [node name="CameraRig" type="Node3D" parent="." unique_id=965123961]
@@ -98,12 +105,14 @@ navigation_mesh = SubResource("NavigationMesh_41ihd")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/Geometry" unique_id=1958924904]
 visible = false
 mesh = SubResource("PlaneMesh_xepy2")
+surface_material_override/0 = ExtResource("9_grass")
 
 [node name="Floor" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=869922010]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/Floor" unique_id=1208446119]
 mesh = SubResource("BoxMesh_ocplc")
+surface_material_override/0 = ExtResource("9_grass")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/Floor" unique_id=285541768]
 shape = SubResource("BoxShape3D_ocplc")
@@ -113,6 +122,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -8.5)
 
 [node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/WallBack" unique_id=940552965]
 mesh = SubResource("BoxMesh_wall_back")
+surface_material_override/0 = ExtResource("9_stone")
 
 [node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/WallBack" unique_id=2134558612]
 shape = SubResource("Box_wall_back")
@@ -123,6 +133,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 8.5)
 [node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/WallFront" unique_id=1529551795]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 mesh = SubResource("BoxMesh_wall_front")
+surface_material_override/0 = ExtResource("9_stone")
 
 [node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/WallFront" unique_id=125180418]
 shape = SubResource("Box_wall_front")
@@ -132,6 +143,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 2, 0)
 
 [node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/Fortress" unique_id=1056555563]
 mesh = SubResource("BoxMesh_fortress")
+surface_material_override/0 = ExtResource("9_stone")
 
 [node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/Fortress" unique_id=3406688]
 shape = SubResource("Box_fortress")
@@ -139,6 +151,7 @@ shape = SubResource("Box_fortress")
 [node name="GateVisual" type="MeshInstance3D" parent="NavigationRegion3D/Geometry" unique_id=1693307904]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.9, 1.5, 0)
 mesh = SubResource("BoxMesh_gate")
+surface_material_override/0 = ExtResource("9_wood")
 
 [node name="NavigationRegionLarge" type="NavigationRegion3D" parent="." unique_id=831528877]
 navigation_mesh = SubResource("NavigationMesh_large")

@@ -1,0 +1,100 @@
+[gd_scene format=3 uid="uid://bnkq3jv27jcnd"]
+
+[ext_resource type="PackedScene" uid="uid://brhovaqssh18w" path="res://contents/assets/characters/enemy and boss/characters/gltf/Skeleton_Rogue.glb" id="1_fpt8a"]
+[ext_resource type="Material" uid="uid://827on583xmsg" path="res://contents/assets/characters/enemy and boss/textures/skeleton_material_B.tres" id="2_matb"]
+[ext_resource type="PackedScene" uid="uid://c71asec2vs4ol" path="res://contents/assets/characters/enemy and boss/assets/gltf/Skeleton_Crossbow.gltf" id="3_r7244"]
+[ext_resource type="AnimationLibrary" uid="uid://cxakfu6km2wxl" path="res://contents/assets/characters/additional animations/Animations/gltf/Rig_Medium/Rig_Medium_General.glb" id="4_iu3ek"]
+[ext_resource type="AnimationLibrary" uid="uid://b46gkfvyibuc6" path="res://contents/assets/characters/additional animations/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb" id="6_dc1ed"]
+[ext_resource type="AnimationLibrary" uid="uid://c63mxs8l5dr14" path="res://contents/assets/characters/additional animations/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb" id="6_fpt8a"]
+
+[node name="ArcherModel" type="Node3D" unique_id=1777562699]
+
+[node name="Skeleton_Rogue" parent="." unique_id=965624739 instance=ExtResource("1_fpt8a")]
+transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0, 0)
+
+[node name="Skeleton3D" parent="Skeleton_Rogue/Rig_Medium" parent_id_path=PackedInt32Array(965624739, 1752556544) index="0" unique_id=548073585]
+bones/1/position = Vector3(0, 0.4371587, 0)
+bones/1/rotation = Quaternion(0.095845774, -1.1866046e-07, 1.1425705e-08, 0.9953962)
+bones/2/position = Vector3(0.17094506, 0.11358723, 0.100000046)
+bones/2/rotation = Quaternion(0.9190819, -1.639744e-08, 1.254484e-08, 0.39406648)
+bones/3/rotation = Quaternion(0.0019691067, 6.904271e-08, -1.3675258e-09, 0.99999815)
+bones/4/rotation = Quaternion(-0.49649605, 1.7175507e-08, -9.875719e-08, 0.868039)
+bones/5/rotation = Quaternion(2.3543484e-08, 0.918349, -0.3957716, 6.4317e-08)
+bones/6/rotation = Quaternion(7.5231634e-37, 7.105427e-15, 1.0587911e-22, 1)
+bones/7/rotation = Quaternion(0.04213311, 0.0021541486, 0.011082109, 0.99904823)
+bones/8/position = Vector3(-0.18637733, 0.11175979, -0.04215817)
+bones/8/rotation = Quaternion(-0.5838075, 0.34844056, 0.67395025, 0.28904858)
+bones/9/rotation = Quaternion(3.320162e-08, 6.1119046e-08, 0.56677157, 0.82387507)
+bones/10/rotation = Quaternion(7.300499e-09, -7.3388096e-09, -0.0266581, 0.99964464)
+bones/10/scale = Vector3(1.0000001, 1, 1)
+bones/11/rotation = Quaternion(0.008697546, 0.3960501, -0.17517336, 0.9013229)
+bones/12/rotation = Quaternion(-0.054505423, -0.054505408, 0.5391622, 0.838667)
+bones/13/position = Vector3(0.21200736, 0.124591716, -0.04908126)
+bones/13/rotation = Quaternion(-0.59904945, 0.081652515, -0.5373604, 0.5879765)
+bones/14/rotation = Quaternion(-1.7756745e-08, -6.282385e-08, -0.42743266, 0.90404725)
+bones/15/rotation = Quaternion(7.250843e-09, 9.200791e-09, 0.026658095, 0.99964464)
+bones/15/scale = Vector3(0.99999994, 1, 1.0000001)
+bones/16/rotation = Quaternion(-0.126534, -0.3519782, -0.49310666, 0.7854592)
+bones/17/rotation = Quaternion(-0.054505434, 0.054505393, -0.5391622, 0.838667)
+bones/18/rotation = Quaternion(-0.13049294, 0.002866565, -0.0006837016, 0.9914449)
+bones/19/position = Vector3(-0.17094506, 0.11358735, -0.099999994)
+bones/19/rotation = Quaternion(0.9538545, 2.2173066e-07, 3.3896477e-09, -0.3002692)
+bones/20/rotation = Quaternion(0.3915314, -6.35308e-08, 2.719049e-07, 0.9201648)
+bones/21/rotation = Quaternion(-0.44524628, 2.920535e-07, -1.02233074e-07, 0.89540815)
+bones/22/rotation = Quaternion(8.168461e-09, 0.9203663, -0.39105743, 5.8903904e-08)
+
+[node name="head" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="0" unique_id=937843917]
+transform = Transform3D(0.9997451, -0.021961601, 0.005238045, 0.022035161, 0.99965304, -0.014425173, -0.004919428, 0.0145368725, 0.9998822, -0.0059032026, 1.2522435, 0.181502)
+
+[node name="Skeleton_Rogue_Hood" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/head" index="0" unique_id=1906612359]
+material_override = ExtResource("2_matb")
+
+[node name="chest" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="1" unique_id=7070435]
+transform = Transform3D(0.9997451, -0.0219616, 0.005238044, 0.022557572, 0.96182823, -0.27272224, 0.00095131784, 0.27277085, 0.9620785, -7.940678e-23, 0.9937074, 0.10818213)
+
+[node name="Skeleton_Rogue_Cape" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/chest" index="0" unique_id=1572607756]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_ArmLeft" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="2" unique_id=1290686237]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_ArmRight" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="3" unique_id=995206195]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_Body" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="4" unique_id=1943140893]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_Eyes" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="5" unique_id=510195134]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_Head" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="6" unique_id=601568784]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_Jaw" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="7" unique_id=803638843]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_LegLeft" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="8" unique_id=1595052939]
+material_override = ExtResource("2_matb")
+
+[node name="Skeleton_Rogue_LegRight" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="9" unique_id=1426299862]
+material_override = ExtResource("2_matb")
+
+[node name="RightHandSlot" type="BoneAttachment3D" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="10" unique_id=1252735163]
+unique_name_in_owner = true
+transform = Transform3D(-0.34201983, -4.4703484e-08, -0.9396923, -0.9013429, 0.28276336, 0.32806194, 0.26571006, 0.95918906, -0.09671074, -0.40501833, 0.72311676, 0.45614713)
+bone_name = "handslot.r"
+bone_idx = 12
+
+[node name="Skeleton_Crossbow2" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/RightHandSlot" unique_id=1949952293 instance=ExtResource("3_r7244")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+
+[node name="Skeleton_Crossbow" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Crossbow2" index="0" unique_id=367315750]
+material_override = ExtResource("2_matb")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Skeleton_Rogue" unique_id=1350729062]
+libraries/general = ExtResource("4_iu3ek")
+libraries/move = ExtResource("6_dc1ed")
+libraries/ranged = ExtResource("6_fpt8a")
+
+[editable path="Skeleton_Rogue"]
+[editable path="Skeleton_Rogue/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Crossbow2"]

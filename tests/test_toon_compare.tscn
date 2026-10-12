@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://cr8io4helfe36"]
+
+[ext_resource type="Script" uid="uid://jxuhldmjk485" path="res://tests/test_toon_compare.gd" id="1_toon"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_toon"]
+
+[sub_resource type="Sky" id="Sky_toon"]
+sky_material = SubResource("ProceduralSkyMaterial_toon")
+
+[sub_resource type="Environment" id="Environment_toon"]
+background_mode = 2
+sky = SubResource("Sky_toon")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 3
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_toon"]
+size = Vector2(60, 60)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
+albedo_color = Color(0.498, 0.627, 0.353, 1)
+
+[node name="TestToonCompare" type="Node3D" unique_id=945596605]
+script = ExtResource("1_toon")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1574189828]
+environment = SubResource("Environment_toon")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=322715895]
+transform = Transform3D(0.242, 0.749, -0.617, 0, 0.636, 0.772, 0.97, -0.187, 0.154, 0, 10, 0)
+light_energy = 0.9
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1765709555]
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 12, 12, 12)
+projection = 1
+size = 7.0
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=1499161336]
+mesh = SubResource("PlaneMesh_toon")
+surface_material_override/0 = SubResource("StandardMaterial3D_ground")
