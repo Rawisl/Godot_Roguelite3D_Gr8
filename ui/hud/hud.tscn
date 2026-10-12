@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b0ncj75b0jni1"]
 
 [ext_resource type="PackedScene" uid="uid://cbnuvwg1yjryl" path="res://ui/hud/parts/boss_bar.tscn" id="1_4d6w6"]
+[ext_resource type="Script" uid="uid://ly6vskx1vrmb" path="res://ui/hud/hud.gd" id="1_5uuaq"]
 [ext_resource type="PackedScene" uid="uid://dx1yjttn4bkfe" path="res://ui/hud/parts/alert_layer.tscn" id="1_xmswo"]
 [ext_resource type="PackedScene" uid="uid://bplnw3dwp8nlw" path="res://ui/hud/parts/commander_status.tscn" id="3_e0nub"]
 [ext_resource type="PackedScene" uid="uid://daiai1f0exqp0" path="res://ui/hud/parts/emergency_repair.tscn" id="4_w75iv"]
@@ -13,6 +14,7 @@
 
 [node name="Hud" type="CanvasLayer" unique_id=1623823647]
 layer = 10
+script = ExtResource("1_5uuaq")
 
 [node name="Root" type="Control" parent="." unique_id=1902627919]
 layout_mode = 3
