@@ -5,10 +5,31 @@
 [node name="FortressBar" type="MarginContainer" unique_id=1658010275]
 offset_right = 4.0
 offset_bottom = 27.0
+mouse_filter = 2
 script = ExtResource("1_ffkjh")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1959007196]
 layout_mode = 2
+mouse_filter = 2
 
-[node name="ProgressBar" type="ProgressBar" parent="." unique_id=1628100303]
+[node name="Title" type="Label" parent="VBoxContainer" unique_id=682460222]
+unique_name_in_owner = true
 layout_mode = 2
+
+[node name="Bar" type="ProgressBar" parent="VBoxContainer" unique_id=118300072]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 28)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false
+
+[node name="Value" type="Label" parent="VBoxContainer/Bar" unique_id=1443153110]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1

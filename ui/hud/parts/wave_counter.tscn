@@ -9,10 +9,26 @@ anchor_right = 0.5
 offset_right = 10.0
 offset_bottom = 23.0
 grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
 script = ExtResource("1_57oc4")
 
-[node name="Label" type="Label" parent="." unique_id=999281154]
+[node name="Wave" type="Label" parent="." unique_id=999281154]
+unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="." unique_id=2115319662]
+[node name="State" type="Label" parent="." unique_id=2115319662]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Countdown" type="Label" parent="." unique_id=265254188]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="EnemiesTitle" type="Label" parent="." unique_id=1744267074]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Enemies" type="Label" parent="." unique_id=1367545860]
+unique_name_in_owner = true
 layout_mode = 2
