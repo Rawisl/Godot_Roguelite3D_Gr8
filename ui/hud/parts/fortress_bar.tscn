@@ -18,7 +18,7 @@ layout_mode = 2
 
 [node name="Bar" type="ProgressBar" parent="VBoxContainer" unique_id=118300072]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(360, 28)
+custom_minimum_size = Vector2(360, 36)
 layout_mode = 2
 mouse_filter = 2
 show_percentage = false
