@@ -2,6 +2,19 @@
 
 [ext_resource type="Script" uid="uid://co7lhvwbt2cjv" path="res://ui/screens/main_menu.gd" id="1_iacjs"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iacjs"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.3764706, 0.16862746, 0.043137256, 1)
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.36078432, 0.23921569, 1)
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+
 [node name="MarginContainer" type="MarginContainer" unique_id=1116123521]
 texture_filter = 2
 anchors_preset = 15
@@ -28,18 +41,49 @@ layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="Meta" type="VBoxContainer" parent="VBoxContainer" unique_id=677840464]
+[node name="Drawer" type="HBoxContainer" parent="VBoxContainer" unique_id=703337817]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="DrawerToggle" type="Button" parent="VBoxContainer/Drawer" unique_id=218288727]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 64)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="DrawerClip" type="Control" parent="VBoxContainer/Drawer" unique_id=954222697]
+unique_name_in_owner = true
+clip_contents = true
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Prestige" type="Label" parent="VBoxContainer/Meta" unique_id=823106924]
+[node name="MetaPanel" type="PanelContainer" parent="VBoxContainer/Drawer/DrawerClip" unique_id=1536537351]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -30.0
+offset_right = 40.0
+offset_bottom = 30.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_iacjs")
+
+[node name="Meta" type="VBoxContainer" parent="VBoxContainer/Drawer/DrawerClip/MetaPanel" unique_id=677840464]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Prestige" type="Label" parent="VBoxContainer/Drawer/DrawerClip/MetaPanel/Meta" unique_id=823106924]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
 theme_override_font_sizes/font_size = 20
 
-[node name="Record" type="Label" parent="VBoxContainer/Meta" unique_id=1952032705]
+[node name="Record" type="Label" parent="VBoxContainer/Drawer/DrawerClip/MetaPanel/Meta" unique_id=1952032705]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.91764706, 0.8352941, 1)
 theme_override_font_sizes/font_size = 20
 
 [node name="Play" type="Button" parent="VBoxContainer" unique_id=1417147528]

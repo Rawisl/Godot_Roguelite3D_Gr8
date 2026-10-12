@@ -33,3 +33,4 @@ menu.prestige,Danh vọng: {value}
 menu.record,Kỷ lục: đợt {wave}
 menu.record_none,Kỷ lục: chưa có
 menu.paused,Tạm dừng
+menu.stats_toggle,Danh vọng và kỷ lục
