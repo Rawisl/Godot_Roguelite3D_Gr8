@@ -1,9 +1,32 @@
 extends CharacterBody3D
 
 @export var stats: CharacterStats
-
 @export var debug_aim_marker: Node3D
 @export var debug_print_speed: bool = false
+@export var _anim_player: AnimationPlayer
+
+# Combat & hit constants
+const COLLISION_LAYER_ENEMY: int = 3
+const TARGET_COLLIDER_PADDING: float = 0.4
+const COMBO_HIT3_ARC_DEG: float = 240.0
+const STRIKE_RATIO_MELEE: float = 0.38
+const STRIKE_RATIO_SPIN: float = 0.45
+const ROTATION_LERP_SPEED: float = 16.0
+
+# Animation clips
+const ANIM_IDLE: StringName = &"general/Idle_A"
+const ANIM_RUN: StringName = &"move/Running_A"
+const ANIM_HIT: StringName = &"general/Hit_A"
+const ANIM_DEATH: StringName = &"general/Death_A"
+const ANIM_DODGE_FWD: StringName = &"advance/Dodge_Forward"
+const ANIM_DODGE_BACK: StringName = &"advance/Dodge_Backward"
+
+const COMBO_ANIM_CLIPS: Array[StringName] = [
+	&"melee/Melee_1H_Attack_Chop",
+	&"melee/Melee_1H_Attack_Slice_Diagonal",
+	&"melee/Melee_2H_Attack_Spinning"
+]
+const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 1.4]
 
 var aim_dir: Vector3 = Vector3.FORWARD
 var is_commander_mode: bool = false
@@ -13,6 +36,7 @@ var is_dodging: bool = false
 var _dodge_timer: float = 0.0
 var _dodge_cooldown_timer: float = 0.0
 var _dodge_dir: Vector3 = Vector3.ZERO
+var _is_backstep_dodge: bool = false
 
 # Combat & Combo state
 var is_attacking: bool = false
@@ -22,18 +46,14 @@ var _strike_timer: float = 0.0
 var _has_struck: bool = false
 var _combo_reset_timer: float = 0.0
 var _has_buffered_attack: bool = false
+var _attack_strike_dir: Vector3 = Vector3.FORWARD
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _debug_last_pos: Vector3
 var _debug_timer: float = 0.0
 
-const COLLISION_LAYER_ENEMY: int = 3
-const WIND_UP_RATIO: float = 0.25 
-
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
-@onready var _anim_player: AnimationPlayer = %AnimationPlayer
-@onready var _facing_mesh: Node3D = %PlaceholderFacing
 @onready var health: HealthComponent = %Health
 
 
@@ -41,6 +61,8 @@ func _ready() -> void:
 	add_to_group(&"commander")
 	_debug_last_pos = global_position
 	_setup_health()
+	_setup_animation_player()
+	_setup_sword_area()
 	EventBus.mode_changed.connect(_on_mode_changed)
 
 
@@ -53,9 +75,34 @@ func _setup_health() -> void:
 	health.died.connect(_on_died)
 
 
+func _setup_animation_player() -> void:
+	if _anim_player == null:
+		var aps := find_children("*", "AnimationPlayer", true, false)
+		if not aps.is_empty():
+			_anim_player = aps[0] as AnimationPlayer
+
+
+func _setup_sword_area() -> void:
+	if _sword_area == null:
+		return
+	var col_shape := _sword_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if col_shape != null and col_shape.shape is CylinderShape3D:
+		var cylinder := col_shape.shape as CylinderShape3D
+		var required_radius: float = (stats.sword_range if stats else 2.2) + TARGET_COLLIDER_PADDING
+		cylinder.radius = maxf(cylinder.radius, required_radius)
+
+
 func _physics_process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
+		return
+
+	if health != null and health.hp <= 0:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		if not is_on_floor():
+			velocity.y -= _gravity * delta
+		move_and_slide()
 		return
 
 	_update_cooldowns_and_timers(delta)
@@ -65,41 +112,41 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if is_dodging:
-		_update_dodge_movement(delta)
-	else:
+	if not is_dodging:
 		_check_dodge_input(camera)
 		_check_attack_input()
+
+	if is_dodging:
+		_update_dodge_movement(delta)
+
+	if not is_dodging:
 		_update_movement(camera, delta)
 
 	move_and_slide()
 	_update_aim(camera)
+	_update_model_facing(delta)
 
 	if debug_print_speed:
 		_debug_report_speed(delta)
 
 
 func _update_cooldowns_and_timers(delta: float) -> void:
-	# Dodge cooldown
 	if _dodge_cooldown_timer > 0.0:
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
 		var total_cd := stats.dodge_cooldown if stats else 1.5
 		EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
 
-	# Active strike timer
 	if is_attacking and not _has_struck:
 		_strike_timer -= delta
 		if _strike_timer <= 0.0:
 			_has_struck = true
 			_execute_sword_strike(current_combo_hit)
 
-	# Attack action total timer
 	if is_attacking:
 		_attack_timer -= delta
 		if _attack_timer <= 0.0:
 			_end_attack()
 
-	# Combo expiration timer
 	if not is_attacking and _combo_reset_timer > 0.0:
 		_combo_reset_timer -= delta
 		if _combo_reset_timer <= 0.0:
@@ -118,14 +165,19 @@ func _check_dodge_input(camera: Camera3D) -> void:
 
 func _start_dodge(camera: Camera3D) -> void:
 	var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+	var dodge_clip := ANIM_DODGE_FWD
 
 	if not input.is_zero_approx():
 		var cam_basis := camera.global_transform.basis
 		var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
 		var forward := Vector3(-cam_basis.z.x, 0.0, -cam_basis.z.z).normalized()
 		_dodge_dir = (right * input.x + forward * (-input.y)).normalized()
+		_is_backstep_dodge = false
+		dodge_clip = ANIM_DODGE_FWD
 	else:
 		_dodge_dir = -aim_dir
+		_is_backstep_dodge = true
+		dodge_clip = ANIM_DODGE_BACK
 
 	is_dodging = true
 	_dodge_timer = stats.dodge_iframe if stats else 0.3
@@ -135,6 +187,12 @@ func _start_dodge(camera: Camera3D) -> void:
 
 	var total_cd := stats.dodge_cooldown if stats else 1.5
 	EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
+
+	if _anim_player != null and _anim_player.has_animation(dodge_clip):
+		var dodge_duration := stats.dodge_iframe if stats else 0.3
+		var anim_len := _anim_player.get_animation(dodge_clip).length
+		var speed := anim_len / maxf(0.01, dodge_duration)
+		_anim_player.play(dodge_clip, 0.05, speed)
 
 
 func _update_dodge_movement(delta: float) -> void:
@@ -155,6 +213,7 @@ func _update_dodge_movement(delta: float) -> void:
 
 func _end_dodge() -> void:
 	is_dodging = false
+	_is_backstep_dodge = false
 	_dodge_timer = 0.0
 	set_collision_mask_value(COLLISION_LAYER_ENEMY, true)
 
@@ -181,6 +240,17 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 
+	if _anim_player != null and not is_attacking and not is_dodging and health.hp > 0:
+		var is_playing_melee := _anim_player.is_playing() and _anim_player.current_animation.begins_with("melee/")
+		if not is_playing_melee:
+			var horizontal_vel := Vector2(velocity.x, velocity.z)
+			if horizontal_vel.length() > 0.1:
+				if _anim_player.current_animation != ANIM_RUN:
+					_anim_player.play(ANIM_RUN, 0.15)
+			else:
+				if _anim_player.current_animation != ANIM_IDLE:
+					_anim_player.play(ANIM_IDLE, 0.15)
+
 
 func _update_aim(camera: Camera3D) -> void:
 	var viewport := get_viewport()
@@ -203,11 +273,32 @@ func _update_aim(camera: Camera3D) -> void:
 	var to_target := hit_point - global_position
 	to_target.y = 0.0
 
-	if to_target.length_squared() < 0.0001:
-		return
+	if to_target.length_squared() >= 0.0001:
+		aim_dir = to_target.normalized()
 
-	aim_dir = to_target.normalized()
-	_aim_pivot.rotation.y = atan2(-aim_dir.x, -aim_dir.z)
+
+func _update_model_facing(delta: float) -> void:
+	var target_dir := Vector3.ZERO
+	var snap_instantly := false
+
+	if is_attacking:
+		target_dir = _attack_strike_dir
+		snap_instantly = true
+	elif is_dodging:
+		target_dir = aim_dir if _is_backstep_dodge else _dodge_dir
+		snap_instantly = true
+	else:
+		var horizontal_vel := Vector2(velocity.x, velocity.z)
+		if horizontal_vel.length() > 0.1:
+			target_dir = Vector3(velocity.x, 0.0, velocity.z).normalized()
+
+	if not target_dir.is_zero_approx():
+		var target_yaw := atan2(target_dir.x, target_dir.z)
+		if snap_instantly:
+			_aim_pivot.rotation.y = target_yaw
+		else:
+			var weight := 1.0 - exp(-ROTATION_LERP_SPEED * delta)
+			_aim_pivot.rotation.y = lerp_angle(_aim_pivot.rotation.y, target_yaw, weight)
 
 
 func _check_attack_input() -> void:
@@ -218,7 +309,6 @@ func _check_attack_input() -> void:
 		if not is_attacking:
 			_start_attack(current_combo_hit)
 		else:
-			# Cho phép buffer trong combo window mà không lo timeout sớm
 			var window := stats.combo_window if stats else 0.35
 			if _attack_timer <= window:
 				_has_buffered_attack = true
@@ -229,11 +319,16 @@ func _start_attack(hit_index: int) -> void:
 	current_combo_hit = hit_index
 	_has_buffered_attack = false
 	_has_struck = false
-	
+
 	var interval := stats.attack_interval if stats else 0.45
 	_attack_timer = interval
-	_strike_timer = interval * WIND_UP_RATIO
+
+	var hit_ratio := STRIKE_RATIO_SPIN if hit_index == 3 else STRIKE_RATIO_MELEE
+	_strike_timer = interval * hit_ratio
 	_combo_reset_timer = 0.0
+
+	_attack_strike_dir = aim_dir
+	_aim_pivot.rotation.y = atan2(_attack_strike_dir.x, _attack_strike_dir.z)
 
 	_play_attack_animation(current_combo_hit)
 
@@ -252,54 +347,50 @@ func _end_attack() -> void:
 			current_combo_hit = 1
 			_combo_reset_timer = 0.0
 		else:
+			current_combo_hit += 1
 			_combo_reset_timer = stats.combo_reset_time if stats else 0.6
 
 
 func _interrupt_attack() -> void:
+	var struck := _has_struck
 	is_attacking = false
 	_attack_timer = 0.0
 	_has_struck = false
 	_has_buffered_attack = false
-	_combo_reset_timer = stats.combo_reset_time if stats else 0.6
+
+	if struck:
+		if current_combo_hit >= 3:
+			current_combo_hit = 1
+			_combo_reset_timer = 0.0
+		else:
+			current_combo_hit += 1
+			_combo_reset_timer = stats.combo_reset_time if stats else 0.6
+	else:
+		current_combo_hit = 1
+		_combo_reset_timer = 0.0
 
 
 func _play_attack_animation(combo_step: int) -> void:
-	var anim_name := "attack_%d" % combo_step
-	if _anim_player != null and _anim_player.has_animation(anim_name):
-		_anim_player.play(anim_name)
-	else:
-		_procedural_attack_feedback(combo_step)
-
-
-func _procedural_attack_feedback(combo_step: int) -> void:
-	if _facing_mesh == null:
+	if _anim_player == null:
 		return
 
-	var tween := create_tween()
-	var base_pos := Vector3(0.0, 1.3, -0.55)
+	var idx := clampi(combo_step - 1, 0, 2)
+	var anim_clip: StringName = COMBO_ANIM_CLIPS[idx]
+	var anim_speed: float = COMBO_ANIM_SPEEDS[idx]
 
-	match combo_step:
-		1:
-			tween.tween_property(_facing_mesh, "position", base_pos + Vector3(-0.15, 0.0, -0.35), 0.08)
-			tween.tween_property(_facing_mesh, "position", base_pos, 0.12)
-		2:
-			tween.tween_property(_facing_mesh, "position", base_pos + Vector3(0.15, 0.0, -0.35), 0.08)
-			tween.tween_property(_facing_mesh, "position", base_pos, 0.12)
-		3:
-			tween.tween_property(_facing_mesh, "position", base_pos + Vector3(0.0, 0.0, -0.55), 0.10)
-			tween.parallel().tween_property(_facing_mesh, "scale", Vector3(1.3, 1.3, 1.3), 0.10)
-			tween.tween_property(_facing_mesh, "position", base_pos, 0.15)
-			tween.parallel().tween_property(_facing_mesh, "scale", Vector3.ONE, 0.15)
+	if _anim_player.has_animation(anim_clip):
+		_anim_player.play(anim_clip, 0.05, anim_speed)
 
 
 func _execute_sword_strike(combo_step: int) -> void:
 	if _sword_area == null or stats == null:
 		return
 
-	var max_range: float = stats.sword_range
-	var half_arc_rad: float = deg_to_rad(stats.sword_arc_deg * 0.5)
-	var max_targets: int = stats.sword_max_targets
+	var max_range: float = stats.sword_range + TARGET_COLLIDER_PADDING
+	var arc_deg: float = COMBO_HIT3_ARC_DEG if combo_step == 3 else stats.sword_arc_deg
+	var half_arc_rad: float = deg_to_rad(arc_deg * 0.5)
 
+	var max_targets: int = stats.sword_max_targets
 	var damage_amount: int = stats.sword_damage
 	var knockback: float = 0.0
 
@@ -323,7 +414,7 @@ func _execute_sword_strike(combo_step: int) -> void:
 
 		var angle: float = 0.0
 		if not to_target.is_zero_approx():
-			angle = aim_dir.angle_to(to_target.normalized())
+			angle = _attack_strike_dir.angle_to(to_target.normalized())
 
 		if angle > half_arc_rad:
 			continue
@@ -334,10 +425,9 @@ func _execute_sword_strike(combo_step: int) -> void:
 			"distance": dist,
 			"angle": angle,
 			"id": entity_id,
-			"dir": to_target.normalized() if not to_target.is_zero_approx() else aim_dir
+			"dir": to_target.normalized() if not to_target.is_zero_approx() else _attack_strike_dir
 		})
 
-	# Sort tie-break
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if not is_equal_approx(a.distance, b.distance):
 			return a.distance < b.distance
@@ -359,6 +449,9 @@ func _execute_sword_strike(combo_step: int) -> void:
 			knockback,
 			hit_dir
 		)
+
+		if "provoked_by_player" in target_node:
+			target_node.set("provoked_by_player", true)
 
 		if target_node.has_method("take_damage"):
 			target_node.take_damage(info)
@@ -393,13 +486,32 @@ func take_damage(damage_input: Variant) -> void:
 	)
 	health.take_damage(processed_info)
 
+	if not is_attacking and not is_dodging and health.hp > 0:
+		if _anim_player != null and _anim_player.has_animation(ANIM_HIT):
+			_anim_player.play(ANIM_HIT, 0.05)
+
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	EventBus.commander_hp_changed.emit(current_hp, max_hp)
 
 
 func _on_died() -> void:
+	if is_dodging:
+		_end_dodge()
+	if is_attacking:
+		_interrupt_attack()
 	EventBus.commander_died.emit()
+	if _anim_player != null and _anim_player.has_animation(ANIM_DEATH):
+		_anim_player.play(ANIM_DEATH)
+
+
+func _on_mode_changed(mode: StringName) -> void:
+	is_commander_mode = (mode == &"COMMANDER")
+	if is_commander_mode:
+		if is_dodging:
+			_end_dodge()
+		if is_attacking:
+			_interrupt_attack()
 
 
 func _debug_report_speed(delta: float) -> void:
@@ -414,6 +526,3 @@ func _debug_report_speed(delta: float) -> void:
 	_debug_timer = 0.0
 	print("velocity: %.3f m/s | moved: %.3f m/s | expected: %.3f m/s" % [
 		flat_velocity.length(), moved.length() / delta, stats.move_speed if stats else 6.0])
-
-func _on_mode_changed(mode: StringName) -> void:
-	is_commander_mode = (mode == &"COMMANDER")
