@@ -11,7 +11,8 @@ func _ready() -> void:
 	health.hp = stats.max_hp
 	health.hp_changed.connect(func(hp, mx): EventBus.fortress_hp_changed.emit(hp, mx))
 	health.died.connect(_on_died)
-	EventBus.fortress_hp_changed.emit(health.hp, health.max_hp)
+	# Deferred so HUD listeners that become ready later in the tree still get the initial HP.
+	EventBus.fortress_hp_changed.emit.call_deferred(health.hp, health.max_hp)
 
 func _on_died() -> void:
 	if _destroyed:

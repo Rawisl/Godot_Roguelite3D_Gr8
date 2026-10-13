@@ -9,19 +9,23 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_e8v0x")
 
 [node name="Banner" type="PanelContainer" parent="." unique_id=1615290743]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2
 
 [node name="ToastTop" type="VBoxContainer" parent="." unique_id=514554512]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2
 
 [node name="ToastBottom" type="VBoxContainer" parent="." unique_id=1252747203]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2

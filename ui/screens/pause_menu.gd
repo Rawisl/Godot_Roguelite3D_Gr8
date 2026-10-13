@@ -6,12 +6,14 @@ const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
 
 var _settings_overlay: Control
 
+@onready var _title: Label = %Title
 @onready var _resume: Button = %Resume
 @onready var _settings: Button = %Settings
 @onready var _abandon: Button = %Abandon
 @onready var _quit: Button = %Quit
 
 func _ready() -> void:
+	_title.text = tr(&"menu.paused")
 	_resume.text = tr(&"menu.resume")
 	_settings.text = tr(&"menu.settings")
 	_abandon.text = tr(&"menu.abandon")
@@ -20,6 +22,9 @@ func _ready() -> void:
 	_settings.pressed.connect(_open_settings)
 	_abandon.pressed.connect(_confirm.bind(&"dialog.abandon.title", &"dialog.abandon.body", GameState.abandon_run))
 	_quit.pressed.connect(_confirm.bind(&"dialog.quit_run.title", &"dialog.quit_run.body", GameState.quit_from_run))
+	for button: Button in [_resume, _settings, _abandon, _quit]:
+		# Hovering moves keyboard focus too, so only one button is ever highlighted.
+		button.mouse_entered.connect(button.grab_focus)
 	_resume.grab_focus()
 
 ## Esc closes Settings first, then resumes.
