@@ -39,12 +39,12 @@ func _setup_arena() -> void:
 
 	# Overhead status label for Commander
 	_commander_label = Label3D.new()
-	_commander_label.position = Vector3(0.0, 2.7, 0.0)
+	_commander_label.position = Vector3(0.0, 2.2, 0.0)
 	_commander_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_commander_label.no_depth_test = true
-	_commander_label.font_size = 54
-	_commander_label.outline_size = 14
-	_commander_label.pixel_size = 0.012
+	_commander_label.font_size = 28
+	_commander_label.outline_size = 6
+	_commander_label.pixel_size = 0.0055
 	_commander_label.modulate = Color(0.4, 0.9, 1.0)
 	_commander_label.outline_modulate = Color(0.0, 0.2, 0.4)
 	_commander.add_child(_commander_label)
@@ -100,15 +100,15 @@ func _spawn_dummy(scene: PackedScene, pos: Vector3, title: String, is_boss: bool
 	if is_boss:
 		enemy.add_to_group(&"boss")
 
-	# Large overhead status label for Enemy
+	# Overhead status label for Enemy
 	var label := Label3D.new()
-	var height_offset := 3.3 if title.begins_with("Brute") else 2.6
+	var height_offset := 2.6 if title.begins_with("Brute") else 2.0
 	label.position = Vector3(0.0, height_offset, 0.0)
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.no_depth_test = true
-	label.font_size = 54
-	label.outline_size = 14
-	label.pixel_size = 0.012
+	label.font_size = 28
+	label.outline_size = 6
+	label.pixel_size = 0.0055
 	label.text = title
 	enemy.add_child(label)
 
@@ -206,9 +206,11 @@ func _update_overhead_labels() -> void:
 		var target_str := "COMMANDER" if is_targeting_cmd else "None / Fortress"
 
 		var prov_str := "YES (%.1fs)" % enemy.provoked_timer if enemy.provoked_by_player else "NO"
+		var state_names := ["SPAWN", "ADVANCE", "CHASE", "ATTACK", "STAGGER", "WAIT", "FRENZY", "DEAD"]
+		var state_str := state_names[enemy.current_state] if enemy.current_state >= 0 and enemy.current_state < state_names.size() else "STATE"
 
-		label.text = "%s\nDist: %.1fm | Target: %s\nProvoked: %s" % [
-			item.title, dist, target_str, prov_str
+		label.text = "%s [%s]\nDist: %.1fm | Target: %s\nProvoked: %s" % [
+			item.title, state_str, dist, target_str, prov_str
 		]
 
 		if is_targeting_cmd:

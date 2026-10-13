@@ -284,6 +284,12 @@ func _end_skill() -> void:
 	_skill_timer = 0.0
 
 
+func _interrupt_skill() -> void:
+	if is_using_skill:
+		is_using_skill = false
+		_skill_timer = 0.0
+
+
 func _taunt_enemies_in_range() -> void:
 	var radius: float = stats.battle_cry_radius if stats else 6.0
 	var radius_sq: float = radius * radius
@@ -574,7 +580,7 @@ func take_damage(damage_input: Variant) -> void:
 	)
 	health.take_damage(processed_info)
 
-	if not is_attacking and not is_dodging and health.hp > 0:
+	if not is_attacking and not is_dodging and not is_using_skill and health.hp > 0:
 		if _anim_player != null and _anim_player.has_animation(ANIM_HIT):
 			_anim_player.play(ANIM_HIT, 0.05)
 
@@ -588,8 +594,7 @@ func _on_died() -> void:
 		_end_dodge()
 	if is_attacking:
 		_interrupt_attack()
-	if is_using_skill:
-		_end_skill()
+	_interrupt_skill()
 	EventBus.commander_died.emit()
 	if _anim_player != null and _anim_player.has_animation(ANIM_DEATH):
 		_anim_player.play(ANIM_DEATH)
@@ -602,8 +607,7 @@ func _on_mode_changed(mode: StringName) -> void:
 			_end_dodge()
 		if is_attacking:
 			_interrupt_attack()
-		if is_using_skill:
-			_end_skill()
+		_interrupt_skill()
 		_battle_cry_active_timer = 0.0
 
 

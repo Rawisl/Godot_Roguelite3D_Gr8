@@ -17,6 +17,7 @@ func _ready() -> void:
 	test_leash_distance()
 	test_event_bus_cooldown_signal()
 	test_mode_switch_and_death_cleanup()
+	test_max_aggro_melee_limit()
 
 	print("=======================================================")
 	print("BATTLE CRY TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -301,3 +302,58 @@ func test_mode_switch_and_death_cleanup() -> void:
 	assert_true(not commander.is_using_skill, "Skill state cleanly ended on death")
 
 	commander.free()
+
+
+func test_max_aggro_melee_limit() -> void:
+	print("\n[GROUP 9] Testing AGG-06 Melee Aggro Capacity (max_aggro_melee = 8)")
+	var cmd_scene: PackedScene = load("res://entities/commander/commander.tscn")
+	var commander: CharacterBody3D = cmd_scene.instantiate()
+	add_child(commander)
+	commander.global_position = Vector3.ZERO
+
+	var grunt_scene: PackedScene = load("res://entities/enemy/grunt.tscn")
+	var archer_scene: PackedScene = load("res://entities/enemy/archer.tscn")
+
+	var melee_enemies: Array[Enemy] = []
+	# Spawn 9 melee grunts within 5m
+	for i in range(9):
+		var angle := (float(i) / 9.0) * TAU
+		var grunt: Enemy = grunt_scene.instantiate()
+		add_child(grunt)
+		grunt.global_position = Vector3(cos(angle) * 3.5, 0.0, sin(angle) * 3.5)
+		grunt.spawn_grace = false
+		grunt.is_in_spawn_zone = false
+		melee_enemies.append(grunt)
+
+	# Spawn 1 ranged archer within 4m
+	var archer: Enemy = archer_scene.instantiate()
+	add_child(archer)
+	archer.global_position = Vector3(2.0, 0.0, 2.0)
+	archer.spawn_grace = false
+	archer.is_in_spawn_zone = false
+
+	# Execute Battle Cry
+	commander._start_battle_cry()
+
+	var chasing_melee_count: int = 0
+	var waiting_melee_count: int = 0
+
+	for grunt in melee_enemies:
+		assert_true(grunt.provoked_by_player, "All melee grunts are provoked by Battle Cry")
+		if grunt.current_state == Enums.EnemyState.CHASE or grunt.current_state == Enums.EnemyState.ATTACK:
+			chasing_melee_count += 1
+		elif grunt.current_state == Enums.EnemyState.WAIT:
+			waiting_melee_count += 1
+
+	assert_true(chasing_melee_count == 8, "Exactly 8 melee grunts are attacking/chasing Commander (got %d)" % chasing_melee_count)
+	assert_true(waiting_melee_count == 1, "Surplus 9th melee grunt is standing on outer ring in WAIT state (got %d)" % waiting_melee_count)
+
+	# Ranged archer is not constrained by melee slot
+	assert_true(archer.provoked_by_player, "Ranged Archer is provoked")
+	assert_true(archer.current_state == Enums.EnemyState.CHASE, "Ranged Archer enters CHASE without taking melee slot")
+
+	commander.free()
+	for grunt in melee_enemies:
+		grunt.free()
+	archer.free()
+

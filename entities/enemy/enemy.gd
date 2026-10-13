@@ -471,12 +471,17 @@ func _find_best_target() -> void:
 		_find_default_target()
 		return
 
-	# Provocation overrides regular targeting rules
+	# Provocation overrides regular targeting rules (AGG-01, AGG-02, AGG-06)
 	if provoked_by_player:
 		var cmd := _get_valid_commander()
 		if cmd != null:
 			var dist_to_cmd := global_position.distance_to(cmd.global_position)
 			if dist_to_cmd <= GameConfig.leash_distance:
+				var is_melee := (data != null and not data.is_ranged and not data.is_flying)
+				if is_melee and current_target != cmd and _get_active_melee_attackers_count(cmd) >= GameConfig.max_aggro_melee:
+					set_target(cmd)
+					change_state(Enums.EnemyState.WAIT)
+					return
 				set_target(cmd)
 				return
 			else:
@@ -557,19 +562,42 @@ func set_target_position(target_pos: Vector3) -> void:
 	has_target_position = true
 	nav.target_position = target_pos
 
+func _get_active_melee_attackers_count(cmd: Node3D) -> int:
+	var count: int = 0
+	var enemies := get_tree().get_nodes_in_group(&"enemy")
+	for e in enemies:
+		if e == self or not is_instance_valid(e) or e.is_queued_for_deletion():
+			continue
+		var other := e as Enemy
+		if other == null or other.is_dead:
+			continue
+		if other.current_target == cmd:
+			var other_is_melee := (other.data != null and not other.data.is_ranged and not other.data.is_flying)
+			if other_is_melee and (other.current_state == Enums.EnemyState.CHASE or other.current_state == Enums.EnemyState.ATTACK):
+				count += 1
+	return count
+
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return
 	if commander_node == null or not is_instance_valid(commander_node):
 		return
 
-	# Bosses are immune to taunt
+	# Bosses are immune to taunt (AGG-02, AI-06, BOSS-01)
 	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
 	if is_boss:
 		return
 
 	provoked_by_player = true
 	provoked_timer = maxf(provoked_timer, duration)
+
+	# AGG-06: Check melee attacker capacity on Commander
+	var is_melee := (data != null and not data.is_ranged and not data.is_flying)
+	if is_melee and _get_active_melee_attackers_count(commander_node) >= GameConfig.max_aggro_melee:
+		set_target(commander_node)
+		change_state(Enums.EnemyState.WAIT)
+		return
+
 	set_target(commander_node)
 
 	if current_state == Enums.EnemyState.ADVANCE or current_state == Enums.EnemyState.WAIT:
