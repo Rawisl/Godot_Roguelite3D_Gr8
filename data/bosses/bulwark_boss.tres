@@ -5,4 +5,5 @@
 [resource]
 script = ExtResource("1_00uft")
 id = &"bulwark"
+knockback_immune = true
 metadata/_custom_type_script = "uid://bhfhlrn5orfb"

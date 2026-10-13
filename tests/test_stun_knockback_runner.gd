@@ -146,8 +146,14 @@ func test_knockback_immunities() -> void:
 
 	# 2. Deploying immunity
 	commander.is_deploying = true
+	var hp_before_deploy: int = int(commander.health.hp)
 	commander.take_damage(dmg)
 	assert_true(commander._knockback_velocity.is_zero_approx(), "Knockback ignored during Deploying")
+	assert_true(commander.health.hp == hp_before_deploy, "Normal damage ignored during Deploying")
+
+	var true_dmg := DamageInfo.new(10, Enums.DamageType.TRUE)
+	commander.take_damage(true_dmg)
+	assert_true(commander.health.hp == hp_before_deploy - 10, "TRUE damage bypasses Deploying invulnerability")
 	commander.is_deploying = false
 
 	# 3. Commander mode immunity
@@ -166,8 +172,10 @@ func test_knockback_immunities() -> void:
 class DummyStructure extends Node3D:
 	var received_damage: int = 0
 	var received_type: int = -1
+	var hit_count: int = 0
 
 	func take_damage(info: Variant, _type: int = 0) -> void:
+		hit_count += 1
 		if info is DamageInfo:
 			received_damage = info.amount
 			received_type = info.damage_type
@@ -291,6 +299,12 @@ func test_bulwark_stomp_mechanics() -> void:
 	add_child(far_tower)
 	far_tower.global_position = Vector3(5.0, 0.0, 0.0)
 
+	var dual_structure := DummyStructure.new()
+	dual_structure.add_to_group(&"tower")
+	dual_structure.add_to_group(&"barricade")
+	add_child(dual_structure)
+	dual_structure.global_position = Vector3(1.0, 0.0, 0.0)
+
 	# 1. Execute stomp
 	var initial_cmd_hp: int = int(commander.health.hp)
 	var start_cmd_pos := commander.global_position
@@ -315,6 +329,7 @@ func test_bulwark_stomp_mechanics() -> void:
 	assert_true(tower.received_type == Enums.DamageType.BLAST, "Damage type applied to Tower is BLAST")
 	assert_true(fortress.received_damage == Bulwark.STOMP_DAMAGE, "Fortress in AoE took Stomp damage")
 	assert_true(far_tower.received_damage == 0, "Out of range structure unaffected by Stomp")
+	assert_true(dual_structure.hit_count == 1, "Multi-group structure receives Stomp damage only once")
 
 	# 2. Dodge i-frame immunity against Stomp
 	commander.global_position = Vector3(0.0, 0.0, 1.5)
@@ -331,7 +346,15 @@ func test_bulwark_stomp_mechanics() -> void:
 	assert_true(not commander.is_stunned, "Dodge avoids Stomp stun")
 	assert_true(commander._knockback_velocity.is_zero_approx(), "Dodge avoids Stomp knockback")
 
-	# 3. Verify towers have no friendly fire towards Commander or structures
+	# 3. Boss knockback immunity
+	var boss_kb_dmg := DamageInfo.new(20, Enums.DamageType.SLASH, null, 2.0, Vector3.FORWARD)
+	bulwark.velocity = Vector3.ZERO
+	bulwark.take_damage(boss_kb_dmg)
+	var boss_horiz_vel := Vector2(bulwark.velocity.x, bulwark.velocity.z)
+	assert_true(boss_horiz_vel.is_zero_approx(), "Boss ignores knockback velocity")
+	assert_true(bulwark.current_state != Enums.EnemyState.STAGGER, "Boss does not enter STAGGER on knockback")
+
+	# 4. Verify towers have no friendly fire towards Commander or structures
 	var tower_scene: PackedScene = load("res://entities/tower/tower.tscn")
 	if tower_scene != null:
 		var active_tower: Tower = tower_scene.instantiate() as Tower
@@ -340,6 +363,7 @@ func test_bulwark_stomp_mechanics() -> void:
 		assert_true(not active_tower._is_valid_target(tower), "Tower target validation rejects other Towers (no friendly fire)")
 		active_tower.free()
 
+	dual_structure.free()
 	tower.free()
 	fortress.free()
 	far_tower.free()

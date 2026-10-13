@@ -29,6 +29,10 @@ const COMBO_ANIM_CLIPS: Array[StringName] = [
 ]
 const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 1.4]
 
+const MAX_STUN_DURATION: float = 1.5
+const STUN_IMMUNITY_DURATION: float = 3.0
+const KNOCKBACK_DURATION: float = 0.25
+
 var aim_dir: Vector3 = Vector3.FORWARD
 var is_commander_mode: bool = false
 var is_deploying: bool = false
@@ -175,7 +179,7 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 		if _stun_timer <= 0.0:
 			is_stunned = false
 			_stun_timer = 0.0
-			_stun_immunity_timer = 3.0
+			_stun_immunity_timer = STUN_IMMUNITY_DURATION
 
 	if _dodge_cooldown_timer > 0.0:
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
@@ -601,7 +605,7 @@ func take_damage(damage_input: Variant) -> void:
 	else:
 		return
 
-	if is_dodging and info.damage_type != Enums.DamageType.TRUE:
+	if (is_dodging or is_deploying) and info.damage_type != Enums.DamageType.TRUE:
 		return
 
 	var final_amount: int = info.amount
@@ -627,7 +631,7 @@ func take_damage(damage_input: Variant) -> void:
 			kb_dir = kb_dir.normalized()
 		else:
 			kb_dir = -aim_dir
-		var kb_duration: float = 0.25
+		var kb_duration: float = KNOCKBACK_DURATION
 		var kb_speed: float = (info.knockback_force * 2.0) / kb_duration
 		_knockback_velocity = kb_dir * kb_speed
 		_knockback_decay = kb_speed / kb_duration
@@ -637,7 +641,7 @@ func take_damage(damage_input: Variant) -> void:
 			_anim_player.play(ANIM_HIT, 0.05)
 
 
-func apply_stun(duration: float = 1.5) -> bool:
+func apply_stun(duration: float = MAX_STUN_DURATION) -> bool:
 	if is_commander_mode or is_dodging or is_deploying:
 		return false
 	if health != null and health.hp <= 0:
@@ -645,7 +649,7 @@ func apply_stun(duration: float = 1.5) -> bool:
 	if is_stunned or _stun_immunity_timer > 0.0:
 		return false
 
-	var clamped_dur := clampf(duration, 0.0, 1.5)
+	var clamped_dur := clampf(duration, 0.0, MAX_STUN_DURATION)
 	if clamped_dur <= 0.0:
 		return false
 

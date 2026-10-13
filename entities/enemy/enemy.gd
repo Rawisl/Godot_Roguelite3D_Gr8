@@ -623,7 +623,8 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		provoked_by_player = true
 		provoked_timer = GameConfig.aggro_duration
 
-	if info.knockback_force > 0.0 and (data == null or not data.knockback_immune):
+	var is_knockback_immune: bool = is_in_group(&"boss") or (data != null and data.knockback_immune)
+	if info.knockback_force > 0.0 and not is_knockback_immune:
 		if knockback_immunity_timer <= 0.0:
 			var kb_dir := info.hit_direction
 			kb_dir.y = 0.0

@@ -34,32 +34,16 @@ func execute_stomp() -> void:
 		if diff.length_squared() <= radius_sq:
 			targets.append(commander)
 
-	var towers := tree.get_nodes_in_group(&"tower")
-	for tw in towers:
-		var tw_node := tw as Node3D
-		if tw_node != null and is_instance_valid(tw_node):
-			var diff := tw_node.global_position - global_position
-			diff.y = 0.0
-			if diff.length_squared() <= radius_sq:
-				targets.append(tw_node)
-
-	var fortresses := tree.get_nodes_in_group(&"fortress")
-	for ft in fortresses:
-		var ft_node := ft as Node3D
-		if ft_node != null and is_instance_valid(ft_node):
-			var diff := ft_node.global_position - global_position
-			diff.y = 0.0
-			if diff.length_squared() <= radius_sq:
-				targets.append(ft_node)
-
-	var barricades := tree.get_nodes_in_group(&"barricade")
-	for bc in barricades:
-		var bc_node := bc as Node3D
-		if bc_node != null and is_instance_valid(bc_node):
-			var diff := bc_node.global_position - global_position
-			diff.y = 0.0
-			if diff.length_squared() <= radius_sq:
-				targets.append(bc_node)
+	var structure_groups: Array[StringName] = [&"tower", &"fortress", &"barricade"]
+	for grp in structure_groups:
+		var nodes := tree.get_nodes_in_group(grp)
+		for node in nodes:
+			var node3d := node as Node3D
+			if node3d != null and is_instance_valid(node3d) and not targets.has(node3d):
+				var diff := node3d.global_position - global_position
+				diff.y = 0.0
+				if diff.length_squared() <= radius_sq:
+					targets.append(node3d)
 
 	for tgt in targets:
 		if not is_instance_valid(tgt) or not tgt.has_method("take_damage"):
