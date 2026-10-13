@@ -1,7 +1,7 @@
 class_name EnemyData
 extends Resource
 
-## Base definition for enemy archetypes (SRS 3.7.1).
+## Base definition for enemy archetypes 
 
 @export_group("Identity")
 @export var id: StringName = &"grunt"
@@ -25,7 +25,7 @@ extends Resource
 @export var avoid_priority: int = 1
 
 @export_group("Targeting Rules")
-## Ordered category priority (SRS 3.7.3): PLAYER, BARRICADE, TOWER_GROUND, TOWER_WALL, FORTRESS
+## Ordered category priority: PLAYER, BARRICADE, TOWER_GROUND, TOWER_WALL, FORTRESS
 @export var target_rules: Array[StringName] = [&"BARRICADE", &"TOWER_GROUND", &"FORTRESS"]
 
 @export_group("Rewards")

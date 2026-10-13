@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://chww4vy5nb6bm"]
+
+[ext_resource type="Script" uid="uid://cl6q3tc2vag54" path="res://tests/test_perf_slice.gd" id="1_perf"]
+
+[node name="TestPerfSlice" type="Node3D" unique_id=376968516]
+script = ExtResource("1_perf")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=761957620]
+
+[node name="FpsLabel" type="Label" parent="CanvasLayer" unique_id=962576880]
+unique_name_in_owner = true
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 900.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22

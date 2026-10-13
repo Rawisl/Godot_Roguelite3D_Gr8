@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://8rhjuet10aec"]
+
+[ext_resource type="Script" uid="uid://dv1y3fm6krcaq" path="res://tests/test_commander_anim.gd" id="1_anim"]
+[ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="2_grass"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_anim"]
+
+[sub_resource type="Sky" id="Sky_anim"]
+sky_material = SubResource("ProceduralSkyMaterial_anim")
+
+[sub_resource type="Environment" id="Environment_anim"]
+background_mode = 2
+sky = SubResource("Sky_anim")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 3
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_anim"]
+size = Vector2(40, 40)
+
+[node name="TestCommanderAnim" type="Node3D" unique_id=453235546]
+script = ExtResource("1_anim")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=636657460]
+environment = SubResource("Environment_anim")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=205182656]
+transform = Transform3D(0.242, 0.749, -0.617, 0, 0.636, 0.772, 0.97, -0.187, 0.154, 0, 10, 0)
+light_energy = 0.9
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2011746403]
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 12, 12, 12)
+projection = 1
+size = 12.0
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=552878506]
+mesh = SubResource("PlaneMesh_anim")
+surface_material_override/0 = ExtResource("2_grass")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1093680020]
+
+[node name="StepLabel" type="Label" parent="CanvasLayer" unique_id=1083271671]
+unique_name_in_owner = true
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 700.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22

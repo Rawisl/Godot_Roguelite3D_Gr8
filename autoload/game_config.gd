@@ -1,6 +1,6 @@
 extends Node
 
-## Global game configuration constants and parameters (SRS-EW-1.6, Section 6.3).
+## Global game configuration constants and parameters
 
 @export_group("Run and Wave")
 @export var starting_gold: int = 150

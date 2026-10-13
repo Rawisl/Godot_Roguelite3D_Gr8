@@ -14,36 +14,29 @@ func _ready() -> void:
 
 
 ## Accepts either an int amount or a DamageInfo instance for backward compatibility.
-func take_damage(damage_input: Variant) -> int:
+func take_damage(damage_input: Variant, damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
 	if hp <= 0:
 		return 0
-
 	var amount: int = 0
 	var info: DamageInfo = null
-
 	if damage_input is DamageInfo:
 		info = damage_input
 		amount = info.amount
 	elif damage_input is int:
 		amount = damage_input
-		info = DamageInfo.new(amount)
+		info = DamageInfo.new(amount, damage_type)
 	else:
 		push_warning("HealthComponent.take_damage received invalid argument type")
 		return 0
-
 	if amount <= 0:
 		return 0
-
 	var previous_hp := hp
 	hp = maxi(0, hp - amount)
 	var damage_taken := previous_hp - hp
-
 	hp_changed.emit(hp, max_hp)
 	damaged.emit(damage_taken, info)
-
 	if hp == 0:
 		died.emit()
-
 	return damage_taken
 
 

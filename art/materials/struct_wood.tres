@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://72cnc8v2gg0s"]
+
+[ext_resource type="Shader" uid="uid://ca0wvrr2vyyy3" path="res://art/shaders/toon.gdshader" id="1_toon"]
+
+[resource]
+resource_name = "struct_wood"
+shader = ExtResource("1_toon")
+shader_parameter/albedo_color = Color(0.584, 0.502, 0.416, 1)

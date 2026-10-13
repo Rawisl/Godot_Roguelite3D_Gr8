@@ -1,7 +1,7 @@
 class_name BossData
 extends EnemyData
 
-## Boss archetype definition with multi-phase mechanics (SRS 3.8.2, 3.8.4).
+## Boss archetype definition with multi-phase mechanics 
 
 @export_group("Phases & Health")
 @export var armor_hp: int = 1200

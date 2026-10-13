@@ -11,7 +11,6 @@ extends Resource
 @export_range(0.0, 1.0, 0.01) var prep_heal_pct: float = 0.60
 @export_range(0.0, 1.0, 0.001) var commander_regen_pct_per_sec: float = 0.02
 @export_range(0.0, 1.0, 0.01) var commander_low_hp_warning_pct: float = 0.25
-@export var commander_mode_damage_mult: float = 0.0
 @export_range(0.0, 1.0, 0.01) var fall_damage_pct: float = 0.15
 
 @export_group("Movement")

@@ -1,6 +1,6 @@
 extends Node
 
-## Unit test verifying ScaleConfig formulas against SRS 3.7.6 table and SCL-01/SCL-02 rules.
+## Unit test verifying ScaleConfig formulas
 
 @export var scale_config: ScaleConfig
 
@@ -12,8 +12,8 @@ func _ready() -> void:
 	run_tests()
 
 func run_tests() -> void:
-	var output_text: String = "=== UNIT TEST: SCALECONFIG (SRS 3.7.6) ===\n\n"
-	print("\n=== UNIT TEST: SCALECONFIG (SRS 3.7.6) ===")
+	var output_text: String = "=== UNIT TEST: SCALECONFIG ===\n\n"
+	print("\n=== UNIT TEST: SCALECONFIG ===")
 	
 	var table_data := [
 		{"wave": 1, "budget": 8, "duration": 15.0, "hp": 1.00, "dmg": 1.00, "speed": 1.000},
@@ -82,8 +82,8 @@ func run_tests() -> void:
 		output_text += line + "\n"
 		
 	if all_passed:
-		output_text += "\nResult: ALL TESTS PASSED (SRS 3.7.6, SCL-01, SCL-02)"
-		print("\nResult: ALL TESTS PASSED (SRS 3.7.6, SCL-01, SCL-02)\n")
+		output_text += "\nResult: ALL TESTS PASSED "
+		print("\nResult: ALL TESTS PASSED\n")
 	else:
 		output_text += "\nResult: SOME TESTS FAILED"
 		push_error("ScaleConfig unit test failed")

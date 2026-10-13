@@ -1,6 +1,6 @@
 class_name Slot
 extends Node3D
-## A fixed build position on the map (SRS 3.6.2).
+## A fixed build position on the map
 
 signal clicked(slot: Slot)
 signal state_changed(slot: Slot, new_state: Enums.SlotState)
