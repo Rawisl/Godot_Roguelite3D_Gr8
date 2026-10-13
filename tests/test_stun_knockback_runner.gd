@@ -331,6 +331,15 @@ func test_bulwark_stomp_mechanics() -> void:
 	assert_true(not commander.is_stunned, "Dodge avoids Stomp stun")
 	assert_true(commander._knockback_velocity.is_zero_approx(), "Dodge avoids Stomp knockback")
 
+	# 3. Verify towers have no friendly fire towards Commander or structures
+	var tower_scene: PackedScene = load("res://entities/tower/tower.tscn")
+	if tower_scene != null:
+		var active_tower: Tower = tower_scene.instantiate() as Tower
+		assert_true(not active_tower._is_valid_target(commander), "Tower target validation rejects Commander (no friendly fire)")
+		assert_true(not active_tower._is_valid_target(fortress), "Tower target validation rejects Fortress (no friendly fire)")
+		assert_true(not active_tower._is_valid_target(tower), "Tower target validation rejects other Towers (no friendly fire)")
+		active_tower.free()
+
 	tower.free()
 	fortress.free()
 	far_tower.free()
