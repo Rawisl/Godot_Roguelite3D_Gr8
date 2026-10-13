@@ -11,8 +11,8 @@ var _life: float = 0.0
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
-func launch(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float) -> void:
-	super.launch(from, to, dmg, dmg_type, spd)
+func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float) -> void:
+	super.fire(from, to, dmg, dmg_type, spd)
 	_homing = true
 	_life = 0.0
 	_dest = _aim_point(to)
@@ -56,7 +56,7 @@ func _lose_target() -> void:
 			_hit(body as Enemy)
 			return
 
-func _on_body_entered(body: Node3D) -> void:
+func _on_body_entered(body: Node) -> void:
 	if not in_use or _homing:
 		return
 	if _is_alive(body):

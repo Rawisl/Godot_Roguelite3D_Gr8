@@ -199,7 +199,7 @@ func _release_shot() -> void:
 		return
 	_release_t = -1.0
 	var from := (_muzzle_node if _muzzle_node != null else muzzle).global_position
-	p.launch(from, _shot_target, _lv.damage, data.damage_type, data.projectile_speed)
+	p.fire(from, _shot_target, _lv.damage, data.damage_type, data.projectile_speed)
 	_shot_target = null
 
 func _update_aim() -> void:
