@@ -12,7 +12,7 @@ const BRUTE_SCENE := preload("res://entities/enemy/brute.tscn")
 @export var label_outline_size: int = 8
 ## Hệ số to/nhỏ trong không gian 3D (World Scale). Tăng số này = chữ to lên, giảm = chữ nhỏ đi.
 ## Gợi ý: 0.0055 (rất nhỏ), 0.0085 (vừa vặn cân đối), 0.012 (rất to)
-@export var label_pixel_size: float = 0.0085
+@export var label_pixel_size: float = 0.012
 
 var _commander: CharacterBody3D
 var _commander_label: Label3D
@@ -108,6 +108,17 @@ func _spawn_dummy(scene: PackedScene, pos: Vector3, title: String, is_boss: bool
 
 	if is_boss:
 		enemy.add_to_group(&"boss")
+
+	# Dummy enemies have 99999 HP so player can continuously test attacks and aggro
+	if enemy.health != null:
+		enemy.health.max_hp = 99999
+		enemy.health.hp = 99999
+		enemy.health.damaged.connect(func(amount: int, info: DamageInfo):
+			var dmg_type_str := "SLASH"
+			if info != null and info.damage_type < Enums.DamageType.size():
+				dmg_type_str = Enums.DamageType.keys()[info.damage_type]
+			_log("[HIT] %s nhận %d %s damage" % [title, amount, dmg_type_str])
+		)
 
 	# Overhead status label for Enemy
 	var label := Label3D.new()
@@ -229,8 +240,9 @@ func _update_overhead_labels() -> void:
 		if enemy.current_state >= 0 and enemy.current_state < state_names.size():
 			state_str = state_names[enemy.current_state]
 
-		label.text = "%s [%s]\nDist: %.1fm | Target: %s\nProvoked: %s" % [
-			item.title, state_str, dist, target_str, prov_str
+		var hp_str := "HP: %d" % enemy.health.hp if enemy.health != null else "HP: N/A"
+		label.text = "%s [%s] (%s)\nDist: %.1fm | Target: %s\nProvoked: %s" % [
+			item.title, state_str, hp_str, dist, target_str, prov_str
 		]
 
 		if is_targeting_cmd:
