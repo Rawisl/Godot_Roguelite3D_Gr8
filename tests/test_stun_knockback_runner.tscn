@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cx6g0f9s8u1b"]
+
+[ext_resource type="Script" path="res://tests/test_stun_knockback_runner.gd" id="1_runner"]
+
+[node name="TestStunKnockbackRunner" type="Node"]
+script = ExtResource("1_runner")

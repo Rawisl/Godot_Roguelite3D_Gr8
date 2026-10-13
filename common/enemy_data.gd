@@ -14,6 +14,7 @@ extends Resource
 @export var attack_range: float = 1.5
 @export var move_speed: float = 3.5
 @export var damage_type: Enums.DamageType = Enums.DamageType.SLASH
+@export var knockback_force: float = 0.0
 
 @export_group("Spawning & Avoidance")
 @export var spawn_cost: int = 1

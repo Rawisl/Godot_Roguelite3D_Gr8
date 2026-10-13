@@ -12,6 +12,7 @@ attack_interval = 2.0
 attack_range = 2.0
 move_speed = 2.0
 damage_type = 2
+knockback_force = 2.0
 spawn_cost = 6
 is_flying = false
 is_ranged = false

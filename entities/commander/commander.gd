@@ -31,6 +31,10 @@ const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 1.4]
 
 var aim_dir: Vector3 = Vector3.FORWARD
 var is_commander_mode: bool = false
+var is_deploying: bool = false
+
+var _knockback_velocity: Vector3 = Vector3.ZERO
+var _knockback_decay: float = 0.0
 
 # Skill state
 var is_using_skill: bool = false
@@ -132,6 +136,11 @@ func _physics_process(delta: float) -> void:
 	else:
 		_update_movement(camera, delta)
 
+	if not _knockback_velocity.is_zero_approx():
+		velocity.x += _knockback_velocity.x
+		velocity.z += _knockback_velocity.z
+		_knockback_velocity = _knockback_velocity.move_toward(Vector3.ZERO, _knockback_decay * delta)
+
 	move_and_slide()
 	_update_aim(camera)
 	_update_model_facing(delta)
@@ -203,6 +212,8 @@ func _start_dodge(camera: Camera3D) -> void:
 		dodge_clip = ANIM_DODGE_BACK
 
 	is_dodging = true
+	_knockback_velocity = Vector3.ZERO
+	_knockback_decay = 0.0
 	_dodge_timer = stats.dodge_iframe if stats else 0.3
 	_dodge_cooldown_timer = stats.dodge_cooldown if stats else 1.5
 
@@ -581,6 +592,19 @@ func take_damage(damage_input: Variant) -> void:
 	)
 	health.take_damage(processed_info)
 
+	var can_knockback: bool = not is_dodging and not is_deploying and not is_commander_mode
+	if can_knockback and info.knockback_force > 0.0 and health.hp > 0:
+		var kb_dir := info.hit_direction
+		kb_dir.y = 0.0
+		if kb_dir.length_squared() > 0.001:
+			kb_dir = kb_dir.normalized()
+		else:
+			kb_dir = -aim_dir
+		var kb_duration: float = 0.25
+		var kb_speed: float = (info.knockback_force * 2.0) / kb_duration
+		_knockback_velocity = kb_dir * kb_speed
+		_knockback_decay = kb_speed / kb_duration
+
 	if not is_attacking and not is_dodging and not is_using_skill and health.hp > 0:
 		if _anim_player != null and _anim_player.has_animation(ANIM_HIT):
 			_anim_player.play(ANIM_HIT, 0.05)
@@ -591,6 +615,8 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 
 
 func _on_died() -> void:
+	_knockback_velocity = Vector3.ZERO
+	_knockback_decay = 0.0
 	if is_dodging:
 		_end_dodge()
 	if is_attacking:
@@ -604,6 +630,8 @@ func _on_died() -> void:
 func _on_mode_changed(mode: StringName) -> void:
 	is_commander_mode = (mode == &"COMMANDER")
 	if is_commander_mode:
+		_knockback_velocity = Vector3.ZERO
+		_knockback_decay = 0.0
 		if is_dodging:
 			_end_dodge()
 		if is_attacking:
