@@ -6,7 +6,8 @@ const ARCHER_SCENE := preload("res://entities/enemy/archer.tscn")
 const BRUTE_SCENE := preload("res://entities/enemy/brute.tscn")
 
 var _commander: CharacterBody3D
-var _spawned_enemies: Array[Dictionary] = [] # Array of {"node": Enemy, "label": Label3D, "init_pos": Vector3, "is_boss": bool}
+var _commander_label: Label3D
+var _spawned_enemies: Array[Dictionary] = []
 
 var _battle_cry_cooldown_left: float = 0.0
 var _battle_cry_active_left: float = 0.0
@@ -35,6 +36,18 @@ func _setup_arena() -> void:
 	_commander.position = Vector3.ZERO
 	add_child(_commander)
 	_commander.health.hp = 100
+
+	# Overhead status label for Commander
+	_commander_label = Label3D.new()
+	_commander_label.position = Vector3(0.0, 2.7, 0.0)
+	_commander_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_commander_label.no_depth_test = true
+	_commander_label.font_size = 54
+	_commander_label.outline_size = 14
+	_commander_label.pixel_size = 0.012
+	_commander_label.modulate = Color(0.4, 0.9, 1.0)
+	_commander_label.outline_modulate = Color(0.0, 0.2, 0.4)
+	_commander.add_child(_commander_label)
 
 	_commander.health.damaged.connect(func(amount: int, info: DamageInfo):
 		var type_str := "SLASH"
@@ -87,12 +100,15 @@ func _spawn_dummy(scene: PackedScene, pos: Vector3, title: String, is_boss: bool
 	if is_boss:
 		enemy.add_to_group(&"boss")
 
-	# Overhead status label
+	# Large overhead status label for Enemy
 	var label := Label3D.new()
-	label.position = Vector3(0.0, 2.2, 0.0)
+	var height_offset := 3.3 if title.begins_with("Brute") else 2.6
+	label.position = Vector3(0.0, height_offset, 0.0)
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.font_size = 28
-	label.outline_size = 6
+	label.no_depth_test = true
+	label.font_size = 54
+	label.outline_size = 14
+	label.pixel_size = 0.012
 	label.text = title
 	enemy.add_child(label)
 
@@ -143,10 +159,8 @@ func _update_ui() -> void:
 
 	var cd_str := "READY (Press Q)" if _battle_cry_cooldown_left <= 0.05 else "%.1f s" % _battle_cry_cooldown_left
 	var buff_str := "INACTIVE (100% damage)"
-	var buff_color := "white"
 	if _battle_cry_active_left > 0.0:
-		buff_str = "ACTIVE (Taking -30%% damage: %.1f s remaining)" % _battle_cry_active_left
-		buff_color = "yellow"
+		buff_str = "ACTIVE (-30% damage: %.1fs remaining)" % _battle_cry_active_left
 
 	_ui_label.text = """[BATTLE CRY PLAYTEST SUITE]
 --------------------------------------------------
@@ -169,6 +183,18 @@ func _update_overhead_labels() -> void:
 	if _commander == null or not is_instance_valid(_commander):
 		return
 
+	# Update Commander's own overhead label
+	if _commander_label != null:
+		var buff_text := "Buff: -30%% (%.1fs)" % _battle_cry_active_left if _battle_cry_active_left > 0.0 else "Buff: None"
+		_commander_label.text = "Commander\nHP: %d/%d\n%s" % [
+			_commander.health.hp, _commander.health.max_hp, buff_text
+		]
+		if _battle_cry_active_left > 0.0:
+			_commander_label.modulate = Color(1.0, 0.9, 0.3)
+		else:
+			_commander_label.modulate = Color(0.4, 0.9, 1.0)
+
+	# Update Enemy overhead labels
 	for item in _spawned_enemies:
 		var enemy: Enemy = item.node
 		var label: Label3D = item.label
@@ -178,7 +204,6 @@ func _update_overhead_labels() -> void:
 		var dist := _commander.global_position.distance_to(enemy.global_position)
 		var is_targeting_cmd := (enemy.current_target == _commander)
 		var target_str := "COMMANDER" if is_targeting_cmd else "None / Fortress"
-		var target_color := "red" if is_targeting_cmd else "white"
 
 		var prov_str := "YES (%.1fs)" % enemy.provoked_timer if enemy.provoked_by_player else "NO"
 
@@ -187,9 +212,11 @@ func _update_overhead_labels() -> void:
 		]
 
 		if is_targeting_cmd:
-			label.modulate = Color(1.0, 0.4, 0.4)
+			label.modulate = Color(1.0, 0.3, 0.3)
+			label.outline_modulate = Color(0.4, 0.0, 0.0)
 		else:
 			label.modulate = Color(1.0, 1.0, 1.0)
+			label.outline_modulate = Color(0.1, 0.1, 0.1)
 
 
 func _on_skill_cooldown_changed(skill_id: StringName, remaining: float, _total: float) -> void:
