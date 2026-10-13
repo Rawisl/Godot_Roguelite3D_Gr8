@@ -45,6 +45,11 @@ func apply_level(new_level: int) -> void:
 	health.hp = _lv.max_hp
 	(range_shape.shape as CylinderShape3D).radius = _lv.attack_range
 
+## TWR-02: enemy melee and projectiles call take_damage on the body they hit.
+## HP = 0 emits destroyed, and the Slot turns RUINED (SLOT-02).
+func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
+	return health.take_damage(damage_input, p_damage_type)
+
 func set_visuals(aim: Node3D, muzzle_node: Node3D) -> void:
 	_aim_node = aim
 	_muzzle_node = muzzle_node
