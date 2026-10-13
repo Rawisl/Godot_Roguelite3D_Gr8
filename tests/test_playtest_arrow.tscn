@@ -1,0 +1,47 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://2s46w4b8pkbr" path="res://tests/test_playtest_arrow.gd" id="1_play"]
+[ext_resource type="PackedScene" uid="uid://ekgmjmchm13f" path="res://levels/corridor/level.tscn" id="2_level"]
+[ext_resource type="PackedScene" uid="uid://w8vescene0001" path="res://systems/wave/wave_manager.tscn" id="3_wave"]
+[ext_resource type="PackedScene" uid="uid://b1ss2j7jn26og" path="res://entities/projectile/projectile_pool.tscn" id="4_pool"]
+[ext_resource type="Script" uid="uid://b12kc1jqe8n0n" path="res://systems/build/slot_manager.gd" id="5_slotmgr"]
+
+[node name="TestPlaytestArrow" type="Node3D"]
+script = ExtResource("1_play")
+
+[node name="Level" parent="." instance=ExtResource("2_level")]
+
+[node name="SlotManager" type="Node3D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5_slotmgr")
+
+[node name="Gameplay" type="Node3D" parent="."]
+
+[node name="WaveManager" parent="Gameplay" instance=ExtResource("3_wave")]
+unique_name_in_owner = true
+
+[node name="Enemy" type="Node3D" parent="Gameplay" groups=["enemy_container"]]
+
+[node name="ProjectilePool" parent="Gameplay" instance=ExtResource("4_pool")]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="PanelContainer" parent="UI"]
+offset_left = 16.0
+offset_top = 16.0
+
+[node name="VBox" type="VBoxContainer" parent="UI/Panel"]
+
+[node name="Top" type="HBoxContainer" parent="UI/Panel/VBox"]
+
+[node name="WaveLabel" type="Label" parent="UI/Panel/VBox/Top"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+
+[node name="CallButton" type="Button" parent="UI/Panel/VBox/Top"]
+unique_name_in_owner = true
+focus_mode = 0
+text = "Call wave"
+
+[node name="SlotRows" type="VBoxContainer" parent="UI/Panel/VBox"]
+unique_name_in_owner = true
