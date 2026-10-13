@@ -165,6 +165,12 @@ func _update_timers(delta: float) -> void:
 		provoked_timer -= delta
 		if provoked_timer <= 0.0:
 			provoked_by_player = false
+		elif provoked_by_player:
+			var cmd := _get_valid_commander()
+			if cmd == null or global_position.distance_to(cmd.global_position) > GameConfig.leash_distance:
+				provoked_by_player = false
+				provoked_timer = 0.0
+				_find_best_target()
 
 func _update_state(delta: float) -> void:
 	match current_state:
@@ -465,14 +471,17 @@ func _find_best_target() -> void:
 		_find_default_target()
 		return
 
-	# Aggro / Provocation overrides regular rules (AGG-01)
+	# Provocation overrides regular targeting rules
 	if provoked_by_player:
 		var cmd := _get_valid_commander()
 		if cmd != null:
 			var dist_to_cmd := global_position.distance_to(cmd.global_position)
-			if dist_to_cmd <= (data.aggro_range if data else 10.0):
+			if dist_to_cmd <= GameConfig.leash_distance:
 				set_target(cmd)
 				return
+			else:
+				provoked_by_player = false
+				provoked_timer = 0.0
 
 	if data == null or data.target_rules.is_empty():
 		_find_default_target()
@@ -547,6 +556,26 @@ func set_target_position(target_pos: Vector3) -> void:
 	current_target_position = target_pos
 	has_target_position = true
 	nav.target_position = target_pos
+
+func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
+	if is_dead or spawn_grace or is_in_spawn_zone:
+		return
+	if commander_node == null or not is_instance_valid(commander_node):
+		return
+
+	# Bosses are immune to taunt
+	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
+	if is_boss:
+		return
+
+	provoked_by_player = true
+	provoked_timer = maxf(provoked_timer, duration)
+	set_target(commander_node)
+
+	if current_state == Enums.EnemyState.ADVANCE or current_state == Enums.EnemyState.WAIT:
+		change_state(Enums.EnemyState.CHASE)
+	elif current_state == Enums.EnemyState.CHASE:
+		_retarget_timer = 0.0
 
 func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
 	if is_dead or spawn_grace:
