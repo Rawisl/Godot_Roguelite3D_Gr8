@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://bya3bq6vjav87"]
+
+[ext_resource type="Script" uid="uid://olovhaqpthyg" path="res://tests/test_occluder_dither.gd" id="1_test"]
+[ext_resource type="Script" uid="uid://bnij7d30nqxt0" path="res://art/occlusion/occlusion_manager.gd" id="2_occl"]
+
+[node name="TestOccluderDither" type="Node3D" unique_id=1017534560]
+script = ExtResource("1_test")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=758121299]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=496410168]
+transform = Transform3D(0.93969256, -0.24184471, 0.24184467, 0, 0.70710665, 0.70710677, -0.34202006, -0.664463, 0.6644629, 7.255, 21.213, 19.934)
+projection = 1
+current = true
+size = 26.0
+
+[node name="OcclusionManager" type="Node" parent="." unique_id=558725662]
+script = ExtResource("2_occl")

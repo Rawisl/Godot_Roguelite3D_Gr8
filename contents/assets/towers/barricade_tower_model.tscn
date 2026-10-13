@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://dwux2nq3acwf1" path="res://contents/assets/fortress/fbx/full/wall_1_full.fbx" id="3_8siom"]
 [ext_resource type="Material" uid="uid://bsw053arn2t03" path="res://contents/assets/fortress/texture/fortress_material.tres" id="9_matf"]
 
-[node name="BarricadeTowerModel" type="Node3D" unique_id=387524894]
+[node name="BarricadeTowerModel" type="Node3D" unique_id=387524894 groups=["occluder"]]
 
 [node name="Level1" type="Node3D" parent="." unique_id=1265179963]
 unique_name_in_owner = true

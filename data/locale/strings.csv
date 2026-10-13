@@ -28,3 +28,20 @@ settings.tab.audio,Âm thanh
 settings.tab.graphics,Đồ họa
 settings.tab.accessibility,Tiếp cận
 settings.tab.data,Dữ liệu
+menu.title,Chiến Tuyến Vô Tận
+menu.prestige,Danh vọng: {value}
+menu.record,Kỷ lục: đợt {wave}
+menu.record_none,Kỷ lục: chưa có
+menu.paused,Tạm dừng
+menu.stats_toggle,Danh vọng và kỷ lục
+hud.fortress,Thành
+hud.commander,Chỉ huy
+hud.ratio,{value}/{max}
+hud.gold_gain,+{gold}
+hud.gold_loss,-{gold}
+hud.wave_value,Đợt {wave}
+hud.state.prep,Chuẩn bị
+hud.state.combat,Chiến đấu
+hud.state.boss_intro,Boss xuất hiện
+hud.state.boss_combat,Đánh boss
+hud.state.summary,Tổng kết

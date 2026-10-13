@@ -9,10 +9,22 @@ anchor_right = 1.0
 offset_right = 9.0
 offset_bottom = 23.0
 grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 8
 script = ExtResource("1_l8fob")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=1649748621]
 layout_mode = 2
+mouse_filter = 2
 
-[node name="Label" type="Label" parent="." unique_id=791004369]
+[node name="Title" type="Label" parent="." unique_id=791004369]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Value" type="Label" parent="." unique_id=1780004430]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Delta" type="Label" parent="." unique_id=292033578]
+unique_name_in_owner = true
 layout_mode = 2

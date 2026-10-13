@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://blucq888snxhn" path="res://contents/assets/towers/fbx/Full/_Cannon_tower_LVL_2.fbx" id="3_fgh2h"]
 [ext_resource type="PackedScene" uid="uid://bl63nteg1ukkp" path="res://contents/assets/towers/fbx/Full/_Cannon_tower_LVL_4.fbx" id="4_hgv5r"]
 
-[node name="CannonTowerModel" type="Node3D" unique_id=550839409]
+[node name="CannonTowerModel" type="Node3D" unique_id=550839409 groups=["occluder"]]
 
 [node name="Level1" parent="." unique_id=1678416894 instance=ExtResource("1_5oxoo")]
 transform = Transform3D(0.265, 0, 0, 0, 0.265, 0, 0, 0, 0.265, 0, 0, 0)
