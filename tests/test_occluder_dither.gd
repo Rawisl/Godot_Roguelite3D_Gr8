@@ -1,5 +1,5 @@
 extends Node3D
-## MSE-05: chỉ huy giả đi qua lại sau tower Cannon và tiến lại gần một quân địch
+## Chỉ huy giả đi qua lại sau tower Cannon và tiến lại gần một quân địch
 ## đứng sau cột đá. Nhấn F6 trên scene này.
 ## - Chỉ huy sau tower: tower mờ dither, bóng vẫn đặc.
 ## - Chỉ huy cách quân địch dưới 3 m: cột đá mờ. Trên 3 m: cột đặc lại.

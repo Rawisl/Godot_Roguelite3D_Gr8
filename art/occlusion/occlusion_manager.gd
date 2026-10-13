@@ -1,6 +1,6 @@
 class_name OcclusionManager
 extends Node
-## MSE-05, SLOT-07: làm mờ dither các vật trong nhóm "occluder" khi chúng che
+## Làm mờ dither các vật trong nhóm "occluder" khi chúng che
 ## chỉ huy, quân địch quanh chỉ huy hoặc vật đang hover.
 ## Cả vật mờ xuống occluded_alpha (phương án A), không khoét lỗ tròn.
 ## Khi vật mờ, một bản sao chỉ đổ bóng (SHADOWS_ONLY, không dither) thay nó
@@ -13,11 +13,11 @@ const SHADOW_PROXY_META := &"occlusion_shadow_proxy"
 ## Vật cách đường camera tới mục tiêu không quá bán kính này (đo trên mặt đất) thì bị làm mờ.
 @export var occlusion_radius := 2.5
 @export var fade_time := 0.15
-## Quân địch trong bán kính này quanh chỉ huy cũng được xét (MSE-05 b).
+## Quân địch trong bán kính này quanh chỉ huy cũng được xét.
 @export var enemy_radius := 3.0
 @export var scan_interval := 0.1
 
-## Vật đang hover (MSE-05 c). Hệ thống chọn mục tiêu gán qua set_hover_target().
+## Vật đang hover. Hệ thống chọn mục tiêu gán qua set_hover_target().
 var _hover_target: Node3D
 var _scan_left := 0.0
 ## GeometryInstance3D -> alpha hiện tại.
@@ -99,6 +99,9 @@ func _geometries(root: Node) -> Array[GeometryInstance3D]:
 func _update_fades(real_delta: float) -> void:
 	var step := (1.0 - occluded_alpha) / maxf(fade_time, 0.001) * real_delta
 	for geo in _occluding:
+		# Vật có thể bị xóa (bán, phá hủy) giữa hai lần quét.
+		if not is_instance_valid(geo):
+			continue
 		if not _alpha.has(geo):
 			_alpha[geo] = 1.0
 			_add_shadow_proxy(geo)

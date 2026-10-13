@@ -13,7 +13,7 @@ uniform float ambient_strength : hint_range(0.0, 1.0) = 0.55;
 uniform float rim_strength : hint_range(0.0, 1.0) = 0.0;
 uniform float rim_width : hint_range(0.0, 1.0) = 0.3;
 
-// MSE-05: độ đặc của vật che, OcclusionManager chỉnh theo từng instance.
+// Độ đặc của vật che, OcclusionManager chỉnh theo từng instance.
 // Dither theo ma trận Bayer 8x8 (discard), không dùng alpha blend.
 instance uniform float dither_alpha : hint_range(0.0, 1.0) = 1.0;
 
