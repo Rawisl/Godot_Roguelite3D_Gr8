@@ -206,8 +206,10 @@ func _update_overhead_labels() -> void:
 		var target_str := "COMMANDER" if is_targeting_cmd else "None / Fortress"
 
 		var prov_str := "YES (%.1fs)" % enemy.provoked_timer if enemy.provoked_by_player else "NO"
-		var state_names := ["SPAWN", "ADVANCE", "CHASE", "ATTACK", "STAGGER", "WAIT", "FRENZY", "DEAD"]
-		var state_str := state_names[enemy.current_state] if enemy.current_state >= 0 and enemy.current_state < state_names.size() else "STATE"
+		var state_names: Array[String] = ["SPAWN", "ADVANCE", "CHASE", "ATTACK", "STAGGER", "WAIT", "FRENZY", "DEAD"]
+		var state_str: String = "STATE"
+		if enemy.current_state >= 0 and enemy.current_state < state_names.size():
+			state_str = state_names[enemy.current_state]
 
 		label.text = "%s [%s]\nDist: %.1fm | Target: %s\nProvoked: %s" % [
 			item.title, state_str, dist, target_str, prov_str

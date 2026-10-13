@@ -600,7 +600,7 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 
 	set_target(commander_node)
 
-	if current_state == Enums.EnemyState.ADVANCE or current_state == Enums.EnemyState.WAIT:
+	if current_state == Enums.EnemyState.ADVANCE or current_state == Enums.EnemyState.WAIT or current_state == Enums.EnemyState.SPAWN:
 		change_state(Enums.EnemyState.CHASE)
 	elif current_state == Enums.EnemyState.CHASE:
 		_retarget_timer = 0.0
