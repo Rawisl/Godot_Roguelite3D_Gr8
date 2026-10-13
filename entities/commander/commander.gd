@@ -80,6 +80,7 @@ func _setup_health() -> void:
 
 	health.hp_changed.connect(_on_hp_changed)
 	health.died.connect(_on_died)
+	EventBus.commander_hp_changed.emit.call_deferred(health.hp, health.max_hp)
 
 
 func _setup_animation_player() -> void:
