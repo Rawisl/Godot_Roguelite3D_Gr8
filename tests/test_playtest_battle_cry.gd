@@ -169,7 +169,7 @@ func _update_ui() -> void:
 	var cd_str := "READY (Press Q)" if _battle_cry_cooldown_left <= 0.05 else "%.1f s" % _battle_cry_cooldown_left
 	var buff_str := "INACTIVE (100% damage)"
 	if _battle_cry_active_left > 0.0:
-		buff_str = "ACTIVE (-30% damage: %.1fs remaining)" % _battle_cry_active_left
+		buff_str = "ACTIVE (-30%% damage: %.1fs remaining)" % _battle_cry_active_left
 
 	_ui_label.text = """[BATTLE CRY PLAYTEST SUITE]
 --------------------------------------------------
@@ -203,11 +203,20 @@ func _update_overhead_labels() -> void:
 		else:
 			_commander_label.modulate = Color(0.4, 0.9, 1.0)
 
-	# Update Enemy overhead labels
+	# Update Enemy overhead labels safely
 	for item in _spawned_enemies:
-		var enemy: Enemy = item.node
-		var label: Label3D = item.label
-		if enemy == null or not is_instance_valid(enemy) or label == null:
+		var raw_node = item.get("node")
+		if raw_node == null or not is_instance_valid(raw_node):
+			continue
+		var enemy := raw_node as Enemy
+		if enemy == null or enemy.is_queued_for_deletion() or enemy.is_dead:
+			continue
+
+		var raw_label = item.get("label")
+		if raw_label == null or not is_instance_valid(raw_label):
+			continue
+		var label := raw_label as Label3D
+		if label == null or label.is_queued_for_deletion():
 			continue
 
 		var dist := _commander.global_position.distance_to(enemy.global_position)
