@@ -1,4 +1,4 @@
-extends Node
+extends Node3D
 
 var passes: int = 0
 var fails: int = 0
@@ -9,14 +9,18 @@ func _ready() -> void:
 	print("    AUTOMATED STUN, KNOCKBACK & UI VERIFICATION RUNNER ")
 	print("=======================================================")
 
-	var cam := Camera3D.new()
-	add_child(cam)
+	var cam := get_node_or_null("Camera3D") as Camera3D
+	if cam == null:
+		cam = Camera3D.new()
+		add_child(cam)
 	cam.make_current()
 
 	await test_initial_hp_emit()
 	test_brute_knockback_data()
 	await test_commander_knockback()
 	test_knockback_immunities()
+	await test_stun_state_and_immunities()
+	await test_bulwark_stomp_mechanics()
 
 	print("=======================================================")
 	print("VERIFICATION SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -156,4 +160,179 @@ func test_knockback_immunities() -> void:
 	commander.take_damage(dmg)
 	assert_true(commander._knockback_velocity.length() > 0.0, "Knockback applied when not immune")
 
+	commander.free()
+
+
+class DummyStructure extends Node3D:
+	var received_damage: int = 0
+	var received_type: int = -1
+
+	func take_damage(info: Variant, _type: int = 0) -> void:
+		if info is DamageInfo:
+			received_damage = info.amount
+			received_type = info.damage_type
+		elif info is int:
+			received_damage = info
+
+
+func test_stun_state_and_immunities() -> void:
+	print("\n[GROUP 5] Testing Stun State, Interrupts, Timers & Immunities")
+	var cmd_scene: PackedScene = load("res://entities/commander/commander.tscn")
+	var commander: CharacterBody3D = cmd_scene.instantiate()
+	add_child(commander)
+
+	# 1. Stun clamping & application
+	assert_true(not commander.is_stunned, "Commander initially not stunned")
+	assert_true(commander.can_retreat(), "Commander can retreat initially")
+
+	assert_true(bool(commander.apply_stun(2.5)), "apply_stun returns true on valid target")
+	assert_true(commander.is_stunned, "Commander is now stunned")
+	assert_true(is_equal_approx(commander._stun_timer, 1.5), "Stun duration capped at 1.5 s")
+	assert_true(not commander.can_retreat(), "can_retreat returns false while stunned")
+
+	# 2. Cannot re-stun while already stunned
+	assert_true(not bool(commander.apply_stun(1.0)), "Cannot re-stun while already stunned")
+
+	# 3. Interrupt attack
+	commander.is_stunned = false
+	commander._stun_timer = 0.0
+	commander.is_attacking = true
+	commander.apply_stun(1.0)
+	assert_true(not commander.is_attacking, "Active attack interrupted on stun")
+
+	# 4. Interrupt skill
+	commander.is_stunned = false
+	commander._stun_timer = 0.0
+	commander.is_using_skill = true
+	commander._battle_cry_cd_timer = 12.0
+	commander.apply_stun(1.0)
+	assert_true(not commander.is_using_skill, "Active skill interrupted on stun")
+	assert_true(commander._battle_cry_cd_timer > 0.0, "Skill cooldown retained on stun interrupt")
+
+	# 5. Stun timer expiration & 3s immunity transition
+	commander.is_stunned = true
+	commander._stun_timer = 0.05
+	commander._stun_immunity_timer = 0.0
+	commander._update_cooldowns_and_timers(0.06)
+	assert_true(not commander.is_stunned, "Stun expires when timer drops to 0")
+	assert_true(is_equal_approx(commander._stun_immunity_timer, 3.0), "Commander gains 3.0 s stun immunity after stun expires")
+	assert_true(commander.can_retreat(), "can_retreat returns true after stun expires")
+
+	# 6. Immune during 3s immunity period
+	assert_true(not bool(commander.apply_stun(1.0)), "Cannot stun during 3.0 s immunity")
+	assert_true(not commander.is_stunned, "is_stunned remains false during immunity")
+
+	# 7. Immunity timer expiration
+	commander._update_cooldowns_and_timers(3.1)
+	assert_true(commander._stun_immunity_timer == 0.0, "Stun immunity timer decays to 0")
+	assert_true(bool(commander.apply_stun(1.0)), "Can be stunned again after immunity decays")
+	commander.is_stunned = false
+	commander._stun_timer = 0.0
+
+	# 8. Dodge, Deploying, and Commander Mode immunities
+	commander.is_dodging = true
+	assert_true(not bool(commander.apply_stun(1.0)), "Cannot stun during Dodge")
+	commander.is_dodging = false
+
+	commander.is_deploying = true
+	assert_true(not bool(commander.apply_stun(1.0)), "Cannot stun during Deploying")
+	commander.is_deploying = false
+
+	commander.is_commander_mode = true
+	assert_true(not bool(commander.apply_stun(1.0)), "Cannot stun in Commander Mode")
+	commander.is_commander_mode = false
+
+	# 9. Mode switch to COMMANDER clears active stun
+	commander.apply_stun(1.5)
+	assert_true(commander.is_stunned, "Commander stunned before mode switch")
+	commander._on_mode_changed(&"COMMANDER")
+	assert_true(not commander.is_stunned, "Active stun cleared on switching to COMMANDER mode")
+	commander.is_commander_mode = false
+
+	# 10. Death resets stun & immunity
+	commander.apply_stun(1.5)
+	commander.health.hp = 0
+	commander._on_died()
+	assert_true(not commander.is_stunned, "Death resets is_stunned")
+	assert_true(commander._stun_timer == 0.0, "Death resets _stun_timer")
+	assert_true(commander._stun_immunity_timer == 0.0, "Death resets _stun_immunity_timer")
+	assert_true(not commander.can_retreat(), "Dead commander cannot retreat")
+
+	commander.free()
+
+
+func test_bulwark_stomp_mechanics() -> void:
+	print("\n[GROUP 6] Testing Bulwark Boss Stomp AoE, Knockback & Stun Integration")
+	var bulwark_scene: PackedScene = load("res://entities/enemy/bulwark.tscn")
+	var bulwark: Bulwark = bulwark_scene.instantiate()
+	add_child(bulwark)
+	bulwark.global_position = Vector3.ZERO
+	bulwark.spawn_grace = false
+	bulwark.is_in_spawn_zone = false
+
+	var cmd_scene: PackedScene = load("res://entities/commander/commander.tscn")
+	var commander: CharacterBody3D = cmd_scene.instantiate()
+	add_child(commander)
+	commander.global_position = Vector3(0.0, 0.0, 1.5)
+
+	# Allied structures inside and outside stomp radius
+	var tower := DummyStructure.new()
+	tower.add_to_group(&"tower")
+	add_child(tower)
+	tower.global_position = Vector3(1.5, 0.0, 0.0)
+
+	var fortress := DummyStructure.new()
+	fortress.add_to_group(&"fortress")
+	add_child(fortress)
+	fortress.global_position = Vector3(0.0, 0.0, -2.0)
+
+	var far_tower := DummyStructure.new()
+	far_tower.add_to_group(&"tower")
+	add_child(far_tower)
+	far_tower.global_position = Vector3(5.0, 0.0, 0.0)
+
+	# 1. Execute stomp
+	var initial_cmd_hp: int = int(commander.health.hp)
+	var start_cmd_pos := commander.global_position
+
+	bulwark.execute_stomp()
+
+	assert_true(commander.health.hp == initial_cmd_hp - Bulwark.STOMP_DAMAGE, "Commander took Stomp damage (%d HP)" % Bulwark.STOMP_DAMAGE)
+	assert_true(commander.is_stunned, "Commander stunned by Stomp")
+	assert_true(is_equal_approx(commander._stun_timer, Bulwark.STOMP_STUN_DURATION), "Commander stun duration == %.1f s" % Bulwark.STOMP_STUN_DURATION)
+	assert_true(commander._knockback_velocity.length() > 0.0, "Commander received knockback impulse from Stomp")
+
+	# Wait for knockback physics loop to finish
+	while not commander._knockback_velocity.is_zero_approx():
+		await get_tree().physics_frame
+
+	var displacement := (commander.global_position - start_cmd_pos).length()
+	assert_true(is_equal_approx(displacement, Bulwark.STOMP_KNOCKBACK) or absf(displacement - Bulwark.STOMP_KNOCKBACK) < 0.25, "Commander displaced ~3.0 m by Boss knockback (got %.2f m)" % displacement)
+	assert_true(commander.is_stunned, "Commander remains stunned during/after knockback decay")
+
+	# Check structures in radius
+	assert_true(tower.received_damage == Bulwark.STOMP_DAMAGE, "Tower in AoE took Stomp damage")
+	assert_true(tower.received_type == Enums.DamageType.BLAST, "Damage type applied to Tower is BLAST")
+	assert_true(fortress.received_damage == Bulwark.STOMP_DAMAGE, "Fortress in AoE took Stomp damage")
+	assert_true(far_tower.received_damage == 0, "Out of range structure unaffected by Stomp")
+
+	# 2. Dodge i-frame immunity against Stomp
+	commander.global_position = Vector3(0.0, 0.0, 1.5)
+	commander.is_stunned = false
+	commander._stun_timer = 0.0
+	commander._stun_immunity_timer = 0.0
+	commander._knockback_velocity = Vector3.ZERO
+	var hp_before_dodge: int = int(commander.health.hp)
+
+	commander.is_dodging = true
+	bulwark.execute_stomp()
+
+	assert_true(commander.health.hp == hp_before_dodge, "Dodge completely avoids Stomp damage")
+	assert_true(not commander.is_stunned, "Dodge avoids Stomp stun")
+	assert_true(commander._knockback_velocity.is_zero_approx(), "Dodge avoids Stomp knockback")
+
+	tower.free()
+	fortress.free()
+	far_tower.free()
+	bulwark.free()
 	commander.free()

@@ -36,6 +36,11 @@ var is_deploying: bool = false
 var _knockback_velocity: Vector3 = Vector3.ZERO
 var _knockback_decay: float = 0.0
 
+# Stun state
+var is_stunned: bool = false
+var _stun_timer: float = 0.0
+var _stun_immunity_timer: float = 0.0
+
 # Skill state
 var is_using_skill: bool = false
 var _skill_timer: float = 0.0
@@ -124,6 +129,18 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	if is_stunned:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		if not _knockback_velocity.is_zero_approx():
+			velocity.x += _knockback_velocity.x
+			velocity.z += _knockback_velocity.z
+			_knockback_velocity = _knockback_velocity.move_toward(Vector3.ZERO, _knockback_decay * delta)
+		if not is_on_floor():
+			velocity.y -= _gravity * delta
+		move_and_slide()
+		return
+
 	if not is_dodging and not is_using_skill:
 		_check_dodge_input(camera)
 		_check_skill_input()
@@ -150,6 +167,16 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_cooldowns_and_timers(delta: float) -> void:
+	if _stun_immunity_timer > 0.0:
+		_stun_immunity_timer = maxf(0.0, _stun_immunity_timer - delta)
+
+	if is_stunned:
+		_stun_timer -= delta
+		if _stun_timer <= 0.0:
+			is_stunned = false
+			_stun_timer = 0.0
+			_stun_immunity_timer = 3.0
+
 	if _dodge_cooldown_timer > 0.0:
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
 		var total_cd := stats.dodge_cooldown if stats else 1.5
@@ -610,6 +637,38 @@ func take_damage(damage_input: Variant) -> void:
 			_anim_player.play(ANIM_HIT, 0.05)
 
 
+func apply_stun(duration: float = 1.5) -> bool:
+	if is_commander_mode or is_dodging or is_deploying:
+		return false
+	if health != null and health.hp <= 0:
+		return false
+	if is_stunned or _stun_immunity_timer > 0.0:
+		return false
+
+	var clamped_dur := clampf(duration, 0.0, 1.5)
+	if clamped_dur <= 0.0:
+		return false
+
+	if is_attacking:
+		_interrupt_attack()
+	if is_using_skill:
+		_interrupt_skill()
+
+	is_stunned = true
+	_stun_timer = clamped_dur
+	velocity.x = 0.0
+	velocity.z = 0.0
+
+	if _anim_player != null and _anim_player.has_animation(ANIM_HIT):
+		_anim_player.play(ANIM_HIT, 0.05)
+
+	return true
+
+
+func can_retreat() -> bool:
+	return not is_commander_mode and not is_stunned and health != null and health.hp > 0
+
+
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	EventBus.commander_hp_changed.emit(current_hp, max_hp)
 
@@ -617,6 +676,9 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 func _on_died() -> void:
 	_knockback_velocity = Vector3.ZERO
 	_knockback_decay = 0.0
+	is_stunned = false
+	_stun_timer = 0.0
+	_stun_immunity_timer = 0.0
 	if is_dodging:
 		_end_dodge()
 	if is_attacking:
@@ -632,6 +694,8 @@ func _on_mode_changed(mode: StringName) -> void:
 	if is_commander_mode:
 		_knockback_velocity = Vector3.ZERO
 		_knockback_decay = 0.0
+		is_stunned = false
+		_stun_timer = 0.0
 		if is_dodging:
 			_end_dodge()
 		if is_attacking:
