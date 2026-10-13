@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://da6u3bayg63r3" path="res://ui/hud/parts/speed_buttons.gd" id="1_guc8t"]
 
 [node name="SpeedButtons" type="HBoxContainer" unique_id=1199262953]
+visible = false
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
