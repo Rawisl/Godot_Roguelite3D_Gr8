@@ -305,7 +305,7 @@ func test_mode_switch_and_death_cleanup() -> void:
 
 
 func test_max_aggro_melee_limit() -> void:
-	print("\n[GROUP 9] Testing AGG-06 Melee Aggro Capacity (max_aggro_melee = 8)")
+	print("\n[GROUP 9] Testing Melee Aggro Capacity (max_aggro_melee = 8)")
 	var cmd_scene: PackedScene = load("res://entities/commander/commander.tscn")
 	var commander: CharacterBody3D = cmd_scene.instantiate()
 	add_child(commander)

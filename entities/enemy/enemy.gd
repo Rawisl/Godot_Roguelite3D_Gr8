@@ -2,7 +2,7 @@ class_name Enemy
 extends CharacterBody3D
 
 ## Base enemy controller with state machine, navigation, spawn grace, and combat behaviors.
-## Supports melee and ranged archetypes, prioritized targeting rules (ETG-01), and crowd optimizations.
+## Supports melee and ranged archetypes, prioritized targeting rules, and crowd optimizations.
 
 signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
 
@@ -409,7 +409,7 @@ func _is_target_valid(t: Node3D) -> bool:
 		elif t.global_position.y >= 3.0:
 			is_wall = true
 
-		# Melee ground units cannot target wall towers (ETG-01)
+		# Melee ground units cannot target wall towers
 		var can_target_wall := (data != null and (data.is_ranged or data.is_flying))
 		if is_wall and not can_target_wall:
 			return false
@@ -471,7 +471,7 @@ func _find_best_target() -> void:
 		_find_default_target()
 		return
 
-	# Provocation overrides regular targeting rules (AGG-01, AGG-02, AGG-06)
+	# Provocation overrides regular targeting rules
 	if provoked_by_player:
 		var cmd := _get_valid_commander()
 		if cmd != null:
@@ -492,7 +492,7 @@ func _find_best_target() -> void:
 		_find_default_target()
 		return
 
-	# Evaluate targets in prioritized order from data.target_rules (ETG-01)
+	# Evaluate targets in prioritized order from data.target_rules
 	for rule in data.target_rules:
 		match rule:
 			&"PLAYER":
@@ -583,7 +583,7 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if commander_node == null or not is_instance_valid(commander_node):
 		return
 
-	# Bosses are immune to taunt (AGG-02, AI-06, BOSS-01)
+	# Bosses are immune to taunt
 	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
 	if is_boss:
 		return
@@ -591,7 +591,7 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	provoked_by_player = true
 	provoked_timer = maxf(provoked_timer, duration)
 
-	# AGG-06: Check melee attacker capacity on Commander
+	# Check melee attacker capacity on Commander
 	var is_melee := (data != null and not data.is_ranged and not data.is_flying)
 	if is_melee and _get_active_melee_attackers_count(commander_node) >= GameConfig.max_aggro_melee:
 		set_target(commander_node)

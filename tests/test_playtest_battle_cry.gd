@@ -6,12 +6,11 @@ const ARCHER_SCENE := preload("res://entities/enemy/archer.tscn")
 const BRUTE_SCENE := preload("res://entities/enemy/brute.tscn")
 
 @export_group("Overhead 3D Label Settings")
-## Kích thước font chữ (pixel texture). Khuyên dùng: 32 - 44
+## Font texture size in pixels (recommended: 32 - 44).
 @export var label_font_size: int = 38
-## Độ dày đường viền chữ. Khuyên dùng: 6 - 10
+## Text outline thickness (recommended: 6 - 10).
 @export var label_outline_size: int = 8
-## Hệ số to/nhỏ trong không gian 3D (World Scale). Tăng số này = chữ to lên, giảm = chữ nhỏ đi.
-## Gợi ý: 0.0055 (rất nhỏ), 0.0085 (vừa vặn cân đối), 0.012 (rất to)
+## World scale factor in 3D space (e.g. 0.0085 for medium, 0.012 for large).
 @export var label_pixel_size: float = 0.012
 
 var _commander: CharacterBody3D
@@ -117,7 +116,7 @@ func _spawn_dummy(scene: PackedScene, pos: Vector3, title: String, is_boss: bool
 			var dmg_type_str := "SLASH"
 			if info != null and info.damage_type < Enums.DamageType.size():
 				dmg_type_str = Enums.DamageType.keys()[info.damage_type]
-			_log("[HIT] %s nhận %d %s damage" % [title, amount, dmg_type_str])
+			_log("[HIT] %s received %d %s damage" % [title, amount, dmg_type_str])
 		)
 
 	# Overhead status label for Enemy
@@ -189,13 +188,13 @@ Battle Cry Cooldown (Q): %s
 Buff Status: %s
 
 CONTROLS:
-  [W, A, S, D] : Di chuyển Chỉ huy
-  [Q]          : Kích hoạt Battle Cry (Bán kính vòng vàng 6m)
-  [Space]      : Lướt (Dodge)
-  [Chuột Trái] : Đánh thường combo 3 đòn
-  [Phím 1]     : Đánh 20 Slash damage vào Chỉ huy (kiểm tra giảm 30%%)
-  [Phím 2]     : Đánh 10 True damage vào Chỉ huy (kiểm tra sát thương chuẩn)
-  [Phím R]     : Reset lại bãi thử
+  [W, A, S, D] : Move Commander
+  [Q]          : Activate Battle Cry (6m radius indicator)
+  [Space]      : Dodge
+  [Left Click] : 3-hit combo basic attack
+  [Key 1]      : Deal 20 Slash damage to Commander (-30%% check)
+  [Key 2]      : Deal 10 True damage to Commander (True damage check)
+  [Key R]      : Reset arena
 --------------------------------------------------""" % [hp_str, cd_str, buff_str]
 
 
