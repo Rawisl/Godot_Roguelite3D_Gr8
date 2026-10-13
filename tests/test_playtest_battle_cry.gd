@@ -5,6 +5,15 @@ const GRUNT_SCENE := preload("res://entities/enemy/grunt.tscn")
 const ARCHER_SCENE := preload("res://entities/enemy/archer.tscn")
 const BRUTE_SCENE := preload("res://entities/enemy/brute.tscn")
 
+@export_group("Overhead 3D Label Settings")
+## Kích thước font chữ (pixel texture). Khuyên dùng: 32 - 44
+@export var label_font_size: int = 38
+## Độ dày đường viền chữ. Khuyên dùng: 6 - 10
+@export var label_outline_size: int = 8
+## Hệ số to/nhỏ trong không gian 3D (World Scale). Tăng số này = chữ to lên, giảm = chữ nhỏ đi.
+## Gợi ý: 0.0055 (rất nhỏ), 0.0085 (vừa vặn cân đối), 0.012 (rất to)
+@export var label_pixel_size: float = 0.0085
+
 var _commander: CharacterBody3D
 var _commander_label: Label3D
 var _spawned_enemies: Array[Dictionary] = []
@@ -42,9 +51,9 @@ func _setup_arena() -> void:
 	_commander_label.position = Vector3(0.0, 2.2, 0.0)
 	_commander_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_commander_label.no_depth_test = true
-	_commander_label.font_size = 28
-	_commander_label.outline_size = 6
-	_commander_label.pixel_size = 0.0055
+	_commander_label.font_size = label_font_size
+	_commander_label.outline_size = label_outline_size
+	_commander_label.pixel_size = label_pixel_size
 	_commander_label.modulate = Color(0.4, 0.9, 1.0)
 	_commander_label.outline_modulate = Color(0.0, 0.2, 0.4)
 	_commander.add_child(_commander_label)
@@ -106,9 +115,9 @@ func _spawn_dummy(scene: PackedScene, pos: Vector3, title: String, is_boss: bool
 	label.position = Vector3(0.0, height_offset, 0.0)
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.no_depth_test = true
-	label.font_size = 28
-	label.outline_size = 6
-	label.pixel_size = 0.0055
+	label.font_size = label_font_size
+	label.outline_size = label_outline_size
+	label.pixel_size = label_pixel_size
 	label.text = title
 	enemy.add_child(label)
 
