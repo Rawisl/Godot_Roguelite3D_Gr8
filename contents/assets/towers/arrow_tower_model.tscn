@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://chh0khixy4m8m" path="res://contents/assets/towers/fbx/Full/_archer_tower_LVL_2.fbx" id="3_wi24g"]
 [ext_resource type="PackedScene" uid="uid://cqmmgjbhdfunn" path="res://contents/assets/towers/fbx/Full/_archer_tower_LVL_4.fbx" id="4_spj2x"]
 
-[node name="ArrowTowerModel" type="Node3D" unique_id=1343548917]
+[node name="ArrowTowerModel" type="Node3D" unique_id=1343548917 groups=["occluder"]]
 
 [node name="Level1" parent="." unique_id=1425309212 instance=ExtResource("1_5d8pq")]
 transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)

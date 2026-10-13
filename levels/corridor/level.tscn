@@ -4,6 +4,7 @@
 [ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="9_grass"]
 [ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
 [ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
+[ext_resource type="Script" uid="uid://bnij7d30nqxt0" path="res://art/occlusion/occlusion_manager.gd" id="10_occl"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -265,3 +266,6 @@ shape = SubResource("BoxShape3D_8dto7")
 
 [node name="FortressSpawn" type="Marker3D" parent="." unique_id=1763631995]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 0, 0)
+
+[node name="OcclusionManager" type="Node" parent="." unique_id=13912130]
+script = ExtResource("10_occl")
