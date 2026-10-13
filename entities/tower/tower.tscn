@@ -3,7 +3,9 @@
 [ext_resource type="Script" uid="uid://cudfty4wymw3h" path="res://entities/tower/tower.gd" id="1_uvpmh"]
 [ext_resource type="Script" uid="uid://81hjayhjt6to" path="res://common/health_component.gd" id="2_uvpmh"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_xepy2"]
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_range"]
+resource_local_to_scene = true
+height = 20.0
 
 [node name="TowerBase" type="StaticBody3D" unique_id=457661571]
 script = ExtResource("1_uvpmh")
@@ -18,7 +20,7 @@ collision_layer = 0
 collision_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="RangeArea" unique_id=49393706]
-shape = SubResource("SphereShape3D_xepy2")
+shape = SubResource("CylinderShape3D_range")
 
 [node name="Muzzle" type="Marker3D" parent="." unique_id=1818894019]
 unique_name_in_owner = true
@@ -32,6 +34,3 @@ collision_mask = 0
 [node name="Health" type="Node" parent="." unique_id=330410723]
 unique_name_in_owner = true
 script = ExtResource("2_uvpmh")
-
-[node name="ScanTimer" type="Timer" parent="." unique_id=567333275]
-unique_name_in_owner = true

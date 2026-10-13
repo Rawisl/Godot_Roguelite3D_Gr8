@@ -58,6 +58,7 @@ func place_tower(t: Tower) -> void:
 	if not is_free():
 		push_warning("Slot %s: place_tower called while OCCUPIED" % slot_id)
 		return
+	t.scan_phase = _scan_phase()
 	anchor.add_child(t)
 	t.transform = Transform3D.IDENTITY
 	tower = t
@@ -96,6 +97,10 @@ func get_rebuild_cost() -> int:
 	if last_data == null:
 		return 0
 	return last_data.get_total_cost(last_level)
+
+## TWR-15: spread tower scans over scan_interval by slot_id (fraction 0..1).
+func _scan_phase() -> float:
+	return float(absi(rand_from_seed(hash(slot_id))[0]) % 1000) / 1000.0
 
 func _free_tower() -> void:
 	if tower != null and is_instance_valid(tower):

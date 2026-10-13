@@ -6,5 +6,5 @@
 [node name="Barricade" unique_id=457661571 instance=ExtResource("1_ea0mi")]
 data = ExtResource("2_cwq22")
 
-[node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="." index="7" unique_id=1436039338]
+[node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="." index="6" unique_id=1436039338]
 affect_navigation_mesh = true
