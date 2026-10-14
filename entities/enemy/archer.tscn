@@ -3,9 +3,13 @@
 [ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_a8ugr"]
 [ext_resource type="Script" uid="uid://p7jqjxl8yng4" path="res://entities/enemy/archer.gd" id="2_lfvlt"]
 [ext_resource type="Resource" uid="uid://ca08sj3da7flm" path="res://data/enemies/archer.tres" id="2_tigow"]
+[ext_resource type="PackedScene" uid="uid://bnkq3jv27jcnd" path="res://contents/assets/characters/enemy and boss/archer_model.tscn" id="3_archer_model"]
 
 [node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_a8ugr")]
 script = ExtResource("2_lfvlt")
 data = ExtResource("2_tigow")
 
+[node name="ArcherModel" parent="Model" index="0" instance=ExtResource("3_archer_model")]
+
 [node name="Muzzle" type="Marker3D" parent="." index="6" unique_id=1479221221]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0.4)
