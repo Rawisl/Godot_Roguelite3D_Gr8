@@ -198,8 +198,13 @@ func test_stun_state_and_immunities() -> void:
 	assert_true(is_equal_approx(commander._stun_timer, 1.5), "Stun duration capped at 1.5 s")
 	assert_true(not commander.can_retreat(), "can_retreat returns false while stunned")
 
-	# 2. Cannot re-stun while already stunned
-	assert_true(not bool(commander.apply_stun(1.0)), "Cannot re-stun while already stunned")
+	# 2. Re-stun refreshes duration without stacking beyond maximum cap
+	commander._stun_timer = 0.5
+	assert_true(bool(commander.apply_stun(1.2)), "Re-stun refreshes active stun")
+	assert_true(is_equal_approx(commander._stun_timer, 1.2), "Stun timer refreshed to 1.2 s")
+	commander._stun_timer = 1.0
+	commander.apply_stun(0.4)
+	assert_true(is_equal_approx(commander._stun_timer, 1.0), "Shorter re-stun does not decrease remaining timer")
 
 	# 3. Interrupt attack
 	commander.is_stunned = false
@@ -305,15 +310,23 @@ func test_bulwark_stomp_mechanics() -> void:
 	add_child(dual_structure)
 	dual_structure.global_position = Vector3(1.0, 0.0, 0.0)
 
+	var boss_data: BossData = load("res://data/bosses/bulwark_boss.tres")
+	assert_true(boss_data != null, "bulwark_boss.tres loaded successfully")
+	if boss_data != null:
+		assert_true(boss_data.stomp_damage == 45, "Boss stomp_damage == 45")
+		assert_true(is_equal_approx(boss_data.stomp_radius, 3.0), "Boss stomp_radius == 3.0 m")
+		assert_true(is_equal_approx(boss_data.stomp_knockback, 3.0), "Boss stomp_knockback == 3.0 m")
+		assert_true(is_equal_approx(boss_data.stomp_stun_duration, 1.5), "Boss stomp_stun_duration == 1.5 s")
+
 	# 1. Execute stomp
 	var initial_cmd_hp: int = int(commander.health.hp)
 	var start_cmd_pos := commander.global_position
 
 	bulwark.execute_stomp()
 
-	assert_true(commander.health.hp == initial_cmd_hp - Bulwark.STOMP_DAMAGE, "Commander took Stomp damage (%d HP)" % Bulwark.STOMP_DAMAGE)
+	assert_true(commander.health.hp == initial_cmd_hp - bulwark.stomp_damage, "Commander took Stomp damage (%d HP)" % bulwark.stomp_damage)
 	assert_true(commander.is_stunned, "Commander stunned by Stomp")
-	assert_true(is_equal_approx(commander._stun_timer, Bulwark.STOMP_STUN_DURATION), "Commander stun duration == %.1f s" % Bulwark.STOMP_STUN_DURATION)
+	assert_true(is_equal_approx(commander._stun_timer, bulwark.stomp_stun_duration), "Commander stun duration == %.1f s" % bulwark.stomp_stun_duration)
 	assert_true(commander._knockback_velocity.length() > 0.0, "Commander received knockback impulse from Stomp")
 
 	# Wait for knockback physics loop to finish
@@ -321,13 +334,13 @@ func test_bulwark_stomp_mechanics() -> void:
 		await get_tree().physics_frame
 
 	var displacement := (commander.global_position - start_cmd_pos).length()
-	assert_true(is_equal_approx(displacement, Bulwark.STOMP_KNOCKBACK) or absf(displacement - Bulwark.STOMP_KNOCKBACK) < 0.25, "Commander displaced ~3.0 m by Boss knockback (got %.2f m)" % displacement)
+	assert_true(is_equal_approx(displacement, bulwark.stomp_knockback) or absf(displacement - bulwark.stomp_knockback) < 0.25, "Commander displaced ~3.0 m by Boss knockback (got %.2f m)" % displacement)
 	assert_true(commander.is_stunned, "Commander remains stunned during/after knockback decay")
 
 	# Check structures in radius
-	assert_true(tower.received_damage == Bulwark.STOMP_DAMAGE, "Tower in AoE took Stomp damage")
+	assert_true(tower.received_damage == bulwark.stomp_damage, "Tower in AoE took Stomp damage")
 	assert_true(tower.received_type == Enums.DamageType.BLAST, "Damage type applied to Tower is BLAST")
-	assert_true(fortress.received_damage == Bulwark.STOMP_DAMAGE, "Fortress in AoE took Stomp damage")
+	assert_true(fortress.received_damage == bulwark.stomp_damage, "Fortress in AoE took Stomp damage")
 	assert_true(far_tower.received_damage == 0, "Out of range structure unaffected by Stomp")
 	assert_true(dual_structure.hit_count == 1, "Multi-group structure receives Stomp damage only once")
 
@@ -363,6 +376,29 @@ func test_bulwark_stomp_mechanics() -> void:
 		assert_true(not active_tower._is_valid_target(tower), "Tower target validation rejects other Towers (no friendly fire)")
 		active_tower.free()
 
+	# 5. Verify Stomp detects targets using distance to collider edge
+	var walled_fortress := DummyStructure.new()
+	walled_fortress.add_to_group(&"fortress")
+	var fort_col := CollisionShape3D.new()
+	var fort_box := BoxShape3D.new()
+	fort_box.size = Vector3(4.0, 3.0, 6.0)
+	fort_col.shape = fort_box
+	walled_fortress.add_child(fort_col)
+	add_child(walled_fortress)
+	walled_fortress.global_position = Vector3.ZERO
+
+	# Standing 3.8m from center but 1.8m from collider surface (within 3.0m radius)
+	bulwark.global_position = Vector3(3.8, 0.0, 0.0)
+	bulwark.execute_stomp()
+	assert_true(walled_fortress.received_damage == bulwark.stomp_damage, "Collider edge within Stomp radius takes damage")
+
+	# Standing 5.5m from center and 3.5m from collider surface (outside 3.0m radius)
+	walled_fortress.received_damage = 0
+	bulwark.global_position = Vector3(5.5, 0.0, 0.0)
+	bulwark.execute_stomp()
+	assert_true(walled_fortress.received_damage == 0, "Collider edge outside Stomp radius takes no damage")
+
+	walled_fortress.free()
 	dual_structure.free()
 	tower.free()
 	fortress.free()

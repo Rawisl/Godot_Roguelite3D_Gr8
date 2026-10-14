@@ -95,8 +95,8 @@ func _spawn_bulwark() -> void:
 	# Visual indicator for 3.0m stomp radius centered on Bulwark
 	_bulwark_stomp_ring = MeshInstance3D.new()
 	var torus := TorusMesh.new()
-	torus.inner_radius = Bulwark.STOMP_RADIUS - 0.08
-	torus.outer_radius = Bulwark.STOMP_RADIUS + 0.08
+	torus.inner_radius = _bulwark.stomp_radius - 0.08
+	torus.outer_radius = _bulwark.stomp_radius + 0.08
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(1.0, 0.3, 0.2, 0.6)
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

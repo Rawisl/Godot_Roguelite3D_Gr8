@@ -28,6 +28,13 @@ extends EnemyData
 @export var boss_gold: int = 100
 @export var boss_prestige: int = 15
 
+@export_group("Stomp Attack")
+@export var stomp_damage: int = 45
+@export var stomp_radius: float = 3.0
+@export var stomp_knockback: float = 3.0
+@export var stomp_stun_duration: float = 1.5
+
+
 
 func get_resist(dmg_type: Enums.DamageType, phase: Enums.BossPhase) -> float:
 	if dmg_type == Enums.DamageType.TRUE:

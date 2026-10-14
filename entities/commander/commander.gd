@@ -29,8 +29,6 @@ const COMBO_ANIM_CLIPS: Array[StringName] = [
 ]
 const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 1.4]
 
-const MAX_STUN_DURATION: float = 1.5
-const STUN_IMMUNITY_DURATION: float = 3.0
 const KNOCKBACK_DURATION: float = 0.25
 const POST_ACTION_DURATION: float = 0.1
 
@@ -199,7 +197,7 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 		if _stun_timer <= 0.0:
 			is_stunned = false
 			_stun_timer = 0.0
-			_stun_immunity_timer = STUN_IMMUNITY_DURATION
+			_stun_immunity_timer = stats.stun_immunity_duration if stats != null else 3.0
 
 	if _dodge_cooldown_timer > 0.0:
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
@@ -705,15 +703,17 @@ func take_damage(damage_input: Variant) -> void:
 			_anim_player.play(ANIM_HIT, 0.05)
 
 
-func apply_stun(duration: float = MAX_STUN_DURATION) -> bool:
+func apply_stun(duration: float = -1.0) -> bool:
 	if is_commander_mode or is_dodging or is_deploying:
 		return false
 	if health != null and health.hp <= 0:
 		return false
-	if is_stunned or _stun_immunity_timer > 0.0:
+	if _stun_immunity_timer > 0.0:
 		return false
 
-	var clamped_dur := clampf(duration, 0.0, MAX_STUN_DURATION)
+	var max_dur: float = stats.max_stun_duration if stats != null else 1.5
+	var target_dur := max_dur if duration < 0.0 else duration
+	var clamped_dur := clampf(target_dur, 0.0, max_dur)
 	if clamped_dur <= 0.0:
 		return false
 
@@ -723,7 +723,7 @@ func apply_stun(duration: float = MAX_STUN_DURATION) -> bool:
 		_interrupt_skill()
 
 	is_stunned = true
-	_stun_timer = clamped_dur
+	_stun_timer = maxf(_stun_timer, clamped_dur)
 	_hit_reaction_timer = 0.0
 	_post_action_timer = 0.0
 	_post_action_facing_dir = Vector3.ZERO
