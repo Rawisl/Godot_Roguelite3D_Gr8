@@ -32,6 +32,8 @@ var is_attacking_active: bool = false
 
 var provoked_by_player: bool = false
 var provoked_timer: float = 0.0
+var taunted_by_player: bool = false
+var taunt_timer: float = 0.0
 var stagger_timer: float = 0.0
 var knockback_immunity_timer: float = 0.0
 
@@ -47,6 +49,7 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 # Shared node cache per physics frame to avoid get_nodes_in_group garbage collection overhead
 static var _cached_barricades: Array[Node] = []
 static var _cached_towers: Array[Node] = []
+static var _cached_enemies: Array[Node] = []
 static var _last_cache_frame: int = -1
 
 @onready var health: HealthComponent = %Health
@@ -165,9 +168,17 @@ func _update_timers(delta: float) -> void:
 		provoked_timer -= delta
 		if provoked_timer <= 0.0:
 			provoked_by_player = false
-		elif provoked_by_player:
+
+	if taunt_timer > 0.0:
+		taunt_timer -= delta
+		if taunt_timer <= 0.0:
+			taunted_by_player = false
+			_find_best_target()
+		elif taunted_by_player:
 			var cmd := _get_valid_commander()
 			if cmd == null or global_position.distance_to(cmd.global_position) > GameConfig.leash_distance:
+				taunted_by_player = false
+				taunt_timer = 0.0
 				provoked_by_player = false
 				provoked_timer = 0.0
 				_find_best_target()
@@ -369,6 +380,7 @@ func _update_node_cache() -> void:
 		_last_cache_frame = cur_frame
 		_cached_barricades = get_tree().get_nodes_in_group(&"barricade")
 		_cached_towers = get_tree().get_nodes_in_group(&"tower")
+		_cached_enemies = get_tree().get_nodes_in_group(&"enemy")
 
 func _is_target_ahead(target_pos: Vector3, tolerance: float = 0.5) -> bool:
 	var advance_dir := Vector3(-1.0, 0.0, 0.0)
@@ -472,8 +484,8 @@ func _find_best_target() -> void:
 		_find_default_target()
 		return
 
-	# Provocation overrides regular targeting rules
-	if provoked_by_player:
+	# Battle Cry taunt overrides regular targeting rules up to leash distance
+	if taunted_by_player:
 		var cmd := _get_valid_commander()
 		if cmd != null:
 			var dist_to_cmd := global_position.distance_to(cmd.global_position)
@@ -486,8 +498,25 @@ func _find_best_target() -> void:
 				set_target(cmd)
 				return
 			else:
+				taunted_by_player = false
+				taunt_timer = 0.0
 				provoked_by_player = false
 				provoked_timer = 0.0
+
+	# Attack hit provocation overrides regular rules within aggro range
+	if provoked_by_player:
+		var cmd := _get_valid_commander()
+		if cmd != null:
+			var dist_to_cmd := global_position.distance_to(cmd.global_position)
+			var max_range: float = data.aggro_range if data != null else 10.0
+			if dist_to_cmd <= max_range:
+				var is_melee := (data != null and not data.is_ranged and not data.is_flying)
+				if is_melee and current_target != cmd and _get_active_melee_attackers_count(cmd) >= GameConfig.max_aggro_melee:
+					set_target(cmd)
+					change_state(Enums.EnemyState.WAIT)
+					return
+				set_target(cmd)
+				return
 
 	if data == null or data.target_rules.is_empty():
 		_find_default_target()
@@ -565,8 +594,8 @@ func set_target_position(target_pos: Vector3) -> void:
 
 func _get_active_melee_attackers_count(cmd: Node3D) -> int:
 	var count: int = 0
-	var enemies := get_tree().get_nodes_in_group(&"enemy")
-	for e in enemies:
+	_update_node_cache()
+	for e in _cached_enemies:
 		if e == self or not is_instance_valid(e) or e.is_queued_for_deletion():
 			continue
 		var other := e as Enemy
@@ -576,6 +605,8 @@ func _get_active_melee_attackers_count(cmd: Node3D) -> int:
 			var other_is_melee := (other.data != null and not other.data.is_ranged and not other.data.is_flying)
 			if other_is_melee and (other.current_state == Enums.EnemyState.CHASE or other.current_state == Enums.EnemyState.ATTACK):
 				count += 1
+				if count >= GameConfig.max_aggro_melee:
+					return count
 	return count
 
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
@@ -589,6 +620,8 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if is_boss:
 		return
 
+	taunted_by_player = true
+	taunt_timer = maxf(taunt_timer, duration)
 	provoked_by_player = true
 	provoked_timer = maxf(provoked_timer, duration)
 

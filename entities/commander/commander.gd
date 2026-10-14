@@ -200,14 +200,18 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 			_stun_immunity_timer = stats.stun_immunity_duration if stats != null else 3.0
 
 	if _dodge_cooldown_timer > 0.0:
+		var prev_cd := _dodge_cooldown_timer
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
 		var total_cd := stats.dodge_cooldown if stats else 1.5
-		EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
+		if _dodge_cooldown_timer == 0.0 or ceili(prev_cd) != ceili(_dodge_cooldown_timer):
+			EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
 
 	if _battle_cry_cd_timer > 0.0:
+		var prev_cd := _battle_cry_cd_timer
 		_battle_cry_cd_timer = maxf(0.0, _battle_cry_cd_timer - delta)
 		var total_cd := stats.skill_cooldown if stats else 12.0
-		EventBus.skill_cooldown_changed.emit(&"battle_cry", _battle_cry_cd_timer, total_cd)
+		if _battle_cry_cd_timer == 0.0 or ceili(prev_cd) != ceili(_battle_cry_cd_timer):
+			EventBus.skill_cooldown_changed.emit(&"battle_cry", _battle_cry_cd_timer, total_cd)
 
 	if _battle_cry_active_timer > 0.0:
 		_battle_cry_active_timer = maxf(0.0, _battle_cry_active_timer - delta)
