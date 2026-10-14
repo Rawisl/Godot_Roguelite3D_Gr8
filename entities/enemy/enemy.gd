@@ -2,7 +2,7 @@ class_name Enemy
 extends CharacterBody3D
 
 ## Base enemy controller with state machine, navigation, spawn grace, and combat behaviors.
-## Supports melee and ranged archetypes, prioritized targeting rules (ETG-01), and crowd optimizations.
+## Supports melee and ranged archetypes, prioritized targeting rules, and crowd optimizations.
 
 signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
 
@@ -32,6 +32,8 @@ var is_attacking_active: bool = false
 
 var provoked_by_player: bool = false
 var provoked_timer: float = 0.0
+var taunted_by_player: bool = false
+var taunt_timer: float = 0.0
 var stagger_timer: float = 0.0
 var knockback_immunity_timer: float = 0.0
 
@@ -47,6 +49,7 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 # Shared node cache per physics frame to avoid get_nodes_in_group garbage collection overhead
 static var _cached_barricades: Array[Node] = []
 static var _cached_towers: Array[Node] = []
+static var _cached_enemies: Array[Node] = []
 static var _last_cache_frame: int = -1
 
 @onready var health: HealthComponent = %Health
@@ -165,6 +168,20 @@ func _update_timers(delta: float) -> void:
 		provoked_timer -= delta
 		if provoked_timer <= 0.0:
 			provoked_by_player = false
+
+	if taunt_timer > 0.0:
+		taunt_timer -= delta
+		if taunt_timer <= 0.0:
+			taunted_by_player = false
+			_find_best_target()
+		elif taunted_by_player:
+			var cmd := _get_valid_commander()
+			if cmd == null or global_position.distance_to(cmd.global_position) > GameConfig.leash_distance:
+				taunted_by_player = false
+				taunt_timer = 0.0
+				provoked_by_player = false
+				provoked_timer = 0.0
+				_find_best_target()
 
 func _update_state(delta: float) -> void:
 	match current_state:
@@ -362,6 +379,7 @@ func _update_node_cache() -> void:
 		_last_cache_frame = cur_frame
 		_cached_barricades = get_tree().get_nodes_in_group(&"barricade")
 		_cached_towers = get_tree().get_nodes_in_group(&"tower")
+		_cached_enemies = get_tree().get_nodes_in_group(&"enemy")
 
 func _is_target_ahead(target_pos: Vector3, tolerance: float = 0.5) -> bool:
 	var advance_dir := Vector3(-1.0, 0.0, 0.0)
@@ -403,7 +421,7 @@ func _is_target_valid(t: Node3D) -> bool:
 		elif t.global_position.y >= 3.0:
 			is_wall = true
 
-		# Melee ground units cannot target wall towers (ETG-01)
+		# Melee ground units cannot target wall towers
 		var can_target_wall := (data != null and (data.is_ranged or data.is_flying))
 		if is_wall and not can_target_wall:
 			return false
@@ -465,12 +483,37 @@ func _find_best_target() -> void:
 		_find_default_target()
 		return
 
-	# Aggro / Provocation overrides regular rules (AGG-01)
+	# Battle Cry taunt overrides regular targeting rules up to leash distance
+	if taunted_by_player:
+		var cmd := _get_valid_commander()
+		if cmd != null:
+			var dist_to_cmd := global_position.distance_to(cmd.global_position)
+			if dist_to_cmd <= GameConfig.leash_distance:
+				var is_melee := (data != null and not data.is_ranged and not data.is_flying)
+				if is_melee and current_target != cmd and _get_active_melee_attackers_count(cmd) >= GameConfig.max_aggro_melee:
+					set_target(cmd)
+					change_state(Enums.EnemyState.WAIT)
+					return
+				set_target(cmd)
+				return
+			else:
+				taunted_by_player = false
+				taunt_timer = 0.0
+				provoked_by_player = false
+				provoked_timer = 0.0
+
+	# Attack hit provocation overrides regular rules within aggro range
 	if provoked_by_player:
 		var cmd := _get_valid_commander()
 		if cmd != null:
 			var dist_to_cmd := global_position.distance_to(cmd.global_position)
-			if dist_to_cmd <= (data.aggro_range if data else 10.0):
+			var max_range: float = data.aggro_range if data != null else 10.0
+			if dist_to_cmd <= max_range:
+				var is_melee := (data != null and not data.is_ranged and not data.is_flying)
+				if is_melee and current_target != cmd and _get_active_melee_attackers_count(cmd) >= GameConfig.max_aggro_melee:
+					set_target(cmd)
+					change_state(Enums.EnemyState.WAIT)
+					return
 				set_target(cmd)
 				return
 
@@ -478,7 +521,7 @@ func _find_best_target() -> void:
 		_find_default_target()
 		return
 
-	# Evaluate targets in prioritized order from data.target_rules (ETG-01)
+	# Evaluate targets in prioritized order from data.target_rules
 	for rule in data.target_rules:
 		match rule:
 			&"PLAYER":
@@ -547,6 +590,53 @@ func set_target_position(target_pos: Vector3) -> void:
 	current_target_position = target_pos
 	has_target_position = true
 	nav.target_position = target_pos
+
+func _get_active_melee_attackers_count(cmd: Node3D) -> int:
+	var count: int = 0
+	_update_node_cache()
+	for e in _cached_enemies:
+		if e == self or not is_instance_valid(e) or e.is_queued_for_deletion():
+			continue
+		var other := e as Enemy
+		if other == null or other.is_dead:
+			continue
+		if other.current_target == cmd:
+			var other_is_melee := (other.data != null and not other.data.is_ranged and not other.data.is_flying)
+			if other_is_melee and (other.current_state == Enums.EnemyState.CHASE or other.current_state == Enums.EnemyState.ATTACK):
+				count += 1
+				if count >= GameConfig.max_aggro_melee:
+					return count
+	return count
+
+func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
+	if is_dead or spawn_grace or is_in_spawn_zone:
+		return
+	if commander_node == null or not is_instance_valid(commander_node):
+		return
+
+	# Bosses are immune to taunt
+	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
+	if is_boss:
+		return
+
+	taunted_by_player = true
+	taunt_timer = maxf(taunt_timer, duration)
+	provoked_by_player = true
+	provoked_timer = maxf(provoked_timer, duration)
+
+	# Check melee attacker capacity on Commander
+	var is_melee := (data != null and not data.is_ranged and not data.is_flying)
+	if is_melee and _get_active_melee_attackers_count(commander_node) >= GameConfig.max_aggro_melee:
+		set_target(commander_node)
+		change_state(Enums.EnemyState.WAIT)
+		return
+
+	set_target(commander_node)
+
+	if current_state == Enums.EnemyState.ADVANCE or current_state == Enums.EnemyState.WAIT or current_state == Enums.EnemyState.SPAWN:
+		change_state(Enums.EnemyState.CHASE)
+	elif current_state == Enums.EnemyState.CHASE:
+		_retarget_timer = 0.0
 
 func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
 	if is_dead or spawn_grace:

@@ -20,6 +20,7 @@ const ANIM_HIT: StringName = &"general/Hit_A"
 const ANIM_DEATH: StringName = &"general/Death_A"
 const ANIM_DODGE_FWD: StringName = &"advance/Dodge_Forward"
 const ANIM_DODGE_BACK: StringName = &"advance/Dodge_Backward"
+const ANIM_SKILL: StringName = &"simulation/Cheering"
 
 const COMBO_ANIM_CLIPS: Array[StringName] = [
 	&"melee/Melee_1H_Attack_Chop",
@@ -30,6 +31,12 @@ const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 1.4]
 
 var aim_dir: Vector3 = Vector3.FORWARD
 var is_commander_mode: bool = false
+
+# Skill state
+var is_using_skill: bool = false
+var _skill_timer: float = 0.0
+var _battle_cry_cd_timer: float = 0.0
+var _battle_cry_active_timer: float = 0.0
 
 # Dodge state
 var is_dodging: bool = false
@@ -112,14 +119,16 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if not is_dodging:
+	if not is_dodging and not is_using_skill:
 		_check_dodge_input(camera)
+		_check_skill_input()
 		_check_attack_input()
 
 	if is_dodging:
 		_update_dodge_movement(delta)
-
-	if not is_dodging:
+	elif is_using_skill:
+		_update_skill_movement(delta)
+	else:
 		_update_movement(camera, delta)
 
 	move_and_slide()
@@ -132,9 +141,26 @@ func _physics_process(delta: float) -> void:
 
 func _update_cooldowns_and_timers(delta: float) -> void:
 	if _dodge_cooldown_timer > 0.0:
+		var prev_cd := _dodge_cooldown_timer
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
 		var total_cd := stats.dodge_cooldown if stats else 1.5
-		EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
+		if _dodge_cooldown_timer == 0.0 or ceili(prev_cd) != ceili(_dodge_cooldown_timer):
+			EventBus.skill_cooldown_changed.emit(&"dodge", _dodge_cooldown_timer, total_cd)
+
+	if _battle_cry_cd_timer > 0.0:
+		var prev_cd := _battle_cry_cd_timer
+		_battle_cry_cd_timer = maxf(0.0, _battle_cry_cd_timer - delta)
+		var total_cd := stats.skill_cooldown if stats else 12.0
+		if _battle_cry_cd_timer == 0.0 or ceili(prev_cd) != ceili(_battle_cry_cd_timer):
+			EventBus.skill_cooldown_changed.emit(&"battle_cry", _battle_cry_cd_timer, total_cd)
+
+	if _battle_cry_active_timer > 0.0:
+		_battle_cry_active_timer = maxf(0.0, _battle_cry_active_timer - delta)
+
+	if is_using_skill:
+		_skill_timer -= delta
+		if _skill_timer <= 0.0:
+			_end_skill()
 
 	if is_attacking and not _has_struck:
 		_strike_timer -= delta
@@ -218,6 +244,74 @@ func _end_dodge() -> void:
 	set_collision_mask_value(COLLISION_LAYER_ENEMY, true)
 
 
+func _check_skill_input() -> void:
+	if is_commander_mode or is_dodging or is_using_skill or is_attacking or _battle_cry_cd_timer > 0.0:
+		return
+	if health != null and health.hp <= 0:
+		return
+
+	if Input.is_action_just_pressed(&"battle_cry"):
+		_start_battle_cry()
+
+
+func _start_battle_cry() -> void:
+	is_using_skill = true
+	var anim_time: float = stats.skill_animation_time if stats else 0.5
+	_skill_timer = anim_time
+
+	var total_cd: float = stats.skill_cooldown if stats else 12.0
+	_battle_cry_cd_timer = total_cd
+	_battle_cry_active_timer = stats.battle_cry_duration if stats else 4.0
+
+	velocity.x = 0.0
+	velocity.z = 0.0
+
+	EventBus.skill_cooldown_changed.emit(&"battle_cry", _battle_cry_cd_timer, total_cd)
+
+	if _anim_player != null and _anim_player.has_animation(ANIM_SKILL):
+		var anim_len := _anim_player.get_animation(ANIM_SKILL).length
+		var speed := anim_len / maxf(0.01, anim_time)
+		_anim_player.play(ANIM_SKILL, 0.05, speed)
+
+	_taunt_enemies_in_range()
+
+
+func _update_skill_movement(delta: float) -> void:
+	velocity.x = 0.0
+	velocity.z = 0.0
+	if not is_on_floor():
+		velocity.y -= _gravity * delta
+
+
+func _end_skill() -> void:
+	is_using_skill = false
+	_skill_timer = 0.0
+
+
+func _interrupt_skill() -> void:
+	if is_using_skill:
+		is_using_skill = false
+		_skill_timer = 0.0
+
+
+func _taunt_enemies_in_range() -> void:
+	var radius: float = stats.battle_cry_radius if stats else 6.0
+	var radius_sq: float = radius * radius
+	var duration: float = stats.battle_cry_duration if stats else 4.0
+	var enemies := get_tree().get_nodes_in_group(&"enemy")
+
+	for enemy in enemies:
+		var enemy_node := enemy as Node3D
+		if enemy_node == null or not is_instance_valid(enemy_node) or enemy_node.is_queued_for_deletion():
+			continue
+
+		var diff := enemy_node.global_position - global_position
+		diff.y = 0.0
+		if diff.length_squared() <= radius_sq:
+			if enemy_node.has_method("apply_commander_taunt"):
+				enemy_node.apply_commander_taunt(self, duration)
+
+
 func _update_movement(camera: Camera3D, delta: float) -> void:
 	if is_attacking:
 		velocity.x = 0.0
@@ -287,6 +381,9 @@ func _update_model_facing(delta: float) -> void:
 	elif is_dodging:
 		target_dir = aim_dir if _is_backstep_dodge else _dodge_dir
 		snap_instantly = true
+	elif is_using_skill:
+		target_dir = aim_dir
+		snap_instantly = false
 	else:
 		var horizontal_vel := Vector2(velocity.x, velocity.z)
 		if horizontal_vel.length() > 0.1:
@@ -473,9 +570,10 @@ func take_damage(damage_input: Variant) -> void:
 		return
 
 	var final_amount: int = info.amount
-	if info.damage_type != Enums.DamageType.TRUE and stats != null:
+	if info.damage_type != Enums.DamageType.TRUE and stats != null and info.amount > 0:
 		var effective_armor: float = clampf(stats.armor_pct, 0.0, 0.75)
-		final_amount = maxi(1, ceili(float(info.amount) * (1.0 - effective_armor)))
+		var skill_mult: float = stats.battle_cry_damage_mult if _battle_cry_active_timer > 0.0 else 1.0
+		final_amount = maxi(1, ceili(float(info.amount) * (1.0 - effective_armor) * skill_mult))
 
 	var processed_info := DamageInfo.new(
 		final_amount,
@@ -486,7 +584,7 @@ func take_damage(damage_input: Variant) -> void:
 	)
 	health.take_damage(processed_info)
 
-	if not is_attacking and not is_dodging and health.hp > 0:
+	if not is_attacking and not is_dodging and not is_using_skill and health.hp > 0:
 		if _anim_player != null and _anim_player.has_animation(ANIM_HIT):
 			_anim_player.play(ANIM_HIT, 0.05)
 
@@ -500,6 +598,7 @@ func _on_died() -> void:
 		_end_dodge()
 	if is_attacking:
 		_interrupt_attack()
+	_interrupt_skill()
 	EventBus.commander_died.emit()
 	if _anim_player != null and _anim_player.has_animation(ANIM_DEATH):
 		_anim_player.play(ANIM_DEATH)
@@ -512,6 +611,8 @@ func _on_mode_changed(mode: StringName) -> void:
 			_end_dodge()
 		if is_attacking:
 			_interrupt_attack()
+		_interrupt_skill()
+		_battle_cry_active_timer = 0.0
 
 
 func _debug_report_speed(delta: float) -> void:
