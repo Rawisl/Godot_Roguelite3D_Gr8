@@ -140,7 +140,9 @@ func _spawn_dummy(scene: PackedScene, pos: Vector3, title: String, is_boss: bool
 	})
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _battle_cry_cooldown_left > 0.0:
+		_battle_cry_cooldown_left = maxf(0.0, _battle_cry_cooldown_left - delta)
 	_update_ui()
 	_update_overhead_labels()
 
@@ -233,7 +235,12 @@ func _update_overhead_labels() -> void:
 		var is_targeting_cmd := (enemy.current_target == _commander)
 		var target_str := "COMMANDER" if is_targeting_cmd else "None / Fortress"
 
-		var prov_str := "YES (%.1fs)" % enemy.provoked_timer if enemy.provoked_by_player else "NO"
+		var status_parts: Array[String] = []
+		if enemy.taunted_by_player:
+			status_parts.append("Taunt(%.1fs)" % enemy.taunt_timer)
+		if enemy.provoked_by_player and not enemy.taunted_by_player:
+			status_parts.append("Hit(%.1fs)" % enemy.provoked_timer)
+		var prov_str: String = " / ".join(status_parts) if not status_parts.is_empty() else "NO"
 		var state_names: Array[String] = ["SPAWN", "ADVANCE", "CHASE", "ATTACK", "STAGGER", "WAIT", "FRENZY", "DEAD"]
 		var state_str: String = "STATE"
 		if enemy.current_state >= 0 and enemy.current_state < state_names.size():
