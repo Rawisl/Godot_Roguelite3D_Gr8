@@ -219,7 +219,11 @@ func _update_state(delta: float) -> void:
 				change_state(Enums.EnemyState.ADVANCE)
 				return
 
-			var diff := current_target.global_position - global_position
+			if not _try_hold_melee_slot(current_target):
+				change_state(Enums.EnemyState.WAIT)
+				return
+
+			var diff := _get_attack_point(current_target) - global_position
 			diff.y = 0.0
 			var dist_to_target: float = diff.length()
 			var attack_rng: float = data.attack_range if data else 1.5
@@ -235,7 +239,7 @@ func _update_state(delta: float) -> void:
 			velocity.z = 0.0
 
 			if current_target != null and is_instance_valid(current_target):
-				var look_dir := (current_target.global_position - global_position)
+				var look_dir := (_get_attack_point(current_target) - global_position)
 				look_dir.y = 0.0
 				if look_dir.length_squared() > 0.001:
 					var target_yaw := atan2(-look_dir.x, -look_dir.z)
@@ -259,7 +263,7 @@ func _update_state(delta: float) -> void:
 						else:
 							change_state(Enums.EnemyState.ADVANCE)
 					else:
-						var diff_after := current_target.global_position - global_position
+						var diff_after := _get_attack_point(current_target) - global_position
 						diff_after.y = 0.0
 						var dist_after: float = diff_after.length()
 						var attack_rng: float = data.attack_range if data else 1.5
@@ -293,7 +297,8 @@ func _update_state(delta: float) -> void:
 			if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"fortress"):
 				_find_default_target()
 			if current_target != null and is_instance_valid(current_target):
-				var diff_f := current_target.global_position - global_position
+				_try_hold_melee_slot(current_target)
+				var diff_f := _get_attack_point(current_target) - global_position
 				diff_f.y = 0.0
 				if diff_f.length() <= (data.attack_range if data else 1.5):
 					change_state(Enums.EnemyState.ATTACK)
@@ -311,7 +316,7 @@ func _execute_melee_strike() -> void:
 	if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 		return
 
-	var diff := current_target.global_position - global_position
+	var diff := _get_attack_point(current_target) - global_position
 	diff.y = 0.0
 	var dist := diff.length()
 	var max_reach := (data.attack_range if data else 1.5) + 0.6
@@ -345,7 +350,7 @@ func _update_target_tracking(delta: float) -> void:
 	if _path_timer >= PATH_UPDATE_INTERVAL:
 		_path_timer = 0.0
 		if current_target != null and is_instance_valid(current_target):
-			nav.target_position = current_target.global_position
+			nav.target_position = _get_attack_point(current_target)
 		elif has_target_position:
 			nav.target_position = current_target_position
 		else:
@@ -581,16 +586,48 @@ func _get_fortress_fallback_position() -> Vector3:
 	return Vector3(-17.5, global_position.y, 0.0)
 
 func set_target(target_node: Node3D) -> void:
+	if target_node != current_target:
+		_release_melee_slot()
 	current_target = target_node
 	has_target_position = false
 	if current_target != null:
-		nav.target_position = current_target.global_position
+		nav.target_position = _get_attack_point(current_target)
 
 func set_target_position(target_pos: Vector3) -> void:
+	_release_melee_slot()
 	current_target = null
 	current_target_position = target_pos
 	has_target_position = true
 	nav.target_position = target_pos
+
+## Attack point: the Fortress returns the claimed slot position (or the gate center); other targets use their own position.
+func _get_attack_point(t: Node3D) -> Vector3:
+	if t.has_method(&"get_melee_slot_position"):
+		return t.get_melee_slot_position(self)
+	return t.global_position
+
+## Only ground melee units use attack slots (CRD-06: flying and ranged units do not take slots).
+func _uses_melee_slot(t: Node3D) -> bool:
+	if t == null or not is_instance_valid(t) or not t.has_method(&"claim_melee_slot"):
+		return false
+	return data == null or not (data.is_ranged or data.is_flying)
+
+## Returns false when the unit must WAIT: within crowd_claim_distance of the Fortress and no slot is free.
+## Distance is measured along the corridor (X axis), since slots are spread across the gate width.
+func _try_hold_melee_slot(t: Node3D) -> bool:
+	if not _uses_melee_slot(t) or t.has_melee_slot(self):
+		return true
+	var gate: Vector3 = t.get_melee_slot_position(self)
+	if absf(global_position.x - gate.x) > GameConfig.crowd_claim_distance:
+		return true
+	if t.claim_melee_slot(self):
+		nav.target_position = t.get_melee_slot_position(self)
+		return true
+	return is_frenzied
+
+func _release_melee_slot() -> void:
+	if current_target != null and is_instance_valid(current_target) and current_target.has_method(&"release_melee_slot"):
+		current_target.release_melee_slot(self)
 
 func _get_active_melee_attackers_count(cmd: Node3D) -> int:
 	var count: int = 0
@@ -675,6 +712,7 @@ func _on_died() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	_release_melee_slot()
 	change_state(Enums.EnemyState.DEAD)
 	set_physics_process(false)
 

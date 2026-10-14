@@ -5,6 +5,7 @@
 [ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
 [ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
 [ext_resource type="Script" uid="uid://bnij7d30nqxt0" path="res://art/occlusion/occlusion_manager.gd" id="10_occl"]
+[ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="11_fortress"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -43,12 +44,6 @@ size = Vector3(40, 1, 1)
 
 [sub_resource type="BoxShape3D" id="Box_wall_front"]
 size = Vector3(40, 3, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_fortress"]
-size = Vector3(5, 4, 16)
-
-[sub_resource type="BoxShape3D" id="Box_fortress"]
-size = Vector3(5, 4, 16)
 
 [sub_resource type="BoxMesh" id="BoxMesh_gate"]
 size = Vector3(0.2, 3, 4)
@@ -139,15 +134,8 @@ surface_material_override/0 = ExtResource("9_stone")
 [node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/WallFront" unique_id=125180418]
 shape = SubResource("Box_wall_front")
 
-[node name="Fortress" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=792113795]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 2, 0)
-
-[node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/Fortress" unique_id=1056555563]
-mesh = SubResource("BoxMesh_fortress")
-surface_material_override/0 = ExtResource("9_stone")
-
-[node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/Fortress" unique_id=3406688]
-shape = SubResource("Box_fortress")
+[node name="Fortress" parent="NavigationRegion3D/Geometry" unique_id=792113795 instance=ExtResource("11_fortress")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 0, 0)
 
 [node name="GateVisual" type="MeshInstance3D" parent="NavigationRegion3D/Geometry" unique_id=1693307904]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.9, 1.5, 0)

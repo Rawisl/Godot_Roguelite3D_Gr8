@@ -49,7 +49,7 @@ func _ready() -> void:
 	var level := LEVEL.instantiate()
 	add_child(level)
 	# Ẩn khối blockout fortress, thay bằng model
-	level.get_node("NavigationRegion3D/Geometry/Fortress/Mesh").visible = false
+	level.get_node("NavigationRegion3D/Geometry/Fortress/Model").visible = false
 	level.get_node("NavigationRegion3D/Geometry/GateVisual").visible = false
 
 	var fortress := FORTRESS.instantiate() as Node3D
