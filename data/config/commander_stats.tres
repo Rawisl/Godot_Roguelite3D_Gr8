@@ -4,4 +4,6 @@
 
 [resource]
 script = ExtResource("1_6r4ea")
+max_stun_duration = 1.5
+stun_immunity_duration = 3.0
 metadata/_custom_type_script = "uid://dwmou5l5vufl6"

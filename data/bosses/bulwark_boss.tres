@@ -5,4 +5,11 @@
 [resource]
 script = ExtResource("1_00uft")
 id = &"bulwark"
+attack_interval = 2.5
+attack_range = 3.0
+knockback_immune = true
+stomp_damage = 45
+stomp_radius = 3.0
+stomp_knockback = 3.0
+stomp_stun_duration = 1.5
 metadata/_custom_type_script = "uid://bhfhlrn5orfb"

@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://cx6g0f9s8u1b"]
+
+[ext_resource type="Script" uid="uid://lytus1j8a73r" path="res://tests/test_stun_knockback_runner.gd" id="1_runner"]
+
+[node name="TestStunKnockbackRunner" type="Node3D"]
+script = ExtResource("1_runner")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 10)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 10, 0)

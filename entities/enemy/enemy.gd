@@ -322,7 +322,8 @@ func _execute_melee_strike() -> void:
 		var dmg := data.base_damage if data else 6
 		var dmg_type := data.damage_type if data else Enums.DamageType.SLASH
 		var hit_dir := diff.normalized() if diff.length_squared() > 0.001 else Vector3.FORWARD
-		var info := DamageInfo.new(dmg, dmg_type, self, 0.0, hit_dir)
+		var kb_force: float = data.knockback_force if data != null else 0.0
+		var info := DamageInfo.new(dmg, dmg_type, self, kb_force, hit_dir)
 		current_target.take_damage(info)
 
 func _move_towards_direction(dir: Vector3) -> void:
@@ -655,7 +656,8 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		provoked_by_player = true
 		provoked_timer = GameConfig.aggro_duration
 
-	if info.knockback_force > 0.0 and (data == null or not data.knockback_immune):
+	var is_knockback_immune: bool = is_in_group(&"boss") or (data != null and data.knockback_immune)
+	if info.knockback_force > 0.0 and not is_knockback_immune:
 		if knockback_immunity_timer <= 0.0:
 			var kb_dir := info.hit_direction
 			kb_dir.y = 0.0

@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://bvyfx3k1t4g7p"]
+
+[ext_resource type="Script" uid="uid://b6iobp774aw46" path="res://tests/test_playtest_stun_knockback.gd" id="1_stun_kb"]
+[ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="2_grass"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.45, 0.65, 0.85, 1)
+
+[sub_resource type="Sky" id="Sky_sky"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_env"]
+background_mode = 2
+sky = SubResource("Sky_sky")
+ambient_light_source = 3
+ambient_light_energy = 0.6
+tonemap_mode = 3
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(80, 0.5, 80)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(80, 0.5, 80)
+
+[node name="TestPlaytestStunKnockback" type="Node3D" unique_id=1129667644]
+script = ExtResource("1_stun_kb")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1032302775]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 15, 25, 15)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=689234557]
+environment = SubResource("Environment_env")
+
+[node name="Ground" type="StaticBody3D" parent="." unique_id=895519491]
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground" unique_id=466376365]
+shape = SubResource("BoxShape3D_ground")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground" unique_id=30599345]
+mesh = SubResource("BoxMesh_ground")
+surface_material_override/0 = ExtResource("2_grass")
+
+[node name="CameraRig" type="Node3D" parent="." unique_id=601741326]
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=60357864]
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 16, 16, 16)
+projection = 1
+current = true
+size = 22.0
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=459328821]
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer" unique_id=1961878273]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 680.0
+offset_bottom = 450.0
+
+[node name="Panel" type="PanelContainer" parent="CanvasLayer/Margin" unique_id=777140480]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/Margin/Panel" unique_id=755671176]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoLabel" type="Label" parent="CanvasLayer/Margin/Panel/VBox" unique_id=1138580431]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Loading..."
+
+[node name="LogLabel" type="Label" parent="CanvasLayer/Margin/Panel/VBox" unique_id=164507657]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 13
+text = "[Ready]"

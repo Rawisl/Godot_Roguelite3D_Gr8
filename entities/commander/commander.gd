@@ -29,8 +29,25 @@ const COMBO_ANIM_CLIPS: Array[StringName] = [
 ]
 const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 1.4]
 
+const KNOCKBACK_DURATION: float = 0.25
+const POST_ACTION_DURATION: float = 0.1
+
 var aim_dir: Vector3 = Vector3.FORWARD
 var is_commander_mode: bool = false
+var is_deploying: bool = false
+
+var _knockback_velocity: Vector3 = Vector3.ZERO
+var _knockback_decay: float = 0.0
+# True if knockback was applied to velocity during this physics frame
+var _was_pushed: bool = false
+var _hit_reaction_timer: float = 0.0
+var _post_action_timer: float = 0.0
+var _post_action_facing_dir: Vector3 = Vector3.ZERO
+
+# Stun state
+var is_stunned: bool = false
+var _stun_timer: float = 0.0
+var _stun_immunity_timer: float = 0.0
 
 # Skill state
 var is_using_skill: bool = false
@@ -80,6 +97,7 @@ func _setup_health() -> void:
 
 	health.hp_changed.connect(_on_hp_changed)
 	health.died.connect(_on_died)
+	EventBus.commander_hp_changed.emit.call_deferred(health.hp, health.max_hp)
 
 
 func _setup_animation_player() -> void:
@@ -119,6 +137,20 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	if is_stunned:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		if not _knockback_velocity.is_zero_approx():
+			velocity.x += _knockback_velocity.x
+			velocity.z += _knockback_velocity.z
+			_knockback_velocity = _knockback_velocity.move_toward(Vector3.ZERO, _knockback_decay * delta)
+		if not is_on_floor():
+			velocity.y -= _gravity * delta
+		move_and_slide()
+		if _anim_player != null and not _anim_player.is_playing() and _anim_player.has_animation(ANIM_IDLE):
+			_anim_player.play(ANIM_IDLE, 0.2)
+		return
+
 	if not is_dodging and not is_using_skill:
 		_check_dodge_input(camera)
 		_check_skill_input()
@@ -131,7 +163,18 @@ func _physics_process(delta: float) -> void:
 	else:
 		_update_movement(camera, delta)
 
+	_was_pushed = false
+	if not _knockback_velocity.is_zero_approx():
+		_was_pushed = true
+		velocity.x += _knockback_velocity.x
+		velocity.z += _knockback_velocity.z
+		_knockback_velocity = _knockback_velocity.move_toward(Vector3.ZERO, _knockback_decay * delta)
+
 	move_and_slide()
+
+	if is_dodging and _dodge_timer <= 0.0:
+		_end_dodge()
+
 	_update_aim(camera)
 	_update_model_facing(delta)
 
@@ -140,6 +183,22 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_cooldowns_and_timers(delta: float) -> void:
+	if _hit_reaction_timer > 0.0:
+		_hit_reaction_timer = maxf(0.0, _hit_reaction_timer - delta)
+
+	if _post_action_timer > 0.0:
+		_post_action_timer = maxf(0.0, _post_action_timer - delta)
+
+	if _stun_immunity_timer > 0.0:
+		_stun_immunity_timer = maxf(0.0, _stun_immunity_timer - delta)
+
+	if is_stunned:
+		_stun_timer -= delta
+		if _stun_timer <= 0.0:
+			is_stunned = false
+			_stun_timer = 0.0
+			_stun_immunity_timer = stats.stun_immunity_duration if stats != null else 3.0
+
 	if _dodge_cooldown_timer > 0.0:
 		var prev_cd := _dodge_cooldown_timer
 		_dodge_cooldown_timer = maxf(0.0, _dodge_cooldown_timer - delta)
@@ -206,6 +265,11 @@ func _start_dodge(camera: Camera3D) -> void:
 		dodge_clip = ANIM_DODGE_BACK
 
 	is_dodging = true
+	_knockback_velocity = Vector3.ZERO
+	_knockback_decay = 0.0
+	_hit_reaction_timer = 0.0
+	_post_action_timer = 0.0
+	_post_action_facing_dir = Vector3.ZERO
 	_dodge_timer = stats.dodge_iframe if stats else 0.3
 	_dodge_cooldown_timer = stats.dodge_cooldown if stats else 1.5
 
@@ -233,14 +297,16 @@ func _update_dodge_movement(delta: float) -> void:
 		velocity.y -= _gravity * delta
 
 	_dodge_timer -= delta
-	if _dodge_timer <= 0.0:
-		_end_dodge()
 
 
 func _end_dodge() -> void:
+	_post_action_facing_dir = aim_dir if _is_backstep_dodge else _dodge_dir
+	_post_action_timer = POST_ACTION_DURATION
 	is_dodging = false
 	_is_backstep_dodge = false
 	_dodge_timer = 0.0
+	velocity.x = 0.0
+	velocity.z = 0.0
 	set_collision_mask_value(COLLISION_LAYER_ENEMY, true)
 
 
@@ -320,30 +386,40 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 			velocity.y -= _gravity * delta
 		return
 
-	var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
-	var speed := stats.move_speed if stats else 6.0
+	if not _knockback_velocity.is_zero_approx():
+		velocity.x = 0.0
+		velocity.z = 0.0
+	else:
+		var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+		var speed := stats.move_speed if stats else 6.0
 
-	var cam_basis := camera.global_transform.basis
-	var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
-	var forward := Vector3(-cam_basis.z.x, 0.0, -cam_basis.z.z).normalized()
+		var cam_basis := camera.global_transform.basis
+		var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
+		var forward := Vector3(-cam_basis.z.x, 0.0, -cam_basis.z.z).normalized()
 
-	var dir := right * input.x + forward * (-input.y)
-	velocity.x = dir.x * speed
-	velocity.z = dir.z * speed
+		var dir := right * input.x + forward * (-input.y)
+		velocity.x = dir.x * speed
+		velocity.z = dir.z * speed
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 
 	if _anim_player != null and not is_attacking and not is_dodging and health.hp > 0:
 		var is_playing_melee := _anim_player.is_playing() and _anim_player.current_animation.begins_with("melee/")
+		var is_playing_hit := _anim_player.is_playing() and _anim_player.current_animation == ANIM_HIT
+		var is_hit_locked := _hit_reaction_timer > 0.0 or not _knockback_velocity.is_zero_approx()
+
 		if not is_playing_melee:
-			var horizontal_vel := Vector2(velocity.x, velocity.z)
-			if horizontal_vel.length() > 0.1:
-				if _anim_player.current_animation != ANIM_RUN:
-					_anim_player.play(ANIM_RUN, 0.15)
+			if is_playing_hit and is_hit_locked:
+				pass
 			else:
-				if _anim_player.current_animation != ANIM_IDLE:
-					_anim_player.play(ANIM_IDLE, 0.15)
+				var horizontal_vel := Vector2(velocity.x, velocity.z)
+				if horizontal_vel.length() > 0.1:
+					if _anim_player.current_animation != ANIM_RUN:
+						_anim_player.play(ANIM_RUN, 0.15)
+				elif not is_playing_hit:
+					if _anim_player.current_animation != ANIM_IDLE:
+						_anim_player.play(ANIM_IDLE, 0.15)
 
 
 func _update_aim(camera: Camera3D) -> void:
@@ -384,6 +460,21 @@ func _update_model_facing(delta: float) -> void:
 	elif is_using_skill:
 		target_dir = aim_dir
 		snap_instantly = false
+	elif _was_pushed:
+		target_dir = -_knockback_velocity.normalized()
+		snap_instantly = false
+	elif _post_action_timer > 0.0 and not _post_action_facing_dir.is_zero_approx():
+		var horizontal_vel := Vector2(velocity.x, velocity.z)
+		if horizontal_vel.length() > 0.1:
+			var move_dir := Vector3(velocity.x, 0.0, velocity.z).normalized()
+			var t := 1.0 - clampf(_post_action_timer / POST_ACTION_DURATION, 0.0, 1.0)
+			if _post_action_facing_dir.dot(move_dir) < -0.999:
+				target_dir = move_dir
+			else:
+				target_dir = _post_action_facing_dir.slerp(move_dir, t).normalized()
+		else:
+			target_dir = _post_action_facing_dir
+		snap_instantly = false
 	else:
 		var horizontal_vel := Vector2(velocity.x, velocity.z)
 		if horizontal_vel.length() > 0.1:
@@ -416,6 +507,8 @@ func _start_attack(hit_index: int) -> void:
 	current_combo_hit = hit_index
 	_has_buffered_attack = false
 	_has_struck = false
+	_post_action_timer = 0.0
+	_post_action_facing_dir = Vector3.ZERO
 
 	var interval := stats.attack_interval if stats else 0.45
 	_attack_timer = interval
@@ -440,6 +533,8 @@ func _end_attack() -> void:
 		var next_hit := (current_combo_hit % 3) + 1
 		_start_attack(next_hit)
 	else:
+		_post_action_facing_dir = _attack_strike_dir
+		_post_action_timer = POST_ACTION_DURATION
 		if current_combo_hit >= 3:
 			current_combo_hit = 1
 			_combo_reset_timer = 0.0
@@ -454,6 +549,8 @@ func _interrupt_attack() -> void:
 	_attack_timer = 0.0
 	_has_struck = false
 	_has_buffered_attack = false
+	_post_action_timer = 0.0
+	_post_action_facing_dir = Vector3.ZERO
 
 	if struck:
 		if current_combo_hit >= 3:
@@ -566,7 +663,7 @@ func take_damage(damage_input: Variant) -> void:
 	else:
 		return
 
-	if is_dodging and info.damage_type != Enums.DamageType.TRUE:
+	if (is_dodging or is_deploying) and info.damage_type != Enums.DamageType.TRUE:
 		return
 
 	var final_amount: int = info.amount
@@ -584,9 +681,67 @@ func take_damage(damage_input: Variant) -> void:
 	)
 	health.take_damage(processed_info)
 
+	var can_knockback: bool = not is_dodging and not is_deploying and not is_commander_mode
+	if can_knockback and info.knockback_force > 0.0 and health.hp > 0:
+		var kb_dir := info.hit_direction
+		kb_dir.y = 0.0
+		if kb_dir.length_squared() > 0.001:
+			kb_dir = kb_dir.normalized()
+		elif info.source is Node3D:
+			var from_source: Vector3 = global_position - (info.source as Node3D).global_position
+			from_source.y = 0.0
+			if from_source.length_squared() > 0.001:
+				kb_dir = from_source.normalized()
+			else:
+				kb_dir = -Vector3(sin(_aim_pivot.rotation.y), 0.0, cos(_aim_pivot.rotation.y))
+		else:
+			kb_dir = -Vector3(sin(_aim_pivot.rotation.y), 0.0, cos(_aim_pivot.rotation.y))
+		var kb_duration: float = KNOCKBACK_DURATION
+		var kb_speed: float = (info.knockback_force * 2.0) / kb_duration
+		_knockback_velocity = kb_dir * kb_speed
+		_knockback_decay = kb_speed / kb_duration
+
 	if not is_attacking and not is_dodging and not is_using_skill and health.hp > 0:
+		_hit_reaction_timer = KNOCKBACK_DURATION
 		if _anim_player != null and _anim_player.has_animation(ANIM_HIT):
 			_anim_player.play(ANIM_HIT, 0.05)
+
+
+func apply_stun(duration: float = -1.0) -> bool:
+	if is_commander_mode or is_dodging or is_deploying:
+		return false
+	if health != null and health.hp <= 0:
+		return false
+	if _stun_immunity_timer > 0.0:
+		return false
+
+	var max_dur: float = stats.max_stun_duration if stats != null else 1.5
+	var target_dur := max_dur if duration < 0.0 else duration
+	var clamped_dur := clampf(target_dur, 0.0, max_dur)
+	if clamped_dur <= 0.0:
+		return false
+
+	if is_attacking:
+		_interrupt_attack()
+	if is_using_skill:
+		_interrupt_skill()
+
+	is_stunned = true
+	_stun_timer = maxf(_stun_timer, clamped_dur)
+	_hit_reaction_timer = 0.0
+	_post_action_timer = 0.0
+	_post_action_facing_dir = Vector3.ZERO
+	velocity.x = 0.0
+	velocity.z = 0.0
+
+	if _anim_player != null and _anim_player.has_animation(ANIM_HIT):
+		_anim_player.play(ANIM_HIT, 0.05)
+
+	return true
+
+
+func can_retreat() -> bool:
+	return not is_commander_mode and not is_stunned and health != null and health.hp > 0
 
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
@@ -594,6 +749,14 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 
 
 func _on_died() -> void:
+	_knockback_velocity = Vector3.ZERO
+	_knockback_decay = 0.0
+	_hit_reaction_timer = 0.0
+	_post_action_timer = 0.0
+	_post_action_facing_dir = Vector3.ZERO
+	is_stunned = false
+	_stun_timer = 0.0
+	_stun_immunity_timer = 0.0
 	if is_dodging:
 		_end_dodge()
 	if is_attacking:
@@ -607,6 +770,13 @@ func _on_died() -> void:
 func _on_mode_changed(mode: StringName) -> void:
 	is_commander_mode = (mode == &"COMMANDER")
 	if is_commander_mode:
+		_knockback_velocity = Vector3.ZERO
+		_knockback_decay = 0.0
+		_hit_reaction_timer = 0.0
+		_post_action_timer = 0.0
+		_post_action_facing_dir = Vector3.ZERO
+		is_stunned = false
+		_stun_timer = 0.0
 		if is_dodging:
 			_end_dodge()
 		if is_attacking:
