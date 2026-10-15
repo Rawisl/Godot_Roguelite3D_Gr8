@@ -88,17 +88,11 @@ func _ready() -> void:
 
 func _setup_anim_player() -> void:
 	anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
-	if EventBus != null and not EventBus.time_scale_changed.is_connected(_on_time_scale_changed):
-		EventBus.time_scale_changed.connect(_on_time_scale_changed)
-	_update_anim_speed()
-
-func _on_time_scale_changed(_new_scale: int, _locked: bool) -> void:
 	_update_anim_speed()
 
 func _update_anim_speed() -> void:
 	if anim_player != null and is_instance_valid(anim_player):
-		var scale_val: float = float(TimeManager.time_scale) if (TimeManager != null and "time_scale" in TimeManager) else 1.0
-		anim_player.speed_scale = _base_anim_speed * scale_val
+		anim_player.speed_scale = _base_anim_speed
 
 func play_anim(clip_name: StringName, base_speed: float = 1.0) -> void:
 	if anim_player == null or not is_instance_valid(anim_player):
