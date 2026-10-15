@@ -57,6 +57,7 @@ func _setup_arena() -> void:
 	_commander = COMMANDER_SCENE.instantiate() as CharacterBody3D
 	_commander.position = Vector3(-2.0, 0.0, 0.0)
 	add_child(_commander)
+	_commander.health.max_hp = 200
 	_commander.health.hp = 200
 
 	# 3D label for Commander

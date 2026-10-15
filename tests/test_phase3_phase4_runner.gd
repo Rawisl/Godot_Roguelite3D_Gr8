@@ -192,6 +192,17 @@ func test_group_4_dodge_evades_arrow() -> void:
 	proj_dodge._apply_hit(commander)
 	assert_eq(int(commander.health.hp), hp_before_dodge_shot, "Commander takes 0 damage when DODGING (AI-02 Dodge né được)")
 
+	# Case C: Commander walks 2m sideways before impact -> arrow lands and does not damage Commander (AI-02 no homing)
+	commander.is_dodging = false
+	var hp_before_move_shot: int = int(commander.health.hp)
+	var proj_move := proj_scene.instantiate() as Projectile
+	add_child(proj_move)
+	proj_move.launch(Vector3(5.0, 1.2, 0.0), Vector3(0.0, 0.0, 0.0), 8, null, Enums.DamageType.PIERCE, true, 2.5, commander)
+	commander.global_position = Vector3(0.0, 0.0, 2.0)
+	proj_move.global_position = Vector3(0.0, 0.0, 0.0)
+	proj_move._on_impact_at_target()
+	assert_eq(int(commander.health.hp), hp_before_move_shot, "Commander takes 0 damage when walking 2m sideways away from landing spot (AI-02)")
+
 	commander.free()
 
 # ==============================================================================

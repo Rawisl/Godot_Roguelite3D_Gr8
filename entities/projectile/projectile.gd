@@ -152,10 +152,13 @@ func _apply_hit(target_node: Node) -> void:
 		EventBus.projectile_hit.emit(target_node, damage, Enums.DamageType.keys()[damage_type], 0.0)
 	queue_free()
  
+const IMPACT_RADIUS: float = 1.0
+
 func _on_impact_at_target() -> void:
 	if intended_target != null and is_instance_valid(intended_target):
-		var dist := global_position.distance_to(intended_target.global_position)
-		if dist <= 2.5 and intended_target.has_method("take_damage"):
+		var diff := global_position - intended_target.global_position
+		diff.y = 0.0
+		if diff.length() <= IMPACT_RADIUS and intended_target.has_method("take_damage"):
 			_apply_hit(intended_target)
 			return
 	queue_free()
