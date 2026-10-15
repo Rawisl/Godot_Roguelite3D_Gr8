@@ -33,6 +33,8 @@ func _ready() -> void:
 		push_warning("Tower is missing TowerData")
 		set_physics_process(false)
 		return
+	if data.id == &"barricade":
+		add_to_group(&"barricade")
 	priority = data.default_priority
 	apply_level(level)
 	health.died.connect(func(): destroyed.emit(self))

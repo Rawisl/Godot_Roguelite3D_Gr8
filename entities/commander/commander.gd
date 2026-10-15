@@ -634,6 +634,8 @@ func _execute_sword_strike(combo_step: int) -> void:
 	for i in range(target_count):
 		var target_data: Dictionary = candidates[i]
 		var target_node: Node = target_data.body
+		if target_node == null or not is_instance_valid(target_node) or target_node.is_queued_for_deletion():
+			continue
 		var hit_dir: Vector3 = target_data.dir
 
 		var info := DamageInfo.new(

@@ -13,6 +13,8 @@ func _execute_attack_action() -> void:
 	if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 		return
 
+	play_anim(&"ranged/Ranged_2H_Shoot", 1.0)
+
 	var muzzle := get_node_or_null("Muzzle") as Marker3D
 	var spawn_pos: Vector3 = muzzle.global_position if muzzle != null else global_position + Vector3(0.0, 1.2, 0.0)
 
@@ -32,4 +34,5 @@ func _execute_attack_action() -> void:
 
 		var dmg: int = data.base_damage if data else 8
 		var dmg_type: Enums.DamageType = data.damage_type if data else Enums.DamageType.PIERCE
-		arrow.launch(spawn_pos, target_center, dmg, self, dmg_type, true, 2.5)
+		var spd: float = data.projectile_speed if (data != null and data.projectile_speed > 0.0) else 20.0
+		arrow.launch(spawn_pos, target_center, dmg, self, dmg_type, true, 2.5, current_target, spd)
