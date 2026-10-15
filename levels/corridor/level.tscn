@@ -5,6 +5,7 @@
 [ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
 [ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
 [ext_resource type="Script" uid="uid://bnij7d30nqxt0" path="res://art/occlusion/occlusion_manager.gd" id="10_occl"]
+[ext_resource type="Script" path="res://art/vfx/build_fx_manager.gd" id="11_bfx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -269,3 +270,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 0, 0)
 
 [node name="OcclusionManager" type="Node" parent="." unique_id=13912130]
 script = ExtResource("10_occl")
+
+[node name="BuildFxManager" type="Node" parent="."]
+script = ExtResource("11_bfx")
