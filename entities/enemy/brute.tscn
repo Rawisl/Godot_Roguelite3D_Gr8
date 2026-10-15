@@ -2,6 +2,23 @@
 
 [ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_2gr2f"]
 [ext_resource type="Resource" uid="uid://e7bep37g0mum" path="res://data/enemies/brute.tres" id="2_b260c"]
+[ext_resource type="Script" path="res://entities/enemy/brute.gd" id="2_brute_script"]
+[ext_resource type="PackedScene" uid="uid://b6omvmb0o2xm" path="res://contents/assets/characters/enemy and boss/brute_model.tscn" id="3_brute_model"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_brute"]
+radius = 0.6
+height = 2.3
 
 [node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_2gr2f")]
+script = ExtResource("2_brute_script")
 data = ExtResource("2_b260c")
+
+[node name="CollisionShape3D" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+shape = SubResource("CapsuleShape3D_brute")
+
+[node name="BruteModel" parent="Model" index="0" instance=ExtResource("3_brute_model")]
+
+[node name="CollisionShape3D" parent="HurtBox" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+shape = SubResource("CapsuleShape3D_brute")

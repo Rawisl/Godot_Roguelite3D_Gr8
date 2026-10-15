@@ -36,6 +36,9 @@ var taunted_by_player: bool = false
 var taunt_timer: float = 0.0
 var stagger_timer: float = 0.0
 var knockback_immunity_timer: float = 0.0
+var knockback_immune: bool:
+	get:
+		return data.knockback_immune if data != null else false
 
 var life_timer: float = 0.0
 var straggler_marked: bool = false
@@ -45,6 +48,9 @@ var _retarget_timer: float = 0.0
 var _path_timer: float = 0.0
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+
+var anim_player: AnimationPlayer = null
+var _base_anim_speed: float = 1.0
 
 # Shared node cache per physics frame to avoid get_nodes_in_group garbage collection overhead
 static var _cached_barricades: Array[Node] = []
@@ -66,6 +72,8 @@ func _ready() -> void:
 		push_warning("Enemy missing EnemyData resource")
 		return
 
+	_setup_anim_player()
+
 	health.max_hp = data.base_hp
 	health.hp = data.base_hp
 	health.died.connect(_on_died)
@@ -75,7 +83,33 @@ func _ready() -> void:
 	nav.target_desired_distance = data.attack_range if data else 1.0
 
 	_init_spawn_zone_bounds()
+	_play_locomotion_anim()
 	_setup_navigation.call_deferred()
+
+func _setup_anim_player() -> void:
+	anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
+	_update_anim_speed()
+
+func _update_anim_speed() -> void:
+	if anim_player != null and is_instance_valid(anim_player):
+		anim_player.speed_scale = _base_anim_speed
+
+func play_anim(clip_name: StringName, base_speed: float = 1.0) -> void:
+	if anim_player == null or not is_instance_valid(anim_player):
+		return
+	if not anim_player.has_animation(clip_name):
+		return
+	_base_anim_speed = base_speed
+	_update_anim_speed()
+	anim_player.play(clip_name)
+
+func _play_locomotion_anim() -> void:
+	var clip: StringName = data.anim_walk if (data != null and not data.anim_walk.is_empty()) else &"move/Running_A"
+	play_anim(clip, 1.0)
+
+func _play_attack_anim() -> void:
+	var clip: StringName = data.anim_attack if (data != null and not data.anim_attack.is_empty()) else &"melee/Melee_1H_Attack_Slice_Diagonal"
+	play_anim(clip, 1.0)
 
 func _init_spawn_zone_bounds() -> void:
 	var sz := get_tree().get_first_node_in_group(&"spawn_zone") as Area3D
@@ -113,29 +147,36 @@ func change_state(new_state: Enums.EnemyState) -> void:
 			spawn_grace = true
 			is_in_spawn_zone = true
 			spawn_grace_timer = 0.0
+			_play_locomotion_anim()
 		Enums.EnemyState.ADVANCE:
 			_retarget_timer = 0.0
+			_play_locomotion_anim()
 		Enums.EnemyState.CHASE:
 			_retarget_timer = 0.0
+			_play_locomotion_anim()
 		Enums.EnemyState.ATTACK:
 			attack_windup_timer = 0.0
 			attack_recovery_timer = 0.0
 			is_attacking_active = false
 			velocity = Vector3.ZERO
+			_play_attack_anim()
 		Enums.EnemyState.STAGGER:
-			pass
+			play_anim(&"general/Hit_B", 1.0)
 		Enums.EnemyState.WAIT:
 			wait_timer = 0.0
 			velocity = Vector3.ZERO
+			play_anim(&"general/Idle_B", 1.0)
 		Enums.EnemyState.FRENZY:
 			if not is_frenzied:
 				is_frenzied = true
 				EventBus.frenzy_started.emit(self)
 			speed_multiplier = GameConfig.frenzy_speed_mult
+			_play_locomotion_anim()
 			_find_default_target()
 		Enums.EnemyState.DEAD:
 			set_physics_process(false)
 			velocity = Vector3.ZERO
+			_play_death_anim()
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -238,7 +279,7 @@ func _update_state(delta: float) -> void:
 				var look_dir := (current_target.global_position - global_position)
 				look_dir.y = 0.0
 				if look_dir.length_squared() > 0.001:
-					var target_yaw := atan2(-look_dir.x, -look_dir.z)
+					var target_yaw := atan2(look_dir.x, look_dir.z)
 					rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
 
 			if not is_attacking_active:
@@ -265,6 +306,7 @@ func _update_state(delta: float) -> void:
 						var attack_rng: float = data.attack_range if data else 1.5
 						if dist_after <= attack_rng + 0.3:
 							attack_windup_timer = 0.0
+							_play_attack_anim()
 						else:
 							change_state(Enums.EnemyState.CHASE)
 
@@ -334,7 +376,7 @@ func _move_towards_direction(dir: Vector3) -> void:
 		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier
 		velocity.x = move_dir.x * move_speed
 		velocity.z = move_dir.z * move_speed
-		var target_yaw := atan2(-move_dir.x, -move_dir.z)
+		var target_yaw := atan2(move_dir.x, move_dir.z)
 		rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
 	else:
 		velocity.x = 0.0
@@ -352,7 +394,18 @@ func _update_target_tracking(delta: float) -> void:
 			_find_default_target()
 
 func _update_navigation_movement(_delta: float) -> void:
-	if nav.is_navigation_finished():
+	var target_dest := Vector3.ZERO
+	if current_target != null and is_instance_valid(current_target):
+		target_dest = current_target.global_position
+	elif has_target_position:
+		target_dest = current_target_position
+
+	var direct_diff := target_dest - global_position
+	direct_diff.y = 0.0
+	var dist_to_dest := direct_diff.length()
+
+	# Stop if navigation agent finished and enemy reached the target distance
+	if nav.is_navigation_finished() and dist_to_dest <= nav.target_desired_distance:
 		velocity.x = move_toward(velocity.x, 0.0, 1.0)
 		velocity.z = move_toward(velocity.z, 0.0, 1.0)
 		return
@@ -361,13 +414,17 @@ func _update_navigation_movement(_delta: float) -> void:
 	var move_dir := (next_path_pos - global_position)
 	move_dir.y = 0.0
 
+	# Fallback to direct steering if navigation mesh is unavailable or path vector is empty
+	if move_dir.length_squared() <= 0.001 and dist_to_dest > 0.1:
+		move_dir = direct_diff
+
 	if move_dir.length_squared() > 0.001:
 		move_dir = move_dir.normalized()
 		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier
 		velocity.x = move_dir.x * move_speed
 		velocity.z = move_dir.z * move_speed
 
-		var target_yaw := atan2(-move_dir.x, -move_dir.z)
+		var target_yaw := atan2(move_dir.x, move_dir.z)
 		rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
 		nav_progress = nav.distance_to_target()
 	else:
@@ -404,14 +461,16 @@ func _is_target_valid(t: Node3D) -> bool:
 			return false
 		return true
 
-	if t.is_in_group(&"barricade"):
+	if t.is_in_group(&"barricade") or _is_barricade(t):
 		if "health" in t and t.health != null and t.health.hp <= 0:
 			return false
 		return true
 
 	if t.is_in_group(&"tower"):
 		var is_wall: bool = false
-		if t.has_meta("is_wall"):
+		if t.is_in_group(&"tower_wall"):
+			is_wall = true
+		elif t.has_meta("is_wall"):
 			is_wall = bool(t.get_meta("is_wall"))
 		elif "slot" in t and t.slot != null and "zone" in t.slot:
 			is_wall = (t.slot.zone == Enums.SlotZone.WALL)
@@ -419,10 +478,10 @@ func _is_target_valid(t: Node3D) -> bool:
 			is_wall = (t.get_parent().zone == Enums.SlotZone.WALL)
 		elif t.get_parent() != null and t.get_parent().get_parent() != null and "zone" in t.get_parent().get_parent():
 			is_wall = (t.get_parent().get_parent().zone == Enums.SlotZone.WALL)
-		elif t.global_position.y >= 3.0:
+		elif t.global_position.y >= 2.5:
 			is_wall = true
 
-		# Melee ground units cannot target wall towers
+		# Melee ground units cannot target wall towers (ETG-01)
 		var can_target_wall := (data != null and (data.is_ranged or data.is_flying))
 		if is_wall and not can_target_wall:
 			return false
@@ -430,6 +489,16 @@ func _is_target_valid(t: Node3D) -> bool:
 			return false
 		return true
 
+	return false
+
+func _is_barricade(node: Node) -> bool:
+	if node == null or not is_instance_valid(node):
+		return false
+	if node.is_in_group(&"barricade"):
+		return true
+	if "data" in node and node.data != null and "id" in node.data:
+		if node.data.id == &"barricade":
+			return true
 	return false
 
 func _get_valid_commander() -> Node3D:
@@ -447,36 +516,109 @@ func _get_valid_fortress() -> Node3D:
 func _find_closest_valid_barricade() -> Node3D:
 	_update_node_cache()
 	var closest: Node3D = null
-	var min_dist: float = INF
+	var min_score: float = INF
+	var best_id: int = 0
+
+	var candidates: Array[Node] = []
 	for b in _cached_barricades:
+		if b not in candidates:
+			candidates.append(b)
+	for tw in _cached_towers:
+		if _is_barricade(tw) and tw not in candidates:
+			candidates.append(tw)
+
+	for b in candidates:
 		var b_node := b as Node3D
 		if b_node != null and is_instance_valid(b_node) and _is_target_valid(b_node):
 			if not _is_target_ahead(b_node.global_position):
 				continue
 			var d := global_position.distance_to(b_node.global_position)
-			if d < min_dist:
-				min_dist = d
+			var weight: float = 1.0
+			if "aggro_weight" in b_node:
+				weight = float(b_node.aggro_weight)
+			elif "level" in b_node:
+				var lv: int = b_node.level
+				if lv == 2:
+					weight = 1.2
+				elif lv >= 3:
+					weight = 1.5
+			var score: float = d / maxf(0.1, weight)
+
+			# Tie-break: score first, then instance id (ETG-07)
+			if score < min_score - 0.001:
+				min_score = score
 				closest = b_node
+				best_id = b_node.get_instance_id()
+			elif absf(score - min_score) <= 0.001:
+				var cur_id := b_node.get_instance_id()
+				if cur_id < best_id:
+					min_score = score
+					closest = b_node
+					best_id = cur_id
 	return closest
 
 func _find_closest_valid_tower(wall_only: bool) -> Node3D:
 	_update_node_cache()
 	var closest: Node3D = null
 	var min_dist: float = INF
+	var best_id: int = 0
 	for tw in _cached_towers:
 		var tw_node := tw as Node3D
 		if tw_node != null and is_instance_valid(tw_node) and _is_target_valid(tw_node):
+			if _is_barricade(tw_node):
+				continue
 			var is_wall: bool = false
-			if "slot" in tw_node and tw_node.slot != null and "zone" in tw_node.slot:
+			if tw_node.is_in_group(&"tower_wall"):
+				is_wall = true
+			elif tw_node.has_meta("is_wall"):
+				is_wall = bool(tw_node.get_meta("is_wall"))
+			elif "slot" in tw_node and tw_node.slot != null and "zone" in tw_node.slot:
 				is_wall = (tw_node.slot.zone == Enums.SlotZone.WALL)
+			elif tw_node.get_parent() != null and "zone" in tw_node.get_parent():
+				is_wall = (tw_node.get_parent().zone == Enums.SlotZone.WALL)
+			elif tw_node.global_position.y >= 2.5:
+				is_wall = true
+
 			if wall_only != is_wall:
 				continue
 			if not _is_target_ahead(tw_node.global_position):
 				continue
 			var d := global_position.distance_to(tw_node.global_position)
-			if d < min_dist:
+			if d < min_dist - 0.001:
 				min_dist = d
 				closest = tw_node
+				best_id = tw_node.get_instance_id()
+			elif absf(d - min_dist) <= 0.001:
+				var cur_id := tw_node.get_instance_id()
+				if cur_id < best_id:
+					min_dist = d
+					closest = tw_node
+					best_id = cur_id
+	return closest
+
+func _find_closest_valid_tower_any() -> Node3D:
+	_update_node_cache()
+	var closest: Node3D = null
+	var min_dist: float = INF
+	var best_id: int = 0
+	for tw in _cached_towers:
+		var tw_node := tw as Node3D
+		if tw_node != null and is_instance_valid(tw_node) and _is_target_valid(tw_node):
+			if _is_barricade(tw_node):
+				continue
+			if not _is_target_ahead(tw_node.global_position):
+				continue
+			var d := global_position.distance_to(tw_node.global_position)
+			if d < min_dist - 0.001:
+				min_dist = d
+				closest = tw_node
+				best_id = tw_node.get_instance_id()
+			elif absf(d - min_dist) <= 0.001:
+				var cur_id := tw_node.get_instance_id()
+				if cur_id < best_id:
+					min_dist = d
+					closest = tw_node
+					best_id = cur_id
 	return closest
 
 func _find_best_target() -> void:
@@ -539,11 +681,23 @@ func _find_best_target() -> void:
 					set_target(closest_barricade)
 					return
 
-			&"TOWER_GROUND":
-				var closest_tower := _find_closest_valid_tower(false)
+			&"TOWER":
+				var closest_tower := _find_closest_valid_tower_any()
 				if closest_tower != null:
 					set_target(closest_tower)
 					return
+
+			&"TOWER_GROUND":
+				if data.is_ranged or data.is_flying:
+					var closest_tower := _find_closest_valid_tower_any()
+					if closest_tower != null:
+						set_target(closest_tower)
+						return
+				else:
+					var closest_tower := _find_closest_valid_tower(false)
+					if closest_tower != null:
+						set_target(closest_tower)
+						return
 
 			&"TOWER_WALL":
 				if data.is_ranged or data.is_flying:
@@ -656,27 +810,42 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		provoked_by_player = true
 		provoked_timer = GameConfig.aggro_duration
 
-	var is_knockback_immune: bool = is_in_group(&"boss") or (data != null and data.knockback_immune)
-	if info.knockback_force > 0.0 and not is_knockback_immune:
-		if knockback_immunity_timer <= 0.0:
-			var kb_dir := info.hit_direction
-			kb_dir.y = 0.0
-			velocity += kb_dir.normalized() * (info.knockback_force * KNOCKBACK_IMPULSE_SCALE)
-			if current_state == Enums.EnemyState.ATTACK:
-				attack_windup_timer = 0.0
-				is_attacking_active = false
-			_previous_state = current_state if current_state != Enums.EnemyState.STAGGER else _previous_state
-			change_state(Enums.EnemyState.STAGGER)
-			stagger_timer = GameConfig.enemy_stagger_time
+	if info.knockback_force > 0.0:
+		var kb_dir := info.hit_direction
+		kb_dir.y = 0.0
+		var dir_norm := kb_dir.normalized() if kb_dir.length_squared() > 0.001 else Vector3.FORWARD
+		apply_knockback(dir_norm * info.knockback_force)
 
 	health.take_damage(info)
+
+func apply_knockback(force_vector: Vector3) -> void:
+	if is_dead or spawn_grace:
+		return
+	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
+	if is_boss or knockback_immune:
+		return
+	if knockback_immunity_timer > 0.0:
+		return
+	var kb_dir := force_vector
+	kb_dir.y = 0.0
+	var force_mag := force_vector.length()
+	if force_mag <= 0.001 or kb_dir.length_squared() <= 0.001:
+		return
+	velocity += kb_dir.normalized() * (force_mag * KNOCKBACK_IMPULSE_SCALE)
+	if current_state == Enums.EnemyState.ATTACK:
+		attack_windup_timer = 0.0
+		is_attacking_active = false
+	_previous_state = current_state if current_state != Enums.EnemyState.STAGGER else _previous_state
+	change_state(Enums.EnemyState.STAGGER)
+	stagger_timer = GameConfig.enemy_stagger_time
 
 func _on_died() -> void:
 	if is_dead:
 		return
 	is_dead = true
-	change_state(Enums.EnemyState.DEAD)
-	set_physics_process(false)
+	remove_from_group(&"enemy")
+	collision_layer = 0
+	collision_mask = 0
 
 	var col_shape := get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col_shape != null:
@@ -687,4 +856,36 @@ func _on_died() -> void:
 
 	if data != null:
 		EventBus.enemy_died.emit(data.id, global_position, data.gold_reward, data.prestige_reward, false)
-	queue_free()
+
+	change_state(Enums.EnemyState.DEAD)
+
+func _play_death_anim() -> void:
+	var death_anim: StringName = &""
+	if anim_player != null:
+		if anim_player.has_animation(&"general/Death_A"):
+			death_anim = &"general/Death_A"
+		elif anim_player.has_animation(&"general/Death_B"):
+			death_anim = &"general/Death_B"
+		elif anim_player.has_animation(&"Death_A"):
+			death_anim = &"Death_A"
+		elif anim_player.has_animation(&"Death_B"):
+			death_anim = &"Death_B"
+
+	if not death_anim.is_empty():
+		play_anim(death_anim, 1.0)
+		var delay: float = 0.8
+		if anim_player != null and anim_player.has_animation(death_anim):
+			var anim: Animation = anim_player.get_animation(death_anim)
+			if anim != null and anim.length > 0.0:
+				delay = anim.length
+		var tree := get_tree()
+		if tree != null:
+			var timer := tree.create_timer(delay)
+			timer.timeout.connect(func():
+				if is_instance_valid(self):
+					queue_free()
+			)
+		else:
+			queue_free()
+	else:
+		queue_free()

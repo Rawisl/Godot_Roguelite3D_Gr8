@@ -51,6 +51,8 @@ func _ensure_visual_fallback() -> void:
 		mesh_inst.material_override = mat
 		model.add_child(mesh_inst)
  
+var intended_target: Node3D = null
+
 func launch(
 	p_start: Vector3,
 	p_target_pos: Vector3,
@@ -58,7 +60,9 @@ func launch(
 	p_source: Node = null,
 	p_damage_type: Enums.DamageType = Enums.DamageType.PIERCE,
 	p_parabolic: bool = true,
-	p_arc_height: float = 2.5
+	p_arc_height: float = 2.5,
+	p_intended_target: Node3D = null,
+	p_speed: float = 20.0
 ) -> void:
 	start_pos = p_start
 	target_pos = p_target_pos
@@ -67,6 +71,8 @@ func launch(
 	damage_type = p_damage_type
 	is_parabolic = p_parabolic
 	arc_height = p_arc_height
+	intended_target = p_intended_target
+	speed = p_speed if p_speed > 0.0 else 20.0
  
 	global_position = start_pos
 	var flat_dist := Vector2(target_pos.x - start_pos.x, target_pos.z - start_pos.z).length()
@@ -125,7 +131,21 @@ func _on_area_entered(area: Area3D) -> void:
 		_apply_hit(parent_body)
  
 func _apply_hit(target_node: Node) -> void:
-	if target_node != null and is_instance_valid(target_node) and target_node.has_method("take_damage"):
+	if target_node == null or not is_instance_valid(target_node):
+		return
+
+	# AI-02: Parabolic projectile is not blocked by Barricade unless Barricade is the intended target
+	var is_barricade := target_node.is_in_group(&"barricade")
+	if not is_barricade and "data" in target_node and target_node.data != null and "id" in target_node.data:
+		is_barricade = (target_node.data.id == &"barricade")
+
+	if is_barricade:
+		if intended_target != null and intended_target != target_node:
+			return
+		elif intended_target == null and target_node.global_position.distance_to(target_pos) > 2.0:
+			return
+
+	if target_node.has_method("take_damage"):
 		var hit_dir := (target_pos - start_pos).normalized() if (target_pos - start_pos).length_squared() > 0.001 else Vector3.FORWARD
 		var info := DamageInfo.new(damage, damage_type, source, 0.0, hit_dir)
 		target_node.take_damage(info)
@@ -133,6 +153,11 @@ func _apply_hit(target_node: Node) -> void:
 	queue_free()
  
 func _on_impact_at_target() -> void:
+	if intended_target != null and is_instance_valid(intended_target):
+		var dist := global_position.distance_to(intended_target.global_position)
+		if dist <= 2.5 and intended_target.has_method("take_damage"):
+			_apply_hit(intended_target)
+			return
 	queue_free()
  
 ## Pooled flight toward a node (tower shots). Subclasses set up their movement here.

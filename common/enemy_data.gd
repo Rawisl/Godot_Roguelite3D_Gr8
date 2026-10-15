@@ -15,6 +15,11 @@ extends Resource
 @export var move_speed: float = 3.5
 @export var damage_type: Enums.DamageType = Enums.DamageType.SLASH
 @export var knockback_force: float = 0.0
+@export var projectile_speed: float = 20.0
+
+@export_group("Visuals & Animation")
+@export var anim_walk: StringName = &"move/Running_A"
+@export var anim_attack: StringName = &"melee/Melee_1H_Attack_Slice_Diagonal"
 
 @export_group("Spawning & Avoidance")
 @export var spawn_cost: int = 1

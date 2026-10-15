@@ -1,0 +1,197 @@
+[gd_scene format=3 uid="uid://cmp6xqvn5rdpi"]
+
+[ext_resource type="Script" uid="uid://cu5n42fiolvk5" path="res://tests/test_playtest_enemies.gd" id="1_script"]
+[ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="2_grass"]
+[ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="3_stone"]
+[ext_resource type="PackedScene" uid="uid://ds7n2omekdjqx" path="res://entities/tower/barricade.tscn" id="4_barricade"]
+[ext_resource type="PackedScene" uid="uid://ck1riefjw2hl2" path="res://entities/tower/arrow.tscn" id="5_arrow"]
+[ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="6_fortress"]
+[ext_resource type="PackedScene" uid="uid://b1ss2j7jn26og" path="res://entities/projectile/projectile_pool.tscn" id="7_pool"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.4, 0.6, 0.85, 1)
+
+[sub_resource type="Sky" id="Sky_sky"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_env"]
+background_mode = 2
+sky = SubResource("Sky_sky")
+ambient_light_source = 3
+ambient_light_energy = 0.65
+tonemap_mode = 3
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_arena"]
+vertices = PackedVector3Array(-40, 0, -40, -40, 0, 40, 40, 0, 40, 40, 0, -40)
+polygons = [PackedInt32Array(0, 1, 2), PackedInt32Array(0, 2, 3)]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(80, 0.5, 80)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(80, 0.5, 80)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_platform"]
+size = Vector3(3, 3, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_platform"]
+size = Vector3(3, 3, 3)
+
+[node name="TestPlaytestEnemies" type="Node3D" unique_id=909678827]
+script = ExtResource("1_script")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=881350827]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 15, 25, 15)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=657925747]
+environment = SubResource("Environment_env")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=458395396]
+navigation_mesh = SubResource("NavigationMesh_arena")
+
+[node name="Ground" type="StaticBody3D" parent="NavigationRegion3D" unique_id=1810717644]
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NavigationRegion3D/Ground" unique_id=744189991]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("BoxShape3D_ground")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/Ground" unique_id=818804067]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_ground")
+surface_material_override/0 = ExtResource("2_grass")
+
+[node name="CameraRig" type="Node3D" parent="." unique_id=2062323589]
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=340677261]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 6, 18, 16)
+projection = 1
+current = true
+size = 22.0
+
+[node name="EnemySpawnPoint" type="Marker3D" parent="." unique_id=259724495]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
+
+[node name="ArenaTargets" type="Node3D" parent="." unique_id=86069080]
+
+[node name="Fortress" parent="ArenaTargets" unique_id=1844391577 instance=ExtResource("6_fortress")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 0)
+
+[node name="WallPlatform" type="StaticBody3D" parent="ArenaTargets" unique_id=1650249074]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 1.5, -4)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ArenaTargets/WallPlatform" unique_id=1126399227]
+mesh = SubResource("BoxMesh_wall_platform")
+surface_material_override/0 = ExtResource("3_stone")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ArenaTargets/WallPlatform" unique_id=2128881250]
+shape = SubResource("BoxShape3D_wall_platform")
+
+[node name="WallTower" parent="ArenaTargets" unique_id=782095575 instance=ExtResource("5_arrow")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 3, -4)
+
+[node name="GroundTower" parent="ArenaTargets" unique_id=1826430202 instance=ExtResource("5_arrow")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 4)
+
+[node name="Barricade" parent="ArenaTargets" unique_id=91620113 instance=ExtResource("4_barricade")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+
+[node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("7_pool")]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1038925574]
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer" unique_id=1971054913]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 550.0
+offset_bottom = 450.0
+
+[node name="Panel" type="PanelContainer" parent="CanvasLayer/Margin" unique_id=1359946045]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/Margin/Panel" unique_id=125016016]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/Margin/Panel/MarginContainer" unique_id=1105758716]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox" unique_id=827036606]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_font_sizes/font_size = 18
+text = "ENEMY PLAYTEST (GRUNT, ARCHER, BRUTE)"
+
+[node name="InfoLabel" type="Label" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox" unique_id=203929085]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "WASD: Move Commander | Space: Dodge (i-frame) | Q: Battle Cry
+• Grunt: Prioritizes Barricade before Ground Tower, ignores Wall Tower.
+• Archer: Stops at 11m, parabolic arrow bypasses Barricade, dodgeable.
+• Brute: 250 HP, heads straight to Fortress, knockback immune.
+• Stagger: Attack Grunt/Archer in wind-up (0.4s) -> interrupts + 2s immunity."
+
+[node name="ButtonsRow1" type="HBoxContainer" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox" unique_id=1787389615]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnGrunt" type="Button" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox/ButtonsRow1" unique_id=1821695789]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "[1] Spawn Grunt"
+
+[node name="BtnArcher" type="Button" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox/ButtonsRow1" unique_id=1187603811]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "[2] Spawn Archer"
+
+[node name="BtnBrute" type="Button" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox/ButtonsRow1" unique_id=562833645]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "[3] Spawn Brute"
+
+[node name="ButtonsRow2" type="HBoxContainer" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox" unique_id=612601792]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnWave" type="Button" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox/ButtonsRow2" unique_id=1152457107]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "[4] Spawn Wave"
+
+[node name="BtnStagger" type="Button" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox/ButtonsRow2" unique_id=1600280120]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "[5/K] Stagger Hit"
+
+[node name="BtnClear" type="Button" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox/ButtonsRow2" unique_id=1210883662]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "[C] Clear"
+
+[node name="BtnReset" type="Button" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox/ButtonsRow2" unique_id=350317542]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "[R] Reset"
+
+[node name="LogLabel" type="Label" parent="CanvasLayer/Margin/Panel/MarginContainer/VBox" unique_id=504756620]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 13
+text = "[Ready]"
