@@ -104,18 +104,12 @@ func play_anim(clip_name: StringName, base_speed: float = 1.0) -> void:
 	anim_player.play(clip_name)
 
 func _play_locomotion_anim() -> void:
-	if data != null and data.id == &"brute":
-		play_anim(&"move/Walking_B", 1.0)
-	else:
-		play_anim(&"move/Running_A", 1.0)
+	var clip: StringName = data.anim_walk if (data != null and not data.anim_walk.is_empty()) else &"move/Running_A"
+	play_anim(clip, 1.0)
 
 func _play_attack_anim() -> void:
-	if data != null and data.id == &"brute":
-		play_anim(&"melee/Melee_1H_Attack_Slice_Horizontal", 1.0)
-	elif data != null and data.is_ranged:
-		play_anim(&"ranged/Ranged_2H_Aiming", 1.0)
-	else:
-		play_anim(&"melee/Melee_1H_Attack_Slice_Diagonal", 1.0)
+	var clip: StringName = data.anim_attack if (data != null and not data.anim_attack.is_empty()) else &"melee/Melee_1H_Attack_Slice_Diagonal"
+	play_anim(clip, 1.0)
 
 func _init_spawn_zone_bounds() -> void:
 	var sz := get_tree().get_first_node_in_group(&"spawn_zone") as Area3D
