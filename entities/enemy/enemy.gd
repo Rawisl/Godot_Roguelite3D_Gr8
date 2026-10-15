@@ -319,6 +319,7 @@ func _update_state(delta: float) -> void:
 						var attack_rng: float = data.attack_range if data else 1.5
 						if dist_after <= attack_rng + 0.3:
 							attack_windup_timer = 0.0
+							_play_attack_anim()
 						else:
 							change_state(Enums.EnemyState.CHASE)
 
