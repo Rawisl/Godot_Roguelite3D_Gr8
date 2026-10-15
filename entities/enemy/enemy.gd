@@ -39,9 +39,6 @@ var knockback_immunity_timer: float = 0.0
 var knockback_immune: bool:
 	get:
 		return data.knockback_immune if data != null else false
-	set(v):
-		if data != null:
-			data.knockback_immune = v
 
 var life_timer: float = 0.0
 var straggler_marked: bool = false
