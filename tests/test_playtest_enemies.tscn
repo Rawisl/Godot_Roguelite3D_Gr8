@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://ds7n2omekdjqx" path="res://entities/tower/barricade.tscn" id="4_barricade"]
 [ext_resource type="PackedScene" uid="uid://ck1riefjw2hl2" path="res://entities/tower/arrow.tscn" id="5_arrow"]
 [ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="6_fortress"]
+[ext_resource type="PackedScene" uid="uid://b1ss2j7jn26og" path="res://entities/projectile/projectile_pool.tscn" id="7_pool"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.4, 0.6, 0.85, 1)
@@ -97,6 +98,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 4)
 
 [node name="Barricade" parent="ArenaTargets" unique_id=91620113 instance=ExtResource("4_barricade")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+
+[node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("7_pool")]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1038925574]
 
