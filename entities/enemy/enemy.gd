@@ -176,7 +176,7 @@ func change_state(new_state: Enums.EnemyState) -> void:
 		Enums.EnemyState.DEAD:
 			set_physics_process(false)
 			velocity = Vector3.ZERO
-			play_anim(&"general/Death_B", 1.0)
+			_play_death_anim()
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -843,8 +843,6 @@ func _on_died() -> void:
 	if is_dead:
 		return
 	is_dead = true
-	change_state(Enums.EnemyState.DEAD)
-	set_physics_process(false)
 	remove_from_group(&"enemy")
 	collision_layer = 0
 	collision_mask = 0
@@ -859,7 +857,9 @@ func _on_died() -> void:
 	if data != null:
 		EventBus.enemy_died.emit(data.id, global_position, data.gold_reward, data.prestige_reward, false)
 
-	# Play death animation if available, then queue_free
+	change_state(Enums.EnemyState.DEAD)
+
+func _play_death_anim() -> void:
 	var death_anim: StringName = &""
 	if anim_player != null:
 		if anim_player.has_animation(&"general/Death_A"):
