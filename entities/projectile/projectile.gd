@@ -117,6 +117,8 @@ func _update_transform_at(t: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if body == source:
 		return
+	if source != null and source.is_in_group(&"enemy") and body.is_in_group(&"enemy"):
+		return
 	if not has_launched:
 		return
 	_apply_hit(body)
@@ -127,11 +129,19 @@ func _on_area_entered(area: Area3D) -> void:
 	if not has_launched:
 		return
 	var parent_body := area.get_parent()
-	if parent_body != null and parent_body != source and parent_body.has_method("take_damage"):
-		_apply_hit(parent_body)
+	if parent_body != null and parent_body != source:
+		if source != null and source.is_in_group(&"enemy") and parent_body.is_in_group(&"enemy"):
+			return
+		if parent_body.has_method("take_damage"):
+			_apply_hit(parent_body)
  
 func _apply_hit(target_node: Node) -> void:
 	if target_node == null or not is_instance_valid(target_node):
+		return
+	if target_node == source:
+		return
+	# AI-03: No friendly fire between enemies
+	if source != null and source.is_in_group(&"enemy") and target_node.is_in_group(&"enemy"):
 		return
 
 	# AI-02: Parabolic projectile is not blocked by Barricade unless Barricade is the intended target
@@ -156,6 +166,9 @@ const IMPACT_RADIUS: float = 1.0
 
 func _on_impact_at_target() -> void:
 	if intended_target != null and is_instance_valid(intended_target):
+		if intended_target == source or (source != null and source.is_in_group(&"enemy") and intended_target.is_in_group(&"enemy")):
+			queue_free()
+			return
 		var diff := global_position - intended_target.global_position
 		diff.y = 0.0
 		if diff.length() <= IMPACT_RADIUS and intended_target.has_method("take_damage"):
@@ -165,12 +178,13 @@ func _on_impact_at_target() -> void:
  
 ## Pooled flight toward a node (tower shots). Subclasses set up their movement here.
 ## Named fire() because launch() is the Archer's position-based flight above.
-func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float) -> void:
+func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float, src: Node = null) -> void:
 	global_position = from
 	target = to
 	damage = dmg
 	damage_type = dmg_type
 	speed = spd
+	source = src
  
 func release() -> void:
 	if not in_use:

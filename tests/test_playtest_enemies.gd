@@ -105,8 +105,11 @@ func spawn_enemy(scene: PackedScene, enemy_name: String) -> void:
 		var type_str := "SLASH"
 		if info != null and info.damage_type < Enums.DamageType.size():
 			type_str = Enums.DamageType.keys()[info.damage_type]
-		_log("[ENEMY HIT] %s took %d %s dmg (HP: %d/%d)" % [
-			enemy_name, amount, type_str, enemy.health.hp, enemy.health.max_hp
+		var src_str := ""
+		if info != null and info.source != null and is_instance_valid(info.source):
+			src_str = " from %s" % info.source.name
+		_log("[ENEMY HIT] %s took %d %s dmg%s (HP: %d/%d)" % [
+			enemy_name, amount, type_str, src_str, enemy.health.hp, enemy.health.max_hp
 		])
 	)
 
