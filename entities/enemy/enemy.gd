@@ -75,6 +75,8 @@ func _ready() -> void:
 		push_warning("Enemy missing EnemyData resource")
 		return
 
+	_setup_anim_player()
+
 	health.max_hp = data.base_hp
 	health.hp = data.base_hp
 	health.died.connect(_on_died)
@@ -84,7 +86,7 @@ func _ready() -> void:
 	nav.target_desired_distance = data.attack_range if data else 1.0
 
 	_init_spawn_zone_bounds()
-	_setup_anim_player()
+	_play_locomotion_anim()
 	_setup_navigation.call_deferred()
 
 func _setup_anim_player() -> void:
