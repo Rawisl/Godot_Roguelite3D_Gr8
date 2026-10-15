@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://5yvo7mfq56kr" path="res://ui/screens/tab_data.tscn" id="4_471q0"]
 [ext_resource type="PackedScene" uid="uid://ce1ndafvk0cow" path="res://ui/screens/tab_gameplay.tscn" id="5_wpins"]
 [ext_resource type="PackedScene" uid="uid://bbg0ghrmn2br1" path="res://ui/screens/tab_graphics.tscn" id="6_204y2"]
+[ext_resource type="Theme" path="res://ui/theme/light_panel_theme.tres" id="7_light"]
 
 [node name="Settings" type="PanelContainer" unique_id=43494788]
 texture_filter = 2
@@ -38,6 +39,7 @@ size_flags_horizontal = 0
 
 [node name="Tabs" type="TabContainer" parent="Margin/Content" unique_id=2026071650]
 unique_name_in_owner = true
+theme = ExtResource("7_light")
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 4

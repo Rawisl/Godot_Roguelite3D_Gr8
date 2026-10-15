@@ -40,7 +40,7 @@ Hai texture `Texture_MAp_ELfs.png` (fortress) và `Texture_MAp_fortress_elves.pn
 |---|---|---|---|
 | ally_steel | `#AAB5BF` | Giáp chỉ huy | `knight_texture.png` |
 | ally_steel_dark | `#556060` | Giáp tối, mũ | `knight_texture.png` |
-| ally_cape | `#CC2929` | Áo choàng chỉ huy | `knight_texture.png` ⚠️ xem mục Xung đột |
+| ally_cape | `#CC2929` | Áo choàng chỉ huy | `knight_texture.png` (đã chốt giữ, xem mục Xung đột) |
 | ally_trim | `#CC9629` | Viền vàng giáp, chuôi kiếm | `knight_texture.png` |
 | enemy_bone | `#F4F4F4` | Xương skeleton | `skeleton_texture_A/B.png` |
 | enemy_cloth | `#991F47` | Mũ trùm, khăn, áo choàng quân địch | `skeleton_texture_A/B.png` |
@@ -84,24 +84,56 @@ Không trùng màu với model để vòng chọn, thanh máu, aura luôn tách 
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| ui_bg | `#1C1F26` | Nền panel |
-| ui_bg_alt | `#2A2F3A` | Nền phụ, ô |
-| ui_text | `#F2EFE6` | Chữ chính |
-| ui_text_dim | `#A9A79F` | Chữ phụ, disabled |
-| ui_accent | `#E8C25A` | Nút chính, focus |
+| ui_bg | `#1C1F26` | Nền panel tối, chữ trên nền sáng (nút, tab đang chọn, khung nội dung) |
+| ui_bg_alt | `#2A2F3A` | Nền phụ, nền thanh tiến trình |
+| ui_text | `#F2EFE6` | Chữ chính trên nền tối |
+| ui_text_dim | `#A9A79F` | Chữ phụ trên nền tối, tab không được chọn |
+| ui_accent | `#E8C25A` | Điểm nhấn (tiêu đề, số liệu nổi bật). Theme hiện chưa dùng |
 | ui_alert_t1 | `#FF2D2D` | Cảnh báo T1 |
 | ui_alert_t2 | `#FF9A2E` | Cảnh báo T2 |
 | ui_alert_t3 | `#E8E05A` | Cảnh báo T3 |
 
-## Xung đột cần nhóm quyết
+Nút và vùng nội dung dùng màu đá `struct_stone`, `struct_stone_light`, `env_dirt`, `struct_stone_dark` (mục Công trình, Môi trường) để đồng bộ với tường và tháp.
 
-- **Áo choàng chỉ huy đỏ** (`ally_cape #CC2929`) gần với `danger #FF2D2D`, trái nguyên tắc "đỏ chỉ dùng cho telegraph". Hướng xử lý: đổi texture áo choàng sang xanh `ally_primary`, hoặc chấp nhận vì telegraph luôn có viền đậm và họa tiết (FBK-06).
+### Áp dụng trong theme
+
+`ui/theme/main_theme.tres` là theme chung của project. `ui/theme/light_panel_theme.tres` gắn vào node cha của vùng nền sáng (hiện là `Tabs` trong `settings.tscn`) để chữ bên trong chuyển sang tối.
+
+| Thành phần | Nền | Viền | Chữ |
+|---|---|---|---|
+| Nút thường | `struct_stone` | | `ui_bg` |
+| Nút rê chuột | `struct_stone_light` | `struct_stone` | `ui_bg` |
+| Nút nhấn | `env_dirt` | `struct_stone_dark` | `ui_bg` |
+| Nút focus | | `ui_bg`, 3 px | `ui_bg` |
+| Nút bị khóa | `struct_stone` 35% alpha | | `struct_stone_dark` |
+| Tab đang chọn | `struct_stone` | | `ui_bg` |
+| Tab không chọn | `ui_bg` | | `ui_text_dim` |
+| Tab rê chuột | `struct_stone` 45% alpha | | `ui_text` |
+| Khung nội dung tab | `struct_stone_light` | `struct_stone`, 4 px | `ui_bg` (qua `light_panel_theme`) |
+| Label | | | `ui_text`; trong vùng sáng là `ui_bg` |
+| PanelContainer | `ui_bg` 90% alpha | | |
+| DialogPanel | `ui_bg` | `ui_bg_alt` | |
+| ProgressBar | `ui_bg_alt`, phần đầy `ally_primary` | | `ui_text` |
+
+Biến thể (Theme Type Variation) cho TV4 dùng khi cần:
+
+| Biến thể | Kiểu gốc | Màu |
+|---|---|---|
+| EnemyBar | ProgressBar | phần đầy `enemy_primary` |
+| BossBar | ProgressBar | phần đầy `enemy_boss` |
+| AlertT1, AlertT2, AlertT3 | PanelContainer | nền `ui_bg` 92%, viền 3 px `ui_alert_t1/t2/t3` |
+| DrawerPanel | PanelContainer | nền `env_bark`, viền `enemy_leather` |
+| DimLabel | Label | `ui_text_dim`; trong vùng sáng là `struct_stone_dark` |
+
+## Xung đột màu
+
+- **Áo choàng chỉ huy đỏ** (`ally_cape #CC2929`) gần với `danger #FF2D2D`, trái nguyên tắc "đỏ chỉ dùng cho telegraph". Hướng xử lý: đổi texture áo choàng sang xanh `ally_primary`, hoặc chấp nhận vì telegraph luôn có viền đậm và họa tiết (FBK-06). **Đã chốt (15/10): giữ áo choàng đỏ.**
 - **Mắt quân thường vàng** (`enemy_glow_b #FFBB33`) gần với `gold #FFC83D`. Mắt rất nhỏ trên màn hình nên ít khả năng gây nhầm, chỉ cần để ý khi làm VFX rơi gold.
 - **Vải quân địch đỏ thẫm** (`enemy_cloth #991F47`) khác hẳn `enemy_primary #7A4FA0`. Giữ `enemy_primary` tím cho aura và thanh máu để không lẫn với telegraph đỏ.
 
 ## Việc còn lại
 
 - [x] Hút màu môi trường, công trình, nhân vật từ asset thật
-- [ ] Chốt xung đột áo choàng đỏ của chỉ huy
+- [x] Chốt xung đột áo choàng đỏ của chỉ huy
 - [ ] Kiểm tra bằng ảnh đen trắng và công cụ giả lập mù màu
-- [ ] Đưa màu UI vào `ui/theme/` cho TV4
+- [x] Đưa màu UI vào `ui/theme/` (xem mục Áp dụng trong theme)
