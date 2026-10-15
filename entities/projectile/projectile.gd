@@ -153,6 +153,11 @@ func _apply_hit(target_node: Node) -> void:
 	queue_free()
  
 func _on_impact_at_target() -> void:
+	if intended_target != null and is_instance_valid(intended_target):
+		var dist := global_position.distance_to(intended_target.global_position)
+		if dist <= 2.5 and intended_target.has_method("take_damage"):
+			_apply_hit(intended_target)
+			return
 	queue_free()
  
 ## Pooled flight toward a node (tower shots). Subclasses set up their movement here.
