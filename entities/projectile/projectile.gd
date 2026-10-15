@@ -61,7 +61,8 @@ func launch(
 	p_damage_type: Enums.DamageType = Enums.DamageType.PIERCE,
 	p_parabolic: bool = true,
 	p_arc_height: float = 2.5,
-	p_intended_target: Node3D = null
+	p_intended_target: Node3D = null,
+	p_speed: float = 20.0
 ) -> void:
 	start_pos = p_start
 	target_pos = p_target_pos
@@ -71,7 +72,7 @@ func launch(
 	is_parabolic = p_parabolic
 	arc_height = p_arc_height
 	intended_target = p_intended_target
-	speed = 20.0  # AI-02: 20 m/s
+	speed = p_speed if p_speed > 0.0 else 20.0
  
 	global_position = start_pos
 	var flat_dist := Vector2(target_pos.x - start_pos.x, target_pos.z - start_pos.z).length()

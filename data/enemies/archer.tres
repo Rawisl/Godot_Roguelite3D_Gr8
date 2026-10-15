@@ -12,6 +12,7 @@ attack_interval = 1.5
 attack_range = 11.0
 move_speed = 3.0
 damage_type = 0
+projectile_speed = 20.0
 anim_walk = &"move/Running_A"
 anim_attack = &"ranged/Ranged_2H_Aiming"
 spawn_cost = 2
