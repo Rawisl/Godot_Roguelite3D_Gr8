@@ -822,31 +822,28 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		provoked_by_player = true
 		provoked_timer = GameConfig.aggro_duration
 
-	var is_knockback_immune: bool = is_in_group(&"boss") or (data != null and data.knockback_immune)
-	if info.knockback_force > 0.0 and not is_knockback_immune:
-		if knockback_immunity_timer <= 0.0:
-			var kb_dir := info.hit_direction
-			kb_dir.y = 0.0
-			velocity += kb_dir.normalized() * (info.knockback_force * KNOCKBACK_IMPULSE_SCALE)
-			if current_state == Enums.EnemyState.ATTACK:
-				attack_windup_timer = 0.0
-				is_attacking_active = false
-			_previous_state = current_state if current_state != Enums.EnemyState.STAGGER else _previous_state
-			change_state(Enums.EnemyState.STAGGER)
-			stagger_timer = GameConfig.enemy_stagger_time
+	if info.knockback_force > 0.0:
+		var kb_dir := info.hit_direction
+		kb_dir.y = 0.0
+		var dir_norm := kb_dir.normalized() if kb_dir.length_squared() > 0.001 else Vector3.FORWARD
+		apply_knockback(dir_norm * info.knockback_force)
 
 	health.take_damage(info)
 
 func apply_knockback(force_vector: Vector3) -> void:
 	if is_dead or spawn_grace:
 		return
-	if knockback_immune:
+	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
+	if is_boss or knockback_immune:
 		return
 	if knockback_immunity_timer > 0.0:
 		return
 	var kb_dir := force_vector
 	kb_dir.y = 0.0
-	velocity += kb_dir.normalized() * (force_vector.length() * KNOCKBACK_IMPULSE_SCALE)
+	var force_mag := force_vector.length()
+	if force_mag <= 0.001 or kb_dir.length_squared() <= 0.001:
+		return
+	velocity += kb_dir.normalized() * (force_mag * KNOCKBACK_IMPULSE_SCALE)
 	if current_state == Enums.EnemyState.ATTACK:
 		attack_windup_timer = 0.0
 		is_attacking_active = false
