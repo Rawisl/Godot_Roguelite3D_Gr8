@@ -31,23 +31,25 @@ func play(tower: Node3D) -> void:
 		return
 	var base_y := model.position.y
 	var base_rot := model.rotation.y
-	model.scale = squash * start_size
+	# Mọi mức ép, dãn tính theo scale gốc, phòng khi Model của một cấp tower có scale khác 1.
+	var base_scale := model.scale
+	model.scale = base_scale * squash * start_size
 	# Thời gian thật: luôn đúng 0.5 s kể cả khi tua x2, x3.
 	var tw := model.create_tween().set_ignore_time_scale()
 	# Lấy đà
-	tw.tween_property(model, "scale", squash * Vector3(1.04, 0.92, 1.04) * start_size, 0.10)
+	tw.tween_property(model, "scale", base_scale * squash * Vector3(1.04, 0.92, 1.04) * start_size, 0.10)
 	# Bật lên: kéo dãn
 	tw.tween_property(model, "position:y", base_y + jump_height, 0.18) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(model, "scale", stretch * peak_size, 0.18)
+	tw.parallel().tween_property(model, "scale", base_scale * stretch * peak_size, 0.18)
 	# Rơi xuống
 	tw.tween_property(model, "position:y", base_y, 0.12) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.parallel().tween_property(model, "scale", stretch.lerp(Vector3.ONE, 0.4), 0.12)
+	tw.parallel().tween_property(model, "scale", base_scale * stretch.lerp(Vector3.ONE, 0.4), 0.12)
 	# Tiếp đất: phình, ép và bụi
 	tw.tween_callback(_spawn_dust.bind(tower.global_position))
-	tw.tween_property(model, "scale", land_squash, 0.06)
-	tw.tween_property(model, "scale", Vector3.ONE, 0.04)
+	tw.tween_property(model, "scale", base_scale * land_squash, 0.06)
+	tw.tween_property(model, "scale", base_scale, 0.04)
 	# Xoay một vòng trong suốt lúc bay (bật lên và rơi xuống), tween riêng để không kéo dài nhịp nhảy.
 	var spin := model.create_tween().set_ignore_time_scale()
 	spin.tween_interval(0.10)
@@ -60,4 +62,6 @@ func _spawn_dust(at: Vector3) -> void:
 	fx.global_position = at
 	var dust := fx.get_node(^"Dust") as CPUParticles3D
 	dust.finished.connect(fx.queue_free)
+	# Particles chạy theo thời gian game; bù lại để bụi tan cùng nhịp với tower khi tua x2, x3.
+	dust.speed_scale = 1.0 / maxf(Engine.time_scale, 0.001)
 	dust.emitting = true

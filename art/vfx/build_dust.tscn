@@ -1,13 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cgl1i1u8hihe0"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_dust"]
 vertex_color_use_as_albedo = true
-roughness = 1.0
 
 [sub_resource type="SphereMesh" id="Mesh_dust"]
 material = SubResource("Mat_dust")
-radius = 0.5
-height = 1.0
 radial_segments = 6
 rings = 3
 
@@ -16,12 +13,11 @@ _data = [Vector2(0, 0.6), 0.0, 3.0, 0, 0, Vector2(0.25, 1), 0.0, 0.0, 0, 0, Vect
 point_count = 3
 
 [sub_resource type="Gradient" id="Gradient_dust"]
-offsets = PackedFloat32Array(0, 1)
 colors = PackedColorArray(0.6588, 0.5529, 0.3882, 1, 1, 0.9176, 0.8353, 1)
 
-[node name="BuildDust" type="Node3D"]
+[node name="BuildDust" type="Node3D" unique_id=679790669]
 
-[node name="Dust" type="CPUParticles3D" parent="."]
+[node name="Dust" type="CPUParticles3D" parent="." unique_id=369247465]
 cast_shadow = 0
 emitting = false
 amount = 14
@@ -36,6 +32,7 @@ emission_ring_axis = Vector3(0, 1, 0)
 emission_ring_height = 0.1
 emission_ring_radius = 0.9
 emission_ring_inner_radius = 0.6
+emission_ring_cone_angle = 90.0
 particle_flag_rotate_y = true
 direction = Vector3(0, 0.3, 0)
 spread = 80.0
