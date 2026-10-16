@@ -20,6 +20,7 @@ extends Resource
 @export_group("Visuals & Animation")
 @export var anim_walk: StringName = &"move/Running_A"
 @export var anim_attack: StringName = &"melee/Melee_1H_Attack_Slice_Diagonal"
+@export var anim_shoot: StringName = &""
 
 @export_group("Spawning & Avoidance")
 @export var spawn_cost: int = 1

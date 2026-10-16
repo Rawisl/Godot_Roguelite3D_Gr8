@@ -9,11 +9,16 @@ const ARROW_SCENE: PackedScene = preload("res://entities/projectile/enemy_projec
 func _ready() -> void:
 	super._ready()
 
+func _play_attack_anim() -> void:
+	var aim_clip: StringName = data.anim_attack if (data != null and not data.anim_attack.is_empty()) else &"ranged/Ranged_2H_Aiming"
+	play_anim(aim_clip, 1.0)
+
 func _execute_attack_action() -> void:
 	if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 		return
 
-	play_anim(&"ranged/Ranged_2H_Shoot", 1.0)
+	var shoot_clip: StringName = data.anim_shoot if (data != null and not data.anim_shoot.is_empty()) else &"ranged/Ranged_2H_Shoot"
+	play_anim(shoot_clip, 1.0)
 
 	var muzzle := get_node_or_null("Muzzle") as Marker3D
 	var spawn_pos: Vector3 = muzzle.global_position if muzzle != null else global_position + Vector3(0.0, 1.2, 0.0)

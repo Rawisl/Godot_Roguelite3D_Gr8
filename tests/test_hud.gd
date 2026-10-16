@@ -3,7 +3,7 @@ extends Node
 
 func _ready() -> void:
 	await get_tree().process_frame
-	EventBus.fortress_hp_changed.emit(1000, 1000)
+	EventBus.fortress_hp_changed.emit(1000, 1000, 0)
 	EventBus.commander_hp_changed.emit(200, 200)
 	EventBus.gold_changed.emit(150)
 	EventBus.state_changed.emit(&"PREP")
@@ -19,7 +19,7 @@ func _ready() -> void:
 		var left := 8 - killed
 		var alive := mini(3, left)
 		EventBus.enemy_count_changed.emit(alive, left - alive, 8)
-		EventBus.fortress_hp_changed.emit(1000 - killed * 40, 1000)
+		EventBus.fortress_hp_changed.emit(1000 - killed * 40, 1000, -40)
 		EventBus.gold_changed.emit(150 + killed * 5)
 		EventBus.gold_delta.emit(5)
 	EventBus.state_changed.emit(&"SUMMARY")

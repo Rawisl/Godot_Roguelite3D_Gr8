@@ -11,8 +11,8 @@ var _life: float = 0.0
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
-func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float) -> void:
-	super.fire(from, to, dmg, dmg_type, spd)
+func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float, src: Node = null) -> void:
+	super.fire(from, to, dmg, dmg_type, spd, src)
 	_homing = true
 	_life = 0.0
 	_dest = _aim_point(to)
@@ -64,8 +64,10 @@ func _on_body_entered(body: Node) -> void:
 
 func _hit(e: Enemy) -> void:
 	if _is_alive(e):
-		# TODO: switch to the shared damage API.
-		e.take_damage(damage, damage_type)
+		var valid_src: Node = source if is_instance_valid(source) else null
+		var hit_dir := (e.global_position - global_position).normalized() if (e.global_position - global_position).length_squared() > 0.0001 else Vector3.FORWARD
+		var info := DamageInfo.new(damage, damage_type, valid_src, 0.0, hit_dir)
+		e.take_damage(info)
 		EventBus.projectile_hit.emit(e, damage,
 				StringName(Enums.DamageType.keys()[damage_type]), 1.0)
 	release()

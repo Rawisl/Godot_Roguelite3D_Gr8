@@ -45,3 +45,4 @@ hud.state.combat,Chiến đấu
 hud.state.boss_intro,Boss xuất hiện
 hud.state.boss_combat,Đánh boss
 hud.state.summary,Tổng kết
+alert.fortress_low,Thành sắp thất thủ
