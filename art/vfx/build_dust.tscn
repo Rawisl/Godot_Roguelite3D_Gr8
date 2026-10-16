@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://cgl1i1u8hihe0"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_dust"]
+vertex_color_use_as_albedo = true
+
+[sub_resource type="SphereMesh" id="Mesh_dust"]
+material = SubResource("Mat_dust")
+radial_segments = 6
+rings = 3
+
+[sub_resource type="Curve" id="Curve_scale"]
+_data = [Vector2(0, 0.6), 0.0, 3.0, 0, 0, Vector2(0.25, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -1.5, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_dust"]
+colors = PackedColorArray(0.6588, 0.5529, 0.3882, 1, 1, 0.9176, 0.8353, 1)
+
+[node name="BuildDust" type="Node3D" unique_id=679790669]
+
+[node name="Dust" type="CPUParticles3D" parent="." unique_id=369247465]
+cast_shadow = 0
+emitting = false
+amount = 14
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+randomness = 0.3
+local_coords = true
+mesh = SubResource("Mesh_dust")
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.1
+emission_ring_radius = 0.9
+emission_ring_inner_radius = 0.6
+emission_ring_cone_angle = 90.0
+particle_flag_rotate_y = true
+direction = Vector3(0, 0.3, 0)
+spread = 80.0
+gravity = Vector3(0, -3, 0)
+initial_velocity_min = 2.0
+initial_velocity_max = 3.0
+damping_min = 3.0
+damping_max = 4.0
+angle_min = -180.0
+angle_max = 180.0
+scale_amount_min = 0.3
+scale_amount_max = 0.5
+scale_amount_curve = SubResource("Curve_scale")
+color_ramp = SubResource("Gradient_dust")
