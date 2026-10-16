@@ -3,7 +3,7 @@ extends Node
 ##
 ## Game time is Engine.time_scale plus SceneTree.paused, so _process/_physics_process
 ## deltas, Tween, Timer and particles follow it automatically. Gameplay timers must use
-## game time; never use Time.get_ticks_msec() for them.
+## game time, never wall-clock tick counters.
 ##
 ## Three clocks:
 ##   game time           scaled by time_scale, stops on Pause
