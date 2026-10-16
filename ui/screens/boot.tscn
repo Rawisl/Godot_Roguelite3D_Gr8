@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://255psr2byxet"]
 
 [ext_resource type="Script" uid="uid://c87gv28r5erhv" path="res://ui/screens/boot.gd" id="1_rc4oh"]
+[ext_resource type="Texture2D" uid="uid://tbxyrb0v6qxv" path="res://contents/branding/logo.png" id="2_bd00w"]
 
 [node name="Boot" type="Control" unique_id=687887003]
 layout_mode = 3
@@ -11,6 +12,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rc4oh")
 
+[node name="Background" type="ColorRect" parent="." unique_id=1902114533]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.1098, 0.1216, 0.149, 1)
+
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=175170479]
 layout_mode = 1
 anchors_preset = 15
@@ -19,8 +30,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ProgressBar" type="ProgressBar" parent="CenterContainer" unique_id=1671752786]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1408713290]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="TextureRect" type="TextureRect" parent="CenterContainer/VBoxContainer" unique_id=32832716]
+custom_minimum_size = Vector2(960, 540)
+layout_mode = 2
+texture = ExtResource("2_bd00w")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ProgressBar" type="ProgressBar" parent="CenterContainer/VBoxContainer" unique_id=1671752786]
 custom_minimum_size = Vector2(480, 0)
 layout_mode = 2
+size_flags_horizontal = 4
 indeterminate = true
 editor_preview_indeterminate = false
