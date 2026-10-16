@@ -2,19 +2,6 @@
 
 [ext_resource type="Script" uid="uid://co7lhvwbt2cjv" path="res://ui/screens/main_menu.gd" id="1_iacjs"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iacjs"]
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.3764706, 0.16862746, 0.043137256, 1)
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.6, 0.36078432, 0.23921569, 1)
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-
 [node name="MarginContainer" type="MarginContainer" unique_id=1116123521]
 texture_filter = 2
 anchors_preset = 15
@@ -68,7 +55,7 @@ offset_top = -30.0
 offset_right = 40.0
 offset_bottom = 30.0
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_iacjs")
+theme_type_variation = &"DrawerPanel"
 
 [node name="Meta" type="VBoxContainer" parent="VBoxContainer/Drawer/DrawerClip/MetaPanel" unique_id=677840464]
 layout_mode = 2

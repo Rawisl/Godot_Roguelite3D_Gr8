@@ -13,7 +13,7 @@ config_version=5
 config/name="Group 8 Project"
 run/main_scene="uid://255psr2byxet"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="uid://c5ip7lypnec8c"
 
 [audio]
 
