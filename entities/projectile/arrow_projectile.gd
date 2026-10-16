@@ -64,8 +64,9 @@ func _on_body_entered(body: Node) -> void:
 
 func _hit(e: Enemy) -> void:
 	if _is_alive(e):
+		var valid_src: Node = source if is_instance_valid(source) else null
 		var hit_dir := (e.global_position - global_position).normalized() if (e.global_position - global_position).length_squared() > 0.0001 else Vector3.FORWARD
-		var info := DamageInfo.new(damage, damage_type, source, 0.0, hit_dir)
+		var info := DamageInfo.new(damage, damage_type, valid_src, 0.0, hit_dir)
 		e.take_damage(info)
 		EventBus.projectile_hit.emit(e, damage,
 				StringName(Enums.DamageType.keys()[damage_type]), 1.0)

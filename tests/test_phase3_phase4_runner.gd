@@ -18,6 +18,7 @@ func _ready() -> void:
 	test_group_6_brute_knockback_immune()
 	test_group_7_no_friendly_fire()
 	test_group_8_no_stun_on_enemies()
+	test_group_9_projectile_deals_damage_when_source_freed_mid_flight()
 
 	print("\n=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passed_count, failed_count])
@@ -309,3 +310,66 @@ func test_group_8_no_stun_on_enemies() -> void:
 	assert_true(Enums.EnemyState.has("STAGGER"), "Enums.EnemyState contains STAGGER for interruption")
 
 	grunt.free()
+
+# ==============================================================================
+# GROUP 9: Projectile Deals Damage When Source Is Freed Mid-Flight
+# ==============================================================================
+func test_group_9_projectile_deals_damage_when_source_freed_mid_flight() -> void:
+	print("\n[GROUP 9] Testing Projectile Hit When Source Freed Mid-Flight")
+
+	# Case A: Tower shoots arrow, then tower is destroyed mid-flight -> arrow deals full damage to enemy
+	var grunt_scene: PackedScene = load("res://entities/enemy/grunt.tscn")
+	var grunt := grunt_scene.instantiate() as Enemy
+	add_child(grunt)
+	grunt.spawn_grace = false
+	grunt.is_in_spawn_zone = false
+	var grunt_initial_hp := int(grunt.health.hp)
+
+	var tower_scene: PackedScene = load("res://entities/tower/arrow.tscn")
+	var tower := tower_scene.instantiate() as Node3D
+	add_child(tower)
+
+	var arrow_scene: PackedScene = load("res://entities/projectile/arrow_projectile.tscn")
+	var arrow := arrow_scene.instantiate() as ArrowProjectile
+	add_child(arrow)
+	arrow.in_use = true
+	arrow.fire(tower.global_position, grunt, 10, Enums.DamageType.PIERCE, 30.0, tower)
+
+	# Destroy the tower while arrow is mid-flight
+	tower.free()
+
+	# Arrow hits grunt
+	arrow._hit(grunt)
+	assert_eq(int(grunt.health.hp), grunt_initial_hp - 10, "Grunt takes 10 damage from arrow even after tower is freed mid-flight")
+	assert_true(is_instance_valid(grunt) and not grunt.is_dead, "Grunt is valid and alive after taking damage")
+
+	grunt.free()
+	if is_instance_valid(arrow) and not arrow.is_queued_for_deletion():
+		arrow.free()
+
+	# Case B: Archer shoots arrow at Commander, then Archer dies mid-flight -> arrow deals full damage to Commander
+	var commander_scene: PackedScene = load("res://entities/commander/commander.tscn")
+	var commander := commander_scene.instantiate() as CharacterBody3D
+	add_child(commander)
+	var cmd_hp_before := int(commander.health.hp)
+
+	var archer_scene: PackedScene = load("res://entities/enemy/archer.tscn")
+	var archer := archer_scene.instantiate() as Archer
+	add_child(archer)
+	archer.global_position = Vector3(10.0, 0.0, 0.0)
+
+	var enemy_proj_scene: PackedScene = load("res://entities/projectile/enemy_projectile.tscn")
+	var enemy_proj := enemy_proj_scene.instantiate() as Projectile
+	add_child(enemy_proj)
+	enemy_proj.launch(archer.global_position, commander.global_position, 8, archer, Enums.DamageType.PIERCE, true, 2.5, commander)
+
+	# Destroy archer mid-flight
+	archer.free()
+
+	# Arrow hits commander
+	enemy_proj._apply_hit(commander)
+	assert_eq(int(commander.health.hp), cmd_hp_before - 8, "Commander takes 8 damage from arrow even after Archer is freed mid-flight")
+
+	commander.free()
+	if is_instance_valid(enemy_proj) and not enemy_proj.is_queued_for_deletion():
+		enemy_proj.free()
