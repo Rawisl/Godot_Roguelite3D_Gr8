@@ -257,7 +257,7 @@ Thứ tự **bắt buộc**:
 | Wave | wave_modifiers, spawn_queue, enemies_alive, wave_clear_timer |
 | Boss | boss_timer, phase, boss_enraged |
 | Buff \[Should] | run_buffs_loaded, active_buff |
-| Điều khiển | time_scale, is_paused |
+| Điều khiển | time_scale, is_paused (dẫn xuất từ pause_requests, TIME-11) |
 
 **RUN-01.** Không trường nào của RunState (kể cả xp, Cấp Chỉ huy, skill đã nhặt) được ghi xuống đĩa giữa Run, trừ run_flag (FLOW-03) và \[Should] kho buff khi kích hoạt (BUF-04). Số lượt Emergency repair không được lưu: mỗi run mới (kể cả sau khi khôi phục run gián đoạn) luôn bắt đầu ở 3/3.
 
@@ -294,7 +294,7 @@ Phạm vi của start_mult: chỉ nhân vào prestige_gain (bù cho việc bỏ 
 
 | **ID** | **Tình huống** | **Xử lý** |
 | --- | --- | --- |
-| END-01 | Chỉ huy chết đúng frame Fortress sập | Ghi FORTRESS_DESTROYED, xử lý **một lần**, không cộng danh vọng hai lần |
+| END-01 | Chỉ huy chết đúng frame Fortress sập | Ghi FORTRESS_DESTROYED, xử lý **một lần**, không cộng danh vọng hai lần. RunState không kết thúc run ngay khi nhận `commander_died` hay tín hiệu Fortress sập: chỉ đánh dấu điều kiện thua, rồi xử lý **cuối frame** (`call_deferred`). Nếu có cả hai thì ghi FORTRESS_DESTROYED. Sau khi đã chốt, mọi điều kiện thua đến sau bị bỏ qua |
 | END-02 | start_wave > 1 | waves_cleared theo số thứ tự tuyệt đối. Kỷ lục lưu riêng theo mốc (best_by_start) |
 | END-03 | Chết ở wave 1 với prestige_pending = 0 | prestige_gain = 0, vẫn hiện RunEnd |
 | END-04 | Bấm Chơi lại liên tục | Chỉ nhận một lần bấm, khóa nút cho đến khi chuyển màn |
@@ -389,7 +389,8 @@ Cài đặt: RewardOfferGenerator là hàm thuần nhận RunSkillState, danh s�
 | TIME-07 | Cooldown kỹ năng, cooldown đổi chế độ, đồng hồ boss, clear time đều tính bằng game time |
 | TIME-08 | Không dùng Pause để né cooldown hay tối ưu quyết định. Ở COMBAT và BOSS_COMBAT, khi Pause mọi panel chỉ đọc: không đổi priority, không Emergency repair, không đổi chế độ, không dùng skill. PREP không bị giới hạn |
 | TIME-09 | **Nút tua nhanh:** tua chỉ điều khiển bằng cụm nút HUD (HUD-14), gọi set_time_scale(1\|2\|3). Bấm nút mức đang tắt thì bật mức đó, bấm lại đúng nút đang bật thì tắt (về x1). Hiển thị luôn theo time_scale thực, kể cả khi bị hạ tự động (TIME-06). Không đổi mức tốc độ khi đang Pause |
-
+| TIME-10 \[MVP] | **Ba loại đồng hồ** do TimeManager cung cấp: (a) **game time**, đã nhân time_scale và dừng khi Pause, cho mọi timer gameplay (TIME-07, CHAR-05); (b) **thời gian thực có thể pause** (không nhân time_scale, dừng khi Pause), cho bộ đếm 10 s của SUMMARY (TIME-02), đếm BOSS_INTRO, hoàn tác bán 3 s \[Should] (PNL-10); (c) **thời gian thực thuần**, không dừng khi Pause, cho animation UI, chuyển camera 0.5 s (MSE-08), retarget_delay 0.3 s (CMD-01), crossfade nhạc. Mọi timer mới phải khai báo thuộc loại nào |
+| TIME-11 \[MVP] | **Pause theo tập lý do:** TimeManager giữ tập `pause_requests` với các lý do `USER` (Esc, nút Pause), `REWARD_PICK` (RWP-01), `FOCUS_LOST` (INP-08). `is_paused = pause_requests không rỗng`. Thêm hoặc bỏ một lý do không ảnh hưởng lý do khác (Esc trong REWARD_PICK thêm `USER`, bỏ `USER` thì game vẫn dừng vì còn `REWARD_PICK`). `pause_changed` (EVB-19) chỉ phát khi `is_paused` thực sự đổi. Lấy lại focus chỉ bỏ `FOCUS_LOST`, không tự bỏ `USER` (INP-08). Đổi time_scale khi đang Pause bị từ chối (TIME-09) |
 Kiểm tra mọi hệ thống (projectile, DoT, đồng hồ boss) đúng ở x1/x2/x3 là hạng mục nghiệm thu bắt buộc của tuần 6.
 
 ## 3.5 Nhân vật chỉ huy
@@ -416,7 +417,7 @@ Chỉ huy là **một thực thể duy nhất** với hai chế độ. Camera, H
 | mode_switch_cooldown | 5 s | Cả hai chiều |
 | prep_heal_pct | 60% | Hồi khi vào PREP |
 | commander_regen_pct_per_sec | 2% | Chỉ ở Commander mode, hồi liên tục (chỉ huy không nhận sát thương ở chế độ này) |
-| combo_window* / combo_reset_time* | 0.35 s / 0.6 s | 3.5.2, 3.5.3 |
+| combo_window* | 0.35 s | 3.5.2, 3.5.3. Cửa sổ nối đòn, mở ngay khi hết attack_interval. `combo_reset_time` đã bỏ ở v1.8 (CHAR-07) |
 | combo_hit3_knockback* | 1.5 m | 3.5.3 |
 | input_buffer_time* | 0.15 s | CHAR-04 |
 | skill_animation_time* | 0.5 s | 3.5.2 |
@@ -459,7 +460,7 @@ Any -> Dead
 
 - **Di chuyển:** WASD theo trục màn hình, chuẩn hóa vector chéo.
 - **Aim:** chuột, raycast xuống mặt phẳng ngang tại độ cao chân chỉ huy (MSE-01). Ray không trúng thì giữ hướng cũ.
-- **Đánh thường:** combo 3 đòn, đòn 3 có knockback nhẹ 1.5 m (Brute và boss miễn). Combo reset sau 0.6 s không bấm. Mỗi đòn trúng tối đa sword_max_targets mục tiêu (CMB-09).
+- **Đánh thường:** combo 3 đòn, đòn 3 có knockback nhẹ 1.5 m (Brute và boss miễn). Nối đòn theo CHAR-07: không bấm trong combo_window thì combo về đòn 1. Mỗi đòn trúng tối đa sword_max_targets mục tiêu (CMB-09).
 - **Dodge:** theo hướng di chuyển. Đứng yên thì lùi về sau hướng aim.
 - **Battle Cry (Q):** taunt mọi quân trong bán kính 6 m trong 4 s, chỉ huy nhận -30% sát thương trong thời gian đó. Cooldown 12 s. Đây là công cụ tank và kéo aggro.
 
@@ -549,7 +550,7 @@ damage_taken = raw × (1 - min(armor_pct, 0.75)) × skill_mult
 
 | **ID** | **Tình huống** | **Xử lý** |
 | --- | --- | --- |
-| DEAD-01 | commander_hp <= 0 ở mọi chế độ | Chuyển RunEnd COMMANDER_DIED. Không hồi sinh ở MVP |
+| DEAD-01 | commander_hp <= 0 **ở Frontline** (Commander mode miễn nhiễm, CMD-10, DEAD-09) | Chuyển RunEnd COMMANDER_DIED qua DEAD-10. Không hồi sinh ở MVP |
 | DEAD-02 | Hai sát thương chí mạng cùng frame | Xử lý cái đầu, cờ is_dead chặn lần hai |
 | DEAD-03 | Chết khi Recall, Stunned | Như DEAD-01. Deploying bất tử nên không chết được |
 | DEAD-04 | \[ĐÃ XÓA v1.8] | Overload không còn |
@@ -558,6 +559,7 @@ damage_taken = raw × (1 - min(armor_pct, 0.75)) × skill_mult
 | DEAD-07 | HP dưới 25% | Viền đỏ, nhịp tim, giảm nhạc nền. Không đổi cơ chế |
 | DEAD-08 | \[Could] Last Stand | Chỉ nếu có tài nguyên, làm mục meta shop |
 | DEAD-09 | Chỉ huy ở Commander mode | Không thể chết: mọi nguồn sát thương bị vô hiệu (CMD-10). Run chỉ kết thúc qua Fortress sập hoặc Abandon khi ở chế độ này |
+| DEAD-10 \[MVP] | Phát tín hiệu chết | Chỉ huy phát `commander_died(cause)` (EVB-10) **đúng một lần** mỗi run, chặn bằng cờ is_dead (DEAD-02); cờ chỉ xóa khi bắt đầu run mới. `cause` ở MVP chỉ có `ENEMY_DAMAGE` (cú rơi khỏi map không giết được, DEAD-06). Tín hiệu `commander_died` không phải end_type: end_type COMMANDER_DIED do RunState ghi vào `run_ended` theo END-01 |
 
 ### 3.5.9 Edge case input của nhân vật
 
@@ -566,9 +568,11 @@ damage_taken = raw × (1 - min(armor_pct, 0.75)) × skill_mult
 | CHAR-01 | Đổi chế độ khi đang giữ phím | Xóa input đang giữ, yêu cầu nhả rồi bấm lại (INP-07) |
 | CHAR-02 | Con trỏ trên UI | Chuột trái không kích hoạt đòn đánh |
 | CHAR-03 | Nhiều phím cùng frame | Ưu tiên: Dodge > Skill > Attack > Mode switch (INP-02). Nhiều skill cùng frame thì ô số nhỏ trước |
-| CHAR-04 | Buffer input | Tối đa 1 lệnh trong 0.15 s cuối animation |
+| CHAR-04 | Buffer input | Tối đa **1 lệnh** trong `input_buffer_time` 0.15 s (game time) cuối state hiện tại, chi tiết ở CHAR-08 |
 | CHAR-05 | Time scale x3 | Buffer, cửa sổ combo, i-frame theo game time. Kiểm thử cảm giác ở x2, x3 |
 | CHAR-06 | Pause giữa Dodge, Skill, Recall | Đóng băng nguyên trạng |
+| CHAR-07 \[MVP] | Timeline combo | `attack_interval` 0.45 s tính từ lúc bắt đầu đòn, gồm cả recovery. Hết `attack_interval` thì mở `combo_window` 0.35 s để nối đòn kế (đòn 1 sang 2 sang 3). Lệnh Attack bấm sớm hơn nằm trong buffer (CHAR-08). Hết cửa sổ mà không bấm thì combo về đòn 1. Sau đòn 3 combo cũng về đòn 1. Không còn tham số combo_reset_time |
+| CHAR-08 \[MVP] | Quy tắc buffer | (a) Chỉ buffer `dodge`, `skill_1..3`, `attack`. **Không buffer `mode_switch`** (MODE-03, MODE-04). (b) Chỉ 1 ô. Lệnh mới ghi đè lệnh trong ô khi ưu tiên cao hơn hoặc bằng (Dodge > Skill > Attack, INP-02), thấp hơn thì bỏ. (c) Cửa sổ 0.15 s đo ngược từ thời điểm state hiện tại cho phép hành động kế: hết attack_interval với Attack, hết state Dodge với Dodge, hết skill_animation_time với Skill. (d) Chạy lệnh trong buffer ngay khi state cho phép. Hết hạn thì bỏ. (e) Xóa buffer khi đổi ngữ cảnh, Pause hoặc mất focus (INP-07, INP-08), vào Stunned, Recalling, Dead. (f) Theo game time (CHAR-05): ở x3, 0.15 s game time bằng 50 ms thời gian thực, đây là chủ đích |
 
 ### 3.5.10 Vòng lặp Frontline \[MVP]
 
@@ -2186,7 +2190,7 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-07 | fortress_hp_changed(new_hp: int, max_hp: int, delta: int) | Tower & Build (Fortress). Nghe: UI, cảnh báo ALR |
 | EVB-08 | commander_hp_changed(new_hp: int, max_hp: int, delta: int) | Player & Combat. Nghe: UI, cảnh báo ALR |
 | EVB-09 | commander_mode_changed(new_mode: StringName) | Player & Combat. Nghe: UI, camera, Audio |
-| EVB-10 | commander_died(cause: StringName) | Player & Combat. Nghe: RunState (END-01) |
+| EVB-10 | commander_died(cause: StringName) | Player & Combat. Phát đúng một lần (DEAD-10). cause MVP: `ENEMY_DAMAGE`. Nghe: RunState (END-01) |
 | EVB-11 | skill_cooldown_changed(skill_id: StringName, remaining: float, total: float) | Player & Combat. skill_id: battle_cry, dodge, mode_switch, emg_repair, skill_1, skill_2, skill_3. Nghe: UI |
 | EVB-12 | emg_repair_changed(charges: int, cooldown_left: float) | Player & Combat. Nghe: UI (HUD-13) |
 | EVB-13 | slot_changed(slot_id: StringName, slot_state: StringName, tower_type: StringName, level: int) | Tower & Build. Nghe: UI, panel Tower, Art |
@@ -2550,5 +2554,6 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 59 | **v1.8, test** (mục 7.1): xóa các test Overload, Retreat, ép x1 T-20; thêm F1..F15. Lịch 7.3 viết lại theo mốc A (W7), B1 (W9), B2 (W10), đóng băng (W11) |
 | 60 | **v1.8, giả định kỹ thuật G1..G7:** phiên 6 giờ, tối đa 2 phiên mỗi người mỗi tuần; W5 đã Done; GridData đã dựng; Firebomb là BLAST; armor chỉ huy chỉ từ Armored; commander_level không giảm; Aura áp cả tower WALL |
 | 61 | **v1.8, bản hợp nhất đầy đủ** (16/10/2026): toàn bộ thay đổi 54 đến 60 được áp thẳng vào văn bản của v1.7, không còn phải đọc kèm tệp "thay đổi". Quyết định khi hợp nhất: (a) commander_level bắt đầu ở 0 để khớp tích lũy 2n² + 3n của XP-04; (b) bảng boss mục 3.8.10 tính lại đúng công thức (wave 10 Bulwark armor_hp 2669, core_hp 2002, Stomp 77; bản thay đổi ghi gần đúng 2664/1998); (c) đổi tên BUFF_FURY từ "Cuồng nộ" sang "Nổi giận" để không trùng Enrage; (d) mục 2.7 MVP bỏ tab Gameplay của Settings (khớp bảng phân công), hành vi mặc định cố định; (e) ETG-08 (tên cũ OVL-07) và các tham chiếu cập nhật; (f) đưa bảng số liệu SKL-10..15 vào mục 3.5.12.1 đến 3.5.12.3 thay vì trỏ sang tệp ngoài |
+| 62 | **v1.8, sửa mâu thuẫn W6 (TimeManager, input, chết và hồi):** (a) DEAD-01 chỉ áp ở Frontline, khớp 3.2.4 và DEAD-09; thêm DEAD-10 (`commander_died` đúng một lần, cause MVP là ENEMY_DAMAGE, phân biệt với end_type COMMANDER_DIED); (b) CHAR-04 trỏ sang CHAR-08: chỉ buffer dodge, skill, attack, không buffer mode_switch, 1 ô, ghi đè theo ưu tiên, xóa khi đổi ngữ cảnh; (c) CHAR-07: một timeline combo, bỏ combo_reset_time (mục 3.5.1, 3.5.3); (d) TIME-10 ba loại đồng hồ, TIME-11 Pause theo tập lý do (USER, REWARD_PICK, FOCUS_LOST), RunState mục 3.2.2; (e) END-01 xử lý điều kiện thua cuối frame; (f) EVB-10 ghi rõ cause và số lần phát. Chưa đổi `event_bus.gd`: cần PR riêng thêm tham số cho EVB-01, 08, 10, 18 |
 
 Hết tài liệu SRS-EW-1.8.
