@@ -17,6 +17,7 @@ var _speed_buttons: Dictionary = {}  # level -> Button
 var _pause_button: Button
 var _mode_button: Button
 var _timers: Array[Dictionary] = []
+var _died_count := 0
 
 func _ready() -> void:
 	# The UI and Esc must keep working while paused; the world below pauses normally.
@@ -28,6 +29,7 @@ func _ready() -> void:
 	_build_world(world)
 	_build_ui()
 	TimeManager.reset()
+	EventBus.commander_died.connect(func(): _died_count += 1)
 
 func _exit_tree() -> void:
 	TimeManager.reset()
@@ -136,16 +138,33 @@ func _build_ui() -> void:
 	_mode_button.pressed.connect(_toggle_mode)
 	box.add_child(_mode_button)
 
+	var tests := HBoxContainer.new()
+	box.add_child(tests)
+	var actions := {
+		"Hit 30": func(): _commander.take_damage(DamageInfo.new(30, Enums.DamageType.SLASH)),
+		"Lethal x2": func():
+			_commander.take_damage(DamageInfo.new(500, Enums.DamageType.SLASH))
+			_commander.take_damage(DamageInfo.new(500, Enums.DamageType.SLASH)),
+		"Fall": func(): _commander.global_position = Vector3(0, -20, 0),
+		"PREP": func(): EventBus.state_changed.emit(&"PREP"),
+		"COMBAT": func(): EventBus.state_changed.emit(&"COMBAT"),
+		"Reload": func(): get_tree().reload_current_scene(),
+	}
+	for title in actions:
+		var button := _make_button(title, false)
+		button.pressed.connect(actions[title])
+		tests.add_child(button)
+
 	var start_timers := _make_button("Start 3 x %d s timers" % int(TIMER_SECONDS))
 	start_timers.pressed.connect(_start_timers)
 	box.add_child(start_timers)
 	_timer_info = Label.new()
 	box.add_child(_timer_info)
 
-func _make_button(text: String) -> Button:
+func _make_button(text: String, toggle := true) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.toggle_mode = true
+	button.toggle_mode = toggle
 	# Keeps Space for Dodge instead of activating the focused button.
 	button.focus_mode = Control.FOCUS_NONE
 	return button
@@ -186,13 +205,16 @@ real time: %.1f s
 Dodge cooldown left: %.2f s    Battle Cry cooldown left: %.2f s
 Combo hit: %d    attacking: %s    dodging: %s    skill: %s
 Buffered command: %s    Blocked (release to use again): %s
+HP: %d/%d    dead: %s    commander_died count: %d    low HP: %s    wave state: %s
 Esc / Pause button: pause. WASD, Space, Q, left click to fight.""" % [
 			TimeManager.get_time_scale(), TimeManager.is_paused, Engine.time_scale,
 			TimeManager.game_time, TimeManager.pausable_real_time, TimeManager.real_time,
 			_commander._dodge_cooldown_timer, _commander._battle_cry_cd_timer,
 			_commander.current_combo_hit, _commander.is_attacking, _commander.is_dodging,
 			_commander.is_using_skill, _commander._cmd_input.get_buffered(),
-			_commander._cmd_input.get_blocked()]
+			_commander._cmd_input.get_blocked(),
+			_commander.health.hp, _commander.health.max_hp, _commander.is_dead,
+			_died_count, _commander._is_low_hp, _commander._wave_state]
 
 	var lines: Array[String] = []
 	for entry in _timers:

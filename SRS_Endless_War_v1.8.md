@@ -2212,6 +2212,7 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-29 | reward_picked(card_id: StringName, slot_kind: StringName, new_level: int) | UI. Nghe: Player & Combat (StatBlock, SkillRunner), RunState |
 | EVB-30 | skill_slots_changed(active: Array, passive: Array) | Player & Combat. Nghe: UI (HUD-16) |
 | EVB-31 | aura_changed(active: bool) | Player & Combat. Nghe: UI (HUD-17), Tower & Build |
+| EVB-32 | commander_low_hp_changed(is_low: bool) | Player & Combat. Phát khi HP chỉ huy xuống dưới commander_low_hp_warning_pct (is_low = true) hoặc lên lại (false), chỉ khi trạng thái đổi (DEAD-07). Nghe: UI (viền đỏ, nhịp tim), Audio (giảm nhạc nền) |
 
 # 7. KIỂM CHỨNG VÀ NGHIỆM THU
 
@@ -2555,5 +2556,6 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 60 | **v1.8, giả định kỹ thuật G1..G7:** phiên 6 giờ, tối đa 2 phiên mỗi người mỗi tuần; W5 đã Done; GridData đã dựng; Firebomb là BLAST; armor chỉ huy chỉ từ Armored; commander_level không giảm; Aura áp cả tower WALL |
 | 61 | **v1.8, bản hợp nhất đầy đủ** (16/10/2026): toàn bộ thay đổi 54 đến 60 được áp thẳng vào văn bản của v1.7, không còn phải đọc kèm tệp "thay đổi". Quyết định khi hợp nhất: (a) commander_level bắt đầu ở 0 để khớp tích lũy 2n² + 3n của XP-04; (b) bảng boss mục 3.8.10 tính lại đúng công thức (wave 10 Bulwark armor_hp 2669, core_hp 2002, Stomp 77; bản thay đổi ghi gần đúng 2664/1998); (c) đổi tên BUFF_FURY từ "Cuồng nộ" sang "Nổi giận" để không trùng Enrage; (d) mục 2.7 MVP bỏ tab Gameplay của Settings (khớp bảng phân công), hành vi mặc định cố định; (e) ETG-08 (tên cũ OVL-07) và các tham chiếu cập nhật; (f) đưa bảng số liệu SKL-10..15 vào mục 3.5.12.1 đến 3.5.12.3 thay vì trỏ sang tệp ngoài |
 | 62 | **v1.8, sửa mâu thuẫn W6 (TimeManager, input, chết và hồi):** (a) DEAD-01 chỉ áp ở Frontline, khớp 3.2.4 và DEAD-09; thêm DEAD-10 (`commander_died` đúng một lần, cause MVP là ENEMY_DAMAGE, phân biệt với end_type COMMANDER_DIED); (b) CHAR-04 trỏ sang CHAR-08: chỉ buffer dodge, skill, attack, không buffer mode_switch, 1 ô, ghi đè theo ưu tiên, xóa khi đổi ngữ cảnh; (c) CHAR-07: một timeline combo, bỏ combo_reset_time (mục 3.5.1, 3.5.3); (d) TIME-10 ba loại đồng hồ, TIME-11 Pause theo tập lý do (USER, REWARD_PICK), RunState mục 3.2.2; (e) END-01 xử lý điều kiện thua cuối frame; (f) EVB-10 ghi rõ cause và số lần phát. Chưa đổi `event_bus.gd`: cần PR riêng thêm tham số cho EVB-01, 08, 10, 18 |
+| 63 | **v1.8, chết và hồi (W6):** thêm EVB-32 `commander_low_hp_changed(is_low)` cho DEAD-07; thêm tham số `fall_y_threshold` (CharacterStats) cho DEAD-06; chỉ huy bỏ qua mọi sát thương ở PREP và SUMMARY (DEAD-05) |
 
 Hết tài liệu SRS-EW-1.8.

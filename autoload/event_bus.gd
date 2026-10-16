@@ -33,6 +33,7 @@ signal stuck_event_logged(tier: int, enemy_type: StringName, position: Vector3, 
 #-----------------------Commander-----------------------#
 signal commander_died
 signal commander_hp_changed(hp: int, max_hp: int)
+signal commander_low_hp_changed(is_low: bool)  # HP below commander_low_hp_warning_pct, emitted only when it flips
 signal mode_changed(mode: StringName)  # FRONTLINE | COMMANDER
 signal mode_switch_denied(reason: StringName, remaining: float)  # HUD-06
 signal recall_started(duration: float)

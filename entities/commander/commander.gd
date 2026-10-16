@@ -35,6 +35,7 @@ const POST_ACTION_DURATION: float = 0.1
 var aim_dir: Vector3 = Vector3.FORWARD
 var is_commander_mode: bool = false
 var is_deploying: bool = false
+var is_dead: bool = false
 
 var _knockback_velocity: Vector3 = Vector3.ZERO
 var _knockback_decay: float = 0.0
@@ -75,6 +76,9 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _debug_last_pos: Vector3
 var _debug_timer: float = 0.0
 var _cmd_input: CommanderInput
+var _spawn_position: Vector3
+var _wave_state: StringName = &""
+var _is_low_hp: bool = false
 
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
@@ -83,12 +87,14 @@ var _cmd_input: CommanderInput
 
 func _ready() -> void:
 	add_to_group(&"commander")
+	_spawn_position = global_position
 	_debug_last_pos = global_position
 	_setup_health()
 	_setup_animation_player()
 	_setup_sword_area()
 	_setup_input()
 	EventBus.mode_changed.connect(_on_mode_changed)
+	EventBus.state_changed.connect(_on_wave_state_changed)
 
 
 func _setup_health() -> void:
@@ -131,13 +137,17 @@ func _physics_process(delta: float) -> void:
 	if camera == null:
 		return
 
-	if health != null and health.hp <= 0:
+	if is_dead or (health != null and health.hp <= 0):
 		velocity.x = 0.0
 		velocity.z = 0.0
 		if not is_on_floor():
 			velocity.y -= _gravity * delta
 		move_and_slide()
 		return
+
+	# Checked before the stun branch so a stunned commander knocked into the void is recovered at once.
+	if global_position.y < (stats.fall_y_threshold if stats else -5.0):
+		_recover_from_fall()
 
 	_update_cooldowns_and_timers(delta)
 
@@ -667,7 +677,7 @@ func _execute_sword_strike(combo_step: int) -> void:
 
 
 func take_damage(damage_input: Variant) -> void:
-	if is_commander_mode:
+	if is_dead or is_commander_mode or _wave_state == &"PREP" or _wave_state == &"SUMMARY":
 		return
 
 	var info: DamageInfo = null
@@ -761,9 +771,52 @@ func can_retreat() -> bool:
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	EventBus.commander_hp_changed.emit(current_hp, max_hp)
+	_update_low_hp(current_hp, max_hp)
+
+
+func _update_low_hp(current_hp: int, max_hp: int) -> void:
+	var threshold: float = stats.commander_low_hp_warning_pct if stats else 0.25
+	var is_low := current_hp > 0 and float(current_hp) < float(max_hp) * threshold
+	if is_low != _is_low_hp:
+		_is_low_hp = is_low
+		EventBus.commander_low_hp_changed.emit(is_low)
+
+
+func _on_wave_state_changed(new_state: StringName) -> void:
+	_wave_state = new_state
+	if new_state == &"PREP" and not is_dead:
+		var heal_pct: float = stats.prep_heal_pct if stats else 0.6
+		health.heal(floori(float(health.max_hp) * heal_pct))
+
+
+## Falling out of the map costs a fraction of max HP as TRUE damage but never kills.
+func _recover_from_fall() -> void:
+	if is_dodging:
+		_end_dodge()
+	if is_attacking:
+		_interrupt_attack()
+	velocity = Vector3.ZERO
+	_knockback_velocity = Vector3.ZERO
+	global_position = _find_deploy_position()
+
+	var hp_before := health.hp
+	var fall_pct: float = stats.fall_damage_pct if stats else 0.15
+	var amount := mini(ceili(float(health.max_hp) * fall_pct), health.hp - 1)
+	if amount > 0:
+		take_damage(DamageInfo.new(amount, Enums.DamageType.TRUE))
+	print("Commander fell off the map: moved to deploy point, lost %d HP" % (hp_before - health.hp))
+
+
+func _find_deploy_position() -> Vector3:
+	var scene := get_tree().current_scene
+	var marker := scene.find_child("DeployPoint", true, false) as Node3D if scene != null else null
+	return marker.global_position if marker != null else _spawn_position
 
 
 func _on_died() -> void:
+	if is_dead:
+		return
+	is_dead = true
 	_cmd_input.discard()
 	_knockback_velocity = Vector3.ZERO
 	_knockback_decay = 0.0
