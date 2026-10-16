@@ -65,13 +65,13 @@ func change_state(new_state: AppState) -> bool:
 	current = new_state
 	if old_state == AppState.RUN:
 		resume()
+		TimeManager.reset()
 	app_state_changed.emit(new_state, old_state)
 	ScreenManager.change_scene(SCENES[new_state])
 	return true
 
 func open_pause() -> void:
-	# TODO: pause through TimeManager once it exists.
-	get_tree().paused = true
+	TimeManager.request_pause(TimeManager.REASON_USER)
 	_pause_menu = PAUSE_MENU_SCENE.instantiate()
 	_pause_layer.add_child(_pause_menu)
 
@@ -79,7 +79,7 @@ func resume() -> void:
 	if _pause_menu != null:
 		_pause_menu.queue_free()
 		_pause_menu = null
-	get_tree().paused = false
+	TimeManager.release_pause(TimeManager.REASON_USER)
 
 ## TODO: request it from RunState so it emits run_ended.
 func abandon_run() -> void:

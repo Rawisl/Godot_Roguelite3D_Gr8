@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bv0if1joqcmk1"]
+
+[ext_resource type="Script" uid="uid://b6y0h8bwy2ui0" path="res://tests/test_playtest_time.gd" id="1_time"]
+
+[node name="TestPlaytestTime" type="Node3D" unique_id=1948348973]
+script = ExtResource("1_time")
