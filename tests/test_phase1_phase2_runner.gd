@@ -75,6 +75,8 @@ func test_group_1_resource_validation() -> void:
 		assert_eq(archer_data.is_ranged, true, "Archer is_ranged == true")
 		assert_eq(archer_data.knockback_immune, false, "Archer knockback_immune == false")
 		assert_eq(archer_data.aggro_range, 11.0, "Archer aggro_range == 11.0")
+		assert_eq(archer_data.anim_attack, &"ranged/Ranged_2H_Aiming", "Archer anim_attack == ranged/Ranged_2H_Aiming")
+		assert_eq(archer_data.anim_shoot, &"ranged/Ranged_2H_Shoot", "Archer anim_shoot == ranged/Ranged_2H_Shoot")
 		assert_true(archer_data.target_rules[0] == &"TOWER" or archer_data.target_rules[0] == &"TOWER_GROUND", "Archer prioritizes Tower first")
 
 	var brute_data: EnemyData = load("res://data/enemies/brute.tres")
