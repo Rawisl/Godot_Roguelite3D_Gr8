@@ -13,7 +13,7 @@ signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: boo
 signal early_call_requested  # UI -> Wave (call wave early - press G)
 signal wave_summary_ready(summary: Dictionary)  # phat SAU KHI save xong (SAV-05, GLD-08)
 signal fortress_destroyed
-signal fortress_hp_changed(hp: int, max_hp: int)
+signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # EVB-07, delta < 0 khi mat HP
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
 signal fortress_low_hp(ratio: float)  # ALR-01, mot lan moi wave
 signal fortress_repaired(amount: int, source: StringName)  # source: GOLD | EMERGENCY
