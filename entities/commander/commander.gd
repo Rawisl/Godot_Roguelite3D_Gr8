@@ -69,12 +69,12 @@ var _attack_timer: float = 0.0
 var _strike_timer: float = 0.0
 var _has_struck: bool = false
 var _combo_reset_timer: float = 0.0
-var _has_buffered_attack: bool = false
 var _attack_strike_dir: Vector3 = Vector3.FORWARD
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _debug_last_pos: Vector3
 var _debug_timer: float = 0.0
+var _cmd_input: CommanderInput
 
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
@@ -87,6 +87,7 @@ func _ready() -> void:
 	_setup_health()
 	_setup_animation_player()
 	_setup_sword_area()
+	_setup_input()
 	EventBus.mode_changed.connect(_on_mode_changed)
 
 
@@ -105,6 +106,14 @@ func _setup_animation_player() -> void:
 		var aps := find_children("*", "AnimationPlayer", true, false)
 		if not aps.is_empty():
 			_anim_player = aps[0] as AnimationPlayer
+
+
+func _setup_input() -> void:
+	_cmd_input = CommanderInput.new()
+	_cmd_input.name = "CommanderInput"
+	if stats != null:
+		_cmd_input.buffer_time = stats.input_buffer_time
+	add_child(_cmd_input)
 
 
 func _setup_sword_area() -> void:
@@ -133,11 +142,13 @@ func _physics_process(delta: float) -> void:
 	_update_cooldowns_and_timers(delta)
 
 	if is_commander_mode:
+		_cmd_input.discard()
 		velocity = Vector3.ZERO
 		move_and_slide()
 		return
 
 	if is_stunned:
+		_cmd_input.discard()
 		velocity.x = 0.0
 		velocity.z = 0.0
 		if not _knockback_velocity.is_zero_approx():
@@ -151,10 +162,7 @@ func _physics_process(delta: float) -> void:
 			_anim_player.play(ANIM_IDLE, 0.2)
 		return
 
-	if not is_dodging and not is_using_skill:
-		_check_dodge_input(camera)
-		_check_skill_input()
-		_check_attack_input()
+	_execute_command(_cmd_input.next_command(_command_busy_left), camera)
 
 	if is_dodging:
 		_update_dodge_movement(delta)
@@ -238,18 +246,39 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 			current_combo_hit = 1
 
 
-func _check_dodge_input(camera: Camera3D) -> void:
+## Game seconds until the commander can start the command. Dodge can cancel the recovery
+## of an attack, other commands wait for it.
+func _command_busy_left(command: StringName) -> float:
+	var left := 0.0
+	if is_dodging:
+		left = maxf(left, _dodge_timer)
+	if is_using_skill:
+		left = maxf(left, _skill_timer)
+	if is_attacking and command != &"dodge":
+		left = maxf(left, _attack_timer)
+	return left
+
+
+func _execute_command(command: StringName, camera: Camera3D) -> void:
+	match command:
+		&"dodge":
+			_try_dodge(camera)
+		&"battle_cry":
+			_try_battle_cry()
+		&"attack":
+			_try_attack()
+
+
+func _try_dodge(camera: Camera3D) -> void:
 	if is_commander_mode or is_dodging or _dodge_cooldown_timer > 0.0:
 		return
-
-	if Input.is_action_just_pressed(&"dodge"):
-		if is_attacking:
-			_interrupt_attack()
-		_start_dodge(camera)
+	if is_attacking:
+		_interrupt_attack()
+	_start_dodge(camera)
 
 
 func _start_dodge(camera: Camera3D) -> void:
-	var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+	var input := _cmd_input.get_move_vector()
 	var dodge_clip := ANIM_DODGE_FWD
 
 	if not input.is_zero_approx():
@@ -310,14 +339,12 @@ func _end_dodge() -> void:
 	set_collision_mask_value(COLLISION_LAYER_ENEMY, true)
 
 
-func _check_skill_input() -> void:
+func _try_battle_cry() -> void:
 	if is_commander_mode or is_dodging or is_using_skill or is_attacking or _battle_cry_cd_timer > 0.0:
 		return
 	if health != null and health.hp <= 0:
 		return
-
-	if Input.is_action_just_pressed(&"battle_cry"):
-		_start_battle_cry()
+	_start_battle_cry()
 
 
 func _start_battle_cry() -> void:
@@ -390,7 +417,7 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
 	else:
-		var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+		var input := _cmd_input.get_move_vector()
 		var speed := stats.move_speed if stats else 6.0
 
 		var cam_basis := camera.global_transform.basis
@@ -489,23 +516,15 @@ func _update_model_facing(delta: float) -> void:
 			_aim_pivot.rotation.y = lerp_angle(_aim_pivot.rotation.y, target_yaw, weight)
 
 
-func _check_attack_input() -> void:
-	if is_commander_mode or is_dodging:
+func _try_attack() -> void:
+	if is_commander_mode or is_dodging or is_attacking or is_using_skill:
 		return
-
-	if Input.is_action_just_pressed(&"attack"):
-		if not is_attacking:
-			_start_attack(current_combo_hit)
-		else:
-			var window := stats.combo_window if stats else 0.35
-			if _attack_timer <= window:
-				_has_buffered_attack = true
+	_start_attack(current_combo_hit)
 
 
 func _start_attack(hit_index: int) -> void:
 	is_attacking = true
 	current_combo_hit = hit_index
-	_has_buffered_attack = false
 	_has_struck = false
 	_post_action_timer = 0.0
 	_post_action_facing_dir = Vector3.ZERO
@@ -528,19 +547,14 @@ func _end_attack() -> void:
 	_attack_timer = 0.0
 	_has_struck = false
 
-	if _has_buffered_attack:
-		_has_buffered_attack = false
-		var next_hit := (current_combo_hit % 3) + 1
-		_start_attack(next_hit)
+	_post_action_facing_dir = _attack_strike_dir
+	_post_action_timer = POST_ACTION_DURATION
+	if current_combo_hit >= 3:
+		current_combo_hit = 1
+		_combo_reset_timer = 0.0
 	else:
-		_post_action_facing_dir = _attack_strike_dir
-		_post_action_timer = POST_ACTION_DURATION
-		if current_combo_hit >= 3:
-			current_combo_hit = 1
-			_combo_reset_timer = 0.0
-		else:
-			current_combo_hit += 1
-			_combo_reset_timer = stats.combo_reset_time if stats else 0.6
+		current_combo_hit += 1
+		_combo_reset_timer = stats.combo_window if stats else 0.35
 
 
 func _interrupt_attack() -> void:
@@ -548,7 +562,6 @@ func _interrupt_attack() -> void:
 	is_attacking = false
 	_attack_timer = 0.0
 	_has_struck = false
-	_has_buffered_attack = false
 	_post_action_timer = 0.0
 	_post_action_facing_dir = Vector3.ZERO
 
@@ -558,7 +571,7 @@ func _interrupt_attack() -> void:
 			_combo_reset_timer = 0.0
 		else:
 			current_combo_hit += 1
-			_combo_reset_timer = stats.combo_reset_time if stats else 0.6
+			_combo_reset_timer = stats.combo_window if stats else 0.35
 	else:
 		current_combo_hit = 1
 		_combo_reset_timer = 0.0
@@ -751,6 +764,7 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 
 
 func _on_died() -> void:
+	_cmd_input.discard()
 	_knockback_velocity = Vector3.ZERO
 	_knockback_decay = 0.0
 	_hit_reaction_timer = 0.0

@@ -75,7 +75,7 @@ func test_skill_activation_and_timers() -> void:
 	# Verify skill cannot be triggered when dead
 	commander.health.hp = 0
 	commander._battle_cry_cd_timer = 0.0
-	commander._check_skill_input()
+	commander._try_battle_cry()
 	assert_true(not commander.is_using_skill, "Skill cannot be activated when dead")
 
 	commander.free()

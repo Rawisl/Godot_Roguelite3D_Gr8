@@ -98,7 +98,6 @@ func test_character_stats() -> void:
 	assert_true(is_equal_approx(stats.combo_hit3_mult, 1.5), "combo_hit3_mult == 1.5")
 	assert_true(is_equal_approx(stats.combo_hit3_knockback, 1.5), "combo_hit3_knockback == 1.5 m")
 	assert_true(is_equal_approx(stats.combo_window, 0.35), "combo_window == 0.35 s")
-	assert_true(is_equal_approx(stats.combo_reset_time, 0.6), "combo_reset_time == 0.6 s")
 	assert_true(is_equal_approx(stats.input_buffer_time, 0.15), "input_buffer_time == 0.15 s")
 
 
@@ -243,7 +242,7 @@ func test_combo_and_cleave() -> void:
 	commander.call("_end_attack")
 	assert_true(commander.get("is_attacking") == false, "Combo Hit 1 ends is_attacking = false")
 	assert_true(commander.get("current_combo_hit") == 2, "Combo step advances to Hit 2 after Hit 1 completion")
-	assert_true(is_equal_approx(commander.get("_combo_reset_timer"), stats.combo_reset_time), "Combo reset timer initialized to 0.6s")
+	assert_true(is_equal_approx(commander.get("_combo_reset_timer"), stats.combo_window), "Combo timer initialized to combo_window (0.35s)")
 
 	commander.call("_start_attack", commander.get("current_combo_hit"))
 	commander.call("_end_attack")
@@ -253,7 +252,7 @@ func test_combo_and_cleave() -> void:
 	commander.call("_end_attack")
 	assert_true(commander.get("current_combo_hit") == 1, "Combo step resets to 1 after Hit 3 finisher completion")
 
-	# Test combo reset on idle timeout (> 0.6s)
+	# Test combo reset on idle timeout (> combo_window)
 	commander.call("_start_attack", 1)
 	commander.call("_end_attack")
 	assert_true(commander.get("current_combo_hit") == 2, "Combo is at Hit 2 before timeout")

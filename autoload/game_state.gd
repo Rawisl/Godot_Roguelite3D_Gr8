@@ -53,6 +53,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pause_menu.go_back()
 	get_viewport().set_input_as_handled()
 
+func _notification(what: int) -> void:
+	# Regaining focus does not resume: the player closes the pause menu.
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and current == AppState.RUN and _pause_menu == null:
+		open_pause()
+
 ## Returns false if the transition is not allowed or a fade is running.
 func change_state(new_state: AppState) -> bool:
 	if ScreenManager.is_fading():

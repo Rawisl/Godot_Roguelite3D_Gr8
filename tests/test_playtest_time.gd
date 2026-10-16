@@ -1,6 +1,7 @@
 extends Node3D
-## Playable arena to feel TimeManager: speed buttons, Pause (Esc), the three clocks and
-## three 5 s timers. Fight the dummies at x1/x2/x3 to check attack, dodge and cooldown feel.
+## Playable arena to feel TimeManager and commander input: speed buttons, Pause (Esc), the
+## three clocks, three 5 s timers, the input buffer and held-key blocking. Fight the dummies
+## at x1/x2/x3 to check attack, dodge and cooldown feel.
 
 const COMMANDER_SCENE := preload("res://entities/commander/commander.tscn")
 const GRUNT_SCENE := preload("res://entities/enemy/grunt.tscn")
@@ -14,6 +15,7 @@ var _info: Label
 var _timer_info: Label
 var _speed_buttons: Dictionary = {}  # level -> Button
 var _pause_button: Button
+var _mode_button: Button
 var _timers: Array[Dictionary] = []
 
 func _ready() -> void:
@@ -130,6 +132,10 @@ func _build_ui() -> void:
 	_pause_button.pressed.connect(_toggle_user_pause)
 	buttons.add_child(_pause_button)
 
+	_mode_button = _make_button("Commander mode (hold WASD while toggling)")
+	_mode_button.pressed.connect(_toggle_mode)
+	box.add_child(_mode_button)
+
 	var start_timers := _make_button("Start 3 x %d s timers" % int(TIMER_SECONDS))
 	start_timers.pressed.connect(_start_timers)
 	box.add_child(start_timers)
@@ -150,6 +156,9 @@ func _toggle_user_pause() -> void:
 	else:
 		TimeManager.request_pause(TimeManager.REASON_USER)
 
+func _toggle_mode() -> void:
+	EventBus.mode_changed.emit(&"FRONTLINE" if _commander.is_commander_mode else &"COMMANDER")
+
 func _start_timers() -> void:
 	_timers.clear()
 	var sources := {
@@ -167,6 +176,7 @@ func _update_ui() -> void:
 		_speed_buttons[level].set_pressed_no_signal(TimeManager.get_time_scale() == level)
 		_speed_buttons[level].disabled = TimeManager.is_paused
 	_pause_button.set_pressed_no_signal(TimeManager.is_paused)
+	_mode_button.set_pressed_no_signal(_commander.is_commander_mode)
 
 	_info.text = """[TIME PLAYTEST]
 time_scale: x%d    paused: %s    Engine.time_scale: %.1f
@@ -174,10 +184,15 @@ game time: %.1f s
 pausable real time: %.1f s
 real time: %.1f s
 Dodge cooldown left: %.2f s    Battle Cry cooldown left: %.2f s
+Combo hit: %d    attacking: %s    dodging: %s    skill: %s
+Buffered command: %s    Blocked (release to use again): %s
 Esc / Pause button: pause. WASD, Space, Q, left click to fight.""" % [
 			TimeManager.get_time_scale(), TimeManager.is_paused, Engine.time_scale,
 			TimeManager.game_time, TimeManager.pausable_real_time, TimeManager.real_time,
-			_commander._dodge_cooldown_timer, _commander._battle_cry_cd_timer]
+			_commander._dodge_cooldown_timer, _commander._battle_cry_cd_timer,
+			_commander.current_combo_hit, _commander.is_attacking, _commander.is_dodging,
+			_commander.is_using_skill, _commander._cmd_input.get_buffered(),
+			_commander._cmd_input.get_blocked()]
 
 	var lines: Array[String] = []
 	for entry in _timers:

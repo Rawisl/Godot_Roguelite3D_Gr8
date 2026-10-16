@@ -28,7 +28,6 @@ extends Resource
 @export var attack_interval: float = 0.45
 @export var combo_hit3_mult: float = 1.5
 @export var combo_window: float = 0.35
-@export var combo_reset_time: float = 0.6
 @export var combo_hit3_knockback: float = 1.5
 @export var input_buffer_time: float = 0.15
 
