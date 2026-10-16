@@ -300,7 +300,7 @@ func _show_summary() -> void:
 	_summary.visible = true
 
 
-func _on_hp_changed(hp: int, max_hp: int) -> void:
+func _on_hp_changed(hp: int, max_hp: int, _delta: int) -> void:
 	_hp_bar.max_value = max_hp
 	_hp_bar.value = hp
 	_hp_label.text = "Fortress HP  %d / %d" % [hp, max_hp]
@@ -439,7 +439,7 @@ func test_damage_formula() -> void:
 
 
 func test_damage_gating_and_destroy_once() -> void:
-	await _begin_stage(3, "Wave gating, clamp and destroy once", "FORT-05: no damage in PREP/SUMMARY. FORT-02/03: HP locks at 0, fortress_destroyed fires once")
+	await _begin_stage(3, "Wave gating, clamp and destroy once", "FORT-05: damage only in COMBAT/BOSS_COMBAT. FORT-02/03: HP locks at 0, fortress_destroyed fires once")
 	var f := _spawn_fortress()
 	var destroyed := [0]
 	var on_destroyed := func(): destroyed[0] += 1
@@ -453,11 +453,20 @@ func test_damage_gating_and_destroy_once() -> void:
 	await _wait(step_delay)
 	_hit(f, 100)
 	await assert_true(f.get_hp() == 1000, "No damage in SUMMARY (FORT-05)")
+	_set_state(&"BOSS_INTRO")
+	await _wait(step_delay)
+	_hit(f, 100)
+	await assert_true(f.get_hp() == 1000, "No damage in BOSS_INTRO (only COMBAT / BOSS_COMBAT)")
 
+	var last_delta := [0]
+	var on_hp := func(_hp: int, _max_hp: int, delta: int): last_delta[0] = delta
+	EventBus.fortress_hp_changed.connect(on_hp)
 	_set_state(&"COMBAT")
 	await _wait(step_delay)
 	_hit(f, DamageInfo.new(100, Enums.DamageType.SLASH))
 	await assert_true(f.get_hp() == 900, "COMBAT: 100 damage -> 900")
+	await assert_true(last_delta[0] == -100, "fortress_hp_changed delta = -100 (EVB-07)")
+	EventBus.fortress_hp_changed.disconnect(on_hp)
 	_note("Three 600-damage hits in the same frame")
 	await _wait(step_delay)
 	_hit(f, 600)

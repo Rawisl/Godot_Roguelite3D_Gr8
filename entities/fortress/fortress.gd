@@ -20,18 +20,21 @@ var _destroyed: bool = false
 ## Current wave state, tracked via EventBus.state_changed (FORT-05, REP-05).
 var _wave_state: StringName = &"PREP"
 var _low_hp_alerted_this_wave: bool = false
+## Last HP sent on fortress_hp_changed, used to compute delta (EVB-07).
+var _last_hp: int = 0
 
 
 func _ready() -> void:
 	var max_hp := compute_max_hp(stats.max_hp, fort_hp_level)
 	health.max_hp = max_hp
 	health.hp = max_hp
+	_last_hp = max_hp
 	health.hp_changed.connect(_on_hp_changed)
 	health.died.connect(_on_died)
 	_melee_slots.setup(stats.melee_slots)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.wave_started.connect(_on_wave_started)
-	EventBus.fortress_hp_changed.emit.call_deferred(health.hp, health.max_hp)
+	EventBus.fortress_hp_changed.emit.call_deferred(health.hp, health.max_hp, 0)
 
 
 #region Stats
@@ -103,7 +106,7 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 
 
 func _can_take_damage() -> bool:
-	return _wave_state != &"PREP" and _wave_state != &"SUMMARY"
+	return _wave_state == &"COMBAT" or _wave_state == &"BOSS_COMBAT"
 
 
 static func _damage_type_name(t: Enums.DamageType) -> StringName:
@@ -199,7 +202,9 @@ func get_free_melee_slots() -> int:
 
 
 func _on_hp_changed(hp: int, max_hp: int) -> void:
-	EventBus.fortress_hp_changed.emit(hp, max_hp)
+	var delta := hp - _last_hp
+	_last_hp = hp
+	EventBus.fortress_hp_changed.emit(hp, max_hp, delta)
 	_check_low_hp(hp, max_hp)
 
 
