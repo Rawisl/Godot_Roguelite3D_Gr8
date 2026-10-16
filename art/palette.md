@@ -101,7 +101,7 @@ Nút và vùng nội dung dùng màu đá `struct_stone`, `struct_stone_light`, 
 
 | Thành phần | Nền | Viền | Chữ |
 |---|---|---|---|
-| Nút thường | `struct_stone` | | `ui_bg` |
+| Nút thường (Button, OptionButton) | `struct_stone` | | `ui_bg` |
 | Nút rê chuột | `struct_stone_light` | `struct_stone` | `ui_bg` |
 | Nút nhấn | `env_dirt` | `struct_stone_dark` | `ui_bg` |
 | Nút focus | | `ui_bg`, 3 px | `ui_bg` |
