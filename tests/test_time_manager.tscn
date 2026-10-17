@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/test_time_manager.gd" id="1_tm"]
+
+[node name="TestTimeManager" type="Node"]
+script = ExtResource("1_tm")

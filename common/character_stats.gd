@@ -18,6 +18,8 @@ extends Resource
 @export var dodge_distance: float = 4.0
 @export var dodge_iframe: float = 0.3
 @export var dodge_cooldown: float = 1.5
+## Below this world height the commander counts as fallen off the map.
+@export var fall_y_threshold: float = -5.0
 
 @export_group("Sword & Attack")
 @export var sword_damage: int = 20
@@ -28,7 +30,6 @@ extends Resource
 @export var attack_interval: float = 0.45
 @export var combo_hit3_mult: float = 1.5
 @export var combo_window: float = 0.35
-@export var combo_reset_time: float = 0.6
 @export var combo_hit3_knockback: float = 1.5
 @export var input_buffer_time: float = 0.15
 
