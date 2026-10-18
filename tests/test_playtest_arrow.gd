@@ -10,7 +10,8 @@ const STATE_MARK := {
 
 var _buttons: Dictionary = {}  # StringName -> Button
 
-@onready var slot_manager: SlotManager = %SlotManager
+## The SlotManager is the level's Slots node (levels/corridor/slots_layout.tscn).
+@onready var slot_manager: SlotManager = $Level/Slots
 @onready var wave_manager: WaveManager = %WaveManager
 @onready var slot_rows: VBoxContainer = %SlotRows
 @onready var wave_label: Label = %WaveLabel
@@ -18,12 +19,10 @@ var _buttons: Dictionary = {}  # StringName -> Button
 
 
 func _ready() -> void:
-	for zone_prefix in ["W", "N", "F"]:
+	for zone in [Enums.SlotZone.WALL, Enums.SlotZone.GROUND]:
 		var row := HBoxContainer.new()
 		slot_rows.add_child(row)
-		for slot in slot_manager.get_all_slots():
-			if String(slot.slot_id).left(1) != zone_prefix:
-				continue
+		for slot in slot_manager.get_slots_in_zone(zone):
 			var b := Button.new()
 			b.custom_minimum_size = Vector2(110, 44)
 			b.focus_mode = Control.FOCUS_NONE
