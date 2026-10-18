@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ekgmjmchm13f"]
 
-[ext_resource type="PackedScene" uid="uid://btoa1luqsnhh5" path="res://systems/build/slot.tscn" id="1_41ihd"]
+[ext_resource type="PackedScene" uid="uid://bg8ubpgsvf1gt" path="res://levels/corridor/slots_layout.tscn" id="12_slots"]
 [ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="9_grass"]
 [ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
 [ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
@@ -150,73 +150,7 @@ navigation_layers = 2
 [node name="LaneCurve" type="Path3D" parent="." unique_id=1725652686]
 curve = SubResource("Curve3D_lane")
 
-[node name="Slots" type="Node3D" parent="." unique_id=1229477472]
-
-[node name="W1" parent="Slots" unique_id=995670275 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -6)
-slot_id = &"W1"
-zone = 0
-
-[node name="W2" parent="Slots" unique_id=392996667 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -3.6)
-slot_id = &"W2"
-zone = 0
-
-[node name="W3" parent="Slots" unique_id=1361793867 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -1.2)
-slot_id = &"W3"
-zone = 0
-
-[node name="W4" parent="Slots" unique_id=981873432 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 1.2)
-slot_id = &"W4"
-zone = 0
-
-[node name="W5" parent="Slots" unique_id=1240733026 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 3.6)
-slot_id = &"W5"
-zone = 0
-
-[node name="W6" parent="Slots" unique_id=769643092 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 6)
-slot_id = &"W6"
-zone = 0
-
-[node name="N1" parent="Slots" unique_id=249274379 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -6.5)
-slot_id = &"N1"
-
-[node name="N2" parent="Slots" unique_id=1918855279 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -3.5)
-slot_id = &"N2"
-
-[node name="N3" parent="Slots" unique_id=998406386 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 3.5)
-slot_id = &"N3"
-
-[node name="N4" parent="Slots" unique_id=436172443 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 6.5)
-slot_id = &"N4"
-
-[node name="F1" parent="Slots" unique_id=428482230 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -6.5)
-slot_id = &"F1"
-zone = 2
-
-[node name="F2" parent="Slots" unique_id=122091872 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -3.5)
-slot_id = &"F2"
-zone = 2
-
-[node name="F3" parent="Slots" unique_id=1988940985 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 3.5)
-slot_id = &"F3"
-zone = 2
-
-[node name="F4" parent="Slots" unique_id=177784305 instance=ExtResource("1_41ihd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 6.5)
-slot_id = &"F4"
-zone = 2
+[node name="Slots" parent="." unique_id=1229477472 instance=ExtResource("12_slots")]
 
 [node name="Markers" type="Node3D" parent="." unique_id=969002018]
 
