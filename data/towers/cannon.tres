@@ -10,7 +10,7 @@
 script = ExtResource("2_yxcx4")
 id = &"cannon"
 display_name = "tower.cannon"
-allowed_zones = Array[int]([0, 1, 2])
+allowed_zones = Array[int]([0, 1])
 damage_type = 1
 default_priority = 1
 min_range = 4.0
