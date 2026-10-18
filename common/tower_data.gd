@@ -12,6 +12,7 @@ extends Resource
 @export var projectile_scene: PackedScene
 @export var projectile_speed: float = 20.0
 @export var release_delay: float = 0.0
+@export var splash_falloff_edge: float = 1.0
 @export var levels: Array[TowerLevelData] = []
 
 ## Total gold to reach `level` from nothing: build + every upgrade up to it.
