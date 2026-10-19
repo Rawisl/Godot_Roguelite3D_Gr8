@@ -41,7 +41,11 @@ func _hide_panels() -> void:
 func _any_open() -> bool:
 	return _build_panel.visible
 
+## Only selections made by SelectionController open the Build panel, and only in PREP.
 func _on_slot_selected(slot_id: StringName) -> void:
+	var service := get_tree().get_first_node_in_group(&"build_service") as BuildService
+	if service == null or not service.is_prep() or _selection.selected_slot != slot_id:
+		return
 	_hide_panels()
 	_build_panel.visible = true
 	_build_panel.open(slot_id)
