@@ -22,7 +22,10 @@ func _ready() -> void:
 	EventBus.early_call_requested.connect(close_all)
 
 ## Runs before GameState in the tree order, so Esc closes the panel before opening Pause.
+## While the pause menu is open, Esc belongs to it.
 func _unhandled_input(event: InputEvent) -> void:
+	if TimeManager.has_pause_reason(TimeManager.REASON_USER):
+		return
 	if event.is_action_pressed(&"pause") and _any_open():
 		close_all()
 		get_viewport().set_input_as_handled()
