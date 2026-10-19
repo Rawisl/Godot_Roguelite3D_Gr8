@@ -6,6 +6,7 @@ extends Node3D
 ## - Tường phía sau chỉ huy không bao giờ mờ.
 
 const STONE := preload("res://art/materials/struct_stone.tres")
+const TOON_DITHER := preload("res://art/shaders/toon_dither.gdshader")
 const GRASS := preload("res://art/materials/env_grass.tres")
 const CANNON := preload("res://contents/assets/towers/cannon_tower_model.tscn")
 
@@ -42,6 +43,10 @@ func _add_box(size: Vector3, pos: Vector3, mat: Material, occluder: bool) -> Mes
 	mesh.material_override = mat
 	mesh.position = pos
 	if occluder:
+		# Vật che dùng bản toon có dither, giống tower_material.
+		var dither_mat := (mat as ShaderMaterial).duplicate() as ShaderMaterial
+		dither_mat.shader = TOON_DITHER
+		mesh.material_override = dither_mat
 		mesh.add_to_group(&"occluder")
 	add_child(mesh)
 	return mesh
