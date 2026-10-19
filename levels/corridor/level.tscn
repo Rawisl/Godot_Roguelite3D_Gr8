@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://ekgmjmchm13f"]
 
-[ext_resource type="PackedScene" uid="uid://bg8ubpgsvf1gt" path="res://levels/corridor/slots_layout.tscn" id="12_slots"]
 [ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="9_grass"]
 [ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
 [ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
 [ext_resource type="Script" uid="uid://bnij7d30nqxt0" path="res://art/occlusion/occlusion_manager.gd" id="10_occl"]
-[ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="11_fortress"]
 [ext_resource type="Script" uid="uid://be8rmfu2jp2rt" path="res://art/vfx/build_fx_manager.gd" id="11_bfx"]
+[ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="11_fortress"]
+[ext_resource type="PackedScene" uid="uid://bg8ubpgsvf1gt" path="res://levels/corridor/slots_layout.tscn" id="12_slots"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -151,6 +151,7 @@ navigation_layers = 2
 curve = SubResource("Curve3D_lane")
 
 [node name="Slots" parent="." unique_id=1229477472 instance=ExtResource("12_slots")]
+unique_name_in_owner = true
 
 [node name="Markers" type="Node3D" parent="." unique_id=969002018]
 

@@ -11,7 +11,7 @@ const STATE_MARK := {
 var _buttons: Dictionary = {}  # StringName -> Button
 
 ## The SlotManager is the level's Slots node (levels/corridor/slots_layout.tscn).
-@onready var slot_manager: SlotManager = $Level/Slots
+@onready var slot_manager: SlotManager = %Level.get_node("%Slots")
 @onready var wave_manager: WaveManager = %WaveManager
 @onready var slot_rows: VBoxContainer = %SlotRows
 @onready var wave_label: Label = %WaveLabel
