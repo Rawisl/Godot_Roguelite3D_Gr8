@@ -2,6 +2,41 @@
 
 [ext_resource type="PackedScene" uid="uid://c8i7qjsqqke46" path="res://entities/tower/tower.tscn" id="1_tq3d3"]
 [ext_resource type="Resource" uid="uid://bm0wnqjyjmnq8" path="res://data/towers/cannon.tres" id="2_thygs"]
+[ext_resource type="Script" uid="uid://b74gxrugag0jg" path="res://entities/tower/tower_model.gd" id="3_model"]
+[ext_resource type="PackedScene" uid="uid://be2n7yc8bock6" path="res://contents/assets/towers/cannon_tower_model.tscn" id="4_cmodel"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_body"]
+height = 4.0
+radius = 0.8
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_bjy5s"]
+resource_local_to_scene = true
+height = 20.0
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_click"]
+height = 4.2
+radius = 0.9
 
 [node name="Cannon" unique_id=457661571 instance=ExtResource("1_tq3d3")]
 data = ExtResource("2_thygs")
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=668314301]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("CylinderShape3D_body")
+
+[node name="Model" parent="." index="1" unique_id=155594529]
+script = ExtResource("3_model")
+aim_node_name = &""
+shoot_anim = &""
+
+[node name="CannonTowerModel" parent="Model" index="0" unique_id=1823384899 instance=ExtResource("4_cmodel")]
+
+[node name="Muzzle" type="Marker3D" parent="Model" index="1" unique_id=194725927]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
+
+[node name="CollisionShape3D" parent="RangeArea" parent_id_path=PackedInt32Array(666926964) index="0" unique_id=49393706]
+shape = SubResource("CylinderShape3D_bjy5s")
+
+[node name="CollisionShape3D" parent="ClickArea" parent_id_path=PackedInt32Array(521694951) index="0" unique_id=444085316]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
+shape = SubResource("CylinderShape3D_click")
