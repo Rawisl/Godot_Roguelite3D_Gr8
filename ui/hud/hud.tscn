@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="10_cxhb7"]
 [ext_resource type="Script" uid="uid://chy1j70x80shi" path="res://ui/world/selection_controller.gd" id="14_olkg6"]
 [ext_resource type="Script" uid="uid://bn8aebymn6o1b" path="res://ui/world/range_ring.gd" id="15_hk13k"]
+[ext_resource type="Script" uid="uid://cjfiuiol141y4" path="res://ui/world/hover_highlight.gd" id="17_olkg6"]
 
 [node name="Hud" type="CanvasLayer" unique_id=1623823647]
 layer = 10
@@ -122,6 +123,7 @@ layout_mode = 1
 layout_mode = 1
 
 [node name="EnemyBarLayer" parent="Root" unique_id=1455219063 instance=ExtResource("5_kwc50")]
+unique_name_in_owner = true
 layout_mode = 1
 
 [node name="OffscreenIndicators" parent="Root" unique_id=352408765 instance=ExtResource("8_gfles")]
@@ -134,3 +136,21 @@ script = ExtResource("14_olkg6")
 [node name="RangeRing" type="MeshInstance3D" parent="." unique_id=456174777]
 unique_name_in_owner = true
 script = ExtResource("15_hk13k")
+
+[node name="HoverRing" type="MeshInstance3D" parent="." unique_id=16498686]
+unique_name_in_owner = true
+script = ExtResource("15_hk13k")
+color = Color(1, 0.85, 0.3, 0.6)
+
+[node name="HoverHighlight" type="Node" parent="." unique_id=1760754945]
+script = ExtResource("17_olkg6")
+
+[node name="EnemyTooltip" type="PanelContainer" parent="." unique_id=1596665316]
+unique_name_in_owner = true
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="TooltipText" type="Label" parent="EnemyTooltip" unique_id=1732002832]
+unique_name_in_owner = true
+layout_mode = 2
