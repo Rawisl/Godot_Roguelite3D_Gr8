@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="2_yxcx4"]
 [ext_resource type="Resource" uid="uid://drnqhtvrwrwyc" path="res://data/towers/cannon_l2.tres" id="3_dxqy6"]
 [ext_resource type="Resource" uid="uid://bpj2rucbr4p5j" path="res://data/towers/cannon_l3.tres" id="4_s70g0"]
+[ext_resource type="PackedScene" path="res://entities/projectile/cannon_projectile.tscn" id="5_cannonprj"]
 
 [resource]
 script = ExtResource("2_yxcx4")
@@ -14,5 +15,7 @@ allowed_zones = Array[int]([0, 1])
 damage_type = 1
 default_priority = 1
 min_range = 4.0
+projectile_scene = ExtResource("5_cannonprj")
+splash_falloff_edge = 0.5
 levels = Array[ExtResource("1_t20fp")]([ExtResource("2_7luwv"), ExtResource("3_dxqy6"), ExtResource("4_s70g0")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"
