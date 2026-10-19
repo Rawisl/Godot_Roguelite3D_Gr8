@@ -2,15 +2,18 @@ class_name SelectionController
 extends Node
 ## Picks towers and slots with a ray on the click layer only, so walls and faded
 ## meshes never block a click. GUI controls get the mouse first because picking
-## runs in _unhandled_input.
+## runs in _unhandled_input. Also reports what is under the mouse for hover feedback.
 
 signal selection_cleared
+signal hovered_changed(node: Node)
 
 const CLICK_LAYER := 1 << 6
+const ENEMY_LAYER := 1 << 2
 const RAY_LENGTH := 300.0
 const MAX_HITS := 4
 
 var selected_slot: StringName = &""
+var hovered: Node = null
 
 var _mode: StringName = &"FRONTLINE"
 var _rings_visible := false
@@ -22,6 +25,17 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	# The first PREP is sent before the HUD is ready, so read it once here.
 	_sync_rings.call_deferred()
+
+## Hover follows the same order as clicks: tower, then slot, then enemy.
+func _process(_delta: float) -> void:
+	var node: Node = null
+	if not _is_mouse_over_ui():
+		node = pick_under_mouse()
+		if node == null:
+			node = _pick_enemy()
+	if node != hovered:
+		hovered = node
+		hovered_changed.emit(node)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"select") and _can_select():
@@ -70,6 +84,24 @@ func clear_selection() -> void:
 		return
 	selected_slot = &""
 	selection_cleared.emit()
+
+func _pick_enemy() -> Enemy:
+	var viewport := get_viewport()
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return null
+	var mouse := viewport.get_mouse_position()
+	var from := cam.project_ray_origin(mouse)
+	var query := PhysicsRayQueryParameters3D.create(
+		from, from + cam.project_ray_normal(mouse) * RAY_LENGTH, ENEMY_LAYER)
+	var hit := cam.get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return null
+	var enemy := hit.collider as Enemy
+	return enemy if enemy != null and not enemy.is_dead else null
+
+func _is_mouse_over_ui() -> bool:
+	return get_viewport().gui_get_hovered_control() != null
 
 func _select(node: Node) -> void:
 	if node is Tower:
