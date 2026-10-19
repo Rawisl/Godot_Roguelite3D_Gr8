@@ -50,4 +50,5 @@ disabled = true
 
 [node name="RubbleObstacle" type="NavigationObstacle3D" parent="Rubble" unique_id=1520394820]
 unique_name_in_owner = true
-radius = 0.85
+height = 0.6
+vertices = PackedVector3Array(-0.6, 0, -0.6, 0.6, 0, -0.6, 0.6, 0, 0.6, -0.6, 0, 0.6)

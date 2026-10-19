@@ -8,6 +8,8 @@ signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
  
 const PATH_UPDATE_INTERVAL: float = 0.3
 const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
+## slot holder blocked by the units already at the target swings.
+const STALL_ATTACK_TIME: float = 0.5
  
 @export var data: EnemyData
  
@@ -46,6 +48,15 @@ var is_frenzied: bool = false
 var wait_timer: float = 0.0
 var _retarget_timer: float = 0.0
 var _path_timer: float = 0.0
+var _full_targets_until: Dictionary = {}
+## Avoidance: safe velocity the NavAgent returned for the last desired velocity.
+var _safe_velocity: Vector3 = Vector3.ZERO
+var _has_safe_velocity: bool = false
+var _stall_time: float = 0.0
+## Side of the current sidestep while blocked: +1 left, -1 right, 0 none chosen yet.
+var _sidestep_sign: float = 0.0
+## Stall time at which the sidestep tries the other side.
+var _sidestep_flip_at: float = 1.0
  
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
  
@@ -79,8 +90,11 @@ func _ready() -> void:
 	health.died.connect(_on_died)
  
 	nav.radius = data.avoid_radius
-	nav.path_desired_distance = 0.5
+	nav.path_desired_distance = 1.0
 	nav.target_desired_distance = data.attack_range if data else 1.0
+	# Steer around Barricades, rubble (NavigationObstacle3D) and other units; the navmesh is not re-baked (SLOT-03).
+	nav.avoidance_enabled = true
+	nav.velocity_computed.connect(_on_velocity_computed)
  
 	_init_spawn_zone_bounds()
 	_play_locomotion_anim()
@@ -189,6 +203,7 @@ func _physics_process(delta: float) -> void:
  
 	_update_timers(delta)
 	_update_state(delta)
+	_apply_avoidance(delta)
 	move_and_slide()
  
 func _update_timers(delta: float) -> void:
@@ -254,10 +269,11 @@ func _update_state(delta: float) -> void:
 			_retarget_timer += delta
 			if _retarget_timer >= GameConfig.retarget_interval:
 				_retarget_timer = 0.0
-				_find_best_target()
+				if not _keeps_slot_target():
+					_find_best_target()
  
 			if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
-				change_state(Enums.EnemyState.ADVANCE)
+				_retarget_now()
 				return
  
 			if not _try_hold_melee_slot(current_target):
@@ -268,8 +284,22 @@ func _update_state(delta: float) -> void:
 			diff.y = 0.0
 			var dist_to_target: float = diff.length()
 			var attack_rng: float = data.attack_range if data else 1.5
+			attack_rng = minf(attack_rng, _slot_arrive_distance(current_target))
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
+				return
+			# CRD-01: holding a slot but boxed in by the units already there; hit from here when in reach.
+			if (_stall_time >= STALL_ATTACK_TIME and dist_to_target <= _melee_reach()
+					and _uses_melee_slot(current_target) and current_target.has_melee_slot(self)):
+				change_state(Enums.EnemyState.ATTACK)
+				return
+			# CRD-02: give the slot up, skip this target for a while and choose another one.
+			if _stall_time >= GameConfig.crowd_wait_retarget_time and _uses_melee_slot(current_target):
+				var stuck_on := current_target
+				_release_melee_slot()
+				_skip_full_target(stuck_on)
+				_stall_time = 0.0
+				_retarget_now()
 				return
  
 			_update_target_tracking(delta)
@@ -278,6 +308,10 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.ATTACK:
 			velocity.x = 0.0
 			velocity.z = 0.0
+			# ETG-04: finish the swing before choosing again, unless the target died or became RUINED (ETG-03).
+			if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
+				_retarget_now()
+				return
  
 			if current_target != null and is_instance_valid(current_target):
 				var look_dir := (_get_attack_point(current_target) - global_position)
@@ -307,8 +341,7 @@ func _update_state(delta: float) -> void:
 						var diff_after := _get_attack_point(current_target) - global_position
 						diff_after.y = 0.0
 						var dist_after: float = diff_after.length()
-						var attack_rng: float = data.attack_range if data else 1.5
-						if dist_after <= attack_rng + 0.3:
+						if dist_after <= _melee_reach():
 							attack_windup_timer = 0.0
 							_play_attack_anim()
 						else:
@@ -330,10 +363,15 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.WAIT:
 			velocity.x = 0.0
 			velocity.z = 0.0
+			if not is_instance_valid(current_target) or not _is_target_valid(current_target):
+				_retarget_now()
+				return
 			wait_timer += delta
 			if wait_timer >= GameConfig.crowd_wait_retarget_time:
 				wait_timer = 0.0
-				change_state(Enums.EnemyState.ADVANCE)
+				# CRD-02: still full after the wait, skip it for a while and choose again.
+				_skip_full_target(current_target)
+				_retarget_now()
  
 		Enums.EnemyState.FRENZY:
 			if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"fortress"):
@@ -452,6 +490,8 @@ func _is_target_ahead(target_pos: Vector3, tolerance: float = 0.5) -> bool:
  
 func _is_target_valid(t: Node3D) -> bool:
 	if t == null or not is_instance_valid(t):
+		return false
+	if _is_skipped_full_target(t):
 		return false
  
 	if t.is_in_group(&"commander"):
@@ -776,10 +816,35 @@ func _try_hold_melee_slot(t: Node3D) -> bool:
 		return true
 	if t.claim_melee_slot(self):
 		nav.target_position = t.get_melee_slot_position(self)
+		nav.target_desired_distance = minf(nav.target_desired_distance, _slot_arrive_distance(t))
 		return true
 	return is_frenzied
  
+## A unit that already holds a melee slot keeps that target on the periodic scan, even when it
+## walks a little past it to reach its slot . The commander hit or taunt it still pulls it away (ETG-03), and a dead or RUINED target ends it.
+func _keeps_slot_target() -> bool:
+	if provoked_by_player or taunted_by_player:
+		return false
+	if current_target == null or not is_instance_valid(current_target):
+		return false
+	return (_is_target_valid(current_target) and _uses_melee_slot(current_target)
+		and current_target.has_melee_slot(self))
+
+## Same reach as the strike check in _execute_melee_strike.
+func _melee_reach() -> float:
+	return (data.attack_range if data else 1.5) + 0.6
+
+## Targets with widely spaced slots (Barricade) ask units to walk onto their slot before swinging,
+## so they do not stop attack_range short and block the way to the slots next to them (CRD-01).
+func _slot_arrive_distance(t: Node3D) -> float:
+	if t == null or not is_instance_valid(t) or not t.has_method(&"get_melee_arrive_distance"):
+		return INF
+	if not _uses_melee_slot(t) or not t.has_melee_slot(self):
+		return INF
+	return t.get_melee_arrive_distance()
+
 func _release_melee_slot() -> void:
+	nav.target_desired_distance = data.attack_range if data else 1.0
 	if current_target != null and is_instance_valid(current_target) and current_target.has_method(&"release_melee_slot"):
 		current_target.release_melee_slot(self)
  
@@ -799,6 +864,82 @@ func _get_active_melee_attackers_count(cmd: Node3D) -> int:
 				if count >= GameConfig.max_aggro_melee:
 					return count
 	return count
+ 
+## ETG-03: target died, became RUINED/skipped. Choose again instead of waiting for the next retarget_interval scan. 
+func _retarget_now() -> void:
+	if is_frenzied:
+		change_state(Enums.EnemyState.FRENZY)
+		return
+	change_state(Enums.EnemyState.ADVANCE)
+	_find_best_target()
+
+## CRD-02: after waiting crowd_wait_retarget_time on a full melee target, ignore it so the unit picks another one. The Fortress is never skipped (ETG-06).
+func _skip_full_target(t) -> void:
+	if not is_instance_valid(t) or not _uses_melee_slot(t):
+		return
+	if t.is_in_group(&"fortress") or t.has_melee_slot(self):
+		return
+	_full_targets_until[t.get_instance_id()] = life_timer + GameConfig.crowd_full_target_ignore_time
+
+func _is_skipped_full_target(t: Node3D) -> bool:
+	var id := t.get_instance_id()
+	if not _full_targets_until.has(id):
+		return false
+	if life_timer >= float(_full_targets_until[id]):
+		_full_targets_until.erase(id)
+		return false
+	return true
+
+## Walking states hand their velocity to the NavAgent and move with the safe velocity it
+## returns (one physics frame later). Standing, attacking and knockback keep their own velocity.
+func _apply_avoidance(delta: float) -> void:
+	if not nav.avoidance_enabled:
+		return
+	var walking := (current_state == Enums.EnemyState.ADVANCE
+		or current_state == Enums.EnemyState.CHASE
+		or current_state == Enums.EnemyState.FRENZY)
+	var desired := Vector3(velocity.x, 0.0, velocity.z) if walking else Vector3.ZERO
+	var blocked := (walking and _has_safe_velocity and desired.length() > 0.1
+		and _safe_velocity.length() < desired.length() * 0.25)
+	_stall_time = _stall_time + delta if blocked else 0.0
+	if not blocked:
+		_sidestep_sign = 0.0
+		_sidestep_flip_at = 1.0
+	var feed := desired
+	# RVO stops that walks straight at an obstacle or at a standing crowd, and never picks a side. Ask for a sideways move instead
+	var to_dest := Vector3(nav.target_position.x - global_position.x, 0.0, nav.target_position.z - global_position.z)
+	if blocked and to_dest.length() > 1.5:
+		var left := Vector3(-desired.z, 0.0, desired.x).normalized()
+		if _sidestep_sign == 0.0:
+			_sidestep_sign = _pick_sidestep(left, to_dest)
+		elif _stall_time >= _sidestep_flip_at:
+			_sidestep_sign = -_sidestep_sign
+			_sidestep_flip_at += 1.0
+		feed = (desired.normalized() * 0.35 + left * _sidestep_sign).normalized() * desired.length()
+	nav.max_speed = maxf(desired.length(), 0.01)
+	nav.velocity = feed
+	if walking and _has_safe_velocity and desired.length_squared() > 0.001:
+		velocity.x = _safe_velocity.x
+		velocity.z = _safe_velocity.z
+
+## +1 = step left, -1 = step right. The side the destination lies on; when it is straight ahead,
+## the side with open navmesh (not a corridor wall).
+func _pick_sidestep(left: Vector3, to_dest: Vector3) -> float:
+	var lean := left.dot(to_dest.normalized())
+	if absf(lean) > 0.3:
+		return signf(lean)
+	var map := nav.get_navigation_map()
+	if NavigationServer3D.map_get_iteration_id(map) == 0:
+		return 1.0  # map not synced yet (first frames)
+	var l := global_position + left * 1.2
+	var r := global_position - left * 1.2
+	var off_l := Vector2(NavigationServer3D.map_get_closest_point(map, l).x - l.x, NavigationServer3D.map_get_closest_point(map, l).z - l.z).length()
+	var off_r := Vector2(NavigationServer3D.map_get_closest_point(map, r).x - r.x, NavigationServer3D.map_get_closest_point(map, r).z - r.z).length()
+	return 1.0 if off_l <= off_r else -1.0
+
+func _on_velocity_computed(safe_velocity: Vector3) -> void:
+	_safe_velocity = safe_velocity
+	_has_safe_velocity = true
  
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if is_dead or spawn_grace or is_in_spawn_zone:
