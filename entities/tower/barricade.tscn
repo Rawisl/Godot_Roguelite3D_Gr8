@@ -2,9 +2,56 @@
 
 [ext_resource type="PackedScene" uid="uid://c8i7qjsqqke46" path="res://entities/tower/tower.tscn" id="1_ea0mi"]
 [ext_resource type="Resource" uid="uid://bakx85mq5louq" path="res://data/towers/barricade.tres" id="2_cwq22"]
+[ext_resource type="Script" uid="uid://bqhwa8tatirh5" path="res://entities/tower/barricade.gd" id="3_bscript"]
+[ext_resource type="PackedScene" uid="uid://6ka6jtxno0f1" path="res://contents/assets/towers/barricade_tower_model.tscn" id="4_bmodel"]
+[ext_resource type="Script" uid="uid://cfhws0o80cwe8" path="res://entities/tower/barricade_melee_slots.gd" id="5_bslots"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(0.7, 1, 1.6)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_gd6hh"]
+resource_local_to_scene = true
+height = 20.0
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_click"]
+size = Vector3(0.9, 1.2, 1.8)
 
 [node name="Barricade" unique_id=457661571 instance=ExtResource("1_ea0mi")]
+script = ExtResource("3_bscript")
 data = ExtResource("2_cwq22")
 
+[node name="CollisionShape3D" parent="." index="0" unique_id=668314301]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_body")
+
+[node name="BarricadeTowerModel" parent="Model" parent_id_path=PackedInt32Array(155594529) index="0" unique_id=228903073 instance=ExtResource("4_bmodel")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+
+[node name="CollisionShape3D" parent="RangeArea" parent_id_path=PackedInt32Array(666926964) index="0" unique_id=49393706]
+shape = SubResource("CylinderShape3D_gd6hh")
+
+[node name="CollisionShape3D" parent="ClickArea" parent_id_path=PackedInt32Array(521694951) index="0" unique_id=444085316]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_click")
+
 [node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="." index="6" unique_id=1436039338]
-affect_navigation_mesh = true
+vertices = PackedVector3Array(-0.4, 0, -0.85, 0.4, 0, -0.85, 0.4, 0, 0.85, -0.4, 0, 0.85)
+
+[node name="MeleeSlots" type="Node3D" parent="." index="7" unique_id=1761828924]
+unique_name_in_owner = true
+script = ExtResource("5_bslots")
+
+[node name="P0" type="Marker3D" parent="MeleeSlots" index="0" unique_id=358471707]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.4)
+
+[node name="P1" type="Marker3D" parent="MeleeSlots" index="1" unique_id=1591103857]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.99, 0, -0.99)
+
+[node name="P2" type="Marker3D" parent="MeleeSlots" index="2" unique_id=250974504]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4, 0, 0)
+
+[node name="P3" type="Marker3D" parent="MeleeSlots" index="3" unique_id=308090936]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.99, 0, 0.99)
+
+[node name="P4" type="Marker3D" parent="MeleeSlots" index="4" unique_id=2125348679]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.4)

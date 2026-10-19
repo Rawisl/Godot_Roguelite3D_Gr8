@@ -1,30 +1,47 @@
 class_name SlotManager
 extends Node3D
 
-## slot_ids that must exist on the map. Adding a slot only needs a new marker and its id here (SLOT-04).
-@export var expected_ids: Array[StringName] = [
-	&"W1", &"W2", &"W3", &"W4", &"W5", &"W6",
-	&"N1", &"N2", &"N3", &"N4",
-	&"F1", &"F2", &"F3", &"F4"
+@export var required_wall_ids: Array[StringName] = [
+	&"W1", &"W2", &"W3", &"W4", &"W5", &"W6"
 ]
+## Where slots are collected from. Empty = every Slot in group "slot".
+## GroundGrid (GRID-02) only has to spawn its cells before reload_slots() runs.
+@export var slot_root: Node
 
+# SLOT-05: slot_id prefix must match the zone (W = wall slot, G_c_r = ground grid cell).
 const ZONE_BY_PREFIX := {
 	"W": Enums.SlotZone.WALL,
-	"N": Enums.SlotZone.NEAR,
-	"F": Enums.SlotZone.FAR,
+	"G": Enums.SlotZone.GROUND,
 }
 
 var _slots: Dictionary = {}  # StringName -> Slot
+# Built once per reload. Read-only
+var _all: Array[Slot] = []  # WALL first, then GROUND, each by slot_id
+var _by_zone: Dictionary = {}  # Enums.SlotZone -> Array[Slot], same order as _all
+var _problems: PackedStringArray = []
 
 func _ready() -> void:
-	_collect_slots()
-	_validate_layout()
+	reload_slots()
 	EventBus.state_changed.connect(_on_game_state_changed)
 
-## Collect Slots tree and append into _slot dictionary
+func reload_slots() -> void:
+	_collect_slots()
+	_validate_layout()
+
+## Layout problems found by the last reload (SLOT-05 [LOG]). Empty = layout is valid.
+func get_layout_problems() -> PackedStringArray:
+	return _problems
+
+## Collect Slots and append into _slots dictionary
 func _collect_slots() -> void:
+	for slot: Slot in _slots.values():
+		if is_instance_valid(slot) and slot.clicked.is_connected(_on_slot_clicked):
+			slot.clicked.disconnect(_on_slot_clicked)
 	_slots.clear()
-	for node in get_tree().get_nodes_in_group("slot"):
+	_all = []
+	_by_zone = {}
+	_problems.clear()
+	for node in _gather_candidates():
 		# soft validate node, if this node variable is not Slot it will become null
 		# push bug instead crash
 		var slot := node as Slot
@@ -32,47 +49,69 @@ func _collect_slots() -> void:
 			push_warning("SlotManager: node '%s' in group slot is not a Slot" % node.get_path())
 			continue
 		if _slots.has(slot.slot_id):
-			push_error("SlotManager: duplicate slot_id '%s'" % slot.slot_id)
+			_report("duplicate slot_id '%s'" % slot.slot_id)
 			continue
 		_slots[slot.slot_id] = slot
+		_all.append(slot)
 		slot.clicked.connect(_on_slot_clicked)
+	_all.sort_custom(func(a: Slot, b: Slot) -> bool:
+		if a.zone != b.zone:
+			return a.zone < b.zone
+		return String(a.slot_id).naturalnocasecmp_to(String(b.slot_id)) < 0)
+	for slot in _all:
+		if not _by_zone.has(slot.zone):
+			var list: Array[Slot] = []
+			_by_zone[slot.zone] = list
+		_by_zone[slot.zone].append(slot)
+	_all.make_read_only()
+	for list: Array[Slot] in _by_zone.values():
+		list.make_read_only()
 
-# SLOT-05: [LOG] check the fixed slot set and that each zone matches its W/N/F prefix
+func _gather_candidates() -> Array[Node]:
+	if slot_root == null:
+		return get_tree().get_nodes_in_group("slot")
+	var result: Array[Node] = []
+	for node in slot_root.find_children("*", "", true, false):
+		if node.is_in_group("slot"):
+			result.append(node)
+	return result
+
+# SLOT-05: [LOG] W1-W6 exist, each slot_id prefix matches its zone, no duplicate slot_id
 func _validate_layout() -> void:
-	# Missing slot
-	for id in expected_ids:
+	for id in required_wall_ids:
 		if not _slots.has(id):
-			push_warning("SlotManager: missing slot '%s'" % id)
-	
-	for id in _slots:
-		var slot: Slot = _slots[id]
-		# Incorrect id
-		if not (id in expected_ids):
-			push_warning("SlotManager: slot '%s' is not in expected_ids" % id)
-		# Incorrect zone
-		#prefix = First letter of id, refer to zone	
+			_report("missing slot '%s'" % id)
+
+	for slot in _all:
+		var id := slot.slot_id
+		# prefix = first letter of id, refers to zone
 		var prefix := String(id).left(1)
-		if ZONE_BY_PREFIX.has(prefix) and ZONE_BY_PREFIX[prefix] != slot.zone:
-			push_warning("SlotManager: slot '%s' has zone %s, expected %s" % [
-				id, Enums.SlotZone.keys()[slot.zone], 
-				Enums.SlotZone.keys()[ZONE_BY_PREFIX[prefix]]])
+		if Enums.SlotZone.find_key(slot.zone) == null:
+			_report("slot '%s' has invalid zone value %d" % [id, slot.zone])
+		elif not ZONE_BY_PREFIX.has(prefix):
+			_report("slot '%s' has unknown prefix, expected W (WALL) or G (GROUND)" % id)
+		elif ZONE_BY_PREFIX[prefix] != slot.zone:
+			_report("slot '%s' has zone %s, expected %s" % [
+				id, Enums.SlotZone.find_key(slot.zone),
+				Enums.SlotZone.find_key(ZONE_BY_PREFIX[prefix])])
+
+func _report(msg: String) -> void:
+	_problems.append(msg)
+	push_warning("SlotManager: " + msg)
 
 func get_slot(slot_id: StringName) -> Slot:
 	return _slots.get(slot_id)
 
+## Read-only, no copy. Use duplicate() if the caller needs to change the list.
 func get_all_slots() -> Array[Slot]:
-	var result: Array[Slot] = []
-	for id in expected_ids:
-		if _slots.has(id):
-			result.append(_slots[id])
-	return result
+	return _all
 
+## Read-only, no copy. Empty array when the zone has no slot.
 func get_slots_in_zone(zone: Enums.SlotZone) -> Array[Slot]:
-	var result: Array[Slot] = []
-	for slot in get_all_slots():
-		if slot.zone == zone:
-			result.append(slot)
-	return result
+	if _by_zone.has(zone):
+		return _by_zone[zone]
+	var empty: Array[Slot] = []
+	return empty
 
 # BLD-06: tower types not valid for the slot do not appear in the menu
 func get_buildable_types(slot_id: StringName, towers: Array[TowerData]) -> Array[TowerData]:
