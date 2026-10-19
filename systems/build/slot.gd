@@ -6,7 +6,8 @@ signal clicked(slot: Slot)
 signal state_changed(slot: Slot, new_state: Enums.SlotState)
 
 @export var slot_id: StringName
-@export var zone: Enums.SlotZone = Enums.SlotZone.NEAR
+@export var zone: Enums.SlotZone = Enums.SlotZone.GROUND
+@export var allowed_types: Array[StringName] = []
 
 var state: Enums.SlotState = Enums.SlotState.EMPTY
 var tower: Tower = null
@@ -114,8 +115,11 @@ func is_free() -> bool:
 	return (state == Enums.SlotState.EMPTY 
 		or state == Enums.SlotState.RUINED)
 
+# BLD-06: a tower type must fit the zone, and the slot's allowed_types when set
 func allows(data: TowerData) -> bool:
-	return data != null and zone in data.allowed_zones
+	if data == null or not (zone in data.allowed_zones):
+		return false
+	return allowed_types.is_empty() or data.id in allowed_types
 
 func can_build(data: TowerData) -> bool:
 	return is_free() and allows(data)
