@@ -9,6 +9,7 @@
 script = ExtResource("1_play")
 
 [node name="Level" parent="." unique_id=2063291597 instance=ExtResource("2_level")]
+unique_name_in_owner = true
 
 [node name="Gameplay" type="Node3D" parent="." unique_id=573179429]
 

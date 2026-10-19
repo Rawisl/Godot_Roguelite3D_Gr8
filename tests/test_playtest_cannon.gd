@@ -23,7 +23,7 @@ var _near_cannon: Tower = null
 var _ring_mat: StandardMaterial3D
 
 ## The SlotManager is the level's Slots node (levels/corridor/slots_layout.tscn).
-@onready var slot_manager: SlotManager = $Level/Slots
+@onready var slot_manager: SlotManager = %Level.get_node("%Slots")
 @onready var wave_manager: WaveManager = %WaveManager
 @onready var pool: ProjectilePool = %ProjectilePool
 @onready var enemy_root: Node3D = %Enemy
