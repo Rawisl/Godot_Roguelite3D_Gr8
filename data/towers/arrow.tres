@@ -11,7 +11,7 @@
 script = ExtResource("2_6htap")
 id = &"arrow"
 display_name = "tower.arrow"
-allowed_zones = Array[int]([0, 1, 2])
+allowed_zones = Array[int]([0, 1])
 targets_air = true
 projectile_scene = ExtResource("5_arrowprj")
 projectile_speed = 30.0
