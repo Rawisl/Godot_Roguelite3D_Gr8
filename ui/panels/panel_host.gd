@@ -72,7 +72,11 @@ func _show_tower_ring(slot_id: StringName) -> void:
 		return
 	_ring.show_at(service.get_slot_position(slot_id), info.range)
 
+## Only selections made by SelectionController open the Build panel, and only in PREP.
 func _on_slot_selected(slot_id: StringName) -> void:
+	var service := _service()
+	if service == null or not service.is_prep() or _selection.selected_slot != slot_id:
+		return
 	_show_build(slot_id)
 
 func _on_tower_selected(slot_id: StringName) -> void:
