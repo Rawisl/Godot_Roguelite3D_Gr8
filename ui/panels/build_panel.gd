@@ -6,6 +6,7 @@ signal preview_requested(slot_id: StringName, radius: float)
 signal preview_cleared
 
 const BUTTON_LOCK_TIME := 0.15
+const SECTION_FONT_SIZE := 24
 
 var slot_id: StringName = &""
 var _locked := false
@@ -26,6 +27,7 @@ func open(id: StringName) -> void:
 	slot_id = id
 	refresh()
 
+## New builds first, then the rebuild of a ruined slot under its own heading.
 func refresh() -> void:
 	preview_cleared.emit()
 	for child in _options.get_children():
@@ -33,7 +35,27 @@ func refresh() -> void:
 	var service := _service()
 	if service == null or slot_id == &"":
 		return
+	var fresh: Array[Dictionary] = []
+	var rebuild: Array[Dictionary] = []
 	for opt in service.get_build_options(slot_id):
+		if opt.rebuild:
+			rebuild.append(opt)
+		else:
+			fresh.append(opt)
+	_add_section(&"panel.build.section_new", fresh)
+	_add_section(&"panel.build.section_rebuild", rebuild)
+
+func _add_section(heading_key: StringName, options: Array[Dictionary]) -> void:
+	if options.is_empty():
+		return
+	if _options.get_child_count() > 0:
+		_options.add_child(HSeparator.new())
+	var heading := Label.new()
+	heading.text = tr(heading_key)
+	heading.theme_type_variation = &"DimLabel"
+	heading.add_theme_font_size_override(&"font_size", SECTION_FONT_SIZE)
+	_options.add_child(heading)
+	for opt in options:
 		_options.add_child(_make_button(opt))
 
 func _make_button(opt: Dictionary) -> Button:
