@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bawnj35w27mdf"]
+
+[ext_resource type="Script" uid="uid://cwmwwwvhtttwj" path="res://tests/test_slot_zone_runner.gd" id="1_slotzone"]
+
+[node name="TestSlotZoneRunner" type="Node" unique_id=652577523]
+script = ExtResource("1_slotzone")

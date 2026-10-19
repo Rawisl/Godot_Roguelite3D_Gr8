@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://d0r1pq1be01t0"]
+
+[ext_resource type="PackedScene" uid="uid://csq0ub35xqnvl" path="res://entities/projectile/projectile.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://d1po6ie8bm6dx" path="res://entities/projectile/cannon_projectile.gd" id="2_cannon"]
+[ext_resource type="PackedScene" uid="uid://b0xu54lkxlpr8" path="res://contents/assets/towers/cannon_shell_model.tscn" id="3_shell"]
+
+[node name="CannonProjectile" unique_id=806226096 instance=ExtResource("1_base")]
+collision_mask = 0
+script = ExtResource("2_cannon")
+max_flight_time = 5.0
+arc_height = 3.0
+
+[node name="CannonShellModel" parent="Model" parent_id_path=PackedInt32Array(1420644310) index="0" unique_id=30666902 instance=ExtResource("3_shell")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0, 0, 0)

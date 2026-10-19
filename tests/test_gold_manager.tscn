@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://e8anpx1vkha2"]
+
+[ext_resource type="Script" uid="uid://dmg0oy5tsnnhb" path="res://tests/test_gold_manager.gd" id="1_jxbl8"]
+
+[node name="TestGoldManager" type="Node" unique_id=1582516082]
+script = ExtResource("1_jxbl8")

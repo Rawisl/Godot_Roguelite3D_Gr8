@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://85xmpmb65ejj"]
+
+[ext_resource type="Script" uid="uid://bphik1cqf63f3" path="res://tests/test_cannon_runner.gd" id="1_cannon"]
+
+[node name="TestCannonRunner" type="Node3D" unique_id=22164695]
+script = ExtResource("1_cannon")

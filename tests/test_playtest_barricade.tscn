@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://csjfx86rxfqlh"]
+
+[ext_resource type="Script" uid="uid://8kq1cpu0cdjt" path="res://tests/test_playtest_barricade.gd" id="1_play"]
+[ext_resource type="PackedScene" uid="uid://ekgmjmchm13f" path="res://levels/corridor/level.tscn" id="2_level"]
+[ext_resource type="PackedScene" uid="uid://dwt1t1sek0m77" path="res://systems/wave/wave_manager.tscn" id="3_wave"]
+[ext_resource type="PackedScene" uid="uid://b1ss2j7jn26og" path="res://entities/projectile/projectile_pool.tscn" id="4_pool"]
+
+[node name="TestPlaytestBarricade" type="Node3D" unique_id=1072315097]
+script = ExtResource("1_play")
+
+[node name="Level" parent="." unique_id=830082226 instance=ExtResource("2_level")]
+unique_name_in_owner = true
+
+[node name="Gameplay" type="Node3D" parent="." unique_id=622425640]
+
+[node name="WaveManager" parent="Gameplay" unique_id=1014757303 instance=ExtResource("3_wave")]
+unique_name_in_owner = true
+
+[node name="Enemy" type="Node3D" parent="Gameplay" unique_id=532577298 groups=["enemy_container"]]
+unique_name_in_owner = true
+
+[node name="ProjectilePool" parent="Gameplay" unique_id=186032235 instance=ExtResource("4_pool")]
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=357667800]
+
+[node name="Panel" type="PanelContainer" parent="UI" unique_id=1147089531]
+offset_left = 16.0
+offset_top = 16.0
+
+[node name="VBox" type="VBoxContainer" parent="UI/Panel" unique_id=53997767]
+layout_mode = 2
+
+[node name="Top" type="HBoxContainer" parent="UI/Panel/VBox" unique_id=456028054]
+layout_mode = 2
+
+[node name="WaveLabel" type="Label" parent="UI/Panel/VBox/Top" unique_id=541527906]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+
+[node name="CallButton" type="Button" parent="UI/Panel/VBox/Top" unique_id=890585171]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Call wave"
+
+[node name="Actions" type="HBoxContainer" parent="UI/Panel/VBox" unique_id=235024574]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SlotRows" type="VBoxContainer" parent="UI/Panel/VBox" unique_id=206443360]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="StatsLabel" type="Label" parent="UI/Panel/VBox" unique_id=1581939264]
+unique_name_in_owner = true
+layout_mode = 2
