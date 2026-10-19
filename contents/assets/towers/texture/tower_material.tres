@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://bxe45ets47rmf"]
 
-[ext_resource type="Shader" path="res://art/shaders/toon_dither.gdshader" id="1_toon"]
+[ext_resource type="Shader" uid="uid://btrrtobhnajxg" path="res://art/shaders/toon_dither.gdshader" id="1_toon"]
 [ext_resource type="Texture2D" uid="uid://vwwm4bdg4meh" path="res://contents/assets/towers/texture/Texture_MAp_fortress_elves.png" id="2_tex"]
 
 [resource]
