@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cwnadkdfg4etw"]
+
+[ext_resource type="Script" uid="uid://ddjor3xhsc28e" path="res://tests/test_barricade_runner.gd" id="1_barr"]
+
+[node name="TestBarricadeRunner" type="Node3D" unique_id=1229742450]
+script = ExtResource("1_barr")
