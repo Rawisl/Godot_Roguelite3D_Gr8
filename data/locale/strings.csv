@@ -49,7 +49,7 @@ alert.fortress_low,Thành sắp thất thủ
 panel.close,Đóng
 panel.build.title,Xây dựng
 panel.build.item,{name} - {gold} vàng
-panel.build.rebuild,Xây lại {name} cấp {level} - {gold} vàng
+panel.build.rebuild,{name} cấp {level} - {gold} vàng
 panel.need_gold,Thiếu {gold} vàng
 panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {hp}
 tower.arrow,Tháp cung
@@ -68,3 +68,12 @@ panel.priority.paused,Không đổi được khi tạm dừng
 panel.tower.next_max,Cấp kế: đã đạt cấp tối đa
 dialog.sell.title,Bán công trình?
 dialog.sell.body,Bán {name} cấp {level} và nhận lại {gold} vàng. Không hoàn tác được.
+hover.enemy.hp,{name} · Máu {hp}/{max}
+hover.enemy.target,Mục tiêu: {target}
+hover.target.none,Không có
+enemy.grunt,Lính bộ
+enemy.archer,Cung thủ
+enemy.brute,Lực sĩ
+enemy.bulwark,Bulwark
+panel.build.section_new,Xây mới
+panel.build.section_rebuild,Xây lại

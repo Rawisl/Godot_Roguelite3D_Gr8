@@ -1,6 +1,6 @@
 # Hướng dẫn làm việc nhóm
 
-Tài liệu này dành cho 5 thành viên của dự án Chiến Tuyến Vô Tận (Endless War), sử dụng Godot 4 với đồ họa 3D và góc máy orthographic isometric. Vui lòng đọc kỹ toàn bộ nội dung trước khi bắt đầu viết code. Mọi yêu cầu chức năng đều nằm trong tài liệu **SRS-EW v1.8**. Các mã chú thích như `TWR-05`, `HUD-09`, `NAV-06` dùng để trỏ tới mục tương ứng trong tài liệu SRS.
+Tài liệu này dành cho 5 thành viên của dự án Chiến Tuyến Vô Tận (Endless War), sử dụng Godot 4 với đồ họa 3D và góc máy orthographic isometric. Vui lòng đọc kỹ toàn bộ nội dung trước khi bắt đầu viết code. Mọi yêu cầu chức năng đều nằm trong tài liệu **SRS-EW v1.9**. Các mã chú thích như `TWR-05`, `HUD-09`, `NAV-06` dùng để trỏ tới mục tương ứng trong tài liệu SRS.
 
 ---
 
@@ -21,13 +21,13 @@ Dự án gồm năm vai trò dựa theo Phụ lục B của tài liệu SRS và 
 
 | Vai | Phụ trách | Thư mục sở hữu | Mục SRS chính |
 | --- | --- | --- | --- |
-| **TV1 - Player & Combat** | Chỉ huy, chiến đấu, Commander mode, Recall và Deploy, Aura Tiền tuyến, SkillRunner và StatBlock, nội dung skill, thời gian, thang chống kẹt, tutorial | `entities/commander/`, `systems/time/`, `systems/nav/`, `systems/tutorial/`, `systems/skill/`, `data/skills/`, `common/stat_block.gd`, `autoload/time_manager.gd`, `ui/screens/tab_controls.tscn` | 3.4, 3.5 (gồm 3.5.10, 3.5.12), 3.7.4, 3.8.1, 4.7 |
-| **TV2 - Enemy & Wave** | Quân địch, boss Bulwark và Cuồng nộ, sinh wave, scale, XpTracker (XP, cờ `hit_by_commander`), RunConfig và kết thúc Run | `entities/enemy/`, `systems/wave/`, `systems/run/`, `systems/xp/`, `data/enemies/`, `data/bosses/`, `data/waves/`, `common/enemy_data.gd`, `common/boss_data.gd`, `common/wave_table.gd`, `common/wave_group.gd`, `common/scale_config.gd`, `autoload/game_config.gd` | 3.2, 3.3, 3.5.11, 3.7, 3.8.2-3.8.4, 3.8.6, 3.8.10, 3.11.2 |
-| **TV3 - Tower & Build** | Tower, Fortress, Slot và GroundGrid, đạn, xây dựng, cổng cấp tower theo cấp Chỉ huy, kinh tế, đồng hồ boss và Cuồng nộ, RewardOfferGenerator và SkillData schema, save | `entities/tower/`, `entities/fortress/`, `entities/projectile/`, `systems/build/`, `systems/economy/`, `systems/reward/`, `systems/save/`, `data/towers/`, `data/config/`, `common/tower_data.gd`, `common/tower_level_data.gd`, `common/fortress_stats.gd`, `common/slot_zone.gd`, `common/skill_data.gd`, `common/run_skill_state.gd`, `levels/corridor/slots_layout.tscn`, `autoload/save_manager.gd`, `ui/screens/tab_data.tscn` | 3.3.6, 3.6, 3.8.5, 3.8.7, 3.8.9, 3.9, 3.10.1, 3.12 |
-| **TV4 - UI/UX & Meta** | HUD (gồm thanh XP và ô skill), panel, màn RewardPick, màn hình, hộp thoại, meta shop 4 mục, Settings, flow, ngôn ngữ | `ui/` (trừ các tab của TV1, TV3, TV5), `data/locale/`, `autoload/game_state.gd`, `autoload/screen_manager.*` | 3.1, 3.3.6 (phần giao diện), 3.10, 4.1, 4.3, 4.6, 5.3 |
-| **TV5 - Art/Level/Audio** | Map và GridData, camera, model, animation, VFX (gồm vòng sáng Aura, VFX skill), shader, âm thanh, accessibility, playtest | `contents/`, `art/`, `audio/`, `levels/corridor/` (trừ `slots_layout.tscn`), `autoload/audio_manager.*`, `default_bus_layout.tres`, `ui/screens/tab_audio.tscn`, `ui/screens/tab_graphics.tscn`, `ui/screens/tab_accessibility.tscn`, `ui/theme/` | 2.1, 2.5, 2.6, 4.2, 4.4, 4.5 |
+| **TV1 - Player & Combat** | Chỉ huy, chiến đấu, Commander mode, Recall và Deploy, Aura Tiền tuyến, SkillRunner và StatBlock, nội dung skill, thời gian (TimeManager), kênh hồi máu `heal_channel` (phím E), tutorial, **phía máy chủ** của tài khoản và bảng xếp hạng | `entities/commander/`, `systems/time/`, `systems/tutorial/`, `systems/skill/`, `data/skills/`, `common/stat_block.gd`, `autoload/time_manager.gd`, `backend/` | 3.4 (trừ TIME-06), 3.5 (gồm 3.5.10, 3.5.12), 3.6.6 (HLT-03..06, HLT-14), 3.8.1, 3.13 và 3.14 (phía máy chủ, ACCT-10), 4.7 |
+| **TV2 - Enemy & Wave** | Quân địch, boss Bulwark và Cuồng nộ, sinh wave, scale, XpTracker (XP, cờ `hit_by_commander`), RunConfig và kết thúc Run, thang chống kẹt (NAV), TIME-06 tự hạ x2, quân nhắm Trạm hồi lực theo bảng ETG | `entities/enemy/`, `systems/wave/`, `systems/run/`, `systems/xp/`, `systems/nav/`, `data/enemies/`, `data/bosses/`, `data/waves/`, `common/enemy_data.gd`, `common/boss_data.gd`, `common/wave_table.gd`, `common/wave_group.gd`, `common/scale_config.gd`, `autoload/game_config.gd` | 3.2, 3.3, 3.4 (TIME-06), 3.5.11, 3.7 (gồm 3.7.4), 3.8.2-3.8.4, 3.8.6, 3.8.10, 3.11.2 |
+| **TV3 - Tower & Build** | Tower, Fortress, Slot và GroundGrid, đạn, xây dựng, cổng cấp tower theo cấp Chỉ huy, kinh tế, đồng hồ boss và Cuồng nộ, RewardOfferGenerator và SkillData schema, **Trạm hồi lực** (thực thể tower thứ 4, kho HP, RUINED), save và `SaveRepository` | `entities/tower/` (gồm `heal_station`), `entities/fortress/`, `entities/projectile/`, `systems/build/`, `systems/economy/`, `systems/reward/`, `systems/save/`, `data/towers/`, `data/config/`, `common/tower_data.gd`, `common/tower_level_data.gd`, `common/fortress_stats.gd`, `common/slot_zone.gd`, `common/skill_data.gd`, `common/run_skill_state.gd`, `levels/corridor/slots_layout.tscn`, `autoload/save_manager.gd` | 3.3.6, 3.6 (gồm 3.6.6, trừ HLT-03..06), 3.8.5, 3.8.7, 3.8.9, 3.9, 3.10.1, 3.12, ACCT-01, ACCT-04, ACCT-06 |
+| **TV4 - UI/UX & Meta** | HUD (gồm thanh XP, ô skill, HUD-18 trạng thái Trạm hồi lực), panel (gồm PNL-14), màn RewardPick, màn hình, hộp thoại, meta shop 4 mục, Settings, flow, ngôn ngữ, **phía client online**: màn Login, Leaderboard, tab Tài khoản, `SyncService` | `ui/` (trừ các tab của TV5), `systems/sync/`, `data/locale/`, `autoload/game_state.gd`, `autoload/screen_manager.*` | 3.1, 3.3.6 (phần giao diện), 3.10, 3.13 và 3.14 (phía client), 4.1, 4.3, 4.6, 5.3 |
+| **TV5 - Art/Level/Audio** | Map và GridData, **camera (CAM, CameraRig)**, model (gồm Trạm hồi lực), animation, VFX (gồm vòng sáng Aura, VFX skill, VFX Trạm hồi lực), shader, âm thanh, accessibility, playtest | `contents/`, `art/`, `audio/`, `levels/corridor/` (trừ `slots_layout.tscn`), `systems/camera/`, `autoload/audio_manager.*`, `default_bus_layout.tres`, `ui/screens/tab_audio.tscn`, `ui/screens/tab_graphics.tscn`, `ui/screens/tab_accessibility.tscn`, `ui/theme/` | 2.1, 2.5, 2.6, 4.2 (gồm 4.2.3), 4.4, 4.5 |
 
-Ghi chú về ranh giới: `SkillData` là Resource do TV3 định nghĩa schema (`common/skill_data.gd`), còn file `.tres` số liệu từng skill trong `data/skills/` do TV1 điền. Riêng cờ `hit_by_commander` nằm trong `DamageInfo` và `HealthComponent` (file dùng chung), do TV2 đề xuất và TV1 review. Settings ở bản MVP có 5 tab (Âm thanh, Đồ họa, Tiếp cận, Điều khiển chỉ đọc, Dữ liệu); tab Gameplay là `[Should]`.
+Ghi chú về ranh giới: `SkillData` là Resource do TV3 định nghĩa schema (`common/skill_data.gd`), còn file `.tres` số liệu từng skill trong `data/skills/` do TV1 điền. Riêng cờ `hit_by_commander` nằm trong `DamageInfo` và `HealthComponent` (file dùng chung), do TV2 đề xuất và TV1 review. Settings ở bản MVP có 4 tab (Âm thanh, Đồ họa, Tiếp cận, Tài khoản). Tab Điều khiển chỉ đọc, tab Dữ liệu và tab Gameplay là `[Should]`. Cờ `heal_*` của Trạm hồi lực nằm trong `GameConfig` (TV2 sở hữu file) và `TowerData` (TV3), TV3 đề xuất giá trị. Thư mục `backend/` là thư mục mới ở cấp cao nhất, đã nằm trong phân công v3 nhưng vẫn cần cả nhóm xác nhận theo quy định ở cuối mục này. Các thư mục `systems/camera/` và `systems/sync/` cũng là thư mục mới, người sở hữu tạo kèm `.gdkeep`.
 
 Các file dùng chung cần tạo Pull Request riêng khi sửa và có thể merge ngay lập tức:
 
@@ -50,28 +50,30 @@ res://
   autoload/        Chứa script và scene tự động nạp khi mở game ở dạng singleton. Chỉ đặt các file đã được khai báo trong Project Settings.
   common/          Chứa các lớp Resource và Component dùng chung cho dự án.
   data/            Chứa dữ liệu cân bằng game. Tuyệt đối không đặt file code tại đây.
-    towers/        Chứa dữ liệu TowerData và TowerLevelData của Arrow, Cannon, Barricade dưới dạng đuôi .tres.
+    towers/        Chứa dữ liệu TowerData và TowerLevelData của Arrow, Cannon, Barricade và Trạm hồi lực (1 cấp, HP kho 300, giá 80) dưới dạng đuôi .tres.
     enemies/       Chứa dữ liệu EnemyData của Grunt, Archer, Brute, Bulwark dưới dạng đuôi .tres.
     bosses/        Chứa dữ liệu BossData dưới dạng đuôi .tres.
     waves/         Chứa dữ liệu WaveTable dưới dạng đuôi .tres.
     config/        Cấu hình chung của game như fortress_stats.tres, scale_config.tres.
-    skills/        Chứa dữ liệu SkillData (Whirlwind, Sword Wave, Firebomb, 5 bị động, 3 thẻ stat) dưới dạng đuôi .tres.
+    skills/        Chứa dữ liệu SkillData (Whirlwind, Sword Wave, Firebomb, 4 bị động gồm Sharpness, Armored, Lifesteal và Trạm hồi lực, 2 thẻ stat Thể lực và Tinh thông) dưới dạng đuôi .tres.
     locale/        Chứa file strings.csv quản lý chuỗi tiếng Việt với khóa được phân loại theo ngữ cảnh.
   entities/        Lưu trữ các thực thể trong game. Mỗi loại thực thể có một thư mục riêng chứa scene .tscn và script .gd tương ứng.
     commander/     Chứa nhân vật của người chơi.
     enemy/         Chứa scene gốc enemy.tscn cùng các biến thể kế thừa như grunt, archer, brute, bulwark.
-    tower/         Chứa scene gốc tower.tscn cùng các biến thể kế thừa arrow, cannon, barricade.
+    tower/         Chứa scene gốc tower.tscn cùng các biến thể kế thừa arrow, cannon, barricade, heal_station.
     fortress/      Chứa thực thể thành chính.
     projectile/    Chứa đạn tấn công của người chơi và của địch.
   systems/         Chứa logic của các hệ thống không gắn liền với một thực thể cụ thể nào.
     time/          Quản lý thời gian x1, x2, x3 và chức năng Pause.
-    nav/           Hệ thống thang xử lý tình trạng kẹt quân.
+    nav/           Hệ thống thang xử lý tình trạng kẹt quân (TV2 sở hữu).
     wave/          Quản lý trạng thái và bộ sinh quân của từng đợt.
     run/           Quản lý tiến trình RunConfig, RunState, RunLoading và việc kết thúc Run.
     build/         Hệ thống quản lý vị trí, xây dựng, nâng cấp và bán tháp.
     economy/       Quản lý vàng, chi phí sửa thành và hệ thống điểm uy tín.
-    save/          Hệ thống lưu trữ, đọc dữ liệu và khôi phục tiến trình chơi.
+    save/          Hệ thống lưu trữ, đọc dữ liệu và khôi phục tiến trình chơi, gồm SaveRepository và LocalSaveRepository.
     tutorial/      Quản lý các thông báo hướng dẫn.
+    camera/        CameraRig: Frontline bám nhân vật, Commander và PREP dịch bằng WASD trong camera_bounds, BOSS_INTRO (TV5 sở hữu).
+    sync/          SyncService: kéo và đẩy profile, meta, flags với backend, không chặn UI (TV4 sở hữu).
     skill/         SkillRunner (phím 1-3, ô, cooldown) và StatBlock của chỉ huy.
     xp/            XpTracker: XP theo cờ hit_by_commander, cấp Chỉ huy, lượt chọn chờ.
     reward/        RewardOfferGenerator (hàm thuần, test bằng GUT) và apply_pick cho màn REWARD_PICK.
@@ -86,6 +88,7 @@ res://
   art/             Chứa các hiệu ứng hình ảnh, shader và VFX được làm riêng cho game.
   audio/           Quản lý nhạc nền dưới dạng đuôi .ogg và hiệu ứng âm thanh dưới dạng đuôi .wav.
   tests/           Thư mục chứa scene hoặc script phục vụ mục đích kiểm thử.
+  backend/         Mã và cấu hình phía máy chủ (BaaS): bảng dữ liệu, phân quyền, hướng dẫn API. Chỉ chứa khóa công khai, không bao giờ chứa khóa quản trị (TV1 sở hữu).
   main.tscn        Cây gốc cốt lõi của game.
 
 ```
@@ -105,10 +108,13 @@ Quy tắc đặt tên file:
 * **Hệ thống Collision layer:** Các lớp dùng cho 3D Physics được quy định cứng là layer 1 cho world, layer 2 cho commander, layer 3 cho enemy, layer 4 cho structure, layer 5 cho proj_player, layer 6 cho proj_enemy và layer 7 cho click. Tuyệt đối không thay đổi bảng quy định này.
 * **Tạo Scene kế thừa:** Khi tạo các biến thể con như Grunt hoặc Arrow, hãy sử dụng tính năng New Inherited Scene từ scene gốc, sau đó chỉ chỉnh sửa các dữ liệu và đặc tính riêng biệt.
 * **Sử dụng Make Unique:** Nếu một shape va chạm được dùng chung giữa nhiều instance, hãy nhấn nút Make Unique để đảm bảo mỗi đối tượng hoạt động độc lập và có shape riêng.
-* **Tùy chỉnh InputMap:** Hãy thiết lập phím bằng Physical Keycode. Phím số 1, 2, 3 là skill chủ động (SKL-05) và tua tốc độ không có phím tắt (INP-06). Mọi action dùng phím vật lý theo INP-09.
+* **Tùy chỉnh InputMap:** Hãy thiết lập phím bằng Physical Keycode. Phím số 1, 2, 3 là skill chủ động (SKL-05) và tua tốc độ không có phím tắt (INP-06). Phím E là `heal_channel` (giữ để hồi máu ở Trạm hồi lực), phím C là `camera_recenter`. WASD chỉ có một nghĩa trong mỗi ngữ cảnh: di chuyển nhân vật ở Frontline, dịch camera ở Commander và PREP (CAM-10). Mọi action dùng phím vật lý theo INP-09.
 * **Xử lý thời gian:** Mọi logic gameplay phải sử dụng thời gian trong game thông qua hệ thống `TimeManager`. Tuyệt đối không dùng hàm `Time.get_ticks_msec()` cho thời gian hồi chiêu hoặc timer liên quan đến gameplay, vì sẽ gây sai sót logic khi người chơi tua nhanh thời gian bằng tốc độ x2 hoặc x3.
 * **Sát thương và XP:** Mọi nguồn sát thương, kể cả skill và vùng cháy theo tick, phải đi qua `HealthComponent` với `DamageInfo` có `damage_type` và `source` để cờ `hit_by_commander` hoạt động (XP-03, CMB-10). Không trừ máu trực tiếp.
 * **Ngẫu nhiên có seed:** Mọi RNG gameplay (sinh wave, thẻ REWARD_PICK) dùng `run_seed` theo RWP-05 và SPN-05. Không gọi `randi()` toàn cục trong logic gameplay để test và replay tái hiện được.
+* **Lưu và mạng:** Mọi đọc ghi tiến trình đi qua `SaveRepository` (ACCT-01), không gọi thẳng `FileAccess` cho save. Các lệnh gọi mạng chạy bất đồng bộ, không chặn UI quá 100 ms và mất mạng không được làm chậm RunEnd hay cửa hàng (ACP-08). Token đăng nhập lưu ở `auth.cfg` riêng, không bao giờ nằm trong `save.json`.
+* **Bí mật:** Không commit `auth.cfg`, khóa quản trị hay mật khẩu của backend. Trong repo chỉ có khóa công khai của dự án BaaS. Thêm `auth.cfg` vào `.gitignore`.
+* **Hồi máu chỉ huy:** Không còn hồi tự động theo giây ở Commander mode. Chỉ huy hồi 35% HP tối đa khi vào PREP (`prep_heal_pct`) và qua Trạm hồi lực. Không thêm `commander_regen_pct_per_sec` trở lại.
 * **Ghi chú mã SRS:** Khi hoàn thành code đáp ứng một yêu cầu cụ thể, hãy ghi ID của yêu cầu đó vào comment hoặc nội dung commit, ví dụ như `# SELL-04`.
 
 ---
@@ -194,7 +200,7 @@ Sử dụng định dạng: `[loại]: <mô tả ngắn thay đổi trong phạm
 
 Chọn phạm vi thay đổi dựa theo thư mục hoặc hệ thống mà bạn đang làm việc:
 
-`commander`, `skill`, `xp`, `reward`, `time`, `nav`, `tutorial`, `enemy`, `boss`, `wave`, `run`, `tower`, `fortress`, `projectile`, `build`, `economy`, `save`, `hud`, `panel`, `screen`, `settings`, `locale`, `audio`, `level`, `common`, `autoload`, `project`
+`commander`, `skill`, `xp`, `reward`, `time`, `nav`, `camera`, `heal`, `backend`, `sync`, `tutorial`, `enemy`, `boss`, `wave`, `run`, `tower`, `fortress`, `projectile`, `build`, `economy`, `save`, `hud`, `panel`, `screen`, `settings`, `locale`, `audio`, `level`, `common`, `autoload`, `project`
 
 ### Quy tắc viết mô tả commit
 
@@ -257,8 +263,11 @@ Các nhóm công việc có tính phụ thuộc lẫn nhau cần phải thống 
 | TV2 và TV3 | Đồng hồ boss, Cuồng nộ (ENR-01..06) và các pha giáp của Bulwark. | Đầu tuần 8. Rủi ro cao nhất, nằm trên đường găng của mốc B1. |
 | TV3, TV2, TV4 | Luồng REWARD_PICK: state trong Wave FSM (TV2), RewardOfferGenerator và `apply_pick` (TV3), màn RewardPick (TV4). | Đầu tuần 8 chốt chữ ký hàm, nối đầy đủ ở tuần 9 |
 | TV3 và TV4 | API xây, nâng, bán và cổng cấp tower (`can_upgrade`, UPG-06), signal `tower_built`, `tower_sold`, `gold_changed`. | Đã chốt ở tuần 3, bổ sung cổng cấp ở tuần 7 |
-| TV1 và TV2 | Thang xử lý kẹt quân tại `systems/nav` và cách tương tác với boss. | Tuần 9 |
-| TV4 và TV5 | Theme, bộ icon set (gồm icon skill) và skin UI. | Tuần 7-8, skin hoàn chỉnh tuần 10 |
+| TV2 và TV3 | Thang xử lý kẹt quân tại `systems/nav` (TV2 viết, TV3 review phần Barricade và tower) và cách tương tác với boss (BOSS-04 rút gọn). | Tuần 9, bản MVP đầy đủ ở tuần 10 |
+| TV4 và TV5 | Theme, bộ icon set (gồm icon skill và icon Trạm hồi lực) và skin UI. | Tuần 7-8, skin hoàn chỉnh tuần 10 |
+| TV1, TV3, TV4, TV5, TV2 | **Trạm hồi lực**: lõi `heal_channel` với trạm giả (TV1, tuần 6), mesh tạm (TV5, tuần 6), dữ liệu `TowerData` và `GameConfig` (TV3, tuần 6), HUD-18 với tín hiệu giả (TV4, tuần 6), quân nhắm trạm theo ETG (TV2, tuần 6). Thực thể tower thật và panel PNL-14 ở tuần 8, nối lõi với trạm thật và chuẩn hóa sát thương ở tuần 10 (W10-NG7, W10-MH5). | Tuần 6 đến tuần 10. Chốt EVB-33, EVB-34 trước khi nối |
+| TV1, TV4, TV3 | **Online**: backend một lần ở tuần 6 (TV1), màn Login chạy thật ở tuần 8 (TV4), `SaveRepository` ở tuần 6 (TV3). API đồng bộ và bảng xếp hạng ở tuần 10 (TV1), `SyncService` và hook nộp điểm ở tuần 11 (TV4, TV3). TV1 viết tài liệu API một trang trước tuần 11. | Tuần 6 chốt hợp đồng API, tuần 11 nối đầy đủ |
+| TV5 và TV1 | **Camera**: `camera_bounds` và size camera trên map thật (TV5), InputMap `camera_recenter` và WASD theo ngữ cảnh (TV1), signal `camera_frame_changed` (EVB-35). | Tuần 6 chốt, camera chạy ở tuần 7 |
 
 Nếu cần thêm signal mới vào hệ thống EventBus, hãy tạo một Pull Request chuyên biệt chỉ chứa duy nhất dòng code thêm signal đó. Cần ghi chú thật rõ ràng về tên tín hiệu, các tham số đi kèm, đối tượng phát tín hiệu và đối tượng nhận tín hiệu.
 
@@ -266,22 +275,22 @@ Nếu cần thêm signal mới vào hệ thống EventBus, hãy tạo một Pull
 
 ## 9. Mốc thời gian dự án theo SRS 7.3
 
-Hãy tham khảo file bảng phân công (`Bang_phan_cong_v2`) để biết chi tiết từng người. Tuần 1-5 đã hoàn thành. Mỗi người tối đa 2 phiên (12 giờ) mỗi tuần. Các cột mốc chung:
+Hãy tham khảo file bảng phân công (`Bang_phan_cong_v3`) để biết chi tiết từng người. Tuần 1-5 đã hoàn thành. Tuần 7-9 và tuần 13 mỗi người 2 phiên (12 giờ), tuần 10-12 mỗi người 3 phiên (khoảng 18 giờ). Tuần 6 có việc kéo sớm cho người đã xong phần cũ. Các cột mốc chung:
 
 | Tuần làm việc | Mục tiêu cần hoàn thành |
 | --- | --- |
-| Tuần 6 (19-25/10) | Họp chốt SRS v1.8. TimeManager, input edge, chết và hồi, sinh wave theo bảng, targeting, AttackSlot, Aura Tiền tuyến, panel Tower, thanh máu quân. |
-| Tuần 7 (26/10-1/11) | **Mốc A:** vòng lặp wave PREP-COMBAT-SUMMARY chơi được wave 1-4, có Commander mode, xây, nâng, bán, XP và Cấp Chỉ huy hiển thị. |
-| Tuần 8 (2-8/11) | SkillRunner và Whirlwind, RewardOfferGenerator, cổng cấp tower, kinh tế gold, HUD đủ vùng, Crowd, khung Bulwark. |
+| Tuần 6 (19-25/10) | Họp chốt SRS v1.9 và bảng phân công v3. TimeManager, input edge, chết và hồi (prep_heal 35%, bỏ regen), sinh wave theo bảng, targeting, AttackSlot, Aura Tiền tuyến, panel Tower, thanh máu quân. Kéo sớm: lõi `heal_channel` với trạm giả, backend xác thực, `SaveRepository`, `camera_bounds`, HUD-18, bố cục màn Login. |
+| Tuần 7 (26/10-1/11) | **Mốc A:** vòng lặp wave PREP-COMBAT-SUMMARY chơi được wave 1-4, có Commander mode, xây, nâng, bán, XP và Cấp Chỉ huy hiển thị, camera Frontline và Commander. |
+| Tuần 8 (2-8/11) | SkillRunner và Whirlwind, RewardOfferGenerator, cổng cấp tower, kinh tế gold, HUD đủ vùng, Crowd, khung Bulwark, Trạm hồi lực phần Tower và panel PNL-14, màn Login nối backend. |
 | Tuần 9 (9-15/11) | **Mốc B1:** chơi đến hết Bulwark đầu, nhặt được 3 skill chủ động qua REWARD_PICK, Cuồng nộ chạy. |
-| Tuần 10 (16-22/11) | **Mốc B2:** vòng skill hoàn chỉnh (bị động, thẻ stat), RunConfig và RunState, save atomic, Meta shop 4 mục, RunEnd. |
-| Tuần 11 (23-29/11) | **Đóng băng tính năng MVP.** Tutorial, Settings, khôi phục run gián đoạn, cân bằng lần 1, playtest ngoài nhóm. |
-| Tuần 12 (30/11-6/12) | Chạy checklist 7.1 và Definition of Done, cân bằng cuối, build phát hành, báo cáo, video demo. |
-| Tuần 13 (7-13/12) | Tuần đệm: các việc MVP còn lại (cảnh báo T1/T2, hiệu ứng phụ) và sửa lỗi cuối. Chỉ dùng nếu hạn nộp cho phép. |
+| Tuần 10 (16-22/11) | **Mốc B2:** vòng skill hoàn chỉnh (4 bị động, 2 thẻ stat), RunConfig và RunState, save atomic, Meta shop 4 mục, RunEnd, thang kẹt MVP, nối lõi hồi máu với Trạm hồi lực thật, API đồng bộ và bảng xếp hạng. |
+| Tuần 11 (23-29/11) | **Đóng băng gameplay 29/11.** Tutorial rút gọn, Settings, khôi phục run gián đoạn, `SyncService` và nộp điểm, cân bằng lần 1, playtest ngoài nhóm. |
+| Tuần 12 (30/11-6/12) | **Đóng băng toàn bộ tính năng 6/12.** Hoàn thiện online, test AC1..AC8, chạy checklist 7.1 (gồm CM, HT, AC), cân bằng cuối, build Windows. |
+| Tuần 13 (7-14/12) | Chỉ test, sửa lỗi, báo cáo và video demo. 14/12 đóng băng bản nộp, 15 và 16/12 dự phòng, **17/12 diễn tập.** |
 
 Barrage, di chuyển tower, Gameplay tab trong Settings và các mục `[Should]` khác chỉ làm khi MVP xong sớm.
 
-Nếu tiến độ trễ hơn mốc B1 quá 2 ngày hoặc một người nghỉ cả tuần, nhóm dừng toàn bộ hạng mục không bắt buộc và cắt theo thứ tự ở Phụ lục C mục 17 của SRS: Firebomb, Reroll, ducking âm thanh, tab Dữ liệu và Điều khiển, TUT-04/05, rồi thẻ Bền thành cùng bị động Focus và Lightstep. **Không cắt** Aura Tiền tuyến, gold chỉ huy, XP, cổng cấp tower, Cuồng nộ và save atomic.
+Nếu tiến độ trễ hơn mốc B1 quá 2 ngày hoặc một người nghỉ cả tuần, nhóm dừng toàn bộ hạng mục không bắt buộc và cắt theo thứ tự ở Phụ lục C mục 17 của SRS: Firebomb, edge-pan và look-ahead camera, HLT-12, bảng xếp hạng, rồi đồng bộ tài khoản. Các mục cắt cũ (Reroll, ducking, tab Dữ liệu và Điều khiển, TUT-04/05, thẻ Bền thành, Focus, Lightstep) đã chuyển sang `[Should]` từ v1.9. **Không cắt** Aura Tiền tuyến, gold chỉ huy, XP, cổng cấp tower, Cuồng nộ và save atomic. Online chỉ bị cắt khi vẫn trễ sau mốc B2.
 
 ---
 
@@ -298,6 +307,7 @@ Bất kỳ asset nào lấy từ nguồn bên ngoài đều phải được ghi 
 * Chỉnh sửa file nằm trong thư mục của người khác quản lý mà không báo trước.
 * Hard-code chuỗi văn bản tiếng Việt trực tiếp vào code hoặc file scene.
 * Viết cứng các số liệu cân bằng chiến đấu trực tiếp vào bên trong script.
+* Commit `auth.cfg`, khóa quản trị hoặc mật khẩu backend lên kho chứa code.
 * Push code khi phần Output của Godot vẫn còn báo lỗi màu đỏ.
 * Thay đổi tên file hoặc di chuyển vị trí file bằng Windows Explorer thay vì trình quản lý của Godot.
 
