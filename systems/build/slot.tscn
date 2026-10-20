@@ -1,12 +1,13 @@
 [gd_scene format=3 uid="uid://btoa1luqsnhh5"]
 
 [ext_resource type="Script" uid="uid://ctxooa2xiyua7" path="res://systems/build/slot.gd" id="1_k2eom"]
+[ext_resource type="Material" uid="uid://co5ilawa42u8r" path="res://art/materials/slot_ring.tres" id="2_ring"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_k2eom"]
-size = Vector2(1.6, 1.6)
+size = Vector2(2.8, 2.8)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
-size = Vector3(1.6, 0.5, 1.6)
+size = Vector3(2.28, 0.5, 2.28)
 
 [sub_resource type="BoxMesh" id="BoxMesh_rubble"]
 size = Vector3(1.2, 0.3, 1.2)
@@ -19,7 +20,10 @@ script = ExtResource("1_k2eom")
 
 [node name="Marker" type="MeshInstance3D" parent="." unique_id=440419306]
 unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+cast_shadow = 0
 mesh = SubResource("PlaneMesh_k2eom")
+surface_material_override/0 = ExtResource("2_ring")
 
 [node name="ClickArea" type="Area3D" parent="." unique_id=1850647318]
 unique_name_in_owner = true

@@ -1,0 +1,19 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://co5ilawa42u8r"]
+
+[ext_resource type="Shader" uid="uid://dngei83sw7d3s" path="res://systems/build/slot_ring.gdshader" id="1_ring"]
+
+[resource]
+resource_name = "slot_ring"
+shader = ExtResource("1_ring")
+shader_parameter/ring_color = Color(1, 1, 1, 0.6)
+shader_parameter/ruined_color = Color(0.78, 0.45, 0.23, 0.7)
+shader_parameter/selected_color = Color(0.92, 0.66, 0.28, 1)
+shader_parameter/box_half = 1.14
+shader_parameter/border_width = 0.14
+shader_parameter/corner_radius = 0.38
+shader_parameter/edge_softness = 0.06
+shader_parameter/fill_alpha = 0.12
+shader_parameter/glow_falloff = 0.08
+shader_parameter/glow_strength = 0.6
+shader_parameter/pulse_speed = 2.5
+shader_parameter/pulse_amount = 0.3
