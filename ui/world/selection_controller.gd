@@ -2,33 +2,43 @@ class_name SelectionController
 extends Node
 ## Picks towers and slots with a ray on the click layer only, so walls and faded
 ## meshes never block a click. GUI controls get the mouse first because picking
-## runs in _unhandled_input.
+## runs in _unhandled_input. Also reports what is under the mouse for hover feedback.
 
 signal selection_cleared
+signal hovered_changed(node: Node)
 
 const CLICK_LAYER := 1 << 6
+const ENEMY_LAYER := 1 << 2
 const RAY_LENGTH := 300.0
 const MAX_HITS := 4
 
 var selected_slot: StringName = &""
+var hovered: Node = null
 
 var _mode: StringName = &"FRONTLINE"
 var _rings_visible := false
-var _hovered: Slot = null
+var _hovered_slot: Slot = null
 var _selected_ring: Slot = null
 
 func _ready() -> void:
 	# Building is allowed while paused in PREP.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	hovered_changed.connect(_on_hovered_changed)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
 	# The first PREP is sent before the HUD is ready, so read it once here.
 	_sync_rings.call_deferred()
 
-## Deferred so the GUI has already taken the motion: a panel under the mouse clears the hover.
-func _input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
-		_update_hover.call_deferred()
+## Hover follows the same order as clicks: tower, then slot, then enemy.
+func _process(_delta: float) -> void:
+	var node: Node = null
+	if not _is_mouse_over_ui():
+		node = pick_under_mouse()
+		if node == null:
+			node = _pick_enemy()
+	if node != hovered:
+		hovered = node
+		hovered_changed.emit(node)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"select") and _can_select():
@@ -79,6 +89,24 @@ func clear_selection() -> void:
 	selected_slot = &""
 	selection_cleared.emit()
 
+func _pick_enemy() -> Enemy:
+	var viewport := get_viewport()
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return null
+	var mouse := viewport.get_mouse_position()
+	var from := cam.project_ray_origin(mouse)
+	var query := PhysicsRayQueryParameters3D.create(
+		from, from + cam.project_ray_normal(mouse) * RAY_LENGTH, ENEMY_LAYER)
+	var hit := cam.get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return null
+	var enemy := hit.collider as Enemy
+	return enemy if enemy != null and not enemy.is_dead else null
+
+func _is_mouse_over_ui() -> bool:
+	return get_viewport().gui_get_hovered_control() != null
+
 func _select(node: Node) -> void:
 	if node is Tower:
 		_select_tower(_slot_of(node))
@@ -108,18 +136,19 @@ func _set_selected_ring(slot: Slot) -> void:
 	if slot != null:
 		slot.set_selected(true)
 
-## Hover only shows while slot rings are on, and a tower over the slot wins.
-func _update_hover() -> void:
-	var slot: Slot = null
-	if _rings_visible and get_viewport().gui_get_hovered_control() == null:
-		slot = pick_under_mouse() as Slot
-	if slot != null and not slot.is_free():
+## Slot rings glow white under the mouse; uses the hover pick above, only while rings show.
+func _on_hovered_changed(_node: Node) -> void:
+	_update_slot_hover()
+
+func _update_slot_hover() -> void:
+	var slot := hovered as Slot if is_instance_valid(hovered) else null
+	if not _rings_visible or (slot != null and not slot.is_free()):
 		slot = null
-	if slot == _hovered:
+	if slot == _hovered_slot:
 		return
-	if is_instance_valid(_hovered):
-		_hovered.set_hovered(false)
-	_hovered = slot
+	if is_instance_valid(_hovered_slot):
+		_hovered_slot.set_hovered(false)
+	_hovered_slot = slot
 	if slot != null:
 		slot.set_hovered(true)
 
@@ -147,7 +176,7 @@ func _is_prep() -> bool:
 func _set_rings_visible(v: bool) -> void:
 	_rings_visible = v
 	get_tree().call_group(&"slot", &"set_buildable_visible", v)
-	_update_hover()
+	_update_slot_hover()
 
 func _sync_rings() -> void:
 	_set_rings_visible(_is_prep())
