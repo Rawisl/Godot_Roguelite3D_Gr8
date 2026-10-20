@@ -48,16 +48,26 @@ func _scan() -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
 		return
-	var points := _target_points()
-	if points.is_empty():
+	var points := _unit_points()
+	var hovered := is_instance_valid(_hover_target) and _hover_target.is_inside_tree()
+	# Vật đang hover không tự che chính nó: model của nó chỉ xét theo chỉ huy và quân.
+	var points_with_hover := points.duplicate()
+	if hovered:
+		points_with_hover.append(_hover_target.global_position)
+	if points_with_hover.is_empty():
 		return
 	var forward := -camera.global_transform.basis.z
 	for occluder in get_tree().get_nodes_in_group(OCCLUDER_GROUP):
+		var is_hovered := hovered and (occluder == _hover_target or _hover_target.is_ancestor_of(occluder))
+		var targets: Array[Vector3] = points if is_hovered else points_with_hover
+		if targets.is_empty():
+			continue
 		for geo in _geometries(occluder):
-			if _is_occluding(geo, camera, forward, points):
+			if _is_occluding(geo, camera, forward, targets):
 				_occluding[geo] = true
 
-func _target_points() -> Array[Vector3]:
+## Chỉ huy và quân địch quanh chỉ huy.
+func _unit_points() -> Array[Vector3]:
 	var points: Array[Vector3] = []
 	var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
 	if commander and commander.is_visible_in_tree():
@@ -66,8 +76,6 @@ func _target_points() -> Array[Vector3]:
 			var e := enemy as Node3D
 			if e and e.global_position.distance_to(commander.global_position) <= enemy_radius:
 				points.append(e.global_position)
-	if is_instance_valid(_hover_target) and _hover_target.is_inside_tree():
-		points.append(_hover_target.global_position)
 	return points
 
 func _is_occluding(geo: GeometryInstance3D, camera: Camera3D, forward: Vector3, points: Array[Vector3]) -> bool:
