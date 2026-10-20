@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b0xu54lkxlpr8"]
 
 [ext_resource type="PackedScene" uid="uid://d0jklwkcjmp5o" path="res://contents/assets/towers/fbx/Shells/Cannom_shell.fbx" id="1_s13e5"]
-[ext_resource type="Material" uid="uid://bxe45ets47rmf" path="res://contents/assets/towers/texture/tower_material.tres" id="2_bjmia"]
+[ext_resource type="Material" uid="uid://dx2octrxvyqqu" path="res://contents/assets/towers/texture/projectile_material.tres" id="2_bjmia"]
 
 [node name="CannonShellModel" type="Node3D" unique_id=1898167801]
 

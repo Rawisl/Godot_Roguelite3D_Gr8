@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c3ev4fp1dcmd4"]
+
+[ext_resource type="Shader" uid="uid://btrrtobhnajxg" path="res://art/shaders/toon_dither.gdshader" id="1_toon"]
+[ext_resource type="Texture2D" uid="uid://cxnwfnbxxxcsq" path="res://contents/assets/fortress/texture/Texture_MAp_ELfs.png" id="2_tex"]
+
+[resource]
+resource_name = "barricade"
+render_priority = 0
+shader = ExtResource("1_toon")
+shader_parameter/albedo_texture = ExtResource("2_tex")
