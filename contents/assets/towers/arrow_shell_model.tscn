@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://lijfm7ctt2v2"]
 
 [ext_resource type="PackedScene" uid="uid://ce3tkwlrmtfe1" path="res://contents/assets/towers/fbx/Shells/Archer_shell_LVL_1.fbx" id="1_cgy4u"]
-[ext_resource type="Material" uid="uid://bxe45ets47rmf" path="res://contents/assets/towers/texture/tower_material.tres" id="2_dnqiq"]
+[ext_resource type="Material" uid="uid://dx2octrxvyqqu" path="res://contents/assets/towers/texture/projectile_material.tres" id="2_dnqiq"]
 [ext_resource type="PackedScene" uid="uid://d0j8xoqcv0ut0" path="res://contents/assets/towers/fbx/Shells/Archer_shell_LVL_2.fbx" id="3_il77n"]
 [ext_resource type="PackedScene" uid="uid://b72ev56cu0wdy" path="res://contents/assets/towers/fbx/Shells/Archer_shell_LVL_4.fbx" id="4_eahsi"]
 
