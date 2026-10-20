@@ -7,10 +7,14 @@
 [ext_resource type="PackedScene" uid="uid://daiai1f0exqp0" path="res://ui/hud/parts/emergency_repair.tscn" id="4_w75iv"]
 [ext_resource type="PackedScene" uid="uid://b0j2regl1w6bn" path="res://ui/hud/parts/enemy_bar_layer.tscn" id="5_kwc50"]
 [ext_resource type="PackedScene" uid="uid://ckn53m8u1tj1p" path="res://ui/hud/parts/fortress_bar.tscn" id="6_o2lis"]
+[ext_resource type="Script" uid="uid://dknih0cu70c5h" path="res://ui/panels/panel_host.gd" id="7_3mxrk"]
 [ext_resource type="PackedScene" uid="uid://c7ac3jyr50isa" path="res://ui/hud/parts/gold_label.tscn" id="7_o2lis"]
+[ext_resource type="PackedScene" uid="uid://klqge08m43r" path="res://ui/panels/build_panel.tscn" id="8_6gxmt"]
 [ext_resource type="PackedScene" uid="uid://dt46xx58li850" path="res://ui/hud/parts/offscreen_indicators.tscn" id="8_gfles"]
 [ext_resource type="PackedScene" uid="uid://csopdaxvf7sac" path="res://ui/hud/parts/speed_buttons.tscn" id="9_aixkq"]
 [ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="10_cxhb7"]
+[ext_resource type="Script" uid="uid://chy1j70x80shi" path="res://ui/world/selection_controller.gd" id="14_olkg6"]
+[ext_resource type="Script" uid="uid://bn8aebymn6o1b" path="res://ui/world/range_ring.gd" id="15_hk13k"]
 
 [node name="Hud" type="CanvasLayer" unique_id=1623823647]
 layer = 10
@@ -77,6 +81,27 @@ size_flags_horizontal = 8
 layout_mode = 2
 size_flags_horizontal = 8
 
+[node name="PanelHost" type="Control" parent="Root/SafeArea/Frame" unique_id=1585184375]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -460.0
+offset_top = -320.0
+offset_bottom = 320.0
+grow_horizontal = 0
+grow_vertical = 2
+script = ExtResource("7_3mxrk")
+
+[node name="BuildPanel" parent="Root/SafeArea/Frame/PanelHost" unique_id=800506704 instance=ExtResource("8_6gxmt")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 58.0
+grow_horizontal = 2
+
 [node name="BossBar" parent="Root" unique_id=615647234 instance=ExtResource("1_4d6w6")]
 layout_mode = 1
 
@@ -91,3 +116,11 @@ layout_mode = 1
 
 [node name="OffscreenIndicators" parent="Root" unique_id=352408765 instance=ExtResource("8_gfles")]
 layout_mode = 1
+
+[node name="SelectionController" type="Node" parent="." unique_id=79485306]
+unique_name_in_owner = true
+script = ExtResource("14_olkg6")
+
+[node name="RangeRing" type="MeshInstance3D" parent="." unique_id=456174777]
+unique_name_in_owner = true
+script = ExtResource("15_hk13k")

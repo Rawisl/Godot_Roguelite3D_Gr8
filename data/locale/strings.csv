@@ -46,3 +46,12 @@ hud.state.boss_intro,Boss xuất hiện
 hud.state.boss_combat,Đánh boss
 hud.state.summary,Tổng kết
 alert.fortress_low,Thành sắp thất thủ
+panel.close,Đóng
+panel.build.title,Xây dựng
+panel.build.item,{name} - {gold} vàng
+panel.build.rebuild,Xây lại {name} cấp {level} - {gold} vàng
+panel.need_gold,Thiếu {gold} vàng
+panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {hp}
+tower.arrow,Tháp cung
+tower.cannon,Tháp pháo
+tower.barricade,Rào chắn
