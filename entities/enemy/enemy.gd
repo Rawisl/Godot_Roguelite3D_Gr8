@@ -16,6 +16,8 @@ const STALL_ATTACK_TIME: float = 0.5
 var current_target: Node3D = null
 var current_target_position: Vector3 = Vector3.ZERO
 var has_target_position: bool = false
+## TWR-16: metres travelled along lane_curve toward the Fortress gate (bigger = closer).
+## Updated every path_update_interval by the unit itself; towers only read it.
 var nav_progress: float = 0.0
 var speed_multiplier: float = 1.0
 var is_dead: bool = false
@@ -48,6 +50,7 @@ var is_frenzied: bool = false
 var wait_timer: float = 0.0
 var _retarget_timer: float = 0.0
 var _path_timer: float = 0.0
+var _progress_timer: float = 0.0
 var _full_targets_until: Dictionary = {}
 ## Avoidance: safe velocity the NavAgent returned for the last desired velocity.
 var _safe_velocity: Vector3 = Vector3.ZERO
@@ -68,6 +71,9 @@ static var _cached_barricades: Array[Node] = []
 static var _cached_towers: Array[Node] = []
 static var _cached_enemies: Array[Node] = []
 static var _last_cache_frame: int = -1
+# Lane used for nav_progress (TWR-16), shared by every enemy. Looked up again when the lane node is gone, e.g. a new run reloads the level.
+static var _lane: Path3D = null
+static var _lane_ref_length: float = 0.0
  
 @onready var health: HealthComponent = %Health
 @onready var nav: NavigationAgent3D = %NavAgent
@@ -78,6 +84,7 @@ func _ready() -> void:
 	# Phase-offset timers to prevent frame spikes across groups
 	_path_timer = randf_range(0.0, PATH_UPDATE_INTERVAL)
 	_retarget_timer = randf_range(0.0, GameConfig.retarget_interval)
+	_progress_timer = randf_range(0.0, GameConfig.path_update_interval)
  
 	if data == null:
 		push_warning("Enemy missing EnemyData resource")
@@ -144,6 +151,34 @@ func _setup_navigation() -> void:
 	if not has_target_position and current_target == null:
 		_find_default_target()
  
+## TWR-16: Walking and flying units both use the projection on the
+## lane, never the navmesh path, so walking around a Barricade does not change the order.
+## Without a lane_curve the projection on x is used (TWR-15 fallback, the Fortress is on -x).
+func update_nav_progress() -> void:
+	var lane := _get_lane()
+	if lane == null:
+		nav_progress = -global_position.x
+		return
+	var local := lane.to_local(global_position)
+	# Flying units count by the point below them; the lane is drawn on the ground plane.
+	local.y = 0.0
+	var remaining := lane.curve.get_baked_length() - lane.curve.get_closest_offset(local)
+	nav_progress = _lane_ref_length - remaining
+
+func _get_lane() -> Path3D:
+	if is_instance_valid(_lane) and _lane.is_inside_tree():
+		return _lane
+	_lane = null
+	_lane_ref_length = 0.0
+	for node in get_tree().get_nodes_in_group(&"lane_curve"):
+		var path := node as Path3D
+		if path == null or path.curve == null or path.curve.point_count < 2:
+			continue
+		if _lane == null:
+			_lane = path
+		_lane_ref_length = maxf(_lane_ref_length, path.curve.get_baked_length())
+	return _lane
+
 func can_be_targeted() -> bool:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return false
@@ -208,6 +243,11 @@ func _physics_process(delta: float) -> void:
  
 func _update_timers(delta: float) -> void:
 	life_timer += delta
+
+	_progress_timer -= delta
+	if _progress_timer <= 0.0:
+		_progress_timer += GameConfig.path_update_interval
+		update_nav_progress()
  
 	if life_timer >= GameConfig.straggler_marker_time and not straggler_marked:
 		straggler_marked = true
@@ -469,7 +509,6 @@ func _update_navigation_movement(_delta: float) -> void:
  
 		var target_yaw := atan2(move_dir.x, move_dir.z)
 		rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
-		nav_progress = nav.distance_to_target()
 	else:
 		velocity.x = 0.0
 		velocity.z = 0.0

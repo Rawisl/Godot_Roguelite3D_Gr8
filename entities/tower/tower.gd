@@ -16,7 +16,8 @@ var _cooldown: float = 0.0
 ## time left before shot leave; negative when no shot pending.
 var _release_t: float = -1.0
 var _shot_target: Enemy = null
-var _priority_t: float = -1.0
+## TimeManager.real_time when the pending priority applies; negative when none is pending.
+var _priority_due: float = -1.0
 var _pending_priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
 var _pool: ProjectilePool = null
 var _aim_node: Node3D = null
@@ -56,10 +57,11 @@ func set_visuals(aim: Node3D, muzzle_node: Node3D) -> void:
 	_aim_node = aim
 	_muzzle_node = muzzle_node
 
-## TGT-03, CMD-01: a new priority applies after retarget_delay.
+## TGT-03, CMD-01: a new priority applies after retarget_delay, counted in real time
+## (TIME-10), so it is 0.3 s at x1, x2 and x3.
 func set_priority(new_priority: Enums.TargetPriority) -> void:
 	_pending_priority = new_priority
-	_priority_t = GameConfig.retarget_delay
+	_priority_due = TimeManager.real_time + GameConfig.retarget_delay
 
 func can_attack() -> bool:
 	return data != null and data.projectile_scene != null and _lv != null and _lv.fire_rate > 0.0
@@ -67,7 +69,7 @@ func can_attack() -> bool:
 func _physics_process(delta: float) -> void:
 	if not can_attack():
 		return
-	_update_priority(delta)
+	_update_priority()
 	_update_aim()
 
 	# TWR-15: scan every scan_interval of game time
@@ -88,14 +90,12 @@ func _physics_process(delta: float) -> void:
 	if _cooldown <= 0.0 and _is_valid_target(target):
 		_start_shot()
 
-func _update_priority(delta: float) -> void:
-	if _priority_t < 0.0:
+func _update_priority() -> void:
+	if _priority_due < 0.0 or TimeManager.real_time < _priority_due:
 		return
-	_priority_t -= delta
-	if _priority_t <= 0.0:
-		_priority_t = -1.0
-		priority = _pending_priority
-		target = _pick_target()
+	_priority_due = -1.0
+	priority = _pending_priority
+	target = _pick_target()
 
 func _scan() -> void:
 	#keep the target until it dies or leaves range
@@ -103,68 +103,74 @@ func _scan() -> void:
 		return
 	target = _pick_target()
 
+## One pass over the area query: each candidate is checked and scored once (TWR-15).
 func _pick_target() -> Enemy:
 	var best: Enemy = null
+	var best_score := 0.0
+	var best_d2 := 0.0
 	for body in range_area.get_overlapping_bodies():
 		var e := body as Enemy
-		if not _is_valid_target(e):
+		var d2 := _target_distance_sq(e)
+		if d2 < 0.0:
 			continue
-		if best == null or _is_better(e, best):
+		var s := _score(e, d2)
+		if best == null or _is_better(s, d2, e, best_score, best_d2, best):
 			best = e
+			best_score = s
+			best_d2 = d2
 	return best  # TGT-02: null means idle
 
-## Valid target (3.6.5): alive, in range, a kind this tower can hit.
+## Valid target (3.6.5): alive and targetable, in range, a kind this tower can hit.
 func _is_valid_target(obj) -> bool:
+	return _target_distance_sq(obj) >= 0.0
+
+## Flat distance squared to obj when it is a valid target, -1 when it is not.
+func _target_distance_sq(obj) -> float:
 	if ( obj == null 
 		or not is_instance_valid(obj) 
 		or not obj is Enemy):
-			return false
+			return -1.0
 	var e := obj as Enemy
-	if e.is_dead:
-		return false
-	# EN-04: TV2 can add is_targetable for spawn_grace; until then every enemy counts.
-	if "is_targetable" in e and not e.get(&"is_targetable"):
-		return false
+	# EN-04: dead, in spawn_grace or still inside the spawn zone.
+	if not e.can_be_targeted():
+		return -1.0
+	# TGT-04, DMG-02: a target immune to this damage type (resist 0) is dropped.
+	# Enemies without get_resist count as resist 1 until boss resistances exist.
+	if e.has_method(&"get_resist") and e.get_resist(data.damage_type) <= 0.0:
+		return -1.0
 	var flying := e.data != null and e.data.is_flying
 	if flying and not data.targets_air:
-		return false
+		return -1.0
 	if not flying and not data.targets_ground:
-		return false
+		return -1.0
 	var d2 := _flat_distance_sq(e)
 	if d2 > _lv.attack_range * _lv.attack_range:
-		return false
+		return -1.0
 	# TGT-05
-	return d2 >= data.min_range * data.min_range
+	if d2 < data.min_range * data.min_range:
+		return -1.0
+	return d2
 
 ## TGT-01: higher score wins, then closer to the tower, then smaller entity id.
-func _is_better(a: Enemy, b: Enemy) -> bool:
-	var sa := _score(a)
-	var sb := _score(b)
+func _is_better(sa: float, da: float, a: Enemy, sb: float, db: float, b: Enemy) -> bool:
 	if not is_equal_approx(sa, sb):
 		return sa > sb
-	var da := _flat_distance_sq(a)
-	var db := _flat_distance_sq(b)
 	if not is_equal_approx(da, db):
 		return da < db
 	return a.get_instance_id() < b.get_instance_id()
 
-func _score(e: Enemy) -> float:
+func _score(e: Enemy, d2: float) -> float:
 	match priority:
 		Enums.TargetPriority.FIRST:
-			return _progress_of(e)
+			# TWR-16: metres along lane_curve toward the Fortress, kept up to date by the enemy.
+			return e.nav_progress
 		Enums.TargetPriority.NEAREST:
-			return -_flat_distance_sq(e)
+			return -d2
 		Enums.TargetPriority.HIGHEST_HP:
 			return float(e.health.hp)
 		Enums.TargetPriority.LOWEST_HP:
 			return -float(e.health.hp)
 	return 0.0
-
-## Distance along the lane toward the Fortress; larger is closer to the gate.
-## TWR-15 fallback: projection on x (the Fortress is on the -x side).
-## TODO: read e.nav_progress once Enemy implements TWR-16 (it holds the remaining nav distance now).
-func _progress_of(e: Enemy) -> float:
-	return -e.global_position.x
 
 func _flat_distance_sq(e: Node3D) -> float:
 	var d := e.global_position - global_position
