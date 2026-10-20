@@ -8,6 +8,8 @@ extends Node3D
 ## - TGT-04, DMG-02: an enemy immune to the tower's damage type (resist 0) is skipped
 ## - TGT-03, TIME-10: a priority change applies after retarget_delay in real time, at x1 and x3
 ## - TWR-15, ACP-01: 14 towers scanning 70 enemies stay under 1 ms per frame
+## - TWR-15, test 7.1 item 6: the tower picks again on every scan, so a unit that overtakes
+##   becomes the First target (and a unit that comes closer the Nearest target) within one scan
 
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
 const CANNON_SCENE: PackedScene = preload("res://entities/tower/cannon.tscn")
@@ -43,6 +45,7 @@ func _ready() -> void:
 	await test_valid_targets()
 	await test_retarget_delay()
 	await test_scan_cost()
+	await test_repick_every_scan()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -122,6 +125,15 @@ func _clear(nodes: Array) -> void:
 	for n in nodes:
 		if is_instance_valid(n):
 			n.free()
+
+
+## Physics frames until the tower's own scan sets `want` as its target, -1 if it never does.
+func _frames_until_target(t: Tower, want: Enemy, max_frames: int) -> int:
+	for i in max_frames:
+		await get_tree().physics_frame
+		if t.target == want:
+			return i + 1
+	return -1
 
 
 func _pick_name(t: Tower) -> String:
@@ -336,3 +348,36 @@ func test_scan_cost() -> void:
 ## Same formula as Slot._scan_phase.
 func _slot_phase(slot_id: StringName) -> float:
 	return float(absi(rand_from_seed(hash(slot_id))[0]) % 1000) / 1000.0
+
+
+## The tower runs on its own here (_physics_process and _scan), not through _pick_target.
+## It keeps no target between scans: a valid target that is no longer the best is replaced
+## at the next scan. Shots are held back so no enemy dies during the test.
+func test_repick_every_scan() -> void:
+	print("\n[GROUP 7] Pick again on every scan (TWR-15, test 7.1 item 6)")
+	var scan_frames := int(ceil(GameConfig.scan_interval * Engine.physics_ticks_per_second))
+	var budget := scan_frames + 2
+	var t := _arrow(Vector3.ZERO)
+	t.priority = Enums.TargetPriority.FIRST
+	var a := _grunt(Vector3(-3, 0, 2), "A")
+	var b := _grunt(Vector3(2, 0, -2), "B")
+	t._cooldown = 1.0e9
+	var first_a := await _frames_until_target(t, a, budget * 2)
+	assert_true(first_a > 0, "First: A leads (%.1f m vs %.1f m) and becomes the target" % [a.nav_progress, b.nav_progress])
+
+	# B overtakes A while A is still a valid target.
+	b.global_position = Vector3(-5, 0, -2)
+	b.update_nav_progress()
+	var took := await _frames_until_target(t, b, budget * 2)
+	assert_true(took > 0 and took <= budget,
+		"First: B overtakes A, target switches to B within one scan (%d frames, budget %d)" % [took, budget])
+
+	t.priority = Enums.TargetPriority.NEAREST
+	var near_a := await _frames_until_target(t, a, budget * 2)
+	assert_true(near_a > 0, "Nearest: A is closer and becomes the target")
+	b.global_position = Vector3(1, 0, -1)
+	b.update_nav_progress()
+	took = await _frames_until_target(t, b, budget * 2)
+	assert_true(took > 0 and took <= budget,
+		"Nearest: B comes closer, target switches to B within one scan (%d frames, budget %d)" % [took, budget])
+	_clear([a, b, t])

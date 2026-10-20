@@ -97,10 +97,9 @@ func _update_priority() -> void:
 	priority = _pending_priority
 	target = _pick_target()
 
+## TWR-15: pick again on every scan by the current priority, so a unit that overtakes becomes
+## the First target within one scan_interval (test 7.1 item 6). A shot already started keeps its _shot_target.
 func _scan() -> void:
-	#keep the target until it dies or leaves range
-	if _is_valid_target(target):
-		return
 	target = _pick_target()
 
 ## One pass over the area query: each candidate is checked and scored once (TWR-15).
