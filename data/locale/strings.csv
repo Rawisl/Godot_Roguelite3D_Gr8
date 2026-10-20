@@ -55,3 +55,16 @@ panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {h
 tower.arrow,Tháp cung
 tower.cannon,Tháp pháo
 tower.barricade,Rào chắn
+panel.tower.level,Cấp {level}
+panel.tower.hp,Máu {value}/{max}
+panel.tower.upgrade,Nâng cấp - {gold} vàng
+panel.tower.sell,Bán (+{gold} vàng)
+panel.tower.next,Cấp kế: Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {hp}
+panel.tower.priority,Ưu tiên bắn
+panel.max,Đã tối đa (MAX)
+panel.priority.first,Đầu đoàn
+panel.priority.nearest,Gần nhất
+panel.priority.paused,Không đổi được khi tạm dừng
+panel.tower.next_max,Cấp kế: đã đạt cấp tối đa
+dialog.sell.title,Bán công trình?
+dialog.sell.body,Bán {name} cấp {level} và nhận lại {gold} vàng. Không hoàn tác được.

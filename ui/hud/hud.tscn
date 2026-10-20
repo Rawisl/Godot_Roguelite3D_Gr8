@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://c7ac3jyr50isa" path="res://ui/hud/parts/gold_label.tscn" id="7_o2lis"]
 [ext_resource type="PackedScene" uid="uid://klqge08m43r" path="res://ui/panels/build_panel.tscn" id="8_6gxmt"]
 [ext_resource type="PackedScene" uid="uid://dt46xx58li850" path="res://ui/hud/parts/offscreen_indicators.tscn" id="8_gfles"]
+[ext_resource type="PackedScene" uid="uid://cmf1pspoewu74" path="res://ui/panels/tower_panel.tscn" id="9_6gxmt"]
 [ext_resource type="PackedScene" uid="uid://csopdaxvf7sac" path="res://ui/hud/parts/speed_buttons.tscn" id="9_aixkq"]
 [ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="10_cxhb7"]
 [ext_resource type="Script" uid="uid://chy1j70x80shi" path="res://ui/world/selection_controller.gd" id="14_olkg6"]
@@ -83,6 +84,7 @@ size_flags_horizontal = 8
 
 [node name="PanelHost" type="Control" parent="Root/SafeArea/Frame" unique_id=1585184375]
 layout_mode = 1
+anchors_preset = 6
 anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
@@ -100,6 +102,14 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 58.0
+grow_horizontal = 2
+
+[node name="TowerPanel" parent="Root/SafeArea/Frame/PanelHost" unique_id=993852717 instance=ExtResource("9_6gxmt")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 153.0
 grow_horizontal = 2
 
 [node name="BossBar" parent="Root" unique_id=615647234 instance=ExtResource("1_4d6w6")]

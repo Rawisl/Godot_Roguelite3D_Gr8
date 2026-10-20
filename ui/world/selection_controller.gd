@@ -78,7 +78,7 @@ func _select(node: Node) -> void:
 		var slot := node as Slot
 		if slot.state == Enums.SlotState.OCCUPIED:
 			_select_tower(slot)
-		elif _is_prep():
+		elif _is_prep() and _rings_visible:
 			selected_slot = slot.slot_id
 			EventBus.slot_selected.emit(slot.slot_id)
 	else:

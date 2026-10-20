@@ -1,6 +1,6 @@
 class_name BuildService
 extends Node
-## Build transactions for the panels. Each call checks the wave state, the slot and
+## Build, upgrade and sell for the panels. Each call checks the wave state, the slot and
 ## the gold in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice.
 
@@ -8,13 +8,21 @@ extends Node
 @export var tower_scenes: Dictionary[StringName, PackedScene] = {}
 
 var _wave_state: StringName = &""
+var _mode: StringName = &"FRONTLINE"
+var _invested: Dictionary = {}  # slot_id -> gold spent on the tower standing there
 
 func _ready() -> void:
 	add_to_group(&"build_service")
 	EventBus.state_changed.connect(_on_state_changed)
+	EventBus.mode_changed.connect(_on_mode_changed)
+	EventBus.tower_destroyed.connect(_on_tower_destroyed)
+	EventBus.run_started.connect(_on_run_started)
 
 func is_prep() -> bool:
 	return _wave_state == &"PREP"
+
+func is_commander_mode() -> bool:
+	return _mode == &"COMMANDER"
 
 ## Looks slots up by group so it works with or without a SlotManager in the level.
 func find_slot(slot_id: StringName) -> Slot:
@@ -73,7 +81,78 @@ func build(slot_id: StringName, type: StringName, level: int = 1) -> bool:
 	slot.place_tower(tower)
 	if is_rebuild:
 		tower.apply_level(level)
+	_invested[slot_id] = cost
 	EventBus.tower_built.emit(slot_id, type)
+	return true
+
+## Everything the Tower panel shows. Empty when the slot holds no tower.
+func get_tower_info(slot_id: StringName) -> Dictionary:
+	var slot := find_slot(slot_id)
+	var gold := _gold()
+	if slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
+		return {}
+	var t := slot.tower
+	var lv: TowerLevelData = t.data.levels[t.level - 1]
+	var info := {
+		"data": t.data,
+		"level": t.level,
+		"hp": t.health.hp,
+		"max_hp": t.health.max_hp,
+		"range": lv.attack_range,
+		"priority": t.priority,
+		"can_target": t.can_attack(),
+		"is_max": t.level >= t.data.levels.size(),
+		"sell_value": floori(float(_invested.get(slot_id, 0)) * GameConfig.sell_refund_pct),
+	}
+	if not info.is_max:
+		var cost: int = t.data.levels[t.level].build_cost
+		info["upgrade_cost"] = cost
+		info["upgrade_shortfall"] = gold.shortfall(cost)
+	return info
+
+func upgrade(slot_id: StringName) -> bool:
+	var slot := find_slot(slot_id)
+	var gold := _gold()
+	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED:
+		return false
+	var t := slot.tower
+	if t == null or t.level >= t.data.levels.size():
+		return false
+	# TODO: block by commander level once the XP tracker exists
+	var cost: int = t.data.levels[t.level].build_cost
+	if not gold.try_spend(cost):
+		EventBus.build_denied.emit(&"NOT_ENOUGH_GOLD", gold.shortfall(cost))
+		return false
+	# apply_level refills HP to the new max and keeps the target priority.
+	t.apply_level(t.level + 1)
+	_invested[slot_id] = _invested.get(slot_id, 0) + cost
+	EventBus.tower_upgraded.emit(slot_id, t.data.id, t.level)
+	return true
+
+func sell(slot_id: StringName) -> bool:
+	var slot := find_slot(slot_id)
+	var gold := _gold()
+	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED:
+		return false
+	var refund := floori(float(_invested.get(slot_id, 0)) * GameConfig.sell_refund_pct)
+	_invested.erase(slot_id)
+	slot.clear_tower()
+	gold.add(refund)
+	EventBus.tower_sold.emit(slot_id)
+	return true
+
+## In combat only Commander mode can change it, and never while paused.
+func can_change_priority() -> bool:
+	if is_prep():
+		return true
+	return is_commander_mode() and not TimeManager.is_paused
+
+func set_priority(slot_id: StringName, priority: Enums.TargetPriority) -> bool:
+	var slot := find_slot(slot_id)
+	if slot == null or slot.tower == null or not can_change_priority():
+		return false
+	slot.tower.set_priority(priority)
+	EventBus.tower_priority_changed.emit(slot_id, StringName(Enums.TargetPriority.keys()[priority]))
 	return true
 
 func _gold() -> GoldManager:
@@ -81,3 +160,12 @@ func _gold() -> GoldManager:
 
 func _on_state_changed(new_state: StringName) -> void:
 	_wave_state = new_state
+
+func _on_mode_changed(mode: StringName) -> void:
+	_mode = mode
+
+func _on_tower_destroyed(slot_id: StringName) -> void:
+	_invested.erase(slot_id)
+
+func _on_run_started() -> void:
+	_invested.clear()
