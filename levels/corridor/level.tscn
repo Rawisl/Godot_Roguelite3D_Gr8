@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://ekgmjmchm13f"]
 
+[ext_resource type="PackedScene" uid="uid://b1ss2j7jn26og" path="res://entities/projectile/projectile_pool.tscn" id="8_a28fg"]
 [ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="9_grass"]
 [ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
 [ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
@@ -147,7 +148,7 @@ surface_material_override/0 = ExtResource("9_wood")
 navigation_mesh = SubResource("NavigationMesh_large")
 navigation_layers = 2
 
-[node name="LaneCurve" type="Path3D" parent="." unique_id=1725652686]
+[node name="LaneCurve" type="Path3D" parent="." unique_id=1725652686 groups=["lane_curve"]]
 curve = SubResource("Curve3D_lane")
 
 [node name="Slots" parent="." unique_id=1229477472 instance=ExtResource("12_slots")]
@@ -196,3 +197,5 @@ script = ExtResource("10_occl")
 
 [node name="BuildFxManager" type="Node" parent="." unique_id=1065239621]
 script = ExtResource("11_bfx")
+
+[node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
