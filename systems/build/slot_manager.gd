@@ -34,9 +34,6 @@ func get_layout_problems() -> PackedStringArray:
 
 ## Collect Slots and append into _slots dictionary
 func _collect_slots() -> void:
-	for slot: Slot in _slots.values():
-		if is_instance_valid(slot) and slot.clicked.is_connected(_on_slot_clicked):
-			slot.clicked.disconnect(_on_slot_clicked)
 	_slots.clear()
 	_all = []
 	_by_zone = {}
@@ -53,7 +50,6 @@ func _collect_slots() -> void:
 			continue
 		_slots[slot.slot_id] = slot
 		_all.append(slot)
-		slot.clicked.connect(_on_slot_clicked)
 	_all.sort_custom(func(a: Slot, b: Slot) -> bool:
 		if a.zone != b.zone:
 			return a.zone < b.zone
@@ -136,6 +132,3 @@ func set_rings_visible(v: bool) -> void:
 
 func _on_game_state_changed(new_state: StringName) -> void:
 	set_rings_visible(new_state == &"PREP")
-
-func _on_slot_clicked(slot: Slot) -> void:
-	EventBus.slot_selected.emit(slot.slot_id)
