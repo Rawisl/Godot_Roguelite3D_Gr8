@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://dr61dft5ihgnw"]
+
+[ext_resource type="Script" uid="uid://6yhf41nghwwr" path="res://tests/test_hover_outline.gd" id="1_133ei"]
+[ext_resource type="Shader" uid="uid://dnc8u4fbsu5lg" path="res://ui/world/outline.gdshader" id="2_77auh"]
+[ext_resource type="PackedScene" uid="uid://cqtr872nne23j" path="res://contents/assets/towers/arrow_tower_model.tscn" id="2_suncw"]
+[ext_resource type="PackedScene" uid="uid://be2n7yc8bock6" path="res://contents/assets/towers/cannon_tower_model.tscn" id="3_77auh"]
+[ext_resource type="PackedScene" uid="uid://6ka6jtxno0f1" path="res://contents/assets/towers/barricade_tower_model.tscn" id="4_86s4b"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_orua6"]
+render_priority = 0
+shader = ExtResource("2_77auh")
+shader_parameter/outline_color = Color(1, 0.72156864, 0.101960786, 1)
+shader_parameter/edge_start = 0.250000011875
+shader_parameter/edge_end = 0.6000000285
+shader_parameter/strength = 1.0000000475
+shader_parameter/fill = 0.0
+
+[node name="TestHoverOutline" type="Node3D" unique_id=759076364]
+script = ExtResource("1_133ei")
+outline = SubResource("ShaderMaterial_orua6")
+
+[node name="ArrowTowerModel" parent="." unique_id=1343548917 instance=ExtResource("2_suncw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 0)
+
+[node name="CannonTowerModel" parent="." unique_id=550839409 instance=ExtResource("3_77auh")]
+
+[node name="BarricadeTowerModel" parent="." unique_id=387524894 instance=ExtResource("4_86s4b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=207647394]
+transform = Transform3D(0.9396926, -0.24184474, 0.24184474, 0, 0.70710677, 0.70710677, -0.34202012, -0.664463, 0.664463, 3.6, 10.6, 10)
+projection = 1
+current = true
+size = 8.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=496384286]
+transform = Transform3D(0.8660254, -0.38302222, 0.32139382, 0, 0.64278764, 0.76604444, -0.5, -0.66341394, 0.5566704, 0, 0, 0)

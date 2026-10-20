@@ -1,12 +1,39 @@
 [gd_scene format=3 uid="uid://bgpfww5ejjq45"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.1098, 0.1216, 0.149, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.749, 0.6235, 0.4588, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
 [node name="PanelBase" type="PanelContainer" unique_id=800506704]
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=492078792]
 layout_mode = 2
+theme_override_constants/separation = 12
 
 [node name="Title" type="Label" parent="VBoxContainer" unique_id=1685814428]
+unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 38
+horizontal_alignment = 1
 
 [node name="CloseButton" type="Button" parent="VBoxContainer" unique_id=1990279323]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 56)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
