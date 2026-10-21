@@ -19,6 +19,12 @@ var has_target_position: bool = false
 var nav_progress: float = 0.0
 var speed_multiplier: float = 1.0
 var is_dead: bool = false
+
+var spawn_wave: int = 1
+var wave_hp_mult: float = 1.0
+var wave_dmg_mult: float = 1.0
+var wave_speed_mult: float = 1.0
+var scaled_damage: int = 0
  
 var current_state: Enums.EnemyState = Enums.EnemyState.SPAWN
 var _previous_state: Enums.EnemyState = Enums.EnemyState.ADVANCE
@@ -85,9 +91,13 @@ func _ready() -> void:
  
 	_setup_anim_player()
  
-	health.max_hp = data.base_hp
-	health.hp = data.base_hp
+	var target_hp: int = data.get_scaled_hp(wave_hp_mult) if wave_hp_mult != 1.0 else data.base_hp
+	health.max_hp = target_hp
+	health.hp = target_hp
 	health.died.connect(_on_died)
+ 
+	if scaled_damage == 0 and data != null:
+		scaled_damage = data.get_scaled_damage(wave_dmg_mult) if wave_dmg_mult != 1.0 else data.base_damage
  
 	nav.radius = data.avoid_radius
 	nav.path_desired_distance = 1.0
@@ -148,6 +158,23 @@ func can_be_targeted() -> bool:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return false
 	return true
+ 
+## SCL-05: Apply wave scale factors at spawn time. Immutable while alive.
+func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave_num: int = 1) -> void:
+	spawn_wave = wave_num
+	wave_hp_mult = hp_mult
+	wave_dmg_mult = dmg_mult
+	wave_speed_mult = p_speed_mult
+	speed_multiplier = p_speed_mult
+
+	if data != null:
+		var s_hp: int = data.get_scaled_hp(hp_mult)
+		if health != null:
+			health.max_hp = s_hp
+			health.hp = s_hp
+		scaled_damage = data.get_scaled_damage(dmg_mult)
+	else:
+		scaled_damage = int(round(6.0 * dmg_mult))
  
 func change_state(new_state: Enums.EnemyState) -> void:
 	if current_state == new_state:
@@ -404,7 +431,7 @@ func _execute_melee_strike() -> void:
 		return
  
 	if current_target.has_method("take_damage"):
-		var dmg := data.base_damage if data else 6
+		var dmg: int = scaled_damage if scaled_damage > 0 else (data.base_damage if data else 6)
 		var dmg_type := data.damage_type if data else Enums.DamageType.SLASH
 		var hit_dir := diff.normalized() if diff.length_squared() > 0.001 else Vector3.FORWARD
 		var kb_force: float = data.knockback_force if data != null else 0.0
@@ -1034,7 +1061,8 @@ func _on_died() -> void:
 		hurt_shape.set_deferred("disabled", true)
  
 	if data != null:
-		EventBus.enemy_died.emit(data.id, global_position, data.gold_reward, data.prestige_reward, false)
+		var gold: int = data.get_scaled_gold_reward(spawn_wave)
+		EventBus.enemy_died.emit(data.id, global_position, gold, data.prestige_reward, false)
  
 	change_state(Enums.EnemyState.DEAD)
  

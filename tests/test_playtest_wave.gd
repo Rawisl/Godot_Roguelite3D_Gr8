@@ -4,6 +4,10 @@ extends Node3D
 ## Allows inputting any wave number and run_seed to test wave composition,
 ## group scheduling, timing, and enemy behaviors in the corridor arena.
 
+const GRUNT_DATA: EnemyData = preload("res://data/enemies/grunt.tres")
+const ARCHER_DATA: EnemyData = preload("res://data/enemies/archer.tres")
+const BRUTE_DATA: EnemyData = preload("res://data/enemies/brute.tres")
+
 @onready var level: Node3D = %Level
 @onready var wave_manager: WaveManager = %WaveManager
 @onready var enemy_container: Node3D = %Enemy
@@ -156,7 +160,8 @@ func _update_overhead_labels() -> void:
 			var state_name: String = Enums.EnemyState.keys()[enemy.current_state]
 			var enemy_id: String = String(enemy.data.id) if enemy.data != null else "Enemy"
 			var hp_text := "%d/%d" % [enemy.health.hp, enemy.health.max_hp] if enemy.health != null else ""
-			lbl.text = "[%s] %s\nHP: %s" % [enemy_id.capitalize(), state_name, hp_text]
+			var dmg_val: int = enemy.scaled_damage if enemy.scaled_damage > 0 else (enemy.data.base_damage if enemy.data else 0)
+			lbl.text = "[%s] %s\nHP: %s | DMG: %d" % [enemy_id.capitalize(), state_name, hp_text, dmg_val]
 
 	for r in to_remove:
 		_overhead_labels.erase(r)
@@ -210,13 +215,25 @@ func _update_preview() -> void:
 	var total := comp.size()
 	var archer_pct: float = (float(archers) / float(total) * 100.0) if total > 0 else 0.0
 
-	composition_label.text = "Wave %d Preview (Seed %d):\nBudget: %d | Duration: %.1fs | Groups: %d\nTotal Enemies: %d\n • Grunt: %d\n • Archer: %d (%.1f%% / max 40%%)\n • Brute: %d (max %d)" % [
+	var hp_m: float = cfg.get_hp_mult(w)
+	var dmg_m: float = cfg.get_dmg_mult(w)
+	var spd_m: float = cfg.get_speed_mult(w)
+
+	var grunt_hp: int = int(round(float(GRUNT_DATA.base_hp) * hp_m)) if GRUNT_DATA != null else 0
+	var grunt_dmg: int = int(round(float(GRUNT_DATA.base_damage) * dmg_m)) if GRUNT_DATA != null else 0
+	var archer_hp: int = int(round(float(ARCHER_DATA.base_hp) * hp_m)) if ARCHER_DATA != null else 0
+	var archer_dmg: int = int(round(float(ARCHER_DATA.base_damage) * dmg_m)) if ARCHER_DATA != null else 0
+	var brute_hp: int = int(round(float(BRUTE_DATA.base_hp) * hp_m)) if BRUTE_DATA != null else 0
+	var brute_dmg: int = int(round(float(BRUTE_DATA.base_damage) * dmg_m)) if BRUTE_DATA != null else 0
+
+	composition_label.text = "Wave %d Preview (Seed %d):\nBudget: %d | Duration: %.1fs | Groups: %d\nScale: HP x%.2f | DMG x%.2f | Spd x%.3f\nTotal Enemies: %d\n • Grunt: %d (HP %d, DMG %d)\n • Archer: %d (HP %d, DMG %d - %.1f%%)\n • Brute: %d (HP %d, DMG %d - max %d)" % [
 		w, s,
 		budget, duration, group_count,
+		hp_m, dmg_m, spd_m,
 		total,
-		grunts,
-		archers, archer_pct,
-		brutes, int(floor(float(w) / 4.0))
+		grunts, grunt_hp, grunt_dmg,
+		archers, archer_hp, archer_dmg, archer_pct,
+		brutes, brute_hp, brute_dmg, int(floor(float(w) / 4.0))
 	]
 
 	# Build group breakdown text
