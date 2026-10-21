@@ -508,12 +508,38 @@ func _update_navigation_movement(_delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
  
+static func invalidate_node_cache() -> void:
+	_last_cache_frame = -1
+	_cached_barricades.clear()
+	_cached_towers.clear()
+	_cached_enemies.clear()
+
 func _update_node_cache() -> void:
 	var cur_frame := Engine.get_physics_frames()
-	if _last_cache_frame != cur_frame or cur_frame <= 1:
+	var needs_refresh: bool = (_last_cache_frame != cur_frame or _last_cache_frame == -1)
+	if not needs_refresh:
+		for b in _cached_barricades:
+			if not is_instance_valid(b):
+				needs_refresh = true
+				break
+		if not needs_refresh:
+			for t in _cached_towers:
+				if not is_instance_valid(t):
+					needs_refresh = true
+					break
+		if not needs_refresh and _cached_towers.is_empty():
+			if not get_tree().get_nodes_in_group(&"tower").is_empty() or not get_tree().get_nodes_in_group(&"tower_ground").is_empty():
+				needs_refresh = true
+		if not needs_refresh and _cached_barricades.is_empty() and not get_tree().get_nodes_in_group(&"barricade").is_empty():
+			needs_refresh = true
+
+	if needs_refresh:
 		_last_cache_frame = cur_frame
 		_cached_barricades = get_tree().get_nodes_in_group(&"barricade")
 		_cached_towers = get_tree().get_nodes_in_group(&"tower")
+		for tg in get_tree().get_nodes_in_group(&"tower_ground"):
+			if tg not in _cached_towers:
+				_cached_towers.append(tg)
 		_cached_enemies = get_tree().get_nodes_in_group(&"enemy")
  
 func _is_target_ahead(target_pos: Vector3, tolerance: float = 0.5) -> bool:
@@ -523,7 +549,7 @@ func _is_target_ahead(target_pos: Vector3, tolerance: float = 0.5) -> bool:
 	return to_target.dot(advance_dir) >= -tolerance
  
 func _is_target_valid(t: Node3D) -> bool:
-	if t == null or not is_instance_valid(t):
+	if t == null or not is_instance_valid(t) or t.is_queued_for_deletion():
 		return false
 	if _is_skipped_full_target(t):
 		return false
@@ -545,9 +571,11 @@ func _is_target_valid(t: Node3D) -> bool:
 			return false
 		return true
  
-	if t.is_in_group(&"tower"):
+	if t.is_in_group(&"tower") or t.is_in_group(&"tower_ground") or t.is_in_group(&"heal_station"):
 		var is_wall: bool = false
-		if t.is_in_group(&"tower_wall"):
+		if t.is_in_group(&"tower_ground") or t.is_in_group(&"heal_station"):
+			is_wall = false
+		elif t.is_in_group(&"tower_wall"):
 			is_wall = true
 		elif t.has_meta("is_wall"):
 			is_wall = bool(t.get_meta("is_wall"))
@@ -647,7 +675,9 @@ func _find_closest_valid_tower(wall_only: bool) -> Node3D:
 			if _is_barricade(tw_node):
 				continue
 			var is_wall: bool = false
-			if tw_node.is_in_group(&"tower_wall"):
+			if tw_node.is_in_group(&"tower_ground") or tw_node.is_in_group(&"heal_station"):
+				is_wall = false
+			elif tw_node.is_in_group(&"tower_wall"):
 				is_wall = true
 			elif tw_node.has_meta("is_wall"):
 				is_wall = bool(tw_node.get_meta("is_wall"))
@@ -846,7 +876,15 @@ func _try_hold_melee_slot(t: Node3D) -> bool:
 	if not _uses_melee_slot(t) or t.has_melee_slot(self):
 		return true
 	var gate: Vector3 = t.get_melee_slot_position(self)
-	if absf(global_position.x - gate.x) > GameConfig.crowd_claim_distance:
+	var dist_to_claim: float
+	if t.is_in_group(&"fortress"):
+		dist_to_claim = absf(global_position.x - gate.x)
+	else:
+		var diff := global_position - gate
+		diff.y = 0.0
+		dist_to_claim = diff.length()
+
+	if dist_to_claim > GameConfig.crowd_claim_distance:
 		return true
 	if t.claim_melee_slot(self):
 		nav.target_position = t.get_melee_slot_position(self)
