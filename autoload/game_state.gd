@@ -41,7 +41,16 @@ func _ready() -> void:
 	_pause_layer.layer = 50
 	add_child(_pause_layer)
 	EventBus.run_ended.connect(_on_run_ended)
+	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_sync_with_current_scene.call_deferred()
+
+## Tab is mode_switch in a run and never moves focus, even in the pause menu or a dialog.
+## Nothing to block when nothing has focus, so Tab still reaches the commander.
+func _input(event: InputEvent) -> void:
+	if current != AppState.RUN or get_viewport().gui_get_focus_owner() == null:
+		return
+	if event.is_action(&"ui_focus_next") or event.is_action(&"ui_focus_prev"):
+		get_viewport().set_input_as_handled()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if current != AppState.RUN or not event.is_action_pressed(&"pause"):
@@ -85,6 +94,15 @@ func resume() -> void:
 		_pause_menu.queue_free()
 		_pause_menu = null
 	TimeManager.release_pause(TimeManager.REASON_USER)
+
+## Run HUD buttons give focus back right away so Space and Enter never press them again.
+## Dialogs and the pause menu keep focus for arrow and Enter navigation.
+func _on_gui_focus_changed(control: Control) -> void:
+	if current != AppState.RUN or _pause_menu != null or ScreenManager.has_dialog():
+		return
+	(func() -> void:
+		if is_instance_valid(control) and control.has_focus():
+			control.release_focus()).call_deferred()
 
 ## TODO: request it from RunState so it emits run_ended.
 func abandon_run() -> void:
