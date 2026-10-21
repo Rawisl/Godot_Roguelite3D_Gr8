@@ -64,6 +64,9 @@ func _ready() -> void:
 	_open_register.pressed.connect(_set_mode.bind(MODE_REGISTER))
 	for edit in _all_fields():
 		edit.text_submitted.connect(_on_field_submitted.bind(edit))
+		# Typing works as soon as a field gets focus, from the mouse, Tab or the arrows.
+		edit.focus_entered.connect(edit.edit)
+		edit.gui_input.connect(_on_field_gui_input.bind(edit))
 	for pair: Array in [[_password_eye, _password_edit], [_confirm_eye, _confirm_edit]]:
 		pair[0].toggled.connect(_on_eye_toggled.bind(pair[0], pair[1]))
 		_on_eye_toggled(false, pair[0], pair[1])
@@ -157,6 +160,16 @@ func _on_field_submitted(_text: String, edit: LineEdit) -> void:
 		_focus_field(fields[i + 1])
 	else:
 		_on_submit_pressed()
+
+func _on_field_gui_input(event: InputEvent, edit: LineEdit) -> void:
+	var target: Control = null
+	if event.is_action_pressed(&"ui_down", true):
+		target = edit.find_next_valid_focus()
+	elif event.is_action_pressed(&"ui_up", true):
+		target = edit.find_prev_valid_focus()
+	if target != null:
+		edit.accept_event()
+		target.grab_focus()
 
 func _all_fields() -> Array[LineEdit]:
 	return [_name_edit, _email_edit, _password_edit, _confirm_edit]
