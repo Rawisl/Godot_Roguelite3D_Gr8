@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://be8rmfu2jp2rt" path="res://art/vfx/build_fx_manager.gd" id="11_bfx"]
 [ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="11_fortress"]
 [ext_resource type="PackedScene" uid="uid://bg8ubpgsvf1gt" path="res://levels/corridor/slots_layout.tscn" id="12_slots"]
+[ext_resource type="Script" path="res://systems/camera/camera_rig.gd" id="13_camrig"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -87,6 +88,8 @@ shadow_enabled = true
 
 [node name="CameraRig" type="Node3D" parent="." unique_id=965123961]
 transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
+script = ExtResource("13_camrig")
+camera_bounds = Rect2(-20, -10, 40, 20)
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1985541732]
 transform = Transform3D(0.93969256, -0.24184471, 0.24184467, 0, 0.70710665, 0.70710677, -0.34202006, -0.664463, 0.6644629, 7.255, 21.213, 19.934)

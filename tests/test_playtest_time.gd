@@ -10,6 +10,7 @@ const GRASS := preload("res://art/materials/env_grass.tres")
 const TIMER_SECONDS := 5.0
 
 var _commander: CharacterBody3D
+var _camera_rig: CameraRig
 var _spinner: MeshInstance3D
 var _info: Label
 var _timer_info: Label
@@ -78,10 +79,14 @@ func _build_world(world: Node3D) -> void:
 	ground.add_child(mesh)
 	world.add_child(ground)
 
+	_camera_rig = CameraRig.new()
+	_camera_rig.name = "CameraRig"
+	_camera_rig.camera_bounds = Rect2(-30, -30, 60, 60)
+	world.add_child(_camera_rig)
 	var camera := Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 22.0
-	world.add_child(camera)
+	_camera_rig.add_child(camera)
 	camera.look_at_from_position(Vector3(16, 16, 16), Vector3.ZERO)
 	camera.current = true
 
@@ -206,7 +211,8 @@ Dodge cooldown left: %.2f s    Battle Cry cooldown left: %.2f s
 Combo hit: %d    attacking: %s    dodging: %s    skill: %s
 Buffered command: %s    Blocked (release to use again): %s
 HP: %d/%d    dead: %s    commander_died count: %d    low HP: %s    wave state: %s
-Esc / Pause button: pause. WASD, Space, Q, left click to fight.""" % [
+Camera pans with WASD: %s    camera offset: %s    commander pos: %s
+Esc / Pause button: pause. WASD, Space, Q, left click to fight. C: recenter camera.""" % [
 			TimeManager.get_time_scale(), TimeManager.is_paused, Engine.time_scale,
 			TimeManager.game_time, TimeManager.pausable_real_time, TimeManager.real_time,
 			_commander._dodge_cooldown_timer, _commander._battle_cry_cd_timer,
@@ -214,7 +220,8 @@ Esc / Pause button: pause. WASD, Space, Q, left click to fight.""" % [
 			_commander.is_using_skill, _commander._cmd_input.get_buffered(),
 			_commander._cmd_input.get_blocked(),
 			_commander.health.hp, _commander.health.max_hp, _commander.is_dead,
-			_died_count, _commander._is_low_hp, _commander._wave_state]
+			_died_count, _commander._is_low_hp, _commander._wave_state,
+			_camera_rig.is_panning_enabled(), _camera_rig.position, _commander.global_position]
 
 	var lines: Array[String] = []
 	for entry in _timers:

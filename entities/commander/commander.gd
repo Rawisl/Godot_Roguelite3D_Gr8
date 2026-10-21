@@ -256,6 +256,18 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 			current_combo_hit = 1
 
 
+## Movement and combat commands only run while a wave is being fought. An empty state
+## means no wave system is running (isolated test scenes), so nothing is locked.
+func _ground_actions_allowed() -> bool:
+	return _wave_state == &"" or _wave_state == &"COMBAT" or _wave_state == &"BOSS_COMBAT"
+
+
+func _move_input() -> Vector2:
+	if not _ground_actions_allowed():
+		return Vector2.ZERO
+	return _cmd_input.get_move_vector()
+
+
 ## Game seconds until the commander can start the command. Dodge can cancel the recovery
 ## of an attack, other commands wait for it.
 func _command_busy_left(command: StringName) -> float:
@@ -270,6 +282,8 @@ func _command_busy_left(command: StringName) -> float:
 
 
 func _execute_command(command: StringName, camera: Camera3D) -> void:
+	if not _ground_actions_allowed():
+		return
 	match command:
 		&"dodge":
 			_try_dodge(camera)
@@ -288,7 +302,7 @@ func _try_dodge(camera: Camera3D) -> void:
 
 
 func _start_dodge(camera: Camera3D) -> void:
-	var input := _cmd_input.get_move_vector()
+	var input := _move_input()
 	var dodge_clip := ANIM_DODGE_FWD
 
 	if not input.is_zero_approx():
@@ -427,7 +441,7 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
 	else:
-		var input := _cmd_input.get_move_vector()
+		var input := _move_input()
 		var speed := stats.move_speed if stats else 6.0
 
 		var cam_basis := camera.global_transform.basis
