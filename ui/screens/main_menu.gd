@@ -9,6 +9,7 @@ var _drawer_tween: Tween
 @onready var _play: Button = %Play
 @onready var _meta_shop: Button = %MetaShop
 @onready var _settings: Button = %Settings
+@onready var _account: Button = %Account
 @onready var _quit: Button = %Quit
 @onready var _prestige: Label = %Prestige
 @onready var _record: Label = %Record
@@ -21,14 +22,17 @@ func _ready() -> void:
 	_play.text = tr(&"menu.play")
 	_meta_shop.text = tr(&"menu.meta_shop")
 	_settings.text = tr(&"menu.settings")
+	_account.text = tr(&"menu.account")
 	_quit.text = tr(&"menu.quit")
 	_play.pressed.connect(GameState.change_state.bind(GameState.AppState.RUN_LOADING))
 	_meta_shop.pressed.connect(GameState.change_state.bind(GameState.AppState.META_SHOP))
 	_settings.pressed.connect(GameState.change_state.bind(GameState.AppState.SETTINGS))
+	# TODO: hide when online is off, and show the account name once signed in.
+	_account.pressed.connect(GameState.change_state.bind(GameState.AppState.LOGIN))
 	_quit.pressed.connect(get_tree().quit)
 	_drawer_toggle.tooltip_text = tr(&"menu.stats_toggle")
 	_drawer_toggle.pressed.connect(_toggle_drawer)
-	for button: Button in [_play, _meta_shop, _settings, _quit, _drawer_toggle]:
+	for button: Button in [_play, _meta_shop, _settings, _account, _quit, _drawer_toggle]:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
 	# TODO: read prestige_balance and max_wave_cleared from SaveManager once it loads the save.

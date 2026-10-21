@@ -2,7 +2,7 @@ extends Node
 
 signal app_state_changed(new_state: AppState, old_state: AppState)
 
-enum AppState { BOOT, MAIN_MENU, RUN_LOADING, RUN, RUN_END, META_SHOP, SETTINGS }
+enum AppState { BOOT, MAIN_MENU, RUN_LOADING, RUN, RUN_END, META_SHOP, SETTINGS, LOGIN }
 
 const SCENES := {
 	AppState.MAIN_MENU: "res://ui/screens/main_menu.tscn",
@@ -11,17 +11,19 @@ const SCENES := {
 	AppState.RUN_END: "res://ui/screens/run_end.tscn",
 	AppState.META_SHOP: "res://ui/screens/meta_shop.tscn",
 	AppState.SETTINGS: "res://ui/screens/settings.tscn",
+	AppState.LOGIN: "res://ui/screens/login.tscn",
 }
 
 ## Allowed transitions. Play goes straight to RunLoading (no StartSelect yet).
 const TRANSITIONS := {
 	AppState.BOOT: [AppState.MAIN_MENU],
-	AppState.MAIN_MENU: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.SETTINGS],
+	AppState.MAIN_MENU: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.SETTINGS, AppState.LOGIN],
 	AppState.RUN_LOADING: [AppState.RUN],
 	AppState.RUN: [AppState.RUN_END],
 	AppState.RUN_END: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.MAIN_MENU],
 	AppState.META_SHOP: [AppState.MAIN_MENU],
 	AppState.SETTINGS: [AppState.MAIN_MENU],
+	AppState.LOGIN: [AppState.MAIN_MENU],
 }
 
 const PAUSE_MENU_SCENE := preload("res://ui/screens/pause_menu.tscn")
