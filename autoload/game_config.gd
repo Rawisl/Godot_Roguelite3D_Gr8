@@ -51,6 +51,14 @@ extends Node
 @export var max_attackers_per_tower: int = 3
 @export var sell_undo_window: float = 3.0
 
+@export_group("Ground Grid")
+@export var grid_cell_size: float = 2.0
+@export var grid_pick_size: float = 1.9
+@export var max_ground_buildings: int = 8
+@export var no_build_lane_min_width: float = 4.0
+@export var no_build_lane_min_ratio: float = 0.30
+@export var grid_min_gap_to_command_post: float = 3.0
+
 @export_group("Enemy and Aggro")
 @export var retarget_interval: float = 0.4
 @export var path_update_interval: float = 0.3

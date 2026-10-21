@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="GridData" format=3]
+
+[ext_resource type="Script" uid="uid://d2168emebb4uk" path="res://levels/corridor/grid_data.gd" id="1_grid"]
+
+[resource]
+script = ExtResource("1_grid")
+origin = Vector3(-7, 0, 0)
+column_dir = Vector3(1, 0, 0)
+columns = 8
+row_offsets = PackedFloat32Array(-6, -4, 4, 6)
+corridor_width = 16.0
+no_build_lane_width = 6.0
