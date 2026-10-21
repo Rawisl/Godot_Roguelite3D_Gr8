@@ -28,6 +28,7 @@ GameState="*uid://cb6cq2u2m8jhq"
 SaveManager="*uid://v6q5tx6c1a6s"
 AudioManager="*uid://bg5qscx0jh6l5"
 ScreenManager="*uid://bah8qey6d6s4w"
+AuthService="*uid://wtr1kvds2etp"
 
 [display]
 
