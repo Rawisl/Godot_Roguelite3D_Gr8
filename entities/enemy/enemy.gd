@@ -165,6 +165,8 @@ func update_nav_progress() -> void:
 	var remaining := lane.curve.get_baked_length() - lane.curve.get_closest_offset(local)
 	nav_progress = _lane_ref_length - remaining
 
+# TODO(multi-lane): projects onto the first lane but uses the longest lane length.
+# Pick the enemy's own lane when a level has more than one.
 func _get_lane() -> Path3D:
 	if is_instance_valid(_lane) and _lane.is_inside_tree():
 		return _lane
