@@ -51,6 +51,12 @@ extends Resource
 @export var deploy_shockwave_distance: float = 2.0
 @export var retreat_fade_time: float = 0.5
 
+@export_group("Heal Station")
+@export var heal_hold_time: float = 1.0
+@export var heal_range: float = 3.0
+@export var heal_drain_rate: float = 20.0
+@export var heal_rate_base: float = 10.0
+
 @export_group("Status Effects")
 @export var max_stun_duration: float = 1.5
 @export var stun_immunity_duration: float = 3.0
