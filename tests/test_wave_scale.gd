@@ -232,7 +232,7 @@ func test_scl05_gold_reward_scaling_rwd02() -> void:
 	var cfg := SCALE_CONFIG_RES
 
 	var res := {"gold": -1}
-	var on_died := func(_type: StringName, _pos: Vector3, gold: int, _prestige: int, _cull: bool):
+	var on_died := func(_type: StringName, _pos: Vector3, gold: int, _prestige: int, _cull: bool, _hit_by_cmd: bool = false):
 		res.gold = gold
 	EventBus.enemy_died.connect(on_died)
 

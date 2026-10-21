@@ -77,6 +77,13 @@ static var _last_cache_frame: int = -1
  
 @onready var health: HealthComponent = %Health
 @onready var nav: NavigationAgent3D = %NavAgent
+
+var hit_by_commander: bool:
+	get:
+		return health.hit_by_commander if health != null else false
+	set(v):
+		if health != null:
+			health.hit_by_commander = v
  
 func _ready() -> void:
 	add_to_group(&"enemy")
@@ -1062,7 +1069,7 @@ func _on_died() -> void:
  
 	if data != null:
 		var gold: int = data.get_scaled_gold_reward(spawn_wave)
-		EventBus.enemy_died.emit(data.id, global_position, gold, data.prestige_reward, false)
+		EventBus.enemy_died.emit(data.id, global_position, gold, data.prestige_reward, false, hit_by_commander)
  
 	change_state(Enums.EnemyState.DEAD)
  

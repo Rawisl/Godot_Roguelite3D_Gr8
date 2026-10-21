@@ -38,6 +38,7 @@ extends Resource
 @export_group("Rewards")
 @export var gold_reward: int = 4
 @export var prestige_reward: int = 1
+@export var xp_value: int = 1
 
 # Backward-compatibility aliases
 var max_hp: int:
