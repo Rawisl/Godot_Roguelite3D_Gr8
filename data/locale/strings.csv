@@ -98,3 +98,34 @@ hud.heal.combat_only,Chỉ dùng khi chiến đấu
 hud.heal.frontline_only,Chỉ dùng khi chỉ huy ở tiền tuyến
 hud.heal.under_attack,Đang bị tấn công
 hud.heal.stations,Trạm {alive}/{total}
+menu.account,Đăng nhập
+login.field.display_name,Tên hiển thị
+login.field.email,Email
+login.field.password,Mật khẩu
+login.field.confirm_password,Nhập lại mật khẩu
+login.submit.sign_in,Đăng nhập
+login.submit.register,Tạo tài khoản
+login.guest,Đăng nhập bằng tài khoản khách
+login.guest_hint,Đăng nhập bằng tài khoản thật để có thể lưu tiến trình chơi và thứ hạng.
+login.busy,Đang kết nối...
+login.error_line,Lỗi: {message}
+login.error.empty,Hãy nhập đủ email và mật khẩu!
+login.error.bad_email,Hãy nhập email đúng định dạng!
+login.error.no_name,Hãy nhập tên hiển thị!
+login.error.mismatch,Mật khẩu không khớp!
+login.error.invalid_credentials,Sai email hoặc mật khẩu!
+login.error.email_taken,Email đã tồn tại!
+login.error.weak_password,Mật khẩu quá yếu. Hãy thử mật khẩu dài hơn!
+login.error.email_not_confirmed,Email chưa được xác nhận. Hãy xác nhận link trong hộp thư!
+login.error.invalid_display_name,Tên hiển thị không hợp lệ!
+login.error.rate_limited,Thử quá nhiều lần. Hãy thử lại sau vài giây!
+login.error.offline,Không kết nối được máy chủ. Hãy kiểm tra mạng!
+login.error.server,Máy chủ đang gặp lỗi. Hãy thử lại sau!
+login.error.disabled,Chức năng trực tuyến chưa sẵn sàng!
+login.error.unknown,Có lỗi không rõ. Hãy thử lại!
+login.title.sign_in,Đăng nhập
+login.title.register,Đăng ký
+login.no_account,Chưa có tài khoản?
+login.back,‹ Quay lại
+login.password.show,Hiện mật khẩu
+login.password.hide,Ẩn mật khẩu
