@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://ttr6y87n11lf"]
+
+[ext_resource type="Script" uid="uid://cn2qcwpuv62nr" path="res://ui/hud/parts/heal_status.gd" id="1_1rhca"]
+
+[node name="HealStatus" type="HBoxContainer" unique_id=1623376205]
+mouse_filter = 2
+script = ExtResource("1_1rhca")
