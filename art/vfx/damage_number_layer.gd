@@ -2,12 +2,15 @@ class_name DamageNumberLayer
 extends Control
 ## Floating damage numbers over enemies and the commander, from a fixed pool of labels.
 ## Hits from the same tower on the same target within MERGE_TIME add up into one number.
+## Heals add up per target and show as one "+N" every HEAL_TICK, counted from the first heal;
+## if healing stops before the tick, the total still shows at the tick.
 ## Runs on pausable real time like the HP bars: not sped up at x2/x3, frozen while paused.
 
 enum Kind { NORMAL, RESIST, IMMUNE, COMMANDER, HEAL }
 
 const MAX_NUMBERS := 60
 const MERGE_TIME := 0.2
+const HEAL_TICK := 0.5
 const LIFE := 0.8
 const RISE := 1.2
 const JITTER := 0.3
@@ -27,6 +30,7 @@ var _labels: Array[Label] = []
 var _items: Array[Dictionary] = []  # one per label: world, born, amount, kind, key
 var _merge: Dictionary = {}  # [target, tower] -> label index, while inside MERGE_TIME
 var _last_hp: Dictionary = {}  # HealthComponent -> hp, to spot heals
+var _heal_pending: Dictionary = {}  # target -> {amount, due}, healed since the last "+N"
 
 
 func _ready() -> void:
@@ -72,8 +76,23 @@ func _on_damaged(amount: int, info: DamageInfo, target: Node3D) -> void:
 func _on_hp_changed(hp: int, _max_hp: int, health: HealthComponent, target: Node3D) -> void:
 	var before: int = _last_hp.get(health, hp)
 	_last_hp[health] = hp
-	if hp > before:
-		show_number(target, hp - before, Kind.HEAL)
+	if hp <= before:
+		return
+	var pending: Dictionary = _heal_pending.get(target, {})
+	if pending.is_empty():
+		pending = {"amount": 0, "due": TimeManager.pausable_real_time + HEAL_TICK}
+		_heal_pending[target] = pending
+	pending.amount += hp - before
+
+
+func _flush_heals(now: float) -> void:
+	for target in _heal_pending.keys():
+		var pending: Dictionary = _heal_pending[target]
+		if not is_instance_valid(target):
+			_heal_pending.erase(target)
+		elif now >= pending.due:
+			_heal_pending.erase(target)
+			show_number(target, pending.amount, Kind.HEAL)
 
 
 ## Shows a number above target. Pass the tower as merge_source to add up its hits within MERGE_TIME.
@@ -154,6 +173,7 @@ func _release(idx: int) -> void:
 func _process(_delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	var now := TimeManager.pausable_real_time
+	_flush_heals(now)
 	for i in _items.size():
 		var item: Dictionary = _items[i]
 		if item.is_empty():

@@ -2,6 +2,7 @@ extends Node
 
 ## Automated test runner verifying floating damage numbers:
 ## - a hit on an enemy shows a white number, on the commander a red one, a heal a green "+n"
+## - heals add up and show once per 0.5 s tick, even if healing stops before the tick
 ## - RESIST and IMMUNE show their tag in gray
 ## - hits from the same tower on the same target within 0.2 s add up into one number
 ## - at most 60 numbers on screen; the oldest is reused
@@ -44,8 +45,23 @@ func _ready() -> void:
 	c_health.take_damage(DamageInfo.new(5))
 	assert_true(_last().kind == DamageNumberLayer.Kind.COMMANDER, "commander hit shows a red number")
 
-	c_health.heal(4)
-	assert_true(_last().kind == DamageNumberLayer.Kind.HEAL and layer._labels[_last_index()].text == "+4", "heal shows a green +4")
+	c_health.hp = 50
+	layer._last_hp[c_health] = 50
+	for k in 6:
+		c_health.heal(1)
+		await get_tree().create_timer(0.05, true, false, true).timeout
+	assert_true(_count(DamageNumberLayer.Kind.HEAL) == 0, "no heal number before the tick")
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	assert_true(_count(DamageNumberLayer.Kind.HEAL) == 1 and layer._labels[_last_index()].text == "+6",
+		"heal stopped early still shows its total +6 at the tick")
+
+	await get_tree().create_timer(0.9, true, false, true).timeout
+	for k in 22:
+		c_health.heal(1)
+		await get_tree().create_timer(0.05, true, false, true).timeout
+	var ticks := _count(DamageNumberLayer.Kind.HEAL)
+	assert_true(ticks >= 2 and ticks <= 3, "steady healing shows one number per 0.5 s tick (%d)" % ticks)
+	await get_tree().create_timer(0.6, true, false, true).timeout
 
 	layer.show_number(enemy, 3, DamageNumberLayer.Kind.RESIST)
 	assert_true(layer._labels[_last_index()].text.ends_with(tr("fbk.resist")), "RESIST tag shown")
@@ -103,7 +119,7 @@ func _demo(cam: Camera3D) -> void:
 	ground.material_override = preload("res://art/materials/env_grass.tres")
 	add_child(ground)
 
-	var names := ["Thường", "Chỉ huy", "Hồi máu", "RESIST", "IMMUNE", "Tower gộp 0.2 s"]
+	var names := ["Thường", "Chỉ huy", "Hồi máu (0.5 s)", "RESIST", "IMMUNE", "Tower gộp 0.2 s"]
 	var dummies: Array[Node3D] = []
 	for i in names.size():
 		var d := _target(&"commander" if i == 1 else &"enemy", Vector3(-10 + i * 4, 0, 0))
@@ -127,13 +143,13 @@ func _demo(cam: Camera3D) -> void:
 	var healths: Array[HealthComponent] = []
 	for d in dummies:
 		healths.append(d.get_node("Health"))
+	_drip_heal(healths[2])
 	while is_inside_tree():
 		for h in healths:
 			h.hp = 50
 			layer._last_hp[h] = 50
 		healths[0].take_damage(DamageInfo.new(randi_range(5, 30)))
 		healths[1].take_damage(DamageInfo.new(randi_range(5, 20)))
-		healths[2].heal(randi_range(5, 25))
 		layer.show_number(dummies[3], randi_range(2, 10), DamageNumberLayer.Kind.RESIST)
 		layer.show_number(dummies[4], 0, DamageNumberLayer.Kind.IMMUNE)
 		# Four hits 0.04 s apart from one tower land as a single "40".
@@ -141,6 +157,16 @@ func _demo(cam: Camera3D) -> void:
 			healths[5].take_damage(DamageInfo.new(10, Enums.DamageType.PIERCE, tower))
 			await get_tree().create_timer(0.04).timeout
 		await get_tree().create_timer(0.9).timeout
+
+## 1 HP every 0.05 s like the heal station, stopping mid-tick so the wait-for-tick case shows too.
+func _drip_heal(h: HealthComponent) -> void:
+	while is_inside_tree():
+		h.hp = 50
+		layer._last_hp[h] = 50
+		for k in 14:
+			h.heal(1)
+			await get_tree().create_timer(0.05).timeout
+		await get_tree().create_timer(0.6).timeout
 
 func _target(group: StringName, pos: Vector3) -> Node3D:
 	var n := Node3D.new()
@@ -162,6 +188,13 @@ func _last_index() -> int:
 			best_born = it.born
 			best = i
 	return best
+
+func _count(kind: DamageNumberLayer.Kind) -> int:
+	var n := 0
+	for it in layer._items:
+		if not it.is_empty() and it.kind == kind:
+			n += 1
+	return n
 
 func _last() -> Dictionary:
 	return layer._items[_last_index()]
