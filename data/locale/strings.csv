@@ -82,3 +82,19 @@ dialog.save_failed.title,Lưu thất bại
 dialog.save_failed.body,Không ghi được dữ liệu lưu. Hãy kiểm tra dung lượng ổ đĩa và quyền ghi.
 dialog.run_recovered.title,Phiên chơi bị gián đoạn
 dialog.run_recovered.body,Phiên chơi trước bị gián đoạn. Đã quy đổi {value} danh vọng.
+hud.speed.x1,x1
+hud.speed.x2,x2
+hud.speed.x3,x3
+hud.speed.locked,Chỉ chạy x1 khi tổng kết đợt hoặc giới thiệu boss
+hud.speed.paused,Không đổi tốc độ khi tạm dừng
+hud.heal.key,E
+hud.heal.ready,Sẵn sàng
+hud.heal.hold,Giữ E
+hud.heal.healing,Đang hồi
+hud.heal.release,Nhả E rồi giữ lại
+hud.heal.depleted,Trạm đã cạn
+hud.heal.full_hp,Đã đầy máu
+hud.heal.combat_only,Chỉ dùng khi chiến đấu
+hud.heal.frontline_only,Chỉ dùng khi chỉ huy ở tiền tuyến
+hud.heal.under_attack,Đang bị tấn công
+hud.heal.stations,Trạm {alive}/{total}
