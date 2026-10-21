@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://nv2vwh2iudv3"]
+
+[ext_resource type="Script" uid="uid://ug0s1j7sxjwm" path="res://tests/test_login.gd" id="1_wbq1y"]
+[ext_resource type="PackedScene" uid="uid://cr2h216gg460u" path="res://ui/screens/login.tscn" id="2_h8xst"]
+
+[node name="TestLogin" type="Node" unique_id=674426006]
+script = ExtResource("1_wbq1y")
+
+[node name="Login" parent="." unique_id=1289120627 instance=ExtResource("2_h8xst")]
