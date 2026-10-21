@@ -8,7 +8,11 @@ signal shot_started(target: Node3D)
 var level: int = 1
 var priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
 var scan_phase: float = 0.0
+## Set by the Slot that holds this tower; used for slot-keyed EventBus signals.
+var slot_id: StringName = &""
 var target: Enemy = null
+## True while the tower idles because every target in range is immune.
+var is_immune_blocked: bool = false
 
 var _lv: TowerLevelData
 var _scan_t: float = 0.0
@@ -22,6 +26,9 @@ var _pending_priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
 var _pool: ProjectilePool = null
 var _aim_node: Node3D = null
 var _muzzle_node: Node3D = null
+
+## _target_distance_sq result for an enemy that is valid except for immunity.
+const IMMUNE := -2.0
 
 @onready var health: HealthComponent = %Health
 @onready var range_area: Area3D = %RangeArea
@@ -40,6 +47,9 @@ func _ready() -> void:
 	apply_level(level)
 	health.died.connect(func(): destroyed.emit(self))
 	_scan_t = scan_phase * GameConfig.scan_interval
+
+func _exit_tree() -> void:
+	_set_immune_blocked(false)
 
 func apply_level(new_level: int) -> void:
 	level = new_level
@@ -107,9 +117,12 @@ func _pick_target() -> Enemy:
 	var best: Enemy = null
 	var best_score := 0.0
 	var best_d2 := 0.0
+	var saw_immune := false
 	for body in range_area.get_overlapping_bodies():
 		var e := body as Enemy
 		var d2 := _target_distance_sq(e)
+		if d2 == IMMUNE:
+			saw_immune = true
 		if d2 < 0.0:
 			continue
 		var s := _score(e, d2)
@@ -117,13 +130,24 @@ func _pick_target() -> Enemy:
 			best = e
 			best_score = s
 			best_d2 = d2
+	# Idle with only immune enemies in range shows the immune icon.
+	_set_immune_blocked(best == null and saw_immune)
 	return best  # TGT-02: null means idle
+
+## Emits EventBus.tower_immunity_changed only when the state changes.
+func _set_immune_blocked(value: bool) -> void:
+	if value == is_immune_blocked:
+		return
+	is_immune_blocked = value
+	if slot_id != &"":
+		EventBus.tower_immunity_changed.emit(slot_id, value)
 
 ## Valid target (3.6.5): alive and targetable, in range, a kind this tower can hit.
 func _is_valid_target(obj) -> bool:
 	return _target_distance_sq(obj) >= 0.0
 
-## Flat distance squared to obj when it is a valid target, -1 when it is not.
+## Flat distance squared to obj when it is a valid target, IMMUNE when only its
+## resistance rules it out, -1 when it is not valid for any other reason.
 func _target_distance_sq(obj) -> float:
 	if ( obj == null 
 		or not is_instance_valid(obj) 
@@ -132,10 +156,6 @@ func _target_distance_sq(obj) -> float:
 	var e := obj as Enemy
 	# EN-04: dead, in spawn_grace or still inside the spawn zone.
 	if not e.can_be_targeted():
-		return -1.0
-	# TGT-04, DMG-02: a target immune to this damage type (resist 0) is dropped.
-	# Enemies without get_resist count as resist 1 until boss resistances exist.
-	if e.has_method(&"get_resist") and e.get_resist(data.damage_type) <= 0.0:
 		return -1.0
 	var flying := e.data != null and e.data.is_flying
 	if flying and not data.targets_air:
@@ -148,6 +168,9 @@ func _target_distance_sq(obj) -> float:
 	# TGT-05
 	if d2 < data.min_range * data.min_range:
 		return -1.0
+	# TODO: the immune icon itself; UI listens to EventBus.tower_immunity_changed.
+	if e.has_method(&"get_resist") and e.get_resist(data.damage_type) <= 0.0:
+		return IMMUNE
 	return d2
 
 ## TGT-01: higher score wins, then closer to the tower, then smaller entity id.

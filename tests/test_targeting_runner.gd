@@ -255,6 +255,27 @@ func test_valid_targets() -> void:
 	assert_true(cannon._is_valid_target(immune), "the same enemy is valid for the Cannon (BLAST not resisted)")
 	_clear([immune, resists, cannon])
 
+	# Only immune enemies in range: the tower idles and reports it once.
+	var events: Array = []
+	var on_immunity := func(id: StringName, is_immune: bool): events.append([id, is_immune])
+	EventBus.tower_immunity_changed.connect(on_immunity)
+	t.slot_id = &"TestSlot"
+	var only_immune := _resist_grunt(Vector3(-2, 0, 0), {Enums.DamageType.PIERCE: 0.0})
+	await _physics_frames()
+	assert_true(t._pick_target() == null, "only an immune enemy in range: no target (TGT-04)")
+	assert_true(t.is_immune_blocked and events == [[&"TestSlot", true]],
+		"idle on an immune enemy emits tower_immunity_changed(slot, true) (BOSS-13)")
+	t._pick_target()
+	assert_true(events.size() == 1, "no repeat emit while the state stays the same")
+	var normal := _grunt(Vector3(-3, 0, 0), "Normal")
+	await _physics_frames()
+	assert_true(_pick_name(t) == "Normal" and not t.is_immune_blocked
+		and events.size() == 2 and events[1] == [&"TestSlot", false],
+		"a hittable enemy arrives: target it and emit tower_immunity_changed(slot, false)")
+	EventBus.tower_immunity_changed.disconnect(on_immunity)
+	t.slot_id = &""
+	_clear([only_immune, normal])
+
 	# TGT-02: nothing valid left, the tower idles.
 	assert_true(t._pick_target() == null, "no valid enemy: no target (idle)")
 	_clear([t])
