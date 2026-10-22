@@ -93,6 +93,7 @@ func _ready() -> void:
 	_setup_animation_player()
 	_setup_sword_area()
 	_setup_input()
+	_setup_heal_channel()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 
@@ -112,6 +113,12 @@ func _setup_animation_player() -> void:
 		var aps := find_children("*", "AnimationPlayer", true, false)
 		if not aps.is_empty():
 			_anim_player = aps[0] as AnimationPlayer
+
+
+func _setup_heal_channel() -> void:
+	var channel := HealChannel.new()
+	channel.name = "HealChannel"
+	add_child(channel)
 
 
 func _setup_input() -> void:
@@ -256,6 +263,35 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 			current_combo_hit = 1
 
 
+## True when the commander stands free of any action, hit reaction or push.
+func is_idle() -> bool:
+	if is_dead or is_commander_mode or is_deploying or is_stunned:
+		return false
+	if is_attacking or is_dodging or is_using_skill:
+		return false
+	return _knockback_velocity.is_zero_approx()
+
+
+func is_trying_to_move() -> bool:
+	return not _move_input().is_zero_approx()
+
+
+func get_wave_state() -> StringName:
+	return _wave_state
+
+
+## Movement and combat commands only run while a wave is being fought. An empty state
+## means no wave system is running (isolated test scenes), so nothing is locked.
+func _ground_actions_allowed() -> bool:
+	return _wave_state == &"" or _wave_state == &"COMBAT" or _wave_state == &"BOSS_COMBAT"
+
+
+func _move_input() -> Vector2:
+	if not _ground_actions_allowed():
+		return Vector2.ZERO
+	return _cmd_input.get_move_vector()
+
+
 ## Game seconds until the commander can start the command. Dodge can cancel the recovery
 ## of an attack, other commands wait for it.
 func _command_busy_left(command: StringName) -> float:
@@ -270,6 +306,8 @@ func _command_busy_left(command: StringName) -> float:
 
 
 func _execute_command(command: StringName, camera: Camera3D) -> void:
+	if not _ground_actions_allowed():
+		return
 	match command:
 		&"dodge":
 			_try_dodge(camera)
@@ -288,7 +326,7 @@ func _try_dodge(camera: Camera3D) -> void:
 
 
 func _start_dodge(camera: Camera3D) -> void:
-	var input := _cmd_input.get_move_vector()
+	var input := _move_input()
 	var dodge_clip := ANIM_DODGE_FWD
 
 	if not input.is_zero_approx():
@@ -427,7 +465,7 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 		velocity.x = 0.0
 		velocity.z = 0.0
 	else:
-		var input := _cmd_input.get_move_vector()
+		var input := _move_input()
 		var speed := stats.move_speed if stats else 6.0
 
 		var cam_basis := camera.global_transform.basis

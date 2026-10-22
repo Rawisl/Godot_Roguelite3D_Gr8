@@ -88,6 +88,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
 
+[node name="Account" type="Button" parent="VBoxContainer" unique_id=1321895484]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 56)
+layout_mode = 2
+
 [node name="Quit" type="Button" parent="VBoxContainer" unique_id=112135320]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)

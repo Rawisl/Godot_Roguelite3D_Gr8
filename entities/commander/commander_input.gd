@@ -4,13 +4,14 @@ extends Node
 ## buffer for a command pressed just before the commander can act, and drops held keys
 ## on context changes so they must be released and pressed again.
 
-## Ordered by priority: Dodge > Skill > Attack > Mode switch. Skills keep slot order.
+## Ordered by priority: Dodge > Skill > Attack > Mode switch > Heal. Skills keep slot order.
 const COMMANDS: Array[StringName] = [
 	&"dodge", &"battle_cry", &"skill_1", &"skill_2", &"skill_3", &"attack", &"mode_switch",
+	&"heal_channel",
 ]
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_down", &"move_left", &"move_right"]
-## A mode switch is never queued: it is either accepted now or ignored.
-const UNBUFFERED: Array[StringName] = [&"mode_switch"]
+## These are never queued: they are either accepted now or ignored.
+const UNBUFFERED: Array[StringName] = [&"mode_switch", &"heal_channel"]
 
 ## How long before the commander can act again a press is still remembered.
 var buffer_time: float = 0.15
@@ -27,6 +28,7 @@ func _ready() -> void:
 			_actions.append(action)
 	EventBus.mode_changed.connect(_on_context_changed)
 	EventBus.pause_changed.connect(_on_context_changed)
+	EventBus.state_changed.connect(_on_context_changed)
 
 # Using unhandled input means clicks swallowed by UI never reach the commander.
 func _unhandled_input(event: InputEvent) -> void:
@@ -118,4 +120,6 @@ func _rank(command: StringName) -> int:
 			return 2
 		&"mode_switch":
 			return 3
+		&"heal_channel":
+			return 4
 	return 1
