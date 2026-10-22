@@ -81,12 +81,14 @@ func _build_world(world: Node3D) -> void:
 
 	_camera_rig = CameraRig.new()
 	_camera_rig.name = "CameraRig"
-	_camera_rig.camera_bounds = Rect2(-30, -30, 60, 60)
-	world.add_child(_camera_rig)
 	var camera := Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = 22.0
 	_camera_rig.add_child(camera)
+	var bounds := CameraBounds.new()
+	bounds.size = Vector2(60, 60)
+	world.add_child(bounds)
+	_camera_rig.bounds = bounds
+	world.add_child(_camera_rig)
 	camera.look_at_from_position(Vector3(16, 16, 16), Vector3.ZERO)
 	camera.current = true
 

@@ -18,13 +18,14 @@ func _ready() -> void:
 
 func _new_rig() -> void:
 	if _rig != null:
+		_rig.bounds.free()
 		_rig.free()
 	_rig = CameraRig.new()
 	_camera = Camera3D.new()
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_rig.add_child(_camera)
 	var bounds := CameraBounds.new()
-	_rig.add_child(bounds)
+	add_child(bounds)
 	_rig.bounds = bounds
 	add_child(_rig)
 	_camera.look_at_from_position(Vector3(16, 16, 16), Vector3.ZERO)
