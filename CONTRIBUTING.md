@@ -1,6 +1,6 @@
 # Hướng dẫn làm việc nhóm
 
-Tài liệu này dành cho 5 thành viên của dự án Chiến Tuyến Vô Tận (Endless War), sử dụng Godot 4 với đồ họa 3D và góc máy orthographic isometric. Vui lòng đọc kỹ toàn bộ nội dung trước khi bắt đầu viết code. Mọi yêu cầu chức năng đều nằm trong tài liệu **SRS-EW v1.9**. Các mã chú thích như `TWR-05`, `HUD-09`, `NAV-06` dùng để trỏ tới mục tương ứng trong tài liệu SRS.
+Tài liệu này dành cho 5 thành viên của dự án Chiến Tuyến Vô Tận (Endless War), sử dụng Godot 4 với đồ họa 3D và góc máy orthographic isometric. Vui lòng đọc kỹ toàn bộ nội dung trước khi bắt đầu viết code. Mọi yêu cầu chức năng đều nằm trong tài liệu **SRS-EW v1.9**.
 
 ---
 
@@ -115,7 +115,6 @@ Quy tắc đặt tên file:
 * **Lưu và mạng:** Mọi đọc ghi tiến trình đi qua `SaveRepository` (ACCT-01), không gọi thẳng `FileAccess` cho save. Các lệnh gọi mạng chạy bất đồng bộ, không chặn UI quá 100 ms và mất mạng không được làm chậm RunEnd hay cửa hàng (ACP-08). Token đăng nhập lưu ở `auth.cfg` riêng, không bao giờ nằm trong `save.json`.
 * **Bí mật:** Không commit `auth.cfg`, khóa quản trị hay mật khẩu của backend. Trong repo chỉ có khóa công khai của dự án BaaS. Thêm `auth.cfg` vào `.gitignore`.
 * **Hồi máu chỉ huy:** Không còn hồi tự động theo giây ở Commander mode. Chỉ huy hồi 35% HP tối đa khi vào PREP (`prep_heal_pct`) và qua Trạm hồi lực. Không thêm `commander_regen_pct_per_sec` trở lại.
-* **Ghi chú mã SRS:** Khi hoàn thành code đáp ứng một yêu cầu cụ thể, hãy ghi ID của yêu cầu đó vào comment hoặc nội dung commit, ví dụ như `# SELL-04`.
 
 ---
 
@@ -206,7 +205,6 @@ Chọn phạm vi thay đổi dựa theo thư mục hoặc hệ thống mà bạn
 
 * Viết commit bằng tiếng Anh, diễn đạt ngắn gọn.
 * Sử dụng các động từ mang tính mệnh lệnh chủ động như thêm, sửa, bỏ, đổi, tách.
-* Nếu commit giải quyết một yêu cầu cụ thể trong SRS, hãy ghi ID của yêu cầu đó ở cuối tiêu đề, ví dụ như mã NAV-06 hoặc tổ hợp mã SELL-02 và PNL-11.
 * Mỗi commit chỉ giải quyết một vấn đề. Không gộp nhiều thay đổi khác nhau vào chung một commit, ví dụ như không viết chung việc thêm Cannon và sửa HUD.
 * Nếu cần giải thích chi tiết, hãy xuống một dòng trống và viết mô tả vào phần thân commit. Cần tập trung giải thích lý do thực hiện thay đổi thay vì diễn giải lại đoạn code bằng văn bản.
 
@@ -310,5 +308,6 @@ Bất kỳ asset nào lấy từ nguồn bên ngoài đều phải được ghi 
 * Commit `auth.cfg`, khóa quản trị hoặc mật khẩu backend lên kho chứa code.
 * Push code khi phần Output của Godot vẫn còn báo lỗi màu đỏ.
 * Thay đổi tên file hoặc di chuyển vị trí file bằng Windows Explorer thay vì trình quản lý của Godot.
+* Thêm mã liên quan đến tài liệu SRS trong comment của code vì tài liệu này có thể bị thay đổi thường xuyên
 
 Nếu có bất kỳ thắc mắc nào liên quan đến cấu trúc dự án, ranh giới quyền quản lý file hay các yêu cầu của tài liệu SRS, hãy chủ động thảo luận và hỏi ý kiến nhóm trước khi tự mình đưa ra quyết định.
