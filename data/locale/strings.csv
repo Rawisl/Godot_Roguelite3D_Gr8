@@ -79,3 +79,8 @@ panel.build.section_new,Xây mới
 panel.build.section_rebuild,Xây lại
 fbk.resist,RESIST
 fbk.immune,IMMUNE
+dialog.ok,Đã hiểu
+dialog.save_failed.title,Lưu thất bại
+dialog.save_failed.body,Không ghi được dữ liệu lưu. Hãy kiểm tra dung lượng ổ đĩa và quyền ghi.
+dialog.run_recovered.title,Phiên chơi bị gián đoạn
+dialog.run_recovered.body,Phiên chơi trước bị gián đoạn. Đã quy đổi {value} danh vọng.

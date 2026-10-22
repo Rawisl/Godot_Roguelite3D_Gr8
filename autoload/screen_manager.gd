@@ -5,13 +5,24 @@ extends CanvasLayer
 
 signal screen_changed(scene_path: String)
 
+const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
+
 ## Fade duration of each half (out, then in), in real time
 @export var fade_duration: float = 0.25
 
 var _is_fading: bool = false
+## System notices waiting for the current dialog or fade to finish.
+var _pending_notices: Array[Control] = []
 
 @onready var _fade: ColorRect = %Fade
 @onready var _dialog_holder: Control = %DialogHolder
+
+func _ready() -> void:
+	# Deferred: the closing dialog is still a child while it exits the tree.
+	_dialog_holder.child_exiting_tree.connect(func(_node: Node) -> void:
+		_open_next_notice.call_deferred())
+	EventBus.save_failed.connect(_on_save_failed)
+	EventBus.run_recovered.connect(_on_run_recovered)
 
 func _input(event: InputEvent) -> void:
 	# Lock all input while fading
@@ -56,6 +67,7 @@ func change_scene(scene_path: String) -> void:
 	_fade.visible = false
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_is_fading = false
+	_open_next_notice()
 
 func is_fading() -> bool:
 	return _is_fading
@@ -66,6 +78,14 @@ func open_dialog(dialog: Control) -> bool:
 		return false
 	_dialog_holder.add_child(dialog)
 	return true
+
+## Unlike open_dialog, a notice is never dropped: it waits until no dialog is open
+## and no fade is running, so one sent right before a screen change still shows.
+func show_notice(title_key: StringName, body_key: StringName, params: Dictionary = {}) -> void:
+	var dialog := DIALOG_SCENE.instantiate()
+	dialog.setup_notice(title_key, body_key, params)
+	_pending_notices.append(dialog)
+	_open_next_notice.call_deferred()
 
 func has_dialog() -> bool:
 	return _dialog_holder.get_child_count() > 0
@@ -82,6 +102,19 @@ func close_top_dialog() -> void:
 func close_all_dialogs() -> void:
 	for dialog in _dialog_holder.get_children():
 		dialog.queue_free()
+
+func _open_next_notice() -> void:
+	if _is_fading or has_dialog() or _pending_notices.is_empty():
+		return
+	_dialog_holder.add_child(_pending_notices.pop_front())
+
+# TODO: add a Retry button once SaveManager can retry a failed write.
+func _on_save_failed(reason: StringName) -> void:
+	push_warning("ScreenManager: save failed (%s)" % reason)
+	show_notice(&"dialog.save_failed.title", &"dialog.save_failed.body")
+
+func _on_run_recovered(prestige_gain: int) -> void:
+	show_notice(&"dialog.run_recovered.title", &"dialog.run_recovered.body", {"value": prestige_gain})
 
 func _tween_fade(target_alpha: float) -> void:
 	# Real time: ignores Engine.time_scale (x2/x3) and keeps running while paused.
