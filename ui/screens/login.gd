@@ -1,7 +1,8 @@
-extends MarginContainer
-## Sign in (the default view) or register, or keep playing as a guest. The form checks
-## what it can locally and turns error codes into text; the network calls arrive with
-## the auth service.
+extends Control
+## Sign in (the default view) or register, shown over MainMenu on the dialog layer.
+## Closing it leaves the player a guest; a successful sign in reloads the menu.
+## The form checks what it can locally and turns error codes into text; the network
+## calls arrive with the auth service.
 
 const MODE_SIGN_IN := &"SIGN_IN"
 const MODE_REGISTER := &"REGISTER"
@@ -35,6 +36,8 @@ var _busy := false
 @onready var _back: Button = %Back
 @onready var _no_account: Label = %NoAccount
 @onready var _open_register: Button = %OpenRegister
+@onready var _register_row: Control = %RegisterRow
+@onready var _close: Button = %Close
 @onready var _title: Label = %Title
 @onready var _name_row: Control = %NameRow
 @onready var _confirm_row: Control = %ConfirmRow
@@ -62,6 +65,9 @@ func _ready() -> void:
 	_guest_hint.text = tr(&"login.guest_hint")
 	_back.pressed.connect(_set_mode.bind(MODE_SIGN_IN))
 	_open_register.pressed.connect(_set_mode.bind(MODE_REGISTER))
+	_close.tooltip_text = tr(&"login.close")
+	# Closes the whole form from either view; Esc and Back still step back one view.
+	_close.pressed.connect(close)
 	for edit in _all_fields():
 		edit.text_submitted.connect(_on_field_submitted.bind(edit))
 		# Typing works as soon as a field gets focus, from the mouse, Tab or the arrows.
@@ -71,17 +77,27 @@ func _ready() -> void:
 		pair[0].toggled.connect(_on_eye_toggled.bind(pair[0], pair[1]))
 		_on_eye_toggled(false, pair[0], pair[1])
 	_submit.pressed.connect(_on_submit_pressed)
-	_guest.pressed.connect(_play_as_guest)
+	_guest.pressed.connect(close)
 	_match_view_heights()
 
-## Esc: Register goes back to Sign in, Sign in goes back to MainMenu.
-func go_back() -> void:
+## Esc, sent by ScreenManager to the top dialog: Register goes back to Sign in,
+## Sign in closes the form.
+func cancel() -> void:
 	if _busy:
 		return
 	if _mode == MODE_REGISTER:
 		_set_mode(MODE_SIGN_IN)
 	else:
-		_play_as_guest()
+		close()
+
+## Back to the menu underneath as a guest; nothing else changes.
+func close() -> void:
+	if not _busy:
+		queue_free()
+
+## The menu is loaded again so it shows the signed-in account.
+func complete_sign_in() -> void:
+	ScreenManager.change_scene(get_tree().current_scene.scene_file_path)
 
 func show_error(code: StringName) -> void:
 	var key: StringName = ERROR_KEYS.get(code, &"login.error.unknown")
@@ -92,24 +108,19 @@ func set_busy(busy: bool) -> void:
 	_busy = busy
 	for edit in _all_fields():
 		edit.editable = not busy
-	for button: Button in [_back, _open_register, _submit, _guest, _password_eye, _confirm_eye]:
+	for button: Button in [_back, _open_register, _close, _submit, _guest, _password_eye, _confirm_eye]:
 		button.disabled = busy
 	if busy:
 		_show_message(tr(&"login.busy"), DIM_COLOR)
 	else:
 		_message.text = ""
 
-## Guests play everything; they only skip cloud save and the leaderboard.
-func _play_as_guest() -> void:
-	GameState.change_state(GameState.AppState.MAIN_MENU)
-
 func _set_mode(mode: StringName) -> void:
 	_mode = mode
 	var register := mode == MODE_REGISTER
 	_title.text = tr(&"login.title.register" if register else &"login.title.sign_in")
 	_back.visible = register
-	_no_account.visible = not register
-	_open_register.visible = not register
+	_register_row.visible = not register
 	_name_row.visible = register
 	_confirm_row.visible = register
 	_guest.visible = not register
@@ -130,7 +141,8 @@ func _on_submit_pressed() -> void:
 	if not problem.is_empty():
 		show_error(problem)
 		return
-	# TODO: send sign in or sign up through the auth service and show its result.
+	# TODO: send sign in or sign up through the auth service; on success call
+	# complete_sign_in(), otherwise show_error() with the returned code.
 	show_error(&"DISABLED")
 
 ## Only checks that need no server; the server still has the last word.

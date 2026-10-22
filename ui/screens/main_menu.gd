@@ -1,5 +1,6 @@
 extends MarginContainer
 
+const LOGIN_SCENE := preload("res://ui/screens/login.tscn")
 const DRAWER_SLIDE_TIME := 0.2
 
 var _drawer_open := false
@@ -28,7 +29,7 @@ func _ready() -> void:
 	_meta_shop.pressed.connect(GameState.change_state.bind(GameState.AppState.META_SHOP))
 	_settings.pressed.connect(GameState.change_state.bind(GameState.AppState.SETTINGS))
 	# TODO: hide when online is off, and show the account name once signed in.
-	_account.pressed.connect(GameState.change_state.bind(GameState.AppState.LOGIN))
+	_account.pressed.connect(_open_login)
 	_quit.pressed.connect(get_tree().quit)
 	_drawer_toggle.tooltip_text = tr(&"menu.stats_toggle")
 	_drawer_toggle.pressed.connect(_toggle_drawer)
@@ -65,3 +66,14 @@ func _set_drawer(open: bool, animate: bool) -> void:
 		return
 	_drawer_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_drawer_tween.tween_property(_drawer_clip, "custom_minimum_size:x", width, DRAWER_SLIDE_TIME)
+
+## Opens over the menu on the dialog layer, so Esc and the dimmed backdrop work like a dialog.
+func _open_login() -> void:
+	var login := LOGIN_SCENE.instantiate()
+	if ScreenManager.open_dialog(login):
+		login.tree_exited.connect(_on_login_closed)
+
+## Keyboard focus comes back to the button that opened the form.
+func _on_login_closed() -> void:
+	if _account.is_inside_tree():
+		_account.grab_focus()
