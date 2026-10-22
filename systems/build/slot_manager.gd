@@ -5,10 +5,10 @@ extends Node3D
 	&"W1", &"W2", &"W3", &"W4", &"W5", &"W6"
 ]
 ## Where slots are collected from. Empty = every Slot in group "slot".
-## GroundGrid (GRID-02) only has to spawn its cells before reload_slots() runs.
+## GroundGrid only has to spawn its cells before reload_slots() runs.
 @export var slot_root: Node
 
-# SLOT-05: slot_id prefix must match the zone (W = wall slot, G_c_r = ground grid cell).
+# The slot_id prefix must match the zone (W = wall slot, G_c_r = ground grid cell).
 const ZONE_BY_PREFIX := {
 	"W": Enums.SlotZone.WALL,
 	"G": Enums.SlotZone.GROUND,
@@ -28,15 +28,12 @@ func reload_slots() -> void:
 	_collect_slots()
 	_validate_layout()
 
-## Layout problems found by the last reload (SLOT-05 [LOG]). Empty = layout is valid.
+## Layout problems found by the last reload. Empty = layout is valid.
 func get_layout_problems() -> PackedStringArray:
 	return _problems
 
 ## Collect Slots and append into _slots dictionary
 func _collect_slots() -> void:
-	for slot: Slot in _slots.values():
-		if is_instance_valid(slot) and slot.clicked.is_connected(_on_slot_clicked):
-			slot.clicked.disconnect(_on_slot_clicked)
 	_slots.clear()
 	_all = []
 	_by_zone = {}
@@ -53,7 +50,6 @@ func _collect_slots() -> void:
 			continue
 		_slots[slot.slot_id] = slot
 		_all.append(slot)
-		slot.clicked.connect(_on_slot_clicked)
 	_all.sort_custom(func(a: Slot, b: Slot) -> bool:
 		if a.zone != b.zone:
 			return a.zone < b.zone
@@ -76,7 +72,7 @@ func _gather_candidates() -> Array[Node]:
 			result.append(node)
 	return result
 
-# SLOT-05: [LOG] W1-W6 exist, each slot_id prefix matches its zone, no duplicate slot_id
+# W1-W6 exist, each slot_id prefix matches its zone, no duplicate slot_id
 func _validate_layout() -> void:
 	for id in required_wall_ids:
 		if not _slots.has(id):
@@ -124,18 +120,15 @@ func get_buildable_types(slot_id: StringName, towers: Array[TowerData]) -> Array
 			result.append(data)
 	return result
 
-## Reset every slot to EMPTY when a new run starts. Positions do not change (SLOT-05).
+## Reset every slot to EMPTY when a new run starts. Positions do not change.
 func reset_all() -> void:
 	for slot in get_all_slots():
 		slot.set_state(Enums.SlotState.EMPTY)
 
-# SLOT-06: slot rings show in PREP and hide in COMBAT
+# Slot rings show in PREP and hide in COMBAT
 func set_rings_visible(v: bool) -> void:
 	for slot in get_all_slots():
 		slot.set_buildable_visible(v)
 
 func _on_game_state_changed(new_state: StringName) -> void:
 	set_rings_visible(new_state == &"PREP")
-
-func _on_slot_clicked(slot: Slot) -> void:
-	EventBus.slot_selected.emit(slot.slot_id)
