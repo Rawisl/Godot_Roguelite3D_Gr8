@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MuzzleStyle" format=3]
+
+[ext_resource type="Script" uid="uid://docedrxuknmd7" path="res://art/vfx/muzzle_style.gd" id="1_style"]
+
+[resource]
+script = ExtResource("1_style")
+flash_color = Color(1, 0.604, 0.18, 1)
+flash_size_start = 0.3
+flash_size_end = 0.7
+flash_time = 0.1
+puff_count = 6
+puff_time = 0.6
+puff_speed = 2.5
