@@ -4,6 +4,10 @@ extends StaticBody3D
 signal destroyed(tower: Tower)
 signal shot_started(target: Node3D)
 
+## Melee attackers walk this close to their attack position before swinging (read by Enemy),
+## so a unit does not stop short and block the way to the positions next to it.
+const MELEE_ARRIVE_DISTANCE := 0.6
+
 @export var data: TowerData
 var level: int = 1
 var priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
@@ -34,6 +38,8 @@ const IMMUNE := -2.0
 @onready var range_area: Area3D = %RangeArea
 @onready var range_shape: CollisionShape3D = %RangeArea.get_node("CollisionShape3D")
 @onready var muzzle: Marker3D = %Muzzle
+## Melee attack positions (3 markers here, 5 on the Barricade).
+@onready var melee_slots: TowerMeleeSlots = %MeleeSlots
 
 func _ready() -> void:
 	add_to_group(&"tower")
@@ -45,6 +51,8 @@ func _ready() -> void:
 		add_to_group(&"barricade")
 	priority = data.default_priority
 	apply_level(level)
+	# A destroyed tower frees every attacker's slot before the Slot turns RUINED.
+	health.died.connect(melee_slots.release_all)
 	health.died.connect(func(): destroyed.emit(self))
 	_scan_t = scan_phase * GameConfig.scan_interval
 
@@ -66,6 +74,34 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 func set_visuals(aim: Node3D, muzzle_node: Node3D) -> void:
 	_aim_node = aim
 	_muzzle_node = muzzle_node
+
+#region Melee slots (same API as Fortress)
+## Melee units cannot reach a tower on a WALL slot (Slot adds the tower_wall group).
+func accepts_melee() -> bool:
+	return health.hp > 0 and not is_in_group(&"tower_wall")
+
+## False when full, destroyed or on a WALL slot: the unit must WAIT or choose another target.
+func claim_melee_slot(attacker: Node3D) -> bool:
+	if not accepts_melee():
+		return false
+	return melee_slots.claim(attacker)
+
+func release_melee_slot(attacker: Node3D) -> void:
+	melee_slots.release(attacker)
+
+func has_melee_slot(attacker: Node3D) -> bool:
+	return melee_slots.has(attacker)
+
+## The claimed attack position, or the middle one for a unit still on its way.
+func get_melee_slot_position(attacker: Node3D) -> Vector3:
+	return melee_slots.position_for(attacker)
+
+func get_free_melee_slots() -> int:
+	return melee_slots.free_count()
+
+func get_melee_arrive_distance() -> float:
+	return MELEE_ARRIVE_DISTANCE
+#endregion
 
 ## TGT-03, CMD-01: a new priority applies after retarget_delay, counted in real time
 ## (TIME-10), so it is 0.3 s at x1, x2 and x3.
