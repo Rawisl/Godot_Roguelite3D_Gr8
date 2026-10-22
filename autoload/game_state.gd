@@ -96,9 +96,10 @@ func resume() -> void:
 	TimeManager.release_pause(TimeManager.REASON_USER)
 
 ## Run HUD buttons give focus back right away so Space and Enter never press them again.
-## Dialogs and the pause menu keep focus for arrow and Enter navigation.
+## Dialogs and anything shown while the run is paused (pause menu, Settings, reward pick)
+## keep focus for arrow and Enter navigation.
 func _on_gui_focus_changed(control: Control) -> void:
-	if current != AppState.RUN or _pause_menu != null or ScreenManager.has_dialog():
+	if current != AppState.RUN or TimeManager.is_paused or ScreenManager.has_dialog():
 		return
 	(func() -> void:
 		if is_instance_valid(control) and control.has_focus():
