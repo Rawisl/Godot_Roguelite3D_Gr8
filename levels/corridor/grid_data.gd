@@ -39,6 +39,9 @@ func get_cells() -> Array[Vector2i]:
 
 
 func cell_position(cell: Vector2i) -> Vector3:
+	if cell.y < 0 or cell.y >= row_offsets.size():
+		push_error("GridData: row %d is out of range (0..%d)" % [cell.y, row_offsets.size() - 1])
+		return origin
 	var size: float = GameConfig.grid_cell_size
 	return origin + column_dir.normalized() * (cell.x * size) + row_dir() * row_offsets[cell.y]
 
@@ -64,7 +67,7 @@ func _check_cell(cell: Vector2i, lane: Path3D, spawn_zone: Area3D, return_zone: 
 	var corners := _corners(cell)
 	var centre := cell_position(cell)
 
-	if lane:
+	if lane and lane.curve:
 		var half := no_build_lane_width * 0.5
 		for p in corners + [centre]:
 			if _lane_distance(lane, p) + EPS < half:
@@ -129,7 +132,8 @@ func _square_distance(centre: Vector3, p: Vector3) -> float:
 
 
 func _shape_of(area: Area3D) -> Shape3D:
-	for child in area.get_children():
-		if child is CollisionShape3D:
+	for child in area.find_children("*", "CollisionShape3D", true, false):
+		if child.shape:
 			return child.shape
+	push_error("GridData: %s has no CollisionShape3D with a shape" % area.name)
 	return null

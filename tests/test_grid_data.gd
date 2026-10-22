@@ -77,6 +77,17 @@ func _ready() -> void:
 	var near_valid := near.get_valid_cells(lane, spawn, ret, post)
 	assert_true(not near_valid.has(Vector2i(0, 1)), "cells in return_zone are dropped")
 
+	assert_true(GRID.cell_position(Vector2i(0, 99)) == GRID.origin, "out-of-range row falls back to origin")
+	var bare_lane := Path3D.new()
+	add_child(bare_lane)
+	assert_true(GRID.get_valid_cells(bare_lane, spawn, ret, post).size() == cells.size(), "lane without a curve is skipped, not a crash")
+	var empty_zone := Area3D.new()
+	empty_zone.add_child(CollisionShape3D.new())
+	add_child(empty_zone)
+	assert_true(GRID.get_valid_cells(lane, empty_zone, ret, post).size() == cells.size(), "zone without a shape is skipped, not a crash")
+	bare_lane.queue_free()
+	empty_zone.queue_free()
+
 	level.queue_free()
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
