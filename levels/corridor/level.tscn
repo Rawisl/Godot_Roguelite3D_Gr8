@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://ekgmjmchm13f"]
 
+[ext_resource type="PackedScene" uid="uid://b1ss2j7jn26og" path="res://entities/projectile/projectile_pool.tscn" id="8_a28fg"]
 [ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="9_grass"]
 [ext_resource type="Material" uid="uid://bseh2kw3vpopx" path="res://art/materials/struct_stone.tres" id="9_stone"]
 [ext_resource type="Material" uid="uid://72cnc8v2gg0s" path="res://art/materials/struct_wood.tres" id="9_wood"]
@@ -8,6 +9,8 @@
 [ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="11_fortress"]
 [ext_resource type="PackedScene" uid="uid://bg8ubpgsvf1gt" path="res://levels/corridor/slots_layout.tscn" id="12_slots"]
 [ext_resource type="Script" path="res://systems/camera/camera_rig.gd" id="13_camrig"]
+[ext_resource type="Script" uid="uid://crjn2jkgywwl" path="res://systems/camera/camera_bounds.gd" id="13_cambounds"]
+[ext_resource type="Script" uid="uid://bcwal67js7t1k" path="res://art/vfx/damage_number_layer.gd" id="13_dmgnum"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -69,10 +72,6 @@ point_count = 2
 height = 4.0
 radius = 5.0
 
-[sub_resource type="CylinderShape3D" id="Cyl_retreat"]
-height = 4.0
-radius = 5.0
-
 [sub_resource type="BoxShape3D" id="BoxShape3D_8dto7"]
 size = Vector3(12, 4, 16)
 
@@ -95,7 +94,10 @@ camera_bounds = Rect2(-20, -10, 40, 20)
 transform = Transform3D(0.93969256, -0.24184471, 0.24184467, 0, 0.70710665, 0.70710677, -0.34202006, -0.664463, 0.6644629, 7.255, 21.213, 19.934)
 projection = 1
 current = true
-size = 26.0
+size = 18.0
+
+[node name="CameraBounds" type="Node3D" parent="." unique_id=1873304521]
+script = ExtResource("13_cambounds")
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=481712762]
 navigation_mesh = SubResource("NavigationMesh_41ihd")
@@ -150,7 +152,7 @@ surface_material_override/0 = ExtResource("9_wood")
 navigation_mesh = SubResource("NavigationMesh_large")
 navigation_layers = 2
 
-[node name="LaneCurve" type="Path3D" parent="." unique_id=1725652686]
+[node name="LaneCurve" type="Path3D" parent="." unique_id=1725652686 groups=["lane_curve"]]
 curve = SubResource("Curve3D_lane")
 
 [node name="Slots" parent="." unique_id=1229477472 instance=ExtResource("12_slots")]
@@ -165,14 +167,6 @@ collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Markers/ReturnZone" unique_id=749994832]
 shape = SubResource("Cyl_return")
-
-[node name="RetreatZone" type="Area3D" parent="Markers" unique_id=898048777]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2, 0)
-collision_layer = 0
-collision_mask = 2
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Markers/RetreatZone" unique_id=1223678777]
-shape = SubResource("Cyl_retreat")
 
 [node name="DeployPoint" type="Marker3D" parent="Markers" unique_id=488986395]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
@@ -199,3 +193,18 @@ script = ExtResource("10_occl")
 
 [node name="BuildFxManager" type="Node" parent="." unique_id=1065239621]
 script = ExtResource("11_bfx")
+
+[node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
+
+[node name="DamageNumbers" type="CanvasLayer" parent="." unique_id=1597734418]
+layer = 5
+
+[node name="DamageNumberLayer" type="Control" parent="DamageNumbers" unique_id=884213907]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("13_dmgnum")

@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://8kq1cpu0cdjt" path="res://tests/test_playtest_barricade.gd" id="1_play"]
 [ext_resource type="PackedScene" uid="uid://ekgmjmchm13f" path="res://levels/corridor/level.tscn" id="2_level"]
 [ext_resource type="PackedScene" uid="uid://dwt1t1sek0m77" path="res://systems/wave/wave_manager.tscn" id="3_wave"]
-[ext_resource type="PackedScene" uid="uid://b1ss2j7jn26og" path="res://entities/projectile/projectile_pool.tscn" id="4_pool"]
 
 [node name="TestPlaytestBarricade" type="Node3D" unique_id=1072315097]
 script = ExtResource("1_play")
@@ -18,8 +17,6 @@ unique_name_in_owner = true
 
 [node name="Enemy" type="Node3D" parent="Gameplay" unique_id=532577298 groups=["enemy_container"]]
 unique_name_in_owner = true
-
-[node name="ProjectilePool" parent="Gameplay" unique_id=186032235 instance=ExtResource("4_pool")]
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=357667800]
 
