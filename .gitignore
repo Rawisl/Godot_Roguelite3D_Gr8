@@ -11,6 +11,9 @@ export.cfg
 export_credentials.cfg
 *.tmp
 
+# Login session tokens (normally in user://, never commit)
+auth.cfg
+
 # Mono-specific ignores
 .mono/
 data_*/

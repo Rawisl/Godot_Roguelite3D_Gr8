@@ -1,4 +1,8 @@
 extends Control
+## Shared dialog template: title, the concrete consequence, Cancel (focused by default)
+## and Confirm. A notice keeps only the confirm button.
+## Transaction dialogs exist only in PREP: they close as a cancel when PREP ends and
+## re-check the action at the moment Confirm is pressed.
 
 signal confirmed
 signal cancelled
@@ -8,6 +12,8 @@ var _body_key: StringName
 var _params: Dictionary = {}
 var _is_transaction: bool = false
 var _validate: Callable = Callable()
+var _confirm_key: StringName = &"dialog.confirm"
+var _cancel_key: StringName = &"dialog.cancel"
 var _closed: bool = false
 
 @onready var _title: Label = %Title
@@ -23,16 +29,36 @@ func setup(title_key: StringName, body_key: StringName, params: Dictionary = {},
 	_is_transaction = is_transaction
 	_validate = validate
 
+## Custom labels, e.g. Retry and Close. An empty cancel_key leaves only the confirm button.
+func set_buttons(confirm_key: StringName, cancel_key: StringName = &"dialog.cancel") -> void:
+	_confirm_key = confirm_key
+	_cancel_key = cancel_key
+
+## One-button message. Esc closes it like the button does.
+func setup_notice(title_key: StringName, body_key: StringName, params: Dictionary = {}) -> void:
+	setup(title_key, body_key, params)
+	set_buttons(&"dialog.ok", &"")
+
+func is_notice() -> bool:
+	return _cancel_key == &""
+
 func _ready() -> void:
 	_title.text = tr(_title_key)
 	_body.text = tr(_body_key).format(_params)
-	_cancel_button.text = tr(&"dialog.cancel")
-	_confirm_button.text = tr(&"dialog.confirm")
+	_confirm_button.text = tr(_confirm_key)
+	_cancel_button.text = tr(_cancel_key)
+	_cancel_button.visible = not is_notice()
 	_cancel_button.pressed.connect(cancel)
 	_confirm_button.pressed.connect(_on_confirm_pressed)
+	for button: Button in [_cancel_button, _confirm_button]:
+		# Hovering moves keyboard focus too, so only one button is ever highlighted.
+		button.mouse_entered.connect(button.grab_focus)
 	if _is_transaction:
 		EventBus.state_changed.connect(_on_wave_state_changed)
-	_cancel_button.grab_focus()
+	if is_notice():
+		_confirm_button.grab_focus()
+	else:
+		_cancel_button.grab_focus()
 
 func cancel() -> void:
 	if _closed:
