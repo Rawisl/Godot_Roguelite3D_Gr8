@@ -1,8 +1,11 @@
 extends Control
 
-## Manual test for ConfirmDialog. Not shipped.
+## Manual test for ConfirmDialog and system notices. Not shipped.
 ## S: system dialog   X: transaction dialog   E: simulate PREP end (state -> COMBAT)
 ## V: toggle validate result   Esc: cancel top dialog (via ScreenManager)
+## N: notice   F: save_failed   R: run_recovered
+## Q: transaction dialog, then save_failed (the notice waits for it to close)
+## M: run_recovered, then change to MainMenu like Boot does (the notice shows after the fade)
 ## Fake PREP clock logs every second and ends PREP at 0.
 
 const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
@@ -28,7 +31,7 @@ func _process(delta: float) -> void:
 	if _fake_prep_left <= 0.0:
 		print("[test] fake PREP ended")
 		EventBus.state_changed.emit(&"COMBAT")
-		_fake_prep_left = 30.0 
+		_fake_prep_left = 30.0
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
@@ -47,6 +50,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_V:
 			_validate_ok = not _validate_ok
 			print("[test] validate_ok=%s" % _validate_ok)
+		KEY_N:
+			ScreenManager.show_notice(&"dialog.test.title", &"dialog.test.body", {"gold": 60})
+		KEY_F:
+			EventBus.save_failed.emit(&"DISK_FULL")
+		KEY_R:
+			EventBus.run_recovered.emit(42)
+		KEY_Q:
+			_open(true)
+			EventBus.save_failed.emit(&"DISK_FULL")
+		KEY_M:
+			EventBus.run_recovered.emit(42)
+			ScreenManager.change_scene("res://ui/screens/main_menu.tscn")
 
 func _open(is_transaction: bool) -> void:
 	var dialog := DIALOG_SCENE.instantiate()
