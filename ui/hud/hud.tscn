@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://ly6vskx1vrmb" path="res://ui/hud/hud.gd" id="1_5uuaq"]
 [ext_resource type="PackedScene" uid="uid://dx1yjttn4bkfe" path="res://ui/hud/parts/alert_layer.tscn" id="1_xmswo"]
 [ext_resource type="PackedScene" uid="uid://bplnw3dwp8nlw" path="res://ui/hud/parts/commander_status.tscn" id="3_e0nub"]
+[ext_resource type="PackedScene" uid="uid://ttr6y87n11lf" path="res://ui/hud/parts/heal_status.tscn" id="4_hk13k"]
 [ext_resource type="PackedScene" uid="uid://daiai1f0exqp0" path="res://ui/hud/parts/emergency_repair.tscn" id="4_w75iv"]
 [ext_resource type="PackedScene" uid="uid://b0j2regl1w6bn" path="res://ui/hud/parts/enemy_bar_layer.tscn" id="5_kwc50"]
 [ext_resource type="PackedScene" uid="uid://ckn53m8u1tj1p" path="res://ui/hud/parts/fortress_bar.tscn" id="6_o2lis"]
@@ -56,6 +57,9 @@ theme_override_constants/separation = 8
 layout_mode = 2
 
 [node name="CommanderStatus" parent="Root/SafeArea/Frame/TopLeft" unique_id=602541407 instance=ExtResource("3_e0nub")]
+layout_mode = 2
+
+[node name="HealStatus" parent="Root/SafeArea/Frame/TopLeft" unique_id=1623376205 instance=ExtResource("4_hk13k")]
 layout_mode = 2
 
 [node name="WaveCounter" parent="Root/SafeArea/Frame" unique_id=1849850089 instance=ExtResource("10_cxhb7")]

@@ -1,5 +1,6 @@
 extends MarginContainer
 
+const LOGIN_SCENE := preload("res://ui/screens/login.tscn")
 const DRAWER_SLIDE_TIME := 0.2
 
 var _drawer_open := false
@@ -9,6 +10,7 @@ var _drawer_tween: Tween
 @onready var _play: Button = %Play
 @onready var _meta_shop: Button = %MetaShop
 @onready var _settings: Button = %Settings
+@onready var _account: Button = %Account
 @onready var _quit: Button = %Quit
 @onready var _prestige: Label = %Prestige
 @onready var _record: Label = %Record
@@ -21,14 +23,17 @@ func _ready() -> void:
 	_play.text = tr(&"menu.play")
 	_meta_shop.text = tr(&"menu.meta_shop")
 	_settings.text = tr(&"menu.settings")
+	_account.text = tr(&"menu.account")
 	_quit.text = tr(&"menu.quit")
 	_play.pressed.connect(GameState.change_state.bind(GameState.AppState.RUN_LOADING))
 	_meta_shop.pressed.connect(GameState.change_state.bind(GameState.AppState.META_SHOP))
 	_settings.pressed.connect(GameState.change_state.bind(GameState.AppState.SETTINGS))
+	# TODO: hide when online is off, and show the account name once signed in.
+	_account.pressed.connect(_open_login)
 	_quit.pressed.connect(get_tree().quit)
 	_drawer_toggle.tooltip_text = tr(&"menu.stats_toggle")
 	_drawer_toggle.pressed.connect(_toggle_drawer)
-	for button: Button in [_play, _meta_shop, _settings, _quit, _drawer_toggle]:
+	for button: Button in [_play, _meta_shop, _settings, _account, _quit, _drawer_toggle]:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
 	# TODO: read prestige_balance and max_wave_cleared from SaveManager once it loads the save.
@@ -61,3 +66,14 @@ func _set_drawer(open: bool, animate: bool) -> void:
 		return
 	_drawer_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_drawer_tween.tween_property(_drawer_clip, "custom_minimum_size:x", width, DRAWER_SLIDE_TIME)
+
+## Opens over the menu on the dialog layer, so Esc and the dimmed backdrop work like a dialog.
+func _open_login() -> void:
+	var login := LOGIN_SCENE.instantiate()
+	if ScreenManager.open_dialog(login):
+		login.tree_exited.connect(_on_login_closed)
+
+## Keyboard focus comes back to the button that opened the form.
+func _on_login_closed() -> void:
+	if _account.is_inside_tree():
+		_account.grab_focus()

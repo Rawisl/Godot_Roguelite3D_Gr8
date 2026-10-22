@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://dmhydr1pdtfad"]
+
+[ext_resource type="Script" uid="uid://g8g3gpqpr4sl" path="res://tests/test_hud_speed_heal.gd" id="1_fhgoy"]
+[ext_resource type="PackedScene" uid="uid://b0ncj75b0jni1" path="res://ui/hud/hud.tscn" id="2_7itn7"]
+
+[node name="TestHudSpeedHeal" type="Node" unique_id=2095544345]
+process_mode = 3
+script = ExtResource("1_fhgoy")
+
+[node name="Hud" parent="." unique_id=1623823647 instance=ExtResource("2_7itn7")]
