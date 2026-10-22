@@ -170,8 +170,9 @@ func _ensure_fresh() -> Dictionary:
 		_last_refresh = {"ok": true}
 	else:
 		var code := _error_code(response)
-		# A rejected refresh token means the session is over. A network error keeps it.
-		if code != ERR_OFFLINE and code != ERR_SERVER:
+		# Only a refresh token the server rejects ends the session. Network errors, rate
+		# limits and other failures keep it so the player is not signed out for a passing problem.
+		if code == ERR_INVALID_CREDENTIALS:
 			_clear_session()
 		_last_refresh = _fail(code)
 	_refreshing = false

@@ -15,10 +15,14 @@ var _fail := 0
 var _last_step := "start"
 var _last_progress_ms := 0
 var _finished := false
+var _saved_auth: PackedByteArray = PackedByteArray()
+var _had_auth := false
 
 func _ready() -> void:
 	_last_progress_ms = Time.get_ticks_msec()
+	_backup_auth()
 	await _run()
+	_restore_auth()
 	_finished = true
 	print("[test] done: %d passed, %d failed" % [_pass, _fail])
 	# Output is sent in per-frame batches, quitting at once can drop the last lines.
@@ -29,6 +33,7 @@ func _process(_delta: float) -> void:
 	if _finished or Time.get_ticks_msec() - _last_progress_ms < int(STALL_SECONDS * 1000.0):
 		return
 	_finished = true
+	_restore_auth()
 	print("[test] STUCK, no progress after: %s" % _last_step)
 	print("[test] done: %d passed, %d failed (unfinished)" % [_pass, _fail + 1])
 	await get_tree().create_timer(0.5, true, false, true).timeout
@@ -39,6 +44,10 @@ func _run() -> void:
 	_check("config holds only a publishable key", GameConfig.backend_public_key.begins_with("sb_publishable_"))
 	_check("backend url is https", GameConfig.backend_url.begins_with("https://"))
 	if not AuthService.is_available():
+		return
+	var probe := await AuthService.rest(HTTPClient.METHOD_GET, "/rest/v1/leaderboard?select=user_id&limit=1", null, false)
+	if not probe["ok"] and probe["error"] == AuthService.ERR_OFFLINE:
+		print("[test] skipped: the backend is unreachable")
 		return
 
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(AuthService.AUTH_FILE))
@@ -184,6 +193,20 @@ func _run() -> void:
 	_last_step = "deleting A"
 	var del_a := await AuthService.delete_account()
 	_check("A deletes its account", del_a["ok"])
+
+# The test signs throwaway accounts in and out, which rewrites the developer's own session file.
+func _backup_auth() -> void:
+	_had_auth = FileAccess.file_exists(AuthService.AUTH_FILE)
+	if _had_auth:
+		_saved_auth = FileAccess.get_file_as_bytes(AuthService.AUTH_FILE)
+
+func _restore_auth() -> void:
+	if _had_auth:
+		var file := FileAccess.open(AuthService.AUTH_FILE, FileAccess.WRITE)
+		if file != null:
+			file.store_buffer(_saved_auth)
+	elif FileAccess.file_exists(AuthService.AUTH_FILE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(AuthService.AUTH_FILE))
 
 func _submit(waves: int, elapsed: float, version: String) -> Dictionary:
 	var path := "/rest/v1/leaderboard"

@@ -23,7 +23,7 @@ Giá trị mặc định (dự án dev) nằm trong `autoload/game_config.gd`, n
 
 1. Tạo dự án trong Supabase. Ở mục Security: giữ **Enable Data API**, bỏ chọn **Automatically expose new tables**, bật **Enable automatic RLS**.
 2. Authentication -> Sign In / Providers: bật **Email**. Khi phát triển nên tắt **Confirm email** (bật thì mỗi tài khoản phải bấm link trong email). Khi cần email thật thì cấu hình SMTP riêng.
-3. SQL Editor -> New query, dán lần lượt từng file `.sql` trong thư mục này theo thứ tự số (`001_init.sql`, `002_...`), mỗi file bấm Run. Chạy lại nhiều lần vẫn an toàn.
+3. SQL Editor -> New query, dán lần lượt từng file `.sql` trong thư mục này theo thứ tự số (`001_init.sql`, `002_...`, `003_...`), mỗi file bấm Run. Chạy lại nhiều lần vẫn an toàn.
 4. Làm cả hai dự án với cùng các file SQL.
 
 ## Kiểm tra
