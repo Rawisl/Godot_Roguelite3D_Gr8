@@ -114,6 +114,18 @@ extends Node
 @export var retreat_open_time: float = 15.0
 @export var overload_countdown_time: float = 5.0
 
+@export_group("Online")
+@export var online_enabled: bool = true
+@export var backend_url: String = "https://mtsfrhlqoeqaeywypkyi.supabase.co"
+## Publishable key: meant to ship with the game, row level security limits what it can do.
+@export var backend_public_key: String = "sb_publishable_zc4q3uAYk2zWisObvTgL8Q_3G6BDbB3"
+@export var sync_timeout: float = 10.0
+@export var lbd_top_n: int = 50
+## The server enforces its own copy of this limit; this one is for the client to explain it.
+@export var lbd_min_seconds_per_wave: float = 15.0
+@export var display_name_min_len: int = 3
+@export var display_name_max_len: int = 16
+
 @export_group("Timing and Performance")
 @export var fps_downscale_floor: float = 30.0
 @export var fps_downscale_duration: float = 3.0
