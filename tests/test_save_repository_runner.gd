@@ -2,14 +2,14 @@ extends Node
 
 ## Automated test runner verifying:
 ## - no save file gives default data and the game can still save
-## - save() writes save.json with save_version and data, load_save() reads it back as int
+## - save() writes endlesswar_save.json with save_version and data, load_save() reads it back as int
 ## - missing fields fall back to defaults, extra fields are kept when written back
 ## - a newer save_version or an unreadable file is refused and never overwritten
 ## - swapping the repository (in-memory double) needs no change at the call site
 ## Writes only under user://test_save/, the real save is put back afterwards.
 
 const TEST_DIR := "user://test_save"
-const TEST_PATH := "user://test_save/save.json"
+const TEST_PATH := "user://test_save/endlesswar_save.json"
 
 ## Off when driven from the editor or godot-mcp, so results can still be read.
 @export var quit_when_done := true
@@ -93,7 +93,7 @@ func test_save_then_load_round_trip() -> void:
 	assert_true(error == OK, "save() returns OK")
 	assert_true(_completed == 1, "save_completed emitted once")
 	assert_true(took_ms < 50.0, "save() took %.2f ms (< 50 ms)" % took_ms)
-	assert_true(FileAccess.file_exists(TEST_PATH), "save.json written")
+	assert_true(FileAccess.file_exists(TEST_PATH), "endlesswar_save.json written")
 
 	var raw := _read_raw()
 	assert_true(raw.get("save_version") == 1.0, "file has save_version 1")

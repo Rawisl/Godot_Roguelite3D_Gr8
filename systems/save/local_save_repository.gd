@@ -1,8 +1,8 @@
 class_name LocalSaveRepository
 extends SaveRepository
-## Stores the envelope as JSON in a single file, user://save.json by default.
+## Stores the envelope as JSON in a single file, user://endlesswar_save.json by default.
 
-const DEFAULT_PATH := "user://save.json"
+const DEFAULT_PATH := "user://endlesswar_save.json"
 
 var path: String
 

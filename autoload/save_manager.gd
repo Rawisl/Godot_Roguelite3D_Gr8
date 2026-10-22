@@ -20,7 +20,7 @@ const REASON_CORRUPT := &"CORRUPT"
 const REASON_WRITE_BLOCKED := &"WRITE_BLOCKED"
 const REASON_WRITE_ERROR := &"WRITE_ERROR"
 
-## Shape of "data" in save.json. unlocked_starts is not stored, it comes from max_wave_cleared.
+## Shape of "data" in endlesswar_save.json. unlocked_starts is not stored, it comes from max_wave_cleared.
 const DEFAULT_DATA := {
 	"profile": {
 		"prestige_balance": 0,

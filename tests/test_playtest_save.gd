@@ -1,9 +1,9 @@
 extends Control
 ## Manual playtest for SaveManager. Not shipped. Run with F6.
 ## Change values, press Save, close the game, run again: the values must come back.
-## Writes to user://playtest_save/save.json unless use_real_save is on.
+## Writes to user://playtest_save/endlesswar_save.json unless use_real_save is on.
 
-const PLAYTEST_PATH := "user://playtest_save/save.json"
+const PLAYTEST_PATH := "user://playtest_save/endlesswar_save.json"
 
 @export var use_real_save := false
 
