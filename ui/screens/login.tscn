@@ -3,7 +3,11 @@
 [ext_resource type="Script" uid="uid://c3payd7yastuj" path="res://ui/screens/login.gd" id="1_tdrsa"]
 [ext_resource type="Texture2D" uid="uid://dr5t78tcaumig" path="res://ui/icons/close.svg" id="2_kg37n"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_pgxa7"]
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_uajsf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kg37n"]
 
 [node name="Login" type="Control" unique_id=1039825747]
 texture_filter = 2
@@ -58,7 +62,16 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+focus_neighbor_right = NodePath("../Close")
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_colors/font_focus_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/font_pressed_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/font_hover_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/font_disabled_color = Color(0.6627451, 0.654902, 0.62352943, 1)
 theme_override_font_sizes/font_size = 22
+theme_override_styles/focus = SubResource("StyleBoxEmpty_pgxa7")
+flat = true
 
 [node name="Spacer" type="Control" parent="Center/Panel/Margin/Content/TopBar" unique_id=629651489]
 layout_mode = 2
@@ -68,6 +81,7 @@ size_flags_horizontal = 3
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
+focus_neighbor_left = NodePath("../Back")
 theme_override_colors/icon_normal_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
 theme_override_colors/icon_focus_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
 theme_override_colors/icon_pressed_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
@@ -129,6 +143,8 @@ layout_mode = 2
 [node name="PasswordCaption" type="Label" parent="Center/Panel/Margin/Content/PasswordRow" unique_id=2109834687]
 unique_name_in_owner = true
 layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 22
 
 [node name="PasswordBox" type="HBoxContainer" parent="Center/Panel/Margin/Content/PasswordRow" unique_id=554205780]
 layout_mode = 2
@@ -146,7 +162,10 @@ secret = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
-focus_mode = 0
+theme_override_colors/icon_focus_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/icon_hover_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/icon_hover_pressed_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_styles/focus = SubResource("StyleBoxEmpty_kg37n")
 toggle_mode = true
 flat = true
 icon_alignment = 1
@@ -178,6 +197,8 @@ layout_mode = 2
 [node name="ConfirmCaption" type="Label" parent="Center/Panel/Margin/Content/ConfirmRow" unique_id=489701630]
 unique_name_in_owner = true
 layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 22
 
 [node name="ConfirmBox" type="HBoxContainer" parent="Center/Panel/Margin/Content/ConfirmRow" unique_id=419819700]
 layout_mode = 2
@@ -195,7 +216,10 @@ secret = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
-focus_mode = 0
+theme_override_colors/icon_focus_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/icon_hover_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/icon_hover_pressed_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_styles/focus = SubResource("StyleBoxEmpty_kg37n")
 toggle_mode = true
 flat = true
 icon_alignment = 1

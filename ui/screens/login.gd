@@ -6,9 +6,8 @@ extends Control
 
 const MODE_SIGN_IN := &"SIGN_IN"
 const MODE_REGISTER := &"REGISTER"
-## Palette: ui_alert_t2 for errors, ui_text_dim for the busy line.
+## Palette ui_alert_t2. TODO: use an ErrorLabel theme variation once main_theme.tres has it.
 const ERROR_COLOR := Color("FF9A2E")
-const DIM_COLOR := Color("A9A79F")
 ## Placeholder icons until the shared icon set has an eye.
 const EYE_OPEN: Texture2D = preload("res://ui/icons/eye.svg")
 const EYE_CLOSED: Texture2D = preload("res://ui/icons/eye_off.svg")
@@ -75,6 +74,7 @@ func _ready() -> void:
 		edit.gui_input.connect(_on_field_gui_input.bind(edit))
 	for pair: Array in [[_password_eye, _password_edit], [_confirm_eye, _confirm_edit]]:
 		pair[0].toggled.connect(_on_eye_toggled.bind(pair[0], pair[1]))
+		pair[0].gui_input.connect(_on_eye_gui_input.bind(pair[0], pair[1]))
 		_on_eye_toggled(false, pair[0], pair[1])
 	_submit.pressed.connect(_on_submit_pressed)
 	_guest.pressed.connect(close)
@@ -101,7 +101,7 @@ func complete_sign_in() -> void:
 
 func show_error(code: StringName) -> void:
 	var key: StringName = ERROR_KEYS.get(code, &"login.error.unknown")
-	_show_message(UiFormat.tr_fmt(&"login.error_line", {"message": tr(key)}), ERROR_COLOR)
+	_show_message(UiFormat.tr_fmt(&"login.error_line", {"message": tr(key)}), true)
 
 ## While a request runs the form is locked, so a second press cannot send it twice.
 func set_busy(busy: bool) -> void:
@@ -111,7 +111,7 @@ func set_busy(busy: bool) -> void:
 	for button: Button in [_back, _open_register, _close, _submit, _guest, _password_eye, _confirm_eye]:
 		button.disabled = busy
 	if busy:
-		_show_message(tr(&"login.busy"), DIM_COLOR)
+		_show_message(tr(&"login.busy"), false)
 	else:
 		_message.text = ""
 
@@ -176,12 +176,39 @@ func _on_field_submitted(_text: String, edit: LineEdit) -> void:
 func _on_field_gui_input(event: InputEvent, edit: LineEdit) -> void:
 	var target: Control = null
 	if event.is_action_pressed(&"ui_down", true):
-		target = edit.find_next_valid_focus()
+		target = _vertical_neighbor(edit, true)
 	elif event.is_action_pressed(&"ui_up", true):
-		target = edit.find_prev_valid_focus()
+		target = _vertical_neighbor(edit, false)
+		if _back.visible and edit == _visible_fields()[0]:
+			target = _back
+	elif event.is_action_pressed(&"ui_right", true) and edit.caret_column == edit.text.length():
+		var neighbor := edit.find_valid_focus_neighbor(SIDE_RIGHT)
+		if neighbor != null and neighbor.get_parent() == edit.get_parent():
+			target = neighbor
 	if target != null:
 		edit.accept_event()
 		target.grab_focus()
+
+## On an eye button, up and down move as if from its password field.
+func _on_eye_gui_input(event: InputEvent, eye: Button, edit: LineEdit) -> void:
+	var down := event.is_action_pressed(&"ui_down", true)
+	if not down and not event.is_action_pressed(&"ui_up", true):
+		return
+	var target := _vertical_neighbor(edit, down)
+	if target != null:
+		eye.accept_event()
+		target.grab_focus()
+
+func _vertical_neighbor(from: Control, down: bool) -> Control:
+	var eyes: Array[Control] = [_password_eye, _confirm_eye]
+	var next := from
+	for i in eyes.size() + 1:
+		next = next.find_next_valid_focus() if down else next.find_prev_valid_focus()
+		if next == null or next == from:
+			return null
+		if not eyes.has(next):
+			return next
+	return null
 
 func _all_fields() -> Array[LineEdit]:
 	return [_name_edit, _email_edit, _password_edit, _confirm_edit]
@@ -193,9 +220,13 @@ func _focus_field(edit: LineEdit) -> void:
 	edit.grab_focus()
 	edit.edit()
 
-func _show_message(text: String, color: Color) -> void:
+func _show_message(text: String, is_error: bool) -> void:
 	_message.text = text
-	_message.add_theme_color_override(&"font_color", color)
+	_message.theme_type_variation = &"" if is_error else &"DimLabel"
+	if is_error:
+		_message.add_theme_color_override(&"font_color", ERROR_COLOR)
+	else:
+		_message.remove_theme_color_override(&"font_color")
 
 func _match_view_heights() -> void:
 	_set_mode(MODE_REGISTER)
