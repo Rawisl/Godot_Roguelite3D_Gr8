@@ -17,10 +17,13 @@ var hovered: Node = null
 
 var _mode: StringName = &"FRONTLINE"
 var _rings_visible := false
+var _hovered_slot: Slot = null
+var _selected_ring: Slot = null
 
 func _ready() -> void:
 	# Building is allowed while paused in PREP.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	hovered_changed.connect(_on_hovered_changed)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
 	# The first PREP is sent before the HUD is ready, so read it once here.
@@ -80,6 +83,7 @@ func pick_under_mouse() -> Node:
 	return best
 
 func clear_selection() -> void:
+	_set_selected_ring(null)
 	if selected_slot == &"":
 		return
 	selected_slot = &""
@@ -112,6 +116,7 @@ func _select(node: Node) -> void:
 			_select_tower(slot)
 		elif _is_prep() and _rings_visible:
 			selected_slot = slot.slot_id
+			_set_selected_ring(slot)
 			EventBus.slot_selected.emit(slot.slot_id)
 	else:
 		clear_selection()
@@ -120,7 +125,32 @@ func _select_tower(slot: Slot) -> void:
 	if slot == null:
 		return
 	selected_slot = slot.slot_id
+	_set_selected_ring(null)
 	EventBus.tower_selected.emit(slot.slot_id)
+
+## One golden ring at a time: the empty slot picked for building.
+func _set_selected_ring(slot: Slot) -> void:
+	if is_instance_valid(_selected_ring):
+		_selected_ring.set_selected(false)
+	_selected_ring = slot
+	if slot != null:
+		slot.set_selected(true)
+
+## Slot rings glow white under the mouse; uses the hover pick above, only while rings show.
+func _on_hovered_changed(_node: Node) -> void:
+	_update_slot_hover()
+
+func _update_slot_hover() -> void:
+	var slot := hovered as Slot if is_instance_valid(hovered) else null
+	if not _rings_visible or (slot != null and not slot.is_free()):
+		slot = null
+	if slot == _hovered_slot:
+		return
+	if is_instance_valid(_hovered_slot):
+		_hovered_slot.set_hovered(false)
+	_hovered_slot = slot
+	if slot != null:
+		slot.set_hovered(true)
 
 func _rank(node: Node) -> int:
 	if node is Tower:
@@ -146,6 +176,7 @@ func _is_prep() -> bool:
 func _set_rings_visible(v: bool) -> void:
 	_rings_visible = v
 	get_tree().call_group(&"slot", &"set_buildable_visible", v)
+	_update_slot_hover()
 
 func _sync_rings() -> void:
 	_set_rings_visible(_is_prep())

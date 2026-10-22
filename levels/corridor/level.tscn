@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="11_fortress"]
 [ext_resource type="PackedScene" uid="uid://bg8ubpgsvf1gt" path="res://levels/corridor/slots_layout.tscn" id="12_slots"]
 [ext_resource type="Script" uid="uid://crjn2jkgywwl" path="res://systems/camera/camera_bounds.gd" id="13_cambounds"]
+[ext_resource type="Script" uid="uid://bcwal67js7t1k" path="res://art/vfx/damage_number_layer.gd" id="13_dmgnum"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -202,4 +203,15 @@ script = ExtResource("10_occl")
 [node name="BuildFxManager" type="Node" parent="." unique_id=1065239621]
 script = ExtResource("11_bfx")
 
-[node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
+[node name="DamageNumbers" type="CanvasLayer" parent="." unique_id=1597734418]
+layer = 5
+
+[node name="DamageNumberLayer" type="Control" parent="DamageNumbers" unique_id=884213907]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("13_dmgnum")
