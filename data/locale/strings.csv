@@ -107,8 +107,7 @@ login.field.password,Mật khẩu
 login.field.confirm_password,Nhập lại mật khẩu
 login.submit.sign_in,Đăng nhập
 login.submit.register,Tạo tài khoản
-login.guest,Tiếp tục chơi khách
-login.guest,Đăng nhập bằng tài khoản khách
+login.guest,Tiếp tục chơi bằng tài khoản khách
 login.guest_hint,Đăng nhập bằng tài khoản thật để có thể lưu tiến trình chơi và thứ hạng.
 login.busy,Đang kết nối...
 login.error_line,Lỗi: {message}
