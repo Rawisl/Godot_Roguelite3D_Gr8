@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="SwordHitStyle" format=3 uid="uid://jojyxhpbbxym"]
-
-[ext_resource type="Script" uid="uid://col8tooacbbna" path="res://art/vfx/sword_hit_style.gd" id="1_style"]
-
-[resource]
-script = ExtResource("1_style")
-sweep_time = 0.1
-spark_count = 3
-spark_speed = 3.0

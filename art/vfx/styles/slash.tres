@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SwordHitStyle" format=3]
+[gd_resource type="Resource" script_class="SwordHitStyle" format=3 uid="uid://dn7geh8b3nybh"]
 
 [ext_resource type="Script" uid="uid://col8tooacbbna" path="res://art/vfx/sword_hit_style.gd" id="1_style"]
 

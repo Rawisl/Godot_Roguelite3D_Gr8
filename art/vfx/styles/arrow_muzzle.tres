@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MuzzleStyle" format=3]
+[gd_resource type="Resource" script_class="MuzzleStyle" format=3 uid="uid://c7jd7q4a5maf3"]
 
 [ext_resource type="Script" uid="uid://docedrxuknmd7" path="res://art/vfx/muzzle_style.gd" id="1_style"]
 
