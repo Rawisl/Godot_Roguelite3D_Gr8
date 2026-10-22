@@ -93,6 +93,7 @@ func _ready() -> void:
 	_setup_animation_player()
 	_setup_sword_area()
 	_setup_input()
+	_setup_heal_channel()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 
@@ -112,6 +113,12 @@ func _setup_animation_player() -> void:
 		var aps := find_children("*", "AnimationPlayer", true, false)
 		if not aps.is_empty():
 			_anim_player = aps[0] as AnimationPlayer
+
+
+func _setup_heal_channel() -> void:
+	var channel := HealChannel.new()
+	channel.name = "HealChannel"
+	add_child(channel)
 
 
 func _setup_input() -> void:
@@ -254,6 +261,23 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 		_combo_reset_timer -= delta
 		if _combo_reset_timer <= 0.0:
 			current_combo_hit = 1
+
+
+## True when the commander stands free of any action, hit reaction or push.
+func is_idle() -> bool:
+	if is_dead or is_commander_mode or is_deploying or is_stunned:
+		return false
+	if is_attacking or is_dodging or is_using_skill:
+		return false
+	return _knockback_velocity.is_zero_approx()
+
+
+func is_trying_to_move() -> bool:
+	return not _move_input().is_zero_approx()
+
+
+func get_wave_state() -> StringName:
+	return _wave_state
 
 
 ## Movement and combat commands only run while a wave is being fought. An empty state
