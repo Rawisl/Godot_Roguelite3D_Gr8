@@ -45,6 +45,8 @@ var _camera: Camera3D
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# After the commander's move_and_slide, so the follow reads this tick's position.
+	process_physics_priority = 100
 	_home = position
 	_camera = find_child("*", true, false) as Camera3D
 	_last_real_time = TimeManager.real_time
@@ -102,9 +104,6 @@ func _process(_delta: float) -> void:
 
 	if _context() == CONTEXT_FRONTLINE:
 		_velocity = Vector3.ZERO
-		# Frame-rate independent exponential follow.
-		var weight := 1.0 - exp(-real_delta / maxf(follow_smoothing, 0.001))
-		position = _clamped(position.lerp(get_default_focus(), weight))
 		return
 
 	var target := Vector3.ZERO
@@ -115,6 +114,20 @@ func _process(_delta: float) -> void:
 	if _velocity.is_zero_approx():
 		return
 	position = _clamped(position + _velocity * real_delta)
+
+
+func _physics_process(_delta: float) -> void:
+	# Real seconds covered by one physics tick.
+	_follow(get_physics_process_delta_time() / maxf(Engine.time_scale, 0.001))
+
+
+## Frontline follow. It must step with the commander's physics ticks: sampling the
+## commander once per rendered frame mixes two clocks and makes it shake on screen.
+func _follow(real_delta: float) -> void:
+	if _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
+		return
+	var weight := 1.0 - exp(-real_delta / maxf(follow_smoothing, 0.001))
+	position = _clamped(position.lerp(get_default_focus(), weight))
 
 
 func _real_delta() -> float:

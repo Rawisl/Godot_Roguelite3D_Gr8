@@ -38,6 +38,7 @@ func _step(seconds: float, tick := 0.016) -> void:
 		var dt := minf(tick, left)
 		TimeManager.real_time += dt
 		_rig._process(dt)
+		_rig._follow(dt)
 		left -= tick
 
 func _release_all() -> void:
