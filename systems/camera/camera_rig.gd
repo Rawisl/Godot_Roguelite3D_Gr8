@@ -1,32 +1,45 @@
 class_name CameraRig
 extends Node3D
-## Camera focus on the ground plane. In Commander mode and PREP the move keys pan it;
-## in Frontline it returns to its home position. Runs on real time, so panning ignores
-## the game speed and keeps working while paused.
+## Camera focus on the ground plane. Frontline follows the commander, Commander mode and PREP
+## let the move keys pan it. Runs on TimeManager's real-time clock, so it ignores the game
+## speed and keeps working while paused.
 
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_down", &"move_left", &"move_right"]
 const CONTEXT_FRONTLINE := &"FRONTLINE"
 const CONTEXT_COMMANDER := &"COMMANDER"
 const CONTEXT_PREP := &"PREP"
+const STATE_BOSS_INTRO := &"BOSS_INTRO"
+const STATE_REWARD_PICK := &"REWARD_PICK"
 
 @export var camera_pan_speed: float = 14.0
 ## Seconds to reach full pan speed, so starting and stopping does not jerk.
 @export var accel_time: float = 0.1
-## Seconds for the focus to glide to its default when the context changes.
+## Seconds for the focus and the ortho size to glide when the context changes.
 @export var transition_time: float = 0.5
 @export var recenter_time: float = 0.3
-## Set by hand in the level. Limits the focus on the ground plane (x, z). No area means no limit.
-@export var camera_bounds: Rect2 = Rect2()
+## Smoothing time constant of the Frontline follow.
+@export var follow_smoothing: float = 0.15
+## Limits the focus and supplies the ortho sizes. Without it the focus is unlimited
+## and the camera size is left alone.
+@export var bounds: CameraBounds
+## Replaces every glide with an instant cut. Also set through the "reduced_motion" setting.
+@export var reduced_motion: bool = false
 
 var _home: Vector3
 var _velocity: Vector3 = Vector3.ZERO
 var _commander_mode: bool = false
 var _in_prep: bool = false
+var _state: StringName = &""
 var _blocked: Dictionary = {}  # move actions held when the context changed
 var _glide_from: Vector3
 var _glide_to: Vector3
 var _glide_total: float = 0.0
 var _glide_left: float = 0.0
+var _size_from: float = 0.0
+var _size_to: float = 0.0
+var _size_total: float = 0.0
+var _size_left: float = 0.0
+var _last_real_time: float = 0.0
 var _camera: Camera3D
 
 
@@ -34,8 +47,12 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_home = position
 	_camera = find_child("*", true, false) as Camera3D
+	_last_real_time = TimeManager.real_time
+	if _camera != null and bounds != null:
+		_camera.size = _target_size()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_state_changed)
+	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.pause_changed.connect(func(_paused: bool) -> void: _clear_held())
 
 
@@ -44,39 +61,50 @@ func _notification(what: int) -> void:
 		_clear_held()
 
 
+## Panning is off in Frontline and while the boss intro or a reward pick owns the screen.
 func is_panning_enabled() -> bool:
-	return _context() != CONTEXT_FRONTLINE
+	if _context() == CONTEXT_FRONTLINE:
+		return false
+	return _state != STATE_BOSS_INTRO and _state != STATE_REWARD_PICK \
+			and not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK)
 
 
 func is_gliding() -> bool:
-	return _glide_left > 0.0
+	return _glide_left > 0.0 or _size_left > 0.0
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if is_panning_enabled() and event.is_action_pressed(&"camera_recenter", false):
-		_glide_to_focus(get_default_focus(), recenter_time)
+		_glide_to_focus(recenter_time)
 
 
-## Where the camera goes when entering a context: the commander in Commander mode,
-## the middle of the bounds in PREP, home in Frontline.
+## Where the camera goes when entering a context: the commander in Frontline and Commander
+## mode, the middle of the bounds in PREP.
 func get_default_focus() -> Vector3:
 	match _context():
-		CONTEXT_COMMANDER:
+		CONTEXT_PREP:
+			if bounds != null:
+				var center := bounds.global_position
+				return Vector3(center.x, _home.y, center.z)
+		_:
 			var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
 			if commander != null:
 				return _clamped(Vector3(commander.global_position.x, _home.y, commander.global_position.z))
-		CONTEXT_PREP:
-			if camera_bounds.has_area():
-				var center := camera_bounds.get_center()
-				return Vector3(center.x, _home.y, center.y)
 	return _home
 
 
-func _process(delta: float) -> void:
-	# delta is scaled by Engine.time_scale; the camera must not follow the game speed.
-	var real_delta := delta / maxf(Engine.time_scale, 0.001)
+func _process(_delta: float) -> void:
+	var real_delta := _real_delta()
+	_update_size(real_delta)
 	if _glide_left > 0.0:
 		_update_glide(real_delta)
+		return
+
+	if _context() == CONTEXT_FRONTLINE:
+		_velocity = Vector3.ZERO
+		# Frame-rate independent exponential follow.
+		var weight := 1.0 - exp(-real_delta / maxf(follow_smoothing, 0.001))
+		position = _clamped(position.lerp(get_default_focus(), weight))
 		return
 
 	var target := Vector3.ZERO
@@ -89,20 +117,63 @@ func _process(delta: float) -> void:
 	position = _clamped(position + _velocity * real_delta)
 
 
+func _real_delta() -> float:
+	var now := TimeManager.real_time
+	var real_delta := maxf(now - _last_real_time, 0.0)
+	_last_real_time = now
+	return real_delta
+
+
 func _update_glide(real_delta: float) -> void:
 	_glide_left = maxf(_glide_left - real_delta, 0.0)
 	var progress := 1.0 - _glide_left / _glide_total
-	# Ease-out: fast at first, settling at the end.
-	var eased := 1.0 - pow(1.0 - progress, 3.0)
-	position = _clamped(_glide_from.lerp(_glide_to, eased))
+	# The target moves with the commander, so it is read again every frame.
+	_glide_to = get_default_focus()
+	position = _clamped(_glide_from.lerp(_glide_to, _ease_out(progress)))
 
 
-func _glide_to_focus(focus: Vector3, duration: float) -> void:
+func _update_size(real_delta: float) -> void:
+	if _size_left <= 0.0 or _camera == null:
+		return
+	_size_left = maxf(_size_left - real_delta, 0.0)
+	var progress := 1.0 - _size_left / _size_total
+	_camera.size = lerpf(_size_from, _size_to, _ease_out(progress))
+
+
+## Fast at first, settling at the end.
+func _ease_out(progress: float) -> float:
+	return 1.0 - pow(1.0 - progress, 3.0)
+
+
+func _glide_to_focus(duration: float) -> void:
 	_velocity = Vector3.ZERO
 	_glide_from = position
-	_glide_to = _clamped(focus)
+	_glide_to = get_default_focus()
+	if reduced_motion:
+		position = _glide_to
+		_glide_left = 0.0
+		return
 	_glide_total = maxf(duration, 0.001)
 	_glide_left = _glide_total
+
+
+func _glide_size() -> void:
+	if _camera == null or bounds == null:
+		return
+	_size_to = _target_size()
+	if reduced_motion:
+		_camera.size = _size_to
+		_size_left = 0.0
+		return
+	_size_from = _camera.size
+	_size_total = maxf(transition_time, 0.001)
+	_size_left = _size_total
+
+
+func _target_size() -> float:
+	if _context() == CONTEXT_FRONTLINE:
+		return bounds.camera_size_frontline
+	return bounds.camera_size_overview
 
 
 func _context() -> StringName:
@@ -144,11 +215,7 @@ func _screen_to_ground(input: Vector2) -> Vector3:
 
 
 func _clamped(focus: Vector3) -> Vector3:
-	if not camera_bounds.has_area():
-		return focus
-	focus.x = clampf(focus.x, camera_bounds.position.x, camera_bounds.end.x)
-	focus.z = clampf(focus.z, camera_bounds.position.y, camera_bounds.end.y)
-	return focus
+	return bounds.clamp_focus(focus) if bounds != null else focus
 
 
 func _on_mode_changed(mode: StringName) -> void:
@@ -156,13 +223,21 @@ func _on_mode_changed(mode: StringName) -> void:
 	_commander_mode = (mode == &"COMMANDER")
 	_clear_held()
 	if _context() != before:
-		_glide_to_focus(get_default_focus(), transition_time)
+		_glide_to_focus(transition_time)
+		_glide_size()
 
 
 func _on_state_changed(new_state: StringName) -> void:
 	var before := _context()
+	_state = new_state
 	_in_prep = (new_state == &"PREP")
 	_clear_held()
 	# Every PREP starts from the default focus, even when Commander mode carried over.
 	if _context() != before or new_state == &"PREP":
-		_glide_to_focus(get_default_focus(), transition_time)
+		_glide_to_focus(transition_time)
+		_glide_size()
+
+
+func _on_settings_changed(key: StringName, value: Variant) -> void:
+	if key == &"reduced_motion":
+		reduced_motion = bool(value)
