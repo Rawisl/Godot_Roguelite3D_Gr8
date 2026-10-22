@@ -148,7 +148,7 @@ surface_material_override/0 = ExtResource("9_wood")
 navigation_mesh = SubResource("NavigationMesh_large")
 navigation_layers = 2
 
-[node name="LaneCurve" type="Path3D" parent="." unique_id=1725652686]
+[node name="LaneCurve" type="Path3D" parent="." unique_id=1725652686 groups=["lane_curve"]]
 curve = SubResource("Curve3D_lane")
 
 [node name="Slots" parent="." unique_id=1229477472 instance=ExtResource("12_slots")]

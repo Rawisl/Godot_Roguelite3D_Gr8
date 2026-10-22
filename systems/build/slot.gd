@@ -59,6 +59,7 @@ func place_tower(t: Tower) -> void:
 		push_warning("Slot %s: place_tower called while OCCUPIED" % slot_id)
 		return
 	t.scan_phase = _scan_phase()
+	t.slot_id = slot_id
 	anchor.add_child(t)
 	t.transform = Transform3D.IDENTITY
 	tower = t
