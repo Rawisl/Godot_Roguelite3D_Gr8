@@ -7,32 +7,32 @@
 script = ExtResource("2_slotmgr")
 
 [node name="W1" parent="." unique_id=995670275 instance=ExtResource("1_4mr3i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 4, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -6)
 slot_id = &"W1"
 zone = 0
 
 [node name="W2" parent="." unique_id=949043674 instance=ExtResource("1_4mr3i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 4, -3.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -3.6)
 slot_id = &"W2"
 zone = 0
 
 [node name="W3" parent="." unique_id=1521720539 instance=ExtResource("1_4mr3i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 4, -1.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, -1.2)
 slot_id = &"W3"
 zone = 0
 
 [node name="W4" parent="." unique_id=1381842639 instance=ExtResource("1_4mr3i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 4, 1.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 1.2)
 slot_id = &"W4"
 zone = 0
 
 [node name="W5" parent="." unique_id=264264261 instance=ExtResource("1_4mr3i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 4, 3.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 3.6)
 slot_id = &"W5"
 zone = 0
 
 [node name="W6" parent="." unique_id=1571812035 instance=ExtResource("1_4mr3i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 4, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 6)
 slot_id = &"W6"
 zone = 0
 

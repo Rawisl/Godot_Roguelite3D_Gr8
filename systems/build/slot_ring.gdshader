@@ -1,5 +1,5 @@
 shader_type spatial;
-// SLOT-06: build ring on a slot. Rounded square outline with a soft edge and a faint fill.
+// Build ring on a slot. Rounded square outline with a soft edge and a faint fill.
 // Hovered and selected rings get a thicker steady line and a glow around it.
 // Depth test stays on so walls, towers and units hide it.
 render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never;
@@ -10,9 +10,9 @@ uniform vec4 ruined_color : source_color = vec4(0.78, 0.45, 0.23, 0.7);
 // Golden brown: the slot picked for building.
 uniform vec4 selected_color : source_color = vec4(0.92, 0.66, 0.28, 1.0);
 // Sizes are in metres, so resizing the plane only changes how much room the glow has.
-uniform float box_half = 1.14;
+uniform float box_half = 0.95;
 uniform float border_width = 0.14;
-uniform float corner_radius = 0.38;
+uniform float corner_radius = 0.3;
 uniform float edge_softness = 0.06;
 uniform float fill_alpha = 0.12;
 uniform float glow_falloff = 0.08;

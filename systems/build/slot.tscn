@@ -7,7 +7,7 @@
 size = Vector2(2.8, 2.8)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
-size = Vector3(2.28, 0.5, 2.28)
+size = Vector3(1.9, 0.5, 1.9)
 
 [sub_resource type="BoxMesh" id="BoxMesh_rubble"]
 size = Vector3(1.2, 0.3, 1.2)
