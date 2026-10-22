@@ -799,7 +799,7 @@ func _update_low_hp(current_hp: int, max_hp: int) -> void:
 func _on_wave_state_changed(new_state: StringName) -> void:
 	_wave_state = new_state
 	if new_state == &"PREP" and not is_dead:
-		var heal_pct: float = stats.prep_heal_pct if stats else 0.6
+		var heal_pct: float = stats.prep_heal_pct if stats else 0.35
 		health.heal(floori(float(health.max_hp) * heal_pct))
 
 

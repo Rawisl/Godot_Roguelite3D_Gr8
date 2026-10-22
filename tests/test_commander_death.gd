@@ -65,11 +65,14 @@ func _run() -> void:
 	_check("damage works again in COMBAT", c.health.hp == c.health.max_hp - 50)
 	c.free()
 
-	# Prep heal: 60% of max, capped, not when dead.
+	# Prep heal: 35% of max, capped, not when dead.
 	c = _spawn()
 	c.health.hp = 20
 	EventBus.state_changed.emit(&"PREP")
-	_check("prep heal adds 60 HP", c.health.hp == 80)
+	_check("prep heal adds 35 HP", c.health.hp == 55)
+	EventBus.state_changed.emit(&"COMBAT")
+	EventBus.state_changed.emit(&"PREP")
+	_check("second prep heal stacks", c.health.hp == 90)
 	EventBus.state_changed.emit(&"COMBAT")
 	EventBus.state_changed.emit(&"PREP")
 	_check("prep heal capped at max HP", c.health.hp == 100)
