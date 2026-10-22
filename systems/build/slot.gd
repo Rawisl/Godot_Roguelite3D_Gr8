@@ -2,7 +2,6 @@ class_name Slot
 extends Node3D
 ## A fixed build position on the map
 
-signal clicked(slot: Slot)
 signal state_changed(slot: Slot, new_state: Enums.SlotState)
 
 @export var slot_id: StringName
@@ -17,6 +16,9 @@ var last_data: TowerData = null
 ## Level of that tower; Rebuild restores the same type at this level.
 var last_level: int = 0
 
+## Last value from set_buildable_visible; the ring follows it when the state changes.
+var _ring_on := false
+
 var facing: Vector3:
 	get: return global_basis.x
 
@@ -29,7 +31,8 @@ var facing: Vector3:
 
 func _ready() -> void:
 	add_to_group("slot")
-	click_area.input_event.connect(_on_input_event)
+	# SelectionController is the only picker; it ray-casts layer 7 itself.
+	click_area.input_ray_pickable = false
 
 	if slot_id == &"":
 		slot_id = StringName(name)
@@ -37,11 +40,7 @@ func _ready() -> void:
 	_apply_state_visuals()
 	set_buildable_visible(false)
 
-func _on_input_event(_cam, event: InputEvent, _pos, _normal, _idx) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		clicked.emit(self)
-
-# SLOT-01: each slot holds at most one structure; states EMPTY / OCCUPIED / RUINED
+# Each slot holds at most one structure; states EMPTY / OCCUPIED / RUINED
 func set_state(new_state: Enums.SlotState) -> void:
 	if new_state == state:
 		return
@@ -71,11 +70,11 @@ func place_tower(t: Tower) -> void:
 func clear_tower() -> void:
 	set_state(Enums.SlotState.EMPTY)
 
-# TWR-02, SLOT-02: a tower at 0 HP leaves rubble, the slot becomes RUINED
+# A tower at 0 HP leaves rubble, the slot becomes RUINED
 func _on_tower_destroyed(_t: Tower) -> void:
 	ruin()
 
-## Single entry point for destroying the tower here: HP = 0 and Overload (TWR-08) both call this.
+## Single entry point for destroying the tower here: HP = 0 and Overload both call this.
 ## Remembers type and level before the tower is freed so Rebuild can restore them.
 func ruin() -> void:
 	if state != Enums.SlotState.OCCUPIED or tower == null:
@@ -100,7 +99,7 @@ func get_rebuild_cost() -> int:
 		return 0
 	return last_data.get_total_cost(last_level)
 
-## TWR-15: spread tower scans over scan_interval by slot_id (fraction 0..1).
+## Spread tower scans over scan_interval by slot_id (fraction 0..1).
 func _scan_phase() -> float:
 	return float(absi(rand_from_seed(hash(slot_id))[0]) % 1000) / 1000.0
 
@@ -111,7 +110,7 @@ func _free_tower() -> void:
 		tower.queue_free()
 	tower = null
 
-# SLOT-02: RUINED behaves like an empty slot
+# RUINED behaves like an empty slot
 func is_free() -> bool:
 	return (state == Enums.SlotState.EMPTY 
 		or state == Enums.SlotState.RUINED)
@@ -125,13 +124,28 @@ func allows(data: TowerData) -> bool:
 func can_build(data: TowerData) -> bool:
 	return is_free() and allows(data)
 
-# SLOT-06: the ring only shows on slots that can still be built on
+# The ring only shows on slots that can still be built on
 func set_buildable_visible(v: bool) -> void:
-	marker.visible = v and is_free()
+	_ring_on = v
+	marker.visible = _ring_on and is_free()
 
-# SLOT-02: RUINED shows rubble. Rubble blocks movement and is avoided by agents (SLOT-03).
+## Mouse over the slot: the ring glows white.
+func set_hovered(v: bool) -> void:
+	marker.set_instance_shader_parameter(&"hovered", 1.0 if v else 0.0)
+
+## The slot picked for building: the ring glows golden brown.
+func set_selected(v: bool) -> void:
+	marker.set_instance_shader_parameter(&"selected", 1.0 if v else 0.0)
+
+# RUINED shows rubble. Rubble blocks movement and is avoided by agents.
 func _apply_state_visuals() -> void:
 	var ruined := state == Enums.SlotState.RUINED
+	# No ring under a new tower; it returns when the tower is ruined in PREP
+	marker.visible = _ring_on and is_free()
+	marker.set_instance_shader_parameter(&"ruined", 1.0 if ruined else 0.0)
+	if not is_free():
+		set_hovered(false)
+		set_selected(false)
 	rubble.visible = ruined
 	# Deferred: the state can change inside a physics callback (tower killed by a hit)
 	rubble_shape.set_deferred(&"disabled", not ruined)
