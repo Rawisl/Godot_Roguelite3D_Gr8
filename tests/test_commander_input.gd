@@ -27,6 +27,11 @@ func _run() -> void:
 	_press([&"skill_3", &"skill_2", &"attack"])
 	_check("lower skill slot wins, skill beats attack", _next() == &"skill_2")
 
+	_press([&"heal_channel", &"mode_switch"])
+	_check("mode switch beats heal", _next() == &"mode_switch")
+	_press([&"heal_channel"])
+	_check("heal is accepted alone", _next() == &"heal_channel")
+
 	# Buffer window.
 	_busy = 0.40
 	_press([&"attack"])
@@ -64,6 +69,12 @@ func _run() -> void:
 	_busy = 0.0
 	_next()
 
+	# Heal is never queued either.
+	_busy = 0.10
+	_press([&"heal_channel"])
+	_check("heal while busy is ignored", _next() == &"" and _input.get_buffered() == &"")
+	_busy = 0.0
+
 	# Mode switch is never queued.
 	_busy = 0.10
 	_press([&"mode_switch"])
@@ -100,6 +111,15 @@ func _run() -> void:
 	_press([&"attack"])
 	EventBus.mode_changed.emit(&"COMMANDER")
 	_check("mode change clears pending presses", _next() == &"")
+
+	Input.action_press(&"move_up")
+	EventBus.state_changed.emit(&"PREP")
+	_check("wave state change drops held keys", _input.get_move_vector() == Vector2.ZERO)
+	Input.action_release(&"move_up")
+	_next()
+
+	_check("heal_channel and camera_recenter exist in InputMap",
+			InputMap.has_action(&"heal_channel") and InputMap.has_action(&"camera_recenter"))
 
 func _press(actions: Array[StringName]) -> void:
 	for action in actions:

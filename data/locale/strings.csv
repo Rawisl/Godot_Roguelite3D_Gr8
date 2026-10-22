@@ -77,6 +77,8 @@ enemy.brute,Lực sĩ
 enemy.bulwark,Bulwark
 panel.build.section_new,Xây mới
 panel.build.section_rebuild,Xây lại
+fbk.resist,RESIST
+fbk.immune,IMMUNE
 dialog.ok,Đã hiểu
 dialog.save_failed.title,Lưu thất bại
 dialog.save_failed.body,Không ghi được dữ liệu lưu. Hãy kiểm tra dung lượng ổ đĩa và quyền ghi.
