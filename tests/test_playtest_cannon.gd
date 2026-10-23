@@ -25,7 +25,8 @@ var _ring_mat: StandardMaterial3D
 ## The SlotManager is the level's Slots node (levels/corridor/slots_layout.tscn).
 @onready var slot_manager: SlotManager = %Level.get_node("%Slots")
 @onready var wave_manager: WaveManager = %WaveManager
-@onready var pool: ProjectilePool = %ProjectilePool
+## The pool the towers shoot from (Tower._get_pool): the one in levels/corridor/level.tscn.
+@onready var pool: ProjectilePool = get_tree().get_first_node_in_group(&"projectile_pool")
 @onready var enemy_root: Node3D = %Enemy
 @onready var slot_rows: VBoxContainer = %SlotRows
 @onready var actions: HBoxContainer = %Actions

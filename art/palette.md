@@ -137,3 +137,12 @@ Biến thể (Theme Type Variation) cho TV4 dùng khi cần:
 - [x] Chốt xung đột áo choàng đỏ của chỉ huy
 - [ ] Kiểm tra bằng ảnh đen trắng và công cụ giả lập mù màu
 - [x] Đưa màu UI vào `ui/theme/` (xem mục Áp dụng trong theme)
+
+## Số sát thương nổi
+
+| Tên | Hex | Dùng cho |
+|---|---|---|
+| fbk_normal | `#FFFFFF` | Sát thương thường lên quân địch |
+| fbk_resist | `#C8C8C8` | Kèm chữ RESIST hoặc IMMUNE (xám sáng để đọc được trên nền cỏ) |
+| fbk_commander | `#E04545` | Sát thương chỉ huy nhận |
+| fbk_heal | `#9CFF6A` | Số hồi máu "+n" |
