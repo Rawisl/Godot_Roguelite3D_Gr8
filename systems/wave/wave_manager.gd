@@ -158,8 +158,9 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 
 	var chosen: Array[Dictionary] = []
 
-	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt
+	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt (WAVE-08)
 	if wave_num <= 0:
+		push_warning("WAVE-08: Wave %d has 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
 	else:
 		# Step 2 (SRS 3.7.5): Newly introduced enemy types guaranteed intro_count, deducted first
@@ -227,8 +228,9 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 			chosen.append(selected)
 			budget -= selected.cost
 
-	# Fallback if somehow empty
+	# WAVE-08: Fallback if somehow empty
 	if chosen.is_empty():
+		push_warning("WAVE-08: Wave %d generated 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
 
 	# Step 4 & 5 (SRS 3.7.5): Grouping and melee-first ordering
