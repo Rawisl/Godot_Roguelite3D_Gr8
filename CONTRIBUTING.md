@@ -1,12 +1,12 @@
 # Hướng dẫn làm việc nhóm
 
-Tài liệu này dành cho 5 thành viên của dự án Chiến Tuyến Vô Tận (Endless War), sử dụng Godot 4 với đồ họa 3D và góc máy orthographic isometric. Vui lòng đọc kỹ toàn bộ nội dung trước khi bắt đầu viết code. Mọi yêu cầu chức năng đều nằm trong tài liệu **SRS-EW v1.9**. Các mã chú thích như `TWR-05`, `HUD-09`, `NAV-06` dùng để trỏ tới mục tương ứng trong tài liệu SRS.
+Tài liệu này dành cho 5 thành viên của dự án Chiến Tuyến Vô Tận (Endless War), sử dụng Godot 4 với đồ họa 3D và góc máy orthographic isometric. Vui lòng đọc kỹ toàn bộ nội dung trước khi bắt đầu viết code. Mọi yêu cầu chức năng đều nằm trong tài liệu **SRS-EW v1.9**.
 
 ---
 
 ## 1. Nguyên tắc cốt lõi
 
-1. **Mỗi người quản lý một thư mục riêng biệt.** Chỉ chỉnh sửa file trong phạm vi công việc của mình. Nếu cần thay đổi file của người khác, hãy thông báo trực tiếp cho họ hoặc tạo một Pull Request nhỏ và tag tên họ vào để review.
+1. **Mỗi người quản lý một thư mục riêng biệt.** Chỉ chỉnh sửa file trong phạm vi công việc của mình. Nếu cần thay đổi file của người khác, bạn được phép sửa trực tiếp trong Pull Request của mình, chỉ cần tag tên người sở hữu để họ biết. Việc tag chỉ để thông báo, không cần họ approve hay review mới được merge.
 2. **Tách biệt dữ liệu khỏi code.** Các chỉ số như máu, giá tiền, tầm bắn, thời gian hồi chiêu phải được lưu trong file Resource `.tres` tại thư mục `data/`. Tuyệt đối không hard-code các giá trị này trực tiếp vào script, tuân theo yêu cầu từ mục 2.5 và 6.1 của SRS. Số liệu skill của chỉ huy (SKL) nằm trong `data/skills/`.
 3. **Sử dụng `EventBus` để giao tiếp.** Các hệ thống không được gọi trực tiếp node của nhau. Ví dụ, HUD chỉ nhận tín hiệu thay vì đọc trực tiếp dữ liệu từ node gameplay theo yêu cầu UI-04.
 4. **Sử dụng hàm `tr("khoa")` cho mọi văn bản hiển thị.** Các khóa này được khai báo trong file `data/locale/strings.csv`. Tuyệt đối không viết cứng tiếng Việt trực tiếp vào scene hoặc script, tuân thủ yêu cầu LOC-01 và LOC-05.
@@ -29,7 +29,7 @@ Dự án gồm năm vai trò dựa theo Phụ lục B của tài liệu SRS và 
 
 Ghi chú về ranh giới: `SkillData` là Resource do TV3 định nghĩa schema (`common/skill_data.gd`), còn file `.tres` số liệu từng skill trong `data/skills/` do TV1 điền. Riêng cờ `hit_by_commander` nằm trong `DamageInfo` và `HealthComponent` (file dùng chung), do TV2 đề xuất và TV1 review. Settings ở bản MVP có 4 tab (Âm thanh, Đồ họa, Tiếp cận, Tài khoản). Tab Điều khiển chỉ đọc, tab Dữ liệu và tab Gameplay là `[Should]`. Cờ `heal_*` của Trạm hồi lực nằm trong `GameConfig` (TV2 sở hữu file) và `TowerData` (TV3), TV3 đề xuất giá trị. Thư mục `backend/` là thư mục mới ở cấp cao nhất, đã nằm trong phân công v3 nhưng vẫn cần cả nhóm xác nhận theo quy định ở cuối mục này. Các thư mục `systems/camera/` và `systems/sync/` cũng là thư mục mới, người sở hữu tạo kèm `.gdkeep`.
 
-Các file dùng chung cần tạo Pull Request riêng khi sửa và có thể merge ngay lập tức:
+Các file dùng chung dưới đây dễ gây xung đột cho cả nhóm. Thay đổi nhỏ gắn liền với tính năng đang làm (một dòng Autoload, một signal, một action InputMap) được phép nằm chung Pull Request của tính năng đó, miễn là ghi rõ trong mô tả và tag người sở hữu. Chỉ tách thành Pull Request riêng, merge ngay, khi thay đổi lớn hoặc không thuộc tính năng nào:
 
 | File | Lý do |
 | --- | --- |
@@ -115,7 +115,6 @@ Quy tắc đặt tên file:
 * **Lưu và mạng:** Mọi đọc ghi tiến trình đi qua `SaveRepository` (ACCT-01), không gọi thẳng `FileAccess` cho save. Các lệnh gọi mạng chạy bất đồng bộ, không chặn UI quá 100 ms và mất mạng không được làm chậm RunEnd hay cửa hàng (ACP-08). Token đăng nhập lưu ở `auth.cfg` riêng, không bao giờ nằm trong `save.json`.
 * **Bí mật:** Không commit `auth.cfg`, khóa quản trị hay mật khẩu của backend. Trong repo chỉ có khóa công khai của dự án BaaS. Thêm `auth.cfg` vào `.gitignore`.
 * **Hồi máu chỉ huy:** Không còn hồi tự động theo giây ở Commander mode. Chỉ huy hồi 35% HP tối đa khi vào PREP (`prep_heal_pct`) và qua Trạm hồi lực. Không thêm `commander_regen_pct_per_sec` trở lại.
-* **Ghi chú mã SRS:** Khi hoàn thành code đáp ứng một yêu cầu cụ thể, hãy ghi ID của yêu cầu đó vào comment hoặc nội dung commit, ví dụ như `# SELL-04`.
 
 ---
 
@@ -152,7 +151,7 @@ Mỗi khi hoàn thành một phần việc nhỏ, hãy thực hiện commit, đ�
 
 * Tiêu đề Pull Request phải tuân thủ quy ước đặt tên commit ở mục 6.
 * Một Pull Request chỉ giải quyết một chủ đề duy nhất và giới hạn ở một vài file scene để dễ kiểm duyệt.
-* Mỗi Pull Request cần ít nhất một thành viên khác xem xét duyệt lỗi. Nếu có thay đổi ở các file dùng chung như đã nêu tại mục 2, cần gắn tên người tạo ra file đó vào phần review.
+* Mỗi Pull Request cần ít nhất một thành viên khác xem xét duyệt lỗi. Nếu có thay đổi ở file dùng chung hoặc thư mục của người khác như đã nêu tại mục 2, gắn tên người sở hữu vào mô tả để thông báo, không cần họ approve.
 * Sử dụng tính năng Squash and merge để giữ cho lịch sử commit của nhánh `main` gọn gàng. Tiêu đề khi squash sẽ lấy theo tiêu đề của Pull Request.
 * Trước khi bấm tạo Pull Request, hãy đánh dấu hoàn thành danh sách sau:
 * [ ] Nhấn F5 chạy `main.tscn` không xuất hiện lỗi báo đỏ.
@@ -206,7 +205,6 @@ Chọn phạm vi thay đổi dựa theo thư mục hoặc hệ thống mà bạn
 
 * Viết commit bằng tiếng Anh, diễn đạt ngắn gọn.
 * Sử dụng các động từ mang tính mệnh lệnh chủ động như thêm, sửa, bỏ, đổi, tách.
-* Nếu commit giải quyết một yêu cầu cụ thể trong SRS, hãy ghi ID của yêu cầu đó ở cuối tiêu đề, ví dụ như mã NAV-06 hoặc tổ hợp mã SELL-02 và PNL-11.
 * Mỗi commit chỉ giải quyết một vấn đề. Không gộp nhiều thay đổi khác nhau vào chung một commit, ví dụ như không viết chung việc thêm Cannon và sửa HUD.
 * Nếu cần giải thích chi tiết, hãy xuống một dòng trống và viết mô tả vào phần thân commit. Cần tập trung giải thích lý do thực hiện thay đổi thay vì diễn giải lại đoạn code bằng văn bản.
 
@@ -310,5 +308,6 @@ Bất kỳ asset nào lấy từ nguồn bên ngoài đều phải được ghi 
 * Commit `auth.cfg`, khóa quản trị hoặc mật khẩu backend lên kho chứa code.
 * Push code khi phần Output của Godot vẫn còn báo lỗi màu đỏ.
 * Thay đổi tên file hoặc di chuyển vị trí file bằng Windows Explorer thay vì trình quản lý của Godot.
+* Thêm mã liên quan đến tài liệu SRS trong comment của code vì tài liệu này có thể bị thay đổi thường xuyên
 
 Nếu có bất kỳ thắc mắc nào liên quan đến cấu trúc dự án, ranh giới quyền quản lý file hay các yêu cầu của tài liệu SRS, hãy chủ động thảo luận và hỏi ý kiến nhóm trước khi tự mình đưa ra quyết định.
