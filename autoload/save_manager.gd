@@ -76,8 +76,8 @@ func load_save() -> Error:
 			save_loaded.emit()
 			return OK
 		_:
-			# TODO(week 10): try save.tmp then save.bak first; if all fail, keep the broken
-			# file as .corrupt and offer "New save" instead of only running on defaults.
+			# TODO(week 10): try endlesswar_save.tmp then endlesswar_save.bak first; if all fail,
+			# keep the broken file as .corrupt and offer "New save" instead of only running on defaults.
 			return _refuse_save(REASON_CORRUPT, "cannot read save (error %d)" % repository.last_error)
 
 	var version: Variant = envelope.get("save_version")
@@ -121,6 +121,7 @@ func save() -> Error:
 	return OK
 
 ## Live dictionary of one section (PROFILE, META, RUN_FLAG, FLAGS). Change it, then call save().
+## load_save() replaces data, so call this again after save_loaded instead of keeping the dictionary.
 func get_section(section: StringName) -> Dictionary:
 	# Keys come from JSON, so they are String, not StringName.
 	var key := String(section)
@@ -133,6 +134,8 @@ func _refuse_save(reason: StringName, message: String) -> Error:
 	push_warning("SaveManager: %s, running on defaults without saving" % message)
 	can_write = false
 	EventBus.save_failed.emit(reason)
+	# The game still runs on defaults, so listeners waiting to build the menu must hear about it.
+	save_loaded.emit()
 	return ERR_INVALID_DATA
 
 ## Fills keys missing from stored with defaults and keeps extra keys. JSON reads every

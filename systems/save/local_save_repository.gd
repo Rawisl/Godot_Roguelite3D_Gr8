@@ -33,8 +33,9 @@ func load_data() -> Dictionary:
 	last_error = OK
 	return json.data
 
-## TODO(week 10): write save.tmp with a checksum, read it back to verify, copy save.json
-## to save.bak, then replace save.json; delete a leftover save.tmp on startup.
+## TODO(week 10): write endlesswar_save.tmp with a checksum, read it back to verify,
+## copy endlesswar_save.json to endlesswar_save.bak, then replace endlesswar_save.json;
+## delete a leftover endlesswar_save.tmp on startup.
 func save_data(envelope: Dictionary) -> Error:
 	var dir_error := DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 	if dir_error != OK:
