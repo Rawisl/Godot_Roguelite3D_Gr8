@@ -198,6 +198,12 @@ func get_melee_slot_position(attacker: Node3D) -> Vector3:
 
 func get_free_melee_slots() -> int:
 	return _melee_slots.free_count()
+
+
+## Slot holders walk onto their slot before swinging (read by Enemy), as on towers, instead
+## of stopping attack_range short; the units waiting behind them then fit on crowd_wait_ring.
+func get_melee_arrive_distance() -> float:
+	return Tower.MELEE_ARRIVE_DISTANCE
 #endregion
 
 
