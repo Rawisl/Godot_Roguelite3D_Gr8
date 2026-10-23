@@ -10,12 +10,22 @@ const PATH_UPDATE_INTERVAL: float = 0.3
 const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
 ## slot holder blocked by the units already at the target swings.
 const STALL_ATTACK_TIME: float = 0.5
- 
+## A waiting unit this close to crowd_wait_ring has reached the ring and stands still.
+const WAIT_RING_TOLERANCE: float = 0.3
+## A knockback that carries a slot holder further than this from where it was hit frees its slot.
+const KNOCKBACK_RELEASE_DISTANCE: float = 3.0
+
+## WAIT: not moved yet, walking in to the wait ring (avoidance and walk animation apply),
+## standing for the rest of this WAIT.
+enum WaitPhase { NOT_MOVED, WALKING_IN, STANDING }
+
 @export var data: EnemyData
  
 var current_target: Node3D = null
 var current_target_position: Vector3 = Vector3.ZERO
 var has_target_position: bool = false
+## TWR-16: metres travelled along lane_curve toward the Fortress gate (bigger = closer).
+## Updated every path_update_interval by the unit itself; towers only read it.
 var nav_progress: float = 0.0
 var speed_multiplier: float = 1.0
 var is_dead: bool = false
@@ -46,8 +56,12 @@ var life_timer: float = 0.0
 var straggler_marked: bool = false
 var is_frenzied: bool = false
 var wait_timer: float = 0.0
+var _wait_phase: WaitPhase = WaitPhase.NOT_MOVED
+## Where the last knockback started, to measure how far it carried the unit.
+var _knockback_origin: Vector3 = Vector3.ZERO
 var _retarget_timer: float = 0.0
 var _path_timer: float = 0.0
+var _progress_timer: float = 0.0
 var _full_targets_until: Dictionary = {}
 ## Avoidance: safe velocity the NavAgent returned for the last desired velocity.
 var _safe_velocity: Vector3 = Vector3.ZERO
@@ -68,6 +82,9 @@ static var _cached_barricades: Array[Node] = []
 static var _cached_towers: Array[Node] = []
 static var _cached_enemies: Array[Node] = []
 static var _last_cache_frame: int = -1
+# Lane used for nav_progress (TWR-16), shared by every enemy. Looked up again when the lane node is gone, e.g. a new run reloads the level.
+static var _lane: Path3D = null
+static var _lane_ref_length: float = 0.0
  
 @onready var health: HealthComponent = %Health
 @onready var nav: NavigationAgent3D = %NavAgent
@@ -78,6 +95,7 @@ func _ready() -> void:
 	# Phase-offset timers to prevent frame spikes across groups
 	_path_timer = randf_range(0.0, PATH_UPDATE_INTERVAL)
 	_retarget_timer = randf_range(0.0, GameConfig.retarget_interval)
+	_progress_timer = randf_range(0.0, GameConfig.path_update_interval)
  
 	if data == null:
 		push_warning("Enemy missing EnemyData resource")
@@ -144,6 +162,36 @@ func _setup_navigation() -> void:
 	if not has_target_position and current_target == null:
 		_find_default_target()
  
+## TWR-16: Walking and flying units both use the projection on the
+## lane, never the navmesh path, so walking around a Barricade does not change the order.
+## Without a lane_curve the projection on x is used (TWR-15 fallback, the Fortress is on -x).
+func update_nav_progress() -> void:
+	var lane := _get_lane()
+	if lane == null:
+		nav_progress = -global_position.x
+		return
+	var local := lane.to_local(global_position)
+	# Flying units count by the point below them; the lane is drawn on the ground plane.
+	local.y = 0.0
+	var remaining := lane.curve.get_baked_length() - lane.curve.get_closest_offset(local)
+	nav_progress = _lane_ref_length - remaining
+
+# TODO(multi-lane): projects onto the first lane but uses the longest lane length.
+# Pick the enemy's own lane when a level has more than one.
+func _get_lane() -> Path3D:
+	if is_instance_valid(_lane) and _lane.is_inside_tree():
+		return _lane
+	_lane = null
+	_lane_ref_length = 0.0
+	for node in get_tree().get_nodes_in_group(&"lane_curve"):
+		var path := node as Path3D
+		if path == null or path.curve == null or path.curve.point_count < 2:
+			continue
+		if _lane == null:
+			_lane = path
+		_lane_ref_length = maxf(_lane_ref_length, path.curve.get_baked_length())
+	return _lane
+
 func can_be_targeted() -> bool:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return false
@@ -178,6 +226,8 @@ func change_state(new_state: Enums.EnemyState) -> void:
 			play_anim(&"general/Hit_B", 1.0)
 		Enums.EnemyState.WAIT:
 			wait_timer = 0.0
+			_wait_phase = WaitPhase.NOT_MOVED
+			_path_timer = PATH_UPDATE_INTERVAL  # aim at the wait ring on the first WAIT frame
 			velocity = Vector3.ZERO
 			play_anim(&"general/Idle_B", 1.0)
 		Enums.EnemyState.FRENZY:
@@ -208,6 +258,11 @@ func _physics_process(delta: float) -> void:
  
 func _update_timers(delta: float) -> void:
 	life_timer += delta
+
+	_progress_timer -= delta
+	if _progress_timer <= 0.0:
+		_progress_timer += GameConfig.path_update_interval
+		update_nav_progress()
  
 	if life_timer >= GameConfig.straggler_marker_time and not straggler_marked:
 		straggler_marked = true
@@ -314,7 +369,7 @@ func _update_state(delta: float) -> void:
 				return
  
 			if current_target != null and is_instance_valid(current_target):
-				var look_dir := (_get_attack_point(current_target) - global_position)
+				var look_dir := current_target.global_position - global_position
 				look_dir.y = 0.0
 				if look_dir.length_squared() > 0.001:
 					var target_yaw := atan2(look_dir.x, look_dir.z)
@@ -350,6 +405,7 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.STAGGER:
 			velocity.x = move_toward(velocity.x, 0.0, 10.0 * delta)
 			velocity.z = move_toward(velocity.z, 0.0, 10.0 * delta)
+			_release_slot_if_knocked_out()
 			stagger_timer -= delta
 			if stagger_timer <= 0.0:
 				knockback_immunity_timer = GameConfig.enemy_knockback_immunity_time
@@ -366,12 +422,19 @@ func _update_state(delta: float) -> void:
 			if not is_instance_valid(current_target) or not _is_target_valid(current_target):
 				_retarget_now()
 				return
+			# A slot came free (its holder died or left); take it instead of waiting out the timer.
+			if (_uses_melee_slot(current_target) and _try_hold_melee_slot(current_target)
+					and current_target.has_melee_slot(self)):
+				change_state(Enums.EnemyState.CHASE)
+				return
 			wait_timer += delta
 			if wait_timer >= GameConfig.crowd_wait_retarget_time:
 				wait_timer = 0.0
 				# CRD-02: still full after the wait, skip it for a while and choose again.
 				_skip_full_target(current_target)
 				_retarget_now()
+				return
+			_walk_to_wait_ring(delta)
  
 		Enums.EnemyState.FRENZY:
 			if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"fortress"):
@@ -469,7 +532,6 @@ func _update_navigation_movement(_delta: float) -> void:
  
 		var target_yaw := atan2(move_dir.x, move_dir.z)
 		rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
-		nav_progress = nav.distance_to_target()
 	else:
 		velocity.x = 0.0
 		velocity.z = 0.0
@@ -794,9 +856,11 @@ func set_target_position(target_pos: Vector3) -> void:
 	has_target_position = true
 	nav.target_position = target_pos
  
-## Attack point: the Fortress returns the claimed slot position (or the gate center); other targets use their own position.
+## Attack point: the Fortress returns the claimed slot position (or the gate center); a tower returns
+## its melee slot to ground melee units only, so ranged units still measure range to its body.
+## Other targets use their own position.
 func _get_attack_point(t: Node3D) -> Vector3:
-	if t.has_method(&"get_melee_slot_position"):
+	if t.has_method(&"get_melee_slot_position") and (t.is_in_group(&"fortress") or _uses_melee_slot(t)):
 		return t.get_melee_slot_position(self)
 	return t.global_position
  
@@ -804,21 +868,74 @@ func _get_attack_point(t: Node3D) -> Vector3:
 func _uses_melee_slot(t: Node3D) -> bool:
 	if t == null or not is_instance_valid(t) or not t.has_method(&"claim_melee_slot"):
 		return false
+	# Bosses are too big for a slot: they walk straight to the target.
+	if is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true):
+		return false
 	return data == null or not (data.is_ranged or data.is_flying)
  
-## Returns false when the unit must WAIT: within crowd_claim_distance of the Fortress and no slot is free.
-## Distance is measured along the corridor (X axis), since slots are spread across the gate width.
+## Returns false when the unit must WAIT: within crowd_claim_distance of the target and no slot is free.
 func _try_hold_melee_slot(t: Node3D) -> bool:
 	if not _uses_melee_slot(t) or t.has_melee_slot(self):
 		return true
-	var gate: Vector3 = t.get_melee_slot_position(self)
-	if absf(global_position.x - gate.x) > GameConfig.crowd_claim_distance:
+	if _slot_target_distance(t) > GameConfig.crowd_claim_distance:
 		return true
 	if t.claim_melee_slot(self):
 		nav.target_position = t.get_melee_slot_position(self)
 		nav.target_desired_distance = minf(nav.target_desired_distance, _slot_arrive_distance(t))
 		return true
 	return is_frenzied
+
+## Distance used by crowd_claim_distance and crowd_wait_ring. The Fortress measures along the
+## corridor (X axis) to the gate, since its slots are spread across the gate width; towers and
+## Barricades measure the flat distance to their centre.
+func _slot_target_distance(t: Node3D) -> float:
+	if t.is_in_group(&"fortress"):
+		return absf(global_position.x - t.get_melee_slot_position(self).x)
+	var d := t.global_position - global_position
+	d.y = 0.0
+	return d.length()
+
+## The place to wait on the wait ring, crowd_wait_ring from the target on the unit's side.
+func _wait_ring_point(t: Node3D) -> Vector3:
+	if t.is_in_group(&"fortress"):
+		var gate: Vector3 = t.get_melee_slot_position(self)
+		var side := signf(global_position.x - gate.x)
+		return Vector3(gate.x + (side if side != 0.0 else 1.0) * GameConfig.crowd_wait_ring, global_position.y, global_position.z)
+	var away := global_position - t.global_position
+	away.y = 0.0
+	if away.length_squared() < 0.0001:
+		return global_position
+	var p := t.global_position + away.normalized() * GameConfig.crowd_wait_ring
+	p.y = global_position.y
+	return p
+
+## A unit refused a slot walks in to the wait ring and stands there, instead of stopping
+## where it was refused (up to crowd_claim_distance out). Boxed in by the crowd before the ring,
+## it stands where it is: that is its place in the queue. It never walks back out.
+func _walk_to_wait_ring(delta: float) -> void:
+	var t := current_target
+	if _wait_phase == WaitPhase.STANDING or not _uses_melee_slot(t):
+		return
+	var arrived := _slot_target_distance(t) <= GameConfig.crowd_wait_ring + WAIT_RING_TOLERANCE
+	var boxed_in := _wait_phase == WaitPhase.WALKING_IN and _stall_time >= STALL_ATTACK_TIME
+	if arrived or boxed_in:
+		if _wait_phase == WaitPhase.WALKING_IN:
+			play_anim(&"general/Idle_B", 1.0)
+		_wait_phase = WaitPhase.STANDING
+		return
+	if _wait_phase == WaitPhase.NOT_MOVED:
+		_wait_phase = WaitPhase.WALKING_IN
+		_play_locomotion_anim()
+	var ring_point := _wait_ring_point(t)
+	_path_timer += delta
+	if _path_timer >= PATH_UPDATE_INTERVAL:
+		_path_timer = 0.0
+		nav.target_position = ring_point
+	var dir := nav.get_next_path_position() - global_position
+	dir.y = 0.0
+	if dir.length_squared() <= 0.001:
+		dir = ring_point - global_position
+	_move_towards_direction(dir)
  
 ## A unit that already holds a melee slot keeps that target on the periodic scan, even when it
 ## walks a little past it to reach its slot . The commander hit or taunt it still pulls it away (ETG-03), and a dead or RUINED target ends it.
@@ -842,6 +959,17 @@ func _slot_arrive_distance(t: Node3D) -> float:
 	if not _uses_melee_slot(t) or not t.has_melee_slot(self):
 		return INF
 	return t.get_melee_arrive_distance()
+
+## A slot holder knocked far from its slot frees it for the units waiting, but keeps its target.
+func _release_slot_if_knocked_out() -> void:
+	if current_target == null or not is_instance_valid(current_target):
+		return
+	if not _uses_melee_slot(current_target) or not current_target.has_melee_slot(self):
+		return
+	var moved := global_position - _knockback_origin
+	moved.y = 0.0
+	if moved.length() > KNOCKBACK_RELEASE_DISTANCE:
+		_release_melee_slot()
 
 func _release_melee_slot() -> void:
 	nav.target_desired_distance = data.attack_range if data else 1.0
@@ -897,7 +1025,8 @@ func _apply_avoidance(delta: float) -> void:
 		return
 	var walking := (current_state == Enums.EnemyState.ADVANCE
 		or current_state == Enums.EnemyState.CHASE
-		or current_state == Enums.EnemyState.FRENZY)
+		or current_state == Enums.EnemyState.FRENZY
+		or (current_state == Enums.EnemyState.WAIT and _wait_phase == WaitPhase.WALKING_IN))
 	var desired := Vector3(velocity.x, 0.0, velocity.z) if walking else Vector3.ZERO
 	var blocked := (walking and _has_safe_velocity and desired.length() > 0.1
 		and _safe_velocity.length() < desired.length() * 0.25)
@@ -1010,6 +1139,8 @@ func apply_knockback(force_vector: Vector3) -> void:
 	if force_mag <= 0.001 or kb_dir.length_squared() <= 0.001:
 		return
 	velocity += kb_dir.normalized() * (force_mag * KNOCKBACK_IMPULSE_SCALE)
+	if current_state != Enums.EnemyState.STAGGER:
+		_knockback_origin = global_position
 	if current_state == Enums.EnemyState.ATTACK:
 		attack_windup_timer = 0.0
 		is_attacking_active = false

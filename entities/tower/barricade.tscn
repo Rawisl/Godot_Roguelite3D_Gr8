@@ -34,20 +34,19 @@ shape = SubResource("CylinderShape3D_gd6hh")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("BoxShape3D_click")
 
-[node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="." index="6" unique_id=1436039338]
+[node name="NavigationObstacle3D" parent="." index="6" unique_id=1501938274]
 vertices = PackedVector3Array(-0.4, 0, -0.85, 0.4, 0, -0.85, 0.4, 0, 0.85, -0.4, 0, 0.85)
 
-[node name="MeleeSlots" type="Node3D" parent="." index="7" unique_id=1761828924]
-unique_name_in_owner = true
+[node name="MeleeSlots" parent="." index="7" unique_id=1384729105]
 script = ExtResource("5_bslots")
 
-[node name="P0" type="Marker3D" parent="MeleeSlots" index="0" unique_id=358471707]
+[node name="P0" parent="MeleeSlots" index="0" unique_id=1672039481]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.4)
 
-[node name="P1" type="Marker3D" parent="MeleeSlots" index="1" unique_id=1591103857]
+[node name="P1" parent="MeleeSlots" index="1" unique_id=905172634]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.99, 0, -0.99)
 
-[node name="P2" type="Marker3D" parent="MeleeSlots" index="2" unique_id=250974504]
+[node name="P2" parent="MeleeSlots" index="2" unique_id=2038471129]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4, 0, 0)
 
 [node name="P3" type="Marker3D" parent="MeleeSlots" index="3" unique_id=308090936]

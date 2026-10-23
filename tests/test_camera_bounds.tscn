@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b2ifrw2rsiq6q"]
+
+[ext_resource type="Script" uid="uid://dmswk4esvlwa4" path="res://tests/test_camera_bounds.gd" id="1_cam"]
+
+[node name="TestCameraBounds" type="Node" unique_id=246243141]
+script = ExtResource("1_cam")
