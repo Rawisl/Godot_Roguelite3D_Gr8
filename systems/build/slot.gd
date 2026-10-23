@@ -60,6 +60,9 @@ func place_tower(t: Tower) -> void:
 		return
 	t.scan_phase = _scan_phase()
 	t.slot_id = slot_id
+	# Melee units skip WALL towers and the tower refuses melee slots.
+	if zone == Enums.SlotZone.WALL:
+		t.add_to_group(&"tower_wall")
 	anchor.add_child(t)
 	t.transform = Transform3D.IDENTITY
 	tower = t
