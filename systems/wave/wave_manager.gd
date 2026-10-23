@@ -158,7 +158,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 
 	var chosen: Array[Dictionary] = []
 
-	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt (WAVE-08)
+	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt
 	if wave_num <= 0:
 		push_warning("WAVE-08: Wave %d has 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
@@ -228,7 +228,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 			chosen.append(selected)
 			budget -= selected.cost
 
-	# WAVE-08: Fallback if somehow empty
+	# Fallback if somehow empty
 	if chosen.is_empty():
 		push_warning("WAVE-08: Wave %d generated 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
@@ -315,9 +315,8 @@ func _physics_process(delta: float) -> void:
 		Enums.WaveState.COMBAT:
 			spawn_timer += delta
 			if spawn_timer >= _next_spawn_delay and not spawn_queue.is_empty():
-				# WAVE-01: Queue holds surplus enemies while enemies_alive >= max_alive (70)
-				var cap: int = scale_config.max_alive if scale_config != null else GameConfig.max_alive
-				if enemies_alive < cap:
+				# Queue holds surplus enemies while enemies_alive >= max_alive
+				if enemies_alive < GameConfig.max_alive:
 					_try_spawn_next_enemy()
 
 		Enums.WaveState.SUMMARY:
@@ -390,12 +389,12 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	enemy.spawn_grace = true
 	enemy.is_in_spawn_zone = true
 
-	# SCL-05: Apply wave scale factors at spawn time. Immutable while alive.
+	# Apply wave scale factors at spawn time. Immutable while alive.
 	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
 	var hp_mult: float = cfg.get_hp_mult(current_wave)
 	var dmg_mult: float = cfg.get_dmg_mult(current_wave)
 	var speed_mult: float = cfg.get_speed_mult(current_wave)
-	enemy.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave)
+	enemy.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave, cfg)
 
 	if enemy_container != null and is_instance_valid(enemy_container):
 		enemy_container.add_child(enemy)

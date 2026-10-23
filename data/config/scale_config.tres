@@ -13,7 +13,6 @@ spawn_duration_base = 15.0
 spawn_duration_linear = 0.5
 spawn_duration_min = 15.0
 spawn_duration_max = 45.0
-max_alive = 70
 hp_mult_base = 1.0
 hp_mult_linear = 0.1
 hp_mult_quadratic = 0.004
