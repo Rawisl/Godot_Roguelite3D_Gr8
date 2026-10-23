@@ -61,6 +61,21 @@ func _ready() -> void:
 	assert_true(mgr._enemy_arrows.any(func(fx): return fx.is_playing()), "archer hit on commander plays an enemy arrow hit")
 	_stop_all()
 
+	# Bulwark Stomp (an enemy BLAST) on the commander: no slash
+	var bulwark := Enemy.new()
+	cmd_health.take_damage(DamageInfo.new(5, Enums.DamageType.BLAST, bulwark, 0.0, Vector3.LEFT))
+	assert_true(_playing_sword_style() == null, "enemy BLAST (Stomp) on the commander plays no slash")
+	_stop_all()
+	bulwark.free()
+
+	# Muzzle flash follows the shot leaving the muzzle, not the wind-up
+	mgr._on_node_added(tower)  # a bare Tower cannot enter the tree, so hook it up directly
+	tower.shot_started.emit(enemy)
+	assert_true(_count_playing(HitFxManager.MUZZLE) == 0, "no muzzle flash at the start of the wind-up")
+	tower.shot_released.emit(Vector3(0, 3, 0), enemy)
+	assert_true(_count_playing(HitFxManager.MUZZLE) == 1, "muzzle flash when the shot is released")
+	_stop_all()
+
 	# Cannon explosion
 	mgr.play_blast(Vector3(2, 0, 0), Vector3.DOWN, 2.0)
 	assert_true(_count_playing(HitFxManager.CANNON_BLAST) == 1, "cannon explosion plays a blast")

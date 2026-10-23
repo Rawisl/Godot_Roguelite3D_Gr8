@@ -81,8 +81,8 @@ func _on_node_added(node: Node) -> void:
 			shell.exploded.connect(_on_exploded.bind(shell))
 	elif node is Tower:
 		var tower := node as Tower
-		if not tower.shot_started.is_connected(_on_shot_started):
-			tower.shot_started.connect(_on_shot_started.bind(tower))
+		if not tower.shot_released.is_connected(_on_shot_released):
+			tower.shot_released.connect(_on_shot_released.bind(tower))
 
 
 func _on_damaged(_amount: int, info: DamageInfo, target: Node3D) -> void:
@@ -103,7 +103,8 @@ func _on_damaged(_amount: int, info: DamageInfo, target: Node3D) -> void:
 		play_arrow(point, dir)
 	elif not on_enemy and source is Archer:
 		play_arrow(point, dir, true)
-	elif not on_enemy and source is Enemy:
+	elif not on_enemy and source is Enemy and info.damage_type != Enums.DamageType.BLAST:
+		# Area hits such as the Bulwark's Stomp have their own telegraph, not a slash.
 		play_sword(point, dir, slash, target.global_position.y)
 
 
@@ -112,19 +113,11 @@ func _on_exploded(center: Vector3, radius: float, _hits: int, shell: CannonProje
 	play_blast(center, dir, radius)
 
 
-## Waits for the tower's release delay so the flash shows when the shot leaves.
-func _on_shot_started(target: Node3D, tower: Tower) -> void:
-	var delay: float = tower.data.release_delay if tower.data != null else 0.0
-	if delay > 0.0:
-		await get_tree().create_timer(delay, false).timeout
-	if not is_instance_valid(tower):
-		return
-	var muzzle: Node3D = tower.get("_muzzle_node")
-	if muzzle == null:
-		muzzle = tower.muzzle
-	var aim := (target.global_position - muzzle.global_position) if is_instance_valid(target) else -tower.global_basis.z
+## The projectile has just left the muzzle.
+func _on_shot_released(muzzle_pos: Vector3, target: Node3D, tower: Tower) -> void:
+	var aim := (target.global_position - muzzle_pos) if is_instance_valid(target) else -tower.global_basis.z
 	var is_cannon := tower.data != null and tower.data.damage_type == Enums.DamageType.BLAST
-	play_muzzle(muzzle.global_position, aim, cannon_muzzle if is_cannon else arrow_muzzle)
+	play_muzzle(muzzle_pos, aim, cannon_muzzle if is_cannon else arrow_muzzle)
 
 
 func play_sword(point: Vector3, dir: Vector3, style: SwordHitStyle, ground_y := 0.0) -> void:
