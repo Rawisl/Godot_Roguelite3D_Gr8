@@ -12,6 +12,7 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
 @export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
+@export var wave_table: WaveTable = preload("res://data/waves/wave_table.tres")
 
 @export var spawn_interval: float = 0.6
 @export var default_wave_1_count: int = 8
@@ -74,10 +75,21 @@ func _setup_container() -> void:
 			spawn_zone_half_extents = box.size * 0.5
 
 
+func _get_scene_for_enemy_id(enemy_id: StringName) -> PackedScene:
+	match enemy_id:
+		&"archer":
+			return archer_scene
+		&"brute":
+			return brute_scene
+		_:
+			return grunt_scene
+
+
 func start_prep() -> void:
 	var old_state := wave_state
 	wave_state = Enums.WaveState.PREP
 	prep_timer = GameConfig.prep_time_early if current_wave <= GameConfig.prep_early_until_wave else GameConfig.prep_time_late
+	_build_spawn_queue_for_wave(current_wave)
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"PREP")
 	EventBus.prep_timer_changed.emit(prep_timer)
@@ -102,7 +114,8 @@ func start_combat() -> void:
 	EventBus.state_changed.emit(&"COMBAT")
 	EventBus.wave_started.emit(current_wave)
 
-	_build_spawn_queue_for_wave(current_wave)
+	if spawn_queue.is_empty():
+		_build_spawn_queue_for_wave(current_wave)
 	total_wave_enemies = spawn_queue.size()
 	enemies_alive = 0
 	_retry_elapsed = 0.0
@@ -111,14 +124,13 @@ func start_combat() -> void:
 	if not _spawn_delays.is_empty():
 		_next_spawn_delay = _spawn_delays.pop_front()
 	else:
-		_next_spawn_delay = spawn_interval
+		_next_spawn_delay = wave_table.group_spawn_delay_min if wave_table != null else spawn_interval
 
 	EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 
 
-## Generates the structured wave composition according to SRS 3.7.5:
-## budget(w), spawn_duration(w), intro_count, weight candidate selection,
-## caps (SPN-05, SPN-08, Brute cap), grouping, and melee-first ordering.
+## Generates the structured wave composition according to budget, intro counts,
+## archetype weights, grouping, and melee-first ordering.
 func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dictionary]:
 	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
 	var budget: int = cfg.get_budget(wave_num)
@@ -126,44 +138,42 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([p_run_seed, wave_num])
 
-	var archetypes: Array[Dictionary] = [
-		{
+	var table: WaveTable = wave_table if wave_table != null else WaveTable.new()
+	var archetypes: Array[Dictionary] = []
+	for g in table.groups:
+		if g == null or g.enemy == null:
+			continue
+		archetypes.append({
+			"id": g.enemy.id,
+			"scene": _get_scene_for_enemy_id(g.enemy.id),
+			"cost": g.enemy.spawn_cost,
+			"weight": g.weight,
+			"min_wave": g.min_wave,
+			"is_ranged": g.enemy.is_ranged,
+			"intro_count": g.intro_count,
+			"max_per_wave": g.max_per_wave
+		})
+
+	if archetypes.is_empty():
+		archetypes.append({
 			"id": &"grunt",
 			"scene": grunt_scene,
 			"cost": 1,
 			"weight": 10.0,
 			"min_wave": 1,
 			"is_ranged": false,
-			"intro_count": 0
-		},
-		{
-			"id": &"archer",
-			"scene": archer_scene,
-			"cost": 2,
-			"weight": 4.0,
-			"min_wave": 3,
-			"is_ranged": true,
-			"intro_count": 2
-		},
-		{
-			"id": &"brute",
-			"scene": brute_scene,
-			"cost": 6,
-			"weight": 2.0,
-			"min_wave": 6,
-			"is_ranged": false,
-			"intro_count": 1
-		}
-	]
+			"intro_count": 0,
+			"max_per_wave": -1
+		})
 
 	var chosen: Array[Dictionary] = []
 
-	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt (WAVE-08)
+	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt
 	if wave_num <= 0:
 		push_warning("WAVE-08: Wave %d has 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
 	else:
-		# Step 2 (SRS 3.7.5): Newly introduced enemy types guaranteed intro_count, deducted first
+		# Step 2: Newly introduced enemy types guaranteed intro_count, deducted first
 		for arch in archetypes:
 			if arch.intro_count > 0 and arch.min_wave == wave_num:
 				var needed: int = arch.intro_count
@@ -172,7 +182,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 						budget -= arch.cost
 						chosen.append(arch)
 
-		# Step 3 (SRS 3.7.5): Loop candidates satisfying min_wave, budget, caps, and weight
+		# Step 3: Loop candidates satisfying min_wave, budget, caps, and weight
 		while true:
 			var candidates: Array[Dictionary] = []
 			var current_archers: int = 0
@@ -188,10 +198,10 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 				# 1. Must satisfy min_wave
 				if wave_num < arch.min_wave:
 					continue
-				# 2. SPN-08: Waves 1-2 only contain Grunt
+				# 2. Waves 1-2 only contain Grunt
 				if wave_num <= 2 and arch.id != &"grunt":
 					continue
-				# 3. On intro wave (w == min_wave), new unit count is fixed to intro_count (SRS/Criteria)
+				# 3. On intro wave (w == min_wave), new unit count is fixed to intro_count
 				if arch.intro_count > 0 and wave_num == arch.min_wave:
 					continue
 				# 4. Budget check
@@ -202,10 +212,10 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 					var max_brutes: int = int(floor(float(wave_num) / 4.0))
 					if current_brutes >= max_brutes:
 						continue
-				# 6. SPN-05: Archer <= 40% of total wave composition
+				# 6. Archer <= archer_max_ratio of total wave composition
 				if arch.id == &"archer":
 					var projected_ratio: float = float(current_archers + 1) / float(current_total + 1)
-					if projected_ratio > 0.40:
+					if projected_ratio > table.archer_max_ratio:
 						continue
 
 				candidates.append(arch)
@@ -228,12 +238,12 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 			chosen.append(selected)
 			budget -= selected.cost
 
-	# WAVE-08: Fallback if somehow empty
+	# Fallback if somehow empty
 	if chosen.is_empty():
 		push_warning("WAVE-08: Wave %d generated 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
 
-	# Step 4 & 5 (SRS 3.7.5): Grouping and melee-first ordering
+	# Step 4 & 5: Grouping and melee-first ordering
 	var group_count: int = clampi(2 + int(floor(float(wave_num) / 5.0)), 2, 6)
 	if chosen.size() < group_count:
 		group_count = maxi(1, chosen.size())
@@ -260,8 +270,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 		var g_idx: int = i % group_count
 		groups[g_idx].append(ranged_units[i])
 
-	# Flatten into final schedule with delays (0.4-0.8s within group, 3.0s between groups)
-	var scale_factor: float = (spawn_interval / 0.6) if spawn_interval > 0.0 else 1.0
+	# Flatten into final schedule with delays from wave_table
 	var result: Array[Dictionary] = []
 
 	for g_idx in range(group_count):
@@ -270,13 +279,11 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 			var unit: Dictionary = grp[m_idx]
 			var delay: float
 			if g_idx == 0 and m_idx == 0:
-				delay = spawn_interval
+				delay = 0.0
 			elif m_idx == 0:
-				# 3.0s pause between groups (SRS 3.7.5 step 4)
-				delay = 3.0 * scale_factor
+				delay = table.group_pause
 			else:
-				# 0.4s to 0.8s between units in group
-				delay = rng.randf_range(0.4, 0.8) * scale_factor
+				delay = rng.randf_range(table.group_spawn_delay_min, table.group_spawn_delay_max)
 
 			result.append({
 				"id": unit.id,
@@ -315,7 +322,7 @@ func _physics_process(delta: float) -> void:
 		Enums.WaveState.COMBAT:
 			spawn_timer += delta
 			if spawn_timer >= _next_spawn_delay and not spawn_queue.is_empty():
-				# Throttling: Queue holds surplus enemies while enemies_alive >= max_alive (70)
+				# Queue holds surplus enemies while enemies_alive >= max_alive
 				if enemies_alive < GameConfig.max_alive:
 					_try_spawn_next_enemy()
 
@@ -342,8 +349,8 @@ func _is_position_occupied(pos: Vector3, min_dist: float = 1.0) -> bool:
 	return false
 
 
-## SPN-03: Position candidate rolled via RNG in spawn_zone.
-## If occupied within 1m, retry after 0.2s; after 3s, force spawn at the last attempted position.
+## Position candidate rolled via RNG in spawn_zone.
+## If occupied within overlap radius, retry; after timeout, force spawn at the last attempted position.
 func _try_spawn_next_enemy() -> void:
 	if spawn_queue.is_empty():
 		return
@@ -354,14 +361,18 @@ func _try_spawn_next_enemy() -> void:
 	var candidate_pos: Vector3 = spawn_point + Vector3(offset_x, 0.0, offset_z)
 	_last_candidate_pos = candidate_pos
 
-	if _is_position_occupied(candidate_pos, 1.0):
-		if _retry_elapsed < 3.0:
-			_retry_elapsed += 0.2
-			# Delay next attempt by 0.2s
-			spawn_timer = maxf(0.0, _next_spawn_delay - 0.2)
+	var overlap_r: float = wave_table.spawn_overlap_radius if wave_table != null else 1.0
+	var retry_delay: float = wave_table.spawn_retry_delay if wave_table != null else 0.2
+	var retry_timeout: float = wave_table.spawn_retry_timeout if wave_table != null else 3.0
+
+	if _is_position_occupied(candidate_pos, overlap_r):
+		if _retry_elapsed < retry_timeout:
+			_retry_elapsed += retry_delay
+			# Delay next attempt
+			spawn_timer = maxf(0.0, _next_spawn_delay - retry_delay)
 			return
 
-	# Position accepted or forced after 3s timeout
+	# Position accepted or forced after timeout
 	_retry_elapsed = 0.0
 	_spawn_enemy_at(candidate_pos)
 
@@ -370,7 +381,7 @@ func _try_spawn_next_enemy() -> void:
 	if not _spawn_delays.is_empty():
 		_next_spawn_delay = _spawn_delays.pop_front()
 	else:
-		_next_spawn_delay = spawn_interval
+		_next_spawn_delay = wave_table.group_spawn_delay_min if wave_table != null else spawn_interval
 
 
 func _spawn_enemy_at(spawn_pos: Vector3) -> void:
