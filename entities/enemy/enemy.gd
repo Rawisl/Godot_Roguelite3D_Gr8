@@ -12,7 +12,13 @@ const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into insta
 const STALL_ATTACK_TIME: float = 0.5
 ## A waiting unit this close to crowd_wait_ring has reached the ring and stands still.
 const WAIT_RING_TOLERANCE: float = 0.3
- 
+## A knockback that carries a slot holder further than this from where it was hit frees its slot.
+const KNOCKBACK_RELEASE_DISTANCE: float = 3.0
+
+## WAIT: not moved yet, walking in to the wait ring (avoidance and walk animation apply),
+## standing for the rest of this WAIT.
+enum WaitPhase { NOT_MOVED, WALKING_IN, STANDING }
+
 @export var data: EnemyData
  
 var current_target: Node3D = null
@@ -50,9 +56,9 @@ var life_timer: float = 0.0
 var straggler_marked: bool = false
 var is_frenzied: bool = false
 var wait_timer: float = 0.0
-## WAIT: 0 not moved yet, 1 walking in to the wait ring (avoidance and walk animation
-## apply), 2 standing for the rest of this WAIT.
-var _wait_phase: int = 0
+var _wait_phase: WaitPhase = WaitPhase.NOT_MOVED
+## Where the last knockback started, to measure how far it carried the unit.
+var _knockback_origin: Vector3 = Vector3.ZERO
 var _retarget_timer: float = 0.0
 var _path_timer: float = 0.0
 var _progress_timer: float = 0.0
@@ -220,7 +226,7 @@ func change_state(new_state: Enums.EnemyState) -> void:
 			play_anim(&"general/Hit_B", 1.0)
 		Enums.EnemyState.WAIT:
 			wait_timer = 0.0
-			_wait_phase = 0
+			_wait_phase = WaitPhase.NOT_MOVED
 			_path_timer = PATH_UPDATE_INTERVAL  # aim at the wait ring on the first WAIT frame
 			velocity = Vector3.ZERO
 			play_anim(&"general/Idle_B", 1.0)
@@ -363,7 +369,7 @@ func _update_state(delta: float) -> void:
 				return
  
 			if current_target != null and is_instance_valid(current_target):
-				var look_dir := (_get_attack_point(current_target) - global_position)
+				var look_dir := current_target.global_position - global_position
 				look_dir.y = 0.0
 				if look_dir.length_squared() > 0.001:
 					var target_yaw := atan2(look_dir.x, look_dir.z)
@@ -399,6 +405,7 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.STAGGER:
 			velocity.x = move_toward(velocity.x, 0.0, 10.0 * delta)
 			velocity.z = move_toward(velocity.z, 0.0, 10.0 * delta)
+			_release_slot_if_knocked_out()
 			stagger_timer -= delta
 			if stagger_timer <= 0.0:
 				knockback_immunity_timer = GameConfig.enemy_knockback_immunity_time
@@ -861,6 +868,9 @@ func _get_attack_point(t: Node3D) -> Vector3:
 func _uses_melee_slot(t: Node3D) -> bool:
 	if t == null or not is_instance_valid(t) or not t.has_method(&"claim_melee_slot"):
 		return false
+	# Bosses are too big for a slot: they walk straight to the target.
+	if is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true):
+		return false
 	return data == null or not (data.is_ranged or data.is_flying)
  
 ## Returns false when the unit must WAIT: within crowd_claim_distance of the target and no slot is free.
@@ -904,17 +914,17 @@ func _wait_ring_point(t: Node3D) -> Vector3:
 ## it stands where it is: that is its place in the queue. It never walks back out.
 func _walk_to_wait_ring(delta: float) -> void:
 	var t := current_target
-	if _wait_phase == 2 or not _uses_melee_slot(t):
+	if _wait_phase == WaitPhase.STANDING or not _uses_melee_slot(t):
 		return
 	var arrived := _slot_target_distance(t) <= GameConfig.crowd_wait_ring + WAIT_RING_TOLERANCE
-	var boxed_in := _wait_phase == 1 and _stall_time >= STALL_ATTACK_TIME
+	var boxed_in := _wait_phase == WaitPhase.WALKING_IN and _stall_time >= STALL_ATTACK_TIME
 	if arrived or boxed_in:
-		if _wait_phase == 1:
+		if _wait_phase == WaitPhase.WALKING_IN:
 			play_anim(&"general/Idle_B", 1.0)
-		_wait_phase = 2
+		_wait_phase = WaitPhase.STANDING
 		return
-	if _wait_phase == 0:
-		_wait_phase = 1
+	if _wait_phase == WaitPhase.NOT_MOVED:
+		_wait_phase = WaitPhase.WALKING_IN
 		_play_locomotion_anim()
 	var ring_point := _wait_ring_point(t)
 	_path_timer += delta
@@ -949,6 +959,17 @@ func _slot_arrive_distance(t: Node3D) -> float:
 	if not _uses_melee_slot(t) or not t.has_melee_slot(self):
 		return INF
 	return t.get_melee_arrive_distance()
+
+## A slot holder knocked far from its slot frees it for the units waiting, but keeps its target.
+func _release_slot_if_knocked_out() -> void:
+	if current_target == null or not is_instance_valid(current_target):
+		return
+	if not _uses_melee_slot(current_target) or not current_target.has_melee_slot(self):
+		return
+	var moved := global_position - _knockback_origin
+	moved.y = 0.0
+	if moved.length() > KNOCKBACK_RELEASE_DISTANCE:
+		_release_melee_slot()
 
 func _release_melee_slot() -> void:
 	nav.target_desired_distance = data.attack_range if data else 1.0
@@ -1005,7 +1026,7 @@ func _apply_avoidance(delta: float) -> void:
 	var walking := (current_state == Enums.EnemyState.ADVANCE
 		or current_state == Enums.EnemyState.CHASE
 		or current_state == Enums.EnemyState.FRENZY
-		or (current_state == Enums.EnemyState.WAIT and _wait_phase == 1))
+		or (current_state == Enums.EnemyState.WAIT and _wait_phase == WaitPhase.WALKING_IN))
 	var desired := Vector3(velocity.x, 0.0, velocity.z) if walking else Vector3.ZERO
 	var blocked := (walking and _has_safe_velocity and desired.length() > 0.1
 		and _safe_velocity.length() < desired.length() * 0.25)
@@ -1118,6 +1139,8 @@ func apply_knockback(force_vector: Vector3) -> void:
 	if force_mag <= 0.001 or kb_dir.length_squared() <= 0.001:
 		return
 	velocity += kb_dir.normalized() * (force_mag * KNOCKBACK_IMPULSE_SCALE)
+	if current_state != Enums.EnemyState.STAGGER:
+		_knockback_origin = global_position
 	if current_state == Enums.EnemyState.ATTACK:
 		attack_windup_timer = 0.0
 		is_attacking_active = false
