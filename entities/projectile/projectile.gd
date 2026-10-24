@@ -20,6 +20,8 @@ var pool_key: String = ""
  
 var source: Node = null
 var target: Node3D = null
+## Damage multiplier of the tower that fired this shot.
+var dealt_mult: float = 1.0
  
 var start_pos: Vector3 = Vector3.ZERO
 var target_pos: Vector3 = Vector3.ZERO
@@ -203,6 +205,21 @@ func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: 
 	speed = spd
 	source = src
 	source_is_enemy = (src != null and is_instance_valid(src) and src.is_in_group(&"enemy"))
+	# Kept for a shot whose tower is destroyed while it flies.
+	dealt_mult = src.get_dealt_mult() if src != null and src.has_method(&"get_dealt_mult") else 1.0
+
+## The source's damage multiplier at the moment of impact; the value saved at fire()
+## when the source tower is gone.
+func hit_dealt_mult() -> float:
+	if is_instance_valid(source) and source.has_method(&"get_dealt_mult"):
+		dealt_mult = source.get_dealt_mult()
+	return dealt_mult
+
+## raw x dealt_mult rounded to nearest once, at least 1 when raw > 0.
+static func scaled_damage(raw: float, mult: float) -> int:
+	if raw <= 0.0:
+		return 0
+	return maxi(1, roundi(raw * mult))
  
 func release() -> void:
 	if not in_use:

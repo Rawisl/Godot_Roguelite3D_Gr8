@@ -19,6 +19,9 @@ var slot_id: StringName = &""
 var target: Enemy = null
 ## True while the tower idles because every target in range is immune.
 var is_immune_blocked: bool = false
+## True while a Frontline commander stands within frontline_aura_radius. Refreshed on each scan.
+# TODO(week 7): show a small aura icon above the tower while aura_active is on.
+var aura_active: bool = false
 
 var _lv: TowerLevelData
 var _scan_t: float = 0.0
@@ -30,6 +33,7 @@ var _shot_target: Enemy = null
 var _priority_due: float = -1.0
 var _pending_priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
 var _pool: ProjectilePool = null
+var _commander: Node3D = null
 var _aim_node: Node3D = null
 var _muzzle_node: Node3D = null
 
@@ -56,6 +60,7 @@ func _ready() -> void:
 	# A destroyed tower frees every attacker's slot before the Slot turns RUINED.
 	health.died.connect(melee_slots.release_all)
 	health.died.connect(func(): destroyed.emit(self))
+	EventBus.aura_changed.connect(_on_aura_changed)
 	_scan_t = scan_phase * GameConfig.scan_interval
 
 func _exit_tree() -> void:
@@ -148,7 +153,39 @@ func _update_priority() -> void:
 ## TWR-15: pick again on every scan by the current priority, so a unit that overtakes becomes
 ## the First target within one scan_interval (test 7.1 item 6). A shot already started keeps its _shot_target.
 func _scan() -> void:
+	_update_aura()
 	target = _pick_target()
+
+## Damage multiplier applied by this tower's shots when they hit.
+func get_dealt_mult() -> float:
+	return 1.0 + (GameConfig.frontline_aura_dmg_bonus if aura_active else 0.0)
+
+## On when the commander is an aura source and within frontline_aura_radius (flat distance).
+## Towers that never attack (Barricade) stay off.
+func _update_aura() -> void:
+	var c := _get_commander()
+	if not can_attack() or c == null or not c.has_method(&"is_aura_source") or not c.is_aura_source():
+		aura_active = false
+		return
+	var d := c.global_position - global_position
+	d.y = 0.0
+	var r := GameConfig.frontline_aura_radius
+	aura_active = d.length_squared() <= r * r
+
+## The source turning off (Commander mode, stun, deploy, death) clears the flag in the
+## same frame instead of waiting for the next scan.
+func _on_aura_changed(active: bool) -> void:
+	if not active:
+		aura_active = false
+	elif can_attack():
+		_update_aura()
+
+## aura_changed only says on or off, so the distance check reads the commander's position
+## and is_aura_source() directly.
+func _get_commander() -> Node3D:
+	if _commander == null or not is_instance_valid(_commander):
+		_commander = get_tree().get_first_node_in_group(&"commander") as Node3D
+	return _commander
 
 ## One pass over the area query: each candidate is checked and scored once (TWR-15).
 func _pick_target() -> Enemy:
