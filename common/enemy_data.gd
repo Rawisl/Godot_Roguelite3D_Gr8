@@ -56,7 +56,3 @@ func get_scaled_damage(dmg_mult: float) -> int:
 
 func get_scaled_speed(speed_mult: float) -> float:
 	return move_speed * speed_mult
-
-func get_scaled_gold_reward(wave: int) -> int:
-	var mult: float = 1.0 + 0.04 * float(maxi(1, wave) - 1)
-	return int(round(float(gold_reward) * mult))

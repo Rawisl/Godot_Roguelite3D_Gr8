@@ -37,7 +37,7 @@ func _execute_attack_action() -> void:
 		else:
 			add_child(arrow)
 
-		var dmg: int = data.base_damage if data else 8
+		var dmg: int = scaled_damage if scaled_damage > 0 else (data.base_damage if data else 8)
 		var dmg_type: Enums.DamageType = data.damage_type if data else Enums.DamageType.PIERCE
 		var spd: float = data.projectile_speed if (data != null and data.projectile_speed > 0.0) else 20.0
 		arrow.launch(spawn_pos, target_center, dmg, self, dmg_type, true, 2.5, current_target, spd)
