@@ -40,6 +40,7 @@ signal mode_switch_denied(reason: StringName, remaining: float)  # HUD-06
 signal recall_started(duration: float)
 signal recall_cancelled
 signal recall_completed
+signal aura_changed(active: bool)  # Frontline aura source on/off: mode, stun, recall, deploy, death
 signal skill_cooldown_changed(skill_id: StringName, remaining: float, total: float)
 signal emergency_repair_state_changed(charges: int, cooldown: float, heal_pct: float)  # HUD-13, PNL-04
 signal emergency_repair_denied(reason: StringName)
