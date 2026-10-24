@@ -29,6 +29,7 @@ func _ready() -> void:
 		slot.slot_id = id
 		slot.zone = Enums.SlotZone.GROUND
 		add_child(slot)
-		# Identity basis: facing (basis x) points along the columns, toward spawn.
+		# Facing (basis x) points along the columns, toward spawn, on any map.
+		slot.global_basis = Basis(grid_data.column_dir.normalized(), Vector3.UP, grid_data.row_dir())
 		slot.global_position = grid_data.cell_position(cell)
 		cells[id] = slot

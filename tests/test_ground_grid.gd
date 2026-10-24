@@ -35,8 +35,9 @@ func _ready() -> void:
 		var id := GridData.cell_id(cell.x, cell.y)
 		var slot := mgr.get_slot(id)
 		placed_ok = placed_ok and slot != null and slot.name == id and slot.zone == Enums.SlotZone.GROUND \
-				and slot.global_position.is_equal_approx(grid.grid_data.cell_position(cell))
-	assert_true(placed_ok, "every slot is G_c_r, GROUND, at its cell centre")
+				and slot.global_position.is_equal_approx(grid.grid_data.cell_position(cell)) \
+				and slot.facing.is_equal_approx(grid.grid_data.column_dir.normalized())
+	assert_true(placed_ok, "every slot is G_c_r, GROUND, at its cell centre, facing along the columns")
 	for ref in [&"G_0_1", &"G_0_2", &"G_1_1", &"G_1_2"]:
 		assert_true(mgr.get_slot(ref) != null, "reference cell %s exists" % ref)
 
