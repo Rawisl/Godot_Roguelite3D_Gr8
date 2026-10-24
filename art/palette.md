@@ -69,6 +69,7 @@ Không trùng màu với model để vòng chọn, thanh máu, aura luôn tách 
 | safe_zone | `#4FE0C0` | Retreat Zone, ReturnZone |
 | build_ring | `#FFFFFF` 60% alpha | Vòng build slot ở PREP |
 | ruined | `#4A4038` | Đống đổ nát |
+| ruined_ring | `#A8876B` 80% alpha | Vòng slot RUINED trên sàn (sáng hơn `ruined` để đọc được trên cỏ) |
 | gold | `#FFC83D` | Gold, phần thưởng |
 
 ## Số nổi (FBK-01)
@@ -92,6 +93,7 @@ Không trùng màu với model để vòng chọn, thanh máu, aura luôn tách 
 | ui_alert_t1 | `#FF2D2D` | Cảnh báo T1 |
 | ui_alert_t2 | `#FF9A2E` | Cảnh báo T2 |
 | ui_alert_t3 | `#E8E05A` | Cảnh báo T3 |
+| ui_error | `#FF6B57` | Chữ báo lỗi trong form (không dùng `ui_alert_t2`, màu đó dành cho cảnh báo T2) |
 
 Nút và vùng nội dung dùng màu đá `struct_stone`, `struct_stone_light`, `env_dirt`, `struct_stone_dark` (mục Công trình, Môi trường) để đồng bộ với tường và tháp.
 
@@ -124,6 +126,15 @@ Biến thể (Theme Type Variation) cho TV4 dùng khi cần:
 | AlertT1, AlertT2, AlertT3 | PanelContainer | nền `ui_bg` 92%, viền 3 px `ui_alert_t1/t2/t3` |
 | DrawerPanel | PanelContainer | nền `env_bark`, viền `enemy_leather` |
 | DimLabel | Label | `ui_text_dim`; trong vùng sáng là `struct_stone_dark` |
+| ErrorLabel | Label | `ui_error` |
+| FormCaption | Label | `ui_text_dim`, cỡ 22 (nhãn ô nhập trong form) |
+| HudLabel | Label | `ui_text`, cỡ 20 |
+| HudHint | Label | `ui_text_dim`, cỡ 16 (chữ phụ trên HUD) |
+| Keycap | PanelContainer | nền `ui_bg_alt`, viền 2 px `ui_text`, bo 6 px (ô phím như [E]) |
+| KeycapLabel | Label | `ui_text`, cỡ 20 (chữ trong Keycap) |
+| SpeedToggle | Button | khi bật (`toggle_mode` pressed): nền `ui_accent`, viền 3 px `ui_text`, chữ `ui_bg` |
+
+Ô nhập (LineEdit) dùng chung trong theme, không cần biến thể: nền `ui_bg_alt`, viền 2 px `ui_text_dim`, focus viền `ui_accent`, chữ `ui_text` cỡ 26, gợi ý (placeholder) `ui_text_dim` 60%.
 
 ## Xung đột màu
 

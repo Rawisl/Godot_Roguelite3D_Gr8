@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://byjrhtkvs02sk"]
+
+[ext_resource type="Shader" uid="uid://btrrtobhnajxg" path="res://art/shaders/toon_dither.gdshader" id="1_pd002"]
+[ext_resource type="Texture2D" uid="uid://qqum3rv23tio" path="res://contents/assets/environment/stone/Textures/T_Stone.png" id="2_tex"]
+
+[resource]
+resource_name = "stone"
+render_priority = 0
+shader = ExtResource("1_pd002")
+shader_parameter/albedo_texture = ExtResource("2_tex")
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/bands = 2
+shader_parameter/band_softness = 0.03
+shader_parameter/shadow_tint = Color(0.3, 0.32, 0.45, 1)
+shader_parameter/light_strength = 0.75
+shader_parameter/ambient_strength = 0.55
+shader_parameter/rim_strength = 0.0
+shader_parameter/rim_width = 0.3

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dhnfkf0h488l0"]
+
+[ext_resource type="Script" uid="uid://bmi8favxjjd2r" path="res://tests/test_theme_accessibility.gd" id="1_t"]
+
+[node name="TestThemeAccessibility" type="Node" unique_id=2086558801]
+script = ExtResource("1_t")
