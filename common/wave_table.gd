@@ -6,6 +6,20 @@ extends Resource
 @export var groups: Array[WaveGroup] = []
 @export var boss_every: int = 5
 
+@export_group("Spawn Timing")
+@export var group_spawn_delay_min: float = 0.4
+@export var group_spawn_delay_max: float = 0.8
+@export var group_pause: float = 3.0
+@export var spawn_overlap_radius: float = 1.0
+@export var spawn_retry_delay: float = 0.2
+@export var spawn_retry_timeout: float = 3.0
+
+@export_group("Composition Constraints")
+@export var archer_max_ratio: float = 0.40
+@export var support_max_ratio: float = 0.20
+@export var support_min_combat: int = 3
+@export var escort_budget_ratio: float = 0.5
+
 
 func is_boss_wave(wave: int) -> bool:
 	return (wave > 0) and (wave % boss_every == 0)

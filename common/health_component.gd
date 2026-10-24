@@ -7,6 +7,7 @@ signal died
 
 @export var max_hp: int = 100
 var hp: int
+var hit_by_commander: bool = false
 
 
 func _ready() -> void:
@@ -33,6 +34,12 @@ func take_damage(damage_input: Variant, damage_type: Enums.DamageType = Enums.Da
 	var previous_hp := hp
 	hp = maxi(0, hp - amount)
 	var damage_taken := previous_hp - hp
+
+	# XP-01, XP-03: Flag flips on first damage >= 1 from commander
+	if damage_taken >= 1 and not hit_by_commander:
+		if info != null and (info.hit_by_commander or info.is_from_commander()):
+			hit_by_commander = true
+
 	hp_changed.emit(hp, max_hp)
 	damaged.emit(damage_taken, info)
 	if hp == 0:

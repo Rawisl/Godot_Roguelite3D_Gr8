@@ -9,19 +9,42 @@
 [sub_resource type="Resource" id="Resource_qtorv"]
 script = ExtResource("2_0y014")
 enemy = ExtResource("1_77civ")
+weight = 10.0
+min_wave = 1
+max_per_wave = -1
+intro_count = 0
 metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
 
 [sub_resource type="Resource" id="Resource_ejb6e"]
 script = ExtResource("2_0y014")
 enemy = ExtResource("3_tfp00")
+weight = 4.0
+min_wave = 3
+max_per_wave = -1
+intro_count = 2
 metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
 
 [sub_resource type="Resource" id="Resource_pgu2a"]
 script = ExtResource("2_0y014")
 enemy = ExtResource("4_ufkje")
+weight = 2.0
+min_wave = 6
+max_per_wave = -1
+intro_count = 1
 metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
 
 [resource]
 script = ExtResource("1_yya70")
 groups = Array[Resource]([SubResource("Resource_qtorv"), SubResource("Resource_ejb6e"), SubResource("Resource_pgu2a")])
+boss_every = 5
+group_spawn_delay_min = 0.4
+group_spawn_delay_max = 0.8
+group_pause = 3.0
+spawn_overlap_radius = 1.0
+spawn_retry_delay = 0.2
+spawn_retry_timeout = 3.0
+archer_max_ratio = 0.4
+support_max_ratio = 0.2
+support_min_combat = 3
+escort_budget_ratio = 0.5
 metadata/_custom_type_script = "uid://bykknpph6d0of"
