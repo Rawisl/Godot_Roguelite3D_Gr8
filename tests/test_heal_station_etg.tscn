@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://chealstationetg01"]
+
+[ext_resource type="Script" path="res://tests/test_heal_station_etg.gd" id="1_test_script"]
+
+[node name="TestHealStationETG" type="Node"]
+script = ExtResource("1_test_script")

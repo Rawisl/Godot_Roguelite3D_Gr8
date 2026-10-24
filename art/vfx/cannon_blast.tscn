@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://btgjx1ge74i7m"]
+
+[ext_resource type="Script" uid="uid://nt26w7a5gr0e" path="res://art/vfx/cannon_blast.gd" id="1_blast"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_core"]
+transparency = 1
+shading_mode = 0
+
+[sub_resource type="SphereMesh" id="Mesh_core"]
+radial_segments = 10
+rings = 5
+
+[sub_resource type="StandardMaterial3D" id="Mat_ring"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.84, 0.84, 0.84, 0)
+
+[sub_resource type="TorusMesh" id="Mesh_ring"]
+inner_radius = 0.82
+rings = 24
+ring_segments = 4
+
+[sub_resource type="StandardMaterial3D" id="Mat_puff"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+
+[sub_resource type="SphereMesh" id="Mesh_puff"]
+material = SubResource("Mat_puff")
+radius = 0.3
+height = 0.6
+radial_segments = 6
+rings = 3
+
+[sub_resource type="Curve" id="Curve_puff"]
+_data = [Vector2(0, 0.5), 0.0, 2.0, 0, 0, Vector2(0.35, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.7), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_puff"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(0.62, 0.62, 0.62, 0.9, 0.55, 0.55, 0.55, 0.6, 0.5, 0.5, 0.5, 0)
+
+[node name="CannonBlast" type="Node3D" unique_id=1336545159]
+script = ExtResource("1_blast")
+blast_size = 0.6
+ring_size = 0.5
+ring_alpha = 0.2
+smoke_spread = 180.0
+smoke_distance = 1.5
+ring_grow_time = 0.3
+ring_travel = 0.7
+
+[node name="Core" type="MeshInstance3D" parent="." unique_id=732170304]
+material_override = SubResource("Mat_core")
+cast_shadow = 0
+mesh = SubResource("Mesh_core")
+
+[node name="Ring" type="MeshInstance3D" parent="." unique_id=424061603]
+material_override = SubResource("Mat_ring")
+cast_shadow = 0
+mesh = SubResource("Mesh_ring")
+
+[node name="Puffs" type="CPUParticles3D" parent="." unique_id=433481497]
+cast_shadow = 0
+emitting = false
+amount = 10
+lifetime = 0.8
+one_shot = true
+explosiveness = 0.9
+randomness = 0.3
+mesh = SubResource("Mesh_puff")
+emission_shape = 1
+emission_sphere_radius = 0.3
+direction = Vector3(0, 0, -1)
+spread = 60.0
+gravity = Vector3(0, 0.6, 0)
+initial_velocity_min = 1.5
+initial_velocity_max = 3.0
+damping_min = 3.0
+damping_max = 4.0
+scale_amount_min = 0.8
+scale_amount_max = 1.4
+scale_amount_curve = SubResource("Curve_puff")
+color_ramp = SubResource("Gradient_puff")

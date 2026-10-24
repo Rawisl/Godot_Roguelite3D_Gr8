@@ -1567,9 +1567,9 @@ Giá trị tương đương mỗi mốc khoảng 80% gold tích lũy tự nhiên
 
 | **Tệp** | **Nội dung** |
 | --- | --- |
-| user://save.json | Tiến trình chính |
-| user://save.bak | Bản chính trước lần ghi gần nhất |
-| user://save.tmp | Bản đang ghi dở |
+| user://endlesswar_save.json | Tiến trình chính |
+| user://endlesswar_save.bak | Bản chính trước lần ghi gần nhất |
+| user://endlesswar_save.tmp | Bản đang ghi dở |
 | user://save.premigrate.bak | \[Should] Bản trước migration (giữ một bản) |
 | user://settings.cfg | Cài đặt, **tách riêng** khỏi save |
 
@@ -1606,19 +1606,19 @@ unlocked_starts **không lưu**, luôn tính lại từ max_wave_cleared. Ba tr�
 
 ### 3.12.2 Quy trình ghi
 
-1. Serialize data, tính checksum, ghi ra save.tmp.
-2. Đọc lại save.tmp, kiểm tra parse và checksum. Sai thì hủy, giữ bản cũ.
-3. Nếu save.json tồn tại: sao chép thành save.bak.
-4. Thay save.json bằng save.tmp (xóa bản cũ trước rồi đổi tên nếu nền tảng không cho ghi đè).
+1. Serialize data, tính checksum, ghi ra endlesswar_save.tmp.
+2. Đọc lại endlesswar_save.tmp, kiểm tra parse và checksum. Sai thì hủy, giữ bản cũ.
+3. Nếu endlesswar_save.json tồn tại: sao chép thành endlesswar_save.bak.
+4. Thay endlesswar_save.json bằng endlesswar_save.tmp (xóa bản cũ trước rồi đổi tên nếu nền tảng không cho ghi đè).
 
 | **ID** | **Đặc tả** |
 | --- | --- |
-| SAV-01 | **Thứ tự tải:** save.json, save.tmp (nếu hợp lệ), save.bak. Bản đầu tiên qua checksum và version được dùng |
+| SAV-01 | **Thứ tự tải:** endlesswar_save.json, endlesswar_save.tmp (nếu hợp lệ), endlesswar_save.bak. Bản đầu tiên qua checksum và version được dùng |
 | SAV-02 | Tất cả hỏng: thông báo, "Tạo save mới", giữ tệp hỏng đổi tên .corrupt |
 | SAV-03 | Ghi một luồng có hàng đợi. Nhiều yêu cầu gần nhau gộp thành một lần ghi mới nhất |
 | SAV-04 | **Thời điểm ghi:** xác nhận StartSelect \[Should], SUMMARY mỗi wave, RunEnd, mua ở shop, kích hoạt buff \[Should], hoàn tất tutorial. **Không ghi trong COMBAT** |
 | SAV-05 | Ghi ở SUMMARY hoàn tất trước khi hiển thị màn tổng kết |
-| SAV-06 | Dọn save.tmp mồ côi khi khởi động (sau khi xét SAV-01) |
+| SAV-06 | Dọn endlesswar_save.tmp mồ côi khi khởi động (sau khi xét SAV-01) |
 
 ### 3.12.3 Migration
 
@@ -1649,7 +1649,7 @@ Khi khởi động, **trước** MainMenu, nếu run_in_progress = true:
 | --- | --- | --- |
 | SAV-12 | Ổ đĩa đầy, không quyền ghi | Giữ trong bộ nhớ, thông báo lỗi kèm "Thử lại". RunEnd có "Tiếp tục không lưu" kèm cảnh báo. Mua shop bị hoàn tác |
 | SAV-13 | Tắt game giữa lúc ghi | Quy trình 4 bước và SAV-01 đảm bảo không có trạng thái nửa vời |
-| SAV-14 | Sửa tay save.json | Checksum sai, chuyển sang .bak |
+| SAV-14 | Sửa tay endlesswar_save.json | Checksum sai, chuyển sang .bak |
 | SAV-15 | Chạy hai phiên bản cùng lúc | "Bản sau thắng", không khóa tệp ở MVP |
 | SAV-16 | Xóa tiến trình | Xác nhận hai bước, đổi tên save.deleted, không xóa settings.cfg |
 | SAV-17 | Chuyển máy | Copy thư mục user:// là đủ, **trừ auth.cfg** (phiên đăng nhập không dùng được ở máy khác, phải đăng nhập lại; ACCT-03). Có tài khoản thì chuyển máy bằng đăng nhập và đồng bộ (ACCT-05) |
@@ -1664,8 +1664,8 @@ Mục đích: thêm yếu tố online cho game. Tài khoản chỉ là lớp b�
 | --- | --- | --- |
 | ACCT-01 | **SaveRepository.** Mọi thao tác đọc ghi tiến trình đi qua một giao diện SaveRepository với hai bản cài đặt: LocalSaveRepository (mục 3.12, bắt buộc) và CloudSaveRepository. Tách giao diện này là việc kiến trúc rẻ, làm từ Tuần 6 để không phải sửa lại save/load khi thêm tài khoản | MVP (kiến trúc) |
 | ACCT-02 | **Chơi khách.** Trạng thái mặc định là GUEST. Mọi chức năng chơi được như cũ, không có hạng trên bảng xếp hạng. Đăng nhập là tùy chọn, từ MainMenu hoặc Settings | MVP |
-| ACCT-03 | **Đăng ký, đăng nhập, đăng xuất** bằng email và mật khẩu qua dịch vụ xác thực có sẵn của nhà cung cấp backend. Client không tự lưu mật khẩu, không chứa khóa quản trị, chỉ dùng khóa công khai. Phiên đăng nhập (token, có hạn dùng và được làm mới) lưu ở tệp riêng user://auth.cfg, **không nằm trong save.json** và không nằm trong quy trình chuyển máy (SAV-17). Đăng xuất xóa auth.cfg và về GUEST. Khởi động thử khôi phục phiên, không được thì về GUEST và báo nhẹ | MVP |
-| ACCT-04 | **Dữ liệu đồng bộ:** profile, meta (levels, unlocks, buff_stock), flags. **Không đồng bộ:** run_flag, settings.cfg, mọi trạng thái trong run, auth.cfg. save.json thêm ba trường ngoài `data` (mục 3.12.1): revision, updated_at, device_id | MVP |
+| ACCT-03 | **Đăng ký, đăng nhập, đăng xuất** bằng email và mật khẩu qua dịch vụ xác thực có sẵn của nhà cung cấp backend. Client không tự lưu mật khẩu, không chứa khóa quản trị, chỉ dùng khóa công khai. Phiên đăng nhập (token, có hạn dùng và được làm mới) lưu ở tệp riêng user://auth.cfg, **không nằm trong endlesswar_save.json** và không nằm trong quy trình chuyển máy (SAV-17). Đăng xuất xóa auth.cfg và về GUEST. Khởi động thử khôi phục phiên, không được thì về GUEST và báo nhẹ | MVP |
+| ACCT-04 | **Dữ liệu đồng bộ:** profile, meta (levels, unlocks, buff_stock), flags. **Không đồng bộ:** run_flag, settings.cfg, mọi trạng thái trong run, auth.cfg. endlesswar_save.json thêm ba trường ngoài `data` (mục 3.12.1): revision, updated_at, device_id | MVP |
 | ACCT-05 | **Thời điểm đồng bộ:** khi đăng nhập (kéo và so sánh), ở RunEnd, sau mỗi lần mua ở shop. Không đồng bộ trong COMBAT (SAV-04). SUMMARY mỗi wave chỉ ghi cục bộ. Ghi cloud chạy bất đồng bộ, luôn ghi cục bộ trước, không chặn UI và không làm ghi save vượt ACP-06 | MVP |
 | ACCT-06 | **Xung đột (MVP rút gọn).** Cùng device_id thì bản có revision cao hơn thắng. Khác device_id và revision lệch nhau: lấy bản có revision cao hơn, hiện thông báo "Đã dùng dữ liệu từ máy khác" và giữ bản kia ở save.conflict.bak. \[Should] Hộp thoại cho người chơi chọn bản giữ lại, hiển thị prestige_balance, max_wave_cleared, total_runs của mỗi bên. **Không tự gộp** danh vọng | MVP / SHOULD |
 | ACCT-07 | **Mất mạng (MVP rút gọn).** Chơi tiếp bình thường. Yêu cầu gửi lỗi thì thử lại ở lần RunEnd hoặc mua shop kế tiếp (gửi bản mới nhất). Timeout sync_timeout 10 s. MainMenu hiện biểu tượng kèm chữ trạng thái: GUEST, SYNCED, SYNCING, OFFLINE, ERROR. Lỗi mạng không bao giờ chặn RunEnd hay mua shop. \[Should] Hàng đợi nền gộp bản mới nhất (như SAV-03) và trạng thái CONFLICT | MVP / SHOULD |
@@ -2344,7 +2344,7 @@ Bảng giá trị đầy đủ nằm ở mục đã trỏ. Dưới đây chỉ g
 
 ## 6.8 Cấu trúc save
 
-Xem mục 3.12.1. settings.cfg là tệp riêng, cấu trúc ConfigFile của Godot, chứa âm lượng bus và cài đặt đồ họa (xem ghi chú cuối mục 6.3). user://auth.cfg là tệp riêng cho phiên đăng nhập (ACCT-03), không thuộc save.json và không đồng bộ. Các trường revision, updated_at, device_id nằm cạnh checksum (mục 3.12.1).
+Xem mục 3.12.1. settings.cfg là tệp riêng, cấu trúc ConfigFile của Godot, chứa âm lượng bus và cài đặt đồ họa (xem ghi chú cuối mục 6.3). user://auth.cfg là tệp riêng cho phiên đăng nhập (ACCT-03), không thuộc endlesswar_save.json và không đồng bộ. Các trường revision, updated_at, device_id nằm cạnh checksum (mục 3.12.1).
 
 ## 6.9 Danh mục tín hiệu EventBus
 
@@ -2487,7 +2487,7 @@ Các test Overload, Retreat, ép x1 ở T-20, cảnh báo y% và retarget sau Ov
 9. \[Should] BUFF_WARD bật, ép fortress_armor_pct = 60% bằng công cụ debug: raw 100 gây ceil(100 × 0.4 × 0.75) = 30. TRUE (cú rơi khỏi map) không bị giảm (DMG-05, mục 3.6.1, APL-03).
 10. \[Should] Mở mốc 10 sau khi hoàn thành wave 10. Chơi từ mốc 10 lên wave 20 mở mốc 20 và ghi best_by_start\["10"] riêng.
 11. Mất điện giữa wave 7: lần mở sau tự chốt run theo waves_cleared đã ghi ở SUMMARY wave 6, thông báo một lần.
-12. Xóa save.json giữa lúc chơi: nạp từ save.bak. Hỏng cả hai: thông báo, giữ .corrupt.
+12. Xóa endlesswar_save.json giữa lúc chơi: nạp từ endlesswar_save.bak. Hỏng cả hai: thông báo, giữ .corrupt.
 13. Sửa checksum: chuyển .bak. save_version lớn hơn: từ chối nạp, không ghi đè (SAV-09). \[Should] Migrate không mất dữ liệu (SAV-07, SAV-08).
 14. RunEnd: run_kills, run_gold_earned, bosses_defeated và loại tower gây nhiều sát thương nhất khớp số liệu chơi. run_kills và bosses_defeated cộng vào profile.stats, tăng profile.stats.total_runs thêm 1, đúng một lần, run_gold_earned và damage_by_tower_type không lưu (mục 3.2.4, BRW-06).
 15. Mở hai phiên bản game cùng lúc: bản ghi sau thắng, không lỗi, save không hỏng (SAV-15).
@@ -2596,12 +2596,12 @@ Pause, giá sửa, trần armor, tải quét (v1.3), hoàn tác bán \[Should]
 | # | Test | Liên quan |
 | --- | --- | --- |
 | AC1 | Không mạng, hoặc online_enabled = false: game khởi động và chơi trọn vẹn như khách, nút online ẩn hoặc báo không kết nối, không lỗi console | ACCT-02, ACCT-12 |
-| AC2 | Đăng nhập, đóng game, mở lại: phiên được khôi phục từ auth.cfg. Đăng xuất xóa auth.cfg. save.json không chứa token | ACCT-03, ACCT-04 |
+| AC2 | Đăng nhập, đóng game, mở lại: phiên được khôi phục từ auth.cfg. Đăng xuất xóa auth.cfg. endlesswar_save.json không chứa token | ACCT-03, ACCT-04 |
 | AC3 | Hai máy lệch revision: lấy bản revision cao hơn, hiện thông báo, bản kia giữ ở save.conflict.bak. \[Should] Hộp thoại chọn bản. Không tự gộp | ACCT-06 |
 | AC4 | Ngắt mạng giữa lúc RunEnd: RunEnd và shop vẫn hoàn tất, yêu cầu gửi lại ở RunEnd hoặc mua shop kế tiếp, biểu tượng đúng trạng thái | ACCT-05, ACCT-07 |
 | AC5 | Không gửi đồng bộ trong COMBAT. Ghi save cục bộ vẫn dưới 50 ms khi đang đồng bộ | ACCT-05, ACP-06, ACP-08 |
 | AC6 | Xếp hạng: hai tài khoản cùng waves_cleared thì run_elapsed nhỏ hơn xếp trên; trùng cả hai thì gửi trước xếp trên. Hạng của chính mình hiện dòng riêng khi ngoài top 50 | LBD-04, LBD-08 |
-| AC7 | Không được tính điểm: tài khoản khách, run bắt đầu từ wave > 1, run khôi phục sau gián đoạn. Điểm lấy từ RunState, sửa max_wave_cleared trong save.json không đổi hạng | LBD-02, LBD-05 |
+| AC7 | Không được tính điểm: tài khoản khách, run bắt đầu từ wave > 1, run khôi phục sau gián đoạn. Điểm lấy từ RunState, sửa max_wave_cleared trong endlesswar_save.json không đổi hạng | LBD-02, LBD-05 |
 | AC8 | Máy chủ từ chối điểm vô lý (ví dụ 40 wave trong 100 s) và dữ liệu của tài khoản khác | LBD-06, ACCT-09 |
 
 

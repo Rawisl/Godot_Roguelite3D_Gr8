@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cefmxlblr31ce"]
+
+[ext_resource type="Script" uid="uid://ckylwbmeopj57" path="res://art/vfx/arrow_hit.gd" id="1_hit"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_ring"]
+transparency = 1
+cull_mode = 2
+no_depth_test = true
+shading_mode = 0
+albedo_color = Color(0.95, 0.94, 0.9, 0)
+
+[sub_resource type="TorusMesh" id="Mesh_ring"]
+inner_radius = 0.86
+rings = 20
+ring_segments = 4
+
+[sub_resource type="StandardMaterial3D" id="Mat_spark"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+
+[sub_resource type="BoxMesh" id="Mesh_spark"]
+material = SubResource("Mat_spark")
+size = Vector3(0.03, 0.16, 0.03)
+
+[node name="ArrowHit" type="Node3D" unique_id=2046986186]
+script = ExtResource("1_hit")
+ring_size_end = 1.0
+spark_count = 5
+spark_size_start = 3.0
+spark_size_end = 1.0
+spark_time = 0.4
+spark_spread = 60.0
+
+[node name="Ring" type="MeshInstance3D" parent="." unique_id=243646127]
+material_override = SubResource("Mat_ring")
+cast_shadow = 0
+mesh = SubResource("Mesh_ring")
+
+[node name="Sparks" type="CPUParticles3D" parent="." unique_id=2059487571]
+cast_shadow = 0
+emitting = false
+amount = 6
+lifetime = 0.3
+one_shot = true
+explosiveness = 1.0
+randomness = 0.3
+mesh = SubResource("Mesh_spark")
+particle_flag_align_y = true
+direction = Vector3(0, 0, -1)
+spread = 35.0
+gravity = Vector3(0, -6, 0)
+initial_velocity_min = 2.4
+initial_velocity_max = 4.0
+damping_min = 4.0
+damping_max = 6.0
