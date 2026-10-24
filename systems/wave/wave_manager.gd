@@ -417,7 +417,7 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 
 
-func _on_enemy_died(_enemy_type: StringName, _pos: Vector3, _gold: int, _prestige: int, _is_cull: bool) -> void:
+func _on_enemy_died(_enemy_type: StringName, _pos: Vector3, _gold: int, _prestige: int, _is_cull: bool, _hit_by_commander: bool = false) -> void:
 	if wave_state == Enums.WaveState.COMBAT:
 		enemies_alive = maxi(0, enemies_alive - 1)
 		EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)

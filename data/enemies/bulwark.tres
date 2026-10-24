@@ -5,4 +5,5 @@
 [resource]
 script = ExtResource("1_x7rpu")
 knockback_immune = true
+xp_value = 30
 metadata/_custom_type_script = "uid://b5nxx0eyswlc0"

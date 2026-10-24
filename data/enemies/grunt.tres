@@ -24,4 +24,5 @@ avoid_priority = 1
 target_rules = Array[StringName]([&"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
 gold_reward = 4
 prestige_reward = 1
+xp_value = 1
 metadata/_custom_type_script = "uid://b5nxx0eyswlc0"
