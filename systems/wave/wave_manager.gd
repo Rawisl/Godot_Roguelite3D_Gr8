@@ -400,6 +400,13 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	enemy.spawn_grace = true
 	enemy.is_in_spawn_zone = true
 
+	# Apply wave scale factors at spawn time. Immutable while alive.
+	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
+	var hp_mult: float = cfg.get_hp_mult(current_wave)
+	var dmg_mult: float = cfg.get_dmg_mult(current_wave)
+	var speed_mult: float = cfg.get_speed_mult(current_wave)
+	enemy.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave, cfg)
+
 	if enemy_container != null and is_instance_valid(enemy_container):
 		enemy_container.add_child(enemy)
 	else:
@@ -410,7 +417,7 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 
 
-func _on_enemy_died(_enemy_type: StringName, _pos: Vector3, _gold: int, _prestige: int, _is_cull: bool) -> void:
+func _on_enemy_died(_enemy_type: StringName, _pos: Vector3, _gold: int, _prestige: int, _is_cull: bool, _hit_by_commander: bool = false) -> void:
 	if wave_state == Enums.WaveState.COMBAT:
 		enemies_alive = maxi(0, enemies_alive - 1)
 		EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)

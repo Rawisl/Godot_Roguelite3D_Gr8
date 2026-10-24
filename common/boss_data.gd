@@ -28,6 +28,10 @@ extends EnemyData
 @export var boss_gold: int = 100
 @export var boss_prestige: int = 15
 
+
+func _init() -> void:
+	xp_value = 30
+
 @export_group("Stomp Attack")
 @export var stomp_damage: int = 45
 @export var stomp_radius: float = 3.0
