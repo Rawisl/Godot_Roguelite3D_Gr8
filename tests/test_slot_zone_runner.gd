@@ -1,7 +1,7 @@
 extends Node
 
 ## Automated test runner verifying:
-## - SRS 1.8: SlotZone is only WALL and GROUND; corridor has 6 WALL + 8 GROUND slots
+## - SlotZone is only WALL and GROUND; corridor has 6 WALL slots + one GROUND slot per GridData cell
 ## - BLD-06: WALL menu has Arrow and Cannon only, GROUND menu has Arrow, Cannon, Barricade
 ## - Slot.allowed_types narrows the zone, never widens it
 ## - SLOT-05: missing W slot, wrong prefix and duplicate slot_id are logged on load
@@ -77,13 +77,14 @@ func test_zone_enum() -> void:
 	slot.free()
 
 func test_corridor_layout() -> void:
-	print("\n[GROUP 2] Corridor layout: 6 WALL + 8 GROUND (SLOT-05)")
+	print("\n[GROUP 2] Corridor layout: 6 WALL + GridData GROUND cells (SLOT-05)")
 	var level := LEVEL_SCENE.instantiate()
 	add_child(level)
 	var mgr := _make_manager(level)
-	assert_true(mgr.get_all_slots().size() == 14, "corridor has 14 slots (got %d)" % mgr.get_all_slots().size())
+	var cells: int = (level.get_node("Slots/GroundGrid") as GroundGrid).cells.size()
+	assert_true(mgr.get_all_slots().size() == 6 + cells, "corridor has %d slots (got %d)" % [6 + cells, mgr.get_all_slots().size()])
 	assert_true(mgr.get_slots_in_zone(Enums.SlotZone.WALL).size() == 6, "6 WALL slots")
-	assert_true(mgr.get_slots_in_zone(Enums.SlotZone.GROUND).size() == 8, "8 GROUND slots")
+	assert_true(mgr.get_slots_in_zone(Enums.SlotZone.GROUND).size() == cells, "%d GROUND slots, one per grid cell" % cells)
 	assert_true(mgr.get_layout_problems().is_empty(), "no layout problems: %s" % ", ".join(mgr.get_layout_problems()))
 	var order: PackedStringArray = []
 	for s in mgr.get_all_slots():
