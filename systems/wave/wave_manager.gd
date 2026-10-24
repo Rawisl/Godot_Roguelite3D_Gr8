@@ -400,12 +400,12 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	enemy.spawn_grace = true
 	enemy.is_in_spawn_zone = true
 
-	# SCL-05: Apply wave scale factors at spawn time. Immutable while alive.
+	# Apply wave scale factors at spawn time. Immutable while alive.
 	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
 	var hp_mult: float = cfg.get_hp_mult(current_wave)
 	var dmg_mult: float = cfg.get_dmg_mult(current_wave)
 	var speed_mult: float = cfg.get_speed_mult(current_wave)
-	enemy.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave)
+	enemy.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave, cfg)
 
 	if enemy_container != null and is_instance_valid(enemy_container):
 		enemy_container.add_child(enemy)

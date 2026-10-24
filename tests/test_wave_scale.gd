@@ -25,6 +25,8 @@ func _ready() -> void:
 	test_scl01_and_scl02_scale_config_formulas()
 	test_scl02_budget_soft_cap_at_wave_40()
 	test_scl05_enemy_spawn_time_hp_and_damage_scaling()
+	test_scl05_scaling_applied_before_entering_tree()
+	test_frenzy_speed_multiplier_compounds_wave_speed()
 	test_scl05_archer_projectile_damage_scaling()
 	test_scl05_stats_immutable_while_alive()
 	test_scl05_gold_reward_scaling_rwd02()
@@ -148,6 +150,59 @@ func test_scl05_enemy_spawn_time_hp_and_damage_scaling() -> void:
 	wm.queue_free()
 
 
+func test_scl05_scaling_applied_before_entering_tree() -> void:
+	print("\n[GROUP 3B] Testing Scaling Applied Before Node Enters Scene Tree (WaveManager Execution Flow)")
+	var wm := WaveManager.new()
+	add_child(wm)
+	var cfg := SCALE_CONFIG_RES
+
+	# Wave 5: Grunt base HP 40 * 1.464 = 59; base DMG 6 * 1.272 = 8; speed 1.020
+	var grunt: Enemy = GRUNT_SCENE.instantiate() as Enemy
+	# Verify health component is not yet initialized prior to entering tree
+	assert_true(grunt.health == null, "Enemy health is not yet initialized before entering scene tree")
+
+	# WaveManager applies scale BEFORE add_child
+	grunt.apply_wave_scale(cfg.get_hp_mult(5), cfg.get_dmg_mult(5), cfg.get_speed_mult(5), 5, cfg)
+
+	# Now add to scene tree
+	wm.add_child(grunt)
+
+	# Verify health.max_hp and stats after entering tree and running _ready()
+	assert_true(grunt.health != null, "Enemy health initialized upon entering scene tree")
+	assert_true(grunt.health.max_hp == 59, "health.max_hp correctly scaled to 59 when scale was applied before add_child")
+	assert_true(grunt.health.hp == 59, "health.hp correctly initialized to max_hp (59)")
+	assert_true(grunt.scaled_damage == 8, "scaled_damage correctly set to 8")
+	assert_true(is_equal_approx(grunt.speed_multiplier, 1.020), "speed_multiplier correctly set to 1.020")
+
+	grunt.queue_free()
+	wm.queue_free()
+
+
+func test_frenzy_speed_multiplier_compounds_wave_speed() -> void:
+	print("\n[GROUP 3C] Testing Frenzy State Compounds Wave Speed Scale (wave_speed_mult * frenzy_speed_mult)")
+	var wm := WaveManager.new()
+	add_child(wm)
+	var cfg := SCALE_CONFIG_RES
+
+	# Wave 10 Grunt: speed_mult = 1.045
+	var grunt: Enemy = GRUNT_SCENE.instantiate() as Enemy
+	var wave_spd := cfg.get_speed_mult(10)
+	grunt.apply_wave_scale(cfg.get_hp_mult(10), cfg.get_dmg_mult(10), wave_spd, 10, cfg)
+	wm.add_child(grunt)
+
+	assert_true(is_equal_approx(grunt.speed_multiplier, wave_spd), "Initial speed_multiplier matches wave_speed_mult (1.045)")
+
+	# Enter Frenzy state
+	grunt.change_state(Enums.EnemyState.FRENZY)
+
+	var expected_frenzy_spd := wave_spd * GameConfig.frenzy_speed_mult
+	assert_true(grunt.current_state == Enums.EnemyState.FRENZY, "Enemy transitioned to FRENZY state")
+	assert_true(is_equal_approx(grunt.speed_multiplier, expected_frenzy_spd), "Frenzy speed_multiplier == wave_speed_mult * frenzy_speed_mult (%.4f == %.4f)" % [grunt.speed_multiplier, expected_frenzy_spd])
+
+	grunt.queue_free()
+	wm.queue_free()
+
+
 func test_scl05_archer_projectile_damage_scaling() -> void:
 	print("\n[GROUP 4] Testing SCL-05 Archer Projectile Damage Scaling")
 	var wm := WaveManager.new()
@@ -226,7 +281,7 @@ func test_scl05_stats_immutable_while_alive() -> void:
 
 
 func test_scl05_gold_reward_scaling_rwd02() -> void:
-	print("\n[GROUP 6] Testing RWD-02 Scaled Gold Reward on Death")
+	print("\n[GROUP 6] Testing Scaled Gold Reward on Death and Custom ScaleConfig Growth")
 	var wm := WaveManager.new()
 	add_child(wm)
 	var cfg := SCALE_CONFIG_RES
@@ -239,40 +294,60 @@ func test_scl05_gold_reward_scaling_rwd02() -> void:
 	# Wave 10 Grunt: base_gold 4 * (1 + 0.04 * 9) = 4 * 1.36 = 5.44 -> round 5
 	var grunt_w10: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt_w10.position = Vector3(14.0, 0.0, 0.0)
+	grunt_w10.apply_wave_scale(cfg.get_hp_mult(10), cfg.get_dmg_mult(10), cfg.get_speed_mult(10), 10, cfg)
 	wm.add_child(grunt_w10)
-	grunt_w10.apply_wave_scale(cfg.get_hp_mult(10), cfg.get_dmg_mult(10), cfg.get_speed_mult(10), 10)
 
 	grunt_w10._on_died()
-	assert_true(res.gold == 5, "Wave 10 Grunt death emitted scaled gold (5 gold per RWD-02, not base 4)")
+	assert_true(res.gold == 5, "Wave 10 Grunt death emitted scaled gold (5 gold per ScaleConfig formula, not base 4)")
+	grunt_w10.queue_free()
+
+	# Test with custom ScaleConfig having modified gold_growth_per_wave (e.g. 0.10)
+	var custom_cfg := ScaleConfig.new()
+	custom_cfg.gold_growth_per_wave = 0.10
+	# Wave 10 with 0.10: 4 * (1 + 0.10 * 9) = 4 * 1.9 = 7.6 -> round 8
+	var grunt_custom: Enemy = GRUNT_SCENE.instantiate() as Enemy
+	grunt_custom.position = Vector3(14.0, 0.0, 0.0)
+	grunt_custom.apply_wave_scale(custom_cfg.get_hp_mult(10), custom_cfg.get_dmg_mult(10), custom_cfg.get_speed_mult(10), 10, custom_cfg)
+	wm.add_child(grunt_custom)
+
+	grunt_custom._on_died()
+	assert_true(res.gold == 8, "Modifying ScaleConfig.gold_growth_per_wave to 0.10 dynamically changes reward to 8 (ScaleConfig controls value)")
 
 	EventBus.enemy_died.disconnect(on_died)
-	grunt_w10.queue_free()
+	grunt_custom.queue_free()
 	wm.queue_free()
 
 
 func test_wave01_max_alive_queue_throttling() -> void:
-	print("\n[GROUP 7] Testing WAVE-01 Max Alive (70) Queue Throttling")
+	print("\n[GROUP 7] Testing Max Alive (70) Queue Throttling With Large Wave")
 	var wm := WaveManager.new()
 	wm.spawn_interval = 0.01
 	add_child(wm)
 
-	assert_true(wm.scale_config.max_alive == 70, "ScaleConfig max_alive == 70 (WAVE-01)")
+	assert_true(GameConfig.max_alive == 70, "GameConfig max_alive == 70")
 
-	wm.current_wave = 1
-	wm.start_combat()
-	assert_true(wm.spawn_queue.size() == 8, "Combat started with 8 queued enemies")
+	# Build a large queue of 85 units to thoroughly test surplus units waiting scenario
+	wm.current_wave = 25
+	wm.spawn_queue.clear()
+	const LARGE_WAVE_COUNT := 85
+	for _i in range(LARGE_WAVE_COUNT):
+		wm.spawn_queue.append(GRUNT_SCENE)
+	wm.total_wave_enemies = LARGE_WAVE_COUNT
+	wm.wave_state = Enums.WaveState.COMBAT
+
+	assert_true(wm.spawn_queue.size() == LARGE_WAVE_COUNT, "Queue populated with %d enemies (exceeding max_alive 70)" % LARGE_WAVE_COUNT)
 
 	# When enemies_alive reaches max_alive (70)
-	wm.enemies_alive = 70
+	wm.enemies_alive = GameConfig.max_alive
 	for _i in range(15):
 		wm._physics_process(0.1)
 
-	assert_true(wm.spawn_queue.size() == 8, "All 8 enemies remain safely in queue while enemies_alive >= 70 (WAVE-01)")
+	assert_true(wm.spawn_queue.size() == LARGE_WAVE_COUNT, "All %d surplus enemies remain safely in queue while enemies_alive >= 70" % LARGE_WAVE_COUNT)
 
-	# Drop below 70
-	wm.enemies_alive = 69
+	# Drop enemies_alive below 70
+	wm.enemies_alive = GameConfig.max_alive - 1
 	wm._physics_process(0.1)
-	assert_true(wm.spawn_queue.size() < 8, "Spawner resumed popping queue when enemies_alive dropped below 70")
+	assert_true(wm.spawn_queue.size() == LARGE_WAVE_COUNT - 1, "Spawner resumed popping queue when enemies_alive dropped to 69 (queue size is now %d)" % wm.spawn_queue.size())
 
 	wm.queue_free()
 

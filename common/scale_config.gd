@@ -2,7 +2,7 @@ class_name ScaleConfig
 extends Resource
 
 ## Endless wave difficulty scale configuration 
-## Tunable in .tres resource file (SCL-01)
+## Tunable in .tres resource file
 
 @export_group("Budget & Duration")
 @export var budget_base: float = 8.0
@@ -14,7 +14,6 @@ extends Resource
 @export var spawn_duration_linear: float = 0.5
 @export var spawn_duration_min: float = 15.0
 @export var spawn_duration_max: float = 45.0
-@export var max_alive: int = 70
 
 @export_group("Multipliers")
 @export var hp_mult_base: float = 1.0
@@ -43,7 +42,7 @@ func get_raw_budget(wave: int) -> float:
 	return budget_base + budget_linear * x + budget_quadratic * (x * x)
 
 
-## SCL-02: After scale_soft_cap_wave (40), growth is reduced by budget_soft_cap_factor (0.5):
+## After scale_soft_cap_wave (40), growth is reduced by budget_soft_cap_factor (0.5):
 ## budget(w) = round(f(40) + budget_soft_cap_factor * (f(w) - f(40)))
 func get_budget(wave: int) -> int:
 	var w: int = maxi(1, wave)
@@ -78,7 +77,7 @@ func get_speed_mult(wave: int) -> float:
 	return minf(speed_mult_max, speed_mult_base + speed_mult_linear * x)
 
 
-## gold_reward(w) = gold_reward_base * (1 + 0.04(w-1)) (RWD-02)
+## gold_reward(w) = gold_reward_base * (1 + 0.04(w-1))
 func get_gold_reward(base_gold: int, wave: int) -> int:
 	var mult: float = 1.0 + gold_growth_per_wave * float(maxi(1, wave) - 1)
 	return int(round(float(base_gold) * mult))
