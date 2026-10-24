@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://ba4wrca3dl21t"]
+
+[ext_resource type="Script" uid="uid://dh6yp6fcx75e2" path="res://art/vfx/muzzle_flash.gd" id="1_muzzle"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_flash"]
+transparency = 1
+shading_mode = 0
+
+[sub_resource type="SphereMesh" id="Mesh_flash"]
+radial_segments = 8
+rings = 4
+
+[sub_resource type="StandardMaterial3D" id="Mat_puff"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+
+[sub_resource type="SphereMesh" id="Mesh_puff"]
+material = SubResource("Mat_puff")
+radius = 0.12
+height = 0.24
+radial_segments = 6
+rings = 3
+
+[node name="MuzzleFlash" type="Node3D" unique_id=289751711]
+script = ExtResource("1_muzzle")
+
+[node name="Flash" type="MeshInstance3D" parent="." unique_id=358238743]
+material_override = SubResource("Mat_flash")
+cast_shadow = 0
+mesh = SubResource("Mesh_flash")
+
+[node name="Puffs" type="CPUParticles3D" parent="." unique_id=1660152992]
+cast_shadow = 0
+emitting = false
+amount = 4
+lifetime = 0.5
+one_shot = true
+explosiveness = 0.9
+randomness = 0.3
+mesh = SubResource("Mesh_puff")
+direction = Vector3(0, 0, -1)
+spread = 25.0
+gravity = Vector3(0, 0.5, 0)
+initial_velocity_min = 1.2
+initial_velocity_max = 2.0
+damping_min = 3.0
+damping_max = 4.0

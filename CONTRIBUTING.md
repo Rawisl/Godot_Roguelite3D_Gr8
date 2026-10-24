@@ -112,7 +112,7 @@ Quy tắc đặt tên file:
 * **Xử lý thời gian:** Mọi logic gameplay phải sử dụng thời gian trong game thông qua hệ thống `TimeManager`. Tuyệt đối không dùng hàm `Time.get_ticks_msec()` cho thời gian hồi chiêu hoặc timer liên quan đến gameplay, vì sẽ gây sai sót logic khi người chơi tua nhanh thời gian bằng tốc độ x2 hoặc x3.
 * **Sát thương và XP:** Mọi nguồn sát thương, kể cả skill và vùng cháy theo tick, phải đi qua `HealthComponent` với `DamageInfo` có `damage_type` và `source` để cờ `hit_by_commander` hoạt động (XP-03, CMB-10). Không trừ máu trực tiếp.
 * **Ngẫu nhiên có seed:** Mọi RNG gameplay (sinh wave, thẻ REWARD_PICK) dùng `run_seed` theo RWP-05 và SPN-05. Không gọi `randi()` toàn cục trong logic gameplay để test và replay tái hiện được.
-* **Lưu và mạng:** Mọi đọc ghi tiến trình đi qua `SaveRepository` (ACCT-01), không gọi thẳng `FileAccess` cho save. Các lệnh gọi mạng chạy bất đồng bộ, không chặn UI quá 100 ms và mất mạng không được làm chậm RunEnd hay cửa hàng (ACP-08). Token đăng nhập lưu ở `auth.cfg` riêng, không bao giờ nằm trong `save.json`.
+* **Lưu và mạng:** Mọi đọc ghi tiến trình đi qua `SaveRepository` (ACCT-01), không gọi thẳng `FileAccess` cho save. Các lệnh gọi mạng chạy bất đồng bộ, không chặn UI quá 100 ms và mất mạng không được làm chậm RunEnd hay cửa hàng (ACP-08). Token đăng nhập lưu ở `auth.cfg` riêng, không bao giờ nằm trong `endlesswar_save.json`.
 * **Bí mật:** Không commit `auth.cfg`, khóa quản trị hay mật khẩu của backend. Trong repo chỉ có khóa công khai của dự án BaaS. Thêm `auth.cfg` vào `.gitignore`.
 * **Hồi máu chỉ huy:** Không còn hồi tự động theo giây ở Commander mode. Chỉ huy hồi 35% HP tối đa khi vào PREP (`prep_heal_pct`) và qua Trạm hồi lực. Không thêm `commander_regen_pct_per_sec` trở lại.
 

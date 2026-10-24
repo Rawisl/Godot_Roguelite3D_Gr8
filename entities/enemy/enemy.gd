@@ -97,6 +97,13 @@ static var _cached_barricades: Array[Node] = []
 static var _cached_towers: Array[Node] = []
 static var _cached_enemies: Array[Node] = []
 static var _last_cache_frame: int = -1
+static var _node_cache_events_connected := false
+
+static func invalidate_node_cache() -> void:
+	_last_cache_frame = -1
+	_cached_barricades.clear()
+	_cached_towers.clear()
+	_cached_enemies.clear()
 # Lane used for nav_progress (TWR-16), shared by every enemy. Looked up again when the lane node is gone, e.g. a new run reloads the level.
 static var _lane: Path3D = null
 static var _lane_ref_length: float = 0.0
@@ -106,6 +113,12 @@ static var _lane_ref_length: float = 0.0
  
 func _ready() -> void:
 	add_to_group(&"enemy")
+
+	if not _node_cache_events_connected and EventBus != null:
+		_node_cache_events_connected = true
+		EventBus.tower_built.connect(func(_slot_id, _type): invalidate_node_cache())
+		EventBus.tower_destroyed.connect(func(_slot_id): invalidate_node_cache())
+		EventBus.tower_sold.connect(func(_slot_id): invalidate_node_cache())
  
 	# Phase-offset timers to prevent frame spikes across groups
 	_path_timer = randf_range(0.0, PATH_UPDATE_INTERVAL)
@@ -597,7 +610,7 @@ func _is_target_ahead(target_pos: Vector3, tolerance: float = 0.5) -> bool:
 	return to_target.dot(advance_dir) >= -tolerance
  
 func _is_target_valid(t: Node3D) -> bool:
-	if t == null or not is_instance_valid(t):
+	if t == null or not is_instance_valid(t) or t.is_queued_for_deletion():
 		return false
 	if _is_skipped_full_target(t):
 		return false

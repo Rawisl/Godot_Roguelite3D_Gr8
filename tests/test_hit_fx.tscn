@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dlt22rwkjbfjn"]
+
+[ext_resource type="Script" uid="uid://br8gr05qqjab7" path="res://tests/test_hit_fx.gd" id="1_hitfx"]
+
+[node name="TestHitFx" type="Node" unique_id=1925420082]
+script = ExtResource("1_hitfx")
