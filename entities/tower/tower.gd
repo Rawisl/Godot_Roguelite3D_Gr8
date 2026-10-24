@@ -3,6 +3,8 @@ extends StaticBody3D
 
 signal destroyed(tower: Tower)
 signal shot_started(target: Node3D)
+## The projectile leaves the muzzle now; not emitted when the shot is dropped or retried.
+signal shot_released(muzzle_pos: Vector3, target: Node3D)
 
 ## Melee attackers walk this close to their attack position before swinging (read by Enemy),
 ## so a unit does not stop short and block the way to the positions next to it.
@@ -270,6 +272,7 @@ func _release_shot() -> void:
 		return
 	_release_t = -1.0
 	var from := (_muzzle_node if _muzzle_node != null else muzzle).global_position
+	shot_released.emit(from, _shot_target)
 	p.fire(from, _shot_target, _lv.damage, data.damage_type, data.projectile_speed, self)
 	_shot_target = null
 

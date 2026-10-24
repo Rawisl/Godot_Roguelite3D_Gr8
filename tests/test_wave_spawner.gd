@@ -30,6 +30,7 @@ func _ready() -> void:
 	test_grouping_and_melee_first()
 	test_queue_throttling_max_alive()
 	test_spn03_overlap_retry_and_timeout()
+	test_wave_table_dynamic_tuning()
 
 	print("=======================================================")
 	print("W6-KT2 TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -231,6 +232,11 @@ func test_grouping_and_melee_first() -> void:
 func test_queue_throttling_max_alive() -> void:
 	print("\n[GROUP 8] Testing Queue Throttling (Holding surplus enemies when enemies_alive >= max_alive)")
 	var wm := WaveManager.new()
+	var custom_table := wm.wave_table.duplicate() as WaveTable
+	custom_table.group_spawn_delay_min = 0.01
+	custom_table.group_spawn_delay_max = 0.01
+	custom_table.group_pause = 0.01
+	wm.wave_table = custom_table
 	wm.spawn_interval = 0.01
 	add_child(wm)
 
@@ -261,6 +267,11 @@ func test_queue_throttling_max_alive() -> void:
 func test_spn03_overlap_retry_and_timeout() -> void:
 	print("\n[GROUP 9] Testing SPN-03 Overlap Avoidance and 3s Force-Spawn Timeout")
 	var wm := WaveManager.new()
+	var custom_table := wm.wave_table.duplicate() as WaveTable
+	custom_table.group_spawn_delay_min = 0.01
+	custom_table.group_spawn_delay_max = 0.01
+	custom_table.spawn_retry_delay = 0.01
+	wm.wave_table = custom_table
 	wm.spawn_interval = 0.01
 	add_child(wm)
 
@@ -278,4 +289,30 @@ func test_spn03_overlap_retry_and_timeout() -> void:
 	assert_true(wm._is_position_occupied(Vector3(14.0, 0.0, 5.0), 1.0) == false, "Position outside 1m of existing enemy detected as clear")
 
 	dummy_enemy.queue_free()
+	wm.queue_free()
+
+
+func test_wave_table_dynamic_tuning() -> void:
+	print("\n[GROUP 10] Testing WaveTable Dynamic Tuning via Resource (SCL-01, DAT-02)")
+	var wm := WaveManager.new()
+	var custom_table: WaveTable = wm.wave_table.duplicate() as WaveTable
+	for g in custom_table.groups:
+		if g.enemy != null and g.enemy.id == &"grunt":
+			g.weight = 0.1
+		elif g.enemy != null and g.enemy.id == &"archer":
+			g.weight = 100.0
+	custom_table.group_pause = 1.5
+	wm.wave_table = custom_table
+	add_child(wm)
+
+	var comp := wm.generate_wave_composition(4, 42)
+	assert_true(comp.size() > 0, "Composition generated with custom WaveTable")
+
+	var group1_first_delay: float = -1.0
+	for u in comp:
+		if u.group_index == 1:
+			group1_first_delay = u.delay
+			break
+	assert_true(is_equal_approx(group1_first_delay, 1.5), "Group 1 pause reflects custom WaveTable.group_pause (1.5s)")
+
 	wm.queue_free()
