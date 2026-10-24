@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TowerData" format=3]
+
+[ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_lvl"]
+[ext_resource type="Resource" path="res://data/towers/heal_station_l1.tres" id="2_l1"]
+[ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="3_dat"]
+
+[resource]
+script = ExtResource("3_dat")
+id = &"heal_station"
+display_name = "tower.heal_station"
+allowed_zones = Array[int]([1])
+targets_ground = false
+targets_air = false
+levels = Array[ExtResource("1_lvl")]([ExtResource("2_l1")])
+metadata/_custom_type_script = "uid://dpqaacof5680d"
