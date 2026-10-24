@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://crjn2jkgywwl" path="res://systems/camera/camera_bounds.gd" id="13_cambounds"]
 [ext_resource type="Script" uid="uid://bcwal67js7t1k" path="res://art/vfx/damage_number_layer.gd" id="13_dmgnum"]
 [ext_resource type="Script" uid="uid://btpnvocgvhv15" path="res://art/vfx/hit_fx_manager.gd" id="14_hitfx"]
+[ext_resource type="Script" uid="uid://bi0ehmxyhpdpo" path="res://levels/corridor/ground_grid.gd" id="15_ggrid"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -158,6 +159,13 @@ curve = SubResource("Curve3D_lane")
 
 [node name="Slots" parent="." unique_id=1229477472 instance=ExtResource("12_slots")]
 unique_name_in_owner = true
+
+[node name="GroundGrid" type="Node3D" parent="Slots" unique_id=1748256093 node_paths=PackedStringArray("lane", "spawn_zone", "return_zone", "command_post")]
+script = ExtResource("15_ggrid")
+lane = NodePath("../../LaneCurve")
+spawn_zone = NodePath("../../SpawnZone")
+return_zone = NodePath("../../Markers/ReturnZone")
+command_post = NodePath("../../Markers/CommandPost")
 
 [node name="Markers" type="Node3D" parent="." unique_id=969002018]
 

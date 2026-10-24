@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://cj1vy38heolln"]
+
+[ext_resource type="PackedScene" uid="uid://ba5n2nn40orik" path="res://contents/assets/environment/rubble/rubble.glb" id="1_jlbtm"]
+[ext_resource type="Material" uid="uid://byjrhtkvs02sk" path="res://contents/assets/environment/stone/Textures/stone_material.tres" id="2_jlbtm"]
+
+[node name="RubbleModel" type="Node3D" unique_id=252606864 groups=["occluder"]]
+
+[node name="rubble" parent="." unique_id=716037064 instance=ExtResource("1_jlbtm")]
+unique_name_in_owner = true
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
+
+[node name="Stone_big_004" parent="rubble" index="0" unique_id=1781183980]
+material_override = ExtResource("2_jlbtm")
+
+[node name="Stone_mid_008" parent="rubble" index="1" unique_id=1080215184]
+material_override = ExtResource("2_jlbtm")
+
+[editable path="rubble"]

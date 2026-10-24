@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d34pubvexvdt1"]
+
+[ext_resource type="Script" uid="uid://br2dlroaio2lk" path="res://tests/test_ground_grid_view.gd" id="1_v"]
+
+[node name="TestGroundGridView" type="Node" unique_id=1426361037]
+script = ExtResource("1_v")
