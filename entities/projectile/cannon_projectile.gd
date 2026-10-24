@@ -81,6 +81,7 @@ func explode(center: Vector3) -> int:
 	if _radius <= 0.0 or damage <= 0:
 		return 0
 	var valid_src: Node = source if is_instance_valid(source) else null
+	var mult := hit_dealt_mult()
 	var hits := 0
 	for node in get_tree().get_nodes_in_group(&"enemy"):
 		var e := node as Enemy
@@ -89,7 +90,8 @@ func explode(center: Vector3) -> int:
 		var d := e.global_position.distance_to(center)
 		if d > _radius:
 			continue
-		var amount := blast_damage(damage, d, _radius, _edge_mult)
+		# Falloff and dealt_mult are applied before the single rounding.
+		var amount := scaled_damage(blast_raw(damage, d, _radius, _edge_mult), mult)
 		if amount <= 0:
 			continue
 		var dir := e.global_position - center
@@ -105,9 +107,14 @@ func explode(center: Vector3) -> int:
 
 ## PRJ-02: 100% at the centre, edge_mult at the radius, linear in between.
 static func blast_damage(base: int, dist: float, radius: float, edge_mult: float) -> int:
+	return roundi(blast_raw(base, dist, radius, edge_mult))
+
+
+## Blast damage before rounding, 0 outside the radius.
+static func blast_raw(base: int, dist: float, radius: float, edge_mult: float) -> float:
 	if radius <= 0.0 or dist > radius:
-		return 0
-	return roundi(base * lerpf(1.0, edge_mult, dist / radius))
+		return 0.0
+	return base * lerpf(1.0, edge_mult, dist / radius)
 
 
 ## Test hook: set the blast numbers without a Tower.
@@ -117,3 +124,4 @@ func setup_blast(dmg: int, radius: float, edge_mult: float, src: Node = null) ->
 	_radius = radius
 	_edge_mult = edge_mult
 	source = src
+	dealt_mult = src.get_dealt_mult() if src != null and src.has_method(&"get_dealt_mult") else 1.0
