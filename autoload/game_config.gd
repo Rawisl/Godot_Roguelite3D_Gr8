@@ -51,6 +51,11 @@ extends Node
 @export var max_attackers_per_tower: int = 3
 @export var sell_undo_window: float = 3.0
 
+@export_group("Heal Station")
+@export var heal_tower_max_count: int = 2
+@export var heal_tower_limit_lv: int = 6
+@export var heal_tower_dmg_norm_exp: float = 0.5
+
 @export_group("Ground Grid")
 @export var grid_cell_size: float = 2.0
 @export var grid_pick_size: float = 1.9
