@@ -22,7 +22,7 @@ signal fortress_repaired(amount: int, source: StringName)  # source: GOLD | EMER
 #-----------------------Enemy-----------------------#
 
 signal enemy_spawned(enemy: Node)
-signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: int, prestige: int, is_cull: bool)  # is_cull: khong thuong, khong tinh kill (RWD-03)
+signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool)  # is_cull: khong thuong, khong tinh kill (RWD-03), hit_by_commander (XP-01, XP-03)
 signal enemy_count_changed(alive: int, queued: int, total: int)  # HUD-03, nguong nhac 20 va 45
 signal straggler_marker_shown(enemy: Node)  # EN-01, sau 60 s
 signal frenzy_started(enemy: Node)  # EN-02, sau 240 s
