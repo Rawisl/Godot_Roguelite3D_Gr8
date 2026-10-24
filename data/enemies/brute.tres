@@ -22,4 +22,5 @@ avoid_priority = 3
 target_rules = Array[StringName]([&"FORTRESS"])
 gold_reward = 20
 prestige_reward = 5
+xp_value = 5
 metadata/_custom_type_script = "uid://b5nxx0eyswlc0"

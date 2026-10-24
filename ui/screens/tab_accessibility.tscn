@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://c6wy7kvpvwrtf"]
 
+[ext_resource type="Script" uid="uid://cnse513kctt01" path="res://ui/screens/tab_accessibility.gd" id="1_acc"]
+
 [node name="TabAccessibility" type="Control" unique_id=985882398]
 layout_mode = 3
 anchors_preset = 15
@@ -7,8 +9,35 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_acc")
 
-[node name="Label" type="Label" parent="." unique_id=1315757147]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="Rows" type="VBoxContainer" parent="." unique_id=1315757147]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="ShakeRow" type="HBoxContainer" parent="Rows" unique_id=1820452917]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="ShakeLabel" type="Label" parent="Rows/ShakeRow" unique_id=640187356]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Shake" type="OptionButton" parent="Rows/ShakeRow" unique_id=1149937024]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="ReduceFlash" type="CheckButton" parent="Rows" unique_id=377621850]
+unique_name_in_owner = true
+layout_mode = 2
