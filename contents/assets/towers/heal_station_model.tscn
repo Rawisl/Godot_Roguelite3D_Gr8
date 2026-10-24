@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://d07b3hic7ijcr"]
+
+[ext_resource type="PackedScene" uid="uid://b3fyf1uikahcq" path="res://contents/assets/fortress/fbx/full/_BRAZIER_1.fbx" id="1_fwdkp"]
+[ext_resource type="Material" uid="uid://b0fb6r7b475r0" path="res://contents/assets/towers/texture/heal_station_material.tres" id="2_v16ip"]
+
+[node name="HealStationModel" type="Node3D" unique_id=623208619 groups=["occluder"]]
+
+[node name="Level1" parent="." unique_id=298098890 instance=ExtResource("1_fwdkp")]
+unique_name_in_owner = true
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
+
+[node name="BRAZIER_1" parent="Level1" index="0" unique_id=1904734981]
+material_override = ExtResource("2_v16ip")
+
+[editable path="Level1"]

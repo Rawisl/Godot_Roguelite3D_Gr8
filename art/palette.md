@@ -69,6 +69,7 @@ Không trùng màu với model để vòng chọn, thanh máu, aura luôn tách 
 | safe_zone | `#4FE0C0` | Retreat Zone, ReturnZone |
 | build_ring | `#FFFFFF` 60% alpha | Vòng build slot ở PREP |
 | ruined | `#4A4038` | Đống đổ nát |
+| ruined_ring | `#A8876B` 80% alpha | Vòng slot RUINED trên sàn (sáng hơn `ruined` để đọc được trên cỏ) |
 | gold | `#FFC83D` | Gold, phần thưởng |
 
 ## Số nổi (FBK-01)
