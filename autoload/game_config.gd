@@ -126,6 +126,10 @@ extends Node
 @export var display_name_min_len: int = 3
 @export var display_name_max_len: int = 16
 
+@export_group("Frontline")
+@export var frontline_aura_radius: float = 12.0
+@export var frontline_aura_dmg_bonus: float = 0.20
+
 @export_group("Timing and Performance")
 @export var fps_downscale_floor: float = 30.0
 @export var fps_downscale_duration: float = 3.0

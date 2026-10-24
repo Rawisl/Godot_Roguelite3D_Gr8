@@ -45,6 +45,9 @@ var _hit_reaction_timer: float = 0.0
 var _post_action_timer: float = 0.0
 var _post_action_facing_dir: Vector3 = Vector3.ZERO
 
+# Last value sent on EventBus.aura_changed
+var _aura_on: bool = false
+
 # Stun state
 var is_stunned: bool = false
 var _stun_timer: float = 0.0
@@ -96,6 +99,7 @@ func _ready() -> void:
 	_setup_heal_channel()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
+	_refresh_aura.call_deferred()
 
 
 func _setup_health() -> void:
@@ -157,6 +161,7 @@ func _physics_process(delta: float) -> void:
 		_recover_from_fall()
 
 	_update_cooldowns_and_timers(delta)
+	_refresh_aura()
 
 	if is_commander_mode:
 		_cmd_input.discard()
@@ -791,6 +796,7 @@ func apply_stun(duration: float = -1.0) -> bool:
 
 	is_stunned = true
 	_stun_timer = maxf(_stun_timer, clamped_dur)
+	_refresh_aura()
 	_hit_reaction_timer = 0.0
 	_post_action_timer = 0.0
 	_post_action_facing_dir = Vector3.ZERO
@@ -869,6 +875,7 @@ func _on_died() -> void:
 	if is_attacking:
 		_interrupt_attack()
 	_interrupt_skill()
+	_refresh_aura()
 	EventBus.commander_died.emit()
 	if _anim_player != null and _anim_player.has_animation(ANIM_DEATH):
 		_anim_player.play(ANIM_DEATH)
@@ -890,6 +897,25 @@ func _on_mode_changed(mode: StringName) -> void:
 			_interrupt_attack()
 		_interrupt_skill()
 		_battle_cry_active_timer = 0.0
+	_refresh_aura()
+
+
+## Frontline aura source: on in Frontline (dodging included), off while Stunned,
+## Deploying, dead or in Commander mode. Towers read this on each scan.
+# TODO(week 7): also off while Recalling, once the Recall state exists; call _refresh_aura() when it starts and ends.
+func is_aura_source() -> bool:
+	return (not is_commander_mode and not is_dead and not is_stunned
+		and not is_deploying
+		and health != null and health.hp > 0)
+
+
+## Emits EventBus.aura_changed only when the source state flips, in the frame it flips.
+func _refresh_aura() -> void:
+	var on := is_aura_source()
+	if on == _aura_on:
+		return
+	_aura_on = on
+	EventBus.aura_changed.emit(on)
 
 
 func _debug_report_speed(delta: float) -> void:
