@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TowerLevelData" format=3]
+
+[ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_lvl"]
+
+[resource]
+script = ExtResource("1_lvl")
+build_cost = 80
+max_hp = 300
+attack_range = 0.0
+fire_rate = 0.0
+metadata/_custom_type_script = "uid://dhh3dg0ixuheg"
