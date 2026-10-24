@@ -333,7 +333,7 @@ func test_wave01_max_alive_queue_throttling() -> void:
 	for _i in range(LARGE_WAVE_COUNT):
 		wm.spawn_queue.append(GRUNT_SCENE)
 	wm.total_wave_enemies = LARGE_WAVE_COUNT
-	wm.current_state = Enums.WaveState.COMBAT
+	wm.wave_state = Enums.WaveState.COMBAT
 
 	assert_true(wm.spawn_queue.size() == LARGE_WAVE_COUNT, "Queue populated with %d enemies (exceeding max_alive 70)" % LARGE_WAVE_COUNT)
 
