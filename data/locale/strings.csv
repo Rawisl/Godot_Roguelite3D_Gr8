@@ -55,6 +55,7 @@ panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {h
 tower.arrow,Tháp cung
 tower.cannon,Tháp pháo
 tower.barricade,Rào chắn
+tower.heal_station,Trạm hồi lực
 panel.tower.level,Cấp {level}
 panel.tower.hp,Máu {value}/{max}
 panel.tower.upgrade,Nâng cấp - {gold} vàng
