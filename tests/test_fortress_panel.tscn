@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://bdefe5vmi7mv2"]
+
+[ext_resource type="PackedScene" uid="uid://og55jctucxje" path="res://main.tscn" id="1_2whry"]
+[ext_resource type="Script" uid="uid://dt56xvbql0sw" path="res://tests/test_fortress_panel.gd" id="2_28s5r"]
+
+[node name="TestFortressPanel" type="Node3D" unique_id=1470463753]
+
+[node name="Main" parent="." unique_id=631834920 instance=ExtResource("1_2whry")]
+
+[node name="FakeSignals" type="Node" parent="." unique_id=257637479]
+script = ExtResource("2_28s5r")
