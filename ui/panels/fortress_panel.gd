@@ -6,7 +6,6 @@ signal closed
 
 const STATS: FortressStats = preload("res://data/config/fortress_stats.tres")
 const BUTTON_LOCK_TIME := 0.15
-const EPSILON := 0.000001
 
 var _hp := 0
 var _max_hp := 0
@@ -85,7 +84,7 @@ func _min_cost() -> int:
 	if _max_hp <= 0:
 		return 0
 	var missing_pct := float(_max_hp - _hp) / float(_max_hp) * 100.0
-	return ceili(minf(1.0, missing_pct) * STATS.repair_gold_per_pct - EPSILON)
+	return ceili(minf(1.0, missing_pct) * STATS.repair_gold_per_pct - Fortress.PCT_EPSILON)
 
 func _refresh_emergency() -> void:
 	var max_charges := GameConfig.emg_repair_charges_max

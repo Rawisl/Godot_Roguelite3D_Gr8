@@ -161,11 +161,12 @@ func _update_slot_hover() -> void:
 func _rank(node: Node) -> int:
 	if node is Tower:
 		return 0
+	# An empty slot only counts while the rings show, so the Fortress roof under it stays clickable.
 	if node is Slot:
-		return 2
-	# TODO(Mạnh): the Fortress needs a ClickArea on the click layer before a click can reach it.
+		return 2 if _rings_visible or not (node as Slot).is_free() else 99
+	# Wall slots sit on the Fortress roof, so the Fortress loses to any slot that counts.
 	if node is Fortress:
-		return 1
+		return 3
 	return 99
 
 func _slot_of(node: Node) -> Slot:
