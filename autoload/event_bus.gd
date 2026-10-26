@@ -95,6 +95,11 @@ signal settings_changed(key: StringName, value: Variant)
 #------------------------------------------------------#
 
 
+#-----------------------Skill and reward-----------------------#
+signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # UI -> StatBlock, SkillRunner, RunState. new_level is the absolute level after the pick
+#------------------------------------------------------#
+
+
 #------------------Warning, sfx, audio, tutorial,...------------------#
 signal alert_requested(tier: int, key: StringName, params: Dictionary)  # tier 1 | 2 | 3; key = locale key
 signal screen_shake_requested(intensity: float, source: StringName)  # FBK-03, ACC-05
