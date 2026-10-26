@@ -103,19 +103,17 @@ func _refresh() -> void:
 	_set_row(_picks, "pending_picks", &"summary.row.picks", func(v: int) -> String:
 		return UiFormat.tr_fmt(&"summary.value.picks", {"value": v}))
 
-## Hides the row when its key is missing, or when there is nothing to report (no ruined tower, no charge).
+## Hides the row when its key is missing, or when there is nothing to report (no ruined tower, no charge, no early bonus).
 func _set_row(row: SummaryRow, key: String, name_key: StringName, format: Callable) -> void:
 	var value: Variant = _summary.get(key)
 	var shown := value != null
-	if shown and key == "emg_repair_gained":
+	if shown and key in ["emg_repair_gained", "early_call_bonus"]:
 		shown = int(value) > 0
-	if shown and key == "ruined_towers":
+	elif shown and key == "ruined_towers":
 		shown = not (value as Array).is_empty()
 	row.visible = shown
 	if shown:
 		row.set_row(tr(name_key), format.call(value))
-	if shown and key in ["emg_repair_gained", "early_call_bonus"]:
-		shown = int(value) > 0
 
 func _clear_time_text(seconds: float) -> String:
 	var text := UiFormat.time_mmss(seconds)
