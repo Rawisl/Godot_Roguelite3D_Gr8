@@ -140,3 +140,12 @@ settings.acc.reduce_flash,Giảm nhấp nháy
 hud.call_wave,Gọi đợt sớm (G) · +{gold} vàng
 hud.call_wave.paused,Không gọi được khi tạm dừng
 hud.offscreen.boss,Boss
+panel.fortress.repair_step,Sửa +{pct}%
+panel.fortress.repair_full,Sửa đầy
+panel.fortress.gold,{gold} vàng
+panel.fortress.repair_tip,"Sửa {pct}% máu thành, dùng {gold} vàng"
+panel.fortress.full,Thành đã đầy máu
+panel.fortress.emg,Sửa khẩn cấp: {value}/{max} lượt
+panel.fortress.emg_cd,Đang hồi (còn {sec} s)
+panel.fortress.emg_hint,Nhận +1 lượt khi diệt boss
+panel.fortress.emg_tip,"Lúc chuẩn bị nên sửa bằng vàng, để dành lượt khẩn cấp cho lúc chiến đấu"
