@@ -4,6 +4,7 @@ extends CharacterBody3D
 @export var debug_aim_marker: Node3D
 @export var debug_print_speed: bool = false
 @export var _anim_player: AnimationPlayer
+@export var stat_cards: StatCardTable
 
 # Combat & hit constants
 const COLLISION_LAYER_ENEMY: int = 3
@@ -83,6 +84,10 @@ var _spawn_position: Vector3
 var _wave_state: StringName = &""
 var _is_low_hp: bool = false
 
+## Every gameplay read of a commander stat goes through this block.
+var stat_block: StatBlock
+var _stat_applier: StatCardApplier
+
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
 @onready var health: HealthComponent = %Health
@@ -92,6 +97,7 @@ func _ready() -> void:
 	add_to_group(&"commander")
 	_spawn_position = global_position
 	_debug_last_pos = global_position
+	_setup_stat_block()
 	_setup_health()
 	_setup_animation_player()
 	_setup_sword_area()
@@ -102,10 +108,31 @@ func _ready() -> void:
 	_refresh_aura.call_deferred()
 
 
+func _setup_stat_block() -> void:
+	stat_block = StatBlock.new(stats)
+	_stat_applier = StatCardApplier.new()
+	_stat_applier.name = "StatCardApplier"
+	_stat_applier.stat_block = stat_block
+	_stat_applier.table = stat_cards
+	_stat_applier.applied.connect(_on_stat_card_applied)
+	add_child(_stat_applier)
+
+
+## The fallback only covers a missing stats resource. Keys must exist in CharacterStats.
+func get_stat(stat_key: StringName, fallback: float) -> float:
+	return stat_block.get_value(stat_key) if stats != null else fallback
+
+
+func _on_stat_card_applied(_card_id: StringName) -> void:
+	var new_max := stat_block.get_max_hp()
+	if new_max != health.max_hp:
+		health.set_max_hp(new_max, true)
+
+
 func _setup_health() -> void:
 	if stats != null:
-		health.max_hp = stats.commander_max_hp
-		health.hp = stats.commander_max_hp
+		health.max_hp = stat_block.get_max_hp()
+		health.hp = health.max_hp
 
 	health.hp_changed.connect(_on_hp_changed)
 	health.died.connect(_on_died)
@@ -471,7 +498,7 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 		velocity.z = 0.0
 	else:
 		var input := _move_input()
-		var speed := stats.move_speed if stats else 6.0
+		var speed := get_stat(&"move_speed", 6.0)
 
 		var cam_basis := camera.global_transform.basis
 		var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
@@ -651,11 +678,12 @@ func _execute_sword_strike(combo_step: int) -> void:
 	var half_arc_rad: float = deg_to_rad(arc_deg * 0.5)
 
 	var max_targets: int = stats.sword_max_targets
-	var damage_amount: int = stats.sword_damage
+	var sword_damage: float = stat_block.get_value(&"sword_damage")
+	var damage_amount: int = roundi(sword_damage)
 	var knockback: float = 0.0
 
 	if combo_step == 3:
-		damage_amount = roundi(float(stats.sword_damage) * stats.combo_hit3_mult)
+		damage_amount = roundi(sword_damage * stats.combo_hit3_mult)
 		knockback = stats.combo_hit3_knockback
 
 	var candidates: Array[Dictionary] = []
@@ -736,7 +764,7 @@ func take_damage(damage_input: Variant) -> void:
 
 	var final_amount: int = info.amount
 	if info.damage_type != Enums.DamageType.TRUE and stats != null and info.amount > 0:
-		var effective_armor: float = clampf(stats.armor_pct, 0.0, 0.75)
+		var effective_armor: float = stat_block.get_capped(&"armor_pct", GameConfig.commander_armor_cap)
 		var skill_mult: float = stats.battle_cry_damage_mult if _battle_cry_active_timer > 0.0 else 1.0
 		final_amount = maxi(1, ceili(float(info.amount) * (1.0 - effective_armor) * skill_mult))
 
@@ -929,4 +957,4 @@ func _debug_report_speed(delta: float) -> void:
 
 	_debug_timer = 0.0
 	print("velocity: %.3f m/s | moved: %.3f m/s | expected: %.3f m/s" % [
-		flat_velocity.length(), moved.length() / delta, stats.move_speed if stats else 6.0])
+		flat_velocity.length(), moved.length() / delta, get_stat(&"move_speed", 6.0)])
