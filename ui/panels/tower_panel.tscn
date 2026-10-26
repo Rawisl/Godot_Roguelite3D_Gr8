@@ -2,11 +2,16 @@
 
 [ext_resource type="PackedScene" uid="uid://bgpfww5ejjq45" path="res://ui/panels/panel_base.tscn" id="1_m73ch"]
 [ext_resource type="Script" uid="uid://c4qretcx8j6y2" path="res://ui/panels/tower_panel.gd" id="2_t2npf"]
+[ext_resource type="PackedScene" uid="uid://bos62olchc33a" path="res://ui/panels/priority_panel.tscn" id="3_vcdgx"]
 
 [node name="TowerPanel" unique_id=800506704 instance=ExtResource("1_m73ch")]
 custom_minimum_size = Vector2(320, 0)
 script = ExtResource("2_t2npf")
 
 [node name="Body" type="VBoxContainer" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="1" unique_id=588440261]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PriorityPanel" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="2" unique_id=1158035571 instance=ExtResource("3_vcdgx")]
 unique_name_in_owner = true
 layout_mode = 2
