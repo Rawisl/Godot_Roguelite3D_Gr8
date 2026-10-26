@@ -5,12 +5,14 @@ extends Node
 ## runs in _unhandled_input. Also reports what is under the mouse for hover feedback.
 
 signal selection_cleared
+signal fortress_selected
 signal hovered_changed(node: Node)
 
 const CLICK_LAYER := 1 << 6
 const ENEMY_LAYER := 1 << 2
 const RAY_LENGTH := 300.0
 const MAX_HITS := 4
+const FORTRESS_ID := &"FORTRESS"
 
 var selected_slot: StringName = &""
 var hovered: Node = null
@@ -118,6 +120,10 @@ func _select(node: Node) -> void:
 			selected_slot = slot.slot_id
 			_set_selected_ring(slot)
 			EventBus.slot_selected.emit(slot.slot_id)
+	elif node is Fortress and _is_prep():
+		selected_slot = FORTRESS_ID
+		_set_selected_ring(null)
+		fortress_selected.emit()
 	else:
 		clear_selection()
 
@@ -157,6 +163,9 @@ func _rank(node: Node) -> int:
 		return 0
 	if node is Slot:
 		return 2
+	# TODO(Mạnh): the Fortress needs a ClickArea on the click layer before a click can reach it.
+	if node is Fortress:
+		return 1
 	return 99
 
 func _slot_of(node: Node) -> Slot:
