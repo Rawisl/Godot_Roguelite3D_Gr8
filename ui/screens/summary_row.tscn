@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://bbocqc6wpf7v1"]
+
+[ext_resource type="Script" uid="uid://bqtb40cx6w5og" path="res://ui/screens/summary_row.gd" id="1_ap24n"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ifen6"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.10980392, 0.12156863, 0.14901961, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="SummaryRow" type="PanelContainer" unique_id=757103320]
+theme_override_styles/panel = SubResource("StyleBoxFlat_ifen6")
+script = ExtResource("1_ap24n")
+
+[node name="Line" type="HBoxContainer" parent="." unique_id=384505818]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Name" type="Label" parent="Line" unique_id=700921381]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78431374, 0.78431374, 0.78431374, 1)
+theme_override_font_sizes/font_size = 26
+
+[node name="Value" type="Label" parent="Line" unique_id=1735462168]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 2
+autowrap_mode = 3

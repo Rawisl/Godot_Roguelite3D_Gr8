@@ -10,6 +10,7 @@
 export.cfg
 export_credentials.cfg
 *.tmp
+*.translation
 
 # Login session tokens (normally in user://, never commit)
 auth.cfg
