@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://i1ivoupbnot2"]
+
+[ext_resource type="PackedScene" uid="uid://og55jctucxje" path="res://main.tscn" id="1_5mcpa"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_vyr6g"]
+top_radius = 1.0
+bottom_radius = 1.0
+
+[node name="TestOffscreenIndicators" type="Node3D" unique_id=626488318]
+
+[node name="Main" parent="." unique_id=631834920 instance=ExtResource("1_5mcpa")]
+
+[node name="FakeBoss" type="Node3D" parent="." unique_id=1569166868 groups=["boss"]]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="FakeBoss" unique_id=1446088025]
+mesh = SubResource("CylinderMesh_vyr6g")

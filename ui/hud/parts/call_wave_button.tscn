@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://c3jndrrp8vrgp"]
+
+[ext_resource type="Script" uid="uid://2txg3077h8m" path="res://ui/hud/parts/call_wave_button.gd" id="1_eubnk"]
+
+[node name="CallWaveButton" type="Button" unique_id=1260135002]
+custom_minimum_size = Vector2(360, 56)
+script = ExtResource("1_eubnk")

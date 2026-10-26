@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://cmf1pspoewu74" path="res://ui/panels/tower_panel.tscn" id="9_6gxmt"]
 [ext_resource type="PackedScene" uid="uid://csopdaxvf7sac" path="res://ui/hud/parts/speed_buttons.tscn" id="9_aixkq"]
 [ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="10_cxhb7"]
+[ext_resource type="PackedScene" uid="uid://c3jndrrp8vrgp" path="res://ui/hud/parts/call_wave_button.tscn" id="12_uyo40"]
 [ext_resource type="Script" uid="uid://chy1j70x80shi" path="res://ui/world/selection_controller.gd" id="14_olkg6"]
 [ext_resource type="Script" uid="uid://bn8aebymn6o1b" path="res://ui/world/range_ring.gd" id="15_hk13k"]
 [ext_resource type="Script" uid="uid://cjfiuiol141y4" path="res://ui/world/hover_highlight.gd" id="17_olkg6"]
@@ -62,11 +63,19 @@ layout_mode = 2
 [node name="HealStatus" parent="Root/SafeArea/Frame/TopLeft" unique_id=1623376205 instance=ExtResource("4_hk13k")]
 layout_mode = 2
 
-[node name="WaveCounter" parent="Root/SafeArea/Frame" unique_id=1849850089 instance=ExtResource("10_cxhb7")]
+[node name="TopCenter" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=359687537]
 layout_mode = 1
-offset_left = -5.0
-offset_right = 5.0
-offset_bottom = 34.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 125.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="WaveCounter" parent="Root/SafeArea/Frame/TopCenter" unique_id=1849850089 instance=ExtResource("10_cxhb7")]
+layout_mode = 2
 
 [node name="TopRight" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=215340958]
 layout_mode = 1
@@ -87,43 +96,83 @@ size_flags_horizontal = 8
 layout_mode = 2
 size_flags_horizontal = 8
 
-[node name="PanelHost" type="Control" parent="Root/SafeArea/Frame" unique_id=1585184375]
+[node name="BottomLeft" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=52446867]
+custom_minimum_size = Vector2(200, 64)
 layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -460.0
-offset_top = -320.0
-offset_bottom = 320.0
-grow_horizontal = 0
-grow_vertical = 2
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="EmergencyRepair" parent="Root/SafeArea/Frame/BottomLeft" unique_id=311037426 instance=ExtResource("4_w75iv")]
+layout_mode = 2
+
+[node name="BottomCenter" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=704166953]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="PanelHost" type="Control" parent="Root/SafeArea/Frame/BottomCenter" unique_id=1585184375]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
 script = ExtResource("7_3mxrk")
 
-[node name="BuildPanel" parent="Root/SafeArea/Frame/PanelHost" unique_id=800506704 instance=ExtResource("8_6gxmt")]
+[node name="BuildPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=800506704 instance=ExtResource("8_6gxmt")]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
-offset_bottom = 58.0
+anchor_bottom = 1.0
+offset_top = -165.0
 grow_horizontal = 2
+grow_vertical = 0
 
-[node name="TowerPanel" parent="Root/SafeArea/Frame/PanelHost" unique_id=993852717 instance=ExtResource("9_6gxmt")]
+[node name="TowerPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=993852717 instance=ExtResource("9_6gxmt")]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
-offset_bottom = 153.0
+anchor_bottom = 1.0
+offset_top = -165.0
 grow_horizontal = 2
+grow_vertical = 0
+
+[node name="CallWaveButton" parent="Root/SafeArea/Frame/BottomCenter" unique_id=1260135002 instance=ExtResource("12_uyo40")]
+layout_mode = 2
+
+[node name="BottomRight" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=1544337224]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
 
 [node name="BossBar" parent="Root" unique_id=615647234 instance=ExtResource("1_4d6w6")]
 layout_mode = 1
 
 [node name="AlertLayer" parent="Root" unique_id=328027326 instance=ExtResource("1_xmswo")]
-layout_mode = 1
-
-[node name="EmergencyRepair" parent="Root" unique_id=311037426 instance=ExtResource("4_w75iv")]
 layout_mode = 1
 
 [node name="EnemyBarLayer" parent="Root" unique_id=1455219063 instance=ExtResource("5_kwc50")]

@@ -137,3 +137,6 @@ settings.acc.shake_normal,Bình thường
 settings.acc.shake_half,Giảm 50%
 settings.acc.shake_off,Tắt
 settings.acc.reduce_flash,Giảm nhấp nháy
+hud.call_wave,Gọi đợt sớm (G) · +{gold} vàng
+hud.call_wave.paused,Không gọi được khi tạm dừng
+hud.offscreen.boss,Boss
