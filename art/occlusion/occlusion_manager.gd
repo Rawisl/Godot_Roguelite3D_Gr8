@@ -12,6 +12,9 @@ const SHADOW_PROXY_META := &"occlusion_shadow_proxy"
 @export var occluded_alpha := 0.3
 ## Vật cách đường camera tới mục tiêu không quá bán kính này (đo trên mặt đất) thì bị làm mờ.
 @export var occlusion_radius := 2.5
+## Như occlusion_radius nhưng cho vật đang hover. Nhỏ hơn nhiều vì chỉ cần thấy vật đó,
+## không cần thấy khoảng xung quanh: để 2.5 m thì tower cạnh một ô trống đang hover cũng bị mờ.
+@export var hover_occlusion_radius := 0.5
 @export var fade_time := 0.15
 ## Quân địch trong bán kính này quanh chỉ huy cũng được xét.
 @export var enemy_radius := 3.0
@@ -50,20 +53,18 @@ func _scan() -> void:
 		return
 	var points := _unit_points()
 	var hovered := is_instance_valid(_hover_target) and _hover_target.is_inside_tree()
-	# Vật đang hover không tự che chính nó: model của nó chỉ xét theo chỉ huy và quân.
-	var points_with_hover := points.duplicate()
-	if hovered:
-		points_with_hover.append(_hover_target.global_position)
-	if points_with_hover.is_empty():
+	if points.is_empty() and not hovered:
 		return
+	var hover_points: Array[Vector3] = []
+	if hovered:
+		hover_points.append(_hover_target.global_position)
 	var forward := -camera.global_transform.basis.z
 	for occluder in get_tree().get_nodes_in_group(OCCLUDER_GROUP):
+		# Vật đang hover không tự che chính nó: model của nó chỉ xét theo chỉ huy và quân.
 		var is_hovered := hovered and (occluder == _hover_target or _hover_target.is_ancestor_of(occluder))
-		var targets: Array[Vector3] = points if is_hovered else points_with_hover
-		if targets.is_empty():
-			continue
 		for geo in _geometries(occluder):
-			if _is_occluding(geo, camera, forward, targets):
+			if _is_occluding(geo, camera, forward, points, occlusion_radius) \
+					or (not is_hovered and _is_occluding(geo, camera, forward, hover_points, hover_occlusion_radius)):
 				_occluding[geo] = true
 
 ## Chỉ huy và quân địch quanh chỉ huy.
@@ -78,17 +79,22 @@ func _unit_points() -> Array[Vector3]:
 				points.append(e.global_position)
 	return points
 
-func _is_occluding(geo: GeometryInstance3D, camera: Camera3D, forward: Vector3, points: Array[Vector3]) -> bool:
+func _is_occluding(geo: GeometryInstance3D, camera: Camera3D, forward: Vector3, points: Array[Vector3], radius: float) -> bool:
+	if points.is_empty():
+		return false
 	var box := geo.global_transform * geo.get_aabb()
 	# Chỉ nới theo mặt đất (X, Z), không nới chiều cao: tia nhìn đi chéo lên
 	# trên nóc vật không bị tính là che.
 	var grown := box
-	grown.position -= Vector3(occlusion_radius, 0.0, occlusion_radius)
-	grown.size += Vector3(occlusion_radius, 0.0, occlusion_radius) * 2.0
-	var box_depth := (box.get_center() - camera.global_position).dot(forward)
+	grown.position -= Vector3(radius, 0.0, radius)
+	grown.size += Vector3(radius, 0.0, radius) * 2.0
+	# So trước sau trên mặt đất: tâm hộp cao hơn chân mục tiêu nên nếu đo theo trục camera
+	# (chúc 45°) thì tower đứng sau một slot vẫn bị tính là gần camera hơn.
+	var ground_forward := Vector3(forward.x, 0.0, forward.z).normalized()
+	var center := box.get_center()
 	for p in points:
 		# Vật nằm sau mục tiêu (xa camera hơn) thì không che.
-		if box_depth >= (p - camera.global_position).dot(forward):
+		if (Vector3(center.x, p.y, center.z) - p).dot(ground_forward) >= 0.0:
 			continue
 		var from := camera.project_ray_origin(camera.unproject_position(p))
 		if grown.intersects_segment(from, p):
