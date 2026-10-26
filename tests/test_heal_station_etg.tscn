@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://chealstationetg01"]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://tests/test_heal_station_etg.gd" id="1_test_script"]
 
