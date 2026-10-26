@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://cwavescaletest01"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://c5cn58n0dvkj6" path="res://tests/test_wave_scale.gd" id="1_scale_test"]
+[ext_resource type="Script" path="res://tests/test_wave_scale.gd" id="1_scale_test"]
 
 [node name="TestWaveScale" type="Node"]
 script = ExtResource("1_scale_test")
