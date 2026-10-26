@@ -21,7 +21,6 @@ func _ready() -> void:
 	_fortress_arrow.visible = false
 	EventBus.fortress_damaged.connect(_on_fortress_damaged)
 
-## Pausable real time, so the arrow does not vanish faster at x2/x3.
 func _on_fortress_damaged(_amount: int, _type: StringName, _source: StringName) -> void:
 	_fortress_alert_until = TimeManager.pausable_real_time + FORTRESS_ALERT_TIME
 
@@ -29,25 +28,38 @@ func _process(_delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	_place(_boss_arrow, _boss_pointer, cam, _boss())
 	var attacked := TimeManager.pausable_real_time < _fortress_alert_until
-	_place(_fortress_arrow, _fortress_pointer, cam, _fortress() if attacked else null)
+	var on_side := _place(_fortress_arrow, _fortress_pointer, cam, _fortress() if attacked else null)
+	_separate(on_side)
 
-func _place(arrow: Control, pointer: Node2D, cam: Camera3D, target: Node3D) -> void:
+func _separate(on_side: bool) -> void:
+	if not (_boss_arrow.visible and _fortress_arrow.visible):
+		return
+	if _boss_arrow.position.distance_to(_fortress_arrow.position) >= _fortress_arrow.size.x:
+		return
+	var step := Vector2(0.0, _fortress_arrow.size.y) if on_side else Vector2(_fortress_arrow.size.x, 0.0)
+	var moved := _boss_arrow.position + step
+	var limit := size - _fortress_arrow.size
+	if moved.x > limit.x or moved.y > limit.y:
+		moved = _boss_arrow.position - step
+	_fortress_arrow.position = moved
+
+func _place(arrow: Control, pointer: Node2D, cam: Camera3D, target: Node3D) -> bool:
 	if cam == null or target == null:
 		arrow.visible = false
-		return
+		return false
 	var margin := size * SAFE_MARGIN
 	var frame := Rect2(margin, size - margin * 2.0)
 	var point := cam.unproject_position(target.global_position)
 	if frame.has_point(point):
 		arrow.visible = false
-		return
+		return false
 	var half := arrow.size * 0.5
 	var inner := frame.grow_individual(-half.x, -half.y, -half.x, -half.y)
 	var center := inner.get_center()
 	var dir := point - center
 	if dir.is_zero_approx():
 		arrow.visible = false
-		return
+		return false
 	# Scale the direction until it touches the nearest edge of the inner frame.
 	var t := INF
 	if not is_zero_approx(dir.x):
@@ -57,6 +69,7 @@ func _place(arrow: Control, pointer: Node2D, cam: Camera3D, target: Node3D) -> v
 	arrow.position = center + dir * t - half
 	pointer.rotation = dir.angle()
 	arrow.visible = true
+	return absf(dir.x) * inner.size.y >= absf(dir.y) * inner.size.x
 
 func _boss() -> Node3D:
 	var boss := get_tree().get_first_node_in_group(&"boss") as Node3D
