@@ -1,18 +1,14 @@
-[gd_resource type="Resource" script_class="WaveTable" format=3 uid="uid://clcuq2474iqev"]
+[gd_resource type="Resource" script_class="WaveTable" format=3]
 
-[ext_resource type="Resource" uid="uid://squ7eu0cinai" path="res://data/enemies/grunt.tres" id="1_77civ"]
-[ext_resource type="Script" uid="uid://bykknpph6d0of" path="res://common/wave_table.gd" id="1_yya70"]
-[ext_resource type="Script" uid="uid://c4n48ya7fbgkf" path="res://common/wave_group.gd" id="2_0y014"]
-[ext_resource type="Resource" uid="uid://ca08sj3da7flm" path="res://data/enemies/archer.tres" id="3_tfp00"]
-[ext_resource type="Resource" uid="uid://e7bep37g0mum" path="res://data/enemies/brute.tres" id="4_ufkje"]
+[ext_resource type="Resource" path="res://data/enemies/grunt.tres" id="1_77civ"]
+[ext_resource type="Script" path="res://common/wave_table.gd" id="1_yya70"]
+[ext_resource type="Script" path="res://common/wave_group.gd" id="2_0y014"]
+[ext_resource type="Resource" path="res://data/enemies/archer.tres" id="3_tfp00"]
+[ext_resource type="Resource" path="res://data/enemies/brute.tres" id="4_ufkje"]
 
 [sub_resource type="Resource" id="Resource_qtorv"]
 script = ExtResource("2_0y014")
 enemy = ExtResource("1_77civ")
-weight = 10.0
-min_wave = 1
-max_per_wave = -1
-intro_count = 0
 metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
 
 [sub_resource type="Resource" id="Resource_ejb6e"]
@@ -20,7 +16,6 @@ script = ExtResource("2_0y014")
 enemy = ExtResource("3_tfp00")
 weight = 4.0
 min_wave = 3
-max_per_wave = -1
 intro_count = 2
 metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
 
@@ -29,22 +24,10 @@ script = ExtResource("2_0y014")
 enemy = ExtResource("4_ufkje")
 weight = 2.0
 min_wave = 6
-max_per_wave = -1
 intro_count = 1
 metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
 
 [resource]
 script = ExtResource("1_yya70")
-groups = Array[Resource]([SubResource("Resource_qtorv"), SubResource("Resource_ejb6e"), SubResource("Resource_pgu2a")])
-boss_every = 5
-group_spawn_delay_min = 0.4
-group_spawn_delay_max = 0.8
-group_pause = 3.0
-spawn_overlap_radius = 1.0
-spawn_retry_delay = 0.2
-spawn_retry_timeout = 3.0
-archer_max_ratio = 0.4
-support_max_ratio = 0.2
-support_min_combat = 3
-escort_budget_ratio = 0.5
+groups = Array[ExtResource("2_0y014")]([SubResource("Resource_qtorv"), SubResource("Resource_ejb6e"), SubResource("Resource_pgu2a")])
 metadata/_custom_type_script = "uid://bykknpph6d0of"
