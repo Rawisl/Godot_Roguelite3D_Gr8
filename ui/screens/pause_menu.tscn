@@ -9,6 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_cu5t8")
 
 [node name="Backdrop" type="ColorRect" parent="." unique_id=807455572]
@@ -19,6 +20,7 @@ color = Color(0.06666667, 0.06666667, 0.06666667, 0.5019608)
 custom_minimum_size = Vector2(320, 48)
 layout_mode = 2
 size_flags_horizontal = 4
+mouse_filter = 0
 theme_override_constants/separation = 16
 alignment = 1
 
