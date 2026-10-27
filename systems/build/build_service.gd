@@ -237,6 +237,14 @@ func _end(slot_id: StringName) -> void:
 
 func _on_state_changed(new_state: StringName) -> void:
 	_wave_state = new_state
+	if new_state == &"PREP" and GameConfig.tower_full_heal_on_prep:
+		_heal_towers_for_prep()
+
+func _heal_towers_for_prep() -> void:
+	for node in get_tree().get_nodes_in_group(&"slot"):
+		var slot := node as Slot
+		if slot != null and slot.state == Enums.SlotState.OCCUPIED and slot.tower != null and slot.tower.heals_on_prep():
+			slot.tower.restore_full_hp()
 
 func _on_mode_changed(mode: StringName) -> void:
 	_mode = mode

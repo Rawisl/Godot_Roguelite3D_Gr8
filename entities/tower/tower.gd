@@ -68,6 +68,17 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	_set_immune_blocked(false)
 
+## Refills HP to max through HealthComponent so hp_changed reaches the health bar.
+func restore_full_hp() -> void:
+	if health.hp <= 0:
+		return
+	health.heal(health.max_hp - health.hp)
+
+## Whether the full refill at the start of PREP applies to this tower.
+# TODO(week 8): Heal Station overrides this to false, it never refills.
+func heals_on_prep() -> bool:
+	return true
+
 func apply_level(new_level: int) -> void:
 	level = new_level
 	_lv = data.levels[level - 1]
