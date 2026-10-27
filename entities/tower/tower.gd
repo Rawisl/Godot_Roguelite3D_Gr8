@@ -86,8 +86,8 @@ func apply_level(new_level: int) -> void:
 	health.hp = _lv.max_hp
 	(range_shape.shape as CylinderShape3D).radius = _lv.attack_range
 
-## TWR-02: enemy melee and projectiles call take_damage on the body they hit.
-## HP = 0 emits destroyed, and the Slot turns RUINED (SLOT-02).
+## Enemy melee and projectiles call take_damage on the body they hit.
+## HP = 0 emits destroyed, and the Slot turns RUINED.
 func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
 	return health.take_damage(damage_input, p_damage_type)
 
@@ -123,8 +123,8 @@ func get_melee_arrive_distance() -> float:
 	return MELEE_ARRIVE_DISTANCE
 #endregion
 
-## TGT-03, CMD-01: a new priority applies after retarget_delay, counted in real time
-## (TIME-10), so it is 0.3 s at x1, x2 and x3.
+## A new priority applies after retarget_delay, counted in real time,
+## so it is 0.3 s at x1, x2 and x3.
 func set_priority(new_priority: Enums.TargetPriority) -> void:
 	_pending_priority = new_priority
 	_priority_due = TimeManager.real_time + GameConfig.retarget_delay
@@ -138,7 +138,7 @@ func _physics_process(delta: float) -> void:
 	_update_priority()
 	_update_aim()
 
-	# TWR-15: scan every scan_interval of game time
+	# Scan every scan_interval of game time
 	_scan_t += delta
 	if _scan_t >= GameConfig.scan_interval:
 		_scan_t = fmod(_scan_t, GameConfig.scan_interval)
@@ -163,8 +163,8 @@ func _update_priority() -> void:
 	priority = _pending_priority
 	target = _pick_target()
 
-## TWR-15: pick again on every scan by the current priority, so a unit that overtakes becomes
-## the First target within one scan_interval (test 7.1 item 6). A shot already started keeps its _shot_target.
+## Pick again on every scan by the current priority, so a unit that overtakes becomes
+## the First target within one scan_interval. A shot already started keeps its _shot_target.
 func _scan() -> void:
 	_update_aura()
 	target = _pick_target()
@@ -200,7 +200,7 @@ func _get_commander() -> Node3D:
 		_commander = get_tree().get_first_node_in_group(&"commander") as Node3D
 	return _commander
 
-## One pass over the area query: each candidate is checked and scored once (TWR-15).
+## One pass over the area query: each candidate is checked and scored once.
 func _pick_target() -> Enemy:
 	var best: Enemy = null
 	var best_score := 0.0
@@ -220,7 +220,7 @@ func _pick_target() -> Enemy:
 			best_d2 = d2
 	# Idle with only immune enemies in range shows the immune icon.
 	_set_immune_blocked(best == null and saw_immune)
-	return best  # TGT-02: null means idle
+	return best  # null means idle
 
 ## Emits EventBus.tower_immunity_changed only when the state changes.
 func _set_immune_blocked(value: bool) -> void:
@@ -230,7 +230,7 @@ func _set_immune_blocked(value: bool) -> void:
 	if slot_id != &"":
 		EventBus.tower_immunity_changed.emit(slot_id, value)
 
-## Valid target (3.6.5): alive and targetable, in range, a kind this tower can hit.
+## Valid target: alive and targetable, in range, a kind this tower can hit.
 func _is_valid_target(obj) -> bool:
 	return _target_distance_sq(obj) >= 0.0
 
@@ -242,7 +242,7 @@ func _target_distance_sq(obj) -> float:
 		or not obj is Enemy):
 			return -1.0
 	var e := obj as Enemy
-	# EN-04: dead, in spawn_grace or still inside the spawn zone.
+	# Not targetable: dead, in spawn_grace or still inside the spawn zone.
 	if not e.can_be_targeted():
 		return -1.0
 	var flying := e.data != null and e.data.is_flying
@@ -253,7 +253,7 @@ func _target_distance_sq(obj) -> float:
 	var d2 := _flat_distance_sq(e)
 	if d2 > _lv.attack_range * _lv.attack_range:
 		return -1.0
-	# TGT-05
+	# Inside the minimum range: too close to hit.
 	if d2 < data.min_range * data.min_range:
 		return -1.0
 	# TODO: the immune icon itself; UI listens to EventBus.tower_immunity_changed.
@@ -261,7 +261,7 @@ func _target_distance_sq(obj) -> float:
 		return IMMUNE
 	return d2
 
-## TGT-01: higher score wins, then closer to the tower, then smaller entity id.
+## Higher score wins, then closer to the tower, then smaller entity id.
 func _is_better(sa: float, da: float, a: Enemy, sb: float, db: float, b: Enemy) -> bool:
 	if not is_equal_approx(sa, sb):
 		return sa > sb
@@ -272,7 +272,7 @@ func _is_better(sa: float, da: float, a: Enemy, sb: float, db: float, b: Enemy) 
 func _score(e: Enemy, d2: float) -> float:
 	match priority:
 		Enums.TargetPriority.FIRST:
-			# TWR-16: metres along lane_curve toward the Fortress, kept up to date by the enemy.
+			# Metres along lane_curve toward the Fortress, kept up to date by the enemy.
 			return e.nav_progress
 		Enums.TargetPriority.NEAREST:
 			return -d2
@@ -298,7 +298,7 @@ func _start_shot() -> void:
 		push_warning("Tower: no ProjectilePool in the scene")
 		_cooldown = 1.0 / _lv.fire_rate
 		return
-	# PRJ-04: pool full, wait for the next frame without losing the shot
+	# Pool full, wait for the next frame without losing the shot
 	if not pool.can_acquire():
 		return
 	_cooldown = 1.0 / _lv.fire_rate
@@ -307,7 +307,7 @@ func _start_shot() -> void:
 	shot_started.emit(target)
 
 ## The projectile leaves the muzzle. A shot still waiting here is dropped if the tower
-## is destroyed first, because this node is freed with it (TWR-02).
+## is destroyed first, because this node is freed with it.
 func _release_shot() -> void:
 	if not _is_valid_target(_shot_target):
 		_shot_target = _pick_target()
@@ -318,7 +318,7 @@ func _release_shot() -> void:
 	var pool := _get_pool()
 	var p: Projectile = pool.acquire(data.projectile_scene) if pool != null else null
 	if p == null:
-		_release_t = 0.0  # PRJ-04: retry next frame
+		_release_t = 0.0  # Retry next frame
 		return
 	_release_t = -1.0
 	var from := (_muzzle_node if _muzzle_node != null else muzzle).global_position
