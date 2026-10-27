@@ -109,4 +109,11 @@ signal duck_requested(amount_db: float, duration: float)  # AUD-05
 signal tutorial_step_completed(step_id: StringName)
 #------------------------------------------------------#
 
+#-----------------------Progression-----------------------#
+signal xp_changed(xp: float, level: int, to_next: float, pending_picks: int)
+signal level_up(new_level: int, pending_picks: int)
+signal reward_offered(cards: Array, rerolls_left: int)
+signal skill_slots_changed(active: Array, passive: Array)
+#------------------------------------------------------#
+
 @warning_ignore_restore("unused_signal")
