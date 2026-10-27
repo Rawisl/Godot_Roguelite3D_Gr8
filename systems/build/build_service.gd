@@ -9,14 +9,11 @@ extends Node
 
 var _wave_state: StringName = &""
 var _mode: StringName = &"FRONTLINE"
-var _invested: Dictionary = {}  # slot_id -> gold spent on the tower standing there
 
 func _ready() -> void:
 	add_to_group(&"build_service")
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
-	EventBus.tower_destroyed.connect(_on_tower_destroyed)
-	EventBus.run_started.connect(_on_run_started)
 
 func is_prep() -> bool:
 	return _wave_state == &"PREP"
@@ -81,7 +78,7 @@ func build(slot_id: StringName, type: StringName, level: int = 1) -> bool:
 	slot.place_tower(tower)
 	if is_rebuild:
 		tower.apply_level(level)
-	_invested[slot_id] = cost
+	tower.invested_gold = cost
 	EventBus.tower_built.emit(slot_id, type)
 	return true
 
@@ -102,7 +99,7 @@ func get_tower_info(slot_id: StringName) -> Dictionary:
 		"priority": t.priority,
 		"can_target": t.can_attack(),
 		"is_max": t.level >= t.data.levels.size(),
-		"sell_value": floori(float(_invested.get(slot_id, 0)) * GameConfig.sell_refund_pct),
+		"sell_value": floori(float(t.invested_gold) * GameConfig.sell_refund_pct),
 	}
 	if not info.is_max:
 		var cost: int = t.data.levels[t.level].build_cost
@@ -125,17 +122,16 @@ func upgrade(slot_id: StringName) -> bool:
 		return false
 	# apply_level refills HP to the new max and keeps the target priority.
 	t.apply_level(t.level + 1)
-	_invested[slot_id] = _invested.get(slot_id, 0) + cost
+	t.invested_gold += cost
 	EventBus.tower_upgraded.emit(slot_id, t.data.id, t.level)
 	return true
 
 func sell(slot_id: StringName) -> bool:
 	var slot := find_slot(slot_id)
 	var gold := _gold()
-	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED:
+	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
 		return false
-	var refund := floori(float(_invested.get(slot_id, 0)) * GameConfig.sell_refund_pct)
-	_invested.erase(slot_id)
+	var refund := floori(float(slot.tower.invested_gold) * GameConfig.sell_refund_pct)
 	slot.clear_tower()
 	gold.add(refund)
 	EventBus.tower_sold.emit(slot_id)
@@ -163,9 +159,3 @@ func _on_state_changed(new_state: StringName) -> void:
 
 func _on_mode_changed(mode: StringName) -> void:
 	_mode = mode
-
-func _on_tower_destroyed(slot_id: StringName) -> void:
-	_invested.erase(slot_id)
-
-func _on_run_started() -> void:
-	_invested.clear()

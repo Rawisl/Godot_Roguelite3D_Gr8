@@ -12,6 +12,8 @@ const MELEE_ARRIVE_DISTANCE := 0.6
 
 @export var data: TowerData
 var level: int = 1
+## Gold spent on this tower (build plus upgrades); preplaced towers start at 0.
+var invested_gold: int = 0
 var priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
 var scan_phase: float = 0.0
 ## Set by the Slot that holds this tower; used for slot-keyed EventBus signals.
