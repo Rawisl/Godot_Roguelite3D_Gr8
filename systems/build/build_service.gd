@@ -74,10 +74,13 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	var gold := _gold()
 	if not is_prep() or slot == null or data == null or gold == null:
 		return false
+	if level < 1 or level > data.levels.size():
+		return false
 	if not tower_scenes.has(type) or not slot.can_build(data):
 		return false
+	# A level above 1 is only a rebuild of the tower that stood here, at the level it had.
 	var is_rebuild := level > 1
-	if is_rebuild and not slot.can_rebuild(data):
+	if is_rebuild and not (slot.can_rebuild(data) and level == slot.last_level):
 		return false
 	var cost := slot.get_rebuild_cost() if is_rebuild else data.get_total_cost(1)
 	if not gold.try_spend(cost):
