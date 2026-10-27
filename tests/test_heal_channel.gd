@@ -218,7 +218,7 @@ func _test_formula() -> void:
 
 	# Skill level 2: 20 HP/s, k = 1.
 	_setup()
-	_channel.skill_level = 2
+	_commander.stat_block.set_add(&"heal_rate_base", &"heal_station", 10.0)
 	_commander.health.max_hp = 300
 	_commander.health.hp = 100
 	_hold()
