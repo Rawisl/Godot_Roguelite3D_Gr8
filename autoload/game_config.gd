@@ -146,8 +146,8 @@ extends Node
 @export var stat_max_stacks: int = 3
 
 @export_group("Commander Progression")
-@export var tower_lv2_commander_level: int = 4
-@export var tower_lv3_commander_level: int = 8
+@export var tower_gate_lv2: int = 4
+@export var tower_gate_lv3: int = 8
 
 
 func get_prep_time(wave: int, is_boss: bool) -> float:

@@ -131,9 +131,9 @@ func get_commander_level() -> int:
 func get_upgrade_required_level(next_level: int) -> int:
 	match next_level:
 		2:
-			return GameConfig.tower_lv2_commander_level
+			return GameConfig.tower_gate_lv2
 		3:
-			return GameConfig.tower_lv3_commander_level
+			return GameConfig.tower_gate_lv3
 	return 0
 
 func can_upgrade(slot_id: StringName) -> bool:

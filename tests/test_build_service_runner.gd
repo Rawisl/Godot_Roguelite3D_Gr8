@@ -115,7 +115,7 @@ func test_build_level_one() -> void:
 func test_upgrade_to_max() -> void:
 	print("\n[GROUP 2] Upgrade twice with commander level 8")
 	_reset()
-	EventBus.level_up.emit(GameConfig.tower_lv3_commander_level, 0)
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
 	_service.build(&"W1", &"arrow")
 	var before := _gold.gold
 	assert_true(_service.upgrade(&"W1"), "first upgrade")
@@ -136,7 +136,7 @@ func test_upgrade_to_max() -> void:
 func test_sell_refund() -> void:
 	print("\n[GROUP 3] Sell at level 1, 2 and 3")
 	_reset()
-	EventBus.level_up.emit(GameConfig.tower_lv3_commander_level, 0)
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
 	var ids: Array[StringName] = [&"W1", &"W2", &"W3"]
 	for i in 3:
 		_service.build(ids[i], &"arrow")
@@ -181,7 +181,7 @@ func test_not_enough_gold() -> void:
 	assert_true(not _service.build(&"W1", &"arrow"), "build refused")
 	assert_true(_denied.size() == 1 and _denied[0] == [&"NOT_ENOUGH_GOLD", 1], "build_denied has the exact shortfall")
 	_reset()
-	EventBus.level_up.emit(GameConfig.tower_lv3_commander_level, 0)
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
 	_service.build(&"W1", &"arrow")
 	_gold.gold = ARROW.levels[1].build_cost - 3
 	_denied.clear()
@@ -199,24 +199,24 @@ func test_commander_level() -> void:
 	assert_true(_denied.size() == 1 and _denied[0] == [&"COMMANDER_LEVEL", 0], "build_denied COMMANDER_LEVEL, 0")
 	assert_true(_gold.gold == g, "gold unchanged when blocked")
 	var info := _service.get_tower_info(&"W1")
-	assert_true(info.get("upgrade_required_level") == GameConfig.tower_lv2_commander_level, "info has the level 2 requirement")
+	assert_true(info.get("upgrade_required_level") == GameConfig.tower_gate_lv2, "info has the level 2 requirement")
 	assert_true(info.get("upgrade_locked") == true, "info says locked")
-	EventBus.level_up.emit(GameConfig.tower_lv2_commander_level, 0)
+	EventBus.level_up.emit(GameConfig.tower_gate_lv2, 0)
 	assert_true(_service.upgrade(&"W1"), "upgrade to 2 allowed")
 	assert_true(not _service.upgrade(&"W1"), "upgrade to 3 blocked")
 	info = _service.get_tower_info(&"W1")
-	assert_true(info.get("upgrade_required_level") == GameConfig.tower_lv3_commander_level, "info has the level 3 requirement")
-	EventBus.level_up.emit(GameConfig.tower_lv3_commander_level, 0)
+	assert_true(info.get("upgrade_required_level") == GameConfig.tower_gate_lv3, "info has the level 3 requirement")
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
 	assert_true(_service.upgrade(&"W1"), "upgrade to 3 allowed")
 	EventBus.level_up.emit(3, 0)
-	assert_true(_service.get_commander_level() == GameConfig.tower_lv3_commander_level, "a lower level_up does not lower the level")
+	assert_true(_service.get_commander_level() == GameConfig.tower_gate_lv3, "a lower level_up does not lower the level")
 	EventBus.run_started.emit()
 	assert_true(_service.get_commander_level() == 1, "run_started resets the level")
 
 func test_rebuild() -> void:
 	print("\n[GROUP 8] Rebuild")
 	_reset()
-	EventBus.level_up.emit(GameConfig.tower_lv3_commander_level, 0)
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
 	_service.build(&"G1", &"arrow")
 	_service.upgrade(&"G1")
 	_service.upgrade(&"G1")
