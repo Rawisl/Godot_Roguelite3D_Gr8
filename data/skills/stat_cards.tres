@@ -34,6 +34,20 @@ card_id = &"vitality"
 stat_key = &"commander_max_hp"
 per_level = 10.0
 
+[sub_resource type="Resource" id="Resource_5"]
+script = ExtResource("2_entry")
+card_id = &"sharpness"
+stat_key = &"skill_damage"
+kind = 1
+per_level = 0.08
+
+[sub_resource type="Resource" id="Resource_6"]
+script = ExtResource("2_entry")
+card_id = &"mastery"
+stat_key = &"skill_damage"
+kind = 1
+per_level = 0.05
+
 [resource]
 script = ExtResource("1_table")
-entries = Array[ExtResource("2_entry")]([SubResource("Resource_0"), SubResource("Resource_1"), SubResource("Resource_2"), SubResource("Resource_3"), SubResource("Resource_4")])
+entries = Array[ExtResource("2_entry")]([SubResource("Resource_0"), SubResource("Resource_1"), SubResource("Resource_2"), SubResource("Resource_3"), SubResource("Resource_4"), SubResource("Resource_5"), SubResource("Resource_6")])

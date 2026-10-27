@@ -128,6 +128,11 @@ func test_card_table_levels() -> void:
 	applier.apply_pick(&"armored", 3)
 	assert_near(block.get_capped(&"armor_pct", GameConfig.commander_armor_cap), 0.15, "armored L3 is 15%")
 
+	assert_near(block.get_mul_total(&"skill_damage"), 0.24, "sharpness L3 also raises skill damage")
+	applier.apply_pick(&"mastery", 3)
+	assert_near(block.get_mul_total(&"skill_damage"), 0.39, "mastery stacks with sharpness on skill damage")
+	assert_near(block.get_mul_total(&"sword_damage"), 0.24, "mastery leaves sword damage alone")
+
 	applier.apply_pick(&"lifesteal", 3)
 	assert_near(block.get_value(&"lifesteal_pct"), 0.015, "lifesteal L3 is 1.5%")
 
@@ -153,13 +158,13 @@ func test_reward_picked_signal() -> void:
 	var block := StatBlock.new(_stats)
 	var applier := _new_applier(block)
 	var before := block.get_value(&"sword_damage")
-	EventBus.reward_picked.emit(&"sharpness", &"passive", 1)
+	EventBus.reward_picked.emit(&"sharpness", &"PASSIVE", 1)
 	assert_near(block.get_value(&"sword_damage"), before * 1.08, "recalculated right after the signal")
-	EventBus.reward_picked.emit(&"sharpness", &"passive", 2)
+	EventBus.reward_picked.emit(&"sharpness", &"PASSIVE", 2)
 	assert_near(block.get_value(&"sword_damage"), before * 1.16, "level up replaces the previous level")
 	applier.queue_free()
 	await get_tree().process_frame
-	EventBus.reward_picked.emit(&"sharpness", &"passive", 3)
+	EventBus.reward_picked.emit(&"sharpness", &"PASSIVE", 3)
 	assert_near(block.get_value(&"sword_damage"), before * 1.16, "freed applier no longer listens")
 
 
@@ -171,7 +176,7 @@ func test_resource_untouched() -> void:
 			snapshot[prop.name] = _stats.get(prop.name)
 	var block := StatBlock.new(_stats)
 	var applier := _new_applier(block)
-	for card in [&"sharpness", &"armored", &"lifesteal", &"heal_station", &"vitality"]:
+	for card in [&"sharpness", &"armored", &"lifesteal", &"heal_station", &"vitality", &"mastery"]:
 		applier.apply_pick(card, 3)
 	var same := true
 	for key in snapshot:
@@ -192,25 +197,25 @@ func test_commander_integration() -> void:
 	assert_true(commander.health.max_hp == base_max, "starts at base max hp")
 
 	commander.health.hp = 50
-	EventBus.reward_picked.emit(&"vitality", &"stat", 1)
+	EventBus.reward_picked.emit(&"vitality", &"STAT", 1)
 	assert_true(commander.health.max_hp == base_max + 10, "vitality 1 adds 10 max hp")
 	assert_true(commander.health.hp == 60, "heals exactly the amount gained")
 
-	EventBus.reward_picked.emit(&"vitality", &"stat", 1)
+	EventBus.reward_picked.emit(&"vitality", &"STAT", 1)
 	assert_true(commander.health.hp == 60, "repeated event heals nothing")
 
-	EventBus.reward_picked.emit(&"vitality", &"stat", 3)
+	EventBus.reward_picked.emit(&"vitality", &"STAT", 3)
 	assert_true(commander.health.max_hp == base_max + 30, "vitality 3 is flat, not compounding")
 	assert_true(commander.health.hp == 80, "second and third pick heal 20 in total")
 
 	commander.health.hp = commander.health.max_hp
-	EventBus.reward_picked.emit(&"armored", &"passive", 3)
+	EventBus.reward_picked.emit(&"armored", &"PASSIVE", 3)
 	var before_hp: int = commander.health.hp
 	commander.take_damage(DamageInfo.new(100, Enums.DamageType.SLASH))
 	# Damage is rounded up, so float noise in 1 - 0.15 may land on 85 or 86.
 	assert_true(absf(float(before_hp - commander.health.hp) - 85.0) <= 1.0, "armor 15% reduces 100 damage to about 85")
 
-	EventBus.reward_picked.emit(&"heal_station", &"passive", 2)
+	EventBus.reward_picked.emit(&"heal_station", &"PASSIVE", 2)
 	var channel: HealChannel = commander.get_node("HealChannel")
 	assert_near(channel.get_heal_rate(), _stats.heal_rate_base + 10.0, "heal channel reads rate from stat block")
 

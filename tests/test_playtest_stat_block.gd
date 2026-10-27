@@ -12,11 +12,11 @@ const DUMMY_HP := 99999
 const STATION_POS := Vector3(5.0, 0.0, 0.0)
 
 const CARDS := {
-	KEY_1: {"id": &"sharpness", "kind": &"passive", "name": "Sharpness"},
-	KEY_2: {"id": &"armored", "kind": &"passive", "name": "Armored"},
-	KEY_3: {"id": &"lifesteal", "kind": &"passive", "name": "Lifesteal"},
-	KEY_4: {"id": &"heal_station", "kind": &"passive", "name": "Heal station"},
-	KEY_5: {"id": &"vitality", "kind": &"stat", "name": "Vitality"},
+	KEY_1: {"id": &"sharpness", "kind": &"PASSIVE", "name": "Sharpness"},
+	KEY_2: {"id": &"armored", "kind": &"PASSIVE", "name": "Armored"},
+	KEY_3: {"id": &"lifesteal", "kind": &"PASSIVE", "name": "Lifesteal"},
+	KEY_4: {"id": &"heal_station", "kind": &"PASSIVE", "name": "Heal station"},
+	KEY_5: {"id": &"vitality", "kind": &"STAT", "name": "Vitality"},
 }
 
 var _commander: CharacterBody3D
