@@ -145,6 +145,10 @@ extends Node
 @export var skill_slots_passive: int = 3
 @export var stat_max_stacks: int = 3
 
+@export_group("Commander Progression")
+@export var tower_lv2_commander_level: int = 4
+@export var tower_lv3_commander_level: int = 8
+
 
 func get_prep_time(wave: int, is_boss: bool) -> float:
 	if is_boss:

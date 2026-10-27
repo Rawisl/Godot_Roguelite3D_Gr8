@@ -9,6 +9,7 @@ extends Node
 
 var _wave_state: StringName = &""
 var _mode: StringName = &"FRONTLINE"
+var _commander_level: int = 1
 var _busy: Dictionary[StringName, bool] = {}  # slot_id -> true while a transaction runs
 
 func _ready() -> void:
@@ -16,6 +17,7 @@ func _ready() -> void:
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.run_started.connect(_on_run_started)
+	EventBus.level_up.connect(_on_level_up)
 
 func is_prep() -> bool:
 	return _wave_state == &"PREP"
@@ -117,7 +119,43 @@ func get_tower_info(slot_id: StringName) -> Dictionary:
 		var cost: int = t.data.levels[t.level].build_cost
 		info["upgrade_cost"] = cost
 		info["upgrade_shortfall"] = gold.shortfall(cost)
+		var required := get_upgrade_required_level(t.level + 1)
+		info["upgrade_required_level"] = required
+		info["upgrade_locked"] = _commander_level < required
 	return info
+
+func get_commander_level() -> int:
+	return _commander_level
+
+## Commander level needed to upgrade a tower to next_level.
+func get_upgrade_required_level(next_level: int) -> int:
+	match next_level:
+		2:
+			return GameConfig.tower_lv2_commander_level
+		3:
+			return GameConfig.tower_lv3_commander_level
+	return 0
+
+func can_upgrade(slot_id: StringName) -> bool:
+	return get_upgrade_block_reason(slot_id) == &""
+
+## &"" when the upgrade can go ahead, otherwise why it cannot.
+func get_upgrade_block_reason(slot_id: StringName) -> StringName:
+	var slot := find_slot(slot_id)
+	var gold := _gold()
+	if not is_prep() or gold == null:
+		return &"NOT_PREP"
+	if slot == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
+		return &"NO_TOWER"
+	var t := slot.tower
+	if t.level >= t.data.levels.size():
+		return &"MAX_LEVEL"
+	# TODO(week 8): commander level comes from XpTracker level_up; tune thresholds with the real XP curve.
+	if _commander_level < get_upgrade_required_level(t.level + 1):
+		return &"COMMANDER_LEVEL"
+	if not gold.can_afford(t.data.levels[t.level].build_cost):
+		return &"NOT_ENOUGH_GOLD"
+	return &""
 
 func upgrade(slot_id: StringName) -> bool:
 	if not _begin(slot_id):
@@ -127,14 +165,14 @@ func upgrade(slot_id: StringName) -> bool:
 	return ok
 
 func _do_upgrade(slot_id: StringName) -> bool:
-	var slot := find_slot(slot_id)
+	var reason := get_upgrade_block_reason(slot_id)
 	var gold := _gold()
-	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED:
+	if reason == &"COMMANDER_LEVEL":
+		EventBus.build_denied.emit(&"COMMANDER_LEVEL", 0)
 		return false
-	var t := slot.tower
-	if t == null or t.level >= t.data.levels.size():
+	var t := find_slot(slot_id).tower if reason in [&"", &"NOT_ENOUGH_GOLD"] else null
+	if t == null:
 		return false
-	# TODO: block by commander level once the XP tracker exists
 	var cost: int = t.data.levels[t.level].build_cost
 	if not gold.try_spend(cost):
 		EventBus.build_denied.emit(&"NOT_ENOUGH_GOLD", gold.shortfall(cost))
@@ -204,4 +242,9 @@ func _on_mode_changed(mode: StringName) -> void:
 	_mode = mode
 
 func _on_run_started() -> void:
+	_commander_level = 1
 	_busy.clear()
+
+## The level never goes down, so a late or repeated signal cannot lock upgrades again.
+func _on_level_up(new_level: int, _pending_picks: int) -> void:
+	_commander_level = maxi(_commander_level, new_level)
