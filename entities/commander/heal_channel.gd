@@ -17,10 +17,6 @@ const DEPLETED := &"DEPLETED"
 const PROGRESS_INTERVAL := 0.1
 const EPSILON := 0.000001
 
-## Extra HP/s per level of the heal station skill.
-const SKILL_RATE_PER_LEVEL := 5.0
-
-var skill_level: int = 0
 var phase: StringName = IDLE
 var hold_time: float = 0.0
 
@@ -47,7 +43,7 @@ func get_source() -> Node3D:
 
 
 func get_heal_rate() -> float:
-	return _stat(&"heal_rate_base", 10.0) + SKILL_RATE_PER_LEVEL * skill_level
+	return _stat(&"heal_rate_base", 10.0)
 
 
 ## Stops the channel. If E is still down it must be released before a new hold can start.
@@ -225,7 +221,4 @@ func _source_id() -> StringName:
 
 
 func _stat(stat_name: StringName, fallback: float) -> float:
-	var stats: CharacterStats = _commander.stats
-	if stats == null:
-		return fallback
-	return float(stats.get(stat_name))
+	return _commander.get_stat(stat_name, fallback)
