@@ -139,6 +139,12 @@ extends Node
 @export var fps_downscale_floor: float = 30.0
 @export var fps_downscale_duration: float = 3.0
 
+@export_group("Skills")
+@export var skill_max_level: int = 3
+@export var skill_slots_active: int = 3
+@export var skill_slots_passive: int = 3
+@export var stat_max_stacks: int = 3
+
 
 func get_prep_time(wave: int, is_boss: bool) -> float:
 	if is_boss:
