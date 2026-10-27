@@ -179,3 +179,11 @@ summary.value.charges,+{value} lượt
 summary.value.xp,{commander} chỉ huy · {towers} tháp
 summary.value.picks,{value} lượt
 summary.value.gold,{base} × {mult}
+skill.whirlwind.name,Lốc xoáy
+skill.whirlwind.desc,Xoay vũ khí gây sát thương chém lên mọi kẻ địch xung quanh.
+skill.sharpness.name,Sắc bén
+skill.sharpness.desc,Tăng sát thương gây ra.
+skill.stat_vitality.name,Sinh lực
+skill.stat_vitality.desc,Tăng máu tối đa.
+skill.heal_station_skill.name,Trạm hồi phục
+skill.heal_station_skill.desc,Tăng tốc độ hồi máu của trạm hồi phục.
