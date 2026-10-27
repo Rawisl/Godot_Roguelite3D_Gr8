@@ -9,11 +9,13 @@ extends Node
 
 var _wave_state: StringName = &""
 var _mode: StringName = &"FRONTLINE"
+var _busy: Dictionary[StringName, bool] = {}  # slot_id -> true while a transaction runs
 
 func _ready() -> void:
 	add_to_group(&"build_service")
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
+	EventBus.run_started.connect(_on_run_started)
 
 func is_prep() -> bool:
 	return _wave_state == &"PREP"
@@ -60,6 +62,13 @@ func get_build_options(slot_id: StringName) -> Array[Dictionary]:
 	return result
 
 func build(slot_id: StringName, type: StringName, level: int = 1) -> bool:
+	if not _begin(slot_id):
+		return false
+	var ok := _do_build(slot_id, type, level)
+	_end(slot_id)
+	return ok
+
+func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	var slot := find_slot(slot_id)
 	var data := get_data(type)
 	var gold := _gold()
@@ -108,6 +117,13 @@ func get_tower_info(slot_id: StringName) -> Dictionary:
 	return info
 
 func upgrade(slot_id: StringName) -> bool:
+	if not _begin(slot_id):
+		return false
+	var ok := _do_upgrade(slot_id)
+	_end(slot_id)
+	return ok
+
+func _do_upgrade(slot_id: StringName) -> bool:
 	var slot := find_slot(slot_id)
 	var gold := _gold()
 	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED:
@@ -127,6 +143,13 @@ func upgrade(slot_id: StringName) -> bool:
 	return true
 
 func sell(slot_id: StringName) -> bool:
+	if not _begin(slot_id):
+		return false
+	var ok := _do_sell(slot_id)
+	_end(slot_id)
+	return ok
+
+func _do_sell(slot_id: StringName) -> bool:
 	var slot := find_slot(slot_id)
 	var gold := _gold()
 	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
@@ -144,6 +167,13 @@ func can_change_priority() -> bool:
 	return is_commander_mode() and not TimeManager.is_paused
 
 func set_priority(slot_id: StringName, priority: Enums.TargetPriority) -> bool:
+	if not _begin(slot_id):
+		return false
+	var ok := _do_set_priority(slot_id, priority)
+	_end(slot_id)
+	return ok
+
+func _do_set_priority(slot_id: StringName, priority: Enums.TargetPriority) -> bool:
 	var slot := find_slot(slot_id)
 	if slot == null or slot.tower == null or not can_change_priority():
 		return false
@@ -154,8 +184,21 @@ func set_priority(slot_id: StringName, priority: Enums.TargetPriority) -> bool:
 func _gold() -> GoldManager:
 	return get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
 
+## Returns false when a transaction on this slot is already running.
+func _begin(slot_id: StringName) -> bool:
+	if _busy.get(slot_id, false):
+		return false
+	_busy[slot_id] = true
+	return true
+
+func _end(slot_id: StringName) -> void:
+	_busy.erase(slot_id)
+
 func _on_state_changed(new_state: StringName) -> void:
 	_wave_state = new_state
 
 func _on_mode_changed(mode: StringName) -> void:
 	_mode = mode
+
+func _on_run_started() -> void:
+	_busy.clear()
