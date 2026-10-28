@@ -1,6 +1,7 @@
 extends Node
 ## Runs main.tscn for testing the build panels by hand. F6 on this scene.
 ## K: ruin the selected tower, to test rebuild. L: add 500 gold.
+## J: raise the commander level by 1, to test the upgrade limits.
 ## Adds the ProjectilePool that main.tscn does not have yet, so towers shoot.
 
 const MAIN := preload("res://main.tscn")
@@ -22,6 +23,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	match key.physical_keycode:
 		KEY_K:
 			_ruin_selected()
+		KEY_J:
+			var svc := get_tree().get_first_node_in_group(&"build_service") as BuildService
+			if svc != null:
+				EventBus.level_up.emit(svc.get_commander_level() + 1, 0)
 		KEY_L:
 			var gold := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
 			if gold != null:
