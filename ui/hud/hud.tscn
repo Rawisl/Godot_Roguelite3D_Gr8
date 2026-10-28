@@ -15,9 +15,11 @@
 [ext_resource type="PackedScene" uid="uid://cmf1pspoewu74" path="res://ui/panels/tower_panel.tscn" id="9_6gxmt"]
 [ext_resource type="PackedScene" uid="uid://csopdaxvf7sac" path="res://ui/hud/parts/speed_buttons.tscn" id="9_aixkq"]
 [ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="10_cxhb7"]
+[ext_resource type="PackedScene" uid="uid://b0k826c63b0wy" path="res://ui/panels/fortress_panel.tscn" id="10_m6r7j"]
 [ext_resource type="PackedScene" uid="uid://c3jndrrp8vrgp" path="res://ui/hud/parts/call_wave_button.tscn" id="12_uyo40"]
 [ext_resource type="Script" uid="uid://chy1j70x80shi" path="res://ui/world/selection_controller.gd" id="14_olkg6"]
 [ext_resource type="Script" uid="uid://bn8aebymn6o1b" path="res://ui/world/range_ring.gd" id="15_hk13k"]
+[ext_resource type="PackedScene" uid="uid://xujhr260fsy1" path="res://ui/screens/summary_panel.tscn" id="16_3rj2y"]
 [ext_resource type="Script" uid="uid://cjfiuiol141y4" path="res://ui/world/hover_highlight.gd" id="17_olkg6"]
 
 [node name="Hud" type="CanvasLayer" unique_id=1623823647]
@@ -131,7 +133,18 @@ custom_minimum_size = Vector2(460, 0)
 layout_mode = 2
 script = ExtResource("7_3mxrk")
 
-[node name="BuildPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=800506704 instance=ExtResource("8_6gxmt")]
+[node name="FortressPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=800506704 instance=ExtResource("10_m6r7j")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -483.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="BuildPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=1099369015 instance=ExtResource("8_6gxmt")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
@@ -170,6 +183,9 @@ grow_vertical = 0
 mouse_filter = 2
 
 [node name="BossBar" parent="Root" unique_id=615647234 instance=ExtResource("1_4d6w6")]
+layout_mode = 1
+
+[node name="SummaryPanel" parent="Root" unique_id=1994441246 instance=ExtResource("16_3rj2y")]
 layout_mode = 1
 
 [node name="AlertLayer" parent="Root" unique_id=328027326 instance=ExtResource("1_xmswo")]

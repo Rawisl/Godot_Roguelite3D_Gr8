@@ -1,5 +1,40 @@
-[gd_scene format=3 uid="uid://hh8c645pu0ol"]
+[gd_scene format=3 uid="uid://bos62olchc33a"]
 
-[ext_resource type="PackedScene" uid="uid://bgpfww5ejjq45" path="res://ui/panels/panel_base.tscn" id="1_f8oic"]
+[ext_resource type="Script" uid="uid://bumlpdbh8tv2b" path="res://ui/panels/priority_panel.gd" id="1_qlh2a"]
+[ext_resource type="Texture2D" uid="uid://bqilsj5lgykls" path="res://art/icons/priority_first_icon.png" id="2_6xthw"]
+[ext_resource type="Texture2D" uid="uid://bvn2gjoovfjja" path="res://art/icons/priority_nearest_icon.png" id="3_6ccmc"]
 
-[node name="PanelBase" unique_id=800506704 instance=ExtResource("1_f8oic")]
+[node name="PriorityPanel" type="VBoxContainer" unique_id=1158035571]
+theme_override_constants/separation = 8
+script = ExtResource("1_qlh2a")
+
+[node name="PriorityHeading" type="Label" parent="." unique_id=1849625954]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+
+[node name="Row" type="HBoxContainer" parent="." unique_id=1217897213]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FirstButton" type="Button" parent="Row" unique_id=199718575]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_constants/icon_max_width = 40
+theme_override_font_sizes/font_size = 26
+toggle_mode = true
+icon = ExtResource("2_6xthw")
+
+[node name="NearestButton" type="Button" parent="Row" unique_id=129623567]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_constants/icon_max_width = 40
+theme_override_font_sizes/font_size = 26
+toggle_mode = true
+icon = ExtResource("3_6ccmc")

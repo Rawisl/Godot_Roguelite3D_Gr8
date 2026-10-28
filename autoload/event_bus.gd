@@ -12,6 +12,7 @@ signal prep_timer_changed(remaining: float)
 signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: bool)  # PNL-05
 signal early_call_requested  # UI -> Wave (call wave early - press G)
 signal wave_summary_ready(summary: Dictionary)  # phat SAU KHI save xong (SAV-05, GLD-08)
+signal summary_continue_requested # UI -> Wave: bam Tiep tuc hoac het 10 s dem nguoc o SUMMARY
 signal fortress_destroyed
 signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # EVB-07, delta < 0 khi mat HP
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
@@ -92,6 +93,11 @@ signal meta_item_purchased(item_id: StringName, new_level: int)
 signal save_completed
 signal save_failed(reason: StringName)  # ALR-11
 signal settings_changed(key: StringName, value: Variant)
+#------------------------------------------------------#
+
+
+#-----------------------Skill and reward-----------------------#
+signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # UI -> StatBlock, SkillRunner, RunState. new_level is the absolute level after the pick
 #------------------------------------------------------#
 
 

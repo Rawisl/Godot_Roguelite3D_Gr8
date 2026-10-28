@@ -7,6 +7,7 @@ extends Control
 @onready var _tower_panel: TowerPanel = %TowerPanel
 @onready var _selection: SelectionController = %SelectionController
 @onready var _ring: RangeRing = %RangeRing
+@onready var _fortress_panel: FortressPanel = %FortressPanel
 
 var _mode: StringName = &"FRONTLINE"
 
@@ -20,6 +21,9 @@ func _ready() -> void:
 	_build_panel.preview_cleared.connect(_ring.hide_ring)
 	_tower_panel.closed.connect(close_all)
 	_selection.selection_cleared.connect(close_all)
+	_fortress_panel.visible = false
+	_fortress_panel.closed.connect(close_all)
+	_selection.fortress_selected.connect(_show_fortress)
 	EventBus.slot_selected.connect(_on_slot_selected)
 	EventBus.tower_selected.connect(_on_tower_selected)
 	EventBus.tower_built.connect(_on_tower_built)
@@ -46,10 +50,11 @@ func close_all() -> void:
 func _hide_panels() -> void:
 	_build_panel.visible = false
 	_tower_panel.visible = false
+	_fortress_panel.visible = false
 	_ring.hide_ring()
 
 func _any_open() -> bool:
-	return _build_panel.visible or _tower_panel.visible
+	return _build_panel.visible or _tower_panel.visible or _fortress_panel.visible
 
 func _show_build(slot_id: StringName) -> void:
 	_hide_panels()
@@ -122,3 +127,8 @@ func _on_preview_requested(slot_id: StringName, radius: float) -> void:
 
 func _service() -> BuildService:
 	return get_tree().get_first_node_in_group(&"build_service") as BuildService
+
+func _show_fortress() -> void:
+	_hide_panels()
+	_fortress_panel.visible = true
+	_fortress_panel.open()

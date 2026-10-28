@@ -2388,6 +2388,7 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-34 | heal_tower_hp_changed(slot_id: StringName, new_hp: int, max_hp: int) | Tower & Build. Phát khi HP kho đổi, gộp tối đa 10 lần/giây. Nghe: UI (HLT-11, PNL-14), cảnh báo ALR-17, ALR-18 |
 | EVB-35 | camera_frame_changed(frame: StringName) | Art / Level / Audio (CameraRig). frame thuộc FRONTLINE, OVERVIEW, BOSS_INTRO. Phát khi bắt đầu chuyển khung (CAM-05). Nghe: UI (HUD-10, tooltip phím), Audio |
 | EVB-36 | sync_state_changed(state: StringName, detail: String) | UI/UX & Meta (SyncService). state thuộc GUEST, SYNCED, SYNCING, OFFLINE, ERROR (ACCT-07; CONFLICT là \[Should]). Nghe: UI (MainMenu, Settings) |
+| EVB-37 | summary_continue_requested() | UI/UX & Meta (SummaryPanel). Phát khi bấm Tiếp tục hoặc hết 10 s đếm ngược ở SUMMARY (thời gian thực, dừng khi Pause). Nghe: Enemy & Wave (rời SUMMARY sang REWARD_PICK nếu pending_picks > 0, ngược lại sang PREP) |
 
 # 7. KIỂM CHỨNG VÀ NGHIỆM THU
 
@@ -2803,5 +2804,6 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 73 | **v1.9, online lên MVP rút gọn** (mục 2.2, 2.7, 3.1, 3.13, 3.14, ACCT-02..12, LBD-01..10, SCR-02, SCR-05, SCR-18, SCR-19, 4.6, 5.4, EVB-36, test AC, Phụ lục A, B): rút gọn gồm không hàng đợi nền (thử lại ở RunEnd hoặc mua shop kế tiếp), không hộp thoại chọn bản (lấy bản revision cao hơn, giữ save.conflict.bak), bỏ trạng thái CONFLICT, lọc tên là \[Should]. Settings thêm tab Tài khoản |
 | 74 | **v1.9, cắt khỏi MVP sang \[Should]** (mục 2.7, RWP-03, SKL-04, SKL-08, SKL-13, SKL-15, 3.5.12.2, 3.5.12.3, REP-06, AUD-05, TUT-04, TUT-05, SCR-05, SCR-17, 4.6, INP-05, test F7, F9, F15, mục 7 của nhóm UI): Reroll, ducking, tab Điều khiển và Dữ liệu, TUT-04/05, thẻ Bền thành, bị động Focus và Lightstep. Pool MVP còn 4 bị động và 2 thẻ stat, nhịp bão hòa 24 lượt chọn |
 | 75 | **v1.9, đồng bộ phân vai với bảng phân công v3** (Phụ lục B, EVB-35): CameraRig chuyển từ Player & Combat sang Art / Level / Audio; SaveRepository và save/load thuộc Tower & Build; thang xử lý kẹt, TIME-06 và nhắm Trạm hồi lực thuộc Enemy & Wave. Không đổi yêu cầu chức năng |
+| 76 | **v1.9, tín hiệu tiếp tục ở SUMMARY** (mục 3.3.4, 6.9, EVB-37, TIME-02): thêm summary_continue_requested, do SummaryPanel phát khi bấm Tiếp tục hoặc hết 10 s đếm ngược (thời gian thực, dừng khi Pause). Wave FSM nghe tín hiệu này để rời SUMMARY sang REWARD_PICK hoặc PREP, bỏ bộ đếm riêng đang tính theo game time. Không đổi yêu cầu chức năng |
 
 Hết tài liệu SRS-EW-1.9.

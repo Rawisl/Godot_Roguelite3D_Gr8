@@ -5,12 +5,14 @@ extends Node
 ## runs in _unhandled_input. Also reports what is under the mouse for hover feedback.
 
 signal selection_cleared
+signal fortress_selected
 signal hovered_changed(node: Node)
 
 const CLICK_LAYER := 1 << 6
 const ENEMY_LAYER := 1 << 2
 const RAY_LENGTH := 300.0
 const MAX_HITS := 4
+const FORTRESS_ID := &"FORTRESS"
 
 var selected_slot: StringName = &""
 var hovered: Node = null
@@ -118,6 +120,10 @@ func _select(node: Node) -> void:
 			selected_slot = slot.slot_id
 			_set_selected_ring(slot)
 			EventBus.slot_selected.emit(slot.slot_id)
+	elif node is Fortress and _is_prep():
+		selected_slot = FORTRESS_ID
+		_set_selected_ring(null)
+		fortress_selected.emit()
 	else:
 		clear_selection()
 
@@ -155,8 +161,12 @@ func _update_slot_hover() -> void:
 func _rank(node: Node) -> int:
 	if node is Tower:
 		return 0
+	# An empty slot only counts while the rings show, so the Fortress roof under it stays clickable.
 	if node is Slot:
-		return 2
+		return 2 if _rings_visible or not (node as Slot).is_free() else 99
+	# Wall slots sit on the Fortress roof, so the Fortress loses to any slot that counts.
+	if node is Fortress:
+		return 3
 	return 99
 
 func _slot_of(node: Node) -> Slot:

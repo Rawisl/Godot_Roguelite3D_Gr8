@@ -55,6 +55,7 @@ panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {h
 tower.arrow,Tháp cung
 tower.cannon,Tháp pháo
 tower.barricade,Rào chắn
+tower.heal_station,Trạm hồi lực
 panel.tower.level,Cấp {level}
 panel.tower.hp,Máu {value}/{max}
 panel.tower.upgrade,Nâng cấp - {gold} vàng
@@ -140,3 +141,41 @@ settings.acc.reduce_flash,Giảm nhấp nháy
 hud.call_wave,Gọi đợt sớm (G) · +{gold} vàng
 hud.call_wave.paused,Không gọi được khi tạm dừng
 hud.offscreen.boss,Boss
+panel.fortress.repair_step,Sửa +{pct}%
+panel.fortress.repair_full,Sửa đầy
+panel.fortress.gold,{gold} vàng
+panel.fortress.repair_tip,"Sửa {pct}% máu thành, dùng {gold} vàng"
+panel.fortress.full,Thành đã đầy máu
+panel.fortress.emg,Sửa khẩn cấp: {value}/{max} lượt
+panel.fortress.emg_cd,Đang hồi (còn {sec} s)
+panel.fortress.emg_hint,Nhận +1 lượt khi diệt boss
+panel.fortress.emg_tip,"Lúc chuẩn bị nên sửa bằng vàng, để dành lượt khẩn cấp cho lúc chiến đấu"
+summary.title,Đợt {wave} hoàn thành
+summary.continue,Tiếp tục
+summary.auto_continue,Tự tiếp tục sau {sec} s
+summary.tier.fast,Nhanh (x1.25 vàng)
+summary.tier.normal,Bình thường (x1 vàng)
+summary.tier.slow,Chậm (x0.8 vàng)
+summary.kill_item,{name} ×{count}
+summary.ruined_item,{name} cấp {level} (xây lại {gold} vàng)
+summary.section.battle,TRẬN ĐÁNH
+summary.section.command,THÀNH VÀ CHỈ HUY
+summary.no_data,Chưa có số liệu của đợt này
+summary.row.clear_time,Thời gian
+summary.row.kills,Đã diệt
+summary.row.gold,Vàng
+summary.row.gold_total,TỔNG VÀNG NHẬN
+summary.row.prestige,Danh vọng
+summary.row.fortress,Máu thành
+summary.row.ruined,Công trình bị phá
+summary.row.emg,Sửa khẩn cấp
+summary.row.xp,XP nhận
+summary.row.level,Cấp Chỉ huy
+summary.row.picks,LƯỢT CHỌN THƯỞNG
+summary.row.early,Thưởng gọi sớm
+summary.value.gold_total,+{value} vàng
+summary.value.plus,+{value}
+summary.value.charges,+{value} lượt
+summary.value.xp,{commander} chỉ huy · {towers} tháp
+summary.value.picks,{value} lượt
+summary.value.gold,{base} × {mult}

@@ -62,6 +62,16 @@ func heal(amount: int) -> int:
 	return healed_amount
 
 
+## Changes max HP. With heal_gain, a living entity is healed by exactly the amount max HP grew.
+func set_max_hp(value: int, heal_gain: bool = false) -> void:
+	var gained := value - max_hp
+	max_hp = value
+	if heal_gain and gained > 0 and hp > 0:
+		hp += gained
+	hp = mini(hp, max_hp)
+	hp_changed.emit(hp, max_hp)
+
+
 func is_alive() -> bool:
 	return hp > 0
 

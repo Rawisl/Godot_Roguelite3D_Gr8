@@ -15,7 +15,6 @@ const UPGRADE_HEIGHT := 96
 
 var slot_id: StringName = &""
 var _locked := false
-var _shown_priority: int = -1
 var _next_refresh := 0.0
 var _sell_dialog: Control = null
 
@@ -24,24 +23,22 @@ var _hp: Label
 var _stats: Label
 var _upgrade: PanelButton
 var _sell: PanelButton
-var _priority_box: VBoxContainer
-var _first: Button
-var _nearest: Button
 
 @onready var _title: Label = %Title
 @onready var _body: VBoxContainer = %Body
 @onready var _close: Button = %CloseButton
+@onready var _priority: PriorityPanel = %PriorityPanel
 
 func _ready() -> void:
 	_close.text = tr(&"panel.close")
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_build_body()
+	_priority.changed.connect(refresh)
 	EventBus.state_changed.connect(_on_any_change)
 	EventBus.gold_changed.connect(_on_any_change)
 	EventBus.pause_changed.connect(_on_any_change)
 	EventBus.mode_changed.connect(_on_any_change)
-	EventBus.tower_priority_changed.connect(_on_priority_changed)
 
 ## A sell dialog never outlives the panel or the tower it was opened for.
 func _notification(what: int) -> void:
@@ -52,7 +49,6 @@ func open(id: StringName) -> void:
 	if id != slot_id:
 		_cancel_sell_dialog()
 	slot_id = id
-	_shown_priority = -1
 	refresh()
 
 func _process(_delta: float) -> void:
@@ -90,18 +86,7 @@ func refresh() -> void:
 			UiFormat.tr_fmt(&"panel.need_gold", {"gold": info.upgrade_shortfall}) if short else "")
 	_sell.disabled = false
 	_sell.set_lines(UiFormat.tr_fmt(&"panel.tower.sell", {"gold": info.sell_value}))
-	_refresh_priority(service, info)
-
-## Hidden for towers that never shoot, and in combat outside Commander mode.
-func _refresh_priority(service: BuildService, info: Dictionary) -> void:
-	_priority_box.visible = info.can_target and (service.is_prep() or service.is_commander_mode())
-	var can_change := service.can_change_priority()
-	for b: Button in [_first, _nearest]:
-		b.disabled = not can_change
-		b.tooltip_text = "" if can_change else tr(&"panel.priority.paused")
-	var current: int = _shown_priority if _shown_priority >= 0 else info.priority
-	_first.set_pressed_no_signal(current == Enums.TargetPriority.FIRST)
-	_nearest.set_pressed_no_signal(current == Enums.TargetPriority.NEAREST)
+	_priority.refresh(slot_id, info, service)
 
 ## The "next level" line is kept at MAX so the buttons below never move up.
 func _stats_text(cur: TowerLevelData, next: TowerLevelData) -> String:
@@ -131,37 +116,12 @@ func _build_body() -> void:
 	_sell.pressed.connect(_on_sell_pressed)
 	_body.add_child(_sell)
 
-	_priority_box = VBoxContainer.new()
-	_body.add_child(_priority_box)
-	var heading := Label.new()
-	heading.text = tr(&"panel.tower.priority")
-	heading.add_theme_font_size_override(&"font_size", SMALL_FONT_SIZE)
-	_priority_box.add_child(heading)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override(&"separation", 8)
-	_priority_box.add_child(row)
-	_first = _make_priority_button(&"panel.priority.first", Enums.TargetPriority.FIRST)
-	_nearest = _make_priority_button(&"panel.priority.nearest", Enums.TargetPriority.NEAREST)
-	row.add_child(_first)
-	row.add_child(_nearest)
-
 func _add_label(font_size: int) -> Label:
 	var label := Label.new()
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override(&"font_size", font_size)
 	_body.add_child(label)
 	return label
-
-func _make_priority_button(key: StringName, priority: Enums.TargetPriority) -> Button:
-	var b := Button.new()
-	b.text = tr(key)
-	b.toggle_mode = true
-	b.focus_mode = Control.FOCUS_NONE
-	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 56)
-	b.add_theme_font_size_override(&"font_size", 26)
-	b.pressed.connect(_on_priority_pressed.bind(priority))
-	return b
 
 func _on_upgrade_pressed() -> void:
 	if _try_lock():
@@ -194,16 +154,6 @@ func _cancel_sell_dialog() -> void:
 	if is_instance_valid(_sell_dialog):
 		_sell_dialog.cancel()
 	_sell_dialog = null
-
-func _on_priority_pressed(priority: Enums.TargetPriority) -> void:
-	if _try_lock():
-		_service().set_priority(slot_id, priority)
-	refresh()
-
-func _on_priority_changed(id: StringName, priority: StringName) -> void:
-	if id == slot_id:
-		_shown_priority = Enums.TargetPriority.get(String(priority), -1)
-		refresh()
 
 func _on_any_change(_value: Variant) -> void:
 	if visible:
