@@ -10,8 +10,7 @@
 script = ExtResource("1_turret")
 yaw_bone = &"Ballista_1"
 pitch_bone = &"Ballista_3"
-tip_bone = &"root_2"
-rest_forward = Vector3(0, 0, -1)
+tip_bone = &"Ballista_3"
 pitch_mode = 0
 
 [node name="Level1" parent="." unique_id=1761637560 instance=ExtResource("3_l1")]
