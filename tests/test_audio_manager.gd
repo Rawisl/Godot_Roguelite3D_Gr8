@@ -16,10 +16,14 @@ func _ready() -> void:
 	var autoload := get_node("/root/AudioManager")
 	EventBus.sfx_requested.disconnect(autoload._on_sfx_requested)
 	EventBus.pause_changed.disconnect(autoload._on_pause_changed)
+	EventBus.settings_changed.disconnect(autoload._on_settings_changed)
 	_run()
 	_free_manager()
 	EventBus.sfx_requested.connect(autoload._on_sfx_requested)
 	EventBus.pause_changed.connect(autoload._on_pause_changed)
+	EventBus.settings_changed.connect(autoload._on_settings_changed)
+	# The test instances wrote to the shared buses; put back the autoload's volumes.
+	autoload._apply_buses()
 	TimeManager.reset()
 	print("[test] done: %d passed, %d failed" % [_pass, _fail])
 	# The AudioServer lets go of finished playbacks on its next mix; quitting in this frame leaks them.
@@ -249,7 +253,7 @@ func _run_settings() -> void:
 	_check("moving the UI slider sets the UI bus", is_equal_approx(_bus_linear(&"UI"), 0.4))
 	var mute: CheckButton = tab.get_node("%MuteOnFocusLoss")
 	mute.button_pressed = false
-	_check("the focus checkbox sets mute_on_focus_loss", AudioManager.get_setting(&"mute_on_focus_loss") == false)
+	_check("the focus checkbox sets mute_on_focus_loss", _am.get_setting(&"mute_on_focus_loss") == false)
 	mute.button_pressed = true
 	slider.value = 70
 	tab.free()
