@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="MusicLibrary" format=3 uid="uid://bysb3v7uat6j8"]
+
+[ext_resource type="AudioStream" uid="uid://8ue1wghgaq4a" path="res://audio/music/Killers.ogg" id="1_15b2g"]
+[ext_resource type="Script" uid="uid://c3lv0xnclsqjo" path="res://audio/music_library.gd" id="1_i7m6j"]
+[ext_resource type="AudioStream" uid="uid://bajscqgg31pl0" path="res://audio/music/Crusade - Heavy Industry.ogg" id="2_ojw3l"]
+[ext_resource type="AudioStream" uid="uid://ds5vqyby6obu6" path="res://audio/music/jingles_STEEL14.ogg" id="3_l0n76"]
+[ext_resource type="AudioStream" uid="uid://cht735xx0po1k" path="res://audio/music/Skye Cuillin.ogg" id="3_rbjue"]
+[ext_resource type="AudioStream" uid="uid://i124ia6kcj40" path="res://audio/music/Morning.ogg" id="4_l0n76"]
+[ext_resource type="AudioStream" uid="uid://dhwekaqbwa23y" path="res://audio/music/Silver Blue Light.ogg" id="5_h1aio"]
+[ext_resource type="AudioStream" uid="uid://2ttck2hyh3xy" path="res://audio/music/jingles_STEEL10.ogg" id="8_h1aio"]
+
+[resource]
+script = ExtResource("1_i7m6j")
+menu = ExtResource("3_rbjue")
+prep = ExtResource("4_l0n76")
+combat = ExtResource("2_ojw3l")
+boss = ExtResource("1_15b2g")
+run_end = ExtResource("5_h1aio")
+win_sting = ExtResource("8_h1aio")
+lose_sting = ExtResource("3_l0n76")
