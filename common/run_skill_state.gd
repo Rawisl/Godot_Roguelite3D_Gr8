@@ -33,10 +33,11 @@ func free_slot_index(kind: SkillData.Kind) -> int:
 			return passive.find(&"")
 	return -1
 
+## Slotted skills already in a slot can level up; a slotted skill without a slot, owned or not, needs a free slot.
 func can_take(data: SkillData) -> bool:
 	if is_maxed(data):
 		return false
-	if get_level(data.id) > 0 or not data.is_slotted():
+	if not data.is_slotted() or _slot_array(data.kind).has(data.id):
 		return true
 	return free_slot_index(data.kind) != -1
 
@@ -50,6 +51,8 @@ func take(data: SkillData) -> Dictionary:
 		slot_index = _slot_array(data.kind).find(data.id)
 		if slot_index == -1:
 			slot_index = free_slot_index(data.kind)
+			if slot_index == -1:
+				return {}
 			_slot_array(data.kind)[slot_index] = data.id
 	var new_level := get_level(data.id) + 1
 	levels[data.id] = new_level

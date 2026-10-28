@@ -26,6 +26,7 @@ func _ready() -> void:
 	test_new_state()
 	test_take_same_skill()
 	test_slots_full()
+	test_owned_without_slot()
 	test_stat_does_not_slot()
 	test_dict_roundtrip()
 	test_event_bus_signals()
@@ -70,7 +71,8 @@ func test_get_value() -> void:
 	assert_true(is_equal_approx(WHIRLWIND.get_value(&"damage", 1), 15.0), "whirlwind damage lv1 = 15")
 	assert_true(is_equal_approx(WHIRLWIND.get_value(&"damage", 2), 20.0), "whirlwind damage lv2 = 20")
 	assert_true(is_equal_approx(WHIRLWIND.get_value(&"damage", 3), 25.0), "whirlwind damage lv3 = 25")
-	assert_true(is_equal_approx(WHIRLWIND.get_value(&"damage", 0), 15.0), "level 0 clamps to first")
+	assert_true(WHIRLWIND.get_value(&"damage", 0) == 0.0, "level 0 gives 0.0 (skill not owned)")
+	assert_true(WHIRLWIND.get_value(&"damage", -1) == 0.0, "negative level gives 0.0")
 	assert_true(is_equal_approx(WHIRLWIND.get_value(&"damage", 4), 25.0), "level 4 clamps to last")
 	assert_true(WHIRLWIND.get_value(&"missing", 1) == 0.0, "missing key returns 0.0")
 	var d := _make_skill(&"bad", SkillData.Kind.PASSIVE)
@@ -114,6 +116,23 @@ func test_slots_full() -> void:
 	s.active[1] = &""
 	assert_true(s.free_slot_index(SkillData.Kind.ACTIVE) == 1, "lowest empty index reused")
 	assert_true(s.free_slot_index(SkillData.Kind.STAT) == -1, "STAT has no slot")
+
+func test_owned_without_slot() -> void:
+	# Restored state where a slotted skill has a level but no slot, with every active slot taken.
+	var full: Array[StringName] = []
+	for i in GameConfig.skill_slots_active:
+		full.append(StringName("a%d" % i))
+	var s := RunSkillState.new()
+	s.from_dict({"active": full, "passive": [], "levels": {&"orphan": 1, VITALITY.id: 1}})
+	var orphan := _make_skill(&"orphan", SkillData.Kind.ACTIVE)
+	assert_true(not s.can_take(orphan), "owned skill without a slot needs a free slot")
+	assert_true(s.take(orphan).is_empty(), "take refused for owned skill without a slot")
+	assert_true(s.active == full, "slots unchanged after the refusal")
+	assert_true(s.get_level(&"orphan") == 1, "level unchanged after the refusal")
+	assert_true(s.can_take(VITALITY), "STAT still can_take with full slots")
+	s.active[1] = &""
+	var r := s.take(orphan)
+	assert_true(r.get("slot_index") == 1 and r.get("new_level") == 2, "owned skill takes the lowest free slot and levels up: %s" % r)
 
 func test_stat_does_not_slot() -> void:
 	var s := RunSkillState.new()
