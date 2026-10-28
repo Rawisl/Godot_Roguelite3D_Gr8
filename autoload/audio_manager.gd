@@ -9,11 +9,11 @@ extends Node
 ## AUD-06: on Pause, gameplay SFX stop, UI SFX keep playing and the music drops to half.
 ## AUD-04 positioning is [Should], so the request position is ignored and sounds play in stereo.
 
-const PRIORITY_UNIT := 0
-const PRIORITY_TOWER := 1
-const PRIORITY_BOSS := 2
-const PRIORITY_COMMANDER := 3
-const PRIORITY_T1 := 4
+const PRIORITY_UNIT := SfxEntry.Priority.UNIT
+const PRIORITY_TOWER := SfxEntry.Priority.TOWER
+const PRIORITY_BOSS := SfxEntry.Priority.BOSS
+const PRIORITY_COMMANDER := SfxEntry.Priority.COMMANDER
+const PRIORITY_T1 := SfxEntry.Priority.T1
 
 const BUS_SFX := &"SFX"
 const BUS_UI := &"UI"
@@ -78,8 +78,11 @@ func play(id: StringName, priority: int = -1) -> bool:
 		return false
 	var now := TimeManager.real_time
 	var window := repeat_window_x3 if TimeManager.get_time_scale() >= 3 else repeat_window
-	if _last_played.has(id) and now - float(_last_played[id]) < window:
-		return false
+	if _last_played.has(id):
+		# A clock set back (TimeManager.reset) must not silence the sound until it catches up.
+		var elapsed := now - float(_last_played[id])
+		if elapsed >= 0.0 and elapsed < window:
+			return false
 	var voice := _pick_voice(id, priority)
 	if voice == null:
 		return false

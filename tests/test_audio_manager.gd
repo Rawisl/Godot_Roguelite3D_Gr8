@@ -10,14 +10,33 @@ var _am: Node
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# The autoload AudioManager would also answer the EventBus signals sent here, with the
+	# shipped library, so it is unplugged while the test instances run.
+	var autoload := get_node("/root/AudioManager")
+	EventBus.sfx_requested.disconnect(autoload._on_sfx_requested)
+	EventBus.pause_changed.disconnect(autoload._on_pause_changed)
 	_run()
+	_free_manager()
+	EventBus.sfx_requested.connect(autoload._on_sfx_requested)
+	EventBus.pause_changed.connect(autoload._on_pause_changed)
 	TimeManager.reset()
 	print("[test] done: %d passed, %d failed" % [_pass, _fail])
+	# The AudioServer lets go of finished playbacks on its next mix; quitting in this frame leaks them.
+	for i in 3:
+		await get_tree().process_frame
 	get_tree().quit(1 if _fail > 0 else 0)
 
+## Stops every voice first, so no playback is left with the AudioServer.
+func _free_manager() -> void:
+	if _am == null:
+		return
+	for player in _am.find_children("*", "AudioStreamPlayer", true, false):
+		(player as AudioStreamPlayer).stop()
+	_am.free()
+	_am = null
+
 func _new_manager() -> void:
-	if _am != null:
-		_am.free()
+	_free_manager()
 	_am = AM_SCENE.instantiate()
 	add_child(_am)
 	var lib := SfxLibrary.new()
@@ -71,6 +90,11 @@ func _run() -> void:
 	_check("at x3, 60 ms is still inside the window", not _am.play(&"unit_0"))
 	_wait(0.03)
 	_check("at x3, 90 ms plays", _am.play(&"unit_0"))
+	TimeManager.set_time_scale(1)
+	TimeManager.real_time = 50.0
+	_check("a clock set back does not silence the sound", _am.play(&"unit_0"))
+	TimeManager.real_time = 100.5
+	TimeManager.set_time_scale(3)
 	# AUD-01: the game speed never reaches the pitch.
 	_check("pitch stays 1 at x3", _all_pitch_one() and is_equal_approx(AudioServer.playback_speed_scale, 1.0))
 	TimeManager.set_time_scale(1)
