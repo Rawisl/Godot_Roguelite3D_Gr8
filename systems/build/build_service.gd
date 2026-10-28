@@ -1,8 +1,11 @@
 class_name BuildService
 extends Node
-## Build, upgrade and sell for the panels. Each call checks the wave state, the slot and
+## Build, upgrade, sell and Fortress repair for the panels. Each call checks the wave state, the slot and
 ## the gold in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice.
+
+## Lock key for Fortress repairs in _busy; slot ids never take this value.
+const FORTRESS_LOCK := &"FORTRESS"
 
 @export var towers: Array[TowerData] = []
 @export var tower_scenes: Dictionary[StringName, PackedScene] = {}
@@ -201,6 +204,42 @@ func _do_sell(slot_id: StringName) -> bool:
 	EventBus.tower_sold.emit(slot_id)
 	return true
 
+## Spends gold and repairs the Fortress in one call. step_ratio as in FortressStats
+## (repair_step_small_pct, repair_step_large_pct); <= 0 repairs to full HP.
+## Returns true when HP was restored and gold spent.
+func repair_fortress(step_ratio: float) -> bool:
+	if not _begin(FORTRESS_LOCK):
+		return false
+	var ok := _do_repair_fortress(step_ratio)
+	_end(FORTRESS_LOCK)
+	return ok
+
+func _do_repair_fortress(step_ratio: float) -> bool:
+	var fortress := _fortress()
+	var gold := _gold()
+	if not is_prep() or fortress == null or gold == null:
+		return false
+	if fortress.is_destroyed() or fortress.is_full():
+		return false
+	var quote := fortress.quote_repair_now(step_ratio, gold.gold)
+	if quote.heal <= 0:
+		EventBus.build_denied.emit(&"NOT_ENOUGH_GOLD", gold.shortfall(_min_repair_cost(fortress)))
+		return false
+	var cost: int = quote.cost
+	if not gold.try_spend(cost):
+		return false
+	# Passing the spent gold as the budget makes the Fortress quote the same step again.
+	var result := fortress.repair_with_gold(step_ratio, cost)
+	var used: int = result.cost if result.heal > 0 else 0
+	if used < cost:
+		gold.add(cost - used)
+	# TODO(week 9): gold repairs give no prestige; keep this spending out of the prestige tally.
+	return used > 0
+
+## Gold for the smallest repair the panel allows: 1% of max HP, or the whole gap when it is smaller.
+func _min_repair_cost(fortress: Fortress) -> int:
+	return ceili(minf(1.0, fortress.get_missing_pct()) * fortress.stats.repair_gold_per_pct - Fortress.PCT_EPSILON)
+
 ## In combat only Commander mode can change it, and never while paused.
 func can_change_priority() -> bool:
 	if is_prep():
@@ -224,6 +263,9 @@ func _do_set_priority(slot_id: StringName, priority: Enums.TargetPriority) -> bo
 
 func _gold() -> GoldManager:
 	return get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
+
+func _fortress() -> Fortress:
+	return get_tree().get_first_node_in_group(&"fortress") as Fortress
 
 ## Returns false when a transaction on this slot is already running.
 func _begin(slot_id: StringName) -> bool:
