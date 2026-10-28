@@ -405,7 +405,20 @@ func test_shockwave() -> void:
 	assert_true(far.current_state != Enums.EnemyState.STAGGER, "enemy outside the radius is untouched")
 	await _wait(0.6)
 	var moved := Vector2(grunt.global_position.x - grunt_start.x, grunt.global_position.z - grunt_start.z).length()
-	assert_true(moved > 1.0, "grunt is pushed back (moved %.2f m)" % moved)
+	assert_true(moved > 1.5, "grunt is pushed back (moved %.2f m)" % moved)
+
+	var walker := _add_enemy(GRUNT_SCENE, DEPLOY_POINT + Vector3(0.0, 0.0, 5.0))
+	walker.velocity = Vector3(0.0, 0.0, -3.5)
+	walker.apply_displacement(Vector3(0.0, 0.0, 1.0), 2.0)
+	var stagger := GameConfig.enemy_stagger_time
+	var expected_speed := (2.0 + 0.5 * Enemy.KNOCKBACK_DECAY * stagger * stagger) / stagger
+	assert_true(absf(walker.velocity.z - expected_speed) < 0.01,
+		"the push replaces the walking velocity (got %.2f, want %.2f)" % [walker.velocity.z, expected_speed])
+
+	var wall := _add_enemy(BRUTE_SCENE, DEPLOY_POINT + Vector3(0.0, 0.0, 5.0))
+	wall.velocity = Vector3(0.0, 0.0, -3.5)
+	wall.apply_displacement(Vector3(0.0, 0.0, 1.0), 2.0)
+	assert_true(wall.velocity.is_equal_approx(Vector3(0.0, 0.0, -3.5)), "an immune enemy keeps its velocity")
 
 
 func test_priority_access_in_prep() -> void:

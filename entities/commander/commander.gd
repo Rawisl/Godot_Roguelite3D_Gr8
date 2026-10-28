@@ -841,7 +841,8 @@ func apply_stun(duration: float = -1.0) -> bool:
 		_interrupt_attack()
 	if is_using_skill:
 		_interrupt_skill()
-	_mode_switch.interrupt_recall()
+	if _mode_switch != null:
+		_mode_switch.interrupt_recall()
 
 	is_stunned = true
 	_stun_timer = maxf(_stun_timer, clamped_dur)

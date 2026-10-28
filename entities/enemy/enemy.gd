@@ -1199,9 +1199,20 @@ func apply_displacement(direction: Vector3, distance: float) -> void:
 	var stagger := GameConfig.enemy_stagger_time
 	if stagger <= 0.0:
 		return
+	if _ignores_knockback():
+		return
 	# Speed falls linearly during the stagger, so the distance covered is v*t - decay*t^2/2.
 	var speed := (distance + 0.5 * KNOCKBACK_DECAY * stagger * stagger) / stagger
+	# The push is added to the current velocity, so drop the walking velocity to cover the full distance.
+	velocity.x = 0.0
+	velocity.z = 0.0
 	apply_knockback(direction.normalized() * (speed / KNOCKBACK_IMPULSE_SCALE))
+
+func _ignores_knockback() -> bool:
+	if is_dead or spawn_grace:
+		return true
+	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
+	return is_boss or knockback_immune or knockback_immunity_timer > 0.0
 
 ## Drops provocation and taunt, and picks a new target by the normal priorities if the commander was the target.
 func release_commander_aggro() -> void:
@@ -1215,12 +1226,7 @@ func release_commander_aggro() -> void:
 		_retarget_now()
 
 func apply_knockback(force_vector: Vector3) -> void:
-	if is_dead or spawn_grace:
-		return
-	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
-	if is_boss or knockback_immune:
-		return
-	if knockback_immunity_timer > 0.0:
+	if _ignores_knockback():
 		return
 	var kb_dir := force_vector
 	kb_dir.y = 0.0
