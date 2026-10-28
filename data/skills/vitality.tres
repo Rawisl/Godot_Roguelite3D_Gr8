@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://common/skill_data.gd" id="1_skill"]
+
+[resource]
+script = ExtResource("1_skill")
+id = &"vitality"
+kind = 2
+name_key = &"skill.vitality.name"
+description_key = &"skill.vitality.desc"

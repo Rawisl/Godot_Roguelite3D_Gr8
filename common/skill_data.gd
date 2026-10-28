@@ -15,7 +15,8 @@ enum Kind { ACTIVE, PASSIVE, STAT }
 ## Run flag that must be true before the card can be offered, e.g. &"heal_station_built". Empty = always.
 # TODO(week 8): RewardOfferGenerator filters by this flag and GameConfig reward weights.
 @export var requires_flag: StringName = &""
-## Per-level numbers: key -> one value per level (index 0 = level 1).
+## Per-level numbers that active-skill code reads: key -> one value per level (index 0 = level 1).
+## Passive and stat numbers are not stored here; they come from the stat card table (same id).
 @export var values: Dictionary[StringName, PackedFloat32Array] = {}
 
 func get_max_level() -> int:
@@ -23,15 +24,15 @@ func get_max_level() -> int:
 		return max_level_override
 	return GameConfig.stat_max_stacks if kind == Kind.STAT else GameConfig.skill_max_level
 
-## Level is clamped to the table so an out-of-range level never reads past the data.
+## Level 0 or below means the skill is not owned and gives 0.0; levels past the table read the last value.
 func get_value(key: StringName, level: int) -> float:
 	if not values.has(key):
 		push_warning("SkillData '%s' has no value '%s'" % [id, key])
 		return 0.0
 	var arr: PackedFloat32Array = values[key]
-	if arr.is_empty():
+	if arr.is_empty() or level < 1:
 		return 0.0
-	return arr[clampi(level, 1, arr.size()) - 1]
+	return arr[mini(level, arr.size()) - 1]
 
 ## ACTIVE and PASSIVE take a slot; STAT only stacks.
 func is_slotted() -> bool:

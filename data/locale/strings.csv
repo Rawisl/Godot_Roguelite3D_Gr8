@@ -55,7 +55,7 @@ panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {h
 tower.arrow,Tháp cung
 tower.cannon,Tháp pháo
 tower.barricade,Rào chắn
-tower.heal_station,Trạm hồi lực
+tower.heal_station,Trạm hồi phục
 panel.tower.level,Cấp {level}
 panel.tower.hp,Máu {value}/{max}
 panel.tower.upgrade,Nâng cấp - {gold} vàng
@@ -183,7 +183,7 @@ skill.whirlwind.name,Lốc xoáy
 skill.whirlwind.desc,Xoay vũ khí gây sát thương chém lên mọi kẻ địch xung quanh.
 skill.sharpness.name,Sắc bén
 skill.sharpness.desc,Tăng sát thương gây ra.
-skill.stat_vitality.name,Sinh lực
-skill.stat_vitality.desc,Tăng máu tối đa.
-skill.heal_station_skill.name,Trạm hồi phục
-skill.heal_station_skill.desc,Tăng tốc độ hồi máu của trạm hồi phục.
+skill.vitality.name,Sinh lực
+skill.vitality.desc,Tăng máu tối đa.
+skill.heal_station.name,Trạm hồi phục
+skill.heal_station.desc,Tăng tốc độ hồi máu của trạm hồi phục.

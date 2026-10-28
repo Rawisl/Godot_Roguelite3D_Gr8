@@ -8,6 +8,3 @@ id = &"sharpness"
 kind = 1
 name_key = &"skill.sharpness.name"
 description_key = &"skill.sharpness.desc"
-values = Dictionary[StringName, PackedFloat32Array]({
-&"damage_mult_add": PackedFloat32Array(0.08, 0.16, 0.24)
-})
