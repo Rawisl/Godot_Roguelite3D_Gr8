@@ -4,11 +4,8 @@
 
 [resource]
 script = ExtResource("1_skill")
-id = &"heal_station_skill"
+id = &"heal_station"
 kind = 1
-name_key = &"skill.heal_station_skill.name"
-description_key = &"skill.heal_station_skill.desc"
+name_key = &"skill.heal_station.name"
+description_key = &"skill.heal_station.desc"
 requires_flag = &"heal_station_built"
-values = Dictionary[StringName, PackedFloat32Array]({
-&"heal_rate": PackedFloat32Array(15, 20, 25)
-})

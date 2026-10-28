@@ -5,8 +5,8 @@ extends Node
 
 const WHIRLWIND: SkillData = preload("res://data/skills/whirlwind.tres")
 const SHARPNESS: SkillData = preload("res://data/skills/sharpness.tres")
-const VITALITY: SkillData = preload("res://data/skills/stat_vitality.tres")
-const HEAL_STATION: SkillData = preload("res://data/skills/heal_station_skill.tres")
+const VITALITY: SkillData = preload("res://data/skills/vitality.tres")
+const HEAL_STATION: SkillData = preload("res://data/skills/heal_station.tres")
 
 ## Off when driven from the editor or godot-mcp, so results can still be read.
 @export var quit_when_done := true
@@ -78,6 +78,9 @@ func test_get_value() -> void:
 	var d := _make_skill(&"bad", SkillData.Kind.PASSIVE)
 	d.values = {&"x": PackedFloat32Array([1.0])}
 	assert_true(d.validate().size() == 1, "validate flags wrong value count")
+	# Passive and stat numbers live in the stat card table, not in SkillData.
+	for p: SkillData in [SHARPNESS, VITALITY, HEAL_STATION]:
+		assert_true(p.values.is_empty(), "%s has no values (numbers come from the stat card table)" % p.id)
 
 func test_new_state() -> void:
 	var s := RunSkillState.new()

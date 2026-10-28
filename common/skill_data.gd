@@ -15,7 +15,8 @@ enum Kind { ACTIVE, PASSIVE, STAT }
 ## Run flag that must be true before the card can be offered, e.g. &"heal_station_built". Empty = always.
 # TODO(week 8): RewardOfferGenerator filters by this flag and GameConfig reward weights.
 @export var requires_flag: StringName = &""
-## Per-level numbers: key -> one value per level (index 0 = level 1).
+## Per-level numbers that active-skill code reads: key -> one value per level (index 0 = level 1).
+## Passive and stat numbers are not stored here; they come from the stat card table (same id).
 @export var values: Dictionary[StringName, PackedFloat32Array] = {}
 
 func get_max_level() -> int:
