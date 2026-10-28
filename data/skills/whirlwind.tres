@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://common/skill_data.gd" id="1_skill"]
+
+[resource]
+script = ExtResource("1_skill")
+id = &"whirlwind"
+kind = 0
+name_key = &"skill.whirlwind.name"
+description_key = &"skill.whirlwind.desc"
+damage_type = 2
+values = Dictionary[StringName, PackedFloat32Array]({
+&"damage": PackedFloat32Array(15, 20, 25),
+&"cooldown": PackedFloat32Array(6, 5.5, 5),
+&"radius": PackedFloat32Array(3, 3, 3)
+})
