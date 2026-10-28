@@ -8,6 +8,8 @@ signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
  
 const PATH_UPDATE_INTERVAL: float = 0.3
 const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
+## Speed lost per second while staggered.
+const KNOCKBACK_DECAY: float = 10.0
 ## slot holder blocked by the units already at the target swings.
 const STALL_ATTACK_TIME: float = 0.5
 ## A waiting unit this close to crowd_wait_ring has reached the ring and stands still.
@@ -469,8 +471,8 @@ func _update_state(delta: float) -> void:
 							change_state(Enums.EnemyState.CHASE)
  
 		Enums.EnemyState.STAGGER:
-			velocity.x = move_toward(velocity.x, 0.0, 10.0 * delta)
-			velocity.z = move_toward(velocity.z, 0.0, 10.0 * delta)
+			velocity.x = move_toward(velocity.x, 0.0, KNOCKBACK_DECAY * delta)
+			velocity.z = move_toward(velocity.z, 0.0, KNOCKBACK_DECAY * delta)
 			_release_slot_if_knocked_out()
 			stagger_timer -= delta
 			if stagger_timer <= 0.0:
@@ -1191,13 +1193,40 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
  
 	health.take_damage(info)
  
-func apply_knockback(force_vector: Vector3) -> void:
+## Staggers the enemy and pushes it about `distance` metres along `direction`.
+## Bosses and knockback-immune units ignore it, like any knockback.
+func apply_displacement(direction: Vector3, distance: float) -> void:
+	var stagger := GameConfig.enemy_stagger_time
+	if stagger <= 0.0:
+		return
+	if _ignores_knockback():
+		return
+	# Speed falls linearly during the stagger, so the distance covered is v*t - decay*t^2/2.
+	var speed := (distance + 0.5 * KNOCKBACK_DECAY * stagger * stagger) / stagger
+	# The push is added to the current velocity, so drop the walking velocity to cover the full distance.
+	velocity.x = 0.0
+	velocity.z = 0.0
+	apply_knockback(direction.normalized() * (speed / KNOCKBACK_IMPULSE_SCALE))
+
+func _ignores_knockback() -> bool:
 	if is_dead or spawn_grace:
-		return
+		return true
 	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
-	if is_boss or knockback_immune:
+	return is_boss or knockback_immune or knockback_immunity_timer > 0.0
+
+## Drops provocation and taunt, and picks a new target by the normal priorities if the commander was the target.
+func release_commander_aggro() -> void:
+	if is_dead:
 		return
-	if knockback_immunity_timer > 0.0:
+	provoked_by_player = false
+	provoked_timer = 0.0
+	taunted_by_player = false
+	taunt_timer = 0.0
+	if current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"commander"):
+		_retarget_now()
+
+func apply_knockback(force_vector: Vector3) -> void:
+	if _ignores_knockback():
 		return
 	var kb_dir := force_vector
 	kb_dir.y = 0.0

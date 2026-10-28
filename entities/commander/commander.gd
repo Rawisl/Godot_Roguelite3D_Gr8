@@ -4,6 +4,7 @@ extends CharacterBody3D
 @export var debug_aim_marker: Node3D
 @export var debug_print_speed: bool = false
 @export var _anim_player: AnimationPlayer
+@export var stat_cards: StatCardTable
 
 # Combat & hit constants
 const COLLISION_LAYER_ENEMY: int = 3
@@ -83,6 +84,11 @@ var _spawn_position: Vector3
 var _wave_state: StringName = &""
 var _is_low_hp: bool = false
 
+## Every gameplay read of a commander stat goes through this block.
+var stat_block: StatBlock
+var _stat_applier: StatCardApplier
+var _mode_switch: ModeSwitch
+
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
 @onready var health: HealthComponent = %Health
@@ -92,20 +98,43 @@ func _ready() -> void:
 	add_to_group(&"commander")
 	_spawn_position = global_position
 	_debug_last_pos = global_position
+	_setup_stat_block()
 	_setup_health()
 	_setup_animation_player()
 	_setup_sword_area()
 	_setup_input()
 	_setup_heal_channel()
+	_setup_mode_switch()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	_refresh_aura.call_deferred()
 
 
+func _setup_stat_block() -> void:
+	stat_block = StatBlock.new(stats)
+	_stat_applier = StatCardApplier.new()
+	_stat_applier.name = "StatCardApplier"
+	_stat_applier.stat_block = stat_block
+	_stat_applier.table = stat_cards
+	_stat_applier.applied.connect(_on_stat_card_applied)
+	add_child(_stat_applier)
+
+
+## The fallback only covers a missing stats resource. Keys must exist in CharacterStats.
+func get_stat(stat_key: StringName, fallback: float) -> float:
+	return stat_block.get_value(stat_key) if stats != null else fallback
+
+
+func _on_stat_card_applied(_card_id: StringName) -> void:
+	var new_max := stat_block.get_max_hp()
+	if new_max != health.max_hp:
+		health.set_max_hp(new_max, true)
+
+
 func _setup_health() -> void:
 	if stats != null:
-		health.max_hp = stats.commander_max_hp
-		health.hp = stats.commander_max_hp
+		health.max_hp = stat_block.get_max_hp()
+		health.hp = health.max_hp
 
 	health.hp_changed.connect(_on_hp_changed)
 	health.died.connect(_on_died)
@@ -123,6 +152,12 @@ func _setup_heal_channel() -> void:
 	var channel := HealChannel.new()
 	channel.name = "HealChannel"
 	add_child(channel)
+
+
+func _setup_mode_switch() -> void:
+	_mode_switch = ModeSwitch.new()
+	_mode_switch.name = "ModeSwitch"
+	add_child(_mode_switch)
 
 
 func _setup_input() -> void:
@@ -164,6 +199,8 @@ func _physics_process(delta: float) -> void:
 	_refresh_aura()
 
 	if is_commander_mode:
+		if _cmd_input.next_command(_command_busy_left) == &"mode_switch":
+			_mode_switch.request()
 		_cmd_input.discard()
 		velocity = Vector3.ZERO
 		move_and_slide()
@@ -184,11 +221,17 @@ func _physics_process(delta: float) -> void:
 			_anim_player.play(ANIM_IDLE, 0.2)
 		return
 
-	_execute_command(_cmd_input.next_command(_command_busy_left), camera)
+	var command := _cmd_input.next_command(_command_busy_left)
+	if is_recalling() and ((command != &"" and command != &"mode_switch") or is_trying_to_move()):
+		_mode_switch.interrupt_recall()
+	if command == &"mode_switch":
+		_mode_switch.request()
+		command = &""
+	_execute_command(command, camera)
 
 	if is_dodging:
 		_update_dodge_movement(delta)
-	elif is_using_skill:
+	elif is_using_skill or is_recalling():
 		_update_skill_movement(delta)
 	else:
 		_update_movement(camera, delta)
@@ -270,11 +313,15 @@ func _update_cooldowns_and_timers(delta: float) -> void:
 
 ## True when the commander stands free of any action, hit reaction or push.
 func is_idle() -> bool:
-	if is_dead or is_commander_mode or is_deploying or is_stunned:
+	if is_dead or is_commander_mode or is_deploying or is_stunned or is_recalling():
 		return false
 	if is_attacking or is_dodging or is_using_skill:
 		return false
 	return _knockback_velocity.is_zero_approx()
+
+
+func is_recalling() -> bool:
+	return _mode_switch != null and _mode_switch.is_recalling()
 
 
 func is_trying_to_move() -> bool:
@@ -311,7 +358,7 @@ func _command_busy_left(command: StringName) -> float:
 
 
 func _execute_command(command: StringName, camera: Camera3D) -> void:
-	if not _ground_actions_allowed():
+	if not _ground_actions_allowed() or is_deploying:
 		return
 	match command:
 		&"dodge":
@@ -471,7 +518,7 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 		velocity.z = 0.0
 	else:
 		var input := _move_input()
-		var speed := stats.move_speed if stats else 6.0
+		var speed := get_stat(&"move_speed", 6.0)
 
 		var cam_basis := camera.global_transform.basis
 		var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
@@ -651,11 +698,12 @@ func _execute_sword_strike(combo_step: int) -> void:
 	var half_arc_rad: float = deg_to_rad(arc_deg * 0.5)
 
 	var max_targets: int = stats.sword_max_targets
-	var damage_amount: int = stats.sword_damage
+	var sword_damage: float = stat_block.get_value(&"sword_damage")
+	var damage_amount: int = roundi(sword_damage)
 	var knockback: float = 0.0
 
 	if combo_step == 3:
-		damage_amount = roundi(float(stats.sword_damage) * stats.combo_hit3_mult)
+		damage_amount = roundi(sword_damage * stats.combo_hit3_mult)
 		knockback = stats.combo_hit3_knockback
 
 	var candidates: Array[Dictionary] = []
@@ -736,7 +784,7 @@ func take_damage(damage_input: Variant) -> void:
 
 	var final_amount: int = info.amount
 	if info.damage_type != Enums.DamageType.TRUE and stats != null and info.amount > 0:
-		var effective_armor: float = clampf(stats.armor_pct, 0.0, 0.75)
+		var effective_armor: float = stat_block.get_capped(&"armor_pct", GameConfig.commander_armor_cap)
 		var skill_mult: float = stats.battle_cry_damage_mult if _battle_cry_active_timer > 0.0 else 1.0
 		final_amount = maxi(1, ceili(float(info.amount) * (1.0 - effective_armor) * skill_mult))
 
@@ -793,6 +841,8 @@ func apply_stun(duration: float = -1.0) -> bool:
 		_interrupt_attack()
 	if is_using_skill:
 		_interrupt_skill()
+	if _mode_switch != null:
+		_mode_switch.interrupt_recall()
 
 	is_stunned = true
 	_stun_timer = maxf(_stun_timer, clamped_dur)
@@ -852,6 +902,8 @@ func _recover_from_fall() -> void:
 
 
 func _find_deploy_position() -> Vector3:
+	if _mode_switch != null:
+		return _mode_switch.find_deploy_position()
 	var scene := get_tree().current_scene
 	var marker := scene.find_child("DeployPoint", true, false) as Node3D if scene != null else null
 	return marker.global_position if marker != null else _spawn_position
@@ -901,11 +953,10 @@ func _on_mode_changed(mode: StringName) -> void:
 
 
 ## Frontline aura source: on in Frontline (dodging included), off while Stunned,
-## Deploying, dead or in Commander mode. Towers read this on each scan.
-# TODO(week 7): also off while Recalling, once the Recall state exists; call _refresh_aura() when it starts and ends.
+## Recalling, Deploying, dead or in Commander mode. Towers read this on each scan.
 func is_aura_source() -> bool:
 	return (not is_commander_mode and not is_dead and not is_stunned
-		and not is_deploying
+		and not is_deploying and not is_recalling()
 		and health != null and health.hp > 0)
 
 
@@ -929,4 +980,4 @@ func _debug_report_speed(delta: float) -> void:
 
 	_debug_timer = 0.0
 	print("velocity: %.3f m/s | moved: %.3f m/s | expected: %.3f m/s" % [
-		flat_velocity.length(), moved.length() / delta, stats.move_speed if stats else 6.0])
+		flat_velocity.length(), moved.length() / delta, get_stat(&"move_speed", 6.0)])
