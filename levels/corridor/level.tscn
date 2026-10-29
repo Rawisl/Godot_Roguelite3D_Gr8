@@ -179,10 +179,10 @@ collision_mask = 2
 shape = SubResource("Cyl_return")
 
 [node name="DeployPoint" type="Marker3D" parent="Markers" unique_id=488986395]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -13, 0, 0)
 
 [node name="CommandPost" type="Marker3D" parent="Markers" unique_id=2075346717]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 5, 0)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -19, 4, 0)
 
 [node name="BossMeleePoint" type="Marker3D" parent="Markers" unique_id=1392566955]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13, 0, 0)

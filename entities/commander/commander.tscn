@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://81hjayhjt6to" path="res://common/health_component.gd" id="1_ms8n4"]
 [ext_resource type="Resource" uid="uid://dsl0yhckk2q4f" path="res://data/config/commander_stats.tres" id="2_72mue"]
 [ext_resource type="Resource" path="res://data/skills/stat_cards.tres" id="3_cards"]
-[ext_resource type="PackedScene" uid="uid://ch20yutdcyf0i" path="res://contents/assets/characters/commander/commander_model.tscn" id="4_2akwn"]
+[ext_resource type="PackedScene" uid="uid://suj17yb2uyxq" path="res://contents/assets/characters/fox_commander/fox_commander_model.tscn" id="4_2akwn"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xepy2"]
 radius = 0.4
@@ -24,7 +24,7 @@ collision_mask = 13
 script = ExtResource("1_3wjli")
 stats = ExtResource("2_72mue")
 stat_cards = ExtResource("3_cards")
-_anim_player = NodePath("AimPivot/Model/CommanderModel/Knight/KnightAnimationPlayer")
+_anim_player = NodePath("AimPivot/Model/CommanderModel/Fox/FoxAnimationPlayer")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1061114779]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -49,37 +49,6 @@ unique_name_in_owner = true
 
 [node name="CommanderModel" parent="AimPivot/Model" unique_id=52484259 instance=ExtResource("4_2akwn")]
 
-[node name="Skeleton3D" parent="AimPivot/Model/CommanderModel/Knight/Rig_Medium" parent_id_path=PackedInt32Array(52484259, 1404373090, 1251981551) index="0" unique_id=1849754511]
-bones/1/position = Vector3(-0.052612856, 0.2691251, -0.14560263)
-bones/1/rotation = Quaternion(0.67896795, -0.028240988, 0.19468886, 0.70731974)
-bones/2/rotation = Quaternion(-0.12141846, 0.03330778, -0.18889804, 0.9738921)
-bones/3/rotation = Quaternion(-0.11651464, -0.10634422, -0.05448948, 0.9859747)
-bones/4/position = Vector3(0.20826875, 0.14464949, 0.060467303)
-bones/4/rotation = Quaternion(-0.12932114, -0.8217412, -0.5332826, 0.153711)
-bones/5/rotation = Quaternion(-3.7315566e-08, -4.823764e-08, -0.14130145, 0.98996663)
-bones/7/rotation = Quaternion(0.2950251, -0.030909741, -0.21100157, 0.9313877)
-bones/8/rotation = Quaternion(-2.8169373e-08, -2.6363399e-08, -0.2164397, 0.97629607)
-bones/9/position = Vector3(-0.21200736, 0.13413233, 8.4878415e-08)
-bones/9/rotation = Quaternion(-0.73100746, 0.3349581, 0.5616088, 0.19500488)
-bones/10/rotation = Quaternion(3.1244637e-10, 5.6969018e-08, 0.6243637, 0.78113383)
-bones/12/rotation = Quaternion(0.4051138, -0.1783524, 0.06418751, 0.894401)
-bones/13/position = Vector3(1.4387312e-08, 0.096125126, -0.05750001)
-bones/13/rotation = Quaternion(-2.8169401e-08, 2.6363411e-08, 0.2164397, 0.97629607)
-bones/14/rotation = Quaternion(-0.18040392, 8.058898e-10, -1.1344641e-09, 0.9835926)
-bones/15/position = Vector3(-0.17094506, 0.082335174, 6.3562764e-09)
-bones/15/rotation = Quaternion(0.93898094, -0.064143084, 0.17458795, 0.28934315)
-bones/16/rotation = Quaternion(0.4817685, -5.755325e-08, 2.1193165e-07, 0.8762985)
-bones/17/rotation = Quaternion(-0.19575152, -0.052471295, 0.07504621, 0.9763689)
-bones/18/rotation = Quaternion(-0.00055957993, 0.921086, -0.38935897, -0.00019337903)
-bones/19/position = Vector3(0.17094506, 0.123203285, 4.1659224e-08)
-bones/19/rotation = Quaternion(0.73242944, 0.10015052, -0.28709146, 0.60917604)
-bones/20/rotation = Quaternion(0.6364064, 3.4400845e-08, -3.9152118e-07, 0.77135396)
-bones/21/rotation = Quaternion(-0.050226524, 0.22035192, -0.2485608, 0.941881)
-bones/22/rotation = Quaternion(4.1465708e-05, 0.92108923, -0.38935164, -8.797745e-06)
-
-[node name="RightHandSlot" parent="AimPivot/Model/CommanderModel/Knight/Rig_Medium/Skeleton3D" index="9" unique_id=823504566]
-transform = Transform3D(-0.9987114, -0.050736308, -1.8500984e-07, 1.09891545e-08, 1.5177689e-07, 0.99999905, -0.05073622, 0.99871117, 1.5951385e-07, -0.6288241, 0.052214205, 0.6990472)
-
 [node name="SwordArea" type="Area3D" parent="AimPivot/Model" unique_id=52479625]
 unique_name_in_owner = true
 collision_layer = 0
@@ -89,7 +58,3 @@ monitorable = false
 [node name="CollisionShape3D" type="CollisionShape3D" parent="AimPivot/Model/SwordArea" unique_id=1923382067]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CylinderShape3D_6uqi0")
-
-[editable path="AimPivot/Model/CommanderModel"]
-[editable path="AimPivot/Model/CommanderModel/Knight"]
-[editable path="AimPivot/Model/CommanderModel/Knight/Rig_Medium/Skeleton3D/RightHandSlot/sword_2handed_color2"]

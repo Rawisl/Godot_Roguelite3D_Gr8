@@ -116,4 +116,3 @@ func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
 	var diff := target.global_position - from_pos
 	diff.y = 0.0
 	return diff.length()
-
