@@ -119,6 +119,7 @@ func _finish_recall() -> void:
 	var post := _marker(&"CommandPost")
 	if post != null:
 		_commander.global_position = post.global_position
+		_commander.face_toward(-post.global_basis.z)
 	_commander.velocity = Vector3.ZERO
 	EventBus.mode_changed.emit(&"COMMANDER")
 	_release_enemy_aggro()

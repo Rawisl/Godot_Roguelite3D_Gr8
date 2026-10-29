@@ -558,6 +558,16 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 						_anim_player.play(ANIM_IDLE, 0.15)
 
 
+## Turns the model to face direction at once (flattened to the ground). Used when the
+## commander is placed somewhere with a set facing, such as the command post.
+func face_toward(direction: Vector3) -> void:
+	var flat := Vector3(direction.x, 0.0, direction.z)
+	if flat.is_zero_approx():
+		return
+	aim_dir = flat.normalized()
+	_aim_pivot.rotation.y = atan2(aim_dir.x, aim_dir.z)
+
+
 func _update_aim(camera: Camera3D) -> void:
 	var viewport := get_viewport()
 	var mouse := viewport.get_mouse_position()
