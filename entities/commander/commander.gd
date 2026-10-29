@@ -141,11 +141,19 @@ func _setup_health() -> void:
 	EventBus.commander_hp_changed.emit.call_deferred(health.hp, health.max_hp)
 
 
+## Used when _anim_player is not set in the scene (for example after set_script in a test).
+## The imported model has its own AnimationPlayer next to the one with the commander clips,
+## so the one that has ANIM_IDLE wins; otherwise the first one found is used.
 func _setup_animation_player() -> void:
-	if _anim_player == null:
-		var aps := find_children("*", "AnimationPlayer", true, false)
-		if not aps.is_empty():
-			_anim_player = aps[0] as AnimationPlayer
+	if _anim_player != null:
+		return
+	var aps := find_children("*", "AnimationPlayer", true, false)
+	for ap in aps:
+		if (ap as AnimationPlayer).has_animation(ANIM_IDLE):
+			_anim_player = ap as AnimationPlayer
+			return
+	if not aps.is_empty():
+		_anim_player = aps[0] as AnimationPlayer
 
 
 func _setup_heal_channel() -> void:
