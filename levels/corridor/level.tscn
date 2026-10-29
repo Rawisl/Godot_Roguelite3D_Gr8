@@ -102,8 +102,6 @@ size = 14.0
 
 [node name="CameraBounds" type="Node3D" parent="." unique_id=1873304521]
 script = ExtResource("13_cambounds")
-size = Vector2(32, 4)
-camera_size_frontline = 14.0
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=481712762]
 navigation_mesh = SubResource("NavigationMesh_41ihd")
