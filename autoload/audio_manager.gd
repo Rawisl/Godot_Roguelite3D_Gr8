@@ -76,11 +76,11 @@ func play(id: StringName, priority: int = -1) -> bool:
 	var gameplay := entry.bus != BUS_UI
 	if gameplay and get_tree().paused:
 		return false
-	var now := TimeManager.real_time
+	var now: float = TimeManager.real_time
 	var window := repeat_window_x3 if TimeManager.get_time_scale() >= 3 else repeat_window
 	if _last_played.has(id):
 		# A clock set back (TimeManager.reset) must not silence the sound until it catches up.
-		var elapsed := now - float(_last_played[id])
+		var elapsed: float = now - float(_last_played[id])
 		if elapsed >= 0.0 and elapsed < window:
 			return false
 	var voice := _pick_voice(id, priority)
