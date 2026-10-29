@@ -60,6 +60,9 @@ func _scan() -> void:
 		hover_points.append(_hover_target.global_position)
 	var forward := -camera.global_transform.basis.z
 	for occluder in get_tree().get_nodes_in_group(OCCLUDER_GROUP):
+		# Vật đang ẩn (đống đổ nát của slot chưa bị phá) không che gì, bỏ qua cho đỡ tốn.
+		if occluder is Node3D and not (occluder as Node3D).is_visible_in_tree():
+			continue
 		# Vật đang hover không tự che chính nó: model của nó chỉ xét theo chỉ huy và quân.
 		var is_hovered := hovered and (occluder == _hover_target or _hover_target.is_ancestor_of(occluder))
 		for geo in _geometries(occluder):
