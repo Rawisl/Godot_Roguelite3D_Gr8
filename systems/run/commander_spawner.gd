@@ -20,3 +20,5 @@ func _ready() -> void:
 	# The commander reads its spawn position in _ready, so place it before add_child.
 	commander.position = to_local(deploy_point.global_position)
 	add_child(commander)
+	# Face the way the marker points (-Z) so the commander starts looking down the corridor.
+	commander.call(&"face_toward", -deploy_point.global_basis.z)
