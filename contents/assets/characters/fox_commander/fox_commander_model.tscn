@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://suj17yb2uyxq"]
+
+[ext_resource type="PackedScene" uid="uid://bolhw5qgej2uw" path="res://contents/assets/characters/fox_commander/fox_commander.glb" id="1_fox"]
+[ext_resource type="Material" uid="uid://cq2lpg5v67xmo" path="res://contents/assets/characters/fox_commander/fox_material.tres" id="2_foxmat"]
+[ext_resource type="Material" uid="uid://cdjvuors5qdls" path="res://contents/assets/characters/commander/Textures/commander_material.tres" id="3_swordmat"]
+[ext_resource type="AnimationLibrary" uid="uid://q6j6s7to7aa3" path="res://contents/assets/characters/fox_commander/animations/fox_advance.res" id="4_adv"]
+[ext_resource type="AnimationLibrary" uid="uid://da6nj721pb3rb" path="res://contents/assets/characters/fox_commander/animations/fox_general.res" id="5_gen"]
+[ext_resource type="AnimationLibrary" uid="uid://k23qyuod7mug" path="res://contents/assets/characters/fox_commander/animations/fox_melee.res" id="6_mel"]
+[ext_resource type="AnimationLibrary" uid="uid://q1g8ieqrtcwr" path="res://contents/assets/characters/fox_commander/animations/fox_move.res" id="7_mov"]
+[ext_resource type="AnimationLibrary" uid="uid://bsgparhwyojuc" path="res://contents/assets/characters/fox_commander/animations/fox_simulation.res" id="8_sim"]
+
+[node name="FoxCommanderModel" type="Node3D" unique_id=1742631941]
+
+[node name="Fox" parent="." unique_id=586281845 instance=ExtResource("1_fox")]
+
+[node name="FoxSword" parent="Fox/Fox_Rig/Skeleton3D/forearm_R" parent_id_path=PackedInt32Array(586281845, 2116804947) index="0" unique_id=1683384966]
+material_override = ExtResource("3_swordmat")
+
+[node name="model_low_25" parent="Fox/Fox_Rig/Skeleton3D" parent_id_path=PackedInt32Array(586281845, 1470066541) index="1" unique_id=1197367577]
+material_override = ExtResource("2_foxmat")
+
+[node name="FoxAnimationPlayer" type="AnimationPlayer" parent="Fox" unique_id=1927168160]
+unique_name_in_owner = true
+libraries/advance = ExtResource("4_adv")
+libraries/general = ExtResource("5_gen")
+libraries/melee = ExtResource("6_mel")
+libraries/move = ExtResource("7_mov")
+libraries/simulation = ExtResource("8_sim")
+autoplay = &"general/Idle_A"
+
+[editable path="Fox"]

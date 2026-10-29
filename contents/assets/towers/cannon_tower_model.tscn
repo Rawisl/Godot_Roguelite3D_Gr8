@@ -1,34 +1,36 @@
 [gd_scene format=3 uid="uid://be2n7yc8bock6"]
 
-[ext_resource type="PackedScene" uid="uid://bo21bdlr76qo7" path="res://contents/assets/towers/fbx/Full/_Cannon_tower_LVL_1.fbx" id="1_5oxoo"]
-[ext_resource type="Material" uid="uid://bxe45ets47rmf" path="res://contents/assets/towers/texture/tower_material.tres" id="2_jfr1o"]
-[ext_resource type="PackedScene" uid="uid://blucq888snxhn" path="res://contents/assets/towers/fbx/Full/_Cannon_tower_LVL_2.fbx" id="3_fgh2h"]
-[ext_resource type="PackedScene" uid="uid://bl63nteg1ukkp" path="res://contents/assets/towers/fbx/Full/_Cannon_tower_LVL_4.fbx" id="4_hgv5r"]
+[ext_resource type="Script" uid="uid://c80rvvkke3i8t" path="res://contents/assets/towers/turret_tower_model.gd" id="1_turret"]
+[ext_resource type="Material" uid="uid://bxe45ets47rmf" path="res://contents/assets/towers/texture/tower_material.tres" id="2_mat"]
+[ext_resource type="PackedScene" uid="uid://e4mwtg16cufo" path="res://contents/assets/towers/fbx/Rig_unity/cannon_tower_LVL_1_rig.fbx" id="3_l1"]
+[ext_resource type="PackedScene" uid="uid://cwy8dkytllau0" path="res://contents/assets/towers/fbx/Rig_unity/cannon_tower_LVL_2_rig.fbx" id="4_l2"]
+[ext_resource type="PackedScene" uid="uid://ca61iukwo7hho" path="res://contents/assets/towers/fbx/Rig_unity/cannon_tower_LVL_4_rig.fbx" id="5_l3"]
 
-[node name="CannonTowerModel" type="Node3D" unique_id=550839409 groups=["occluder"]]
+[node name="CannonTowerModel" type="Node3D" unique_id=299528441 groups=["occluder"]]
+script = ExtResource("1_turret")
 
-[node name="Level1" parent="." unique_id=1678416894 instance=ExtResource("1_5oxoo")]
-transform = Transform3D(0.265, 0, 0, 0, 0.265, 0, 0, 0, 0.265, 0, 0, 0)
+[node name="Level1" parent="." unique_id=68611406 instance=ExtResource("3_l1")]
 unique_name_in_owner = true
-
-[node name="Cannon_tower_LVL_1" parent="Level1" index="0" unique_id=125349246]
-material_override = ExtResource("2_jfr1o")
-
-[node name="Level2" parent="." unique_id=1967979012 instance=ExtResource("3_fgh2h")]
 transform = Transform3D(0.265, 0, 0, 0, 0.265, 0, 0, 0, 0.265, 0, 0, 0)
+
+[node name="Level2" parent="." unique_id=870691194 instance=ExtResource("4_l2")]
 unique_name_in_owner = true
+transform = Transform3D(0.265, 0, 0, 0, 0.265, 0, 0, 0, 0.265, 0, 0, 0)
 visible = false
 
-[node name="Cannon_tower_LVL_2" parent="Level2" index="0" unique_id=979005102]
-material_override = ExtResource("2_jfr1o")
-
-[node name="Level3" parent="." unique_id=419366444 instance=ExtResource("4_hgv5r")]
-transform = Transform3D(0.265, 0, 0, 0, 0.265, 0, 0, 0, 0.265, 0, 0, 0)
+[node name="Level3" parent="." unique_id=1532107081 instance=ExtResource("5_l3")]
 unique_name_in_owner = true
+transform = Transform3D(0.265, 0, 0, 0, 0.265, 0, 0, 0, 0.265, 0, 0, 0)
 visible = false
 
-[node name="Cannon_tower_LVL_4" parent="Level3" index="0" unique_id=738418530]
-material_override = ExtResource("2_jfr1o")
+[node name="Cannon_tower_LVL_1" parent="Level1/C_tower_1_rig1/Skeleton3D" index="0"]
+material_override = ExtResource("2_mat")
+
+[node name="Cannon_tower_LVL_2" parent="Level2/C_tower_2_rig/Skeleton3D" index="0"]
+material_override = ExtResource("2_mat")
+
+[node name="Cannon_tower_LVL_4" parent="Level3/C_tower_4_rig/Skeleton3D" index="0"]
+material_override = ExtResource("2_mat")
 
 [editable path="Level1"]
 [editable path="Level2"]
