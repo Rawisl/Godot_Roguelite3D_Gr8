@@ -1,8 +1,8 @@
 extends Node3D
-## Automated test for the rigged Arrow (ballista) and Cannon tower models:
+## Automated test for the rigged Arrow and Cannon tower models:
 ## - level 1, 2 and 3 show the LVL_1, LVL_2 and LVL_4 meshes, one at a time
 ## - the barrel or bolt turns toward the target, wherever it is around the tower
-## - the ballista tilts down at a close target, the cannon rises with distance
+## - the Arrow tower tilts down at a close target, the cannon rises with distance
 ## - the muzzle sits at the tip, follows the turn, and is where shots leave from
 ## Run with F6. Set quit_when_done off to watch the towers turn.
 
@@ -132,12 +132,12 @@ func test_aim(scene: PackedScene, label: String) -> void:
 
 
 func test_pitch() -> void:
-	print("\n[GROUP] Pitch: ballista tilts down at a close target, cannon rises with distance")
+	print("\n[GROUP] Pitch: Arrow tower tilts down at a close target, cannon rises with distance")
 	var arrow := _tower(ARROW_SCENE)
 	var g := _grunt(Vector3(3, 0, 0))
 	await _wait(GameConfig.scan_interval + 1.0)
 	var down := _model(arrow).barrel_direction().y
-	assert_true(down < -0.2, "ballista bolt points down at a unit 3 m away (dir.y %.2f)" % down)
+	assert_true(down < -0.2, "Arrow tower bolt points down at a unit 3 m away (dir.y %.2f)" % down)
 	_clear([arrow, g])
 
 	var cannon := _tower(CANNON_SCENE)

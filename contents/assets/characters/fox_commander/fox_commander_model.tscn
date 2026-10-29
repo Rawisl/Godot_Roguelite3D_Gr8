@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://suj17yb2uyxq"]
 
 [ext_resource type="PackedScene" uid="uid://bolhw5qgej2uw" path="res://contents/assets/characters/fox_commander/fox_commander.glb" id="1_fox"]
-[ext_resource type="Material" path="res://contents/assets/characters/fox_commander/fox_material.tres" id="2_foxmat"]
+[ext_resource type="Material" uid="uid://cq2lpg5v67xmo" path="res://contents/assets/characters/fox_commander/fox_material.tres" id="2_foxmat"]
 [ext_resource type="Material" uid="uid://cdjvuors5qdls" path="res://contents/assets/characters/commander/Textures/commander_material.tres" id="3_swordmat"]
-[ext_resource type="AnimationLibrary" path="res://contents/assets/characters/fox_commander/animations/fox_advance.res" id="4_adv"]
-[ext_resource type="AnimationLibrary" path="res://contents/assets/characters/fox_commander/animations/fox_general.res" id="5_gen"]
-[ext_resource type="AnimationLibrary" path="res://contents/assets/characters/fox_commander/animations/fox_melee.res" id="6_mel"]
-[ext_resource type="AnimationLibrary" path="res://contents/assets/characters/fox_commander/animations/fox_move.res" id="7_mov"]
-[ext_resource type="AnimationLibrary" path="res://contents/assets/characters/fox_commander/animations/fox_simulation.res" id="8_sim"]
+[ext_resource type="AnimationLibrary" uid="uid://q6j6s7to7aa3" path="res://contents/assets/characters/fox_commander/animations/fox_advance.res" id="4_adv"]
+[ext_resource type="AnimationLibrary" uid="uid://da6nj721pb3rb" path="res://contents/assets/characters/fox_commander/animations/fox_general.res" id="5_gen"]
+[ext_resource type="AnimationLibrary" uid="uid://k23qyuod7mug" path="res://contents/assets/characters/fox_commander/animations/fox_melee.res" id="6_mel"]
+[ext_resource type="AnimationLibrary" uid="uid://q1g8ieqrtcwr" path="res://contents/assets/characters/fox_commander/animations/fox_move.res" id="7_mov"]
+[ext_resource type="AnimationLibrary" uid="uid://bsgparhwyojuc" path="res://contents/assets/characters/fox_commander/animations/fox_simulation.res" id="8_sim"]
 
 [node name="FoxCommanderModel" type="Node3D" unique_id=1742631941]
 

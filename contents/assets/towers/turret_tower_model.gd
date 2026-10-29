@@ -1,6 +1,6 @@
 class_name TurretTowerModel
 extends Node3D
-## Rigged tower model (cannon, ballista) that turns toward the tower's target.
+## Rigged model for the Cannon and Arrow towers that turns toward the tower's target.
 ## - Shows Level1, Level2 or Level3 to match Tower.level (the LVL_1, LVL_2 and LVL_4 meshes).
 ## - Turns yaw_bone around the vertical axis and tilts pitch_bone up or down, so the barrel or
 ##   the bolt points where the shot goes.
@@ -9,9 +9,9 @@ extends Node3D
 ## Reads Tower.target only; the Tower's own aim node is not used (aim_node_name stays empty).
 
 enum PitchMode {
-	## Barrel or bolt points straight at the target (ballista).
+	## Barrel or bolt points straight at the target (Arrow tower).
 	DIRECT,
-	## Barrel rises with distance, like a lobbed shell (cannon).
+	## Barrel rises with distance, like a lobbed shell (Cannon tower).
 	LOB,
 }
 
@@ -51,6 +51,8 @@ var _rigs: Array[Rig] = []
 var _shown := -1
 var _yaw := 0.0
 var _pitch := 0.0
+## Angles the skeleton was last posed with; INF forces the next pose.
+var _posed := Vector2.INF
 
 
 func _ready() -> void:
@@ -141,11 +143,14 @@ func _process(delta: float) -> void:
 	if r.yaw < 0:
 		return
 	var target := _tower.target
-	if target != null and is_instance_valid(target):
+	# The Tower drops a dying target on its next scan; stop following it now.
+	if target != null and is_instance_valid(target) 			and (not target.has_method(&"can_be_targeted") or target.can_be_targeted()):
 		var want := _aim_angles(r, target.global_position + Vector3.UP * aim_height)
 		_yaw = rotate_toward(_yaw, want.x, deg_to_rad(turn_speed) * delta)
 		_pitch = move_toward(_pitch, want.y, deg_to_rad(pitch_speed) * delta)
-	_pose(r)
+	# An idle tower keeps its pose, so its skeleton is left alone.
+	if Vector2(_yaw, _pitch) != _posed:
+		_pose(r)
 
 
 ## x: yaw from rest_forward around up, y: pitch above the horizon, both in radians.
@@ -171,6 +176,7 @@ func _aim_angles(r: Rig, point: Vector3) -> Vector2:
 
 
 func _pose(r: Rig) -> void:
+	_posed = Vector2(_yaw, _pitch)
 	var sk := r.skeleton
 	sk.set_bone_pose_rotation(r.yaw, Quaternion(Vector3.UP, _yaw) * r.yaw_rest)
 	# Rotating around up x forward by +a lowers the barrel, so raise it with -pitch.

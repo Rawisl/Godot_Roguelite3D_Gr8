@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cq2lpg5v67xmo"]
 
 [ext_resource type="Shader" uid="uid://ca0wvrr2vyyy3" path="res://art/shaders/toon.gdshader" id="1_toon"]
 [ext_resource type="Texture2D" uid="uid://br6a0vnqm54up" path="res://contents/assets/characters/fox_commander/fox_commander_shaded.png" id="2_tex"]
