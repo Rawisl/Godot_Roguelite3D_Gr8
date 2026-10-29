@@ -109,7 +109,7 @@ func test_ring() -> void:
 	var p: Vector3 = _fx._ring.global_position
 	assert_true(is_equal_approx(p.x, c.global_position.x) and is_equal_approx(p.z, c.global_position.z),
 		"ring is centred on the commander")
-	var r: float = _fx._ring_mat.get_shader_parameter(&"radius")
+	var r: float = _fx._ring.get_instance_shader_parameter(&"radius")
 	assert_true(is_equal_approx(r, GameConfig.frontline_aura_radius), "ring radius is frontline_aura_radius (%s)" % r)
 	var plane := _fx._ring.mesh as PlaneMesh
 	assert_true(plane != null and plane.size.x >= 2.0 * r, "plane is wide enough for the whole ring")

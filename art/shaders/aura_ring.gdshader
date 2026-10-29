@@ -1,5 +1,5 @@
 shader_type spatial;
-// Frontline aura ring around the commander (FRT-01). A soft line at the aura radius, a faint
+// Frontline aura ring around the commander. A soft line at the aura radius, a faint
 // fill that gets stronger toward the edge, and a slow ripple moving outward.
 // Depth test stays on so walls, towers and units hide it.
 render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never;
@@ -7,7 +7,8 @@ render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never;
 // ally_accent, the same gold as the aura icons.
 uniform vec4 ring_color : source_color = vec4(0.91, 0.76, 0.35, 0.85);
 // Sizes are in metres. The plane must be at least 2 x (radius + glow room) wide.
-uniform float radius = 12.0;
+// Set per ring by AuraFxManager, so the shared material is never written to.
+instance uniform float radius = 12.0;
 uniform float border_width = 0.18;
 uniform float edge_softness = 0.08;
 uniform float glow_falloff = 0.35;
@@ -21,7 +22,7 @@ uniform float ripple_alpha = 0.12;
 uniform float pulse_speed = 2.0;
 uniform float pulse_amount = 0.25;
 // 0 hidden, 1 shown. Set by AuraFxManager while it fades in and out.
-uniform float fade = 1.0;
+instance uniform float fade = 1.0;
 
 varying vec2 local_xz;
 

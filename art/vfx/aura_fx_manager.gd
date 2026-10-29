@@ -1,17 +1,17 @@
 class_name AuraFxManager
 extends Node
-## Frontline aura visuals (FRT-01):
+## Frontline aura visuals:
 ## - a gold ring on the ground around the commander, at frontline_aura_radius, while the aura is on
 ## - a small aura icon above every tower that currently gets the bonus
 ## The ring follows EventBus.aura_changed. Towers have no signal for aura_active, so their flags
 ## are read every icon_poll seconds; the flag itself only changes once per scan_interval.
 ## Nothing is added to the commander or tower scenes.
 
-const RING_SHADER := preload("res://art/shaders/aura_ring.gdshader")
 const TOWER_ICON := preload("res://art/icons/aura_alter_icon.png")
 
 @export_group("Ring")
-@export var ring_color := Color("#E8C25A")
+## Colour, line and ripple are tuned in this material; radius and fade are set per ring.
+@export var ring_material: ShaderMaterial = preload("res://art/materials/aura_ring.tres")
 ## Seconds to fade in or out.
 @export var fade_time := 0.15
 ## Height above the commander's feet, enough to stay above the floor.
@@ -22,6 +22,8 @@ const TOWER_ICON := preload("res://art/icons/aura_alter_icon.png")
 @export_group("Tower icon")
 ## Width of the icon in metres.
 @export var icon_size := 1.1
+## Scale when an icon starts to fade in; it grows to 1 as it becomes opaque.
+@export var icon_start_scale := 0.6
 ## Gap between the top of the tower model and the bottom of the icon.
 @export var icon_gap := 0.4
 @export var icon_poll := 0.1
@@ -29,7 +31,6 @@ const TOWER_ICON := preload("res://art/icons/aura_alter_icon.png")
 @export var default_tower_height := 3.0
 
 var _ring: MeshInstance3D
-var _ring_mat: ShaderMaterial
 var _ring_radius := -1.0
 var _aura_on := false
 var _ring_fade := 0.0
@@ -42,11 +43,8 @@ func _ready() -> void:
 	_ring = MeshInstance3D.new()
 	_ring.name = "AuraRing"
 	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_ring_mat = ShaderMaterial.new()
-	_ring_mat.shader = RING_SHADER
-	_ring_mat.set_shader_parameter(&"ring_color", ring_color)
-	_ring_mat.set_shader_parameter(&"fade", 0.0)
-	_ring.material_override = _ring_mat
+	_ring.material_override = ring_material
+	_ring.set_instance_shader_parameter(&"fade", 0.0)
 	_ring.visible = false
 	add_child(_ring)
 	EventBus.aura_changed.connect(_on_aura_changed)
@@ -83,7 +81,7 @@ func _update_ring(delta: float) -> void:
 	_set_radius(GameConfig.frontline_aura_radius)
 	if c != null:
 		_ring.global_position = c.global_position + Vector3.UP * ring_lift
-	_ring_mat.set_shader_parameter(&"fade", _ring_fade)
+	_ring.set_instance_shader_parameter(&"fade", _ring_fade)
 
 
 func _set_radius(r: float) -> void:
@@ -93,7 +91,7 @@ func _set_radius(r: float) -> void:
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * 2.0 * (r + ring_margin)
 	_ring.mesh = plane
-	_ring_mat.set_shader_parameter(&"radius", r)
+	_ring.set_instance_shader_parameter(&"radius", r)
 
 
 func _update_icons() -> void:
@@ -119,7 +117,7 @@ func _fade_icons(delta: float) -> void:
 		var icon: Sprite3D = _icons[tower]
 		var a := move_toward(icon.modulate.a, float(icon.get_meta(&"target", 0.0)), delta / maxf(fade_time, 0.001))
 		icon.modulate.a = a
-		icon.scale = Vector3.ONE * lerpf(0.6, 1.0, a)
+		icon.scale = Vector3.ONE * lerpf(icon_start_scale, 1.0, a)
 		icon.visible = a > 0.0
 
 
