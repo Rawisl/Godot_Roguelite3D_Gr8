@@ -27,10 +27,10 @@ func try_spend(cost: int) -> bool:
 	_set_gold(gold - cost)
 	return true
 
-func add(amount: int) -> void:
+func add(amount: int, show_delta: bool = true) -> void:
 	if amount <= 0:
 		return
-	_set_gold(gold + amount)
+	_set_gold(gold + amount, show_delta)
 
 func _set_gold(value: int, show_delta: bool = true) -> void:
 	var delta := value - gold

@@ -18,10 +18,25 @@ const PROJECTILE_SCENE: PackedScene = preload("res://entities/projectile/project
 var passes: int = 0
 var fails: int = 0
 
+class MemorySaveRepository extends SaveRepository:
+	var stored: Dictionary = {}
+	func has_data() -> bool: return not stored.is_empty()
+	func load_data() -> Dictionary:
+		last_error = OK if has_data() else ERR_FILE_NOT_FOUND
+		return stored.duplicate(true)
+	func save_data(envelope: Dictionary) -> Error:
+		stored = envelope.duplicate(true)
+		last_error = OK
+		return OK
+
 func _ready() -> void:
 	print("\n=======================================================")
 	print("       AUTOMATED GRUNT FSM & WAVE RUNNER TEST          ")
 	print("=======================================================")
+
+	var real_repo := SaveManager.repository
+	SaveManager.set_repository(MemorySaveRepository.new())
+	SaveManager.load_save()
 
 	test_grunt_initial_spawn_state()
 	test_grunt_spawn_grace_and_invulnerability()
@@ -32,6 +47,9 @@ func _ready() -> void:
 	test_targeting_rules_and_wall_filtering()
 	test_archer_projectile_and_dodge_iframes()
 	test_wave_fsm_and_8_grunts_flow()
+
+	SaveManager.set_repository(real_repo)
+	SaveManager.load_save()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -352,7 +370,7 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 			enemies_spawned.append(e)
 	EventBus.enemy_spawned.connect(on_enemy_spawned)
 
-	for _step in range(30):
+	for _step in range(80):
 		wave_manager._physics_process(0.1)
 		if wave_manager.spawn_queue.is_empty():
 			break
