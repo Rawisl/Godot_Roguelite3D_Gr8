@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://dypfje6y3fvak"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_smoke"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+
+[sub_resource type="SphereMesh" id="Mesh_smoke"]
+material = SubResource("Mat_smoke")
+radial_segments = 6
+rings = 3
+
+[sub_resource type="Curve" id="Curve_smoke_scale"]
+_data = [Vector2(0, 0.35), 0.0, 2.5, 0, 0, Vector2(0.35, 0.9), 0.0, 0.0, 0, 0, Vector2(1, 1.2), 0.3, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_smoke"]
+offsets = PackedFloat32Array(0, 0.25, 1)
+colors = PackedColorArray(0.43, 0.4, 0.37, 0.85, 0.36, 0.34, 0.32, 0.7, 0.3, 0.29, 0.28, 0)
+
+[sub_resource type="StandardMaterial3D" id="Mat_debris"]
+vertex_color_use_as_albedo = true
+
+[sub_resource type="BoxMesh" id="Mesh_debris"]
+material = SubResource("Mat_debris")
+size = Vector3(0.22, 0.12, 0.16)
+
+[sub_resource type="Curve" id="Curve_debris_scale"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.75, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -4.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_debris"]
+offsets = PackedFloat32Array(0, 0.45, 0.75, 1)
+colors = PackedColorArray(0.56, 0.53, 0.5, 1, 0.29, 0.27, 0.27, 1, 0.46, 0.4, 0.36, 1, 0.24, 0.3, 0.21, 1)
+
+[node name="DestroyBurst" type="Node3D" unique_id=1913628788]
+
+[node name="Smoke" type="CPUParticles3D" parent="." unique_id=1634193528]
+cast_shadow = 0
+emitting = false
+amount = 12
+lifetime = 1.4
+one_shot = true
+explosiveness = 0.85
+randomness = 0.4
+local_coords = true
+mesh = SubResource("Mesh_smoke")
+emission_shape = 1
+emission_sphere_radius = 0.8
+direction = Vector3(0, 1, 0)
+spread = 35.0
+gravity = Vector3(0, 0.6, 0)
+initial_velocity_min = 1.0
+initial_velocity_max = 2.2
+damping_min = 1.5
+damping_max = 2.5
+scale_amount_min = 0.9
+scale_amount_max = 1.5
+scale_amount_curve = SubResource("Curve_smoke_scale")
+color_ramp = SubResource("Gradient_smoke")
+
+[node name="Debris" type="CPUParticles3D" parent="." unique_id=1243140871]
+emitting = false
+amount = 16
+lifetime = 0.9
+one_shot = true
+explosiveness = 1.0
+randomness = 0.3
+local_coords = true
+mesh = SubResource("Mesh_debris")
+emission_shape = 1
+emission_sphere_radius = 0.6
+particle_flag_rotate_y = true
+direction = Vector3(0, 1, 0)
+spread = 55.0
+gravity = Vector3(0, -14, 0)
+initial_velocity_min = 4.0
+initial_velocity_max = 7.0
+angular_velocity_min = -540.0
+angular_velocity_max = 540.0
+angle_min = -180.0
+angle_max = 180.0
+scale_amount_min = 0.6
+scale_amount_max = 1.4
+scale_amount_curve = SubResource("Curve_debris_scale")
+color_initial_ramp = SubResource("Gradient_debris")
