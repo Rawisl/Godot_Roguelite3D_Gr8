@@ -1,6 +1,6 @@
 class_name BuildService
 extends Node
-## Build, upgrade, sell and Fortress repair for the panels. Each call checks the wave state, the slot and
+## Build, upgrade, sell, rubble clearing and Fortress repair for the panels. Each call checks the wave state, the slot and
 ## the gold in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice.
 
@@ -98,6 +98,20 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	tower.invested_gold = cost
 	EventBus.tower_built.emit(slot_id, type)
 	return true
+
+## Removes the rubble of a destroyed tower. Free; the slot goes back to EMPTY.
+func clear_rubble(slot_id: StringName) -> bool:
+	if not _begin(slot_id):
+		return false
+	var ok := _do_clear_rubble(slot_id)
+	_end(slot_id)
+	return ok
+
+func _do_clear_rubble(slot_id: StringName) -> bool:
+	var slot := find_slot(slot_id)
+	if not is_prep() or slot == null or slot.state != Enums.SlotState.RUINED:
+		return false
+	return slot.clear_rubble()
 
 ## Everything the Tower panel shows. Empty when the slot holds no tower.
 func get_tower_info(slot_id: StringName) -> Dictionary:
