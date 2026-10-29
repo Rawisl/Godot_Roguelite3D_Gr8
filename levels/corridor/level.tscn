@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://bcwal67js7t1k" path="res://art/vfx/damage_number_layer.gd" id="13_dmgnum"]
 [ext_resource type="Script" uid="uid://btpnvocgvhv15" path="res://art/vfx/hit_fx_manager.gd" id="14_hitfx"]
 [ext_resource type="Script" uid="uid://bi0ehmxyhpdpo" path="res://levels/corridor/ground_grid.gd" id="15_ggrid"]
+[ext_resource type="Script" uid="uid://bq062ooam7kqg" path="res://art/vfx/aura_fx_manager.gd" id="16_aurafx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -205,6 +206,9 @@ script = ExtResource("11_bfx")
 
 [node name="HitFxManager" type="Node" parent="." unique_id=1402957713]
 script = ExtResource("14_hitfx")
+
+[node name="AuraFxManager" type="Node" parent="." unique_id=1730452861]
+script = ExtResource("16_aurafx")
 
 [node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
 
