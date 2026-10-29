@@ -134,6 +134,7 @@ extends Node
 @export_group("Frontline")
 @export var frontline_aura_radius: float = 12.0
 @export var frontline_aura_dmg_bonus: float = 0.20
+@export var frontline_gold_mult: float = 1.25
 
 @export_group("Timing and Performance")
 @export var fps_downscale_floor: float = 30.0
@@ -148,6 +149,14 @@ extends Node
 @export_group("Commander Progression")
 @export var tower_gate_lv2: int = 4
 @export var tower_gate_lv3: int = 8
+@export var xp_base: int = 5
+@export var xp_step: int = 4
+@export var xp_commander_pct: float = 1.0
+@export var xp_tower_only_pct: float = 0.5
+
+
+func get_xp_to_level(level: int) -> int:
+	return xp_base + xp_step * (maxi(1, level) - 1)
 
 
 func get_prep_time(wave: int, is_boss: bool) -> float:
