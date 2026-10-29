@@ -107,6 +107,7 @@ func _ready() -> void:
 	_setup_mode_switch()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
+	_sync_wave_state()
 	_refresh_aura.call_deferred()
 
 
@@ -882,6 +883,17 @@ func _update_low_hp(current_hp: int, max_hp: int) -> void:
 	if is_low != _is_low_hp:
 		_is_low_hp = is_low
 		EventBus.commander_low_hp_changed.emit(is_low)
+
+
+## The wave system may have entered its first state before the commander was spawned,
+## so read the current one instead of waiting for the next state_changed. Without a wave
+## manager the state stays empty and nothing is locked. The PREP heal is not run here:
+## it belongs to entering PREP, which this commander did not see.
+func _sync_wave_state() -> void:
+	var wave_manager := get_tree().get_first_node_in_group(&"wave_manager")
+	if wave_manager == null or not ("wave_state" in wave_manager):
+		return
+	_wave_state = StringName(Enums.WaveState.keys()[wave_manager.wave_state])
 
 
 func _on_wave_state_changed(new_state: StringName) -> void:
