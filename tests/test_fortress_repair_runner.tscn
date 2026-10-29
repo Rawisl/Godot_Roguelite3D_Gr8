@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/test_fortress_repair_runner.gd" id="1_frr"]
+
+[node name="TestFortressRepairRunner" type="Node"]
+script = ExtResource("1_frr")
