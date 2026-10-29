@@ -13,8 +13,12 @@ var commander: Node3D
 
 func _ready() -> void:
 	# TODO(week 10): move the spawn into RunState / RunLoading so the commander is placed when the run starts, then remove this node from main.tscn.
+	# The exported path can be broken (level loaded differently), so look the marker up by name.
+	if deploy_point == null:
+		var scene := get_tree().current_scene
+		deploy_point = scene.find_child("DeployPoint", true, false) as Marker3D if scene != null else null
 	if commander_scene == null or deploy_point == null:
-		push_warning("CommanderSpawner: commander_scene or deploy_point is not set")
+		push_warning("CommanderSpawner: commander_scene is not set or no DeployPoint marker was found")
 		return
 	commander = commander_scene.instantiate() as Node3D
 	# The commander reads its spawn position in _ready, so place it before add_child.
