@@ -89,7 +89,7 @@ transform = Transform3D(0.926673, 0.2786682, -0.25223216, 0.11164967, 0.43669602
 light_energy = 0.9
 shadow_enabled = true
 
-[node name="CameraRig" type="Node3D" parent="." unique_id=965123961]
+[node name="CameraRig" type="Node3D" parent="." unique_id=965123961 node_paths=PackedStringArray("bounds")]
 transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
 script = ExtResource("13_camrig")
 bounds = NodePath("../CameraBounds")
@@ -102,6 +102,8 @@ size = 14.0
 
 [node name="CameraBounds" type="Node3D" parent="." unique_id=1873304521]
 script = ExtResource("13_cambounds")
+size = Vector2(32, 4)
+camera_size_frontline = 14.0
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=481712762]
 navigation_mesh = SubResource("NavigationMesh_41ihd")

@@ -2,15 +2,13 @@
 
 [ext_resource type="Script" uid="uid://ctxooa2xiyua7" path="res://systems/build/slot.gd" id="1_k2eom"]
 [ext_resource type="Material" uid="uid://co5ilawa42u8r" path="res://art/materials/slot_ring.tres" id="2_ring"]
+[ext_resource type="PackedScene" uid="uid://cj1vy38heolln" path="res://contents/assets/towers/rubble_model.tscn" id="3_rubble"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_k2eom"]
 size = Vector2(2.8, 2.8)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_xepy2"]
 size = Vector3(1.9, 0.5, 1.9)
-
-[sub_resource type="BoxMesh" id="BoxMesh_rubble"]
-size = Vector3(1.2, 0.3, 1.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_rubble"]
 size = Vector3(1.2, 0.6, 1.2)
@@ -42,9 +40,7 @@ unique_name_in_owner = true
 unique_name_in_owner = true
 collision_mask = 0
 
-[node name="RubbleMesh" type="MeshInstance3D" parent="Rubble" unique_id=1520394818]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
-mesh = SubResource("BoxMesh_rubble")
+[node name="RubbleModel" parent="Rubble" unique_id=1520394818 instance=ExtResource("3_rubble")]
 
 [node name="RubbleShape" type="CollisionShape3D" parent="Rubble" unique_id=1520394819]
 unique_name_in_owner = true
