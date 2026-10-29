@@ -914,7 +914,11 @@ func _sync_wave_state() -> void:
 	var wave_manager := get_tree().get_first_node_in_group(&"wave_manager")
 	if wave_manager == null or not ("wave_state" in wave_manager):
 		return
-	_wave_state = StringName(Enums.WaveState.keys()[wave_manager.wave_state])
+	# An out-of-range value would crash the lookup, so keep the previous state instead.
+	var state_names := Enums.WaveState.keys()
+	var index: int = wave_manager.wave_state
+	if index >= 0 and index < state_names.size():
+		_wave_state = StringName(state_names[index])
 
 
 func _on_wave_state_changed(new_state: StringName) -> void:
