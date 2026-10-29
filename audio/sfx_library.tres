@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="SfxLibrary" format=3 uid="uid://d08uncq7nd8rc"]
+
+[ext_resource type="Script" uid="uid://ch0s8gm2cmq61" path="res://audio/sfx_entry.gd" id="1_hx12n"]
+[ext_resource type="AudioStream" uid="uid://ds1efea64848x" path="res://audio/sfx/click_002.ogg" id="2_hx12n"]
+[ext_resource type="AudioStream" uid="uid://bxqpnkdrhfrrf" path="res://audio/sfx/forceField_001.ogg" id="3_cojex"]
+[ext_resource type="AudioStream" uid="uid://bpfh2j6w8s47s" path="res://audio/sfx/impactPunch_heavy_001.ogg" id="4_4cc06"]
+[ext_resource type="AudioStream" uid="uid://tfckon7aus2w" path="res://audio/sfx/boss_stomp_windup.wav" id="5_3y37n"]
+[ext_resource type="AudioStream" uid="uid://b6ae7djtrb30n" path="res://audio/sfx/394186__saturdaysoundguy__slingshot-fly-by-2.wav" id="6_hx12n"]
+[ext_resource type="AudioStream" uid="uid://dtrylat6t7xml" path="res://audio/sfx/impactWood_light_001.ogg" id="7_exlo3"]
+[ext_resource type="Script" uid="uid://djjstbfgh1hvx" path="res://audio/sfx_library.gd" id="8_vgvlt"]
+
+[sub_resource type="Resource" id="Resource_c0njm"]
+script = ExtResource("1_hx12n")
+id = &"ui_click"
+stream = ExtResource("2_hx12n")
+bus = &"UI"
+priority = 3
+
+[sub_resource type="Resource" id="Resource_yjrhu"]
+script = ExtResource("1_hx12n")
+id = &"alert_t1"
+stream = ExtResource("3_cojex")
+bus = &"UI"
+priority = 4
+
+[sub_resource type="Resource" id="Resource_6encv"]
+script = ExtResource("1_hx12n")
+id = &"commander_hit"
+stream = ExtResource("4_4cc06")
+priority = 3
+
+[sub_resource type="Resource" id="Resource_qcjyq"]
+script = ExtResource("1_hx12n")
+id = &"boss_stomp_windup"
+stream = ExtResource("5_3y37n")
+priority = 2
+
+[sub_resource type="Resource" id="Resource_7uqqq"]
+script = ExtResource("1_hx12n")
+id = &"tower_arrow_shot"
+stream = ExtResource("6_hx12n")
+volume_db = -3.0
+priority = 1
+
+[sub_resource type="Resource" id="Resource_nmj7l"]
+script = ExtResource("1_hx12n")
+id = &"enemy_hit"
+stream = ExtResource("7_exlo3")
+volume_db = -2.0
+
+[resource]
+script = ExtResource("8_vgvlt")
+entries = Array[ExtResource("1_hx12n")]([SubResource("Resource_c0njm"), SubResource("Resource_yjrhu"), SubResource("Resource_6encv"), SubResource("Resource_qcjyq"), SubResource("Resource_7uqqq"), SubResource("Resource_nmj7l")])
