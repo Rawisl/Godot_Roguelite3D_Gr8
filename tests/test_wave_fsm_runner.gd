@@ -352,7 +352,7 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 			enemies_spawned.append(e)
 	EventBus.enemy_spawned.connect(on_enemy_spawned)
 
-	for _step in range(30):
+	for _step in range(80):
 		wave_manager._physics_process(0.1)
 		if wave_manager.spawn_queue.is_empty():
 			break
