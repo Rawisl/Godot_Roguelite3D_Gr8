@@ -14,11 +14,26 @@ const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
 var passes: int = 0
 var fails: int = 0
 
+class MemorySaveRepository extends SaveRepository:
+	var stored: Dictionary = {}
+	func has_data() -> bool: return not stored.is_empty()
+	func load_data() -> Dictionary:
+		last_error = OK if has_data() else ERR_FILE_NOT_FOUND
+		return stored.duplicate(true)
+	func save_data(envelope: Dictionary) -> Error:
+		stored = envelope.duplicate(true)
+		last_error = OK
+		return OK
+
 
 func _ready() -> void:
 	print("\n=======================================================")
 	print("       AUTOMATED WAVE REWARDS & XP TRACKER TEST        ")
 	print("=======================================================")
+
+	var real_repo := SaveManager.repository
+	SaveManager.set_repository(MemorySaveRepository.new())
+	SaveManager.load_save()
 
 	test_xp_tracker_level_curve_and_caps()
 	test_xp_tracker_damage_sources_and_cull()
@@ -26,8 +41,13 @@ func _ready() -> void:
 	test_early_call_bonus_calculation_and_cap()
 	test_clear_time_multiplier_and_tiers()
 	test_wave_summary_and_wallet_crediting()
+	test_ruined_towers_from_slots()
+	test_boss_gold_only_on_boss_defeated()
 	test_loss_cancels_wave_gold_and_bonus()
 	test_summary_continue_requested_advances_wave()
+
+	SaveManager.set_repository(real_repo)
+	SaveManager.load_save()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -93,7 +113,7 @@ func test_xp_tracker_level_curve_and_caps() -> void:
 	assert_true(xp_tracker.pending_picks == 3, "reward_picked decrements pending_picks to 3")
 
 	EventBus.level_up.disconnect(on_level_up)
-	xp_tracker.queue_free()
+	xp_tracker.free()
 
 
 func test_xp_tracker_damage_sources_and_cull() -> void:
@@ -130,7 +150,7 @@ func test_xp_tracker_damage_sources_and_cull() -> void:
 	EventBus.enemy_died.emit(&"bulwark", Vector3.ZERO, 100, 15, false, true)
 	assert_true(xp_tracker.commander_level >= 2, "Boss kill (30 XP) advances Commander Level")
 
-	xp_tracker.queue_free()
+	xp_tracker.free()
 
 
 func test_commander_kill_gold_multiplier() -> void:
@@ -151,7 +171,7 @@ func test_commander_kill_gold_multiplier() -> void:
 	grunt._on_died()
 	assert_true(deltas.size() == 1 and deltas[0] == 4, "Regular enemy death emits gold_delta = 4 (base)")
 
-	grunt.queue_free()
+	grunt.free()
 
 	# 2. Kill with hit_by_commander -> 4 * 1.25 = 5.0 -> floating delta 5
 	deltas.clear()
@@ -164,7 +184,7 @@ func test_commander_kill_gold_multiplier() -> void:
 	grunt_comm._on_died()
 	assert_true(deltas.size() == 1 and deltas[0] == 5, "Commander hit enemy death emits gold_delta = 5 (4 * 1.25, FRT-02)")
 
-	grunt_comm.queue_free()
+	grunt_comm.free()
 	EventBus.gold_delta.disconnect(on_gold_delta)
 
 
@@ -185,7 +205,7 @@ func test_early_call_bonus_calculation_and_cap() -> void:
 	wave_manager.call_early()
 	assert_true(wave_manager.get("_early_call_bonus") == 21, "Early call at 10.5s gives 21 gold (10.5 * 2 = 21)")
 
-	wave_manager.queue_free()
+	wave_manager.free()
 
 
 func test_clear_time_multiplier_and_tiers() -> void:
@@ -261,12 +281,78 @@ func test_wave_summary_and_wallet_crediting() -> void:
 	assert_true(TimeManager.get_time_scale() == 1, "TimeManager speed auto drops to x1 on SUMMARY (TIME-03)")
 
 	EventBus.wave_summary_ready.disconnect(on_summary)
-	wave_manager.queue_free()
-	gold_mgr.queue_free()
+	wave_manager.free()
+	gold_mgr.free()
+
+
+func test_ruined_towers_from_slots() -> void:
+	print("\n[GROUP 7] Testing Ruined Towers Read from Slots (not Towers)")
+	var slot_scene := preload("res://systems/build/slot.tscn")
+	var slot: Slot = slot_scene.instantiate()
+	slot.slot_id = &"slot_test"
+	slot.state = Enums.SlotState.RUINED
+	slot.last_data = preload("res://data/towers/arrow.tres")
+	slot.last_level = 2
+	add_child(slot)
+
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	add_child(wave_manager)
+
+	var summaries: Array[Dictionary] = []
+	var on_summary := func(s: Dictionary): summaries.append(s)
+	EventBus.wave_summary_ready.connect(on_summary)
+
+	wave_manager._end_combat_to_summary()
+
+	assert_true(summaries.size() == 1, "Summary emitted")
+	var s: Dictionary = summaries[0]
+	var ruined: Array = s.get("ruined_towers", [])
+	assert_true(ruined.size() == 1, "ruined_towers contains 1 ruined slot")
+	assert_true(ruined[0].get("type") == &"arrow", "Ruined tower type is arrow")
+	assert_true(ruined[0].get("level") == 2, "Ruined tower level is 2")
+	assert_true(ruined[0].get("rebuild_cost") == slot.get_rebuild_cost(), "Ruined tower rebuild_cost matches slot.get_rebuild_cost()")
+
+	EventBus.wave_summary_ready.disconnect(on_summary)
+	wave_manager.free()
+	slot.free()
+
+
+func test_boss_gold_only_on_boss_defeated() -> void:
+	print("\n[GROUP 8] Testing Boss Gold Only on Boss Defeated")
+	var gold_mgr := GoldManager.new()
+	add_child(gold_mgr)
+	gold_mgr.reset()
+	var starting_gold := gold_mgr.gold
+
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	wave_manager.current_wave = 5 # wave 5 is boss wave interval
+	add_child(wave_manager)
+
+	# 1. End combat on wave 5 WITHOUT boss_defeated firing -> No boss gold
+	wave_manager._end_combat_to_summary()
+	assert_true(gold_mgr.gold == starting_gold, "Wave 5 without boss_defeated gives 0 boss gold")
+	wave_manager.free()
+
+	# 2. End combat on wave 5 WITH boss_defeated firing -> Grants boss gold
+	var wave_manager_boss := WaveManager.new()
+	wave_manager_boss.auto_advance_summary = false
+	wave_manager_boss.current_wave = 5
+	add_child(wave_manager_boss)
+
+	EventBus.boss_defeated.emit()
+	wave_manager_boss._end_combat_to_summary()
+
+	var expected_boss_gold := int(floor(float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * 4.0)))
+	assert_true(gold_mgr.gold == starting_gold + expected_boss_gold, "Wave 5 with boss_defeated gives scaled boss gold")
+
+	wave_manager_boss.free()
+	gold_mgr.free()
 
 
 func test_loss_cancels_wave_gold_and_bonus() -> void:
-	print("\n[GROUP 7] Testing Loss (WAVE-02, GLD-03): Abandons pending gold & bonus")
+	print("\n[GROUP 9] Testing Loss (WAVE-02, GLD-03): Abandons pending gold & bonus")
 	var gold_mgr := GoldManager.new()
 	add_child(gold_mgr)
 	gold_mgr.reset()
@@ -289,12 +375,12 @@ func test_loss_cancels_wave_gold_and_bonus() -> void:
 
 	assert_true(gold_mgr.gold == starting_gold, "No gold gained after Fortress destroyed (WAVE-02, GLD-03)")
 
-	wave_manager.queue_free()
-	gold_mgr.queue_free()
+	wave_manager.free()
+	gold_mgr.free()
 
 
 func test_summary_continue_requested_advances_wave() -> void:
-	print("\n[GROUP 8] Testing Summary Continue Request")
+	print("\n[GROUP 10] Testing Summary Continue Request")
 	var wave_manager := WaveManager.new()
 	wave_manager.auto_advance_summary = false
 	add_child(wave_manager)
@@ -313,4 +399,4 @@ func test_summary_continue_requested_advances_wave() -> void:
 	assert_true(wave_manager.wave_state == Enums.WaveState.PREP, "summary_continue_requested advances to PREP")
 	assert_true(wave_manager.current_wave == 2, "Current wave incremented to 2")
 
-	wave_manager.queue_free()
+	wave_manager.free()
