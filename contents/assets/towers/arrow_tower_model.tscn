@@ -1,34 +1,40 @@
 [gd_scene format=3 uid="uid://cqtr872nne23j"]
 
-[ext_resource type="PackedScene" uid="uid://dcymyo24euk7h" path="res://contents/assets/towers/fbx/Full/_archer_tower_LVL_1.fbx" id="1_5d8pq"]
-[ext_resource type="Material" uid="uid://bxe45ets47rmf" path="res://contents/assets/towers/texture/tower_material.tres" id="2_b3dfo"]
-[ext_resource type="PackedScene" uid="uid://chh0khixy4m8m" path="res://contents/assets/towers/fbx/Full/_archer_tower_LVL_2.fbx" id="3_wi24g"]
-[ext_resource type="PackedScene" uid="uid://cqmmgjbhdfunn" path="res://contents/assets/towers/fbx/Full/_archer_tower_LVL_4.fbx" id="4_spj2x"]
+[ext_resource type="Script" uid="uid://c80rvvkke3i8t" path="res://contents/assets/towers/turret_tower_model.gd" id="1_turret"]
+[ext_resource type="Material" uid="uid://bxe45ets47rmf" path="res://contents/assets/towers/texture/tower_material.tres" id="2_mat"]
+[ext_resource type="PackedScene" uid="uid://bfjuigl6cnhun" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_1.fbx" id="3_l1"]
+[ext_resource type="PackedScene" uid="uid://dmem7pxeyk21c" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_2.fbx" id="4_l2"]
+[ext_resource type="PackedScene" uid="uid://cvqdrdujd3pmp" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_4_rig.fbx" id="5_l3"]
 
-[node name="ArrowTowerModel" type="Node3D" unique_id=1343548917 groups=["occluder"]]
+[node name="ArrowTowerModel" type="Node3D" unique_id=1567500813 groups=["occluder"]]
+script = ExtResource("1_turret")
+yaw_bone = &"Ballista_1"
+pitch_bone = &"Ballista_3"
+tip_bone = &"Ballista_3"
+pitch_mode = 0
 
-[node name="Level1" parent="." unique_id=1425309212 instance=ExtResource("1_5d8pq")]
-transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
+[node name="Level1" parent="." unique_id=1761637560 instance=ExtResource("3_l1")]
 unique_name_in_owner = true
-
-[node name="archer_tower_LVL_1" parent="Level1" index="0" unique_id=1134867083]
-material_override = ExtResource("2_b3dfo")
-
-[node name="Level2" parent="." unique_id=1503645755 instance=ExtResource("3_wi24g")]
 transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
+
+[node name="Ballista_tower_LVL_1" parent="Level1/B_tower_1_rig/Skeleton3D" parent_id_path=PackedInt32Array(1761637560, 674451889) index="0" unique_id=93903237]
+material_override = ExtResource("2_mat")
+
+[node name="Level2" parent="." unique_id=354627581 instance=ExtResource("4_l2")]
 unique_name_in_owner = true
+transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
 visible = false
 
-[node name="archer_tower_LVL_2" parent="Level2" index="0" unique_id=1538863708]
-material_override = ExtResource("2_b3dfo")
+[node name="Ballista_tower_LVL_2" parent="Level2/B_tower_2_rig/Skeleton3D" parent_id_path=PackedInt32Array(354627581, 361201633) index="0" unique_id=1635446186]
+material_override = ExtResource("2_mat")
 
-[node name="Level3" parent="." unique_id=1870756775 instance=ExtResource("4_spj2x")]
-transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
+[node name="Level3" parent="." unique_id=759708145 instance=ExtResource("5_l3")]
 unique_name_in_owner = true
+transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
 visible = false
 
-[node name="archer_tower_LVL_4" parent="Level3" index="0" unique_id=1608169743]
-material_override = ExtResource("2_b3dfo")
+[node name="Ballista_tower_LVL_4" parent="Level3/B_tower_4_rig/Skeleton3D" parent_id_path=PackedInt32Array(759708145, 921136532) index="0" unique_id=1223665977]
+material_override = ExtResource("2_mat")
 
 [editable path="Level1"]
 [editable path="Level2"]
