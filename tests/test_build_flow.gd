@@ -1,6 +1,6 @@
 extends Node
 ## Runs main.tscn for testing the build panels by hand. F6 on this scene.
-## K: ruin the selected tower, to test rebuild. L: add 500 gold.
+## K: ruin the selected tower, to test rebuild. X: clear the selected rubble. L: add 500 gold.
 ## J: raise the commander level by 1, to test the upgrade limits.
 ## H: damage the Fortress. N / M / O: repair it by the small step, the large step, to full.
 ## Adds the ProjectilePool that main.tscn does not have yet, so towers shoot.
@@ -25,6 +25,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	match key.physical_keycode:
 		KEY_K:
 			_ruin_selected()
+		KEY_X:
+			_clear_selected_rubble()
 		KEY_J:
 			var svc := get_tree().get_first_node_in_group(&"build_service") as BuildService
 			if svc != null:
@@ -50,6 +52,14 @@ func _ruin_selected() -> void:
 	var slot := service.find_slot(selection.selected_slot)
 	if slot != null:
 		slot.ruin()
+
+func _clear_selected_rubble() -> void:
+	var selection := _main.find_child("SelectionController", true, false) as SelectionController
+	var service := get_tree().get_first_node_in_group(&"build_service") as BuildService
+	if selection == null or service == null or selection.selected_slot == &"":
+		return
+	var ok := service.clear_rubble(selection.selected_slot)
+	print("clear_rubble(%s) -> %s, ground used %d" % [selection.selected_slot, ok, service.get_ground_used()])
 
 func _damage_fortress() -> void:
 	var fortress := get_tree().get_first_node_in_group(&"fortress") as Fortress

@@ -4,6 +4,7 @@ extends Node
 ## - build / upgrade / sell prices and invested_gold on the Tower
 ## - commander level limits on upgrades, and rebuild level checks
 ## - slot lock during a transaction, HP refill at the start of PREP
+## - rubble clearing and the ground building cap
 
 const SLOT_SCENE: PackedScene = preload("res://systems/build/slot.tscn")
 const ARROW: TowerData = preload("res://data/towers/arrow.tres")
@@ -28,6 +29,7 @@ var _sold: Array[StringName] = []
 var _denied: Array = []
 var _nested_result := true
 var _nested_ran := false
+var _slot_changes: Array = []
 
 func _ready() -> void:
 	print("\n=======================================================")
@@ -46,6 +48,12 @@ func _ready() -> void:
 	test_level_range()
 	test_transaction_lock()
 	test_heal_on_prep()
+	test_clear_rubble()
+	test_ground_cap()
+	test_ground_cap_ruined()
+	test_ground_cap_clear()
+	test_ground_cap_sell()
+	test_clear_rubble_lock()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -74,8 +82,9 @@ func _setup() -> void:
 	add_child(_service)
 	for id in [&"W1", &"W2", &"W3", &"W4"]:
 		_make_slot(id, Enums.SlotZone.WALL)
-	for id in [&"G1", &"G2", &"G3"]:
-		_make_slot(id, Enums.SlotZone.GROUND)
+	# One more GROUND slot than the cap allows.
+	for i in GameConfig.max_ground_buildings + 1:
+		_make_slot(_ground_id(i), Enums.SlotZone.GROUND)
 	EventBus.tower_built.connect(func(slot_id, _type): _built.append(slot_id))
 	EventBus.tower_sold.connect(func(slot_id): _sold.append(slot_id))
 	EventBus.build_denied.connect(func(reason, shortfall): _denied.append([reason, shortfall]))
@@ -272,3 +281,114 @@ func test_heal_on_prep() -> void:
 	EventBus.state_changed.emit(&"PREP")
 	GameConfig.tower_full_heal_on_prep = saved
 	assert_true(t.health.hp < t.health.max_hp, "no refill when the option is off")
+
+func _ground_id(i: int) -> StringName:
+	return StringName("G%d" % (i + 1))
+
+## Fills the first max_ground_buildings GROUND slots with Arrow towers.
+func _fill_ground() -> void:
+	for i in GameConfig.max_ground_buildings:
+		_service.build(_ground_id(i), &"arrow")
+
+func _on_slot_changed(slot_id: StringName, new_state: StringName) -> void:
+	_slot_changes.append([slot_id, new_state])
+
+func test_clear_rubble() -> void:
+	print("\n[GROUP 12] Clear rubble")
+	_reset()
+	_service.build(&"G1", &"arrow")
+	_slot(&"G1").ruin()
+	var g := _gold.gold
+	_slot_changes.clear()
+	EventBus.slot_state_changed.connect(_on_slot_changed)
+	var ok := _service.clear_rubble(&"G1")
+	EventBus.slot_state_changed.disconnect(_on_slot_changed)
+	var slot := _slot(&"G1")
+	assert_true(ok, "clear_rubble returns true")
+	assert_true(slot.state == Enums.SlotState.EMPTY, "slot is EMPTY")
+	assert_true(slot.last_data == null and slot.last_level == 0, "lost tower forgotten")
+	assert_true(_gold.gold == g, "gold unchanged")
+	assert_true(_slot_changes == [[&"G1", &"EMPTY"]], "slot_state_changed(EMPTY) emitted once")
+	var has_rebuild := false
+	for option in _service.get_build_options(&"G1"):
+		has_rebuild = has_rebuild or option.rebuild
+	assert_true(not has_rebuild, "no rebuild entry left")
+	assert_true(not slot.rubble.visible, "rubble hidden")
+	assert_true(not _service.clear_rubble(&"G1"), "EMPTY slot refused")
+	_service.build(&"G1", &"arrow")
+	assert_true(not _service.clear_rubble(&"G1"), "OCCUPIED slot refused")
+	_slot(&"G1").ruin()
+	EventBus.state_changed.emit(&"COMBAT")
+	assert_true(not _service.clear_rubble(&"G1"), "refused outside PREP")
+	assert_true(_slot(&"G1").state == Enums.SlotState.RUINED, "still RUINED after the refusal")
+	EventBus.state_changed.emit(&"PREP")
+	assert_true(not _service.clear_rubble(&"missing"), "unknown slot refused")
+
+func test_ground_cap() -> void:
+	print("\n[GROUP 13] Ground building cap")
+	_reset()
+	_fill_ground()
+	assert_true(_service.get_ground_used() == GameConfig.max_ground_buildings, "ground used reaches the cap")
+	assert_true(_service.is_ground_full(), "ground is full")
+	var extra := _ground_id(GameConfig.max_ground_buildings)
+	var g := _gold.gold
+	_denied.clear()
+	assert_true(not _service.build(extra, &"arrow"), "build on an EMPTY ground slot refused")
+	assert_true(_denied.size() == 1 and _denied[0] == [&"GROUND_FULL", 0], "build_denied GROUND_FULL")
+	assert_true(_gold.gold == g, "gold unchanged")
+	var options := _service.get_build_options(extra)
+	assert_true(not options.is_empty() and options.all(func(o): return o.locked_reason == &"GROUND_FULL"), "options carry locked_reason GROUND_FULL")
+	assert_true(_service.build(&"W1", &"arrow"), "WALL slot still builds")
+	assert_true(_service.get_ground_used() == GameConfig.max_ground_buildings, "WALL does not count")
+	_reset()
+	options = _service.get_build_options(&"G1")
+	assert_true(not options.is_empty() and options.all(func(o): return o.locked_reason == &""), "no locked_reason when not full")
+
+func test_ground_cap_ruined() -> void:
+	print("\n[GROUP 14] Ruined slots keep their place")
+	_reset()
+	_fill_ground()
+	var extra := _ground_id(GameConfig.max_ground_buildings)
+	_slot(&"G1").ruin()
+	assert_true(_service.get_ground_used() == GameConfig.max_ground_buildings, "ground used unchanged by ruin")
+	assert_true(not _service.build(extra, &"arrow"), "extra slot still refused")
+	assert_true(_service.build(&"G1", &"arrow"), "build on a RUINED ground slot works when full")
+
+func test_ground_cap_clear() -> void:
+	print("\n[GROUP 15] Clearing frees a place")
+	_reset()
+	_fill_ground()
+	var extra := _ground_id(GameConfig.max_ground_buildings)
+	var cap := GameConfig.max_ground_buildings
+	_slot(&"G1").ruin()
+	assert_true(_service.clear_rubble(&"G1"), "rubble cleared")
+	assert_true(_service.get_ground_used() == cap - 1, "ground used dropped by 1")
+	assert_true(_service.build(extra, &"arrow"), "extra slot builds now")
+	assert_true(GameConfig.max_ground_buildings == cap, "cap setting unchanged")
+
+func test_ground_cap_sell() -> void:
+	print("\n[GROUP 16] Selling frees a place")
+	_reset()
+	_fill_ground()
+	assert_true(_service.sell(&"G2"), "sold a ground tower")
+	assert_true(_service.get_ground_used() == GameConfig.max_ground_buildings - 1, "ground used dropped by 1")
+
+func _nested_clear(_slot_id: StringName, _new_state: StringName) -> void:
+	_nested_result = _service.build(&"G1", &"arrow")
+	_nested_ran = true
+
+func test_clear_rubble_lock() -> void:
+	print("\n[GROUP 17] Slot lock while clearing")
+	_reset()
+	_service.build(&"G1", &"arrow")
+	_slot(&"G1").ruin()
+	_nested_ran = false
+	var gold_before := _gold.gold
+	EventBus.slot_state_changed.connect(_nested_clear)
+	var ok := _service.clear_rubble(&"G1")
+	EventBus.slot_state_changed.disconnect(_nested_clear)
+	assert_true(ok, "outer clear works")
+	assert_true(_nested_ran, "nested handler ran")
+	assert_true(not _nested_result, "nested build on the slot being cleared refused")
+	assert_true(_slot(&"G1").state == Enums.SlotState.EMPTY, "slot is EMPTY after the outer clear")
+	assert_true(_gold.gold == gold_before, "gold unchanged")

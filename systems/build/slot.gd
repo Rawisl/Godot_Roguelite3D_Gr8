@@ -69,9 +69,24 @@ func place_tower(t: Tower) -> void:
 	t.destroyed.connect(_on_tower_destroyed)
 	set_state(Enums.SlotState.OCCUPIED)
 
-# SELL-03: selling returns the slot to EMPTY
+# Selling returns the slot to EMPTY
 func clear_tower() -> void:
 	set_state(Enums.SlotState.EMPTY)
+
+## Removes the rubble and forgets the lost tower; only from RUINED. Free of charge.
+# TODO(week 10): mirror the cleared slot in RunState (RunState).
+func clear_rubble() -> bool:
+	if state != Enums.SlotState.RUINED:
+		return false
+	set_state(Enums.SlotState.EMPTY)
+	return true
+
+func is_ground() -> bool:
+	return zone == Enums.SlotZone.GROUND
+
+## True while a GROUND slot holds a tower or its rubble, so it counts against the ground cap.
+func uses_ground_space() -> bool:
+	return is_ground() and (state == Enums.SlotState.OCCUPIED or state == Enums.SlotState.RUINED)
 
 # A tower at 0 HP leaves rubble, the slot becomes RUINED
 func _on_tower_destroyed(_t: Tower) -> void:
@@ -96,7 +111,7 @@ func can_rebuild(data: TowerData) -> bool:
 	return (state == Enums.SlotState.RUINED and last_data != null
 		and data != null and data.id == last_data.id)
 
-## Rebuild price: build + all upgrades up to last_level, from TowerData (not invested_gold, SELL-04).
+## Rebuild price: build + all upgrades up to last_level, from TowerData (not invested_gold).
 func get_rebuild_cost() -> int:
 	if last_data == null:
 		return 0
@@ -118,7 +133,7 @@ func is_free() -> bool:
 	return (state == Enums.SlotState.EMPTY 
 		or state == Enums.SlotState.RUINED)
 
-# BLD-06: a tower type must fit the zone, and the slot's allowed_types when set
+# A tower type must fit the zone, and the slot's allowed_types when set
 func allows(data: TowerData) -> bool:
 	if data == null or not (zone in data.allowed_zones):
 		return false
