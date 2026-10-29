@@ -1,18 +1,28 @@
 [gd_scene format=3 uid="uid://cj1vy38heolln"]
 
-[ext_resource type="PackedScene" uid="uid://ba5n2nn40orik" path="res://contents/assets/environment/rubble/rubble.glb" id="1_jlbtm"]
-[ext_resource type="Material" uid="uid://byjrhtkvs02sk" path="res://contents/assets/environment/stone/Textures/stone_material.tres" id="2_jlbtm"]
+[ext_resource type="PackedScene" uid="uid://kd4drvfbmrl7" path="res://contents/assets/environment/rubble/tower_rubble.glb" id="1_glb"]
+[ext_resource type="Material" uid="uid://gof662hkeu5c" path="res://contents/assets/environment/rubble/materials/rubble_stone_light.tres" id="2_stone_light"]
+[ext_resource type="Material" uid="uid://cweseebv34pr1" path="res://contents/assets/environment/rubble/materials/rubble_stone.tres" id="3_stone"]
+[ext_resource type="Material" uid="uid://cknghk87w4y10" path="res://contents/assets/environment/rubble/materials/rubble_stone_dark.tres" id="4_stone_dark"]
+[ext_resource type="Material" uid="uid://b4lwk38h5axei" path="res://contents/assets/environment/rubble/materials/rubble_wood.tres" id="5_wood"]
+[ext_resource type="Material" uid="uid://bthrsfgp8pgmh" path="res://contents/assets/environment/rubble/materials/rubble_char.tres" id="6_char"]
+[ext_resource type="Material" uid="uid://dthenhk4bctu6" path="res://contents/assets/environment/rubble/materials/rubble_roof.tres" id="7_roof"]
+[ext_resource type="Material" uid="uid://58a4p4qweptd" path="res://contents/assets/environment/rubble/materials/rubble_roof_dark.tres" id="8_roof_dark"]
 
-[node name="RubbleModel" type="Node3D" unique_id=252606864 groups=["occluder"]]
+[node name="RubbleModel" type="Node3D" groups=["occluder"]]
 
-[node name="rubble" parent="." unique_id=716037064 instance=ExtResource("1_jlbtm")]
+[node name="tower_rubble" parent="." instance=ExtResource("1_glb")]
 unique_name_in_owner = true
-transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="Stone_big_004" parent="rubble" index="0" unique_id=1781183980]
-material_override = ExtResource("2_jlbtm")
+[node name="model" parent="tower_rubble" index="0"]
+cast_shadow = 1
+surface_material_override/0 = ExtResource("2_stone_light")
+surface_material_override/1 = ExtResource("3_stone")
+surface_material_override/2 = ExtResource("4_stone_dark")
+surface_material_override/3 = ExtResource("5_wood")
+surface_material_override/4 = ExtResource("6_char")
+surface_material_override/5 = ExtResource("7_roof")
+surface_material_override/6 = ExtResource("8_roof_dark")
 
-[node name="Stone_mid_008" parent="rubble" index="1" unique_id=1080215184]
-material_override = ExtResource("2_jlbtm")
-
-[editable path="rubble"]
+[editable path="tower_rubble"]
