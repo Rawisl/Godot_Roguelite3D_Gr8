@@ -32,6 +32,8 @@ const BURST := preload("res://art/vfx/destroy_burst.tscn")
 @export var settle_time := 0.16
 
 var _swells: Array[Dictionary] = []
+## Smoke and debris still playing; their speed follows the game speed every frame.
+var _particles: Array[CPUParticles3D] = []
 
 
 func _ready() -> void:
@@ -47,6 +49,9 @@ func _on_tower_destroyed(slot_id: StringName) -> void:
 
 
 ## The tower the slot has just let go of: still in the tree until the end of the frame.
+## Relies on Slot.ruin() calling queue_free() on the tower before it emits tower_destroyed. If
+## that order changes, no tower is found and the effect skips the swell and only pops;
+## test_destroy_fx checks that the model reaches the stand-in, so it would show there.
 func _dying_tower(slot: Slot) -> Tower:
 	for node in slot.find_children("*", "Tower", true, false):
 		var tower := node as Tower
@@ -77,6 +82,7 @@ func play(slot: Slot, tower: Tower = null) -> void:
 
 
 func _process(_delta: float) -> void:
+	_update_particle_speed()
 	var now := TimeManager.pausable_real_time
 	for swell in _swells.duplicate():
 		var t := clampf((now - float(swell.start)) / maxf(swell_time, 0.001), 0.0, 1.0)
@@ -138,14 +144,30 @@ func _spawn_burst(at: Vector3) -> void:
 		var p := particles as CPUParticles3D
 		if p == null:
 			continue
-		# Particles run on game time; scaled back so the burst lasts the same at x2 and x3.
-		p.speed_scale = 1.0 / maxf(Engine.time_scale, 0.001)
+		p.speed_scale = _real_speed()
 		p.emitting = true
+		_particles.append(p)
 		left += 1
 		p.finished.connect(func() -> void:
+			_particles.erase(p)
 			left -= 1
 			if left == 0:
 				fx.queue_free())
+
+
+## Particles run on game time; scaled back so a burst lasts the same at x2 and x3, also when
+## the speed changes while it plays.
+func _update_particle_speed() -> void:
+	var speed := _real_speed()
+	for p in _particles.duplicate():
+		if not is_instance_valid(p):
+			_particles.erase(p)
+		elif not is_equal_approx(p.speed_scale, speed):
+			p.speed_scale = speed
+
+
+func _real_speed() -> float:
+	return 1.0 / maxf(Engine.time_scale, 0.001)
 
 
 func _drop(model: Node3D) -> void:

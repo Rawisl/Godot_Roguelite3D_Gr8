@@ -211,7 +211,7 @@ script = ExtResource("14_hitfx")
 [node name="AuraFxManager" type="Node" parent="." unique_id=1730452861]
 script = ExtResource("16_aurafx")
 
-[node name="DestroyFxManager" type="Node" parent="." unique_id=1730452862]
+[node name="DestroyFxManager" type="Node" parent="." unique_id=1626181688]
 script = ExtResource("17_destroyfx")
 
 [node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
