@@ -213,6 +213,7 @@ func _physics_process(delta: float) -> void:
 		_cmd_input.discard()
 		velocity = Vector3.ZERO
 		move_and_slide()
+		_play_idle_when_free()
 		return
 
 	if is_stunned:
@@ -242,6 +243,7 @@ func _physics_process(delta: float) -> void:
 		_update_dodge_movement(delta)
 	elif is_using_skill or is_recalling():
 		_update_skill_movement(delta)
+		_play_idle_when_free()
 	else:
 		_update_movement(camera, delta)
 
@@ -566,6 +568,15 @@ func face_toward(direction: Vector3) -> void:
 		return
 	aim_dir = flat.normalized()
 	_aim_pivot.rotation.y = atan2(aim_dir.x, aim_dir.z)
+
+
+## Standing still without moving input: replace the looping run clip, or an action clip
+## that has finished, with idle. Action clips still playing are left to finish.
+func _play_idle_when_free() -> void:
+	if _anim_player == null or not _anim_player.has_animation(ANIM_IDLE):
+		return
+	if not _anim_player.is_playing() or _anim_player.current_animation == ANIM_RUN:
+		_anim_player.play(ANIM_IDLE, 0.15)
 
 
 func _update_aim(camera: Camera3D) -> void:
