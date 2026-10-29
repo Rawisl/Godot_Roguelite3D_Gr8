@@ -2,17 +2,17 @@ extends Node
 ## Plays the sound effects requested through EventBus.sfx_requested and the music for each
 ## part of the game, and applies the audio settings to the buses.
 ##
-## AUD-01: pitch and speed never follow the game speed. Engine.time_scale does not touch audio,
-##         and nothing here changes pitch_scale.
-## AUD-02: at most max_voices sounds and max_instances of the same sound. When full, a new
-##         sound replaces the lowest priority one playing. T1 is never dropped.
-## AUD-03: the same sound plays at most once per repeat_window (repeat_window_x3 at x3).
-## AUD-06: on Pause, gameplay SFX stop, UI SFX keep playing and the music drops to half.
-##         A new track crossfades with the old one over crossfade_time real seconds, so it runs
-##         the same while paused and at x3. Tracks per state follow the table in SRS 4.5.
-## AUD-08: losing window focus mutes Master (setting mute_on_focus_loss, on by default);
-##         getting it back fades Master in over focus_fade_time real seconds.
-## AUD-04 positioning is [Should], so the request position is ignored and sounds play in stereo.
+## - Pitch and speed never follow the game speed. Engine.time_scale does not touch audio,
+##   and nothing here changes pitch_scale.
+## - At most max_voices sounds and max_instances of the same sound. When full, a new
+##   sound replaces the lowest priority one playing. T1 is never dropped.
+## - The same sound plays at most once per repeat_window (repeat_window_x3 at x3).
+## - On Pause, gameplay SFX stop, UI SFX keep playing and the music drops to half.
+## - A new track crossfades with the old one over crossfade_time real seconds, so it runs
+##   the same while paused and at x3.
+## - Losing window focus mutes Master (setting mute_on_focus_loss, on by default);
+##   getting it back fades Master in over focus_fade_time real seconds.
+## - Positional sound is optional, so the request position is ignored and sounds play in stereo.
 ##
 ## Settings keys on EventBus.settings_changed: volume_master, volume_music, volume_sfx and
 ## volume_ui (0 to 1), mute_on_focus_loss (bool).
@@ -28,7 +28,7 @@ const BUS_MUSIC := &"Music"
 const BUS_SFX := &"SFX"
 const BUS_UI := &"UI"
 
-## Used until settings.cfg is loaded (note under SRS 6.3: Master 80%, Music 60%, SFX 80%, UI 70%).
+## Used until settings.cfg is loaded: Master 80%, Music 60%, SFX 80%, UI 70%.
 const DEFAULT_SETTINGS := {
 	&"volume_master": 0.8,
 	&"volume_music": 0.6,
@@ -53,9 +53,9 @@ const VOLUME_BUSES := {
 
 @export_group("Music")
 @export var music: MusicLibrary
-## Real-time seconds for one track to replace another (AUD-06).
+## Real-time seconds for one track to replace another.
 @export var crossfade_time: float = 1.5
-## Real-time seconds for Master to come back after the window gets focus again (AUD-08).
+## Real-time seconds for Master to come back after the window gets focus again.
 @export var focus_fade_time: float = 0.5
 
 class Voice:
@@ -134,11 +134,11 @@ func play(id: StringName, priority: int = -1) -> bool:
 	var gameplay := entry.bus != BUS_UI
 	if gameplay and get_tree().paused:
 		return false
-	var now := TimeManager.real_time
+	var now: float = TimeManager.real_time
 	var window := repeat_window_x3 if TimeManager.get_time_scale() >= 3 else repeat_window
 	if _last_played.has(id):
 		# A clock set back (TimeManager.reset) must not silence the sound until it catches up.
-		var elapsed := now - float(_last_played[id])
+		var elapsed: float = now - float(_last_played[id])
 		if elapsed >= 0.0 and elapsed < window:
 			return false
 	var voice := _pick_voice(id, priority)
@@ -160,8 +160,8 @@ func set_music_volume_db(value: float) -> void:
 	_update_music_volume()
 
 func _process(_delta: float) -> void:
-	# Real time, so fades run the same while paused and at x2/x3 (AUD-06, AUD-08).
-	var now := TimeManager.real_time
+	# Real time, so fades run the same while paused and at x2/x3.
+	var now: float = TimeManager.real_time
 	var real_delta := maxf(now - _last_real, 0.0)
 	_last_real = now
 	var step := real_delta / maxf(crossfade_time, 0.001)
@@ -219,7 +219,7 @@ func _on_sting_finished() -> void:
 		_after_sting = null
 		_crossfade(next)
 
-## Track for each wave state (SRS 4.5). SUMMARY plays the win sting, then the PREP music.
+## Track for each wave state. SUMMARY plays the win sting, then the PREP music.
 func _on_wave_state_changed(new_state: StringName) -> void:
 	if music == null:
 		return
@@ -278,7 +278,7 @@ func _set_bus(bus_name: StringName, linear: float) -> void:
 	AudioServer.set_bus_volume_db(index, linear_to_db(maxf(linear, 0.0001)))
 	AudioServer.set_bus_mute(index, linear <= 0.0)
 
-## AUD-08: losing focus mutes at once, getting it back fades in.
+## Losing focus mutes at once, getting it back fades in.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and _settings[&"mute_on_focus_loss"]:
 		_focus_target = 0.0

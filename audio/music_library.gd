@@ -1,7 +1,7 @@
 class_name MusicLibrary
 extends Resource
-## Music for each part of the game (SRS 4.5). Loops should be .ogg with loop on in the import
-## settings (AUD-09). A missing track plays silence.
+## Music for each part of the game. Loops should be .ogg at -14 LUFS with loop on in the import
+## settings. A missing track plays silence.
 
 ## MainMenu, MetaShop and Settings.
 @export var menu: AudioStream

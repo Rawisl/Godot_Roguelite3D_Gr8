@@ -1,9 +1,9 @@
 extends Control
-## Audio tab (SRS 4.6): Master, Music, SFX and UI volume, and muting when the window loses focus.
+## Audio tab: Master, Music, SFX and UI volume, and muting when the window loses focus.
 ## Each change is broadcast on EventBus.settings_changed right away and AudioManager applies it
 ## to the buses; saving to settings.cfg happens when the Settings screen closes.
 ##   volume_master, volume_music, volume_sfx, volume_ui: 0 to 1
-##   mute_on_focus_loss: bool (AUD-08)
+##   mute_on_focus_loss: bool
 
 const ROWS: Array[Array] = [
 	[&"volume_master", &"settings.audio.master"],

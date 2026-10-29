@@ -80,7 +80,7 @@ func _run() -> void:
 	for id in [&"ui_click", &"alert_t1", &"commander_hit", &"boss_stomp_windup", &"tower_arrow_shot", &"enemy_hit"]:
 		_check("shipped library has %s" % id, shipped._entries.has(id) and shipped._entries[id].stream != null)
 	_check("pool has 32 voices", shipped._voices.size() == 32)
-	# AUD-09: every state has a track; loops loop, stings play once.
+	# every state has a track; loops loop, stings play once.
 	var tracks: MusicLibrary = shipped.music
 	for key in [&"menu", &"prep", &"combat", &"boss", &"run_end"]:
 		var t: AudioStream = tracks.get(key)
@@ -94,7 +94,7 @@ func _run() -> void:
 	_new_manager()
 	_check("unknown id is ignored", not _am.play(&"missing"))
 
-	# AUD-03: repeat window, 50 ms at x1 and 80 ms at x3.
+	# repeat window, 50 ms at x1 and 80 ms at x3.
 	_check("first play starts", _am.play(&"unit_0"))
 	_check("same sound inside 50 ms is skipped", not _am.play(&"unit_0"))
 	_wait(0.06)
@@ -109,11 +109,11 @@ func _run() -> void:
 	_check("a clock set back does not silence the sound", _am.play(&"unit_0"))
 	TimeManager.real_time = 100.5
 	TimeManager.set_time_scale(3)
-	# AUD-01: the game speed never reaches the pitch.
+	# the game speed never reaches the pitch.
 	_check("pitch stays 1 at x3", _all_pitch_one() and is_equal_approx(AudioServer.playback_speed_scale, 1.0))
 	TimeManager.set_time_scale(1)
 
-	# AUD-02: at most 4 copies of one sound.
+	# at most 4 copies of one sound.
 	_new_manager()
 	for i in 4:
 		_am.play(&"unit_1")
@@ -124,7 +124,7 @@ func _run() -> void:
 		_wait(0.1)
 	_check("fifth copy of a T1 restarts the oldest", _am.play(&"t1_0") and _am.playing_count(&"t1_0") == 4)
 
-	# AUD-02: 32 voices, lower priority replaced first, equal priority not replaced.
+	# 32 voices, lower priority replaced first, equal priority not replaced.
 	_new_manager()
 	_fill(&"unit_", 8)
 	_check("32 unit sounds fill the pool", _am.playing_count() == 32)
@@ -133,13 +133,13 @@ func _run() -> void:
 	_check("the oldest unit sound was the one replaced", _am.playing_count(&"unit_0") == 3)
 	_check("a commander sound replaces a unit before a tower", _am.play(&"commander") and _am.playing_count(&"tower") == 1)
 
-	# AUD-02: T1 is never dropped, even when every voice is a T1.
+	# T1 is never dropped, even when every voice is a T1.
 	_new_manager()
 	_fill(&"t1_", 8)
 	_check("T1 still plays when 32 T1 sounds are playing", _am.play(&"t1_8") and _am.playing_count() == 33)
 	_check("a commander sound cannot replace a T1", not _am.play(&"commander"))
 
-	# AUD-06: Pause stops gameplay SFX, UI keeps playing, music drops by half.
+	# Pause stops gameplay SFX, UI keeps playing, music drops by half.
 	_new_manager()
 	var music: AudioStreamPlayer = _am.get_node("MusicPlayer")
 	_am.play_music(_track(1.0))
@@ -165,7 +165,7 @@ func _run() -> void:
 	_run_settings()
 
 func _run_music() -> void:
-	# AUD-06: 1.5 s crossfade in real time, the same while paused and at x3.
+	# 1.5 s crossfade in real time, the same while paused and at x3.
 	_new_manager()
 	var a := _track(1.0)
 	var b := _track(1.0)
@@ -189,7 +189,7 @@ func _run_music() -> void:
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	TimeManager.set_time_scale(1)
 
-	# Tracks per state (SRS 4.5).
+	# Tracks per state.
 	_new_manager()
 	var lib := MusicLibrary.new()
 	for key in [&"menu", &"prep", &"combat", &"boss", &"run_end"]:
@@ -230,7 +230,7 @@ func _run_settings() -> void:
 	EventBus.settings_changed.emit(&"volume_sfx", 0.8)
 	_check("raising it again unmutes", not AudioServer.is_bus_mute(AudioServer.get_bus_index(&"SFX")))
 
-	# AUD-08: focus out mutes Master at once, focus in fades back over 0.5 s.
+	# focus out mutes Master at once, focus in fades back over 0.5 s.
 	_am._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	_check("losing focus mutes Master", AudioServer.is_bus_mute(AudioServer.get_bus_index(&"Master")))
 	_am._notification(NOTIFICATION_APPLICATION_FOCUS_IN)
