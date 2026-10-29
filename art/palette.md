@@ -56,7 +56,7 @@ Không trùng màu với model để vòng chọn, thanh máu, aura luôn tách 
 | Tên | Hex | Dùng cho |
 |---|---|---|
 | ally_primary | `#3F7FD0` | Vòng chọn chỉ huy, thanh máu phe ta, cờ Fortress |
-| ally_accent | `#E8C25A` | Điểm nhấn phe ta |
+| ally_accent | `#E8C25A` | Điểm nhấn phe ta, vòng aura Frontline quanh chỉ huy (`aura_ring.tres`) và icon aura trên tháp |
 | enemy_primary | `#7A4FA0` | Viền, aura, thanh máu quân địch |
 | enemy_boss | `#B0402E` | Điểm nhấn boss (không trùng telegraph) |
 

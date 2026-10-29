@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cluc54idkjuyh"]
+
+[ext_resource type="Script" uid="uid://cvr3c3puujwmo" path="res://tests/test_aura_fx.gd" id="1_aurafx"]
+
+[node name="TestAuraFx" type="Node3D" unique_id=165154868]
+script = ExtResource("1_aurafx")
