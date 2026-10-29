@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://ck1riefjw2hl2" path="res://entities/tower/arrow.tscn" id="10_074og"]
 [ext_resource type="PackedScene" uid="uid://c47peuux5sxbx" path="res://entities/tower/cannon.tscn" id="11_cegan"]
 [ext_resource type="PackedScene" uid="uid://ds7n2omekdjqx" path="res://entities/tower/barricade.tscn" id="12_82xsv"]
+[ext_resource type="Script" uid="uid://co2bi4w4nhvw5" path="res://systems/run/commander_spawner.gd" id="13_cmdspawn"]
 
 [node name="Main" type="Node" unique_id=631834920]
 
@@ -42,5 +43,9 @@ script = ExtResource("4_dg77c")
 [node name="Projectiles" type="Node3D" parent="Gameplay" unique_id=1359556574]
 
 [node name="Effects" type="Node3D" parent="Gameplay" unique_id=74705817]
+
+[node name="CommanderSpawner" type="Node3D" parent="Gameplay" unique_id=1785302046 node_paths=PackedStringArray("deploy_point")]
+script = ExtResource("13_cmdspawn")
+deploy_point = NodePath("../../LevelHolder/Level/Markers/DeployPoint")
 
 [node name="Hud" parent="." unique_id=1623823647 instance=ExtResource("1_ig7tw")]
