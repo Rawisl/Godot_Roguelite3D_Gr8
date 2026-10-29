@@ -107,6 +107,7 @@ func _ready() -> void:
 	_setup_mode_switch()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
+	_sync_wave_state()
 	_refresh_aura.call_deferred()
 
 
@@ -141,11 +142,19 @@ func _setup_health() -> void:
 	EventBus.commander_hp_changed.emit.call_deferred(health.hp, health.max_hp)
 
 
+## Used when _anim_player is not set in the scene (for example after set_script in a test).
+## The imported model has its own AnimationPlayer next to the one with the commander clips,
+## so the one that has ANIM_IDLE wins; otherwise the first one found is used.
 func _setup_animation_player() -> void:
-	if _anim_player == null:
-		var aps := find_children("*", "AnimationPlayer", true, false)
-		if not aps.is_empty():
-			_anim_player = aps[0] as AnimationPlayer
+	if _anim_player != null:
+		return
+	var aps := find_children("*", "AnimationPlayer", true, false)
+	for ap in aps:
+		if (ap as AnimationPlayer).has_animation(ANIM_IDLE):
+			_anim_player = ap as AnimationPlayer
+			return
+	if not aps.is_empty():
+		_anim_player = aps[0] as AnimationPlayer
 
 
 func _setup_heal_channel() -> void:
@@ -204,6 +213,7 @@ func _physics_process(delta: float) -> void:
 		_cmd_input.discard()
 		velocity = Vector3.ZERO
 		move_and_slide()
+		_play_idle_when_free()
 		return
 
 	if is_stunned:
@@ -233,6 +243,7 @@ func _physics_process(delta: float) -> void:
 		_update_dodge_movement(delta)
 	elif is_using_skill or is_recalling():
 		_update_skill_movement(delta)
+		_play_idle_when_free()
 	else:
 		_update_movement(camera, delta)
 
@@ -547,6 +558,25 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 				elif not is_playing_hit:
 					if _anim_player.current_animation != ANIM_IDLE:
 						_anim_player.play(ANIM_IDLE, 0.15)
+
+
+## Turns the model to face direction at once (flattened to the ground). Used when the
+## commander is placed somewhere with a set facing, such as the command post.
+func face_toward(direction: Vector3) -> void:
+	var flat := Vector3(direction.x, 0.0, direction.z)
+	if flat.is_zero_approx():
+		return
+	aim_dir = flat.normalized()
+	_aim_pivot.rotation.y = atan2(aim_dir.x, aim_dir.z)
+
+
+## Standing still without moving input: replace the looping run clip, or an action clip
+## that has finished, with idle. Action clips still playing are left to finish.
+func _play_idle_when_free() -> void:
+	if _anim_player == null or not _anim_player.has_animation(ANIM_IDLE):
+		return
+	if not _anim_player.is_playing() or _anim_player.current_animation == ANIM_RUN:
+		_anim_player.play(ANIM_IDLE, 0.15)
 
 
 func _update_aim(camera: Camera3D) -> void:
@@ -874,6 +904,21 @@ func _update_low_hp(current_hp: int, max_hp: int) -> void:
 	if is_low != _is_low_hp:
 		_is_low_hp = is_low
 		EventBus.commander_low_hp_changed.emit(is_low)
+
+
+## The wave system may have entered its first state before the commander was spawned,
+## so read the current one instead of waiting for the next state_changed. Without a wave
+## manager the state stays empty and nothing is locked. The PREP heal is not run here:
+## it belongs to entering PREP, which this commander did not see.
+func _sync_wave_state() -> void:
+	var wave_manager := get_tree().get_first_node_in_group(&"wave_manager")
+	if wave_manager == null or not ("wave_state" in wave_manager):
+		return
+	# An out-of-range value would crash the lookup, so keep the previous state instead.
+	var state_names := Enums.WaveState.keys()
+	var index: int = wave_manager.wave_state
+	if index >= 0 and index < state_names.size():
+		_wave_state = StringName(state_names[index])
 
 
 func _on_wave_state_changed(new_state: StringName) -> void:

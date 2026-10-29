@@ -1261,8 +1261,12 @@ func _on_died() -> void:
  
 	if data != null:
 		var cfg := _get_effective_scale_config()
-		var gold: int = scaled_gold if scaled_gold > 0 else cfg.get_gold_reward(data.gold_reward, spawn_wave)
-		EventBus.enemy_died.emit(data.id, global_position, gold, data.prestige_reward, false, hit_by_commander)
+		var base_gold: int = scaled_gold if scaled_gold > 0 else cfg.get_gold_reward(data.gold_reward, spawn_wave)
+		var mult: float = GameConfig.frontline_gold_mult if hit_by_commander else 1.0
+		var display_gold: int = int(round(float(base_gold) * mult))
+		if display_gold > 0:
+			EventBus.gold_delta.emit(display_gold)
+		EventBus.enemy_died.emit(data.id, global_position, base_gold, data.prestige_reward, false, hit_by_commander)
  
 	change_state(Enums.EnemyState.DEAD)
  

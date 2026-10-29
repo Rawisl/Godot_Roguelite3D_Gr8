@@ -40,13 +40,62 @@ var _wave_rng: RandomNumberGenerator = null
 var _retry_elapsed: float = 0.0
 var _last_candidate_pos: Vector3 = Vector3.ZERO
 
+# Early call & Wave gold rewards (W7-KT2, GLD-02, GLD-08, GLD-09, FRT-02, RWD-01)
+var _early_call_bonus: int = 0
+var _wave_gold_base: float = 0.0
+var _wave_prestige: int = 0
+var _kills_by_type: Dictionary = {}
+
+const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
+
+# Clear time tracking (W7-KT1, TIME-03, SRS 3.3.3)
+var _combat_timer: float = 0.0
+var _clear_time: float = 0.0
+var _first_enemy_spawned: bool = false
+var _is_run_lost: bool = false
+var _boss_defeated_this_wave: bool = false
+
+var _xp_tracker: Node = null
+
 
 func _ready() -> void:
 	add_to_group(&"wave_manager")
 	EventBus.early_call_requested.connect(_on_early_call_requested)
 	EventBus.enemy_died.connect(_on_enemy_died)
+	EventBus.summary_continue_requested.connect(_on_summary_continue_requested)
+	EventBus.fortress_destroyed.connect(_on_run_lost)
+	EventBus.commander_died.connect(_on_run_lost)
+	EventBus.boss_defeated.connect(_on_boss_defeated)
+	_setup_xp_tracker()
 	_setup_container.call_deferred()
 	start_prep()
+
+
+func _exit_tree() -> void:
+	if EventBus.early_call_requested.is_connected(_on_early_call_requested):
+		EventBus.early_call_requested.disconnect(_on_early_call_requested)
+	if EventBus.enemy_died.is_connected(_on_enemy_died):
+		EventBus.enemy_died.disconnect(_on_enemy_died)
+	if EventBus.summary_continue_requested.is_connected(_on_summary_continue_requested):
+		EventBus.summary_continue_requested.disconnect(_on_summary_continue_requested)
+	if EventBus.fortress_destroyed.is_connected(_on_run_lost):
+		EventBus.fortress_destroyed.disconnect(_on_run_lost)
+	if EventBus.commander_died.is_connected(_on_run_lost):
+		EventBus.commander_died.disconnect(_on_run_lost)
+	if EventBus.boss_defeated.is_connected(_on_boss_defeated):
+		EventBus.boss_defeated.disconnect(_on_boss_defeated)
+
+
+func _on_boss_defeated() -> void:
+	_boss_defeated_this_wave = true
+
+
+func _setup_xp_tracker() -> void:
+	_xp_tracker = get_tree().get_first_node_in_group(&"xp_tracker")
+	if _xp_tracker == null:
+		_xp_tracker = XP_TRACKER_SCRIPT.new()
+		_xp_tracker.name = "XpTracker"
+		add_child(_xp_tracker)
 
 
 func _setup_container() -> void:
@@ -90,6 +139,17 @@ func start_prep() -> void:
 	wave_state = Enums.WaveState.PREP
 	prep_timer = GameConfig.prep_time_early if current_wave <= GameConfig.prep_early_until_wave else GameConfig.prep_time_late
 	_build_spawn_queue_for_wave(current_wave)
+
+	# Reset per-wave tracking
+	_early_call_bonus = 0
+	_wave_gold_base = 0.0
+	_wave_prestige = 0
+	_kills_by_type.clear()
+	_combat_timer = 0.0
+	_clear_time = 0.0
+	_first_enemy_spawned = false
+	_boss_defeated_this_wave = false
+
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"PREP")
 	EventBus.prep_timer_changed.emit(prep_timer)
@@ -98,6 +158,7 @@ func start_prep() -> void:
 func call_early() -> void:
 	if wave_state == Enums.WaveState.PREP:
 		var bonus_gold := mini(GameConfig.early_call_cap, int(floor(prep_timer * float(GameConfig.early_call_gold_per_sec))))
+		_early_call_bonus = bonus_gold
 		if bonus_gold > 0:
 			EventBus.gold_delta.emit(bonus_gold)
 		start_combat()
@@ -120,6 +181,8 @@ func start_combat() -> void:
 	enemies_alive = 0
 	_retry_elapsed = 0.0
 	spawn_timer = 0.0
+	_combat_timer = 0.0
+	_first_enemy_spawned = false
 
 	if not _spawn_delays.is_empty():
 		_next_spawn_delay = _spawn_delays.pop_front()
@@ -320,6 +383,8 @@ func _physics_process(delta: float) -> void:
 				start_combat()
 
 		Enums.WaveState.COMBAT:
+			if _first_enemy_spawned:
+				_combat_timer += delta
 			spawn_timer += delta
 			if spawn_timer >= _next_spawn_delay and not spawn_queue.is_empty():
 				# Queue holds surplus enemies while enemies_alive >= max_alive
@@ -330,7 +395,7 @@ func _physics_process(delta: float) -> void:
 			if auto_advance_summary:
 				summary_timer -= delta
 				if summary_timer <= 0.0:
-					advance_to_next_wave()
+					advance_from_summary()
 
 
 func _is_position_occupied(pos: Vector3, min_dist: float = 1.0) -> bool:
@@ -412,26 +477,163 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	else:
 		add_child(enemy)
 
+	_first_enemy_spawned = true
 	enemies_alive += 1
 	EventBus.enemy_spawned.emit(enemy)
 	EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 
 
-func _on_enemy_died(_enemy_type: StringName, _pos: Vector3, _gold: int, _prestige: int, _is_cull: bool, _hit_by_commander: bool = false) -> void:
+func _on_enemy_died(enemy_type: StringName, _pos: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool = false) -> void:
+	if not is_cull:
+		var type_key := String(enemy_type)
+		_kills_by_type[type_key] = _kills_by_type.get(type_key, 0) + 1
+		var mult: float = GameConfig.frontline_gold_mult if hit_by_commander else 1.0
+		_wave_gold_base += float(gold_base) * mult
+		_wave_prestige += prestige
+
 	if wave_state == Enums.WaveState.COMBAT:
 		enemies_alive = maxi(0, enemies_alive - 1)
 		EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 		if spawn_queue.is_empty() and enemies_alive == 0:
+			_clear_time = _combat_timer
 			_end_combat_to_summary()
 
 
 func _end_combat_to_summary() -> void:
+	var fort := get_tree().get_first_node_in_group(&"fortress")
+	if fort != null and "health" in fort and fort.health != null and fort.health.hp <= 0:
+		_is_run_lost = true
+
+	# WAVE-02, GLD-03: Thua de thang - if fortress destroyed or commander died, do not reward
+	# TODO(week 10): RunState handles settling run loss at end of frame.
+	if _is_run_lost:
+		return
+
 	var old_state := wave_state
 	wave_state = Enums.WaveState.SUMMARY
 	summary_timer = GameConfig.summary_auto_advance
+
+	# TIME-03: Return to x1 on entering SUMMARY (reset_time_scale works even if paused)
+	TimeManager.reset_time_scale()
+
+	# Par time & Clear multiplier (SRS 3.3.3, 3.9.1)
+	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
+	var spawn_dur: float = cfg.get_spawn_duration(current_wave)
+	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
+	var par_time: float = GameConfig.get_par_time(spawn_dur, is_boss)
+	var clear_mult: float = GameConfig.get_clear_mult(_clear_time, par_time)
+
+	var clear_tier: String = "NORMAL"
+	if par_time > 0.0:
+		if _clear_time <= GameConfig.clear_fast_threshold * par_time:
+			clear_tier = "FAST"
+		elif _clear_time > GameConfig.clear_slow_threshold * par_time:
+			clear_tier = "SLOW"
+
+	# Boss gold (SRS 3.8.9, 3.9.1) - only granted if boss was defeated this wave
+	var boss_gold: float = 0.0
+	if _boss_defeated_this_wave:
+		boss_gold = float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * float(current_wave - 1))
+
+	# Total gold gain (SRS 3.9.1)
+	# TODO(week 10): Apply meta gold bonus (gold_pct_total = gold_pct_meta + gold_pct_buff)
+	var gold_pct_total: float = 0.0
+	var wave_gold_scaled: int = int(floor(_wave_gold_base * (1.0 + gold_pct_total) * clear_mult))
+	var boss_gold_scaled: int = int(floor(boss_gold * (1.0 + gold_pct_total)))
+	var total_gold_gain: int = wave_gold_scaled + boss_gold_scaled + _early_call_bonus
+
+	# Credit gold to GoldManager (GLD-02, GLD-08), false avoids double "+xx" popup on SUMMARY
+	var gold_mgr := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
+	if gold_mgr != null:
+		gold_mgr.add(total_gold_gain, false)
+
+	# Pending prestige
+	if _wave_prestige > 0:
+		EventBus.prestige_pending_changed.emit(_wave_prestige)
+
+	# Save progress (SAV-05)
+	# TODO(week 10): Handle start_wave > 1 when calculating waves_cleared (RunFlag start_wave).
+	if SaveManager != null and SaveManager.can_write:
+		var run_flag: Dictionary = SaveManager.get_section(SaveManager.RUN_FLAG)
+		run_flag["waves_cleared"] = current_wave
+		SaveManager.save()
+
+	# Fortress HP
+	var fortress_hp := 0
+	var fortress_max_hp := 0
+	if fort != null and "health" in fort and fort.health != null:
+		fortress_hp = fort.health.hp
+		fortress_max_hp = fort.health.max_hp
+
+	# Ruined towers read from Slot instances (Slot.state == RUINED)
+	var ruined_towers: Array = []
+	for s in get_tree().get_nodes_in_group(&"slot"):
+		var slot := s as Slot
+		if slot != null and slot.state == Enums.SlotState.RUINED and slot.last_data != null:
+			ruined_towers.append({
+				"type": slot.last_data.id,
+				"level": slot.last_level,
+				"rebuild_cost": slot.get_rebuild_cost(),
+			})
+
+	# XP stats
+	var xp_cmd: int = 0
+	var xp_tow: int = 0
+	var cmd_lv: int = 0
+	var pend_picks: int = 0
+	if _xp_tracker != null:
+		xp_cmd = int(round(_xp_tracker.wave_xp_commander))
+		xp_tow = int(round(_xp_tracker.wave_xp_towers))
+		cmd_lv = _xp_tracker.commander_level
+		pend_picks = _xp_tracker.pending_picks
+
+	var summary: Dictionary = {
+		"wave_index": current_wave,
+		"clear_time": _clear_time,
+		"clear_tier": clear_tier,
+		"par_time": par_time,
+		"kills_by_type": _kills_by_type.duplicate(),
+		"gold_base": int(round(_wave_gold_base)),
+		"gold_mult": clear_mult,
+		"early_call_bonus": _early_call_bonus,
+		"gold_total": total_gold_gain,
+		"prestige_gain_wave": _wave_prestige,
+		"fortress_hp": fortress_hp,
+		"fortress_max_hp": fortress_max_hp,
+		"ruined_towers": ruined_towers,
+		"emg_repair_gained": 1 if _boss_defeated_this_wave else 0,
+		"xp_from_commander": xp_cmd,
+		"xp_from_towers": xp_tow,
+		"commander_level": cmd_lv,
+		"pending_picks": pend_picks,
+	}
+
+	EventBus.wave_summary_ready.emit(summary)
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"SUMMARY")
 	EventBus.wave_cleared.emit(current_wave)
+
+
+func advance_from_summary() -> void:
+	if wave_state != Enums.WaveState.SUMMARY:
+		return
+
+	# PRJ-06: release all projectiles at end of SUMMARY
+	var pool := get_tree().get_first_node_in_group(&"projectile_pool") as ProjectilePool
+	if pool != null:
+		pool.release_all()
+
+	# TODO(week 8): Transition to REWARD_PICK when _xp_tracker.pending_picks > 0 and pool not exhausted (needs RunSkillState, RWP-06).
+	advance_to_next_wave()
+
+
+func _on_summary_continue_requested() -> void:
+	if wave_state == Enums.WaveState.SUMMARY:
+		advance_from_summary()
+
+
+func _on_run_lost() -> void:
+	_is_run_lost = true
 
 
 func advance_to_next_wave() -> void:

@@ -59,4 +59,3 @@ extends Resource
 @export_group("Status Effects")
 @export var max_stun_duration: float = 1.5
 @export var stun_immunity_duration: float = 3.0
-
