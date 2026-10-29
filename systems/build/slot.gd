@@ -81,6 +81,13 @@ func clear_rubble() -> bool:
 	set_state(Enums.SlotState.EMPTY)
 	return true
 
+func is_ground() -> bool:
+	return zone == Enums.SlotZone.GROUND
+
+## True while a GROUND slot holds a tower or its rubble, so it counts against the ground cap.
+func uses_ground_space() -> bool:
+	return is_ground() and (state == Enums.SlotState.OCCUPIED or state == Enums.SlotState.RUINED)
+
 # A tower at 0 HP leaves rubble, the slot becomes RUINED
 func _on_tower_destroyed(_t: Tower) -> void:
 	ruin()

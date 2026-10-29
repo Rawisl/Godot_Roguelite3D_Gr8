@@ -54,16 +54,19 @@ func get_build_options(slot_id: StringName) -> Array[Dictionary]:
 	var gold := _gold()
 	if slot == null or gold == null or not slot.is_free():
 		return result
+	var locked_reason: StringName = &"GROUND_FULL" if _ground_blocks(slot) else &""
 	if slot.state == Enums.SlotState.RUINED and slot.last_data != null:
 		var rebuild_cost := slot.get_rebuild_cost()
 		result.append({"data": slot.last_data, "level": slot.last_level,
-			"cost": rebuild_cost, "shortfall": gold.shortfall(rebuild_cost), "rebuild": true})
+			"cost": rebuild_cost, "shortfall": gold.shortfall(rebuild_cost), "rebuild": true,
+			"locked_reason": locked_reason})
 	for data in towers:
 		if not slot.allows(data):
 			continue
 		var cost := data.get_total_cost(1)
 		result.append({"data": data, "level": 1,
-			"cost": cost, "shortfall": gold.shortfall(cost), "rebuild": false})
+			"cost": cost, "shortfall": gold.shortfall(cost), "rebuild": false,
+			"locked_reason": locked_reason})
 	return result
 
 func build(slot_id: StringName, type: StringName, level: int = 1) -> bool:
@@ -82,6 +85,9 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	if level < 1 or level > data.levels.size():
 		return false
 	if not tower_scenes.has(type) or not slot.can_build(data):
+		return false
+	if _ground_blocks(slot):
+		EventBus.build_denied.emit(&"GROUND_FULL", 0)
 		return false
 	# A level above 1 is only a rebuild of the tower that stood here, at the level it had.
 	var is_rebuild := level > 1
@@ -112,6 +118,23 @@ func _do_clear_rubble(slot_id: StringName) -> bool:
 	if not is_prep() or slot == null or slot.state != Enums.SlotState.RUINED:
 		return false
 	return slot.clear_rubble()
+
+## GROUND slots holding a tower or rubble. Counted from the slots on every call, so slots
+## created later (by the ground grid) never leave a stale number.
+func get_ground_used() -> int:
+	var used := 0
+	for node in get_tree().get_nodes_in_group(&"slot"):
+		var slot := node as Slot
+		if slot != null and slot.uses_ground_space():
+			used += 1
+	return used
+
+func is_ground_full() -> bool:
+	return get_ground_used() >= GameConfig.max_ground_buildings
+
+## A new building on an EMPTY ground slot needs a free place; rubble already holds one.
+func _ground_blocks(slot: Slot) -> bool:
+	return slot.is_ground() and slot.state == Enums.SlotState.EMPTY and is_ground_full()
 
 ## Everything the Tower panel shows. Empty when the slot holds no tower.
 func get_tower_info(slot_id: StringName) -> Dictionary:
