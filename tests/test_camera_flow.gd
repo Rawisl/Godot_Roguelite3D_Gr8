@@ -78,18 +78,22 @@ func _run() -> void:
 	await _wait(0.4)
 
 	# Tab in PREP: free switch to Commander mode, focus on the commander at the command post.
+	# A key held when the context changes stays ignored until it is released, even after the glide.
+	Input.action_press(&"move_up")
 	_switch.request()
 	await _frames(1)
 	_check("Tab in PREP enters Commander mode", _commander.is_commander_mode)
 	_check("Tab starts a 0.5 s glide", _rig.is_gliding())
-	# Keys pressed during the glide are ignored; released before it ends.
-	Input.action_press(&"move_up")
-	await _wait(0.4)
-	Input.action_release(&"move_up")
-	await _wait(0.2)
+	await _wait(0.8)
 	var post := _flat(bounds.clamp_focus(_commander.global_position))
 	_check("Commander mode focuses the commander, kept in the bounds", _near(_focus(), post))
-	_check("keys held through the glide did not move the camera", _near(_focus(), post))
+	_check("a key held through the change does not drift the camera after the glide", not _rig.is_gliding() and _near(_focus(), post))
+	Input.action_release(&"move_up")
+	await _frames(1)
+	await _hold(&"move_up", 0.3)
+	_check("pressing the key again pans", _focus().distance_to(post) > 0.5)
+	_press(&"camera_recenter")
+	await _wait(0.4)
 
 	# Pan away, Tab back to PREP, Tab into Commander again: no remembered pan.
 	await _hold(&"move_right", 0.4)
@@ -126,8 +130,10 @@ func _run() -> void:
 	# Recall in COMBAT: after the channel, Commander mode at the command post.
 	_switch.request()
 	_check("Recall starts a channel in COMBAT", _switch.is_recalling())
-	while _switch.is_recalling():
+	var recall_end := TimeManager.real_time + 10.0
+	while _switch.is_recalling() and TimeManager.real_time < recall_end:
 		await _frames(1)
+	_check("Recall finishes within 10 s", not _switch.is_recalling())
 	await _wait(0.6)
 	_check("after Recall the camera is on the command post", _near(_focus(), _flat(bounds.clamp_focus(_commander.global_position))))
 	_check("after Recall the size is overview", is_equal_approx(_camera.size, bounds.camera_size_overview))

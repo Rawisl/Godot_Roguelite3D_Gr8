@@ -72,6 +72,7 @@ func _run_checks() -> void:
 	slot.ruin()
 	_check("the slot is RUINED at once", slot.state == Enums.SlotState.RUINED)
 	var stand_in := get_node_or_null(^"DestroyingTower") as Node3D
+	# Fails if Slot.ruin() stops freeing the tower before tower_destroyed (see _dying_tower).
 	_check("the tower model moves to a stand-in", stand_in != null and model.get_parent() == stand_in)
 	_check("the rubble is hidden while the tower swells", not visual.visible)
 	await _wait(0.06)
@@ -107,7 +108,11 @@ func _run_checks() -> void:
 	slot.ruin()
 	await _wait(0.2)
 	_check("at x3 the tower is still swelling after 0.2 s real time", get_node_or_null(^"DestroyingTower") != null)
+	await _wait(0.3)
+	var live := _bursts()
 	TimeManager.set_time_scale(1)
+	await _frames(1)
+	_check("a burst follows a speed change while it plays", not live.is_empty() 			and is_equal_approx((live[0].get_node(^"Smoke") as CPUParticles3D).speed_scale, 1.0))
 	await _wait(1.8)
 	# Paused: the swell holds and pops after the game resumes.
 	_build_one(1)
@@ -138,6 +143,11 @@ func _build_one(i: int) -> void:
 	if TOWERS[i][1] != null:
 		tower.get_node(^"Model").add_child((TOWERS[i][1] as PackedScene).instantiate())
 	slot.place_tower(tower)
+
+
+func _frames(n: int) -> void:
+	for i in n:
+		await get_tree().process_frame
 
 
 ## Real seconds, so x3 does not shorten the wait.
