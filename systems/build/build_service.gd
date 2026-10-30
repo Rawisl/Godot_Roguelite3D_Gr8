@@ -169,6 +169,8 @@ func get_commander_level() -> int:
 
 ## Commander level needed to upgrade a tower to next_level.
 func get_upgrade_required_level(next_level: int) -> int:
+	if not GameConfig.tower_gate_enabled:
+		return 0
 	match next_level:
 		2:
 			return GameConfig.tower_gate_lv2

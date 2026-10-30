@@ -20,11 +20,14 @@
 [ext_resource type="Script" uid="uid://chy1j70x80shi" path="res://ui/world/selection_controller.gd" id="14_olkg6"]
 [ext_resource type="Script" uid="uid://bn8aebymn6o1b" path="res://ui/world/range_ring.gd" id="15_hk13k"]
 [ext_resource type="PackedScene" uid="uid://xujhr260fsy1" path="res://ui/screens/summary_panel.tscn" id="16_3rj2y"]
+[ext_resource type="PackedScene" path="res://ui/hud/lost_overlay.tscn" id="99_lost"]
 [ext_resource type="Script" uid="uid://cjfiuiol141y4" path="res://ui/world/hover_highlight.gd" id="17_olkg6"]
 
 [node name="Hud" type="CanvasLayer" unique_id=1623823647]
 layer = 10
 script = ExtResource("1_5uuaq")
+
+[node name="LostOverlay" parent="." instance=ExtResource("99_lost")]
 
 [node name="Root" type="Control" parent="." unique_id=1902627919]
 layout_mode = 3

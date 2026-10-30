@@ -7,7 +7,7 @@ func _ready() -> void:
 		[S.BOOT, S.MAIN_MENU, true],
 		[S.MAIN_MENU, S.RUN_LOADING, true],
 		[S.MAIN_MENU, S.RUN, false],          # must go through RunLoading
-		[S.RUN, S.MAIN_MENU, false],          # only via RunEnd
+		[S.RUN, S.MAIN_MENU, true],           # run lost screen returns straight to the menu
 		[S.RUN_END, S.META_SHOP, true],
 		[S.META_SHOP, S.MAIN_MENU, true],
 		[S.SETTINGS, S.RUN, false],

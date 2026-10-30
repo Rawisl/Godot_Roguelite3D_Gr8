@@ -157,3 +157,11 @@ Biến thể (Theme Type Variation) cho TV4 dùng khi cần:
 | fbk_resist | `#C8C8C8` | Kèm chữ RESIST hoặc IMMUNE (xám sáng để đọc được trên nền cỏ) |
 | fbk_commander | `#E04545` | Sát thương chỉ huy nhận |
 | fbk_heal | `#9CFF6A` | Số hồi máu "+n" |
+
+## Màn thua
+
+| Tên | Hex | Dùng cho |
+|---|---|---|
+| lost_text | `#D91F1F` | Chữ LOST khi thua. Chỉnh ở `text_color` của `ui/hud/lost_overlay.tscn` |
+| lost_fade | `#000000` | Màn đen phủ dần trước khi về menu. Chỉnh ở `fade_color` của `ui/hud/lost_overlay.tscn` |
+| lost_dim | `#111111` 50% | Lớp tối sau chữ LOST, lấy từ Backdrop của `ui/screens/pause_menu.tscn`. Chỉnh ở `dim_color` của `ui/hud/lost_overlay.tscn` |

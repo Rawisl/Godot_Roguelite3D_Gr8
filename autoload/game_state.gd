@@ -18,7 +18,7 @@ const TRANSITIONS := {
 	AppState.BOOT: [AppState.MAIN_MENU],
 	AppState.MAIN_MENU: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.SETTINGS],
 	AppState.RUN_LOADING: [AppState.RUN],
-	AppState.RUN: [AppState.RUN_END],
+	AppState.RUN: [AppState.RUN_END, AppState.MAIN_MENU],
 	AppState.RUN_END: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.MAIN_MENU],
 	AppState.META_SHOP: [AppState.MAIN_MENU],
 	AppState.SETTINGS: [AppState.MAIN_MENU],

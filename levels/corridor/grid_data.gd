@@ -8,7 +8,7 @@ extends Resource
 @export var column_dir: Vector3 = Vector3.RIGHT
 @export var columns: int = 0
 ## Lateral offset of each row's cell centre from the lane, along column_dir rotated 90 degrees.
-@export var row_offsets: PackedFloat32Array = []
+@export var row_offsets: PackedFloat32Array = PackedFloat32Array()
 ## Cells left out of the layout, as (column, row).
 @export var holes: Array[Vector2i] = []
 ## Inner width of the corridor, wall to wall.

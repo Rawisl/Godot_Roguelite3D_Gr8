@@ -200,6 +200,8 @@ func test_not_enough_gold() -> void:
 
 func test_commander_level() -> void:
 	print("\n[GROUP 7] Commander level limits")
+	var gate_before := GameConfig.tower_gate_enabled
+	GameConfig.tower_gate_enabled = true
 	_reset()
 	_service.build(&"W1", &"arrow")
 	var g := _gold.gold
@@ -221,6 +223,7 @@ func test_commander_level() -> void:
 	assert_true(_service.get_commander_level() == GameConfig.tower_gate_lv3, "a lower level_up does not lower the level")
 	EventBus.run_started.emit()
 	assert_true(_service.get_commander_level() == 1, "run_started resets the level")
+	GameConfig.tower_gate_enabled = gate_before
 
 func test_rebuild() -> void:
 	print("\n[GROUP 8] Rebuild")

@@ -147,6 +147,8 @@ extends Node
 @export var stat_max_stacks: int = 3
 
 @export_group("Commander Progression")
+# Temporarily off; set true to require commander level for tower upgrades.
+@export var tower_gate_enabled: bool = false
 @export var tower_gate_lv2: int = 4
 @export var tower_gate_lv3: int = 8
 @export var xp_base: int = 5
