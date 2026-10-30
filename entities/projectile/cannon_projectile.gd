@@ -16,8 +16,8 @@ var _edge_mult: float = 1.0
 
 
 func _ready() -> void:
-	# No contact damage on the way (TGT-07): the base class hit handlers stay disconnected.
-	pass
+	add_to_group(&"projectile")
+	_ensure_visual_fallback()
 
 
 func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float, src: Node = null) -> void:

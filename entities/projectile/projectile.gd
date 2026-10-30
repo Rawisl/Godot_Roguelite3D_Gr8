@@ -32,6 +32,7 @@ var has_launched: bool = false
 @onready var life_timer: Timer = get_node_or_null("LifeTimer")
  
 func _ready() -> void:
+	add_to_group(&"projectile")
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 	if life_timer != null:
@@ -222,6 +223,9 @@ static func scaled_damage(raw: float, mult: float) -> int:
 	return maxi(1, roundi(raw * mult))
  
 func release() -> void:
+	if pool_key.is_empty():
+		queue_free()
+		return
 	if not in_use:
 		return
 	source = null
