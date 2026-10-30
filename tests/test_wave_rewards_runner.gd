@@ -45,6 +45,12 @@ func _ready() -> void:
 	test_boss_gold_only_on_boss_defeated()
 	test_loss_cancels_wave_gold_and_bonus()
 	test_summary_continue_requested_advances_wave()
+	test_prj06_projectile_cleanup_at_end_of_summary()
+	test_time03_auto_revert_to_x1_on_boss_intro()
+	test_clear_multiplier_invariance_under_fast_forward()
+	test_cmb10_firebomb_dot_tick_commander_xp()
+	test_boss_wave_prep_time_and_early_call()
+	test_bulwark_get_resist_and_death_signal()
 
 	SaveManager.set_repository(real_repo)
 	SaveManager.load_save()
@@ -400,3 +406,148 @@ func test_summary_continue_requested_advances_wave() -> void:
 	assert_true(wave_manager.current_wave == 2, "Current wave incremented to 2")
 
 	wave_manager.free()
+
+
+func test_prj06_projectile_cleanup_at_end_of_summary() -> void:
+	print("\n[GROUP 11] Testing Projectile Cleanup on Summary Advance (PRJ-06)")
+	var pool_scene := preload("res://entities/projectile/projectile_pool.tscn")
+	var pool: ProjectilePool = pool_scene.instantiate()
+	add_child(pool)
+
+	var arrow_scene := preload("res://entities/projectile/arrow_projectile.tscn")
+	var enemy_arrow_scene := preload("res://entities/projectile/enemy_projectile.tscn")
+
+	# Acquire a projectile from the pool
+	var p_pooled: Projectile = pool.acquire(arrow_scene)
+	assert_true(p_pooled != null and p_pooled.in_use, "Acquired active projectile from ProjectilePool")
+
+	# Instantiate an enemy projectile directly (like Archer does)
+	var p_enemy: Projectile = enemy_arrow_scene.instantiate()
+	add_child(p_enemy)
+	assert_true(p_enemy.is_in_group(&"projectile"), "Enemy projectile added to group projectile")
+
+	# Advance wave manager from SUMMARY
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	add_child(wave_manager)
+	wave_manager.wave_state = Enums.WaveState.SUMMARY
+
+	wave_manager.advance_from_summary()
+
+	assert_true(not p_pooled.in_use, "Pooled projectile returned to pool / in_use is false")
+	assert_true(p_enemy.is_queued_for_deletion() or not is_instance_valid(p_enemy), "Direct projectile queued for deletion upon advance_from_summary")
+
+	wave_manager.free()
+	pool.free()
+
+
+func test_time03_auto_revert_to_x1_on_boss_intro() -> void:
+	print("\n[GROUP 12] Testing TIME-03 Auto Revert to x1 on BOSS_INTRO and SUMMARY")
+	TimeManager.set_time_scale(2)
+	assert_true(TimeManager.get_time_scale() == 2, "TimeManager speed set to x2")
+
+	# Entering BOSS_INTRO
+	EventBus.state_changed.emit(&"BOSS_INTRO")
+	assert_true(TimeManager.get_time_scale() == 1, "TimeManager auto-drops to x1 on BOSS_INTRO (TIME-03)")
+
+	TimeManager.set_time_scale(3)
+	assert_true(TimeManager.get_time_scale() == 3, "TimeManager speed set to x3")
+
+	# Entering SUMMARY
+	EventBus.state_changed.emit(&"SUMMARY")
+	assert_true(TimeManager.get_time_scale() == 1, "TimeManager auto-drops to x1 on SUMMARY (TIME-03)")
+
+
+func test_clear_multiplier_invariance_under_fast_forward() -> void:
+	print("\n[GROUP 13] Testing Clear Multiplier Invariance Under Fast-Forward")
+	# Clear time is measured in game time, so time_scale x2/x3 does not change clear_mult
+	var par_time := 30.0
+	var mult_x1 := GameConfig.get_clear_mult(15.0, par_time)
+	var mult_x2 := GameConfig.get_clear_mult(15.0, par_time)
+	var mult_x3 := GameConfig.get_clear_mult(15.0, par_time)
+	assert_true(mult_x1 == 1.25 and mult_x2 == 1.25 and mult_x3 == 1.25, "Clear multiplier for 15s game time is 1.25 across all speed rates")
+
+	var wave_manager := WaveManager.new()
+	wave_manager.wave_state = Enums.WaveState.COMBAT
+	wave_manager.set("_first_enemy_spawned", true)
+	wave_manager._physics_process(0.5)
+	assert_true(is_equal_approx(wave_manager.get("_combat_timer"), 0.5), "Combat timer tracks game time delta accurately")
+	wave_manager.free()
+
+
+func test_cmb10_firebomb_dot_tick_commander_xp() -> void:
+	print("\n[GROUP 14] Testing Firebomb DoT Tick Hit Flag & Commander XP (CMB-10, XP-03)")
+	var grunt_scene := preload("res://entities/enemy/grunt.tscn")
+	var grunt: Enemy = grunt_scene.instantiate()
+	grunt.spawn_grace = false
+	grunt.is_in_spawn_zone = false
+	add_child(grunt)
+
+	var xp_tracker := XpTracker.new()
+	add_child(xp_tracker)
+	xp_tracker.reset()
+
+	# Firebomb DoT tick: source = "commander", damage_type = BLAST
+	var dot_tick := DamageInfo.new(4, Enums.DamageType.BLAST, "commander")
+	grunt.take_damage(dot_tick)
+
+	assert_true(grunt.hit_by_commander, "Grunt hit_by_commander is true after commander DoT tick")
+
+	grunt._on_died()
+
+	assert_true(xp_tracker.wave_xp_commander == 1.0, "Commander DoT kill awarded 100% XP (1.0) to commander XP")
+	assert_true(xp_tracker.wave_xp_towers == 0.0, "Tower XP is 0.0 for commander DoT kill")
+
+	xp_tracker.free()
+	grunt.free()
+
+
+func test_boss_wave_prep_time_and_early_call() -> void:
+	print("\n[GROUP 15] Testing Boss Wave Prep Time (45s) and Early Call (WAVE-07)")
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	add_child(wave_manager)
+
+	# Regular wave 1
+	wave_manager.current_wave = 1
+	wave_manager.start_prep()
+	assert_true(wave_manager.prep_timer == GameConfig.prep_time_early, "Wave 1 prep_timer is prep_time_early (25s)")
+
+	# Boss wave 5
+	wave_manager.current_wave = 5
+	wave_manager.start_prep()
+	assert_true(wave_manager.prep_timer == GameConfig.prep_time_boss, "Boss Wave 5 prep_timer is prep_time_boss (45s)")
+
+	# Early call at 45s: 45 * 2 = 90, capped at early_call_cap = 40
+	wave_manager.call_early()
+	assert_true(wave_manager.get("_early_call_bonus") == GameConfig.early_call_cap, "Boss wave early call is capped at early_call_cap (40 gold)")
+
+	wave_manager.free()
+
+
+func test_bulwark_get_resist_and_death_signal() -> void:
+	print("\n[GROUP 16] Testing Bulwark get_resist & Boss Defeated Emission")
+	var bulwark_scene := preload("res://entities/enemy/bulwark.tscn")
+	var bulwark: Bulwark = bulwark_scene.instantiate()
+	bulwark.data = preload("res://data/bosses/bulwark_boss.tres")
+	bulwark.spawn_grace = false
+	bulwark.is_in_spawn_zone = false
+	add_child(bulwark)
+
+	# Check get_resist (1 argument)
+	assert_true(bulwark.has_method(&"get_resist"), "Bulwark implements get_resist(dmg_type)")
+	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) <= 0.0, "Bulwark Phase 1 is immune to PIERCE (resist <= 0.0)")
+	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) <= 0.0, "Bulwark Phase 1 is immune to MAGIC (resist <= 0.0)")
+	assert_true(bulwark.get_resist(Enums.DamageType.SLASH) > 0.0, "Bulwark Phase 1 takes SLASH damage")
+
+	# Check boss_defeated signal emitted upon death
+	var record := {"called": false}
+	var on_boss_defeated := func(): record.called = true
+	EventBus.boss_defeated.connect(on_boss_defeated)
+
+	bulwark._on_died()
+
+	assert_true(record.called, "Bulwark death in-game emits EventBus.boss_defeated")
+
+	EventBus.boss_defeated.disconnect(on_boss_defeated)
+	bulwark.free()

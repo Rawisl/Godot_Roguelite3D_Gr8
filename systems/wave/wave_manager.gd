@@ -1,7 +1,7 @@
 class_name WaveManager
 extends Node
 
-## Wave FSM (PREP - COMBAT - SUMMARY) and Spawner (SPN-01, SPN-02, SPN-03, SPN-04, SPN-05..08, EN-04).
+## Wave FSM (PREP - COMBAT - SUMMARY) and Spawner.
 ## Supports queue-based spawning, spawn_zone placement, spawn_grace,
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
 
@@ -40,7 +40,7 @@ var _wave_rng: RandomNumberGenerator = null
 var _retry_elapsed: float = 0.0
 var _last_candidate_pos: Vector3 = Vector3.ZERO
 
-# Early call & Wave gold rewards (W7-KT2, GLD-02, GLD-08, GLD-09, FRT-02, RWD-01)
+# Early call & Wave gold rewards
 var _early_call_bonus: int = 0
 var _wave_gold_base: float = 0.0
 var _wave_prestige: int = 0
@@ -48,7 +48,7 @@ var _kills_by_type: Dictionary = {}
 
 const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
 
-# Clear time tracking (W7-KT1, TIME-03, SRS 3.3.3)
+# Clear time tracking
 var _combat_timer: float = 0.0
 var _clear_time: float = 0.0
 var _first_enemy_spawned: bool = false
@@ -137,7 +137,8 @@ func _get_scene_for_enemy_id(enemy_id: StringName) -> PackedScene:
 func start_prep() -> void:
 	var old_state := wave_state
 	wave_state = Enums.WaveState.PREP
-	prep_timer = GameConfig.prep_time_early if current_wave <= GameConfig.prep_early_until_wave else GameConfig.prep_time_late
+	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
+	prep_timer = GameConfig.get_prep_time(current_wave, is_boss)
 	_build_spawn_queue_for_wave(current_wave)
 
 	# Reset per-wave tracking
@@ -504,8 +505,10 @@ func _end_combat_to_summary() -> void:
 	if fort != null and "health" in fort and fort.health != null and fort.health.hp <= 0:
 		_is_run_lost = true
 
-	# WAVE-02, GLD-03: Thua de thang - if fortress destroyed or commander died, do not reward
-	# TODO(week 10): RunState handles settling run loss at end of frame.
+	var cmd := get_tree().get_first_node_in_group(&"commander")
+	if cmd != null and "health" in cmd and cmd.health != null and cmd.health.hp <= 0:
+		_is_run_lost = true
+
 	if _is_run_lost:
 		return
 
@@ -513,14 +516,16 @@ func _end_combat_to_summary() -> void:
 	wave_state = Enums.WaveState.SUMMARY
 	summary_timer = GameConfig.summary_auto_advance
 
-	# TIME-03: Return to x1 on entering SUMMARY (reset_time_scale works even if paused)
+	# Return to x1 on entering SUMMARY
 	TimeManager.reset_time_scale()
 
-	# Par time & Clear multiplier (SRS 3.3.3, 3.9.1)
+	# Par time & Clear multiplier
 	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
 	var spawn_dur: float = cfg.get_spawn_duration(current_wave)
 	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
-	var par_time: float = GameConfig.get_par_time(spawn_dur, is_boss)
+	var boss_n: int = current_wave / GameConfig.boss_wave_interval
+	var boss_time: float = GameConfig.get_boss_timer(boss_n)
+	var par_time: float = GameConfig.get_par_time(spawn_dur, is_boss, boss_time)
 	var clear_mult: float = GameConfig.get_clear_mult(_clear_time, par_time)
 
 	var clear_tier: String = "NORMAL"
@@ -530,19 +535,19 @@ func _end_combat_to_summary() -> void:
 		elif _clear_time > GameConfig.clear_slow_threshold * par_time:
 			clear_tier = "SLOW"
 
-	# Boss gold (SRS 3.8.9, 3.9.1) - only granted if boss was defeated this wave
+	# Boss gold - only granted if boss was defeated this wave
 	var boss_gold: float = 0.0
 	if _boss_defeated_this_wave:
 		boss_gold = float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * float(current_wave - 1))
 
-	# Total gold gain (SRS 3.9.1)
+	# Total gold gain
 	# TODO(week 10): Apply meta gold bonus (gold_pct_total = gold_pct_meta + gold_pct_buff)
 	var gold_pct_total: float = 0.0
 	var wave_gold_scaled: int = int(floor(_wave_gold_base * (1.0 + gold_pct_total) * clear_mult))
 	var boss_gold_scaled: int = int(floor(boss_gold * (1.0 + gold_pct_total)))
 	var total_gold_gain: int = wave_gold_scaled + boss_gold_scaled + _early_call_bonus
 
-	# Credit gold to GoldManager (GLD-02, GLD-08), false avoids double "+xx" popup on SUMMARY
+	# Credit gold to GoldManager, false avoids double "+xx" popup on SUMMARY
 	var gold_mgr := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
 	if gold_mgr != null:
 		gold_mgr.add(total_gold_gain, false)
@@ -551,7 +556,7 @@ func _end_combat_to_summary() -> void:
 	if _wave_prestige > 0:
 		EventBus.prestige_pending_changed.emit(_wave_prestige)
 
-	# Save progress (SAV-05)
+	# Save progress
 	# TODO(week 10): Handle start_wave > 1 when calculating waves_cleared (RunFlag start_wave).
 	if SaveManager != null and SaveManager.can_write:
 		var run_flag: Dictionary = SaveManager.get_section(SaveManager.RUN_FLAG)
@@ -618,12 +623,14 @@ func advance_from_summary() -> void:
 	if wave_state != Enums.WaveState.SUMMARY:
 		return
 
-	# PRJ-06: release all projectiles at end of SUMMARY
+	# Release/destroy all projectiles at end of SUMMARY
 	var pool := get_tree().get_first_node_in_group(&"projectile_pool") as ProjectilePool
 	if pool != null:
 		pool.release_all()
+	for p in get_tree().get_nodes_in_group(&"projectile"):
+		if is_instance_valid(p) and p.has_method("release"):
+			p.release()
 
-	# TODO(week 8): Transition to REWARD_PICK when _xp_tracker.pending_picks > 0 and pool not exhausted (needs RunSkillState, RWP-06).
 	advance_to_next_wave()
 
 
