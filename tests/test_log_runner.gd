@@ -185,7 +185,7 @@ func test_memory_sink_level() -> void:
 	assert_true(first.get("line", "") == "[T] w", "first kept entry has the line")
 	assert_true(second.get("level", -1) == Log.Level.ERROR, "second kept entry has level ERROR")
 	assert_true(second.get("line", "") == "[T] e", "second kept entry has the line")
-	assert_true(second.get("msec", -1) >= first.get("msec", 0), "msec does not go backwards")
+	assert_true(second.get("time", -1.0) >= first.get("time", 0.0), "time does not go backwards")
 
 func test_ring() -> void:
 	print("\n--- Group 9: Ring ---")
