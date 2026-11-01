@@ -1,6 +1,7 @@
 class_name MeleeSlotSet
 extends Node3D
 ## Melee attack positions around a structure: one unit per position, freed when the unit leaves the tree or dies.
+## Shared by TowerMeleeSlots (towers, barricades) and FortressMeleeSlots in entities/fortress/.
 
 ## slot index -> unit holding it (null when free).
 var _owners: Array = []
