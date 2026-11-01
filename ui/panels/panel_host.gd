@@ -3,11 +3,15 @@ extends Control
 ## Shows one panel at a time. The Build panel lives only in PREP; the Tower panel
 ## also stays open in combat while the commander is in Commander mode.
 
+## A tower built from this data opens the heal station panel instead of the Tower panel.
+@export var heal_station_data: TowerData = preload("res://data/towers/heal_station.tres")
+
 @onready var _build_panel: BuildPanel = %BuildPanel
 @onready var _tower_panel: TowerPanel = %TowerPanel
 @onready var _selection: SelectionController = %SelectionController
 @onready var _ring: RangeRing = %RangeRing
 @onready var _fortress_panel: FortressPanel = %FortressPanel
+@onready var _heal_panel: HealStationPanel = %HealStationPanel
 
 var _mode: StringName = &"FRONTLINE"
 
@@ -20,6 +24,8 @@ func _ready() -> void:
 	_build_panel.preview_requested.connect(_on_preview_requested)
 	_build_panel.preview_cleared.connect(_ring.hide_ring)
 	_tower_panel.closed.connect(close_all)
+	_heal_panel.visible = false
+	_heal_panel.closed.connect(close_all)
 	_selection.selection_cleared.connect(close_all)
 	_fortress_panel.visible = false
 	_fortress_panel.closed.connect(close_all)
@@ -50,11 +56,12 @@ func close_all() -> void:
 func _hide_panels() -> void:
 	_build_panel.visible = false
 	_tower_panel.visible = false
+	_heal_panel.visible = false
 	_fortress_panel.visible = false
 	_ring.hide_ring()
 
 func _any_open() -> bool:
-	return _build_panel.visible or _tower_panel.visible or _fortress_panel.visible
+	return _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible
 
 func _show_build(slot_id: StringName) -> void:
 	_hide_panels()
@@ -85,12 +92,12 @@ func _on_slot_selected(slot_id: StringName) -> void:
 	_show_build(slot_id)
 
 func _on_tower_selected(slot_id: StringName) -> void:
-	_show_tower(slot_id)
+	_show_selected_tower(slot_id)
 
 ## The panel stays open after a transaction: building switches to the new tower.
 func _on_tower_built(slot_id: StringName, _type: StringName) -> void:
 	if _build_panel.visible and slot_id == _build_panel.slot_id:
-		_show_tower(slot_id)
+		_show_selected_tower(slot_id)
 
 func _on_tower_upgraded(slot_id: StringName, _type: StringName, _level: int) -> void:
 	if _tower_panel.visible and slot_id == _tower_panel.slot_id:
@@ -98,19 +105,23 @@ func _on_tower_upgraded(slot_id: StringName, _type: StringName, _level: int) -> 
 
 ## Selling switches back to the Build panel of the now empty slot.
 func _on_tower_sold(slot_id: StringName) -> void:
-	if _tower_panel.visible and slot_id == _tower_panel.slot_id:
+	if _tower_or_heal_open(slot_id):
 		_show_build(slot_id)
 
 func _on_tower_destroyed(slot_id: StringName) -> void:
-	if _tower_panel.visible and slot_id == _tower_panel.slot_id:
+	if _tower_or_heal_open(slot_id):
 		close_all()
 
 func _on_state_changed(new_state: StringName) -> void:
 	if new_state == &"PREP":
 		return
-	if _tower_panel.visible and _mode == &"COMMANDER":
+	if (_tower_panel.visible or _heal_panel.visible) and _mode == &"COMMANDER":
 		return
 	close_all()
+
+func _tower_or_heal_open(slot_id: StringName) -> bool:
+	return (_tower_panel.visible and slot_id == _tower_panel.slot_id) \
+			or (_heal_panel.visible and slot_id == _heal_panel.slot_id)
 
 func _on_mode_changed(mode: StringName) -> void:
 	_mode = mode
@@ -132,3 +143,25 @@ func _show_fortress() -> void:
 	_hide_panels()
 	_fortress_panel.visible = true
 	_fortress_panel.open()
+
+## Heal stations get their own panel; every other tower gets the Tower panel.
+func _show_selected_tower(slot_id: StringName) -> void:
+	if _is_heal_station(slot_id):
+		_show_heal_station(slot_id)
+	else:
+		_show_tower(slot_id)
+
+func _is_heal_station(slot_id: StringName) -> bool:
+	var service := _service()
+	if service == null:
+		return false
+	var info := service.get_tower_info(slot_id)
+	return not info.is_empty() and info.data == heal_station_data
+
+func _show_heal_station(slot_id: StringName) -> void:
+	_hide_panels()
+	_heal_panel.visible = true
+	_heal_panel.open(slot_id)
+	var service := _service()
+	if service != null:
+		_ring.show_at(service.get_slot_position(slot_id), _heal_panel.get_heal_range())
