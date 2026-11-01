@@ -41,9 +41,9 @@ func _add_slider(key: StringName, label_key: StringName) -> void:
 	var value := Label.new()
 	value.custom_minimum_size = Vector2(56, 0)
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value.text = "%d%%" % slider.value
+	value.text = UiFormat.tr_fmt(&"settings.audio.percent", {"value": int(slider.value)})
 	slider.value_changed.connect(func(v: float) -> void:
-		value.text = "%d%%" % v
+		value.text = UiFormat.tr_fmt(&"settings.audio.percent", {"value": int(v)})
 		EventBus.settings_changed.emit(key, v / 100.0))
 	row.add_child(label)
 	row.add_child(slider)

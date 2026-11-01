@@ -90,16 +90,16 @@ func refresh() -> void:
 
 ## The "next level" line is kept at MAX so the buttons below never move up.
 func _stats_text(cur: TowerLevelData, next: TowerLevelData) -> String:
-	var text := UiFormat.tr_fmt(&"panel.stats", {"damage": cur.damage,
+	var lines := PackedStringArray([UiFormat.tr_fmt(&"panel.stats", {"damage": cur.damage,
 		"range": UiFormat.decimal(cur.attack_range), "rate": UiFormat.decimal(cur.fire_rate),
-		"hp": cur.max_hp})
+		"hp": cur.max_hp})])
 	if next != null:
-		text += "\n" + UiFormat.tr_fmt(&"panel.tower.next", {"damage": next.damage,
+		lines.append(UiFormat.tr_fmt(&"panel.tower.next", {"damage": next.damage,
 			"range": UiFormat.decimal(next.attack_range), "rate": UiFormat.decimal(next.fire_rate),
-			"hp": next.max_hp})
+			"hp": next.max_hp}))
 	else:
-		text += "\n" + tr(&"panel.tower.next_max")
-	return text
+		lines.append(tr(&"panel.tower.next_max"))
+	return "\n".join(lines)
 
 func _build_body() -> void:
 	_body.add_theme_constant_override(&"separation", 8)
