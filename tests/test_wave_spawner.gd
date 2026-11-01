@@ -1,6 +1,6 @@
 extends Node
 
-## Comprehensive verification runner for 
+## Comprehensive verification runner for the wave spawner:
 ## - Deterministic wave generation (same run_seed + wave -> identical composition)
 ## - Intro count: wave 3 exactly 2 Archers, wave 6 exactly 1 Brute
 ## - Wave 1 and 2 only contain Grunts

@@ -1,6 +1,6 @@
 extends Node
 
-## Comprehensive verification runner for 
+## Comprehensive verification runner for wave scaling:
 ## - ScaleConfig tunable via resource without code modification
 ## - Soft cap at wave 40 reducing budget growth rate by budget_soft_cap_factor (0.5)
 ## - Wave scale applied at enemy spawn time (HP, damage, speed, gold reward)

@@ -1,6 +1,6 @@
 extends Node
 
-## Automated test runner for 
+## Automated test runner for XP and the hit_by_commander flag:
 ## - EnemyData.xp_value per archetype (Grunt 1, Archer 2, Brute 5, Boss 30)
 ## - DamageInfo hit_by_commander flag and source detection
 ## - HealthComponent hit_by_commander: flips on first damage >= 1 from commander
