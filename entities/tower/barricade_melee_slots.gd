@@ -1,6 +1,6 @@
 class_name BarricadeMeleeSlots
 extends TowerMeleeSlots
-## TWR-06: at most max_attackers_per_barricade melee units attack one Barricade at a time.
+## At most max_attackers_per_barricade melee units attack one Barricade at a time.
 ## Same positions logic as every tower; only the count differs (markers P0..P4 in barricade.tscn).
 
 

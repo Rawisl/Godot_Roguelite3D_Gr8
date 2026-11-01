@@ -1,5 +1,5 @@
 class_name TowerMeleeSlots
-extends Node3D
+extends MeleeSlotSet
 ## Melee attack positions around a tower, one Marker3D child per position.
 ## A tower on a GROUND cell has max_attackers_per_tower (3, the Heal Station included);
 ## the Barricade overrides the count.
@@ -13,12 +13,7 @@ extends Node3D
 ## How far outside the positions that walk round goes (other attackers stand on the positions).
 @export var approach_distance: float = 1.2
 
-var _owners: Array = []
-var _local_points: Array[Vector3] = []
 var _built := false
-var _audit_timer: Timer
-## Units already connected to tree_exiting, so re-claiming does not connect twice.
-var _watched: Dictionary = {}
 
 
 func _ready() -> void:
@@ -26,13 +21,8 @@ func _ready() -> void:
 	if count != _expected_count():
 		push_warning("%s: %d markers, GameConfig expects %d"
 				% [get_script().get_global_name(), count, _expected_count()])
-	_owners.resize(count)
-	_owners.fill(null)
-	_audit_timer = Timer.new()
-	_audit_timer.wait_time = GameConfig.crowd_slot_audit_interval
-	_audit_timer.timeout.connect(_audit)
-	add_child(_audit_timer)
-	_audit_timer.start()
+	_reset_owners(count)
+	_start_audit()
 
 
 ## Number of markers the scene should have; only checked, the markers decide.
@@ -78,54 +68,9 @@ func _on_nav(local_p: Vector3) -> bool:
 	return d.length() <= nav_snap_distance
 
 
-func claim(attacker: Node3D) -> bool:
-	if attacker == null:
-		return false
-	if has(attacker):
-		return true
+func _ensure_points() -> void:
 	if not _built:
 		rebuild()
-	var best := -1
-	var best_dist := INF
-	for i in _owners.size():
-		if _owners[i] != null:
-			continue
-		var d := attacker.global_position.distance_squared_to(_world_point(i))
-		if d < best_dist:
-			best_dist = d
-			best = i
-	if best < 0:
-		return false
-	_owners[best] = attacker
-	var id := attacker.get_instance_id()
-	if not _watched.has(id):
-		_watched[id] = true
-		attacker.tree_exiting.connect(_on_attacker_exiting.bind(attacker, id), CONNECT_ONE_SHOT)
-	return true
-
-
-func _on_attacker_exiting(attacker: Node3D, id: int) -> void:
-	_watched.erase(id)
-	release(attacker)
-
-
-func release(attacker: Node3D) -> void:
-	var i := _owners.find(attacker)
-	if i >= 0:
-		_owners[i] = null
-
-
-## The tower is destroyed, every attacker loses its slot.
-func release_all() -> void:
-	_owners.fill(null)
-
-
-func has(attacker: Node3D) -> bool:
-	return attacker != null and _owners.has(attacker)
-
-
-func free_count() -> int:
-	return _owners.count(null)
 
 
 ## The held attack position, or the middle marker for a unit still on its way.
@@ -210,17 +155,3 @@ func get_world_points() -> Array[Vector3]:
 ## Index of the middle position (P1 of P0..P2, P2 of P0..P4).
 func _mid_index(count: int) -> int:
 	return floori(count / 2.0)
-
-
-func _world_point(i: int) -> Vector3:
-	return get_parent().to_global(_local_points[i])
-
-
-## Free slots whose owner was freed from memory or is dead.
-func _audit() -> void:
-	for i in _owners.size():
-		var a = _owners[i]
-		if a == null:
-			continue
-		if not is_instance_valid(a) or not a.is_inside_tree() or ("is_dead" in a and a.is_dead):
-			_owners[i] = null
