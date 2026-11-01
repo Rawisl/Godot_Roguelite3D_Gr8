@@ -38,6 +38,7 @@ signal heal_state_changed(state: StringName, source_slot: StringName, hold_progr
 signal commander_low_hp_changed(is_low: bool)  # HP below commander_low_hp_warning_pct, emitted only when it flips
 signal mode_changed(mode: StringName)  # FRONTLINE | COMMANDER
 signal mode_switch_denied(reason: StringName, remaining: float)  # HUD-06
+signal mode_switch_cooldown_started(duration: float)  # ModeSwitch -> HUD, only when the switch costs a cooldown
 signal recall_started(duration: float)
 signal recall_cancelled
 signal recall_completed

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bplnw3dwp8nlw"]
 
 [ext_resource type="Script" uid="uid://d1c7ggtr5uq17" path="res://ui/hud/parts/commander_status.gd" id="1_ykgfw"]
+[ext_resource type="Texture2D" uid="uid://bs1qm0yx4mf1r" path="res://art/icons/shield_icon.png" id="2_f78r6"]
 
 [node name="CommanderStatus" type="VBoxContainer" unique_id=602541407]
 anchors_preset = 2
@@ -12,9 +13,32 @@ grow_vertical = 0
 mouse_filter = 2
 script = ExtResource("1_ykgfw")
 
-[node name="Title" type="Label" parent="." unique_id=680202974]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1304810852]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="HBoxContainer" unique_id=680202974]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="Shield" type="HBoxContainer" parent="HBoxContainer" unique_id=1945591507]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="ShieldIcon" type="TextureRect" parent="HBoxContainer/Shield" unique_id=899899068]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("2_f78r6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShieldLabel" type="Label" parent="HBoxContainer/Shield" unique_id=424399589]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudHint"
 
 [node name="Bar" type="ProgressBar" parent="." unique_id=471868200]
 unique_name_in_owner = true

@@ -116,9 +116,12 @@ func _set_row(row: SummaryRow, key: String, name_key: StringName, format: Callab
 		row.set_row(tr(name_key), format.call(value))
 
 func _clear_time_text(seconds: float) -> String:
-	var text := UiFormat.time_mmss(seconds)
+	var time := UiFormat.time_mmss(seconds)
 	var tier: String = _summary.get("clear_tier", "")
-	return text if tier == "" else text + " · " + tr(StringName("summary.tier." + tier.to_lower()))
+	if tier == "":
+		return time
+	return UiFormat.tr_fmt(&"summary.value.clear_time", {"time": time,
+		"tier": tr(StringName("summary.tier." + tier.to_lower()))})
 
 func _kills_text(kills: Dictionary) -> String:
 	var parts: PackedStringArray = []
