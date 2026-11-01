@@ -212,7 +212,7 @@ script = ExtResource("14_hitfx")
 [node name="AuraFxManager" type="Node" parent="." unique_id=1730452861]
 script = ExtResource("16_aurafx")
 
-[node name="DestroyFxManager" type="Node" parent="." unique_id=1730452862]
+[node name="DestroyFxManager" type="Node" parent="." unique_id=1626181688]
 script = ExtResource("17_destroyfx")
 
 [node name="TelegraphFxManager" type="Node" parent="." unique_id=1283842892]

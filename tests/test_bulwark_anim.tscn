@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://d2lclhx4lxryb"]
+
+[ext_resource type="Script" uid="uid://dneue6d8hprof" path="res://tests/test_bulwark_anim.gd" id="1_anim"]
+[ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="2_grass"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_bw"]
+
+[sub_resource type="Sky" id="Sky_bw"]
+sky_material = SubResource("ProceduralSkyMaterial_bw")
+
+[sub_resource type="Environment" id="Environment_bw"]
+background_mode = 2
+sky = SubResource("Sky_bw")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 3
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_bw"]
+size = Vector2(80, 80)
+
+[sub_resource type="SystemFont" id="SystemFont_mono"]
+font_names = PackedStringArray("Consolas", "Courier New", "Monospace")
+
+[node name="TestBulwarkAnim" type="Node3D" unique_id=627369537]
+script = ExtResource("1_anim")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1093975766]
+environment = SubResource("Environment_bw")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1915893880]
+transform = Transform3D(0.242, 0.749, -0.617, 0, 0.636, 0.772, 0.97, -0.187, 0.154, 0, 10, 0)
+light_energy = 0.9
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1142316901]
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 13.5, 18, 13.5)
+projection = 1
+size = 22.0
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=156872916]
+mesh = SubResource("PlaneMesh_bw")
+surface_material_override/0 = ExtResource("2_grass")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1948388297]
+
+[node name="Top" type="VBoxContainer" parent="CanvasLayer" unique_id=1737816773]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 1100.0
+offset_bottom = 260.0
+
+[node name="InfoLabel" type="Label" parent="CanvasLayer/Top" unique_id=389549239]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+
+[node name="Buttons" type="HBoxContainer" parent="CanvasLayer/Top" unique_id=1532025405]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TableLabel" type="Label" parent="CanvasLayer/Top" unique_id=1120709340]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = SubResource("SystemFont_mono")
+theme_override_font_sizes/font_size = 18

@@ -82,6 +82,10 @@ var _settings: Dictionary = DEFAULT_SETTINGS.duplicate()
 var _focus_gain := 1.0
 var _focus_target := 1.0
 var _last_real := 0.0
+## True for the autoload in a headless run. There is no audio device there, and a stream still
+## playing at quit is kept by the dummy driver, so every runner printed the music as leaked at
+## exit. Test instances of this scene are not the autoload and still play.
+var _silent := false
 
 @onready var _music: AudioStreamPlayer = $MusicPlayer
 @onready var _pool: Node = $SfxPool
@@ -89,6 +93,7 @@ var _last_real := 0.0
 func _ready() -> void:
 	# UI sounds and the music must keep running while paused. Gameplay voices opt back in to pausing.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_silent = DisplayServer.get_name() == "headless" and get_parent() == get_tree().root
 	_music_db = _music.volume_db
 	var second := AudioStreamPlayer.new()
 	second.name = "MusicPlayerB"
@@ -123,6 +128,8 @@ func set_library(value: SfxLibrary) -> void:
 
 ## Returns true when the sound started. A negative priority uses the entry's priority.
 func play(id: StringName, priority: int = -1) -> bool:
+	if _silent:
+		return false
 	var entry: SfxEntry = _entries.get(id)
 	if entry == null or entry.stream == null:
 		if not _warned.has(id):
@@ -177,12 +184,16 @@ func _process(_delta: float) -> void:
 #region Music
 ## Crossfades to stream, or fades out when it is null. The track already playing keeps going.
 func play_music(stream: AudioStream) -> void:
+	if _silent:
+		return
 	_after_sting = null
 	_sting.stop()
 	_crossfade(stream)
 
 ## Fades the music out, plays sting once, then crossfades into next.
 func play_sting(sting: AudioStream, next: AudioStream) -> void:
+	if _silent:
+		return
 	if sting == null:
 		play_music(next)
 		return

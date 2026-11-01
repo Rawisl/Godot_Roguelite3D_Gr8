@@ -45,6 +45,13 @@ func _ready() -> void:
 	test_boss_gold_only_on_boss_defeated()
 	test_loss_cancels_wave_gold_and_bonus()
 	test_summary_continue_requested_advances_wave()
+	test_prj06_projectile_cleanup_at_end_of_summary()
+	test_time03_auto_revert_to_x1_on_boss_intro()
+	test_clear_multiplier_invariance_under_fast_forward()
+	test_cmb10_firebomb_dot_tick_commander_xp()
+	test_boss_wave_prep_time_and_early_call()
+	test_bulwark_get_resist_and_death_signal()
+	await test_pooled_arrow_reuse_after_five_seconds()
 
 	SaveManager.set_repository(real_repo)
 	SaveManager.load_save()
@@ -400,3 +407,202 @@ func test_summary_continue_requested_advances_wave() -> void:
 	assert_true(wave_manager.current_wave == 2, "Current wave incremented to 2")
 
 	wave_manager.free()
+
+
+func test_prj06_projectile_cleanup_at_end_of_summary() -> void:
+	print("\n[GROUP 11] Testing Projectile Cleanup on Summary Advance (PRJ-06)")
+	var pool_scene := preload("res://entities/projectile/projectile_pool.tscn")
+	var pool: ProjectilePool = pool_scene.instantiate()
+	add_child(pool)
+
+	var arrow_scene := preload("res://entities/projectile/arrow_projectile.tscn")
+	var enemy_arrow_scene := preload("res://entities/projectile/enemy_projectile.tscn")
+
+	# Acquire a projectile from the pool
+	var p_pooled: Projectile = pool.acquire(arrow_scene)
+	assert_true(p_pooled != null and p_pooled.in_use, "Acquired active projectile from ProjectilePool")
+
+	# Instantiate an enemy projectile directly (like Archer does)
+	var p_enemy: Projectile = enemy_arrow_scene.instantiate()
+	add_child(p_enemy)
+	assert_true(p_enemy.is_in_group(&"projectile"), "Enemy projectile added to group projectile")
+
+	# Advance wave manager from SUMMARY
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	add_child(wave_manager)
+	wave_manager.wave_state = Enums.WaveState.SUMMARY
+
+	wave_manager.advance_from_summary()
+
+	assert_true(not p_pooled.in_use, "Pooled projectile returned to pool / in_use is false")
+	assert_true(p_enemy.is_queued_for_deletion() or not is_instance_valid(p_enemy), "Direct projectile queued for deletion upon advance_from_summary")
+
+	wave_manager.free()
+	pool.free()
+
+
+func test_time03_auto_revert_to_x1_on_boss_intro() -> void:
+	print("\n[GROUP 12] Testing TIME-03 Auto Revert to x1 on BOSS_INTRO and SUMMARY")
+	TimeManager.set_time_scale(2)
+	assert_true(TimeManager.get_time_scale() == 2, "TimeManager speed set to x2")
+
+	# Entering BOSS_INTRO
+	EventBus.state_changed.emit(&"BOSS_INTRO")
+	assert_true(TimeManager.get_time_scale() == 1, "TimeManager auto-drops to x1 on BOSS_INTRO (TIME-03)")
+
+	TimeManager.set_time_scale(3)
+	assert_true(TimeManager.get_time_scale() == 3, "TimeManager speed set to x3")
+
+	# Entering SUMMARY
+	EventBus.state_changed.emit(&"SUMMARY")
+	assert_true(TimeManager.get_time_scale() == 1, "TimeManager auto-drops to x1 on SUMMARY (TIME-03)")
+
+
+func test_clear_multiplier_invariance_under_fast_forward() -> void:
+	print("\n[GROUP 13] Testing Clear Multiplier Invariance Under Fast-Forward")
+	var par_time := 30.0
+	var prev_scale := Engine.time_scale
+
+	# 1. Simulate encounter cleared at x1 speed
+	TimeManager.set_time_scale(1)
+	var wm_x1 := WaveManager.new()
+	wm_x1.wave_state = Enums.WaveState.COMBAT
+	wm_x1.set("_first_enemy_spawned", true)
+	for i in 150:
+		wm_x1._physics_process(0.1 * Engine.time_scale)
+	var clear_time_x1: float = wm_x1.get("_combat_timer")
+	var mult_x1 := GameConfig.get_clear_mult(clear_time_x1, par_time)
+	assert_true(is_equal_approx(clear_time_x1, 15.0), "Combat timer reaches 15.0s game time at x1")
+
+	# 2. Simulate same encounter cleared at x3 speed (fast-forward finishes in 1/3 the wall clock time)
+	TimeManager.set_time_scale(3)
+	var wm_x3 := WaveManager.new()
+	wm_x3.wave_state = Enums.WaveState.COMBAT
+	wm_x3.set("_first_enemy_spawned", true)
+	for i in 50:
+		wm_x3._physics_process(0.1 * Engine.time_scale)
+	var clear_time_x3: float = wm_x3.get("_combat_timer")
+	var mult_x3 := GameConfig.get_clear_mult(clear_time_x3, par_time)
+	assert_true(is_equal_approx(clear_time_x3, 15.0), "Combat timer reaches 15.0s game time at x3 in 1/3 the frames")
+	assert_true(mult_x1 == mult_x3, "Clear multiplier is identical between x1 and x3 (1.25)")
+
+	TimeManager.reset_time_scale()
+	Engine.time_scale = prev_scale
+	wm_x1.free()
+	wm_x3.free()
+
+
+func test_cmb10_firebomb_dot_tick_commander_xp() -> void:
+	print("\n[GROUP 14] Testing Firebomb DoT Tick Hit Flag & Commander XP (CMB-10, XP-03)")
+	var grunt_scene := preload("res://entities/enemy/grunt.tscn")
+	var grunt: Enemy = grunt_scene.instantiate()
+	grunt.spawn_grace = false
+	grunt.is_in_spawn_zone = false
+	add_child(grunt)
+
+	var xp_tracker := XpTracker.new()
+	add_child(xp_tracker)
+	xp_tracker.reset()
+
+	# Firebomb DoT tick: source = "commander", damage_type = BLAST
+	var dot_tick := DamageInfo.new(4, Enums.DamageType.BLAST, "commander")
+	grunt.take_damage(dot_tick)
+
+	assert_true(grunt.hit_by_commander, "Grunt hit_by_commander is true after commander DoT tick")
+
+	grunt._on_died()
+
+	assert_true(xp_tracker.wave_xp_commander == 1.0, "Commander DoT kill awarded 100% XP (1.0) to commander XP")
+	assert_true(xp_tracker.wave_xp_towers == 0.0, "Tower XP is 0.0 for commander DoT kill")
+
+	xp_tracker.free()
+	grunt.free()
+
+
+func test_boss_wave_prep_time_and_early_call() -> void:
+	print("\n[GROUP 15] Testing Boss Wave Prep Time (45s) and Early Call (WAVE-07)")
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	add_child(wave_manager)
+
+	# Regular wave 1
+	wave_manager.current_wave = 1
+	wave_manager.start_prep()
+	assert_true(wave_manager.prep_timer == GameConfig.prep_time_early, "Wave 1 prep_timer is prep_time_early (25s)")
+
+	# Boss wave 5
+	wave_manager.current_wave = 5
+	wave_manager.start_prep()
+	assert_true(wave_manager.prep_timer == GameConfig.prep_time_boss, "Boss Wave 5 prep_timer is prep_time_boss (45s)")
+
+	# Early call at 45s: 45 * 2 = 90, capped at early_call_cap = 40
+	wave_manager.call_early()
+	assert_true(wave_manager.get("_early_call_bonus") == GameConfig.early_call_cap, "Boss wave early call is capped at early_call_cap (40 gold)")
+
+	wave_manager.free()
+
+
+func test_bulwark_get_resist_and_death_signal() -> void:
+	print("\n[GROUP 16] Testing Bulwark get_resist & Boss Defeated Emission")
+	var bulwark_scene := preload("res://entities/enemy/bulwark.tscn")
+	var bulwark: Bulwark = bulwark_scene.instantiate()
+	bulwark.data = preload("res://data/bosses/bulwark_boss.tres")
+	bulwark.spawn_grace = false
+	bulwark.is_in_spawn_zone = false
+	add_child(bulwark)
+
+	# Check get_resist (1 argument)
+	assert_true(bulwark.has_method(&"get_resist"), "Bulwark implements get_resist(dmg_type)")
+	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) <= 0.0, "Bulwark Phase 1 is immune to PIERCE (resist <= 0.0)")
+	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) <= 0.0, "Bulwark Phase 1 is immune to MAGIC (resist <= 0.0)")
+	assert_true(bulwark.get_resist(Enums.DamageType.SLASH) > 0.0, "Bulwark Phase 1 takes SLASH damage")
+
+	# Check boss_defeated signal emitted upon death exactly once
+	var record := {"count": 0}
+	var on_boss_defeated := func(): record["count"] += 1
+	EventBus.boss_defeated.connect(on_boss_defeated)
+
+	bulwark._on_died()
+	assert_true(record["count"] == 1, "Bulwark death in-game emits EventBus.boss_defeated")
+
+	# Second call when already dead must not re-emit
+	bulwark._on_died()
+	assert_true(record["count"] == 1, "Bulwark second _on_died call does not re-emit boss_defeated")
+
+	EventBus.boss_defeated.disconnect(on_boss_defeated)
+	bulwark.free()
+
+
+func test_pooled_arrow_reuse_after_five_seconds() -> void:
+	print("\n[GROUP 17] Testing Pooled Arrow Reuse After 5 Seconds")
+	var pool_scene := preload("res://entities/projectile/projectile_pool.tscn")
+	var pool: ProjectilePool = pool_scene.instantiate()
+	add_child(pool)
+
+	var arrow_scene := preload("res://entities/projectile/arrow_projectile.tscn")
+	var arrow: ArrowProjectile = pool.acquire(arrow_scene) as ArrowProjectile
+	assert_true(arrow != null and is_instance_valid(arrow), "Arrow acquired from pool")
+
+	var lt := arrow.get_node_or_null("LifeTimer") as Timer
+	assert_true(lt == null or lt.is_stopped(), "LifeTimer is not running on pooled arrow")
+
+	arrow.release()
+	assert_true(not arrow.in_use, "Arrow released back to pool")
+
+	# Wait 5.6s of game time (fast-forwarded by temporary high time_scale so test is fast)
+	var prev_scale := Engine.time_scale
+	Engine.time_scale = 50.0
+	await TimeManager.wait_game(5.6)
+	Engine.time_scale = prev_scale
+
+	# Arrow in pool must still be valid and not freed by any inherited LifeTimer
+	assert_true(is_instance_valid(arrow) and not arrow.is_queued_for_deletion(), "Arrow in pool is still valid after 5.6s of game time")
+
+	# Acquire again from pool: must succeed without 'invalid previously freed instance' error
+	var reacquired: ArrowProjectile = pool.acquire(arrow_scene) as ArrowProjectile
+	assert_true(reacquired != null and is_instance_valid(reacquired), "Reacquired pooled arrow is valid")
+	assert_true(reacquired == arrow, "Reacquired arrow is the same pooled instance")
+
+	reacquired.release()
+	pool.free()

@@ -38,10 +38,14 @@ func acquire(scene: PackedScene) -> Projectile:
 	_active.append(p)
 	return p
 
-## PRJ-06: clear every projectile in flight.
+## Clear every projectile in flight.
 func release_all() -> void:
 	for p in _active.duplicate():
 		p.release()
+	if is_inside_tree():
+		for p in get_tree().get_nodes_in_group(&"projectile"):
+			if is_instance_valid(p) and p is Projectile and not _active.has(p):
+				p.release()
 
 func _on_released(p: Projectile) -> void:
 	_active.erase(p)
@@ -54,7 +58,7 @@ func _on_released(p: Projectile) -> void:
 		_free[p.pool_key] = []
 	_free[p.pool_key].append(p)
 
-## PRJ-06: SUMMARY ends when the next PREP starts
+## Clear projectiles when the next PREP starts.
 func _on_state_changed(new_state: StringName) -> void:
 	if new_state == &"PREP":
 		release_all()

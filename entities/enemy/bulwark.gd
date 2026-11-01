@@ -21,10 +21,27 @@ var stomp_stun_duration: float:
 		var boss_data := data as BossData
 		return boss_data.stomp_stun_duration if boss_data != null else 1.5
 
+# TODO(week 8): Update current_phase to EXPOSED when armor HP is depleted.
+var current_phase: Enums.BossPhase = Enums.BossPhase.ARMORED
+
 
 func _ready() -> void:
 	super._ready()
 	add_to_group(&"boss")
+
+
+func get_resist(dmg_type: Enums.DamageType) -> float:
+	var boss_data := data as BossData
+	if boss_data == null:
+		return 1.0
+	return boss_data.get_resist(dmg_type, current_phase)
+
+
+func _on_died() -> void:
+	if is_dead:
+		return
+	super._on_died()
+	EventBus.boss_defeated.emit()
 
 
 func _execute_attack_action() -> void:
