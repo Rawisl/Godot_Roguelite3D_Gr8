@@ -6,14 +6,16 @@ class_name Log
 
 enum Level { DEBUG, INFO, WARN, ERROR }
 
-## Lowest level written. Release builds keep WARN and ERROR only.
+## Lowest level written. Release builds keep WARN and ERROR only, except tags in debug_tags.
 static var min_level: Level = Level.INFO if OS.is_debug_build() else Level.WARN
 ## Tags that write nothing at any level (tag -> true).
 static var muted_tags: Dictionary[String, bool] = {}
-## Tags that write from DEBUG up whatever min_level is (tag -> true).
+## Tags that write from DEBUG up whatever min_level is (tag -> true), in release builds too,
+## so one system can be traced in an exported build. Do not commit entries here.
 static var debug_tags: Dictionary[String, bool] = {}
 # TODO(week 12): add a FileLogSink, or write recent_sink entries to a file from the Settings data tab (export log).
-## The last WARN and ERROR lines, kept for the export log.
+## The last WARN and ERROR lines, kept for the export log. Its own WARN filter is on purpose:
+## it does not follow min_level, so debug builds keep the same lines as release builds.
 static var recent_sink: MemoryLogSink = MemoryLogSink.new(MemoryLogSink.DEFAULT_CAPACITY, Level.WARN)
 ## Every line that passes the filters goes to each sink here, in order. Empty means silent.
 ## Declared after recent_sink: static vars are set in this order when the script loads.
