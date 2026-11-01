@@ -126,6 +126,7 @@ func _finish_recall() -> void:
 	EventBus.recall_completed.emit()
 	if not free_switch:
 		cooldown_left = _commander.get_stat(&"mode_switch_cooldown", 5.0)
+		EventBus.mode_switch_cooldown_started.emit(cooldown_left)
 
 
 func _deploy(free_switch: bool) -> void:
@@ -139,6 +140,7 @@ func _deploy(free_switch: bool) -> void:
 	_shockwave(landing)
 	if not free_switch:
 		cooldown_left = _commander.get_stat(&"mode_switch_cooldown", 5.0)
+		EventBus.mode_switch_cooldown_started.emit(cooldown_left)
 
 
 func _channel_time() -> float:
