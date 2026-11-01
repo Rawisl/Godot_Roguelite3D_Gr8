@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://b6r4bkfncysts"]
+
+[ext_resource type="Script" uid="uid://b8icr1u51b7rs" path="res://ui/hud/parts/commander_frame.gd" id="1_unnqu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_f7moe"]
+draw_center = false
+border_width_left = 10
+border_width_top = 10
+border_width_right = 10
+border_width_bottom = 10
+border_color = Color(0.24780053, 0.4977886, 0.815826, 0.5)
+border_blend = true
+
+[node name="CommanderFrame" type="Panel" unique_id=916380011]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_f7moe")
+script = ExtResource("1_unnqu")
