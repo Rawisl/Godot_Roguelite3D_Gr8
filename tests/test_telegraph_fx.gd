@@ -1,9 +1,10 @@
 extends Node3D
 
-## Test for the Stomp telegraph (FBK-06) and the screen shake (FBK-03, ACC-05):
+## Test for the Stomp telegraph and the screen shake:
 ## - telegraph_started puts a ring at the given point with the given radius
 ## - the ring fills over the wind-up on game time: faster at x2, held while paused
 ## - it fades after the hit and frees itself; two telegraphs live side by side
+## - leaving BOSS_COMBAT clears every ring at once
 ## - the material draws on top (no depth test)
 ## - screen_shake_requested moves the camera by h_offset / v_offset, never past the cap,
 ##   then settles; 50% halves it, Off and Pause stop it
@@ -13,7 +14,7 @@ extends Node3D
 const BULWARK := preload("res://contents/assets/characters/enemy and boss/boss_bulwark_model.tscn")
 const SLAM := "melee/Melee_2H_Slam"
 const IDLE := "general/Idle_A"
-const WINDUP := 1.0 # SRS 3.8.2
+const WINDUP := 1.0 # game time
 const CADENCE := 2.5
 const CLIP_RECOVERED := 2.37 # art/models_animations.md, Boss Bulwark
 const STOMP_RADIUS := 3.0
@@ -37,6 +38,7 @@ func _ready() -> void:
 	await test_ring_placed()
 	await test_ring_fills_on_game_time()
 	await test_ring_fades_and_frees()
+	await test_rings_cleared_after_boss()
 	test_draws_on_top()
 	await test_shake_capped_and_settles()
 	await test_shake_settings()
@@ -108,6 +110,17 @@ func test_ring_fades_and_frees() -> void:
 	assert_true(_fx.get_active_count() == 1, "the first ring frees itself after the fade")
 	assert_true(_progress(0) < 1.0, "the longer telegraph is still filling")
 	await _clear()
+
+
+func test_rings_cleared_after_boss() -> void:
+	EventBus.state_changed.emit(&"BOSS_COMBAT")
+	EventBus.telegraph_started.emit(&"stomp", Vector3.ZERO, STOMP_RADIUS, WINDUP)
+	await TimeManager.wait_game(WINDUP * 0.3)
+	EventBus.state_changed.emit(&"BOSS_COMBAT")
+	assert_true(_fx.get_active_count() == 1, "staying in BOSS_COMBAT keeps the ring")
+	EventBus.state_changed.emit(&"SUMMARY")
+	await _frames(2)
+	assert_true(_fx.get_active_count() == 0 and _ring(0) == null, "leaving BOSS_COMBAT mid wind-up clears the ring")
 
 
 func test_draws_on_top() -> void:

@@ -1,8 +1,8 @@
 shader_type spatial;
-// Telegraph of a boss AoE (FBK-06): a thick red border with a dark outline, diagonal hatching
-// inside so the area reads without colour (UI-05), a solid fill growing from the centre to the
-// edge over the wind-up and a countdown arc just inside the border (ACC-09).
-// Depth test is off so walls, towers and units never hide it. Nothing blinks (ACC-06).
+// Telegraph of a boss AoE: a thick red border with a dark outline, diagonal hatching inside so
+// the area reads without relying on colour, a solid fill growing from the centre to the edge over
+// the wind-up and a countdown arc just inside the border, so the hit time reads without sound.
+// Depth test is off so walls, towers and units never hide it. Nothing blinks.
 render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never, depth_test_disabled;
 
 // danger and danger_fill in art/palette.md.

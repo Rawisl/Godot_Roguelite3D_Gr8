@@ -26,13 +26,13 @@ const STATE_REWARD_PICK := &"REWARD_PICK"
 @export var reduced_motion: bool = false
 
 @export_group("Screen shake")
-## Cap of the shake in metres on screen (FBK-03), reached when trauma is 1.
+## Cap of the shake in metres on screen, reached when trauma is 1.
 @export var shake_max_offset: float = 0.35
 ## Trauma lost per real second. Trauma 1 settles in 1 / shake_decay seconds.
 @export var shake_decay: float = 2.0
 ## How fast the camera wobbles, in cycles per second.
 @export var shake_frequency: float = 15.0
-## 1 normal, 0.5 reduced, 0 off (ACC-05). Also set through the "screen_shake" setting.
+## 1 normal, 0.5 reduced, 0 off, from the Accessibility tab. Also set through the "screen_shake" setting.
 @export_range(0.0, 1.0) var shake_scale: float = 1.0
 
 var _home: Vector3

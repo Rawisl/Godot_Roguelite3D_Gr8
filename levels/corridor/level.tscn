@@ -8,8 +8,8 @@
 [ext_resource type="Script" uid="uid://be8rmfu2jp2rt" path="res://art/vfx/build_fx_manager.gd" id="11_bfx"]
 [ext_resource type="PackedScene" uid="uid://cr0cm1thifi8i" path="res://entities/fortress/fortress.tscn" id="11_fortress"]
 [ext_resource type="PackedScene" uid="uid://bg8ubpgsvf1gt" path="res://levels/corridor/slots_layout.tscn" id="12_slots"]
-[ext_resource type="Script" uid="uid://bjtky41gm1ecd" path="res://systems/camera/camera_rig.gd" id="13_camrig"]
 [ext_resource type="Script" uid="uid://crjn2jkgywwl" path="res://systems/camera/camera_bounds.gd" id="13_cambounds"]
+[ext_resource type="Script" uid="uid://bjtky41gm1ecd" path="res://systems/camera/camera_rig.gd" id="13_camrig"]
 [ext_resource type="Script" uid="uid://bcwal67js7t1k" path="res://art/vfx/damage_number_layer.gd" id="13_dmgnum"]
 [ext_resource type="Script" uid="uid://btpnvocgvhv15" path="res://art/vfx/hit_fx_manager.gd" id="14_hitfx"]
 [ext_resource type="Script" uid="uid://bi0ehmxyhpdpo" path="res://levels/corridor/ground_grid.gd" id="15_ggrid"]
@@ -103,8 +103,6 @@ size = 14.0
 
 [node name="CameraBounds" type="Node3D" parent="." unique_id=1873304521]
 script = ExtResource("13_cambounds")
-size = Vector2(32, 4)
-camera_size_frontline = 14.0
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=481712762]
 navigation_mesh = SubResource("NavigationMesh_41ihd")
@@ -217,7 +215,7 @@ script = ExtResource("16_aurafx")
 [node name="DestroyFxManager" type="Node" parent="." unique_id=1730452862]
 script = ExtResource("17_destroyfx")
 
-[node name="TelegraphFxManager" type="Node" parent="." unique_id=1730452863]
+[node name="TelegraphFxManager" type="Node" parent="." unique_id=1283842892]
 script = ExtResource("18_telegraphfx")
 
 [node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
