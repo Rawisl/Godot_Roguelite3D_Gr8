@@ -25,6 +25,16 @@ const STATE_REWARD_PICK := &"REWARD_PICK"
 ## Replaces every glide with an instant cut. Also set through the "reduced_motion" setting.
 @export var reduced_motion: bool = false
 
+@export_group("Screen shake")
+## Cap of the shake in metres on screen (FBK-03), reached when trauma is 1.
+@export var shake_max_offset: float = 0.35
+## Trauma lost per real second. Trauma 1 settles in 1 / shake_decay seconds.
+@export var shake_decay: float = 2.0
+## How fast the camera wobbles, in cycles per second.
+@export var shake_frequency: float = 15.0
+## 1 normal, 0.5 reduced, 0 off (ACC-05). Also set through the "screen_shake" setting.
+@export_range(0.0, 1.0) var shake_scale: float = 1.0
+
 var _home: Vector3
 var _velocity: Vector3 = Vector3.ZERO
 var _commander_mode: bool = false
@@ -41,6 +51,8 @@ var _size_total: float = 0.0
 var _size_left: float = 0.0
 var _last_real_time: float = 0.0
 var _camera: Camera3D
+var _trauma: float = 0.0
+var _shake_time: float = 0.0
 
 
 func _ready() -> void:
@@ -55,7 +67,8 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.settings_changed.connect(_on_settings_changed)
-	EventBus.pause_changed.connect(func(_paused: bool) -> void: _clear_held())
+	EventBus.screen_shake_requested.connect(_on_screen_shake_requested)
+	EventBus.pause_changed.connect(_on_pause_changed)
 
 
 func _notification(what: int) -> void:
@@ -73,6 +86,19 @@ func is_panning_enabled() -> bool:
 
 func is_gliding() -> bool:
 	return _glide_left > 0.0 or _size_left > 0.0
+
+
+## Adds trauma in 0..1; hits close together stack up to the cap instead of adding up.
+func add_shake(intensity: float) -> void:
+	if shake_scale <= 0.0 or intensity <= 0.0:
+		return
+	_trauma = minf(_trauma + intensity, 1.0)
+
+
+func get_shake_offset() -> Vector2:
+	if _camera == null:
+		return Vector2.ZERO
+	return Vector2(_camera.h_offset, _camera.v_offset)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -97,6 +123,7 @@ func get_default_focus() -> Vector3:
 
 func _process(_delta: float) -> void:
 	var real_delta := _real_delta()
+	_update_shake(real_delta)
 	_update_size(real_delta)
 	if _glide_left > 0.0:
 		_update_glide(real_delta)
@@ -151,6 +178,29 @@ func _update_size(real_delta: float) -> void:
 	_size_left = maxf(_size_left - real_delta, 0.0)
 	var progress := 1.0 - _size_left / _size_total
 	_camera.size = lerpf(_size_from, _size_to, _ease_out(progress))
+
+
+## Moves the view through the camera's h_offset and v_offset, so the focus, the follow and the
+## glides never see the shake. Squared trauma keeps small hits subtle.
+func _update_shake(real_delta: float) -> void:
+	if _camera == null:
+		return
+	if _trauma <= 0.0:
+		if _camera.h_offset != 0.0 or _camera.v_offset != 0.0:
+			_camera.h_offset = 0.0
+			_camera.v_offset = 0.0
+		return
+	_trauma = maxf(_trauma - shake_decay * real_delta, 0.0)
+	_shake_time += real_delta
+	var amount := shake_max_offset * shake_scale * _trauma * _trauma
+	var phase := _shake_time * TAU * shake_frequency
+	_camera.h_offset = amount * (0.6 * sin(phase) + 0.4 * sin(phase * 2.3 + 1.7))
+	_camera.v_offset = amount * (0.6 * sin(phase * 1.3 + 0.5) + 0.4 * sin(phase * 2.9 + 2.9))
+
+
+func _stop_shake() -> void:
+	_trauma = 0.0
+	_update_shake(0.0)
 
 
 ## Fast at first, settling at the end.
@@ -254,3 +304,18 @@ func _on_state_changed(new_state: StringName) -> void:
 func _on_settings_changed(key: StringName, value: Variant) -> void:
 	if key == &"reduced_motion":
 		reduced_motion = bool(value)
+	elif key == &"screen_shake":
+		shake_scale = clampf(float(value), 0.0, 1.0)
+		if shake_scale <= 0.0:
+			_stop_shake()
+
+
+func _on_screen_shake_requested(intensity: float, _source: StringName) -> void:
+	add_shake(intensity)
+
+
+## A paused frame holds still, so the shake is dropped rather than frozen mid-swing.
+func _on_pause_changed(paused: bool) -> void:
+	_clear_held()
+	if paused:
+		_stop_shake()
