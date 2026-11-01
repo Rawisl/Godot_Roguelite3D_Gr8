@@ -8,7 +8,7 @@ extends Node3D
 ##      rồi blend 0.15 s sang Idle trước cú Stomp kế ở 1.9 s
 ##   D  pha 2, speed 1.0 suốt, chưa về thế đã blend sang Idle ở 1.75 s để kịp cú Stomp kế ở 1.9 s
 ## Hàng sau: Idle, Walking theo tốc độ pha 1 và pha 2 (chân phải bám đất, không trượt), Hit, Death.
-## Vòng đỏ chỉ để giữ chỗ cho telegraph, chưa phải shader FBK-06. Sát thương tính theo đồng hồ
+## Vòng đỏ chỉ để giữ chỗ, chưa phải shader telegraph thật. Sát thương tính theo đồng hồ
 ## wind-up, còn "chạm đất" là lúc xương handslot.r xuống dưới GROUND_Y, để so hai mốc với nhau.
 ## Phím: Space dừng / chạy, R chạy lại từ đầu, 1-4 đổi tốc độ x0.25 / x1 / x2 / x3 (giả TimeManager).
 
@@ -20,7 +20,7 @@ const WALK := "move/Walking_A"
 const HIT := "general/Hit_A"
 const DEATH := "general/Death_A"
 
-const WINDUP := 1.0 # SRS 3.8.2, game time
+const WINDUP := 1.0 # game time
 const CLIP_RECOVERED := 2.37 # chùy về thế
 const STOMP_RADIUS := 3.0
 const BLEND := 0.15
@@ -285,11 +285,11 @@ func _refresh_text() -> void:
 
 func _build_buttons() -> void:
 	var bar: HBoxContainer = %Buttons
-	for scale in TIME_SCALES:
+	for level in TIME_SCALES:
 		var button := Button.new()
-		button.text = "x%s" % str(scale)
+		button.text = "x%s" % str(level)
 		button.focus_mode = Control.FOCUS_NONE
-		button.pressed.connect(func() -> void: _time_scale = scale)
+		button.pressed.connect(func() -> void: _time_scale = level)
 		bar.add_child(button)
 	var pause := Button.new()
 	pause.text = "Dừng / chạy"
