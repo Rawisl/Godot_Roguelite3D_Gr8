@@ -142,6 +142,7 @@ settings.audio.master,Âm lượng chung
 settings.audio.music,Nhạc nền
 settings.audio.sfx,Hiệu ứng
 settings.audio.ui,Giao diện
+settings.audio.percent,{value}%
 settings.audio.mute_on_focus_loss,Tắt tiếng khi chuyển cửa sổ
 hud.call_wave,Gọi đợt sớm (G) · +{gold} vàng
 hud.call_wave.paused,Không gọi được khi tạm dừng
@@ -184,6 +185,7 @@ summary.value.charges,+{value} lượt
 summary.value.xp,{commander} chỉ huy · {towers} tháp
 summary.value.picks,{value} lượt
 summary.value.gold,{base} × {mult}
+summary.value.clear_time,{time} · {tier}
 skill.whirlwind.name,Lốc xoáy
 skill.whirlwind.desc,Xoay vũ khí gây sát thương chém lên mọi kẻ địch xung quanh.
 skill.sharpness.name,Sắc bén
@@ -192,3 +194,9 @@ skill.vitality.name,Sinh lực
 skill.vitality.desc,Tăng máu tối đa.
 skill.heal_station.name,Trạm hồi phục
 skill.heal_station.desc,Tăng tốc độ hồi máu của trạm hồi phục.
+hud.fortress_low,NGUY CẤP
+hud.mode.key,Tab
+hud.mode.frontline,Tiền tuyến
+hud.mode.commander,Chỉ huy
+hud.mode.cooldown,Đổi chế độ sau {sec} s
+hud.invulnerable,Bất khả xâm phạm
