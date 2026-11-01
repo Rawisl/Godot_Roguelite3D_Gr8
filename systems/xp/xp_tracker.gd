@@ -2,7 +2,6 @@ class_name XpTracker
 extends Node
 
 ## Tracks Commander XP, leveling, pending skill picks, and commander-vs-tower XP contributions.
-## SRS: 3.5.11 (XP-01..05, BOSS-42), W7-KT3.
 
 var commander_level: int = 0
 var xp: float = 0.0
@@ -111,7 +110,7 @@ func get_xp_value_for_enemy(enemy_type: StringName) -> int:
 
 
 func _on_enemy_died(enemy_type: StringName, _pos: Vector3, _gold_base: int, _prestige: int, is_cull: bool, hit_by_commander: bool) -> void:
-	# Cull kills grant 0 XP (RWD-03, XP-01)
+	# Cull kills grant no XP
 	if is_cull:
 		return
 

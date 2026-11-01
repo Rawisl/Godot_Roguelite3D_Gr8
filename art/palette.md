@@ -34,6 +34,20 @@ Hai texture `Texture_MAp_ELfs.png` (fortress) và `Texture_MAp_fortress_elves.pn
 | struct_roof_dark | `#4A6040` | Mái xanh tối, sọc trang trí |
 | struct_trim | `#0B0B0B` | Ô cửa, khe tối |
 
+### Đống đổ nát (tower bị phá)
+
+Màu phẳng theo từng mặt đá của `contents/assets/environment/rubble/tower_rubble.glb`, mỗi màu một file trong `contents/assets/environment/rubble/materials/`. Tối và ít tương phản hơn màu tháp để đống đổ nát không lấn át tower và quân; mảnh ngói xanh lấy từ `struct_roof` làm tối đi.
+
+| Tên | Hex | Dùng cho |
+|---|---|---|
+| rubble_stone_light | `#8F877F` | Mặt đá sáng nhất |
+| rubble_stone | `#494545` | Đá |
+| rubble_stone_dark | `#2E2A27` | Đá tối, khe |
+| rubble_wood | `#75655C` | Gỗ gãy |
+| rubble_char | `#2A2522` | Mảng cháy sém |
+| rubble_roof | `#3D4C36` | Mảnh ngói xanh, mặt trên |
+| rubble_roof_dark | `#2B3625` | Mảnh ngói xanh, mặt bên và mặt dưới |
+
 ## Nhân vật
 
 | Tên | Hex | Dùng cho | Nguồn |
@@ -68,7 +82,7 @@ Không trùng màu với model để vòng chọn, thanh máu, aura luôn tách 
 | danger_fill | `#FF2D2D` 35% alpha | Phần nền bên trong telegraph |
 | safe_zone | `#4FE0C0` | Retreat Zone, ReturnZone |
 | build_ring | `#FFFFFF` 60% alpha | Vòng build slot ở PREP |
-| ruined | `#4A4038` | Đống đổ nát |
+| ruined | `#4A4038` | Tông chung của đống đổ nát, chưa file nào dùng trực tiếp. Model dùng bộ `rubble_*` ở mục Công trình |
 | ruined_ring | `#A8876B` 80% alpha | Vòng slot RUINED trên sàn (sáng hơn `ruined` để đọc được trên cỏ) |
 | gold | `#FFC83D` | Gold, phần thưởng |
 
