@@ -32,6 +32,11 @@ var is_paused: bool:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	EventBus.state_changed.connect(_on_state_changed)
+
+func _on_state_changed(new_state: StringName) -> void:
+	if new_state == &"BOSS_INTRO" or new_state == &"SUMMARY" or new_state == &"REWARD_PICK":
+		reset_time_scale()
 
 func _process(delta: float) -> void:
 	# delta is already multiplied by Engine.time_scale.
