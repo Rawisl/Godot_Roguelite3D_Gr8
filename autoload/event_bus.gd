@@ -99,6 +99,7 @@ signal settings_changed(key: StringName, value: Variant)
 
 #-----------------------Skill and reward-----------------------#
 signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # UI -> StatBlock, SkillRunner, RunState. new_level is the absolute level after the pick
+signal skill_cast(skill_id: StringName, slot_index: int, level: int, origin: Vector3, radius: float)  # SkillRunner -> VFX, audio, once per cast
 #------------------------------------------------------#
 
 
