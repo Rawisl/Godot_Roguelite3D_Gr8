@@ -9,7 +9,9 @@ var _dest: Vector3 = Vector3.ZERO
 var _life: float = 0.0
 
 func _ready() -> void:
+	add_to_group(&"projectile")
 	body_entered.connect(_on_body_entered)
+	_ensure_visual_fallback()
 
 func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float, src: Node = null) -> void:
 	super.fire(from, to, dmg, dmg_type, spd, src)
