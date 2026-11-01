@@ -1,0 +1,22 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://clpqwaaaphuab"]
+
+[ext_resource type="Shader" uid="uid://bgintc8vikhxc" path="res://art/shaders/telegraph_ring.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "telegraph_ring"
+render_priority = 10
+shader = ExtResource("1_shader")
+shader_parameter/danger_color = Color(1, 0.176, 0.176, 1)
+shader_parameter/outline_color = Color(0.25, 0, 0, 1)
+shader_parameter/arc_color = Color(1, 0.92, 0.88, 0.95)
+shader_parameter/border_width = 0.22
+shader_parameter/outline_width = 0.07
+shader_parameter/edge_softness = 0.03
+shader_parameter/hatch_spacing = 0.45
+shader_parameter/hatch_width = 0.35
+shader_parameter/hatch_alpha = 0.45
+shader_parameter/hatch_darken = 0.55
+shader_parameter/base_alpha = 0.12
+shader_parameter/fill_alpha = 0.35
+shader_parameter/arc_width = 0.12
+shader_parameter/arc_gap = 0.08
