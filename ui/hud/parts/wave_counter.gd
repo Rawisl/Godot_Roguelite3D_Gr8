@@ -25,6 +25,7 @@ func _ready() -> void:
 	_boss_row.visible = false
 	EventBus.boss_spawned.connect(_on_boss_spawned)
 	EventBus.boss_defeated.connect(_on_boss_defeated)
+	EventBus.run_started.connect(_on_run_started)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.wave_started.connect(_on_wave_started)
 	EventBus.prep_timer_changed.connect(_on_prep_timer_changed)
@@ -55,4 +56,7 @@ func _on_boss_spawned() -> void:
 	_boss_row.visible = true
 
 func _on_boss_defeated() -> void:
+	_boss_row.visible = false
+
+func _on_run_started() -> void:
 	_boss_row.visible = false
