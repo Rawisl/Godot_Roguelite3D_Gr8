@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dthenhk4bctu6"]
+
+[ext_resource type="Shader" uid="uid://btrrtobhnajxg" path="res://art/shaders/toon_dither.gdshader" id="1_oxobv"]
+
+[resource]
+resource_name = "rubble_roof"
+render_priority = 0
+shader = ExtResource("1_oxobv")
+shader_parameter/albedo_color = Color(0.23921569, 0.29803923, 0.21176471, 1)
+shader_parameter/bands = null
+shader_parameter/band_softness = null
+shader_parameter/shadow_tint = null
+shader_parameter/light_strength = null
+shader_parameter/ambient_strength = null
+shader_parameter/rim_strength = null
+shader_parameter/rim_width = null

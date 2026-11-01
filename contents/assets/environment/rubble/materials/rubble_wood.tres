@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://b4lwk38h5axei"]
+
+[ext_resource type="Shader" uid="uid://btrrtobhnajxg" path="res://art/shaders/toon_dither.gdshader" id="1_8w0o5"]
+
+[resource]
+resource_name = "rubble_wood"
+render_priority = 0
+shader = ExtResource("1_8w0o5")
+shader_parameter/albedo_color = Color(0.45882353, 0.39607844, 0.36078432, 1)
+shader_parameter/bands = null
+shader_parameter/band_softness = null
+shader_parameter/shadow_tint = null
+shader_parameter/light_strength = null
+shader_parameter/ambient_strength = null
+shader_parameter/rim_strength = null
+shader_parameter/rim_width = null

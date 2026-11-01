@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cknghk87w4y10"]
+
+[ext_resource type="Shader" uid="uid://btrrtobhnajxg" path="res://art/shaders/toon_dither.gdshader" id="1_vp14f"]
+
+[resource]
+resource_name = "rubble_stone_dark"
+render_priority = 0
+shader = ExtResource("1_vp14f")
+shader_parameter/albedo_color = Color(0.18039216, 0.16470589, 0.15294118, 1)
+shader_parameter/bands = null
+shader_parameter/band_softness = null
+shader_parameter/shadow_tint = null
+shader_parameter/light_strength = null
+shader_parameter/ambient_strength = null
+shader_parameter/rim_strength = null
+shader_parameter/rim_width = null
