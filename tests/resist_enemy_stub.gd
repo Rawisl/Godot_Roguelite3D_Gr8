@@ -1,5 +1,5 @@
 extends "res://entities/enemy/enemy.gd"
-## Test stub: an Enemy with a resistance table, until boss resistances (DMG-01) exist.
+## Test stub: an Enemy with a resistance table, until boss resistances exist.
 
 var resist_table: Dictionary = {}
 

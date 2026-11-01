@@ -1,16 +1,16 @@
 extends Node
 
-## Comprehensive verification runner for W6-KT2:
+## Comprehensive verification runner for 
 ## - Deterministic wave generation (same run_seed + wave -> identical composition)
 ## - Intro count: wave 3 exactly 2 Archers, wave 6 exactly 1 Brute
-## - SPN-08: Wave 1 and 2 only contain Grunts
-## - SPN-05: Archer <= 40% of total wave composition
+## - Wave 1 and 2 only contain Grunts
+## - Archer <= 40% of total wave composition
 ## - Brute cap: Brute count <= floor(w / 4)
 ## - Wave 0 fallback: forces exactly 1 Grunt
 ## - Grouping: group_count = clamp(2 + floor(w/5), 2, 6), melee first and ranged after in each group
 ## - Delays: 0.4-0.8s within group, 3.0s between groups
 ## - Queue Throttling: surplus enemies remain in queue when enemies_alive >= max_alive (70)
-## - SPN-03: candidate position in spawn_zone, overlap check (1m), 0.2s retry, 3s force spawn
+## - Candidate position in spawn_zone, overlap check (1m), 0.2s retry, 3s force spawn
 
 var passes: int = 0
 var fails: int = 0
@@ -18,7 +18,7 @@ var fails: int = 0
 
 func _ready() -> void:
 	print("\n=======================================================")
-	print("       AUTOMATED W6-KT2 WAVE SPAWNER TEST RUNNER       ")
+	print("       AUTOMATED WAVE SPAWNER TEST RUNNER       ")
 	print("=======================================================")
 
 	test_deterministic_by_run_seed()
@@ -33,7 +33,7 @@ func _ready() -> void:
 	test_wave_table_dynamic_tuning()
 
 	print("=======================================================")
-	print("W6-KT2 TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
+	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
 	print("=======================================================\n")
 
 	get_tree().quit(0 if fails == 0 else 1)
@@ -108,7 +108,7 @@ func test_intro_count_archer_w3_and_brute_w6() -> void:
 
 
 func test_spn08_waves_1_and_2_grunt_only() -> void:
-	print("\n[GROUP 3] Testing SPN-08 (Waves 1 & 2 are Grunt only)")
+	print("\n[GROUP 3] Waves 1 & 2 are Grunt only")
 	var wm := WaveManager.new()
 	add_child(wm)
 
@@ -130,7 +130,7 @@ func test_spn08_waves_1_and_2_grunt_only() -> void:
 
 
 func test_spn05_archer_max_40_percent() -> void:
-	print("\n[GROUP 4] Testing SPN-05 (Archer <= 40% of wave composition)")
+	print("\n[GROUP 4] Archer <= 40% of wave composition")
 	var wm := WaveManager.new()
 	add_child(wm)
 
@@ -147,7 +147,7 @@ func test_spn05_archer_max_40_percent() -> void:
 				all_within_cap = false
 				printerr("Wave %d Seed %d exceeded 40%% Archer cap: %d/%d (%.2f%%)" % [w, s, archers, comp.size(), ratio * 100.0])
 
-	assert_true(all_within_cap, "All waves across all seeds respect Archer <= 40% cap (SPN-05)")
+	assert_true(all_within_cap, "All waves across all seeds respect Archer <= 40% cap")
 	wm.queue_free()
 
 
@@ -225,7 +225,7 @@ func test_grouping_and_melee_first() -> void:
 					all_melee_first = false
 					printerr("Wave %d Group %d had Melee unit after Ranged unit!" % [w, current_group])
 
-	assert_true(all_melee_first, "Within every group, all Melee units appear before Ranged units (SRS 3.7.5 step 5)")
+	assert_true(all_melee_first, "Within every group, all Melee units appear before Ranged units")
 	wm.queue_free()
 
 
@@ -265,7 +265,7 @@ func test_queue_throttling_max_alive() -> void:
 
 
 func test_spn03_overlap_retry_and_timeout() -> void:
-	print("\n[GROUP 9] Testing SPN-03 Overlap Avoidance and 3s Force-Spawn Timeout")
+	print("\n[GROUP 9] Testing Overlap Avoidance and 3s Force-Spawn Timeout")
 	var wm := WaveManager.new()
 	var custom_table := wm.wave_table.duplicate() as WaveTable
 	custom_table.group_spawn_delay_min = 0.01
@@ -293,7 +293,7 @@ func test_spn03_overlap_retry_and_timeout() -> void:
 
 
 func test_wave_table_dynamic_tuning() -> void:
-	print("\n[GROUP 10] Testing WaveTable Dynamic Tuning via Resource (SCL-01, DAT-02)")
+	print("\n[GROUP 10] Testing WaveTable Dynamic Tuning via Resource")
 	var wm := WaveManager.new()
 	var custom_table: WaveTable = wm.wave_table.duplicate() as WaveTable
 	for g in custom_table.groups:

@@ -1,12 +1,12 @@
 extends Node
 
-## Comprehensive verification runner for W6-KT3:
-## - SCL-01: ScaleConfig tunable via resource without code modification
-## - SCL-02: Soft cap at wave 40 reducing budget growth rate by budget_soft_cap_factor (0.5)
-## - SCL-05: Wave scale applied at enemy spawn time (HP, damage, speed, gold reward)
-## - SCL-05: Enemy stats remain immutable while alive
-## - WAVE-01: Maximum alive (70) queue throttling
-## - WAVE-08: 0-enemy wave forces minimum 1 Grunt and logs warning
+## Comprehensive verification runner for 
+## - ScaleConfig tunable via resource without code modification
+## - Soft cap at wave 40 reducing budget growth rate by budget_soft_cap_factor (0.5)
+## - Wave scale applied at enemy spawn time (HP, damage, speed, gold reward)
+## - Enemy stats remain immutable while alive
+## - Maximum alive (70) queue throttling
+## - 0-enemy wave forces minimum 1 Grunt and logs warning
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const ARCHER_SCENE: PackedScene = preload("res://entities/enemy/archer.tscn")
@@ -19,7 +19,7 @@ var fails: int = 0
 
 func _ready() -> void:
 	print("\n=======================================================")
-	print("       AUTOMATED W6-KT3 WAVE SCALE TEST RUNNER         ")
+	print("       AUTOMATED WAVE SCALE TEST RUNNER         ")
 	print("=======================================================")
 
 	test_scl01_and_scl02_scale_config_formulas()
@@ -34,7 +34,7 @@ func _ready() -> void:
 	test_wave08_empty_wave_warning_and_fallback()
 
 	print("=======================================================")
-	print("W6-KT3 TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
+	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
 	print("=======================================================\n")
 
 	get_tree().quit(0 if fails == 0 else 1)
@@ -50,13 +50,13 @@ func assert_true(cond: bool, test_name: String) -> void:
 
 
 func test_scl01_and_scl02_scale_config_formulas() -> void:
-	print("\n[GROUP 1] Testing SCL-01 & SCL-02 ScaleConfig Formulas vs SRS Table")
+	print("\n[GROUP 1] Testing ScaleConfig Formulas")
 	var cfg := SCALE_CONFIG_RES
 	assert_true(cfg != null, "ScaleConfig resource loaded from data/config/scale_config.tres")
-	assert_true(cfg.budget_soft_cap_factor == 0.5, "budget_soft_cap_factor is configured to 0.5 (SCL-01)")
-	assert_true(cfg.scale_soft_cap_wave == 40, "scale_soft_cap_wave is configured to 40 (SCL-02)")
+	assert_true(cfg.budget_soft_cap_factor == 0.5, "budget_soft_cap_factor is configured to 0.5")
+	assert_true(cfg.scale_soft_cap_wave == 40, "scale_soft_cap_wave is configured to 40")
 
-	# Verify SRS 3.7.6 table exact values:
+	# Verify the exact table values:
 	# Wave 1: budget 8, duration 15, hp_mult 1.00, dmg_mult 1.00, speed_mult 1.000
 	assert_true(cfg.get_budget(1) == 8, "Wave 1 budget == 8")
 	assert_true(is_equal_approx(cfg.get_spawn_duration(1), 15.0), "Wave 1 duration == 15.0s")
@@ -87,7 +87,7 @@ func test_scl01_and_scl02_scale_config_formulas() -> void:
 
 
 func test_scl02_budget_soft_cap_at_wave_40() -> void:
-	print("\n[GROUP 2] Testing SCL-02 Soft Cap Growth Reduction After Wave 40")
+	print("\n[GROUP 2] Testing Soft Cap Growth Reduction After Wave 40")
 	var cfg := SCALE_CONFIG_RES
 
 	var budget_w40 := cfg.get_budget(40)
@@ -101,12 +101,12 @@ func test_scl02_budget_soft_cap_at_wave_40() -> void:
 
 	# Actual growth must be approximately half of uncap_growth (within rounding tolerance)
 	var expected_budget_w45 := int(round(raw_w40 + 0.5 * uncap_growth))
-	assert_true(budget_w45 == expected_budget_w45, "Wave 45 budget matches SCL-02 soft cap formula (growth rate cut in half)")
+	assert_true(budget_w45 == expected_budget_w45, "Wave 45 budget matches soft cap formula (growth rate cut in half)")
 	assert_true(actual_growth < uncap_growth * 0.55 and actual_growth > uncap_growth * 0.45, "Soft cap halved budget increase after wave 40")
 
 
 func test_scl05_enemy_spawn_time_hp_and_damage_scaling() -> void:
-	print("\n[GROUP 3] Testing SCL-05 Spawn-time HP and Damage Scaling on Enemies")
+	print("\n[GROUP 3] Testing Spawn-time HP and Damage Scaling on Enemies")
 	var wm := WaveManager.new()
 	add_child(wm)
 
@@ -204,7 +204,7 @@ func test_frenzy_speed_multiplier_compounds_wave_speed() -> void:
 
 
 func test_scl05_archer_projectile_damage_scaling() -> void:
-	print("\n[GROUP 4] Testing SCL-05 Archer Projectile Damage Scaling")
+	print("\n[GROUP 4] Testing Archer Projectile Damage Scaling")
 	var wm := WaveManager.new()
 	add_child(wm)
 	var cfg := SCALE_CONFIG_RES
@@ -253,7 +253,7 @@ func test_scl05_archer_projectile_damage_scaling() -> void:
 
 
 func test_scl05_stats_immutable_while_alive() -> void:
-	print("\n[GROUP 5] Testing SCL-05 Enemy Stats Immutability While Alive")
+	print("\n[GROUP 5] Testing Enemy Stats Immutability While Alive")
 	var wm := WaveManager.new()
 	add_child(wm)
 	var cfg := SCALE_CONFIG_RES
@@ -353,16 +353,16 @@ func test_wave01_max_alive_queue_throttling() -> void:
 
 
 func test_wave08_empty_wave_warning_and_fallback() -> void:
-	print("\n[GROUP 8] Testing WAVE-08 Empty Wave Warning and 1 Grunt Fallback")
+	print("\n[GROUP 8] Testing Empty Wave Warning and 1 Grunt Fallback")
 	var wm := WaveManager.new()
 	add_child(wm)
 
 	# Wave 0 (or negative)
 	var comp_zero := wm.generate_wave_composition(0, 42)
 	assert_true(comp_zero.size() == 1, "Wave 0 generated exactly 1 enemy")
-	assert_true(comp_zero[0].id == &"grunt", "Fallback enemy is Grunt (WAVE-08)")
+	assert_true(comp_zero[0].id == &"grunt", "Fallback enemy is Grunt")
 
 	var comp_neg := wm.generate_wave_composition(-5, 42)
-	assert_true(comp_neg.size() == 1 and comp_neg[0].id == &"grunt", "Negative wave also falls back to 1 Grunt (WAVE-08)")
+	assert_true(comp_neg.size() == 1 and comp_neg[0].id == &"grunt", "Negative wave also falls back to 1 Grunt")
 
 	wm.queue_free()

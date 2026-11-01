@@ -49,7 +49,7 @@ func _physics_process(delta: float) -> void:
 	global_position += dir * step
 	_face(dir)
 
-## PRJ-01: target died in flight, keep flying to its last position.
+## Target died in flight, keep flying to its last position.
 func _lose_target() -> void:
 	_homing = false
 	target = null

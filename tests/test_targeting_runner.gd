@@ -1,14 +1,14 @@
 extends Node3D
 
 ## Automated test runner for tower targeting (branch week4/tower-targeting):
-## - TWR-16: nav_progress from lane_curve, same for walking and flying units, x fallback without a lane
-## - TGT-01: First / Nearest on a fixed 5-enemy scene give the same pick whatever the spawn order;
+## - nav_progress from lane_curve, same for walking and flying units, x fallback without a lane
+## - First / Nearest on a fixed 5-enemy scene give the same pick whatever the spawn order;
 ##   ties go to the closer enemy, then the smaller entity id
-## - EN-04, TGT-02: dead, spawn_grace and spawn-zone enemies are never targeted
-## - TGT-04, DMG-02: an enemy immune to the tower's damage type (resist 0) is skipped
-## - TGT-03, TIME-10: a priority change applies after retarget_delay in real time, at x1 and x3
-## - TWR-15, ACP-01: 14 towers scanning 70 enemies stay under 1 ms per frame
-## - TWR-15, test 7.1 item 6: the tower picks again on every scan, so a unit that overtakes
+## - dead, spawn_grace and spawn-zone enemies are never targeted
+## - an enemy immune to the tower's damage type (resist 0) is skipped
+## - a priority change applies after retarget_delay in real time, at x1 and x3
+## - 14 towers scanning 70 enemies stay under 1 ms per frame
+## - The tower picks again on every scan, so a unit that overtakes
 ##   becomes the First target (and a unit that comes closer the Nearest target) within one scan
 
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
@@ -143,7 +143,7 @@ func _pick_name(t: Tower) -> String:
 
 
 func test_nav_progress() -> void:
-	print("\n[GROUP 1] nav_progress along lane_curve (TWR-16, TWR-15)")
+	print("\n[GROUP 1] nav_progress along lane_curve")
 	var length := LANE_FROM.distance_to(LANE_TO)
 	var a := _grunt(Vector3(10, 0, 0))
 	var b := _grunt(Vector3(10, 0, 3.5))
@@ -174,7 +174,7 @@ func test_nav_progress() -> void:
 ## Five enemies around one Arrow. Expected picks are fixed by the layout, so the result must
 ## not depend on the order the enemies were spawned in.
 func test_first_nearest_deterministic() -> void:
-	print("\n[GROUP 2] First / Nearest on a fixed 5-enemy scene (TGT-01, TWR-16)")
+	print("\n[GROUP 2] First / Nearest on a fixed 5-enemy scene")
 	var layout := {
 		"E1": Vector3(8, 0, 2),    # far from the gate, far from the tower
 		"E2": Vector3(2, 0, -1),   # closest to the tower
@@ -202,7 +202,7 @@ func test_first_nearest_deterministic() -> void:
 
 
 func test_tie_break() -> void:
-	print("\n[GROUP 3] Tie-break: closer to the tower, then smaller entity id (TGT-01)")
+	print("\n[GROUP 3] Tie-break: closer to the tower, then smaller entity id")
 	var t := _arrow(Vector3.ZERO)
 	# Same x, so the same nav_progress; B is closer to the tower.
 	var a := _grunt(Vector3(-4, 0, 6), "A")
@@ -225,7 +225,7 @@ func test_tie_break() -> void:
 
 
 func test_valid_targets() -> void:
-	print("\n[GROUP 4] Valid targets (EN-04, TGT-02, TGT-04)")
+	print("\n[GROUP 4] Valid targets")
 	var t := _arrow(Vector3.ZERO)
 	var ok := _grunt(Vector3(-3, 0, 0), "Ok")
 	var grace := _grunt(Vector3(-2, 0, 1), "Grace")
@@ -236,8 +236,8 @@ func test_valid_targets() -> void:
 	dead.is_dead = true
 	await _physics_frames()
 	assert_true(t._is_valid_target(ok), "normal enemy in range is valid")
-	assert_true(not t._is_valid_target(grace), "enemy in spawn_grace is not targeted (EN-04)")
-	assert_true(not t._is_valid_target(in_zone), "enemy still inside the spawn zone is not targeted (EN-04)")
+	assert_true(not t._is_valid_target(grace), "enemy in spawn_grace is not targeted")
+	assert_true(not t._is_valid_target(in_zone), "enemy still inside the spawn zone is not targeted")
 	assert_true(not t._is_valid_target(dead), "dead enemy is not targeted")
 	t.priority = Enums.TargetPriority.NEAREST
 	assert_true(_pick_name(t) == "Ok", "Nearest skips the closer untargetable ones and picks Ok")
@@ -246,7 +246,7 @@ func test_valid_targets() -> void:
 	var immune := _resist_grunt(Vector3(-2, 0, 0), {Enums.DamageType.PIERCE: 0.0})
 	var resists := _resist_grunt(Vector3(-4, 0, 0), {Enums.DamageType.PIERCE: 0.5})
 	await _physics_frames()
-	assert_true(not t._is_valid_target(immune), "resist 0 to PIERCE: the Arrow skips it (TGT-04, DMG-02)")
+	assert_true(not t._is_valid_target(immune), "resist 0 to PIERCE: the Arrow skips it")
 	assert_true(t._is_valid_target(resists), "resist 0.5 to PIERCE: still a valid target")
 	var cannon := CANNON_SCENE.instantiate() as Tower
 	cannon.position = Vector3(-10, 0, 0)
@@ -262,9 +262,9 @@ func test_valid_targets() -> void:
 	t.slot_id = &"TestSlot"
 	var only_immune := _resist_grunt(Vector3(-2, 0, 0), {Enums.DamageType.PIERCE: 0.0})
 	await _physics_frames()
-	assert_true(t._pick_target() == null, "only an immune enemy in range: no target (TGT-04)")
+	assert_true(t._pick_target() == null, "only an immune enemy in range: no target")
 	assert_true(t.is_immune_blocked and events == [[&"TestSlot", true]],
-		"idle on an immune enemy emits tower_immunity_changed(slot, true) (BOSS-13)")
+		"idle on an immune enemy emits tower_immunity_changed(slot, true)")
 	t._pick_target()
 	assert_true(events.size() == 1, "no repeat emit while the state stays the same")
 	var normal := _grunt(Vector3(-3, 0, 0), "Normal")
@@ -276,7 +276,7 @@ func test_valid_targets() -> void:
 	t.slot_id = &""
 	_clear([only_immune, normal])
 
-	# TGT-02: nothing valid left, the tower idles.
+	# Nothing valid left, the tower idles.
 	assert_true(t._pick_target() == null, "no valid enemy: no target (idle)")
 	_clear([t])
 
@@ -298,7 +298,7 @@ func _resist_grunt(pos: Vector3, table: Dictionary) -> Enemy:
 
 
 func test_retarget_delay() -> void:
-	print("\n[GROUP 5] Priority change after retarget_delay in real time (TGT-03, TIME-10)")
+	print("\n[GROUP 5] Priority change after retarget_delay in real time")
 	var delay := GameConfig.retarget_delay
 	for level in [1, 3]:
 		TimeManager.set_time_scale(level)
@@ -319,11 +319,11 @@ func test_retarget_delay() -> void:
 	TimeManager.reset_time_scale()
 
 
-## Towers get their scan phase from the slot_id (TWR-15), so in a real frame only the towers
+## Towers get their scan phase from the slot_id, so in a real frame only the towers
 ## whose phase falls in that frame pick a target. The 14 slot ids of the corridor are used here,
 ## and the worst frame of one scan_interval at 60 FPS is measured.
 func test_scan_cost() -> void:
-	print("\n[GROUP 6] Scan cost: 14 towers, 70 enemies (TWR-15, ACP-01)")
+	print("\n[GROUP 6] Scan cost: 14 towers, 70 enemies")
 	var slot_ids := ["W1", "W2", "W3", "W4", "W5", "W6",
 		"G_0_0", "G_0_1", "G_0_2", "G_0_3", "G_1_0", "G_1_1", "G_1_2", "G_1_3"]
 	var towers: Array = []
@@ -375,7 +375,7 @@ func _slot_phase(slot_id: StringName) -> float:
 ## It keeps no target between scans: a valid target that is no longer the best is replaced
 ## at the next scan. Shots are held back so no enemy dies during the test.
 func test_repick_every_scan() -> void:
-	print("\n[GROUP 7] Pick again on every scan (TWR-15, test 7.1 item 6)")
+	print("\n[GROUP 7] Pick again on every scan")
 	var scan_frames := int(ceil(GameConfig.scan_interval * Engine.physics_ticks_per_second))
 	var budget := scan_frames + 2
 	var t := _arrow(Vector3.ZERO)

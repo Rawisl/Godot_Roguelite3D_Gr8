@@ -161,7 +161,7 @@ func test_srs_example() -> void:
 	_prepare(1033, 5000)
 	assert_true(_service.repair_fortress(0.0), "repair to full returns true")
 	assert_true(_fortress.get_hp() == 1050, "HP back to 1050")
-	assert_true(5000 - _gold.gold == 7, "cost 7 gold (expected SRS example)")
+	assert_true(5000 - _gold.gold == 7, "cost 7 gold")
 	_prepare(1033, 5000)
 	assert_true(_service.repair_fortress(_small()), "small step returns true")
 	assert_true(_fortress.get_hp() == 1050, "small step also reaches 1050")

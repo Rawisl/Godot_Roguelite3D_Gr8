@@ -13,7 +13,7 @@ extends EnemyData
 @export var phase2_attack_rate_mult: float = 1.3
 
 @export_group("Phase 1 Resistances")
-## Resistance multipliers per damage type in phase 1 (0.0 = immune, DMG-01, DMG-02)
+## Resistance multipliers per damage type in phase 1 (0.0 = immune)
 @export var resist_table_phase1: Dictionary = {
 	Enums.DamageType.PIERCE: 0.0,
 	Enums.DamageType.MAGIC: 0.0,
