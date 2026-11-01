@@ -112,7 +112,8 @@ func _run_checks() -> void:
 	var live := _bursts()
 	TimeManager.set_time_scale(1)
 	await _frames(1)
-	_check("a burst follows a speed change while it plays", not live.is_empty() 			and is_equal_approx((live[0].get_node(^"Smoke") as CPUParticles3D).speed_scale, 1.0))
+	_check("a burst follows a speed change while it plays", not live.is_empty()
+		and is_equal_approx((live[0].get_node(^"Smoke") as CPUParticles3D).speed_scale, 1.0))
 	await _wait(1.8)
 	# Paused: the swell holds and pops after the game resumes.
 	_build_one(1)

@@ -158,6 +158,8 @@ func _spawn_burst(at: Vector3) -> void:
 ## Particles run on game time; scaled back so a burst lasts the same at x2 and x3, also when
 ## the speed changes while it plays.
 func _update_particle_speed() -> void:
+	if _particles.is_empty():
+		return
 	var speed := _real_speed()
 	for p in _particles.duplicate():
 		if not is_instance_valid(p):
