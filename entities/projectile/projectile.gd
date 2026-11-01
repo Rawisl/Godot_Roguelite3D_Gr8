@@ -35,7 +35,7 @@ func _ready() -> void:
 	add_to_group(&"projectile")
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
-	if life_timer != null:
+	if life_timer != null and pool_key.is_empty():
 		life_timer.timeout.connect(queue_free)
 		if life_timer.is_stopped():
 			life_timer.start(5.0)

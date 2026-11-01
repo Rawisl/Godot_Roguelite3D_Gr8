@@ -51,6 +51,7 @@ func _ready() -> void:
 	test_cmb10_firebomb_dot_tick_commander_xp()
 	test_boss_wave_prep_time_and_early_call()
 	test_bulwark_get_resist_and_death_signal()
+	await test_pooled_arrow_reuse_after_five_seconds()
 
 	SaveManager.set_repository(real_repo)
 	SaveManager.load_save()
@@ -460,19 +461,36 @@ func test_time03_auto_revert_to_x1_on_boss_intro() -> void:
 
 func test_clear_multiplier_invariance_under_fast_forward() -> void:
 	print("\n[GROUP 13] Testing Clear Multiplier Invariance Under Fast-Forward")
-	# Clear time is measured in game time, so time_scale x2/x3 does not change clear_mult
 	var par_time := 30.0
-	var mult_x1 := GameConfig.get_clear_mult(15.0, par_time)
-	var mult_x2 := GameConfig.get_clear_mult(15.0, par_time)
-	var mult_x3 := GameConfig.get_clear_mult(15.0, par_time)
-	assert_true(mult_x1 == 1.25 and mult_x2 == 1.25 and mult_x3 == 1.25, "Clear multiplier for 15s game time is 1.25 across all speed rates")
+	var prev_scale := Engine.time_scale
 
-	var wave_manager := WaveManager.new()
-	wave_manager.wave_state = Enums.WaveState.COMBAT
-	wave_manager.set("_first_enemy_spawned", true)
-	wave_manager._physics_process(0.5)
-	assert_true(is_equal_approx(wave_manager.get("_combat_timer"), 0.5), "Combat timer tracks game time delta accurately")
-	wave_manager.free()
+	# 1. Simulate encounter cleared at x1 speed
+	TimeManager.set_time_scale(1)
+	var wm_x1 := WaveManager.new()
+	wm_x1.wave_state = Enums.WaveState.COMBAT
+	wm_x1.set("_first_enemy_spawned", true)
+	for i in 150:
+		wm_x1._physics_process(0.1 * Engine.time_scale)
+	var clear_time_x1: float = wm_x1.get("_combat_timer")
+	var mult_x1 := GameConfig.get_clear_mult(clear_time_x1, par_time)
+	assert_true(is_equal_approx(clear_time_x1, 15.0), "Combat timer reaches 15.0s game time at x1")
+
+	# 2. Simulate same encounter cleared at x3 speed (fast-forward finishes in 1/3 the wall clock time)
+	TimeManager.set_time_scale(3)
+	var wm_x3 := WaveManager.new()
+	wm_x3.wave_state = Enums.WaveState.COMBAT
+	wm_x3.set("_first_enemy_spawned", true)
+	for i in 50:
+		wm_x3._physics_process(0.1 * Engine.time_scale)
+	var clear_time_x3: float = wm_x3.get("_combat_timer")
+	var mult_x3 := GameConfig.get_clear_mult(clear_time_x3, par_time)
+	assert_true(is_equal_approx(clear_time_x3, 15.0), "Combat timer reaches 15.0s game time at x3 in 1/3 the frames")
+	assert_true(mult_x1 == mult_x3, "Clear multiplier is identical between x1 and x3 (1.25)")
+
+	TimeManager.reset_time_scale()
+	Engine.time_scale = prev_scale
+	wm_x1.free()
+	wm_x3.free()
 
 
 func test_cmb10_firebomb_dot_tick_commander_xp() -> void:
@@ -540,14 +558,51 @@ func test_bulwark_get_resist_and_death_signal() -> void:
 	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) <= 0.0, "Bulwark Phase 1 is immune to MAGIC (resist <= 0.0)")
 	assert_true(bulwark.get_resist(Enums.DamageType.SLASH) > 0.0, "Bulwark Phase 1 takes SLASH damage")
 
-	# Check boss_defeated signal emitted upon death
-	var record := {"called": false}
-	var on_boss_defeated := func(): record.called = true
+	# Check boss_defeated signal emitted upon death exactly once
+	var record := {"count": 0}
+	var on_boss_defeated := func(): record["count"] += 1
 	EventBus.boss_defeated.connect(on_boss_defeated)
 
 	bulwark._on_died()
+	assert_true(record["count"] == 1, "Bulwark death in-game emits EventBus.boss_defeated")
 
-	assert_true(record.called, "Bulwark death in-game emits EventBus.boss_defeated")
+	# Second call when already dead must not re-emit
+	bulwark._on_died()
+	assert_true(record["count"] == 1, "Bulwark second _on_died call does not re-emit boss_defeated")
 
 	EventBus.boss_defeated.disconnect(on_boss_defeated)
 	bulwark.free()
+
+
+func test_pooled_arrow_reuse_after_five_seconds() -> void:
+	print("\n[GROUP 17] Testing Pooled Arrow Reuse After 5 Seconds")
+	var pool_scene := preload("res://entities/projectile/projectile_pool.tscn")
+	var pool: ProjectilePool = pool_scene.instantiate()
+	add_child(pool)
+
+	var arrow_scene := preload("res://entities/projectile/arrow_projectile.tscn")
+	var arrow: ArrowProjectile = pool.acquire(arrow_scene) as ArrowProjectile
+	assert_true(arrow != null and is_instance_valid(arrow), "Arrow acquired from pool")
+
+	var lt := arrow.get_node_or_null("LifeTimer") as Timer
+	assert_true(lt == null or lt.is_stopped(), "LifeTimer is not running on pooled arrow")
+
+	arrow.release()
+	assert_true(not arrow.in_use, "Arrow released back to pool")
+
+	# Wait 5.6s of game time (fast-forwarded by temporary high time_scale so test is fast)
+	var prev_scale := Engine.time_scale
+	Engine.time_scale = 50.0
+	await TimeManager.wait_game(5.6)
+	Engine.time_scale = prev_scale
+
+	# Arrow in pool must still be valid and not freed by any inherited LifeTimer
+	assert_true(is_instance_valid(arrow) and not arrow.is_queued_for_deletion(), "Arrow in pool is still valid after 5.6s of game time")
+
+	# Acquire again from pool: must succeed without 'invalid previously freed instance' error
+	var reacquired: ArrowProjectile = pool.acquire(arrow_scene) as ArrowProjectile
+	assert_true(reacquired != null and is_instance_valid(reacquired), "Reacquired pooled arrow is valid")
+	assert_true(reacquired == arrow, "Reacquired arrow is the same pooled instance")
+
+	reacquired.release()
+	pool.free()

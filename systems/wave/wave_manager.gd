@@ -627,9 +627,10 @@ func advance_from_summary() -> void:
 	var pool := get_tree().get_first_node_in_group(&"projectile_pool") as ProjectilePool
 	if pool != null:
 		pool.release_all()
-	for p in get_tree().get_nodes_in_group(&"projectile"):
-		if is_instance_valid(p) and p.has_method("release"):
-			p.release()
+	else:
+		for p in get_tree().get_nodes_in_group(&"projectile"):
+			if is_instance_valid(p) and p.has_method("release"):
+				p.release()
 
 	advance_to_next_wave()
 

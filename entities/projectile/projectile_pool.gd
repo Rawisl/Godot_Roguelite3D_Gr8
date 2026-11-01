@@ -58,7 +58,7 @@ func _on_released(p: Projectile) -> void:
 		_free[p.pool_key] = []
 	_free[p.pool_key].append(p)
 
-## PRJ-06: SUMMARY ends when the next PREP starts
+## Clear projectiles when the next PREP starts.
 func _on_state_changed(new_state: StringName) -> void:
 	if new_state == &"PREP":
 		release_all()
