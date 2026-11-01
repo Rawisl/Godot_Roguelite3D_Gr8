@@ -17,6 +17,8 @@ const PATH_SIGN_IN := "/auth/v1/token?grant_type=password"
 const PATH_REFRESH := "/auth/v1/token?grant_type=refresh_token"
 const PATH_SIGN_OUT := "/auth/v1/logout"
 const PATH_DELETE_ACCOUNT := "/rest/v1/rpc/delete_my_account"
+const PATH_NAME_AVAILABLE := "/rest/v1/rpc/display_name_available"
+const PATH_RESEND := "/auth/v1/resend"
 
 const ERR_DISABLED := &"DISABLED"
 const ERR_OFFLINE := &"OFFLINE"
@@ -28,6 +30,9 @@ const ERR_EMAIL_NOT_CONFIRMED := &"EMAIL_NOT_CONFIRMED"
 const ERR_RATE_LIMITED := &"RATE_LIMITED"
 const ERR_NOT_SIGNED_IN := &"NOT_SIGNED_IN"
 const ERR_SERVER := &"SERVER"
+const ERR_DISPLAY_NAME_TAKEN := &"DISPLAY_NAME_TAKEN"
+const ERR_EMAIL_NOT_AUTHORIZED := &"EMAIL_NOT_AUTHORIZED"
+const ERR_EMAIL_RATE_LIMITED := &"EMAIL_RATE_LIMITED"
 
 var user_id: String = ""
 var email: String = ""
@@ -63,6 +68,12 @@ func sign_up(new_email: String, password: String, new_display_name: String) -> D
 	var trimmed := new_display_name.strip_edges()
 	if trimmed.length() < GameConfig.display_name_min_len or trimmed.length() > GameConfig.display_name_max_len:
 		return _fail(ERR_INVALID_DISPLAY_NAME)
+	# Asked first so a taken name gets its own message instead of a generic server error.
+	var check := await rest(HTTPClient.METHOD_POST, PATH_NAME_AVAILABLE, {"wanted_name": trimmed}, false)
+	if not check["ok"]:
+		return _fail(check["error"])
+	if check["data"] != true:
+		return _fail(ERR_DISPLAY_NAME_TAKEN)
 	var response := await _send(HTTPClient.METHOD_POST, PATH_SIGN_UP, {
 		"email": new_email,
 		"password": password,
@@ -90,6 +101,14 @@ func sign_in(sign_in_email: String, password: String) -> Dictionary:
 	_store_session(response["data"])
 	return {"ok": true}
 
+## Sends the sign-up confirmation email again. The server allows it about once a minute.
+func resend_confirmation(resend_email: String) -> Dictionary:
+	if not is_available():
+		return _fail(ERR_DISABLED)
+	var response := await _send(HTTPClient.METHOD_POST, PATH_RESEND, {"type": "signup", "email": resend_email})
+	if not response["ok"]:
+		return _fail(_error_code(response))
+	return {"ok": true}
 
 ## Local sign-out never waits for the network: the session is dropped first.
 func sign_out() -> void:
@@ -265,8 +284,12 @@ func _error_code(response: Dictionary) -> StringName:
 			return ERR_WEAK_PASSWORD
 		"email_not_confirmed":
 			return ERR_EMAIL_NOT_CONFIRMED
-		"over_request_rate_limit", "over_email_send_rate_limit":
+		"over_request_rate_limit":
 			return ERR_RATE_LIMITED
+		"over_email_send_rate_limit":
+			return ERR_EMAIL_RATE_LIMITED
+		"email_address_not_authorized":
+			return ERR_EMAIL_NOT_AUTHORIZED
 	if status >= 500:
 		return ERR_SERVER
 	# A refresh token the server refuses comes back as a plain 400 or 401.
