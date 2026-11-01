@@ -20,6 +20,7 @@ var _blink: Tween
 func _ready() -> void:
 	_title.text = tr(&"hud.fortress")
 	_low_tag.text = tr(&"hud.fortress_low")
+	_reduce_flash = bool(GameState.get_setting(&"reduce_flash", false))
 	_refresh_low()
 	EventBus.fortress_hp_changed.connect(_on_hp_changed)
 	EventBus.settings_changed.connect(_on_settings_changed)

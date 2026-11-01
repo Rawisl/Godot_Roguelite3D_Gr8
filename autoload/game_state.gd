@@ -30,6 +30,9 @@ var current: AppState = AppState.BOOT
 ## Result of the last run, read by the RunEnd screen.
 var last_run_end_type: StringName = &""
 var last_run_summary: Dictionary = {}
+## Last value sent for each setting on EventBus.settings_changed. Parts created later, such as
+## the HUD of a new run, read it here instead of starting from a default.
+var _settings: Dictionary = {}
 
 var _pause_layer: CanvasLayer
 var _pause_menu: Control
@@ -41,6 +44,7 @@ func _ready() -> void:
 	_pause_layer.layer = 50
 	add_child(_pause_layer)
 	EventBus.run_ended.connect(_on_run_ended)
+	EventBus.settings_changed.connect(_on_settings_changed)
 	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_sync_with_current_scene.call_deferred()
 
@@ -129,3 +133,10 @@ func _sync_with_current_scene() -> void:
 		if SCENES[state] == scene.scene_file_path:
 			current = state
 			return
+
+# TODO(WhoKeng): load and save these through settings.cfg with the Settings tabs.
+func get_setting(key: StringName, default_value: Variant = null) -> Variant:
+	return _settings.get(key, default_value)
+
+func _on_settings_changed(key: StringName, value: Variant) -> void:
+	_settings[key] = value

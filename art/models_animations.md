@@ -101,12 +101,28 @@ Cột **Clip** ghi tên clip đã chọn theo dạng `library/Clip`, ô trống 
 
 | Trạng thái | SRS | Clip | Loop | Thời lượng | Ghi chú |
 |---|---|---|---|---|---|
-| Idle | 3.11 | | Có | | |
-| Di chuyển | 3.11 | | Có | | |
-| Stomp wind-up | Stomp, wind-up 1.0 s | | Không | | Hiện vòng đỏ telegraph cùng lúc (FBK-06) |
-| Stomp | Stomp, nhịp 2.5 s, AoE 3 m | | Không | | Rung màn hình (FBK-03) |
-| Bị đánh | 3.11 | | Không | | |
-| Chết | 3.11 | | Không | | |
+| Idle | 3.8.2 | general/Idle_A | Có | 1.97 | Có sẵn loop. Idle_B (6.00) quá dài cho boss đứng chờ |
+| Di chuyển | 3.8.2, 1.6 m/s | move/Walking_A | Có | 1.07 | Có sẵn loop. Ở `speed_scale` 1.0 chân trượt khớp tốc độ ~1.42 m/s, nên đặt `speed_scale = tốc độ hiện tại / 1.42` (1.6 m/s → 1.13, pha 2 1.92 m/s → 1.35, nhân thêm speed_mult(w)). Không dùng Running_A: khớp ~5 m/s, Bulwark sẽ chạy tại chỗ |
+| Stomp (wind-up và nện) | Stomp, wind-up 1.0 s, nhịp 2.5 s, pha 2 1.9 s, AoE 3 m | melee/Melee_2H_Slam | Không | 2.83 | **Một clip cho cả wind-up lẫn nện**, xem chi tiết bên dưới |
+| Bị đánh | 3.8.2 | general/Hit_A | Không | 0.70 | Boss miễn knockback và stun (BOSS-01), chỉ dùng làm phản hồi va chạm, không ngắt Stomp đang wind-up |
+| Chết | 3.8.2 | general/Death_A | Không | 1.67 | |
+
+Mốc thời gian của `melee/Melee_2H_Slam` ở `speed_scale` 1.0, đo bằng vị trí xương `handslot.r` (chỗ gắn chùy):
+
+| Đoạn | Thời điểm trong clip | Việc gameplay |
+|---|---|---|
+| Giơ chùy lên | 0.00 → 0.60 s (tay lên cao nhất ~3.3 m) | Bắt đầu clip cùng lúc phát `telegraph_started` (FBK-06) và âm wind-up (AUD-07) |
+| Đập xuống | 0.83 → 0.97 s | |
+| **Chạm đất** | **0.97 s** | Gây sát thương AoE, phát `screen_shake_requested` (FBK-03) và VFX nện |
+| Giữ chùy dưới đất | 0.97 → 1.97 s | |
+| Nhấc chùy, về thế | 1.97 → 2.37 s, đứng yên tới 2.83 s | Hết đòn, có thể blend sang Idle hoặc Walking từ 2.37 s |
+
+- Wind-up: chạm đất ở 0.97 s, sát 1.0 s của SRS. Giữ `speed_scale` 1.0 (nếu cần khớp đúng 1.0 s thì đặt 0.97) và lấy mốc gây sát thương theo **thời gian game của wind-up**, không theo khung animation. Cả hai pha giữ wind-up 1.0 s, pha 2 chỉ rút ngắn nhịp.
+- Pha 1 (nhịp 2.5 s): sau khi chạm đất còn 1.5 s, đủ cho đoạn 0.97 → 2.37 s (1.4 s). Blend sang Idle 0.15 s khi đến 2.37 s hoặc khi hết nhịp.
+- Pha 2 (nhịp 1.9 s, **đã chốt: tăng tốc đoạn hồi**): sau khi chạm đất chỉ còn 0.9 s. Từ mốc 1.0 s đổi `speed_scale` của đoạn hồi thành **1.87** để chùy về thế (clip 2.37 s) ở 1.75 s, rồi blend 0.15 s sang Idle cho kịp cú Stomp kế ở 1.9 s. Công thức chung: `speed_hồi = (2.37 − 0.97) / (nhịp − 1.0 − 0.15)`, pha 1 ra 1.04 nên giữ 1.0. Không chọn cách để speed 1.0 rồi cắt sang Idle giữa chừng, vì chùy còn nằm dưới đất đã bị kéo về thế đứng.
+- Xem thử cả 4 phương án ở `tests/test_bulwark_anim.tscn` (F6): A, B là pha 1, C là pha 2 đã chốt, D là phương án cắt sang Idle để so sánh.
+- Mọi giá trị trên tính ở tốc độ x1. Theo TIME-04 thì `speed_scale` còn nhân thêm hệ số của `TimeManager`.
+- Đòn đánh chung của enemy đang dùng `GameConfig.enemy_windup_time` = 0.4 s, không phải 1.0 s như Stomp. TV2 cần tách riêng wind-up cho Stomp (SRS 3.8.2).
 
 ### Boss Barrage (BossBarrageModel)
 
