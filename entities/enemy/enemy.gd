@@ -26,7 +26,7 @@ enum WaitPhase { NOT_MOVED, WALKING_IN, STANDING }
 var current_target: Node3D = null
 var current_target_position: Vector3 = Vector3.ZERO
 var has_target_position: bool = false
-## TWR-16: metres travelled along lane_curve toward the Fortress gate (bigger = closer).
+## Metres travelled along lane_curve toward the Fortress gate (bigger = closer).
 ## Updated every path_update_interval by the unit itself; towers only read it.
 var nav_progress: float = 0.0
 var speed_multiplier: float = 1.0
@@ -106,7 +106,7 @@ static func invalidate_node_cache() -> void:
 	_cached_barricades.clear()
 	_cached_towers.clear()
 	_cached_enemies.clear()
-# Lane used for nav_progress (TWR-16), shared by every enemy. Looked up again when the lane node is gone, e.g. a new run reloads the level.
+# Lane used for nav_progress, shared by every enemy. Looked up again when the lane node is gone, e.g. a new run reloads the level.
 static var _lane: Path3D = null
 static var _lane_ref_length: float = 0.0
  
@@ -128,6 +128,9 @@ func _ready() -> void:
 		EventBus.tower_built.connect(func(_slot_id, _type): invalidate_node_cache())
 		EventBus.tower_destroyed.connect(func(_slot_id): invalidate_node_cache())
 		EventBus.tower_sold.connect(func(_slot_id): invalidate_node_cache())
+
+	if EventBus != null and not EventBus.recall_completed.is_connected(_on_commander_recall_completed):
+		EventBus.recall_completed.connect(_on_commander_recall_completed)
  
 	# Phase-offset timers to prevent frame spikes across groups
 	_path_timer = randf_range(0.0, PATH_UPDATE_INTERVAL)
@@ -162,6 +165,18 @@ func _ready() -> void:
 	_init_spawn_zone_bounds()
 	_play_locomotion_anim()
 	_setup_navigation.call_deferred()
+
+
+func _exit_tree() -> void:
+	if EventBus != null and EventBus.recall_completed.is_connected(_on_commander_recall_completed):
+		EventBus.recall_completed.disconnect(_on_commander_recall_completed)
+
+
+func _on_commander_recall_completed() -> void:
+	if is_dead:
+		return
+	if current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"commander"):
+		release_commander_aggro()
  
 func _setup_anim_player() -> void:
 	anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
@@ -207,9 +222,9 @@ func _setup_navigation() -> void:
 	if not has_target_position and current_target == null:
 		_find_default_target()
  
-## TWR-16: Walking and flying units both use the projection on the
+## Walking and flying units both use the projection on the
 ## lane, never the navmesh path, so walking around a Barricade does not change the order.
-## Without a lane_curve the projection on x is used (TWR-15 fallback, the Fortress is on -x).
+## Without a lane_curve the projection on x is used (fallback, the Fortress is on -x).
 func update_nav_progress() -> void:
 	var lane := _get_lane()
 	if lane == null:
@@ -411,12 +426,12 @@ func _update_state(delta: float) -> void:
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
 				return
-			# CRD-01: holding a slot but boxed in by the units already there; hit from here when in reach.
+			# Holding a slot but boxed in by the units already there; hit from here when in reach.
 			if (_stall_time >= STALL_ATTACK_TIME and dist_to_target <= _melee_reach()
 					and _uses_melee_slot(current_target) and current_target.has_melee_slot(self)):
 				change_state(Enums.EnemyState.ATTACK)
 				return
-			# CRD-02: give the slot up, skip this target for a while and choose another one.
+			# Give the slot up, skip this target for a while and choose another one.
 			if _stall_time >= GameConfig.crowd_wait_retarget_time and _uses_melee_slot(current_target):
 				var stuck_on := current_target
 				_release_melee_slot()
@@ -431,7 +446,7 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.ATTACK:
 			velocity.x = 0.0
 			velocity.z = 0.0
-			# ETG-04: finish the swing before choosing again, unless the target died or became RUINED (ETG-03).
+			# Finish the swing before choosing again, unless the target died or became ruined.
 			if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 				_retarget_now()
 				return
@@ -445,12 +460,12 @@ func _update_state(delta: float) -> void:
  
 			if not is_attacking_active:
 				attack_windup_timer += delta
-				if attack_windup_timer >= GameConfig.enemy_windup_time:
+				if attack_windup_timer >= _get_attack_windup():
 					is_attacking_active = true
 					attack_windup_timer = 0.0
 					_execute_attack_action()
-					var total_interval: float = data.attack_interval if data else 1.0
-					attack_recovery_timer = maxf(0.0, total_interval - GameConfig.enemy_windup_time)
+					var total_interval: float = _get_attack_interval()
+					attack_recovery_timer = maxf(0.0, total_interval - _get_attack_windup())
 			else:
 				attack_recovery_timer -= delta
 				if attack_recovery_timer <= 0.0:
@@ -498,7 +513,7 @@ func _update_state(delta: float) -> void:
 			wait_timer += delta
 			if wait_timer >= GameConfig.crowd_wait_retarget_time:
 				wait_timer = 0.0
-				# CRD-02: still full after the wait, skip it for a while and choose again.
+				# Still full after the wait, skip it for a while and choose again.
 				_skip_full_target(current_target)
 				_retarget_now()
 				return
@@ -520,6 +535,14 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.DEAD:
 			velocity = Vector3.ZERO
  
+func _get_attack_windup() -> float:
+	return GameConfig.enemy_windup_time
+
+
+func _get_attack_interval() -> float:
+	return data.attack_interval if data != null else 1.0
+
+
 func _execute_attack_action() -> void:
 	_execute_melee_strike()
  
@@ -656,7 +679,7 @@ func _is_target_valid(t: Node3D) -> bool:
 		elif t.global_position.y >= 2.5:
 			is_wall = true
  
-		# Melee ground units cannot target wall towers (ETG-01)
+		# Melee ground units cannot target wall towers.
 		var can_target_wall := (data != null and (data.is_ranged or data.is_flying))
 		if is_wall and not can_target_wall:
 			return false
@@ -719,7 +742,7 @@ func _find_closest_valid_barricade() -> Node3D:
 					weight = 1.5
 			var score: float = d / maxf(0.1, weight)
  
-			# Tie-break: score first, then instance id (ETG-07)
+			# Tie-break: score first, then instance id.
 			if score < min_score - 0.001:
 				min_score = score
 				closest = b_node
@@ -932,7 +955,7 @@ func _get_attack_point(t: Node3D) -> Vector3:
 		return t.get_melee_slot_position(self)
 	return t.global_position
  
-## Only ground melee units use attack slots (CRD-06: flying and ranged units do not take slots).
+## Only ground melee units use attack slots (flying and ranged units do not take slots).
 func _uses_melee_slot(t: Node3D) -> bool:
 	if t == null or not is_instance_valid(t) or not t.has_method(&"claim_melee_slot"):
 		return false
@@ -1006,7 +1029,7 @@ func _walk_to_wait_ring(delta: float) -> void:
 	_move_towards_direction(dir)
  
 ## A unit that already holds a melee slot keeps that target on the periodic scan, even when it
-## walks a little past it to reach its slot . The commander hit or taunt it still pulls it away (ETG-03), and a dead or RUINED target ends it.
+## walks a little past it to reach its slot. The commander hit or taunt still pulls it away, and a dead or ruined target ends it.
 func _keeps_slot_target() -> bool:
 	if provoked_by_player or taunted_by_player:
 		return false
@@ -1020,7 +1043,7 @@ func _melee_reach() -> float:
 	return (data.attack_range if data else 1.5) + 0.6
 
 ## Targets with widely spaced slots (Barricade) ask units to walk onto their slot before swinging,
-## so they do not stop attack_range short and block the way to the slots next to them (CRD-01).
+## so they do not stop attack_range short and block the way to the slots next to them.
 func _slot_arrive_distance(t: Node3D) -> float:
 	if t == null or not is_instance_valid(t) or not t.has_method(&"get_melee_arrive_distance"):
 		return INF
@@ -1061,7 +1084,7 @@ func _get_active_melee_attackers_count(cmd: Node3D) -> int:
 					return count
 	return count
  
-## ETG-03: target died, became RUINED/skipped. Choose again instead of waiting for the next retarget_interval scan. 
+## Target died, became RUINED/skipped. Choose again instead of waiting for the next retarget_interval scan. 
 func _retarget_now() -> void:
 	if is_frenzied:
 		change_state(Enums.EnemyState.FRENZY)
@@ -1069,7 +1092,7 @@ func _retarget_now() -> void:
 	change_state(Enums.EnemyState.ADVANCE)
 	_find_best_target()
 
-## CRD-02: after waiting crowd_wait_retarget_time on a full melee target, ignore it so the unit picks another one. The Fortress is never skipped (ETG-06).
+## After waiting crowd_wait_retarget_time on a full melee target, ignore it so the unit picks another one. The Fortress is never skipped.
 func _skip_full_target(t) -> void:
 	if not is_instance_valid(t) or not _uses_melee_slot(t):
 		return

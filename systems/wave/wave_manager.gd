@@ -11,6 +11,7 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var grunt_scene: PackedScene = preload("res://entities/enemy/grunt.tscn")
 @export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
 @export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
+@export var bulwark_scene: PackedScene = preload("res://entities/enemy/bulwark.tscn")
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
 @export var wave_table: WaveTable = preload("res://data/waves/wave_table.tres")
 
@@ -59,6 +60,7 @@ var _xp_tracker: Node = null
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group(&"wave_manager")
 	EventBus.early_call_requested.connect(_on_early_call_requested)
 	EventBus.enemy_died.connect(_on_enemy_died)
@@ -67,6 +69,7 @@ func _ready() -> void:
 	EventBus.commander_died.connect(_on_run_lost)
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 	_setup_xp_tracker()
+	EventBus.reward_picked.connect(_on_reward_picked)
 	_setup_container.call_deferred()
 	start_prep()
 
@@ -84,6 +87,8 @@ func _exit_tree() -> void:
 		EventBus.commander_died.disconnect(_on_run_lost)
 	if EventBus.boss_defeated.is_connected(_on_boss_defeated):
 		EventBus.boss_defeated.disconnect(_on_boss_defeated)
+	if EventBus.reward_picked.is_connected(_on_reward_picked):
+		EventBus.reward_picked.disconnect(_on_reward_picked)
 
 
 func _on_boss_defeated() -> void:
@@ -171,9 +176,10 @@ func _on_early_call_requested() -> void:
 
 func start_combat() -> void:
 	var old_state := wave_state
-	wave_state = Enums.WaveState.COMBAT
+	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
+	wave_state = Enums.WaveState.BOSS_COMBAT if is_boss else Enums.WaveState.COMBAT
 	wave_fsm_state_changed.emit(wave_state, old_state)
-	EventBus.state_changed.emit(&"COMBAT")
+	EventBus.state_changed.emit(&"BOSS_COMBAT" if is_boss else &"COMBAT")
 	EventBus.wave_started.emit(current_wave)
 
 	if spawn_queue.is_empty():
@@ -184,6 +190,9 @@ func start_combat() -> void:
 	spawn_timer = 0.0
 	_combat_timer = 0.0
 	_first_enemy_spawned = false
+
+	if is_boss:
+		_spawn_boss()
 
 	if not _spawn_delays.is_empty():
 		_next_spawn_delay = _spawn_delays.pop_front()
@@ -383,12 +392,11 @@ func _physics_process(delta: float) -> void:
 			if prep_timer <= 0.0:
 				start_combat()
 
-		Enums.WaveState.COMBAT:
+		Enums.WaveState.COMBAT, Enums.WaveState.BOSS_COMBAT:
 			if _first_enemy_spawned:
 				_combat_timer += delta
 			spawn_timer += delta
 			if spawn_timer >= _next_spawn_delay and not spawn_queue.is_empty():
-				# Queue holds surplus enemies while enemies_alive >= max_alive
 				if enemies_alive < GameConfig.max_alive:
 					_try_spawn_next_enemy()
 
@@ -397,6 +405,9 @@ func _physics_process(delta: float) -> void:
 				summary_timer -= delta
 				if summary_timer <= 0.0:
 					advance_from_summary()
+
+		Enums.WaveState.REWARD_PICK:
+			pass
 
 
 func _is_position_occupied(pos: Vector3, min_dist: float = 1.0) -> bool:
@@ -492,7 +503,7 @@ func _on_enemy_died(enemy_type: StringName, _pos: Vector3, gold_base: int, prest
 		_wave_gold_base += float(gold_base) * mult
 		_wave_prestige += prestige
 
-	if wave_state == Enums.WaveState.COMBAT:
+	if wave_state == Enums.WaveState.COMBAT or wave_state == Enums.WaveState.BOSS_COMBAT:
 		enemies_alive = maxi(0, enemies_alive - 1)
 		EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 		if spawn_queue.is_empty() and enemies_alive == 0:
@@ -623,7 +634,39 @@ func advance_from_summary() -> void:
 	if wave_state != Enums.WaveState.SUMMARY:
 		return
 
-	# Release/destroy all projectiles at end of SUMMARY
+	_cleanup_projectiles()
+
+	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
+	if pending > 0:
+		start_reward_pick()
+	else:
+		advance_to_next_wave()
+
+
+func start_reward_pick() -> void:
+	var old_state := wave_state
+	wave_state = Enums.WaveState.REWARD_PICK
+	TimeManager.request_pause(TimeManager.REASON_REWARD_PICK)
+	wave_fsm_state_changed.emit(wave_state, old_state)
+	EventBus.state_changed.emit(&"REWARD_PICK")
+
+
+func finish_reward_pick() -> void:
+	if wave_state != Enums.WaveState.REWARD_PICK:
+		return
+	TimeManager.release_pause(TimeManager.REASON_REWARD_PICK)
+	advance_to_next_wave()
+
+
+func _on_reward_picked(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
+	if wave_state != Enums.WaveState.REWARD_PICK:
+		return
+	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
+	if pending <= 0:
+		finish_reward_pick()
+
+
+func _cleanup_projectiles() -> void:
 	var pool := get_tree().get_first_node_in_group(&"projectile_pool") as ProjectilePool
 	if pool != null:
 		pool.release_all()
@@ -632,7 +675,33 @@ func advance_from_summary() -> void:
 			if is_instance_valid(p) and p.has_method("release"):
 				p.release()
 
-	advance_to_next_wave()
+
+func _spawn_boss() -> void:
+	if bulwark_scene == null:
+		return
+	var boss_inst := bulwark_scene.instantiate() as Enemy
+	if boss_inst == null:
+		return
+	boss_inst.position = spawn_point
+	boss_inst.spawn_grace = true
+	boss_inst.is_in_spawn_zone = true
+
+	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
+	var hp_mult: float = cfg.get_hp_mult(current_wave)
+	var dmg_mult: float = cfg.get_dmg_mult(current_wave)
+	var speed_mult: float = cfg.get_speed_mult(current_wave)
+	boss_inst.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave, cfg)
+
+	if enemy_container != null and is_instance_valid(enemy_container):
+		enemy_container.add_child(boss_inst)
+	else:
+		add_child(boss_inst)
+
+	_first_enemy_spawned = true
+	enemies_alive += 1
+	total_wave_enemies += 1
+	EventBus.enemy_spawned.emit(boss_inst)
+	EventBus.boss_spawned.emit()
 
 
 func _on_summary_continue_requested() -> void:

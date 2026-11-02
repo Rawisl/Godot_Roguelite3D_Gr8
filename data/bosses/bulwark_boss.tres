@@ -5,11 +5,18 @@
 [resource]
 script = ExtResource("1_00uft")
 id = &"bulwark"
+move_speed = 1.6
+avoid_radius = 1.6
 attack_interval = 2.5
 attack_range = 3.0
 knockback_immune = true
+aggro_range = 4.0
+target_rules = Array[StringName]([&"PLAYER", &"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
 stomp_damage = 45
 stomp_radius = 3.0
 stomp_knockback = 3.0
 stomp_stun_duration = 1.5
+stomp_windup = 1.0
+stomp_cadence_phase1 = 2.5
+stomp_cadence_phase2 = 1.9
 metadata/_custom_type_script = "uid://bhfhlrn5orfb"

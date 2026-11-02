@@ -13,7 +13,7 @@ extends EnemyData
 @export var phase2_attack_rate_mult: float = 1.3
 
 @export_group("Phase 1 Resistances")
-## Resistance multipliers per damage type in phase 1 (0.0 = immune, DMG-01, DMG-02)
+## Resistance multipliers per damage type in phase 1 (0.0 = immune).
 @export var resist_table_phase1: Dictionary = {
 	Enums.DamageType.PIERCE: 0.0,
 	Enums.DamageType.MAGIC: 0.0,
@@ -31,12 +31,19 @@ extends EnemyData
 
 func _init() -> void:
 	xp_value = 30
+	move_speed = 1.6
+	avoid_radius = 1.6
+	attack_range = 3.0
+	knockback_immune = true
 
 @export_group("Stomp Attack")
 @export var stomp_damage: int = 45
 @export var stomp_radius: float = 3.0
 @export var stomp_knockback: float = 3.0
 @export var stomp_stun_duration: float = 1.5
+@export var stomp_windup: float = 1.0
+@export var stomp_cadence_phase1: float = 2.5
+@export var stomp_cadence_phase2: float = 1.9
 
 
 

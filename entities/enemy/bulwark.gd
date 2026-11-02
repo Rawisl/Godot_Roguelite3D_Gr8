@@ -6,6 +6,12 @@ var stomp_damage: int:
 		var boss_data := data as BossData
 		return boss_data.stomp_damage if boss_data != null else 45
 
+var effective_stomp_damage: int:
+	get:
+		if wave_dmg_mult > 0.0:
+			return maxi(1, int(round(float(stomp_damage) * wave_dmg_mult)))
+		return stomp_damage
+
 var stomp_radius: float:
 	get:
 		var boss_data := data as BossData
@@ -21,7 +27,6 @@ var stomp_stun_duration: float:
 		var boss_data := data as BossData
 		return boss_data.stomp_stun_duration if boss_data != null else 1.5
 
-# TODO(week 8): Update current_phase to EXPOSED when armor HP is depleted.
 var current_phase: Enums.BossPhase = Enums.BossPhase.ARMORED
 
 
@@ -44,8 +49,29 @@ func _on_died() -> void:
 	EventBus.boss_defeated.emit()
 
 
+func _get_attack_windup() -> float:
+	var boss_data := data as BossData
+	return boss_data.stomp_windup if boss_data != null else 1.0
+
+
+func _get_attack_interval() -> float:
+	var boss_data := data as BossData
+	if boss_data == null:
+		return 2.5
+	return boss_data.stomp_cadence_phase2 if current_phase == Enums.BossPhase.EXPOSED else boss_data.stomp_cadence_phase1
+
+
+func _play_attack_anim() -> void:
+	EventBus.telegraph_started.emit(&"stomp", global_position, stomp_radius, _get_attack_windup())
+	if anim_player != null and anim_player.has_animation(&"melee/Melee_2H_Slam"):
+		anim_player.speed_scale = 1.0
+		anim_player.play(&"melee/Melee_2H_Slam", 0.05, 1.0)
+
+
 func _execute_attack_action() -> void:
 	execute_stomp()
+	if current_phase == Enums.BossPhase.EXPOSED and anim_player != null and anim_player.is_playing():
+		anim_player.speed_scale = 1.87
 
 
 func execute_stomp() -> void:
@@ -55,6 +81,8 @@ func execute_stomp() -> void:
 	var tree := get_tree()
 	if tree == null:
 		return
+
+	EventBus.screen_shake_requested.emit(0.6, &"stomp")
 
 	var radius := stomp_radius
 	var stomp_pos := global_position
@@ -83,13 +111,33 @@ func execute_stomp() -> void:
 		var hit_dir := diff.normalized() if diff.length_squared() > 0.001 else Vector3.FORWARD
 
 		var is_cmd := tgt.is_in_group(&"commander")
-		var kb: float = stomp_knockback if is_cmd else 0.0
-		var info := DamageInfo.new(stomp_damage, Enums.DamageType.BLAST, self, kb, hit_dir)
+		var is_dodge: bool = bool(tgt.get("is_dodging")) if is_cmd else false
+		if is_cmd and is_dodge:
+			continue
 
+		var is_deploy: bool = bool(tgt.get("is_deploying")) if is_cmd else false
+		var kb: float = 0.0
+		if is_cmd and not is_deploy:
+			kb = stomp_knockback
+
+		var info := DamageInfo.new(effective_stomp_damage, Enums.DamageType.BLAST, self, kb, hit_dir)
 		tgt.take_damage(info)
 
-		if is_cmd and tgt.has_method("apply_stun") and stomp_stun_duration > 0.0:
+		if is_cmd and not is_dodge and tgt.has_method("apply_stun") and stomp_stun_duration > 0.0:
 			tgt.apply_stun(stomp_stun_duration)
+
+
+func _get_attack_point(t: Node3D) -> Vector3:
+	if t != null and is_instance_valid(t) and t.is_in_group(&"fortress"):
+		var bmp := get_tree().get_first_node_in_group(&"boss_melee_point") as Node3D
+		if bmp == null:
+			var root := get_tree().current_scene
+			if root != null:
+				bmp = root.find_child("BossMeleePoint", true, false) as Node3D
+		if bmp != null and is_instance_valid(bmp):
+			return bmp.global_position
+		return Vector3(-6.5, 0.0, 0.0)
+	return super._get_attack_point(t)
 
 
 func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
