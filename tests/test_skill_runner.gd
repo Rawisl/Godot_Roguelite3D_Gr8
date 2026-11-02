@@ -73,7 +73,12 @@ func test_slots_and_levels() -> void:
 	runner.catalog = [whirlwind, _dummy_active(&"b"), _dummy_active(&"c"), _dummy_active(&"d")]
 
 	assert_true(runner.get_skill_id(0) == &"", "slots start empty")
+	var slots_emitted: Array = []
+	var on_slots := func(a: Array, p: Array) -> void: slots_emitted.append([a, p])
+	EventBus.skill_slots_changed.connect(on_slots)
 	EventBus.reward_picked.emit(&"whirlwind", &"ACTIVE", 1)
+	EventBus.skill_slots_changed.disconnect(on_slots)
+	assert_true(slots_emitted.is_empty(), "reward_picked does not emit skill_slots_changed from runner")
 	assert_true(runner.get_skill_id(0) == &"whirlwind" and runner.get_level(0) == 1, "first skill takes slot 1 at level 1")
 	EventBus.reward_picked.emit(&"whirlwind", &"ACTIVE", 2)
 	assert_true(runner.get_skill_id(0) == &"whirlwind" and runner.get_level(0) == 2, "same card levels up in place")
@@ -89,6 +94,8 @@ func test_slots_and_levels() -> void:
 	assert_true(runner.get_level(0) == 3, "level is capped at skill_max_level")
 	EventBus.reward_picked.emit(&"sharpness", &"PASSIVE", 1)
 	assert_true(runner.state.active.find(&"sharpness") == -1, "passive cards are ignored")
+	EventBus.run_started.emit()
+	assert_true(runner.get_skill_id(0) == &"" and runner.get_level(0) == 0, "run_started resets runner")
 	runner.free()
 
 
@@ -124,8 +131,14 @@ func test_whirlwind_hits() -> void:
 	var on_cast := func(skill_id: StringName, slot: int, level: int, _origin: Vector3, radius: float) -> void:
 		casts.append([skill_id, slot, level, radius])
 	EventBus.skill_cast.connect(on_cast)
+	var cooldown_slots: Array[StringName] = []
+	var on_cooldown := func(slot_id: StringName, _remaining: float, _total: float) -> void:
+		cooldown_slots.append(slot_id)
+	EventBus.skill_cooldown_changed.connect(on_cooldown)
 	assert_true(runner.activate(0) != null, "level 1 cast accepted")
 	EventBus.skill_cast.disconnect(on_cast)
+	EventBus.skill_cooldown_changed.disconnect(on_cooldown)
+	assert_true(cooldown_slots == [&"skill_1"], "skill_cooldown_changed emits slot id skill_1")
 
 	var all_hit := true
 	for i in ring.size():
@@ -154,6 +167,12 @@ func test_whirlwind_hits() -> void:
 	var boss_before := boss.health.hp
 	runner.activate(0)
 	assert_true(boss_before - boss.health.hp == 15, "level 3 Whirlwind 25 x 0.6 = 15 on the armored Bulwark")
+
+	var detached := Node3D.new()
+	var whirlwind: SkillData = load("res://data/skills/whirlwind.tres")
+	assert_true(WhirlwindSkill.cast(null, whirlwind, 1) == 0, "cast returns 0 for null caster")
+	assert_true(WhirlwindSkill.cast(detached, whirlwind, 1) == 0, "cast returns 0 for detached caster")
+	detached.free()
 
 	for e in ring:
 		e.free()
@@ -273,7 +292,7 @@ func test_cooldown_time_scale() -> void:
 	await TimeManager.wait_real(0.3)  # let the physics loop settle after the previous groups
 	for scale in [1, 2, 3]:
 		TimeManager.set_time_scale(scale)
-		runner._cooldowns[0] = 6.0
+		runner._cooldowns[&"whirlwind"] = 6.0
 		var start: float = TimeManager.game_time
 		await TimeManager.wait_real(0.8)
 		var game_elapsed: float = TimeManager.game_time - start
@@ -281,7 +300,7 @@ func test_cooldown_time_scale() -> void:
 		assert_true(absf(used - game_elapsed) < 0.2 and used > 0.7 * scale, "x%d: cooldown used %.2f s of game time %.2f s" % [scale, used, game_elapsed])
 
 	TimeManager.set_time_scale(1)
-	runner._cooldowns[0] = 6.0
+	runner._cooldowns[&"whirlwind"] = 6.0
 	TimeManager.request_pause(TimeManager.REASON_USER)
 	await TimeManager.wait_real(0.5)
 	assert_true(is_equal_approx(runner.get_cooldown_left(0), 6.0), "Pause freezes the cooldown")

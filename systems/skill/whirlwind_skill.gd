@@ -8,6 +8,8 @@ const ENEMY_GROUP: StringName = &"enemy"
 ## Returns how many enemies were hit. Distance is measured on the ground plane, centre to centre.
 ## damage_mult is the caster's skill damage multiplier (1.0 = none).
 static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float = 1.0) -> int:
+	if caster == null or not is_instance_valid(caster) or not caster.is_inside_tree() or data == null:
+		return 0
 	var radius := data.get_value(&"radius", level)
 	var base_damage := data.get_value(&"damage", level) * damage_mult
 	var radius_sq := radius * radius
