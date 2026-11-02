@@ -1,6 +1,8 @@
 extends Control
 ## Draws the heal station panel without a BuildService. Press F6 on this scene.
-## 1: full store in PREP. 2: half store in PREP. 3: empty store in COMBAT (no Sell).
+## 1: full store in PREP. 2: half store in PREP. 3: empty store in COMBAT (Sell greyed out as broken).
+## The sell values assume the refund follows the HP left in the store, as it will once
+## get_tower_info() does that for heal stations.
 
 const DATA: TowerData = preload("res://data/towers/heal_station.tres")
 
