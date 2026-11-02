@@ -156,7 +156,7 @@ func _is_heal_station(slot_id: StringName) -> bool:
 	if service == null:
 		return false
 	var info := service.get_tower_info(slot_id)
-	return not info.is_empty() and info.data == heal_station_data
+	return not info.is_empty() and (info.data as TowerData).id == heal_station_data.id
 
 func _show_heal_station(slot_id: StringName) -> void:
 	_hide_panels()
