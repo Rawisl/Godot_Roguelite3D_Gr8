@@ -45,12 +45,9 @@ func _ready() -> void:
 	_glow.modulate.a = 0.0
 	_reset()
 	EventBus.run_started.connect(_reset)
-	# TODO(Rawisl): emit emergency_repair_state_changed and skill_cooldown_changed(&"emg_repair")
-	# when R is used, and emergency_repair_denied when it is refused.
 	EventBus.emergency_repair_state_changed.connect(_on_state_changed)
 	EventBus.skill_cooldown_changed.connect(_on_cooldown_changed)
 	EventBus.emergency_repair_denied.connect(_on_denied)
-	# TODO(kiezroth): emit emergency_repair_charge_granted when killing the boss adds a charge.
 	EventBus.emergency_repair_charge_granted.connect(_on_charge_granted)
 	EventBus.fortress_hp_changed.connect(_on_fortress_hp_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
@@ -69,13 +66,14 @@ func _process(_delta: float) -> void:
 func _cooldown_left() -> float:
 	return maxf(_cd_end - TimeManager.game_time, 0.0)
 
+## Same order as EmergencyRepair.get_denial_reason(), so the HUD names the reason the commander refuses with.
 func _lock_reason(left: float) -> StringName:
-	if _charges <= 0:
-		return &"hud.emg.no_charges"
-	if not _commander_mode:
-		return &"hud.emg.commander_only"
 	if _paused:
 		return &"hud.emg.paused"
+	if not _commander_mode:
+		return &"hud.emg.commander_only"
+	if _charges <= 0:
+		return &"hud.emg.no_charges"
 	if left > 0.0:
 		return &"hud.emg.cooldown"
 	if _max_hp > 0 and _hp >= _max_hp:

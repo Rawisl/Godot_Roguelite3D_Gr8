@@ -223,3 +223,10 @@ login.error.email_not_authorized,Máy chủ chưa gửi được email tới đ�
 login.resend,Gửi lại email xác nhận
 login.resend_sent,Đã gửi lại email xác nhận. Hãy kiểm tra cả mục Spam!
 login.error.email_rate_limited,Máy chủ đã gửi quá nhiều email xác nhận trong giờ này. Hãy thử lại sau!
+panel.heal.store,Kho máu
+panel.heal.rate,Hồi chỉ huy
+panel.heal.rate_value,+{rate} HP/s
+panel.heal.level,Cấp
+panel.heal.max,Tối đa
+panel.heal.broken,Đã hỏng
+panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
