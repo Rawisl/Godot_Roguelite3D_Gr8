@@ -1,5 +1,6 @@
 class_name Tower
 extends StaticBody3D
+# TODO(week 9): immune icon above a tower whose targets in range are all immune (UI)
 
 signal destroyed(tower: Tower)
 signal shot_started(target: Node3D)
@@ -22,7 +23,6 @@ var target: Enemy = null
 ## True while the tower idles because every target in range is immune.
 var is_immune_blocked: bool = false
 ## True while a Frontline commander stands within frontline_aura_radius. Refreshed on each scan.
-# TODO(week 7): show a small aura icon above the tower while aura_active is on.
 var aura_active: bool = false
 
 var _lv: TowerLevelData
@@ -84,6 +84,8 @@ func apply_level(new_level: int) -> void:
 	_lv = data.levels[level - 1]
 	health.max_hp = _lv.max_hp
 	health.hp = _lv.max_hp
+	# Direct writes skip HealthComponent's signal; the health bar needs the new max.
+	health.hp_changed.emit(health.hp, health.max_hp)
 	(range_shape.shape as CylinderShape3D).radius = _lv.attack_range
 
 ## Enemy melee and projectiles call take_damage on the body they hit.
@@ -256,7 +258,6 @@ func _target_distance_sq(obj) -> float:
 	# Inside the minimum range: too close to hit.
 	if d2 < data.min_range * data.min_range:
 		return -1.0
-	# TODO: the immune icon itself; UI listens to EventBus.tower_immunity_changed.
 	if e.has_method(&"get_resist") and e.get_resist(data.damage_type) <= 0.0:
 		return IMMUNE
 	return d2
