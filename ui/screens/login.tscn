@@ -232,6 +232,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 22
 autowrap_mode = 3
 
+[node name="Resend" type="Button" parent="Center/Panel/Margin/Content" unique_id=1487379176]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+flat = true
+
 [node name="Filler" type="Control" parent="Center/Panel/Margin/Content" unique_id=730029062]
 layout_mode = 2
 size_flags_vertical = 3

@@ -16,8 +16,8 @@ var _edge_mult: float = 1.0
 
 
 func _ready() -> void:
-	# No contact damage on the way (TGT-07): the base class hit handlers stay disconnected.
-	pass
+	add_to_group(&"projectile")
+	_ensure_visual_fallback()
 
 
 func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float, src: Node = null) -> void:
@@ -41,7 +41,7 @@ func launch_at(from: Vector3, dest: Vector3) -> void:
 	global_position = from
 
 
-## PRJ-02: lead the target by its current velocity over the flight time.
+## Lead the target by its current velocity over the flight time.
 static func predict_landing(from: Vector3, to: Node3D, spd: float) -> Vector3:
 	if to == null or not is_instance_valid(to):
 		return from
@@ -105,7 +105,7 @@ func explode(center: Vector3) -> int:
 	return hits
 
 
-## PRJ-02: 100% at the centre, edge_mult at the radius, linear in between.
+## 100% at the centre, edge_mult at the radius, linear in between.
 static func blast_damage(base: int, dist: float, radius: float, edge_mult: float) -> int:
 	return roundi(blast_raw(base, dist, radius, edge_mult))
 

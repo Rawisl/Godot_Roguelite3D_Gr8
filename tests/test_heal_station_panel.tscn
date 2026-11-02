@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://bt252lxgycgji"]
+
+[ext_resource type="Script" uid="uid://ctf1tx6l5j1m1" path="res://tests/test_heal_station_panel.gd" id="1_s5puo"]
+[ext_resource type="PackedScene" uid="uid://c8hs4tp2nl6qa" path="res://ui/panels/heal_station_panel.tscn" id="2_wdckb"]
+
+[node name="TestHealStationPanel" type="Control" unique_id=1497479671]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_s5puo")
+
+[node name="HealStationPanel" parent="." unique_id=800506704 instance=ExtResource("2_wdckb")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -162.0
+offset_top = -725.0
+offset_right = 158.0
+offset_bottom = -370.0
+grow_horizontal = 2
+grow_vertical = 0

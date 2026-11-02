@@ -1,6 +1,19 @@
 [gd_scene format=3 uid="uid://ckn53m8u1tj1p"]
 
 [ext_resource type="Script" uid="uid://fhar4qyuyntd" path="res://ui/hud/parts/fortress_bar.gd" id="1_ffkjh"]
+[ext_resource type="Texture2D" uid="uid://cpw4r7l4bn75i" path="res://art/icons/fortress_icon.png" id="2_u6toq"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jpyye"]
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.1764706, 0.1764706, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="FortressBar" type="MarginContainer" unique_id=1658010275]
 offset_right = 4.0
@@ -12,9 +25,28 @@ script = ExtResource("1_ffkjh")
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Title" type="Label" parent="VBoxContainer" unique_id=682460222]
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=584230415]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="FortressIcon" type="TextureRect" parent="VBoxContainer/HBoxContainer" unique_id=1194939776]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_u6toq")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="VBoxContainer/HBoxContainer" unique_id=682460222]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="LowTag" type="Label" parent="VBoxContainer/HBoxContainer" unique_id=477529488]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+theme_override_colors/font_color = Color(1, 0.1764706, 0.1764706, 1)
 
 [node name="Bar" type="ProgressBar" parent="VBoxContainer" unique_id=118300072]
 unique_name_in_owner = true
@@ -33,3 +65,14 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="LowBorder" type="Panel" parent="VBoxContainer/Bar" unique_id=1738481837]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_jpyye")

@@ -1,10 +1,10 @@
 class_name Projectile
 extends Area3D
  
-## Ranged projectile supporting linear and parabolic trajectories (AI-02).
+## Ranged projectile supporting linear and parabolic trajectories.
 ## Emits DamageInfo on impact; respects Dodge i-frames on the Commander.
  
-## Pooled projectiles (PRJ-04): ProjectilePool owns them, call release() instead of queue_free().
+## Pooled projectiles: ProjectilePool owns them, call release() instead of queue_free().
 ## Emitted by release(); the pool listens and takes the projectile back.
 signal released(projectile: Projectile)
  
@@ -32,9 +32,10 @@ var has_launched: bool = false
 @onready var life_timer: Timer = get_node_or_null("LifeTimer")
  
 func _ready() -> void:
+	add_to_group(&"projectile")
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
-	if life_timer != null:
+	if life_timer != null and pool_key.is_empty():
 		life_timer.timeout.connect(queue_free)
 		if life_timer.is_stopped():
 			life_timer.start(5.0)
@@ -154,11 +155,11 @@ func _apply_hit(target_node: Node) -> void:
 	_clean_source()
 	if source != null and target_node == source:
 		return
-	# AI-03: No friendly fire between enemies
+	# No friendly fire between enemies
 	if source_is_enemy and target_node.is_in_group(&"enemy"):
 		return
 
-	# AI-02: Parabolic projectile is not blocked by Barricade unless Barricade is the intended target
+	# Parabolic projectile is not blocked by Barricade unless Barricade is the intended target
 	var is_barricade := target_node.is_in_group(&"barricade")
 	if not is_barricade and "data" in target_node and target_node.data != null and "id" in target_node.data:
 		is_barricade = (target_node.data.id == &"barricade")
@@ -222,6 +223,9 @@ static func scaled_damage(raw: float, mult: float) -> int:
 	return maxi(1, roundi(raw * mult))
  
 func release() -> void:
+	if pool_key.is_empty():
+		queue_free()
+		return
 	if not in_use:
 		return
 	source = null

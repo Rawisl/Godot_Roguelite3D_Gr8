@@ -1,6 +1,6 @@
 extends Node3D
 
-## Automated test runner for melee attack slots (branch week4/attack-slots, W6-MH3):
+## Automated test runner for melee attack slots (branch week4/attack-slots):
 ## - A tower on a GROUND cell has max_attackers_per_tower (3) positions, the
 ##   Barricade keeps max_attackers_per_barricade (5), all on the side facing the spawn
 ## - The 4th unit is refused, a released or freed holder frees its slot,
@@ -39,6 +39,7 @@ func _ready() -> void:
 	_add_floor()
 	test_marker_layout()
 	test_claim_cap()
+	test_slot_set_base()
 	await test_wall_tower()
 	test_ranged_units_skip_slots()
 	await test_grunts_on_arrow()
@@ -231,6 +232,34 @@ func test_claim_cap() -> void:
 				"%s: destroyed, every slot freed and no new claims" % label)
 		_clear(units)
 		_clear([t])
+
+
+func test_slot_set_base() -> void:
+	print("\n[GROUP 2b] Tower and Fortress melee slots share MeleeSlotSet")
+	var arrow := _tower(ARROW_SCENE, Vector3(0, 0, -40))
+	var barricade := _tower(BARRICADE_SCENE, Vector3(10, 0, -40))
+	assert_true(arrow.melee_slots is MeleeSlotSet and barricade.melee_slots is MeleeSlotSet,
+			"Arrow and Barricade melee slots are MeleeSlotSets")
+	_clear([arrow, barricade])
+	var body := Node3D.new()
+	add_child(body)
+	var slots := FortressMeleeSlots.new()
+	body.add_child(slots)
+	slots.setup(3)
+	var units: Array[Node3D] = []
+	for i in 2:
+		var u := Node3D.new()
+		add_child(u)
+		units.append(u)
+	assert_true(slots.claim(units[0]) and slots.claim(units[1]) and slots.free_count() == 1,
+			"Fortress slots: two claims leave one slot free")
+	assert_true(slots.claim(units[0]) and slots.free_count() == 1, "Claiming again keeps the held slot")
+	slots.release_all()
+	assert_true(slots.free_count() == 3, "release_all frees every slot")
+	assert_true(slots.claim(units[0]) and slots.claim(units[1]) and slots._watched.size() == 2,
+			"Claiming again after release_all does not connect tree_exiting twice")
+	_clear(units)
+	_clear([body])
 
 
 func test_wall_tower() -> void:

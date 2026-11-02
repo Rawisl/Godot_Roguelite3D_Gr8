@@ -1,6 +1,7 @@
 extends Node
 
 signal app_state_changed(new_state: AppState, old_state: AppState)
+signal session_restore_failed(error: StringName)
 
 enum AppState { BOOT, MAIN_MENU, RUN_LOADING, RUN, RUN_END, META_SHOP, SETTINGS }
 
@@ -30,6 +31,11 @@ var current: AppState = AppState.BOOT
 ## Result of the last run, read by the RunEnd screen.
 var last_run_end_type: StringName = &""
 var last_run_summary: Dictionary = {}
+## Last value sent for each setting on EventBus.settings_changed. Parts created later, such as
+## the HUD of a new run, read it here instead of starting from a default.
+var _settings: Dictionary = {}
+## Why the saved sign-in could not be restored at start, empty when it was fine.
+var session_restore_error: StringName = &""
 
 var _pause_layer: CanvasLayer
 var _pause_menu: Control
@@ -41,8 +47,10 @@ func _ready() -> void:
 	_pause_layer.layer = 50
 	add_child(_pause_layer)
 	EventBus.run_ended.connect(_on_run_ended)
+	EventBus.settings_changed.connect(_on_settings_changed)
 	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_sync_with_current_scene.call_deferred()
+	_restore_session.call_deferred()
 
 ## Tab is mode_switch in a run and never moves focus, even in the pause menu or a dialog.
 ## Nothing to block when nothing has focus, so Tab still reaches the commander.
@@ -129,3 +137,23 @@ func _sync_with_current_scene() -> void:
 		if SCENES[state] == scene.scene_file_path:
 			current = state
 			return
+
+# TODO(WhoKeng): load and save these through settings.cfg with the Settings tabs.
+func get_setting(key: StringName, default_value: Variant = null) -> Variant:
+	return _settings.get(key, default_value)
+
+func _on_settings_changed(key: StringName, value: Variant) -> void:
+	_settings[key] = value
+
+## Runs in the background, so a slow network never holds the boot screen. A failure only
+## leaves a hint on the menu; the player keeps playing as before.
+func _restore_session() -> void:
+	AuthService.session_changed.connect(_on_session_changed)
+	var result: Dictionary = await AuthService.restore_session()
+	if not result["ok"]:
+		session_restore_error = result.get("error", AuthService.ERR_SERVER)
+		session_restore_failed.emit(session_restore_error)
+
+## A sign in or a sign out replaces whatever went wrong while restoring.
+func _on_session_changed(_signed_in: bool) -> void:
+	session_restore_error = &""

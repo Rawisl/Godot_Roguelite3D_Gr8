@@ -9,7 +9,9 @@ var _dest: Vector3 = Vector3.ZERO
 var _life: float = 0.0
 
 func _ready() -> void:
+	add_to_group(&"projectile")
 	body_entered.connect(_on_body_entered)
+	_ensure_visual_fallback()
 
 func fire(from: Vector3, to: Node3D, dmg: int, dmg_type: Enums.DamageType, spd: float, src: Node = null) -> void:
 	super.fire(from, to, dmg, dmg_type, spd, src)
@@ -47,7 +49,7 @@ func _physics_process(delta: float) -> void:
 	global_position += dir * step
 	_face(dir)
 
-## PRJ-01: target died in flight, keep flying to its last position.
+## Target died in flight, keep flying to its last position.
 func _lose_target() -> void:
 	_homing = false
 	target = null

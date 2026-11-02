@@ -11,7 +11,7 @@ const FORTRESS := preload("res://contents/assets/fortress/fortress_model.tscn")
 const ENEMY_DIR := "res://contents/assets/characters/enemy and boss/"
 const TOWER_DIR := "res://contents/assets/towers/"
 
-# Loại quân: số lượng, tốc độ theo bảng quân SRS 3.7, clip di chuyển
+# Loại quân: số lượng, tốc độ theo bảng quân, clip di chuyển
 const ENEMIES := [
 	{"scene": "grunt_model.tscn", "count": 6, "speed": 3.5, "clip": "move/Running_A"},
 	{"scene": "archer_model.tscn", "count": 4, "speed": 3.0, "clip": "move/Running_A"},
