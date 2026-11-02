@@ -2,8 +2,8 @@ extends Node3D
 ## Playtest for the Barricade (branch week3/barricade). Press F6 on this scene.
 ## Ground slot buttons cycle: empty (+) -> Barricade B1 -> B2 -> B3 -> ruined (x) -> empty.
 ## Markers show the 5 attack positions of every Barricade: green free, red taken.
-## The stats line shows attackers per Barricade (max 5, TWR-06), Grunts waiting,
-## how long attackers took to choose again after a Barricade fell (TWR-07) and stuck units.
+## The stats line shows attackers per Barricade (max 5), Grunts waiting,
+## how long attackers took to choose again after a Barricade fell and stuck units.
 
 const BARRICADE_SCENE := preload("res://entities/tower/barricade.tscn")
 const BARRICADE_DATA := preload("res://data/towers/barricade.tres")
@@ -235,7 +235,7 @@ func _on_barricade_destroyed(t: Tower) -> void:
 			_lost[en] = 0.0
 
 
-## TWR-07: time from the Barricade falling until each of its attackers has a new target.
+## Time from the Barricade falling until each of its attackers has a new target.
 func _track_retarget(delta: float) -> void:
 	for en in _lost.keys():
 		if not is_instance_valid(en):

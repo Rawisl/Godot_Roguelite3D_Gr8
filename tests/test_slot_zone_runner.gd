@@ -2,9 +2,9 @@ extends Node
 
 ## Automated test runner verifying:
 ## - SlotZone is only WALL and GROUND; corridor has 6 WALL slots + one GROUND slot per GridData cell
-## - BLD-06: WALL menu has Arrow and Cannon only, GROUND menu has Arrow, Cannon, Barricade
+## - WALL menu has Arrow and Cannon only, GROUND menu has Arrow, Cannon, Barricade
 ## - Slot.allowed_types narrows the zone, never widens it
-## - SLOT-05: missing W slot, wrong prefix and duplicate slot_id are logged on load
+## - Missing W slot, wrong prefix and duplicate slot_id are logged on load
 
 const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 const SLOT_SCENE: PackedScene = preload("res://systems/build/slot.tscn")
@@ -70,14 +70,14 @@ func _make_manager(root: Node, require_walls := true) -> SlotManager:
 	return mgr
 
 func test_zone_enum() -> void:
-	print("\n[GROUP 1] SlotZone has only WALL and GROUND (SRS 1.8)")
+	print("\n[GROUP 1] SlotZone has only WALL and GROUND")
 	assert_true(",".join(Enums.SlotZone.keys()) == "WALL,GROUND", "SlotZone keys are WALL, GROUND")
 	var slot := SLOT_SCENE.instantiate() as Slot
 	assert_true(slot.zone == Enums.SlotZone.GROUND, "a new slot defaults to GROUND")
 	slot.free()
 
 func test_corridor_layout() -> void:
-	print("\n[GROUP 2] Corridor layout: 6 WALL + GridData GROUND cells (SLOT-05)")
+	print("\n[GROUP 2] Corridor layout: 6 WALL + GridData GROUND cells")
 	var level := LEVEL_SCENE.instantiate()
 	add_child(level)
 	var mgr := _make_manager(level)
@@ -94,7 +94,7 @@ func test_corridor_layout() -> void:
 	level.free()
 
 func test_buildable_types_by_zone() -> void:
-	print("\n[GROUP 3] Build menu by zone (BLD-06)")
+	print("\n[GROUP 3] Build menu by zone")
 	var root := Node3D.new()
 	add_child(root)
 	_make_slot(root, &"W1", Enums.SlotZone.WALL)
@@ -125,7 +125,7 @@ func test_allowed_types_narrow_zone() -> void:
 	root.free()
 
 func test_layout_validation_logs() -> void:
-	print("\n[GROUP 5] Load-time checks (SLOT-05 [LOG])")
+	print("\n[GROUP 5] Load-time checks ([LOG])")
 	var root := Node3D.new()
 	add_child(root)
 	for i in range(1, 6):  # W6 left out on purpose

@@ -1,10 +1,10 @@
 class_name Projectile
 extends Area3D
  
-## Ranged projectile supporting linear and parabolic trajectories (AI-02).
+## Ranged projectile supporting linear and parabolic trajectories.
 ## Emits DamageInfo on impact; respects Dodge i-frames on the Commander.
  
-## Pooled projectiles (PRJ-04): ProjectilePool owns them, call release() instead of queue_free().
+## Pooled projectiles: ProjectilePool owns them, call release() instead of queue_free().
 ## Emitted by release(); the pool listens and takes the projectile back.
 signal released(projectile: Projectile)
  
@@ -155,11 +155,11 @@ func _apply_hit(target_node: Node) -> void:
 	_clean_source()
 	if source != null and target_node == source:
 		return
-	# AI-03: No friendly fire between enemies
+	# No friendly fire between enemies
 	if source_is_enemy and target_node.is_in_group(&"enemy"):
 		return
 
-	# AI-02: Parabolic projectile is not blocked by Barricade unless Barricade is the intended target
+	# Parabolic projectile is not blocked by Barricade unless Barricade is the intended target
 	var is_barricade := target_node.is_in_group(&"barricade")
 	if not is_barricade and "data" in target_node and target_node.data != null and "id" in target_node.data:
 		is_barricade = (target_node.data.id == &"barricade")

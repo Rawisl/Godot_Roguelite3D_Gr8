@@ -3,7 +3,7 @@ extends Node3D
 ## - Tower đang hover không bao giờ tự mờ.
 ## - Tower đứng phía trước nó (gần camera hơn) mờ.
 ## - Tower ở xa không mờ.
-## - Tower đứng cạnh trong bán kính 2.5 m, phía gần camera, cũng có thể mờ (đúng bán kính của SRS).
+## - Tower đứng cạnh trong bán kính 2.5 m, phía gần camera, cũng có thể mờ.
 ## Độ mờ của từng tower in ra Output và hiện góc trái màn hình.
 
 const GRASS := preload("res://art/materials/env_grass.tres")

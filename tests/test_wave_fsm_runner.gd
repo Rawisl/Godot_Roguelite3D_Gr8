@@ -2,13 +2,13 @@ extends Node
 
 ## Automated test runner verifying:
 ## - Grunt State Machine (SPAWN, ADVANCE, CHASE, ATTACK, STAGGER, FRENZY, DEAD)
-## - AI-01: Melee attack active frame strike, miss on target out of reach
-## - AI-02: Archer ranged attack, parabolic projectile, and dodge i-frame interaction
-## - AI-04: Knockback interrupts windup, causes STAGGER, grants immunity
-## - EN-02, EN-03: FRENZY persists after STAGGER without signal spam
-## - ETG-01: data.target_rules prioritization, behind-target filter, wall tower filter
-## - SPN-01, SPN-02, EN-04: Spawn queue, spawn_zone, spawn_grace, cannot be targeted in spawn_zone
-## - WAVE-07, GLD-09: WaveManager PREP on ready, early call gold bonus
+## - Melee attack active frame strike, miss on target out of reach
+## - Archer ranged attack, parabolic projectile, and dodge i-frame interaction
+## - Knockback interrupts windup, causes STAGGER, grants immunity
+## - FRENZY persists after STAGGER without signal spam
+## - Data.target_rules prioritization, behind-target filter, wall tower filter
+## - Spawn queue, spawn_zone, spawn_grace, cannot be targeted in spawn_zone
+## - WaveManager PREP on ready, early call gold bonus
 ## - Wave FSM: PREP -> COMBAT -> SUMMARY transitions with 8 Grunts
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
@@ -72,9 +72,9 @@ func test_grunt_initial_spawn_state() -> void:
 	add_child(grunt)
 
 	assert_true(grunt.current_state == Enums.EnemyState.SPAWN, "Grunt starts in SPAWN state")
-	assert_true(grunt.spawn_grace == true, "Grunt has spawn_grace = true on spawn (EN-04)")
+	assert_true(grunt.spawn_grace == true, "Grunt has spawn_grace = true on spawn")
 	assert_true(grunt.is_in_spawn_zone == true, "Grunt is marked is_in_spawn_zone = true")
-	assert_true(grunt.can_be_targeted() == false, "Grunt CANNOT be targeted while in spawn_zone (SPN-02, EN-04)")
+	assert_true(grunt.can_be_targeted() == false, "Grunt CANNOT be targeted while in spawn_zone")
 
 	grunt.queue_free()
 
@@ -87,7 +87,7 @@ func test_grunt_spawn_grace_and_invulnerability() -> void:
 	var initial_hp := grunt.health.hp
 	var hit := DamageInfo.new(10, Enums.DamageType.SLASH)
 	grunt.take_damage(hit)
-	assert_true(grunt.health.hp == initial_hp, "Grunt takes NO damage during spawn_grace (SPN-02)")
+	assert_true(grunt.health.hp == initial_hp, "Grunt takes NO damage during spawn_grace")
 
 	# Move out of spawn zone
 	grunt.position = Vector3(0.0, 0.0, 0.0)
@@ -128,7 +128,7 @@ func test_grunt_advance_and_targeting() -> void:
 	add_child(barricade)
 
 	grunt._find_best_target()
-	assert_true(grunt.current_target == barricade, "Grunt prioritizes Barricade blocking path (ETG-01)")
+	assert_true(grunt.current_target == barricade, "Grunt prioritizes Barricade blocking path")
 
 	# Provocation by Commander
 	var commander := CharacterBody3D.new()
@@ -139,7 +139,7 @@ func test_grunt_advance_and_targeting() -> void:
 	add_child(commander)
 
 	grunt.take_damage(DamageInfo.new(1, Enums.DamageType.SLASH, commander))
-	assert_true(grunt.provoked_by_player == true, "Grunt provoked when hit by Commander (AGG-01)")
+	assert_true(grunt.provoked_by_player == true, "Grunt provoked when hit by Commander")
 	grunt._find_best_target()
 	assert_true(grunt.current_target == commander, "Provoked Grunt redirects attack towards Commander")
 
@@ -149,7 +149,7 @@ func test_grunt_advance_and_targeting() -> void:
 	grunt.queue_free()
 
 func test_grunt_attack_and_ai01_active_frame() -> void:
-	print("\n[GROUP 4] Testing Melee Attack Lifecycle & Active Frame Strike (AI-01)")
+	print("\n[GROUP 4] Testing Melee Attack Lifecycle & Active Frame Strike")
 	var grunt: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt.position = Vector3(1.0, 0.0, 0.0)
 	add_child(grunt)
@@ -171,11 +171,11 @@ func test_grunt_attack_and_ai01_active_frame() -> void:
 
 	# During windup (before 0.4s), no damage dealt yet
 	grunt._physics_process(0.2)
-	assert_true(dummy.get("hp") == dummy_initial_hp, "No damage dealt during wind-up (AI-01)")
+	assert_true(dummy.get("hp") == dummy_initial_hp, "No damage dealt during wind-up")
 
 	# Complete windup (total >= 0.4s) -> triggers active frame
 	grunt._physics_process(0.25)
-	assert_true(dummy.get("hp") < dummy_initial_hp, "Damage dealt at active frame (AI-01)")
+	assert_true(dummy.get("hp") < dummy_initial_hp, "Damage dealt at active frame")
 
 	# Test miss when target out of reach at active frame
 	dummy.set("hp", dummy_initial_hp)
@@ -184,13 +184,13 @@ func test_grunt_attack_and_ai01_active_frame() -> void:
 	dummy.global_position = Vector3(50.0, 0.0, 0.0)
 
 	grunt._physics_process(0.45)
-	assert_true(dummy.get("hp") == dummy_initial_hp, "Attack misses if target moves out of range before active frame (AI-01)")
+	assert_true(dummy.get("hp") == dummy_initial_hp, "Attack misses if target moves out of range before active frame")
 
 	dummy.free()
 	grunt.queue_free()
 
 func test_grunt_stagger_and_ai04() -> void:
-	print("\n[GROUP 5] Testing Knockback Stagger & AI-04 Interruption")
+	print("\n[GROUP 5] Testing Knockback Stagger & Interruption")
 	var grunt: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt.position = Vector3(0.0, 0.0, 0.0)
 	add_child(grunt)
@@ -203,18 +203,18 @@ func test_grunt_stagger_and_ai04() -> void:
 	var kb_info := DamageInfo.new(5, Enums.DamageType.SLASH, null, 1.5, Vector3.FORWARD)
 	grunt.take_damage(kb_info)
 
-	assert_true(grunt.current_state == Enums.EnemyState.STAGGER, "Knockback forces STAGGER state (AI-04)")
-	assert_true(grunt.attack_windup_timer == 0.0, "Knockback interrupts wind-up (AI-04)")
+	assert_true(grunt.current_state == Enums.EnemyState.STAGGER, "Knockback forces STAGGER state")
+	assert_true(grunt.attack_windup_timer == 0.0, "Knockback interrupts wind-up")
 
 	# Wait stagger duration (0.4s)
 	grunt._physics_process(0.45)
-	assert_true(grunt.knockback_immunity_timer > 0.0, "Gains knockback immunity after stagger (AI-04)")
+	assert_true(grunt.knockback_immunity_timer > 0.0, "Gains knockback immunity after stagger")
 	assert_true(grunt.current_state != Enums.EnemyState.STAGGER, "Exits STAGGER after stagger timer expires")
 
 	grunt.queue_free()
 
 func test_frenzy_retention_after_stagger() -> void:
-	print("\n[GROUP 6] Testing Frenzy Retention After Stagger (EN-02, EN-03)")
+	print("\n[GROUP 6] Testing Frenzy Retention After Stagger")
 	var grunt: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt.position = Vector3(0.0, 0.0, 0.0)
 	add_child(grunt)
@@ -238,7 +238,7 @@ func test_frenzy_retention_after_stagger() -> void:
 
 	# Advance past stagger duration (0.4s)
 	grunt._physics_process(0.45)
-	assert_true(grunt.current_state == Enums.EnemyState.FRENZY, "Grunt recovers back into FRENZY state (EN-02, EN-03)")
+	assert_true(grunt.current_state == Enums.EnemyState.FRENZY, "Grunt recovers back into FRENZY state")
 
 	# Verify no signal spam on subsequent physics ticks
 	grunt._physics_process(0.1)
@@ -248,7 +248,7 @@ func test_frenzy_retention_after_stagger() -> void:
 	grunt.queue_free()
 
 func test_targeting_rules_and_wall_filtering() -> void:
-	print("\n[GROUP 7] Testing Target Rules, Wall Tower Filter & Behind-Target Filter (ETG-01)")
+	print("\n[GROUP 7] Testing Target Rules, Wall Tower Filter & Behind-Target Filter")
 	var grunt: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt.position = Vector3(5.0, 0.0, 0.0)
 	add_child(grunt)
@@ -264,13 +264,13 @@ func test_targeting_rules_and_wall_filtering() -> void:
 	wall_tower.set_script(preload("res://tests/dummy_target.gd"))
 	add_child(wall_tower)
 
-	assert_true(grunt._is_target_valid(wall_tower) == false, "Ground melee Grunt rejects WALL towers (ETG-01)")
+	assert_true(grunt._is_target_valid(wall_tower) == false, "Ground melee Grunt rejects WALL towers")
 
 	# Archer (ranged) CAN target wall tower
 	var archer: Enemy = ARCHER_SCENE.instantiate() as Enemy
 	archer.position = Vector3(5.0, 0.0, 0.0)
 	add_child(archer)
-	assert_true(archer._is_target_valid(wall_tower) == true, "Ranged Archer accepts WALL towers (ETG-01)")
+	assert_true(archer._is_target_valid(wall_tower) == true, "Ranged Archer accepts WALL towers")
 
 	# 2. Test target behind enemy: Enemy advancing -X ignores target at positive X
 	var behind_barricade := CharacterBody3D.new()
@@ -288,7 +288,7 @@ func test_targeting_rules_and_wall_filtering() -> void:
 	grunt.queue_free()
 
 func test_archer_projectile_and_dodge_iframes() -> void:
-	print("\n[GROUP 8] Testing Archer Projectile & Dodge I-Frames (AI-02)")
+	print("\n[GROUP 8] Testing Archer Projectile & Dodge I-Frames")
 	var proj: Projectile = PROJECTILE_SCENE.instantiate() as Projectile
 	add_child(proj)
 
@@ -303,11 +303,11 @@ func test_archer_projectile_and_dodge_iframes() -> void:
 	proj.launch(start_pos, target_pos, 8, null, Enums.DamageType.PIERCE, true, 2.0)
 
 	assert_true(proj.has_launched == true, "Projectile launched successfully")
-	assert_true(proj.is_parabolic == true, "Projectile trajectory is parabolic (AI-02)")
+	assert_true(proj.is_parabolic == true, "Projectile trajectory is parabolic")
 
 	# Advance midway along arc
 	proj._physics_process(proj.duration * 0.5)
-	assert_true(proj.global_position.y > 1.0, "Projectile reaches arc apex above ground (AI-02)")
+	assert_true(proj.global_position.y > 1.0, "Projectile reaches arc apex above ground")
 
 	# Verify Dodge i-frame logic
 	var mock_cmd := CharacterBody3D.new()
@@ -320,7 +320,7 @@ func test_archer_projectile_and_dodge_iframes() -> void:
 
 	var hp_before: int = mock_cmd.get("hp")
 	mock_cmd.call("take_damage", DamageInfo.new(8, Enums.DamageType.PIERCE))
-	assert_true(mock_cmd.get("hp") == hp_before, "Dodge i-frames prevent arrow damage (AI-02)")
+	assert_true(mock_cmd.get("hp") == hp_before, "Dodge i-frames prevent arrow damage")
 
 	proj.queue_free()
 	dummy.free()
@@ -355,10 +355,10 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 	assert_true(wave_manager.prep_timer > 0.0, "prep_timer initialized to prep_time_early (25s)")
 	assert_true(states_received.has(&"PREP"), "EventBus emitted state_changed(&'PREP')")
 
-	# 2. Call Early -> Grants early call bonus gold (WAVE-07, GLD-09) and enters COMBAT
+	# 2. Call Early -> Grants early call bonus gold and enters COMBAT
 	wave_manager.call_early()
 	assert_true(wave_manager.wave_state == Enums.WaveState.COMBAT, "WaveManager enters COMBAT on early call")
-	assert_true(gold_deltas.size() > 0 and gold_deltas[0] > 0, "Early call gold bonus granted via EventBus.gold_delta (GLD-09)")
+	assert_true(gold_deltas.size() > 0 and gold_deltas[0] > 0, "Early call gold bonus granted via EventBus.gold_delta")
 	assert_true(states_received.has(&"COMBAT"), "EventBus emitted state_changed(&'COMBAT')")
 	assert_true(waves_started.has(1), "EventBus emitted wave_started(1)")
 	assert_true(wave_manager.spawn_queue.size() == 8, "spawn_queue has exactly 8 Grunts queued")
@@ -384,7 +384,7 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 	for enemy in enemies_spawned:
 		if enemy.can_be_targeted() != false:
 			all_un_targetable = false
-	assert_true(all_un_targetable, "Enemies in spawn_zone cannot be targeted (can_be_targeted() == false, SPN-02)")
+	assert_true(all_un_targetable, "Enemies in spawn_zone cannot be targeted (can_be_targeted() == false)")
 
 	# 4. Kill all 8 Grunts one by one
 	for enemy in enemies_spawned:
