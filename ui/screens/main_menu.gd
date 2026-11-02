@@ -111,7 +111,6 @@ func _confirm_sign_out() -> void:
 
 ## The session is dropped locally first, so the menu updates without waiting for the network.
 func _sign_out() -> void:
-	GameState.session_restore_error = &""
 	AuthService.sign_out()
 
 func _on_session_changed(_signed_in: bool) -> void:

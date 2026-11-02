@@ -148,7 +148,12 @@ func _on_settings_changed(key: StringName, value: Variant) -> void:
 ## Runs in the background, so a slow network never holds the boot screen. A failure only
 ## leaves a hint on the menu; the player keeps playing as before.
 func _restore_session() -> void:
+	AuthService.session_changed.connect(_on_session_changed)
 	var result: Dictionary = await AuthService.restore_session()
 	if not result["ok"]:
 		session_restore_error = result.get("error", AuthService.ERR_SERVER)
 		session_restore_failed.emit(session_restore_error)
+
+## A sign in or a sign out replaces whatever went wrong while restoring.
+func _on_session_changed(_signed_in: bool) -> void:
+	session_restore_error = &""
