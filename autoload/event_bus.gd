@@ -4,29 +4,29 @@ extends Node
 #-----------------------Run and Wave-----------------------#
 signal run_started
 signal run_ended(end_type: StringName, summary: Dictionary)  # FORTRESS_DESTROYED | COMMANDER_DIED | ABANDONED
-signal run_recovered(prestige_gain: int)  # khoi phuc run gian doan
+signal run_recovered(prestige_gain: int)  # recover interrupted run
 signal wave_started(wave_index: int)
 signal wave_cleared(wave_index: int)
 signal state_changed(new_state: StringName)  # PREP | COMBAT | SUMMARY | BOSS_INTRO | BOSS_COMBAT
 signal prep_timer_changed(remaining: float)
 signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: bool)
 signal early_call_requested  # UI -> Wave (call wave early - press G)
-signal wave_summary_ready(summary: Dictionary)  # phat SAU KHI save xong
-signal summary_continue_requested # UI -> Wave: bam Tiep tuc hoac het 10 s dem nguoc o SUMMARY
+signal wave_summary_ready(summary: Dictionary)  # emitted AFTER save completes
+signal summary_continue_requested  # UI -> Wave: press Continue or after 10s countdown in SUMMARY
 signal fortress_destroyed
-signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 khi mat HP
+signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 on HP loss
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
-signal fortress_low_hp(ratio: float)  # mot lan moi wave
+signal fortress_low_hp(ratio: float)  #once per wave
 signal fortress_repaired(amount: int, source: StringName)  # source: GOLD | EMERGENCY
 #------------------------------------------------------#
 
 #-----------------------Enemy-----------------------#
 
 signal enemy_spawned(enemy: Node)
-signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool)  # is_cull: khong thuong, khong tinh kill, hit_by_commander
-signal enemy_count_changed(alive: int, queued: int, total: int)  # nguong nhac 20 va 45
-signal straggler_marker_shown(enemy: Node)  # sau 60 s
-signal frenzy_started(enemy: Node)  # sau 240 s
+signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool)  # is_cull: no reward, no kill credit, hit_by_commander 
+signal enemy_count_changed(alive: int, queued: int, total: int)  # reminder thresholds 20 and 45
+signal straggler_marker_shown(enemy: Node)  # after 60s
+signal frenzy_started(enemy: Node)  # after 240s
 signal stuck_event_logged(tier: int, enemy_type: StringName, position: Vector3, wave_index: int)
 
 #------------------------------------------------------#
@@ -54,7 +54,7 @@ signal retreat_performed
 
 #-----------------------Currency and build-----------------------#
 signal gold_changed(gold: int)
-signal gold_delta(delta: int)  # so noi "+xx" tren HUD
+signal gold_delta(delta: int)  # floating "+xx" text on HUD
 signal prestige_pending_changed(value: int)
 signal prestige_balance_changed(value: int)
 signal slot_state_changed(slot_id: StringName, state: StringName)  # EMPTY | OCCUPIED | RUINED
@@ -77,8 +77,8 @@ signal boss_timer_changed(t: float)
 signal boss_timer_milestone(t_mark: int)  # 30, 20, 15, 5
 signal boss_hp_changed(armor_hp: int, core_hp: int, phase: StringName)
 signal boss_phase_changed(phase: StringName)  # ARMORED | TRANSITION | EXPOSED
-signal telegraph_started(kind: StringName, position: Vector3, radius: float, duration: float)
-signal overload_resolved(fortress_damage: int, commander_exposed: bool)  # chi emit mot lan moi wave boss
+signal telegraph_started(kind: StringName, position: Vector3, radius: float, duration: float) 
+signal overload_resolved(fortress_damage: int, commander_exposed: bool)  # emitted once per boss wave
 signal boss_defeated
 #------------------------------------------------------#
 
