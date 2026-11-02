@@ -66,15 +66,17 @@ func test_input_map() -> void:
 					printerr("Action '%s' does not use physical_keycode!" % action)
 	assert_true(keys_using_physical, "All keyboard actions use physical_keycode")
 
-	# Verify NO actions mapped to keys 1, 2, 3 
+	# Keys 1, 2, 3 belong to the active skill slots only; speed keys were removed.
 	var has_num_123 := false
 	for action in InputMap.get_actions():
+		if action in [&"skill_1", &"skill_2", &"skill_3"]:
+			continue
 		for event in InputMap.action_get_events(action):
 			if event is InputEventKey:
 				if event.physical_keycode in [KEY_1, KEY_2, KEY_3] or event.keycode in [KEY_1, KEY_2, KEY_3]:
 					has_num_123 = true
 					printerr("Action '%s' mapped to key 1-3!" % action)
-	assert_true(not has_num_123, "No actions assigned to keys 1, 2, 3")
+	assert_true(not has_num_123, "No action except skill_1..3 is assigned to keys 1, 2, 3")
 
 
 func test_character_stats() -> void:
@@ -181,7 +183,7 @@ func test_dodge_mechanics() -> void:
 
 	var true_info := DamageInfo.new(15, Enums.DamageType.TRUE)
 	commander.call("take_damage", true_info)
-	assert_true(commander_health.hp == prev_hp - 15, "TRUE damage bypasses dodge i-frame (DMG-05)")
+	assert_true(commander_health.hp == prev_hp - 15, "TRUE damage bypasses dodge i-frame")
 
 	# End dodge
 	commander.call("_end_dodge")
