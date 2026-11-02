@@ -1,12 +1,12 @@
 extends Node3D
 
 ## Automated test runner for the Barricade (branch week3/barricade):
-## - Data: 3 levels, HP 300 / 500 / 800, aggro_weight 1.0 / 1.2 / 1.5, GROUND only, never attacks (3.6.3)
-## - TWR-06: 5 attack positions on an arc in front of the Barricade, a 6th unit is refused
-## - TWR-05: enemies pick the Barricade with the smallest distance / aggro_weight
-## - TWR-07, ETG-03: destroyed while 5 Grunts attack it, all 5 choose again at once; slot turns RUINED
-## - CRD-02: the 6th Grunt waits, then skips the full Barricade and picks another target
-## - SLOT-03: a unit that does not target the Barricade steers around it (avoidance, no re-bake)
+## - Data: 3 levels, HP 300 / 500 / 800, aggro_weight 1.0 / 1.2 / 1.5, GROUND only, never attacks
+## - 5 attack positions on an arc in front of the Barricade, a 6th unit is refused
+## - Enemies pick the Barricade with the smallest distance / aggro_weight
+## - destroyed while 5 Grunts attack it, all 5 choose again at once; slot turns RUINED
+## - The 6th Grunt waits, then skips the full Barricade and picks another target
+## - A unit that does not target the Barricade steers around it (avoidance, no re-bake)
 
 const BARRICADE_SCENE: PackedScene = preload("res://entities/tower/barricade.tscn")
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
@@ -115,7 +115,7 @@ func _clear(nodes: Array) -> void:
 
 
 func test_data() -> void:
-	print("\n[GROUP 1] Barricade data (3.6.3)")
+	print("\n[GROUP 1] Barricade data")
 	assert_true(BARRICADE.levels.size() == 3, "3 levels")
 	var hp: Array[int] = []
 	var w: Array[float] = []
@@ -145,12 +145,12 @@ func test_data() -> void:
 	assert_true(model_ok, "model shows only the Level3 mesh at level 3")
 	var obstacle := b.get_node(^"NavigationObstacle3D") as NavigationObstacle3D
 	assert_true(obstacle.avoidance_enabled and not obstacle.affect_navigation_mesh,
-			"obstacle steers agents and does not change the navmesh (SLOT-03)")
+			"obstacle steers agents and does not change the navmesh")
 	_clear([b])
 
 
 func test_arc_slots() -> void:
-	print("\n[GROUP 2] Attack positions: markers P0..P4 on a half circle in front of the blocking face (TWR-06)")
+	print("\n[GROUP 2] Attack positions: markers P0..P4 on a half circle in front of the blocking face")
 	var b := _barricade(Vector3(0, 0, -40))
 	var body := (b.get_node(^"CollisionShape3D") as CollisionShape3D).shape as BoxShape3D
 	assert_true(body.size.z > body.size.x, "the wall runs across the path (long side along Z)")
@@ -185,7 +185,7 @@ func test_arc_slots() -> void:
 	var e4 := pts[4] - b.global_position
 	assert_true(absf(e0.z + span) < 0.01 and absf(e4.z - span) < 0.01 and absf(e0.x) < 0.01 and absf(e4.x) < 0.01,
 			"half circle: ends %.1f m to each side, level with the centre" % span)
-	# SLOT-03: Barricades in the two cells next to the 5 m lane (z = +-3.5) leave >= 3 m between
+	# Barricades in the two cells next to the 5 m lane (z = +-3.5) leave >= 3 m between
 	# their attackers, enough for a Brute (avoid_radius 0.9).
 	var gap_left := 2.0 * (3.5 - span - 0.5)
 	assert_true(gap_left >= 3.0, "attackers of facing Barricades leave %.1f m of lane" % gap_left)
@@ -193,7 +193,7 @@ func test_arc_slots() -> void:
 
 
 func test_attacker_cap() -> void:
-	print("\n[GROUP 3] At most 5 attackers (TWR-06)")
+	print("\n[GROUP 3] At most 5 attackers")
 	var b := _barricade(Vector3(0, 0, -40))
 	var units: Array[Node3D] = []
 	var took := 0
@@ -217,7 +217,7 @@ func test_attacker_cap() -> void:
 	assert_true(b.get_free_melee_slots() == 1, "a unit leaving the tree frees its slot")
 	b.take_damage(10000)
 	assert_true(b.get_free_melee_slots() == 5 and not b.claim_melee_slot(units[0]),
-			"destroyed: every slot freed, no new claims (TWR-07)")
+			"destroyed: every slot freed, no new claims")
 	_clear(units)
 	_clear([b])
 
@@ -238,7 +238,7 @@ func test_attacker_cap() -> void:
 
 
 func test_aggro_weight() -> void:
-	print("\n[GROUP 4] distance / aggro_weight (TWR-05)")
+	print("\n[GROUP 4] distance / aggro_weight")
 	var g := _grunt(Vector3(10, 0, -60))
 	var near := _barricade(Vector3(4, 0, -60), 1)  # 6 m / 1.0 = 6.0
 	var far := _barricade(Vector3(2, 0, -60), 3)   # 8 m / 1.5 = 5.3
@@ -251,7 +251,7 @@ func test_aggro_weight() -> void:
 
 
 func test_destroyed_while_attacked() -> void:
-	print("\n[GROUP 5] Destroyed while 5 Grunts attack it (TWR-07, ETG-03, EN-07)")
+	print("\n[GROUP 5] Destroyed while 5 Grunts attack it")
 	var slot := SLOT_SCENE.instantiate() as Slot
 	slot.slot_id = &"G_9_9"
 	slot.position = Vector3(0, 0, -80)
@@ -308,13 +308,13 @@ func test_destroyed_while_attacked() -> void:
 		if walked.size() == 5:
 			break
 	assert_true(walked.size() == 5, "none of them stands still afterwards (got %d walking)" % walked.size())
-	assert_true(slot.rubble_obstacle.avoidance_enabled, "rubble keeps an obstacle (SLOT-02)")
+	assert_true(slot.rubble_obstacle.avoidance_enabled, "rubble keeps an obstacle")
 	_clear(grunts)
 	_clear([slot, goal])
 
 
 func test_extra_unit_skips_full() -> void:
-	print("\n[GROUP 6] 6th Grunt waits, then picks another target (TWR-06, CRD-02)")
+	print("\n[GROUP 6] 6th Grunt waits, then picks another target")
 	var a := _barricade(Vector3(0, 0, -120))
 	var b2 := _barricade(Vector3(-10, 0, -120))
 	var goal := _goal(Vector3(-30, 0, -120))
@@ -351,7 +351,7 @@ func test_extra_unit_skips_full() -> void:
 
 
 func test_avoidance() -> void:
-	print("\n[GROUP 7] Steering around a Barricade it does not target (SLOT-03)")
+	print("\n[GROUP 7] Steering around a Barricade it does not target")
 	var b := _barricade(Vector3(0, 0, -160))
 	var goal := _goal(Vector3(-12, 0, -160))
 	var brute := _grunt(Vector3(8, 0, -160), BRUTE_SCENE)  # Brute: FORTRESS only, ignores Barricades

@@ -158,7 +158,7 @@ func _ready() -> void:
 	nav.radius = data.avoid_radius
 	nav.path_desired_distance = 1.0
 	nav.target_desired_distance = data.attack_range if data else 1.0
-	# Steer around Barricades, rubble (NavigationObstacle3D) and other units; the navmesh is not re-baked (SLOT-03).
+	# Steer around Barricades, rubble (NavigationObstacle3D) and other units; the navmesh is not re-baked.
 	nav.avoidance_enabled = true
 	nav.velocity_computed.connect(_on_velocity_computed)
  

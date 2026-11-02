@@ -121,7 +121,7 @@ login.error.email_taken,Email đã tồn tại!
 login.error.weak_password,Mật khẩu quá yếu. Hãy thử mật khẩu dài hơn!
 login.error.email_not_confirmed,Email chưa được xác nhận. Hãy xác nhận link trong hộp thư!
 login.error.invalid_display_name,Tên hiển thị không hợp lệ!
-login.error.rate_limited,Thử quá nhiều lần. Hãy thử lại sau vài giây!
+login.error.rate_limited,Thử quá nhiều lần. Hãy đợi vài phút rồi thử lại!
 login.error.offline,Không kết nối được máy chủ. Hãy kiểm tra mạng!
 login.error.server,Máy chủ đang gặp lỗi. Hãy thử lại sau!
 login.error.disabled,Chức năng trực tuyến chưa sẵn sàng!
@@ -200,3 +200,33 @@ hud.mode.frontline,Tiền tuyến
 hud.mode.commander,Chỉ huy
 hud.mode.cooldown,Đổi chế độ sau {sec} s
 hud.invulnerable,Bất khả xâm phạm
+hud.emg.key,R
+hud.emg.title,Sửa khẩn cấp
+hud.emg.ready,Sẵn sàng (bấm R ở chế độ Chỉ huy)
+hud.emg.cooldown,Đang hồi (còn {sec} s)
+hud.emg.no_charges,Hết lượt. +1 lượt khi diệt boss
+hud.emg.full_hp,Thành đầy máu
+hud.emg.commander_only,Chỉ dùng ở chế độ Chỉ huy
+hud.emg.paused,Không dùng được khi tạm dừng
+hud.emg.overheal,Hồi thừa: Thành chỉ thiếu ít máu
+alert.emg_charge,Sửa khẩn cấp +1 ({value}/{max})
+login.error.name_length,Tên hiển thị phải dài từ {min} đến {max} ký tự!
+login.check_email,Đã tạo tài khoản. Hãy bấm nút xác nhận trong email rồi quay lại đăng nhập!
+menu.account_signed_in,Tài khoản: {name}
+menu.account_offline,Đang ngoại tuyến. Tiến trình vẫn được lưu trên máy này.
+menu.account_expired,Phiên đăng nhập đã hết hạn. Đang chơi bằng tài khoản khách.
+dialog.sign_out.title,Đăng xuất?
+dialog.sign_out.body,Đăng xuất khỏi tài khoản {name}. Bạn sẽ chơi tiếp bằng tài khoản khách.
+dialog.sign_out.confirm,Đăng xuất
+login.error.display_name_taken,Tên hiển thị đã có người dùng. Hãy chọn tên khác!
+login.error.email_not_authorized,Máy chủ chưa gửi được email tới địa chỉ này. Hãy báo nhóm phát triển!
+login.resend,Gửi lại email xác nhận
+login.resend_sent,Đã gửi lại email xác nhận. Hãy kiểm tra cả mục Spam!
+login.error.email_rate_limited,Máy chủ đã gửi quá nhiều email xác nhận trong giờ này. Hãy thử lại sau!
+panel.heal.store,Kho máu
+panel.heal.rate,Hồi chỉ huy
+panel.heal.rate_value,+{rate} HP/s
+panel.heal.level,Cấp
+panel.heal.max,Tối đa
+panel.heal.broken,Đã hỏng
+panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho

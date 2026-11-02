@@ -60,6 +60,7 @@ func _run() -> void:
 	var email_b := "ew-b-%s@%s" % [stamp, TEST_EMAIL_DOMAIN]
 	var name_a := "tester_a_" + stamp.right(4)
 	var name_b := "tester_b_" + stamp.right(4)
+	var name_c := "tester_c_" + stamp.right(4)
 
 	# Client side checks before any request leaves the machine.
 	var bad_name := await AuthService.sign_up(email_a, password, "ab")
@@ -106,8 +107,16 @@ func _run() -> void:
 
 	# Sign out and back in.
 	await AuthService.sign_out()
-	var taken := await AuthService.sign_up(email_a, password, name_a)
+	# A fresh name, so the case reaches the email check instead of the name check.
+	var taken := await AuthService.sign_up(email_a, password, name_c)
 	_check("an email that already exists is refused", not taken["ok"] and taken["error"] == AuthService.ERR_EMAIL_TAKEN)
+	# Name checks that create no account.
+	var name_used := await AuthService.rest(HTTPClient.METHOD_POST, AuthService.PATH_NAME_AVAILABLE, {"wanted_name": name_a}, false)
+	_check("a taken display name is reported (needs 004_unique_display_name.sql)", name_used["ok"] and name_used["data"] == false)
+	var name_case := await AuthService.rest(HTTPClient.METHOD_POST, AuthService.PATH_NAME_AVAILABLE, {"wanted_name": name_a.to_upper()}, false)
+	_check("display names are case sensitive", name_case["ok"] and name_case["data"] == true)
+	var name_taken := await AuthService.sign_up("ew-c-%s@%s" % [stamp, TEST_EMAIL_DOMAIN], password, name_a)
+	_check("sign up with a taken name is refused before any account exists", not name_taken["ok"] and name_taken["error"] == AuthService.ERR_DISPLAY_NAME_TAKEN)
 	_check("signed out", not AuthService.is_signed_in())
 	_check("session file is removed", not FileAccess.file_exists(AuthService.AUTH_FILE))
 	var wrong := await AuthService.sign_in(email_a, password + "x")

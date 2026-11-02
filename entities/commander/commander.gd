@@ -56,6 +56,8 @@ var _stun_immunity_timer: float = 0.0
 
 # Skill state
 var is_using_skill: bool = false
+# Battle Cry roots the commander for its animation; active slot skills do not.
+var _skill_locks_movement: bool = false
 var _skill_timer: float = 0.0
 var _battle_cry_cd_timer: float = 0.0
 var _battle_cry_active_timer: float = 0.0
@@ -88,6 +90,8 @@ var _is_low_hp: bool = false
 var stat_block: StatBlock
 var _stat_applier: StatCardApplier
 var _mode_switch: ModeSwitch
+## Keys 1-3: active skill slots, cooldowns and levels.
+var skill_runner: SkillRunner
 
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
@@ -103,8 +107,10 @@ func _ready() -> void:
 	_setup_animation_player()
 	_setup_sword_area()
 	_setup_input()
+	_setup_emergency_repair()
 	_setup_heal_channel()
 	_setup_mode_switch()
+	_setup_skill_runner()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	_sync_wave_state()
@@ -157,6 +163,12 @@ func _setup_animation_player() -> void:
 		_anim_player = aps[0] as AnimationPlayer
 
 
+func _setup_emergency_repair() -> void:
+	var repair := EmergencyRepair.new()
+	repair.name = "EmergencyRepair"
+	add_child(repair)
+
+
 func _setup_heal_channel() -> void:
 	var channel := HealChannel.new()
 	channel.name = "HealChannel"
@@ -167,6 +179,14 @@ func _setup_mode_switch() -> void:
 	_mode_switch = ModeSwitch.new()
 	_mode_switch.name = "ModeSwitch"
 	add_child(_mode_switch)
+
+
+func _setup_skill_runner() -> void:
+	skill_runner = SkillRunner.new()
+	skill_runner.name = "SkillRunner"
+	skill_runner.caster = self
+	skill_runner.stat_block = stat_block
+	add_child(skill_runner)
 
 
 func _setup_input() -> void:
@@ -241,7 +261,7 @@ func _physics_process(delta: float) -> void:
 
 	if is_dodging:
 		_update_dodge_movement(delta)
-	elif is_using_skill or is_recalling():
+	elif (is_using_skill and _skill_locks_movement) or is_recalling():
 		_update_skill_movement(delta)
 		_play_idle_when_free()
 	else:
@@ -364,8 +384,20 @@ func _command_busy_left(command: StringName) -> float:
 	if is_using_skill:
 		left = maxf(left, _skill_timer)
 	if is_attacking and command != &"dodge":
-		left = maxf(left, _attack_timer)
+		# A skill cuts the recovery of a sword swing short, but not the swing before it lands.
+		left = maxf(left, _attack_timer if not _is_skill_command(command) or not _has_struck else 0.0)
+	if skill_runner != null and _is_skill_command(command):
+		left = maxf(left, skill_runner.get_cooldown_left(_skill_slot(command)))
 	return left
+
+
+func _is_skill_command(command: StringName) -> bool:
+	return command == &"skill_1" or command == &"skill_2" or command == &"skill_3"
+
+
+## skill_1..3 -> slot 0..2.
+func _skill_slot(command: StringName) -> int:
+	return String(command).trim_prefix("skill_").to_int() - 1
 
 
 func _execute_command(command: StringName, camera: Camera3D) -> void:
@@ -378,6 +410,31 @@ func _execute_command(command: StringName, camera: Camera3D) -> void:
 			_try_battle_cry()
 		&"attack":
 			_try_attack()
+		&"skill_1", &"skill_2", &"skill_3":
+			_try_skill(_skill_slot(command))
+
+
+func _try_skill(slot: int) -> void:
+	if is_commander_mode or is_dodging or is_using_skill or is_stunned:
+		return
+	if health != null and health.hp <= 0:
+		return
+	if skill_runner == null or not skill_runner.can_use(slot):
+		return
+	if is_attacking:
+		_interrupt_attack()
+	var data := skill_runner.activate(slot)
+	if data == null:
+		return
+	is_using_skill = true
+	_skill_locks_movement = false
+	var anim_time: float = stats.skill_animation_time if stats else 0.5
+	_skill_timer = anim_time
+	# Whirlwind shares the spinning swing of the third combo hit until it gets its own clip.
+	var clip := COMBO_ANIM_CLIPS[2]
+	if _anim_player != null and _anim_player.has_animation(clip):
+		var speed := _anim_player.get_animation(clip).length / maxf(0.01, anim_time)
+		_anim_player.play(clip, 0.05, speed)
 
 
 func _try_dodge(camera: Camera3D) -> void:
@@ -460,6 +517,7 @@ func _try_battle_cry() -> void:
 
 func _start_battle_cry() -> void:
 	is_using_skill = true
+	_skill_locks_movement = true
 	var anim_time: float = stats.skill_animation_time if stats else 0.5
 	_skill_timer = anim_time
 

@@ -1,13 +1,13 @@
 extends Node3D
 
 ## Automated test runner for the Cannon tower (branch week3/cannon-tower):
-## - Data: 3 levels, blast radius 2.5 / 3.0 / 3.5 m, min_range 4 m, ground-only targeting (3.6.3)
-## - TGT-05: targets inside min_range are ignored; flying targets are ignored
-## - PRJ-02: shell lands at the predicted position; blast 100% centre, 50% edge
-## - PRJ-03: no damage to the commander or towers
-## - PRJ-08: no knockback, no STAGGER on a cluster of Grunts
+## - Data: 3 levels, blast radius 2.5 / 3.0 / 3.5 m, min_range 4 m, ground-only targeting
+## - Targets inside min_range are ignored; flying targets are ignored
+## - Shell lands at the predicted position; blast 100% centre, 50% edge
+## - No damage to the commander or towers
+## - No knockback, no STAGGER on a cluster of Grunts
 ## - Flying enemies inside the blast are still hit (only targeting skips them)
-## - PRJ-04: a fired shell comes back to the pool
+## - A fired shell comes back to the pool
 
 const CANNON_SCENE: PackedScene = preload("res://entities/tower/cannon.tscn")
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
@@ -91,7 +91,7 @@ func _clear(nodes: Array) -> void:
 
 
 func test_data() -> void:
-	print("\n[GROUP 1] Cannon data (3.6.3)")
+	print("\n[GROUP 1] Cannon data")
 	assert_true(CANNON.levels.size() == 3, "3 levels")
 	var radii: Array[float] = []
 	for lv in CANNON.levels:
@@ -108,7 +108,7 @@ func test_data() -> void:
 
 
 func test_targeting() -> void:
-	print("\n[GROUP 2] Targeting (TGT-05, ground only)")
+	print("\n[GROUP 2] Targeting (ground only)")
 	var t := _cannon(Vector3.ZERO)
 	var near := _grunt(Vector3(3.0, 0, 0))
 	var ok := _grunt(Vector3(6.0, 0, 0))
@@ -125,7 +125,7 @@ func test_targeting() -> void:
 
 
 func test_blast_falloff() -> void:
-	print("\n[GROUP 3] Blast falloff (PRJ-02, DMG-06)")
+	print("\n[GROUP 3] Blast falloff")
 	assert_true(CannonProjectile.blast_damage(35, 0.0, 2.5, 0.5) == 35, "centre: 100% (35)")
 	assert_true(CannonProjectile.blast_damage(35, 1.25, 2.5, 0.5) == 26, "half radius: 75% (26.25 -> 26)")
 	assert_true(CannonProjectile.blast_damage(35, 2.5, 2.5, 0.5) == 18, "edge: 50% (17.5 -> 18)")
@@ -152,7 +152,7 @@ func test_blast_falloff() -> void:
 
 
 func test_no_friendly_fire() -> void:
-	print("\n[GROUP 4] No friendly fire (PRJ-03)")
+	print("\n[GROUP 4] No friendly fire")
 	var cmd := COMMANDER_SCENE.instantiate() as Node3D
 	cmd.position = Vector3(40, 0, 0)
 	add_child(cmd)
@@ -172,7 +172,7 @@ func test_no_friendly_fire() -> void:
 
 
 func test_no_stagger_or_knockback() -> void:
-	print("\n[GROUP 5] No knockback, no STAGGER (PRJ-08, test 7.1 #12)")
+	print("\n[GROUP 5] No knockback, no STAGGER")
 	var grunts: Array[Enemy] = []
 	for i in 10:
 		var g := _grunt(Vector3(60 + (i % 5) * 0.6, 0, floorf(i / 5.0) * 0.6))
@@ -214,7 +214,7 @@ func test_flying_in_blast() -> void:
 
 
 func test_prediction() -> void:
-	print("\n[GROUP 7] Lead the target (PRJ-02)")
+	print("\n[GROUP 7] Lead the target")
 	var g := _grunt(Vector3(10, 0, 0))
 	g.velocity = Vector3(-3.0, 0, 0)
 	var from := Vector3(0, 2, 0)
@@ -228,7 +228,7 @@ func test_prediction() -> void:
 
 
 func test_fire_through_pool() -> void:
-	print("\n[GROUP 8] Tower fires on its own through the pool (PRJ-04)")
+	print("\n[GROUP 8] Tower fires on its own through the pool")
 	var pool := POOL_SCENE.instantiate() as ProjectilePool
 	add_child(pool)
 	var t := _cannon(Vector3(100, 0, 0))

@@ -243,7 +243,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 
 	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt
 	if wave_num <= 0:
-		push_warning("WAVE-08: Wave %d has 0 enemies. Forced minimum 1 Grunt." % wave_num)
+		push_warning("Wave %d has 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
 	else:
 		# Step 2: Newly introduced enemy types guaranteed intro_count, deducted first
@@ -313,7 +313,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 
 	# Fallback if somehow empty
 	if chosen.is_empty():
-		push_warning("WAVE-08: Wave %d generated 0 enemies. Forced minimum 1 Grunt." % wave_num)
+		push_warning("Wave %d generated 0 enemies. Forced minimum 1 Grunt." % wave_num)
 		chosen.append(archetypes[0])
 
 	# Step 4 & 5: Grouping and melee-first ordering

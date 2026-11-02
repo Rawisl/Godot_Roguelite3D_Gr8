@@ -1,13 +1,11 @@
 extends Control
 ## Sign in (the default view) or register, shown over MainMenu on the dialog layer.
 ## Closing it leaves the player a guest; a successful sign in reloads the menu.
-## The form checks what it can locally and turns error codes into text; the network
-## calls arrive with the auth service.
+## The form checks what it can locally, sends the rest to AuthService and turns its
+## error codes into text.
 
 const MODE_SIGN_IN := &"SIGN_IN"
 const MODE_REGISTER := &"REGISTER"
-## Palette ui_alert_t2. TODO: use an ErrorLabel theme variation once main_theme.tres has it.
-const ERROR_COLOR := Color("FF9A2E")
 ## Placeholder icons until the shared icon set has an eye.
 const EYE_OPEN: Texture2D = preload("res://ui/icons/eye.svg")
 const EYE_CLOSED: Texture2D = preload("res://ui/icons/eye_off.svg")
@@ -17,6 +15,9 @@ const ERROR_KEYS := {
 	&"EMPTY": &"login.error.empty",
 	&"BAD_EMAIL": &"login.error.bad_email",
 	&"NO_NAME": &"login.error.no_name",
+	&"NAME_LENGTH": &"login.error.name_length",
+	&"DISPLAY_NAME_TAKEN": &"login.error.display_name_taken",
+	&"EMAIL_NOT_AUTHORIZED": &"login.error.email_not_authorized",
 	&"MISMATCH": &"login.error.mismatch",
 	&"INVALID_CREDENTIALS": &"login.error.invalid_credentials",
 	&"EMAIL_TAKEN": &"login.error.email_taken",
@@ -24,6 +25,7 @@ const ERROR_KEYS := {
 	&"EMAIL_NOT_CONFIRMED": &"login.error.email_not_confirmed",
 	&"INVALID_DISPLAY_NAME": &"login.error.invalid_display_name",
 	&"RATE_LIMITED": &"login.error.rate_limited",
+	&"EMAIL_RATE_LIMITED": &"login.error.email_rate_limited",
 	&"OFFLINE": &"login.error.offline",
 	&"SERVER": &"login.error.server",
 	&"DISABLED": &"login.error.disabled",
@@ -47,6 +49,7 @@ var _busy := false
 @onready var _password_eye: Button = %PasswordEye
 @onready var _confirm_eye: Button = %ConfirmEye
 @onready var _message: Label = %Message
+@onready var _resend: Button = %Resend
 @onready var _submit: Button = %Submit
 @onready var _guest: Button = %Guest
 @onready var _guest_hint: Label = %GuestHint
@@ -77,6 +80,9 @@ func _ready() -> void:
 		pair[0].gui_input.connect(_on_eye_gui_input.bind(pair[0], pair[1]))
 		_on_eye_toggled(false, pair[0], pair[1])
 	_submit.pressed.connect(_on_submit_pressed)
+	_resend.text = tr(&"login.resend")
+	_resend.visible = false
+	_resend.pressed.connect(_on_resend_pressed)
 	_guest.pressed.connect(close)
 	_match_view_heights()
 
@@ -99,16 +105,16 @@ func close() -> void:
 func complete_sign_in() -> void:
 	ScreenManager.change_scene(get_tree().current_scene.scene_file_path)
 
-func show_error(code: StringName) -> void:
+func show_error(code: StringName, params: Dictionary = {}) -> void:
 	var key: StringName = ERROR_KEYS.get(code, &"login.error.unknown")
-	_show_message(UiFormat.tr_fmt(&"login.error_line", {"message": tr(key)}), true)
+	_show_message(UiFormat.tr_fmt(&"login.error_line", {"message": UiFormat.tr_fmt(key, params)}), true)
 
 ## While a request runs the form is locked, so a second press cannot send it twice.
 func set_busy(busy: bool) -> void:
 	_busy = busy
 	for edit in _all_fields():
 		edit.editable = not busy
-	for button: Button in [_back, _open_register, _close, _submit, _guest, _password_eye, _confirm_eye]:
+	for button: Button in [_back, _open_register, _close, _submit, _guest, _password_eye, _confirm_eye, _resend]:
 		button.disabled = busy
 	if busy:
 		_show_message(tr(&"login.busy"), false)
@@ -132,6 +138,7 @@ func _set_mode(mode: StringName) -> void:
 	_password_edit.clear()
 	_confirm_edit.clear()
 	_message.text = ""
+	_resend.visible = false
 	_focus_field(_visible_fields()[0])
 
 func _on_submit_pressed() -> void:
@@ -139,11 +146,50 @@ func _on_submit_pressed() -> void:
 		return
 	var problem := _check_fields()
 	if not problem.is_empty():
-		show_error(problem)
+		show_error(problem, _name_limits())
 		return
-	# TODO: send sign in or sign up through the auth service; on success call
-	# complete_sign_in(), otherwise show_error() with the returned code.
-	show_error(&"DISABLED")
+	set_busy(true)
+	var mail := _email_edit.text.strip_edges()
+	var result: Dictionary
+	if _mode == MODE_REGISTER:
+		result = await AuthService.sign_up(mail, _password_edit.text, _name_edit.text)
+	else:
+		result = await AuthService.sign_in(mail, _password_edit.text)
+	# A screen change may have closed the form while the request ran.
+	if not is_inside_tree():
+		return
+	set_busy(false)
+	if not result["ok"]:
+		var code: StringName = result.get("error", &"")
+		show_error(code, _name_limits())
+		# Signing in before confirming: offer the email again.
+		_resend.visible = code == AuthService.ERR_EMAIL_NOT_CONFIRMED
+		return
+	# The account exists but has no session until the player presses the button in the email.
+	if result.get("confirm_email", false):
+		_set_mode(MODE_SIGN_IN)
+		_show_message(tr(&"login.check_email"), false)
+		_resend.visible = true
+		return
+	complete_sign_in()
+
+func _on_resend_pressed() -> void:
+	if _busy:
+		return
+	var mail := _email_edit.text.strip_edges()
+	if not _looks_like_email(mail):
+		show_error(&"BAD_EMAIL")
+		return
+	set_busy(true)
+	var result: Dictionary = await AuthService.resend_confirmation(mail)
+	if not is_inside_tree():
+		return
+	set_busy(false)
+	_resend.visible = true
+	if result["ok"]:
+		_show_message(tr(&"login.resend_sent"), false)
+	else:
+		show_error(result.get("error", &""))
 
 ## Only checks that need no server; the server still has the last word.
 func _check_fields() -> StringName:
@@ -153,12 +199,17 @@ func _check_fields() -> StringName:
 	if not _looks_like_email(mail):
 		return &"BAD_EMAIL"
 	if _mode == MODE_REGISTER:
-		# TODO: check the display name length against GameConfig once it has the limits.
-		if _name_edit.text.strip_edges().is_empty():
+		var name_length := _name_edit.text.strip_edges().length()
+		if name_length == 0:
 			return &"NO_NAME"
+		if name_length < GameConfig.display_name_min_len or name_length > GameConfig.display_name_max_len:
+			return &"NAME_LENGTH"
 		if _confirm_edit.text != _password_edit.text:
 			return &"MISMATCH"
 	return &""
+
+func _name_limits() -> Dictionary:
+	return {"min": GameConfig.display_name_min_len, "max": GameConfig.display_name_max_len}
 
 func _looks_like_email(text: String) -> bool:
 	var at := text.find("@")
@@ -222,11 +273,7 @@ func _focus_field(edit: LineEdit) -> void:
 
 func _show_message(text: String, is_error: bool) -> void:
 	_message.text = text
-	_message.theme_type_variation = &"" if is_error else &"DimLabel"
-	if is_error:
-		_message.add_theme_color_override(&"font_color", ERROR_COLOR)
-	else:
-		_message.remove_theme_color_override(&"font_color")
+	_message.theme_type_variation = &"ErrorLabel" if is_error else &"DimLabel"
 
 func _match_view_heights() -> void:
 	_set_mode(MODE_REGISTER)

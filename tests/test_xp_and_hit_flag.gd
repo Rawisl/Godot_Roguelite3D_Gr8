@@ -1,11 +1,11 @@
 extends Node
 
-## Automated test runner for W6-KT4:
-## - EnemyData.xp_value per archetype (XP-01: Grunt 1, Archer 2, Brute 5, Boss 30)
+## Automated test runner for XP and the hit_by_commander flag:
+## - EnemyData.xp_value per archetype (Grunt 1, Archer 2, Brute 5, Boss 30)
 ## - DamageInfo hit_by_commander flag and source detection
 ## - HealthComponent hit_by_commander: flips on first damage >= 1 from commander
 ## - Immutability of hit_by_commander flag (never reverts on non-commander hit or heal)
-## - Battle Cry does NOT flip hit_by_commander (XP-03)
+## - Battle Cry does NOT flip hit_by_commander
 ## - Enemy entity exposure and death signal forwarding
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
@@ -23,7 +23,7 @@ var fails: int = 0
 
 func _ready() -> void:
 	print("\n=======================================================")
-	print("       AUTOMATED W6-KT4 XP & HIT FLAG TEST RUNNER      ")
+	print("       AUTOMATED XP & HIT FLAG TEST RUNNER      ")
 	print("=======================================================")
 
 	test_xp01_enemy_data_xp_values()
@@ -33,7 +33,7 @@ func _ready() -> void:
 	test_enemy_entity_flag_and_death_event()
 
 	print("=======================================================")
-	print("W6-KT4 TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
+	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
 	print("=======================================================\n")
 
 	get_tree().quit(0 if fails == 0 else 1)
@@ -49,21 +49,21 @@ func assert_true(cond: bool, test_name: String) -> void:
 
 
 func test_xp01_enemy_data_xp_values() -> void:
-	print("\n[GROUP 1] Testing XP-01 EnemyData xp_value Configuration")
+	print("\n[GROUP 1] Testing EnemyData xp_value Configuration")
 	assert_true(GRUNT_DATA != null, "Grunt EnemyData resource loaded successfully")
-	assert_true(GRUNT_DATA.xp_value == 1, "Grunt xp_value == 1 (XP-01)")
+	assert_true(GRUNT_DATA.xp_value == 1, "Grunt xp_value == 1")
 
 	assert_true(ARCHER_DATA != null, "Archer EnemyData resource loaded successfully")
-	assert_true(ARCHER_DATA.xp_value == 2, "Archer xp_value == 2 (XP-01)")
+	assert_true(ARCHER_DATA.xp_value == 2, "Archer xp_value == 2")
 
 	assert_true(BRUTE_DATA != null, "Brute EnemyData resource loaded successfully")
-	assert_true(BRUTE_DATA.xp_value == 5, "Brute xp_value == 5 (XP-01)")
+	assert_true(BRUTE_DATA.xp_value == 5, "Brute xp_value == 5")
 
 	assert_true(BULWARK_DATA != null, "Bulwark EnemyData resource loaded successfully")
-	assert_true(BULWARK_DATA.xp_value == 30, "Bulwark boss xp_value == 30 (XP-01)")
+	assert_true(BULWARK_DATA.xp_value == 30, "Bulwark boss xp_value == 30")
 
 	var boss_data := BossData.new()
-	assert_true(boss_data.xp_value == 30, "BossData default instance xp_value == 30 (XP-01)")
+	assert_true(boss_data.xp_value == 30, "BossData default instance xp_value == 30")
 
 
 func test_damage_info_commander_detection() -> void:
@@ -121,7 +121,7 @@ func test_health_component_flag_transitions() -> void:
 	var cmd_info := DamageInfo.new(12, Enums.DamageType.SLASH, "commander")
 	hc.take_damage(cmd_info)
 	assert_true(hc.hp == 78, "HealthComponent took 12 damage from commander")
-	assert_true(hc.hit_by_commander, "hit_by_commander flips to true on first damage >= 1 from commander (XP-03)")
+	assert_true(hc.hit_by_commander, "hit_by_commander flips to true on first damage >= 1 from commander")
 
 	# Subsequent non-commander damage should NOT revert the flag
 	var tower_info_2 := DamageInfo.new(15, Enums.DamageType.MAGIC, "tower")
