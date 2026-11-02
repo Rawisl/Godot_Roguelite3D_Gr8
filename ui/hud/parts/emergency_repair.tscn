@@ -1,38 +1,150 @@
 [gd_scene format=3 uid="uid://daiai1f0exqp0"]
 
 [ext_resource type="Script" uid="uid://c3afrps05ehb5" path="res://ui/hud/parts/emergency_repair.gd" id="1_rgcab"]
+[ext_resource type="Script" uid="uid://cnwq4xwphuih7" path="res://ui/hud/parts/cooldown_sweep.gd" id="2_pi3an"]
+[ext_resource type="Texture2D" uid="uid://cpw4r7l4bn75i" path="res://art/icons/fortress_icon.png" id="3_hxokb"]
 
-[node name="EmergencyRepair" type="Control" unique_id=311037426]
-layout_mode = 3
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pi3an"]
+bg_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hxokb"]
+bg_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jpyye"]
+bg_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="EmergencyRepair" type="PanelContainer" unique_id=1782654947]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_top = -6.125
 offset_bottom = -6.125
 grow_vertical = 0
+mouse_filter = 1
 script = ExtResource("1_rgcab")
+dot_full = SubResource("StyleBoxFlat_pi3an")
+dot_empty = SubResource("StyleBoxFlat_hxokb")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1944566056]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Row" type="HBoxContainer" parent="." unique_id=1241894344]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=256115510]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="KeyCap" type="PanelContainer" parent="Row" unique_id=1343742083]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Keycap"
 
-[node name="TextureRect2" type="TextureRect" parent="." unique_id=1466855703]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="KeyLabel" type="Label" parent="Row/KeyCap" unique_id=1185393101]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"KeycapLabel"
 
-[node name="TextureRect3" type="TextureRect" parent="." unique_id=1630506888]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Sweep" type="Control" parent="Row" unique_id=587226190]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_pi3an")
 
-[node name="Label" type="Label" parent="." unique_id=1672954219]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="Icon" type="TextureRect" parent="Row/Sweep" unique_id=1434949369]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_hxokb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CooldownLabel" type="Label" parent="Row/Sweep" unique_id=1729741035]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HudLabel"
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="Row" unique_id=1621418199]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Row/Column" unique_id=615868916]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+
+[node name="ChargeRow" type="HBoxContainer" parent="Row/Column" unique_id=1400179272]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Dots" type="HBoxContainer" parent="Row/Column/ChargeRow" unique_id=1309601113]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Dot1" type="Panel" parent="Row/Column/ChargeRow/Dots" unique_id=670975519]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Dot2" type="Panel" parent="Row/Column/ChargeRow/Dots" unique_id=1146075846]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Dot3" type="Panel" parent="Row/Column/ChargeRow/Dots" unique_id=1039052464]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Count" type="Label" parent="Row/Column/ChargeRow" unique_id=1761465877]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudHint"
+
+[node name="Glow" type="Panel" parent="." unique_id=809601291]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_jpyye")

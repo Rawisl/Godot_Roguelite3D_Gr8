@@ -25,6 +25,7 @@ func _ready() -> void:
 		EventBus.gold_delta.emit(5)
 	await _fortress_low()
 	await _mode_switch()
+	await _emergency()
 	await _boss()
 	EventBus.state_changed.emit(&"SUMMARY")
 	print("[test_hud] done, press F1 to toggle the HUD")
@@ -61,3 +62,34 @@ func _boss() -> void:
 	await get_tree().create_timer(2.0).timeout
 	EventBus.boss_defeated.emit()
 	await get_tree().create_timer(1.0).timeout
+
+func _emergency() -> void:
+	print("[test_hud] emergency repair in Frontline: grey, hover shows the commander only reason")
+	EventBus.mode_changed.emit(&"FRONTLINE")
+	EventBus.emergency_repair_state_changed.emit(3, 0.0, 0.2)
+	await get_tree().create_timer(2.0).timeout
+	print("[test_hud] Commander mode: ready")
+	EventBus.mode_changed.emit(&"COMMANDER")
+	await get_tree().create_timer(2.0).timeout
+	print("[test_hud] Fortress full: grey, full HP reason")
+	EventBus.fortress_hp_changed.emit(1000, 1000, 400)
+	await get_tree().create_timer(2.0).timeout
+	print("[test_hud] Fortress at 95%: ready, hover warns about overheal")
+	EventBus.fortress_hp_changed.emit(950, 1000, -50)
+	await get_tree().create_timer(2.0).timeout
+	print("[test_hud] used: 2/3, ring and seconds count down from 10")
+	EventBus.fortress_hp_changed.emit(600, 1000, -350)
+	EventBus.emergency_repair_state_changed.emit(2, 10.0, 0.2)
+	EventBus.skill_cooldown_changed.emit(&"emg_repair", 10.0, 10.0)
+	await get_tree().create_timer(3.0).timeout
+	print("[test_hud] R refused twice during the cooldown: only one glow")
+	EventBus.emergency_repair_denied.emit(&"COOLDOWN")
+	EventBus.emergency_repair_denied.emit(&"COOLDOWN")
+	await get_tree().create_timer(2.0).timeout
+	print("[test_hud] out of charges: hollow dots, no charges reason")
+	EventBus.emergency_repair_state_changed.emit(0, 0.0, 0.2)
+	await get_tree().create_timer(2.0).timeout
+	print("[test_hud] boss killed: +1 charge and a glow")
+	EventBus.emergency_repair_charge_granted.emit(1)
+	await get_tree().create_timer(2.0).timeout
+	EventBus.mode_changed.emit(&"FRONTLINE")
