@@ -13,6 +13,8 @@
 [ext_resource type="PackedScene" uid="uid://c47peuux5sxbx" path="res://entities/tower/cannon.tscn" id="11_cegan"]
 [ext_resource type="PackedScene" uid="uid://ds7n2omekdjqx" path="res://entities/tower/barricade.tscn" id="12_82xsv"]
 [ext_resource type="Script" uid="uid://co2bi4w4nhvw5" path="res://systems/run/commander_spawner.gd" id="13_cmdspawn"]
+[ext_resource type="Script" uid="uid://wucg8pi62c72" path="res://systems/reward/reward_service.gd" id="20_reward_service"]
+[ext_resource type="Resource" path="res://data/config/reward_pool.tres" id="21_reward_pool"]
 
 [node name="Main" type="Node" unique_id=631834920]
 
@@ -43,6 +45,10 @@ script = ExtResource("4_dg77c")
 [node name="Projectiles" type="Node3D" parent="Gameplay" unique_id=1359556574]
 
 [node name="Effects" type="Node3D" parent="Gameplay" unique_id=74705817]
+
+[node name="RewardService" type="Node" parent="Gameplay" unique_id=1928374650]
+script = ExtResource("20_reward_service")
+pool = ExtResource("21_reward_pool")
 
 [node name="CommanderSpawner" type="Node3D" parent="Gameplay" unique_id=1785302046 node_paths=PackedStringArray("deploy_point")]
 script = ExtResource("13_cmdspawn")
