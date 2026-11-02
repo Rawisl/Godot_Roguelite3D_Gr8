@@ -1,6 +1,6 @@
 extends Node3D
 
-## Automated test runner for melee attack slots (branch week4/attack-slots, W6-MH3):
+## Automated test runner for melee attack slots (branch week4/attack-slots):
 ## - A tower on a GROUND cell has max_attackers_per_tower (3) positions, the
 ##   Barricade keeps max_attackers_per_barricade (5), all on the side facing the spawn
 ## - The 4th unit is refused, a released or freed holder frees its slot,
