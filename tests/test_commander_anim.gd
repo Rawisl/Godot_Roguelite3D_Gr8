@@ -75,7 +75,7 @@ func _loop(rig: Dictionary) -> void:
 		await _dodge(rig, DODGE_FORWARD, FACING)
 		await _wait(PAUSE)
 
-		# Đứng yên thì lùi về sau hướng aim (SRS 3.5)
+		# Đứng yên thì lùi về sau hướng aim
 		_show(rig, "Dodge backward")
 		await _dodge(rig, DODGE_BACKWARD, -FACING)
 		await _wait(PAUSE)

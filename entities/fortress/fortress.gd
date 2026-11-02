@@ -1,26 +1,26 @@
 class_name Fortress
 extends StaticBody3D
-## The main Fortress (SRS v1.7 sections 3.6.1, 6.5). Unique and fixed; cannot be built, sold or moved.
+## The main Fortress. Unique and fixed; cannot be built, sold or moved.
 ## Its HP is shared across the whole run. Damage, repairs and melee attack slots all go through here.
 
-## Heal source names for fortress_repaired (REP-01, CMD-02).
+## Heal source names for fortress_repaired.
 const REPAIR_SOURCE_GOLD := &"GOLD"
 const REPAIR_SOURCE_EMERGENCY := &"EMERGENCY"
 ## Tolerance for float comparisons of HP percentages.
 const PCT_EPSILON := 0.000001
 
 @export var stats: FortressStats
-## Meta FORT_HP level. RunLoading sets it before the Fortress enters the tree (FORT-04, APL-01).
+## Meta FORT_HP level. RunLoading sets it before the Fortress enters the tree.
 @export_range(0, 5) var fort_hp_level: int = 0
 
 @onready var health: HealthComponent = %Health
 @onready var _melee_slots: FortressMeleeSlots = %MeleeSlots
 
 var _destroyed: bool = false
-## Current wave state, tracked via EventBus.state_changed (FORT-05, REP-05).
+## Current wave state, tracked via EventBus.state_changed.
 var _wave_state: StringName = &"PREP"
 var _low_hp_alerted_this_wave: bool = false
-## Last HP sent on fortress_hp_changed, used to compute delta (EVB-07).
+## Last HP sent on fortress_hp_changed, used to compute delta.
 var _last_hp: int = 0
 
 
@@ -38,7 +38,7 @@ func _ready() -> void:
 
 
 #region Stats
-## Effective HP = base × (1 + 0.05 × FORT_HP level), computed once in RunLoading (section 6.5).
+## Effective HP = base × (1 + 0.05 × FORT_HP level), computed once in RunLoading.
 static func compute_max_hp(base_hp: int, level: int) -> int:
 	return roundi(base_hp * (1.0 + 0.05 * level))
 
@@ -59,7 +59,7 @@ func is_destroyed() -> bool:
 	return _destroyed
 
 
-## Missing HP percentage as a float, not rounded before multiplying by price (REP-01).
+## Missing HP percentage as a float, not rounded before multiplying by price.
 func get_missing_pct() -> float:
 	if health.max_hp <= 0:
 		return 0.0
@@ -69,7 +69,7 @@ func get_missing_pct() -> float:
 
 #region Damage
 ## fortress_damage = raw × (1 - armor), rounded up once, minimum 1.
-## TRUE damage (Overload) ignores armor (OVL-01). Armor is capped at fortress_armor_cap (APL-03).
+## TRUE damage (Overload) ignores armor. Armor is capped at fortress_armor_cap.
 static func compute_damage(raw: int, damage_type: Enums.DamageType, armor_pct: float) -> int:
 	if raw <= 0:
 		return 0
@@ -115,7 +115,7 @@ static func _damage_type_name(t: Enums.DamageType) -> StringName:
 
 
 #region Repair
-## REP-01: quote for one repair button. step_pct is a percentage of max HP (10 or 25); <= 0 means "to full HP".
+## Quote for one repair button. step_pct is a percentage of max HP (10 or 25); <= 0 means "to full HP".
 ## Returns {heal: HP to restore, cost: gold to deduct, pct: percentage actually repaired}.
 ## If gold does not cover the full step, repair floor(gold / price per 1%) percent.
 static func quote_repair(step_pct: float, hp: int, max_hp: int, gold: int, gold_per_pct: int) -> Dictionary:
@@ -136,19 +136,19 @@ static func quote_repair(step_pct: float, hp: int, max_hp: int, gold: int, gold_
 	return {heal = _pct_to_hp(affordable_pct, max_hp, missing_hp), cost = affordable_pct * gold_per_pct, pct = float(affordable_pct)}
 
 
-## Healed HP is rounded down (REP-01) and never exceeds the missing HP.
+## Healed HP is rounded down and never exceeds the missing HP.
 static func _pct_to_hp(pct: float, max_hp: int, missing_hp: int) -> int:
 	return mini(missing_hp, floori(pct * max_hp / 100.0 + PCT_EPSILON))
 
 
-## Quote based on current HP, for the Fortress panel (PNL-04). step_ratio is a ratio as in
+## Quote based on current HP, for the Fortress panel. step_ratio is a ratio as in
 ## FortressStats (repair_step_small_pct 0.10, repair_step_large_pct 0.25); <= 0 means "to full HP".
 func quote_repair_now(step_ratio: float, gold: int) -> Dictionary:
 	return quote_repair(step_ratio * 100.0, health.hp, health.max_hp, gold, stats.repair_gold_per_pct)
 
 
 ## Repair with gold. The Fortress does not own gold: the economy system passes the current gold and deducts
-## exactly the returned "cost". Refused (cost 0) outside PREP (REP-05), at full HP (REP-04) or when destroyed.
+## exactly the returned "cost". Refused (cost 0) outside PREP, at full HP or when destroyed.
 func repair_with_gold(step_ratio: float, gold: int) -> Dictionary:
 	var none := {heal = 0, cost = 0, pct = 0.0}
 	if _destroyed or _wave_state != &"PREP" or is_full():
@@ -163,9 +163,9 @@ func repair_with_gold(step_ratio: float, gold: int) -> Dictionary:
 	return quote
 
 
-## Emergency repair (CMD-02): heals heal_pct × max_hp at no gold cost. Charges, cooldown and the
-## Commander mode condition are owned by the Commander (CMD-09). Here it only refuses at full HP (CMD-07) or when destroyed,
-## and clamps at max on overheal (CMD-08, FORT-03). Returns the HP actually healed.
+## Emergency repair: heals heal_pct × max_hp at no gold cost. Charges, cooldown and the
+## Commander mode condition are owned by the Commander. Here it only refuses at full HP or when destroyed,
+## and clamps at max on overheal. Returns the HP actually healed.
 func emergency_repair(heal_pct: float) -> int:
 	if _destroyed or is_full() or heal_pct <= 0.0:
 		return 0
@@ -177,7 +177,7 @@ func emergency_repair(heal_pct: float) -> int:
 #endregion
 
 
-#region Melee attack slots (FORT-01, CRD-01 to CRD-04)
+#region Melee attack slots
 ## Claims one of the fortress_melee_slots attack positions. Returns false when full (the unit must WAIT).
 func claim_melee_slot(attacker: Node3D) -> bool:
 	return _melee_slots.claim(attacker)
@@ -214,7 +214,7 @@ func _on_hp_changed(hp: int, max_hp: int) -> void:
 	_check_low_hp(hp, max_hp)
 
 
-## ALR-01: at low_hp_warning_pct, raise a T1 alert once per wave.
+## At low_hp_warning_pct, raise a T1 alert once per wave.
 func _check_low_hp(hp: int, max_hp: int) -> void:
 	if _destroyed or _low_hp_alerted_this_wave or max_hp <= 0 or hp <= 0:
 		return

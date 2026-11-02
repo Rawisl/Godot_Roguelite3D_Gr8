@@ -51,33 +51,33 @@ func run_tests() -> void:
 		print(line)
 		output_text += line + "\n"
 	
-	# SCL-01 test: runtime resource parameter modification
+	# test: runtime resource parameter modification
 	var custom_cfg: ScaleConfig = scale_config.duplicate() as ScaleConfig
 	custom_cfg.budget_base = 20.0
 	custom_cfg.budget_linear = 5.0
 	custom_cfg.budget_quadratic = 0.0
 	var scl01_ok: bool = (custom_cfg.get_budget(1) == 20 and custom_cfg.get_budget(2) == 25)
 	if scl01_ok:
-		var line := "[PASS] SCL-01: Runtime resource tuning alters calculation without code changes"
+		var line := "[PASS] Runtime resource tuning alters calculation without code changes"
 		print(line)
 		output_text += "\n" + line + "\n"
 	else:
 		all_passed = false
-		var line := "[FAIL] SCL-01: Resource parameter change had no effect"
+		var line := "[FAIL] Resource parameter change had no effect"
 		print(line)
 		output_text += "\n" + line + "\n"
 	
-	# SCL-02 test: budget growth rate halved after wave 40
+	# test: budget growth rate halved after wave 40
 	var diff_pre_cap: int = scale_config.get_budget(40) - scale_config.get_budget(39)
 	var diff_post_cap: int = scale_config.get_budget(41) - scale_config.get_budget(40)
 	var scl02_ok: bool = (diff_post_cap < diff_pre_cap)
 	if scl02_ok:
-		var line := "[PASS] SCL-02: Soft cap active after wave 40 (+%d vs +%d)" % [diff_pre_cap, diff_post_cap]
+		var line := "[PASS] Soft cap active after wave 40 (+%d vs +%d)" % [diff_pre_cap, diff_post_cap]
 		print(line)
 		output_text += line + "\n"
 	else:
 		all_passed = false
-		var line := "[FAIL] SCL-02: Soft cap failed after wave 40"
+		var line := "[FAIL] Soft cap failed after wave 40"
 		print(line)
 		output_text += line + "\n"
 		

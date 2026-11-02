@@ -109,7 +109,7 @@ func get_slots_in_zone(zone: Enums.SlotZone) -> Array[Slot]:
 	var empty: Array[Slot] = []
 	return empty
 
-# BLD-06: tower types not valid for the slot do not appear in the menu
+# Tower types not valid for the slot do not appear in the menu
 func get_buildable_types(slot_id: StringName, towers: Array[TowerData]) -> Array[TowerData]:
 	var result: Array[TowerData] = []
 	var slot := get_slot(slot_id)

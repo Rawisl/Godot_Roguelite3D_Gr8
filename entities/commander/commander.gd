@@ -107,6 +107,7 @@ func _ready() -> void:
 	_setup_animation_player()
 	_setup_sword_area()
 	_setup_input()
+	_setup_emergency_repair()
 	_setup_heal_channel()
 	_setup_mode_switch()
 	_setup_skill_runner()
@@ -160,6 +161,12 @@ func _setup_animation_player() -> void:
 			return
 	if not aps.is_empty():
 		_anim_player = aps[0] as AnimationPlayer
+
+
+func _setup_emergency_repair() -> void:
+	var repair := EmergencyRepair.new()
+	repair.name = "EmergencyRepair"
+	add_child(repair)
 
 
 func _setup_heal_channel() -> void:
