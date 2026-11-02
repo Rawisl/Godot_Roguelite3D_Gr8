@@ -1,6 +1,6 @@
 extends Node3D
 
-## Visual test runner for the Fortress (SRS v1.7 sections 3.6.1, 6.5, 7.1 "Fortress, tower").
+## Visual test runner for the Fortress.
 ## Each group runs as its own stage with a title card, a fade between stages and a live
 ## pass/fail log, so the checks can be watched instead of running in the background.
 const FORTRESS_SCENE: PackedScene = preload("res://entities/fortress/fortress.tscn")
@@ -402,7 +402,7 @@ func _collapse(fortress: Fortress) -> void:
 
 
 func test_max_hp_meta() -> void:
-	await _begin_stage(1, "Max HP and FORT_HP meta", "FORT-04, 6.5: max HP = 1000 × (1 + 0.05 × level), starts full")
+	await _begin_stage(1, "Max HP and FORT_HP meta", "6.5: max HP = 1000 × (1 + 0.05 × level), starts full")
 	var f0 := _spawn_fortress(0)
 	_info_label.text = "FORT_HP level 0"
 	await _wait(step_delay)
@@ -420,7 +420,7 @@ func test_max_hp_meta() -> void:
 
 
 func test_damage_formula() -> void:
-	await _begin_stage(2, "Damage formula", "3.6.1, APL-03: ceil(raw × (1 - armor)), min 1, armor capped at 60%, TRUE ignores armor")
+	await _begin_stage(2, "Damage formula", "ceil(raw × (1 - armor)), min 1, armor capped at 60%, TRUE ignores armor")
 	var f := _spawn_fortress()
 	var cases := [
 		[6, Enums.DamageType.SLASH, 0.0, 6, "armor 0: raw 6 -> 6"],
@@ -428,8 +428,8 @@ func test_damage_formula() -> void:
 		[100, Enums.DamageType.SLASH, 0.9, 40, "armor 90% clamped to 60%: 100 -> 40"],
 		[1, Enums.DamageType.SLASH, 0.6, 1, "minimum 1 damage"],
 		[7, Enums.DamageType.PIERCE, 0.25, 6, "rounds up once: ceil(5.25) = 6"],
-		[350, Enums.DamageType.TRUE, 0.6, 350, "TRUE ignores armor (OVL-01)"],
-		[-5, Enums.DamageType.SLASH, 0.0, 0, "negative damage does nothing (FORT-03)"],
+		[350, Enums.DamageType.TRUE, 0.6, 350, "TRUE ignores armor"],
+		[-5, Enums.DamageType.SLASH, 0.0, 0, "negative damage does nothing"],
 	]
 	for c in cases:
 		var result := Fortress.compute_damage(c[0], c[1], c[2])
@@ -439,7 +439,7 @@ func test_damage_formula() -> void:
 
 
 func test_damage_gating_and_destroy_once() -> void:
-	await _begin_stage(3, "Wave gating, clamp and destroy once", "FORT-05: damage only in COMBAT/BOSS_COMBAT. FORT-02/03: HP locks at 0, fortress_destroyed fires once")
+	await _begin_stage(3, "Wave gating, clamp and destroy once", "damage only in COMBAT/BOSS_COMBAT. /03: HP locks at 0, fortress_destroyed fires once")
 	var f := _spawn_fortress()
 	var destroyed := [0]
 	var on_destroyed := func(): destroyed[0] += 1
@@ -448,11 +448,11 @@ func test_damage_gating_and_destroy_once() -> void:
 	_set_state(&"PREP")
 	await _wait(step_delay)
 	_hit(f, 100)
-	await assert_true(f.get_hp() == 1000, "No damage in PREP (FORT-05)")
+	await assert_true(f.get_hp() == 1000, "No damage in PREP")
 	_set_state(&"SUMMARY")
 	await _wait(step_delay)
 	_hit(f, 100)
-	await assert_true(f.get_hp() == 1000, "No damage in SUMMARY (FORT-05)")
+	await assert_true(f.get_hp() == 1000, "No damage in SUMMARY")
 	_set_state(&"BOSS_INTRO")
 	await _wait(step_delay)
 	_hit(f, 100)
@@ -465,16 +465,16 @@ func test_damage_gating_and_destroy_once() -> void:
 	await _wait(step_delay)
 	_hit(f, DamageInfo.new(100, Enums.DamageType.SLASH))
 	await assert_true(f.get_hp() == 900, "COMBAT: 100 damage -> 900")
-	await assert_true(last_delta[0] == -100, "fortress_hp_changed delta = -100 (EVB-07)")
+	await assert_true(last_delta[0] == -100, "fortress_hp_changed delta = -100")
 	EventBus.fortress_hp_changed.disconnect(on_hp)
 	_note("Three 600-damage hits in the same frame")
 	await _wait(step_delay)
 	_hit(f, 600)
 	_hit(f, 600)
 	_hit(f, 600)
-	await assert_true(f.get_hp() == 0, "HP clamped at 0 (FORT-03)")
+	await assert_true(f.get_hp() == 0, "HP clamped at 0")
 	await _collapse(f)
-	await assert_true(destroyed[0] == 1, "fortress_destroyed emitted exactly once (FORT-02)")
+	await assert_true(destroyed[0] == 1, "fortress_destroyed emitted exactly once")
 	await assert_true(f.is_destroyed(), "is_destroyed() true")
 	await assert_true(f.emergency_repair(0.2) == 0, "No repair after destroyed")
 
@@ -482,7 +482,7 @@ func test_damage_gating_and_destroy_once() -> void:
 
 
 func test_low_hp_alert_once_per_wave() -> void:
-	await _begin_stage(4, "Low HP alert once per wave", "ALR-01: at 30% HP one T1 alert per wave, again in the next wave")
+	await _begin_stage(4, "Low HP alert once per wave", "at 30% HP one T1 alert per wave, again in the next wave")
 	var f := _spawn_fortress()
 	var alerts: Array = []
 	var on_alert := func(tier: int, key: StringName, _p: Dictionary):
@@ -519,17 +519,17 @@ func test_low_hp_alert_once_per_wave() -> void:
 
 
 func test_repair_quotes() -> void:
-	await _begin_stage(5, "Repair prices", "REP-01, REP-06, GLD-07: 4 gold per 1% missing, partial repair when gold is short")
+	await _begin_stage(5, "Repair prices", "4 gold per 1% missing, partial repair when gold is short")
 	_spawn_fortress()
 	var cases := [
 		[0.0, 800, 1000, 9999, 80, 200, "Missing 20% of 1000: full repair 80 gold"],
-		[0.0, 1200, 1500, 9999, 80, 300, "Missing 20% of 1500: still 80 gold (REP-06)"],
+		[0.0, 1200, 1500, 9999, 80, 300, "Missing 20% of 1500: still 80 gold"],
 		[10.0, 1033, 1050, 9999, 7, 17, "1050 HP at 1033: +10% repairs the 1.619% left for 7 gold"],
 		[10.0, 800, 1000, 6, 4, 10, "Gold 6, missing 20%: +10% repairs 1% for 4 gold"],
 		[25.0, 800, 1000, 50, 48, 120, "Gold 50, +25% on 20% missing: 12% for 48 gold"],
 		[10.0, 500, 1000, 9999, 40, 100, "+10% on 50% missing: 100 HP for 40 gold"],
 		[25.0, 500, 1000, 9999, 100, 250, "+25% on 50% missing: 250 HP for 100 gold"],
-		[10.0, 1000, 1000, 9999, 0, 0, "Full HP: refused, no gold (REP-04)"],
+		[10.0, 1000, 1000, 9999, 0, 0, "Full HP: refused, no gold"],
 		[10.0, 995, 1000, 1, 0, 0, "Missing 0.5%, gold 1 < ceil(2): refused"],
 		[10.0, 995, 1000, 2, 2, 5, "Missing 0.5%, gold 2: repairs all of it"],
 	]
@@ -545,7 +545,7 @@ func test_repair_quotes() -> void:
 
 
 func test_repair_with_gold() -> void:
-	await _begin_stage(6, "Gold repair rules", "REP-04: refused at full HP. REP-05: only in PREP")
+	await _begin_stage(6, "Gold repair rules", "refused at full HP. only in PREP")
 	var f := _spawn_fortress()
 	var repaired: Array = []
 	var on_repaired := func(amount: int, source: StringName): repaired.append([amount, source])
@@ -554,13 +554,13 @@ func test_repair_with_gold() -> void:
 
 	_set_state(&"PREP")
 	var r := f.repair_with_gold(f.stats.repair_step_small_pct, 100)
-	await assert_true(r.cost == 0, "Full HP in PREP: refused (REP-04)")
+	await assert_true(r.cost == 0, "Full HP in PREP: refused")
 
 	_set_state(&"COMBAT")
 	_hit(f, 400)
 	await _wait(step_delay)
 	r = f.repair_with_gold(f.stats.repair_step_small_pct, gold[0])
-	await assert_true(r.cost == 0 and f.get_hp() == 600, "COMBAT: gold repair refused (REP-05)")
+	await assert_true(r.cost == 0 and f.get_hp() == 600, "COMBAT: gold repair refused")
 
 	_set_state(&"PREP")
 	await _wait(step_delay)
@@ -584,9 +584,9 @@ func _gold_repair(fortress: Fortress, step: float, gold: Array) -> Dictionary:
 
 
 func test_emergency_repair() -> void:
-	await _begin_stage(7, "Emergency repair", "CMD-02: heal a share of max HP for free. CMD-07: refused at full HP. CMD-08: overheal clamps")
+	await _begin_stage(7, "Emergency repair", "heal a share of max HP for free. refused at full HP. overheal clamps")
 	var f := _spawn_fortress()
-	await assert_true(f.emergency_repair(0.2) == 0, "Full HP: refused (CMD-07)")
+	await assert_true(f.emergency_repair(0.2) == 0, "Full HP: refused")
 	_set_state(&"COMBAT")
 	_hit(f, 500)
 	await _wait(step_delay)
@@ -598,11 +598,11 @@ func test_emergency_repair() -> void:
 	await assert_true(healed == 290 and f.get_hp() == 990, "29% of 1000 heals 290")
 	healed = f.emergency_repair(0.2)
 	_heal_pop(f, healed, "+%d" % healed)
-	await assert_true(healed == 10 and f.is_full(), "Overheal clamped at max (CMD-08, FORT-03)")
+	await assert_true(healed == 10 and f.is_full(), "Overheal clamped at max")
 
 
 func test_melee_slot_capacity() -> void:
-	await _begin_stage(8, "Melee slots", "FORT-01, CRD-01, CRD-03: 12 slots on the gate, extra attackers wait, a dead attacker frees its slot")
+	await _begin_stage(8, "Melee slots", "12 slots on the gate, extra attackers wait, a dead attacker frees its slot")
 	var f := _spawn_fortress()
 	var attackers: Array[MeshInstance3D] = []
 	for i in 20:
@@ -642,7 +642,7 @@ func test_melee_slot_capacity() -> void:
 			break
 	_pop_text(holder.global_position + Vector3(0.0, 1.5, 0.0), "dies", COLOR_FAIL)
 	holder.free()
-	await assert_true(f.get_free_melee_slots() == 1, "Freed attacker releases its slot (CRD-03)")
+	await assert_true(f.get_free_melee_slots() == 1, "Freed attacker releases its slot")
 	var waiting: MeshInstance3D = null
 	for a in attackers:
 		if is_instance_valid(a) and not f.has_melee_slot(a):
@@ -714,7 +714,7 @@ func test_grunts_attack_fortress_in_level() -> void:
 	_note("fortress hp = %d, slot holders max = %d, attacking now = %d" % [fortress.get_hp(), max_holders, attacking])
 	await assert_true(fortress.get_hp() < 1000, "Grunts damage the Fortress from their slots")
 	await assert_true(max_holders == 12, "Never more than 12 slot holders, and all 12 get used")
-	await assert_true(saw_wait, "Extra Grunts WAIT instead of piling in (CRD-01)")
+	await assert_true(saw_wait, "Extra Grunts WAIT instead of piling in")
 
 	var victim: Enemy = null
 	for g in grunts:
@@ -724,7 +724,7 @@ func test_grunts_attack_fortress_in_level() -> void:
 	_pop_text(victim.global_position + Vector3(0.0, 2.0, 0.0), "killed", COLOR_FAIL)
 	victim.take_damage(DamageInfo.new(999, Enums.DamageType.TRUE))
 	await get_tree().physics_frame
-	await assert_true(fortress.get_free_melee_slots() >= 1, "Dead Grunt frees its slot (CRD-03)")
+	await assert_true(fortress.get_free_melee_slots() >= 1, "Dead Grunt frees its slot")
 	await _wait(step_delay * 2.0)
 
 	_set_state(&"PREP")

@@ -1,7 +1,7 @@
 class_name Archer
 extends Enemy
 
-## Archer enemy archetype with parabolic ranged attacks (AI-02).
+## Archer enemy archetype with parabolic ranged attacks.
 ## Prioritizes targets based on data.target_rules (PLAYER, TOWER_WALL, TOWER_GROUND, BARRICADE, FORTRESS).
 
 const ARROW_SCENE: PackedScene = preload("res://entities/projectile/enemy_projectile.tscn")

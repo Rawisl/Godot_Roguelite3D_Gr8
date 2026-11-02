@@ -69,11 +69,14 @@ func sign_up(new_email: String, password: String, new_display_name: String) -> D
 	if trimmed.length() < GameConfig.display_name_min_len or trimmed.length() > GameConfig.display_name_max_len:
 		return _fail(ERR_INVALID_DISPLAY_NAME)
 	# Asked first so a taken name gets its own message instead of a generic server error.
+	# A project without 004_unique_display_name.sql has no such function (404): skip the check,
+	# the database still has the last word.
 	var check := await rest(HTTPClient.METHOD_POST, PATH_NAME_AVAILABLE, {"wanted_name": trimmed}, false)
-	if not check["ok"]:
+	if check["ok"]:
+		if check["data"] != true:
+			return _fail(ERR_DISPLAY_NAME_TAKEN)
+	elif int(check.get("status", 0)) != 404:
 		return _fail(check["error"])
-	if check["data"] != true:
-		return _fail(ERR_DISPLAY_NAME_TAKEN)
 	var response := await _send(HTTPClient.METHOD_POST, PATH_SIGN_UP, {
 		"email": new_email,
 		"password": password,

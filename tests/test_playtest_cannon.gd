@@ -2,7 +2,7 @@ extends Node3D
 ## Playtest for the Cannon tower (branch week3/cannon-tower). Press F6 on this scene.
 ## Slot buttons cycle: empty (+) -> Cannon C1 -> C2 -> C3 -> ruined (x) -> empty.
 ## Each blast draws its radius on the ground; the stats line counts shots, hits,
-## damage, STAGGER (must stay 0, PRJ-08) and blast damage on towers (must stay 0, PRJ-03).
+## damage, STAGGER (must stay 0) and blast damage on towers (must stay 0).
 
 const CANNON_SCENE := preload("res://entities/tower/cannon.tscn")
 const CANNON_DATA := preload("res://data/towers/cannon.tres")
@@ -90,7 +90,7 @@ func _process(_delta: float) -> void:
 	var avg: float = float(_stats.hits) / _stats.blasts if _stats.blasts > 0 else 0.0
 	var s := "Shots %d  Blasts %d  Hits %d (%.1f / blast)  Damage %d  Max hit %d" % [
 		_stats.shots, _stats.blasts, _stats.hits, avg, _stats.damage, _stats.max_hit]
-	s += "\nSTAGGER seen %d (expect 0, PRJ-08)   Blast damage on towers %d (expect 0, PRJ-03)" % [
+	s += "\nSTAGGER seen %d (expect 0)   Blast damage on towers %d (expect 0)" % [
 		_stats.stagger, _stats.tower_blast_dmg]
 	s += "   Shells in flight %d" % pool.active_count()
 	if _last_blast != "":
@@ -98,13 +98,13 @@ func _process(_delta: float) -> void:
 	if _near_grunt != null and is_instance_valid(_near_grunt) and _near_cannon != null and is_instance_valid(_near_cannon):
 		var d := Vector2(_near_grunt.global_position.x - _near_cannon.global_position.x,
 				_near_grunt.global_position.z - _near_cannon.global_position.z).length()
-		s += "\nGrunt %.1f m from %s: targeted = %s (TGT-05: ignored while < 4 m)" % [
+		s += "\nGrunt %.1f m from %s: targeted = %s (ignored while < 4 m)" % [
 			d, _near_cannon.get_parent().get_parent().name, str(_near_cannon.target == _near_grunt)]
 	stats_label.text = s
 
 
 func _physics_process(_delta: float) -> void:
-	# PRJ-08: count every entry into STAGGER while Cannons fire.
+	# Count every entry into STAGGER while Cannons fire.
 	for node in get_tree().get_nodes_in_group(&"enemy"):
 		var e := node as Enemy
 		if e == null:
@@ -200,7 +200,7 @@ func _spawn_cluster() -> void:
 		_spawn_grunt(CLUSTER_CENTER + Vector3((i % 5) * 0.6, 0.0, floorf(i / 5.0) * 0.6 - 0.3))
 
 
-## TGT-05: a Grunt 2.5 m from the first ground Cannon must not be targeted by it.
+## A Grunt 2.5 m from the first ground Cannon must not be targeted by it.
 func _spawn_near() -> void:
 	for slot in slot_manager.get_slots_in_zone(Enums.SlotZone.GROUND):
 		if slot.state == Enums.SlotState.OCCUPIED:

@@ -1,6 +1,6 @@
 extends Node3D
 
-## Automated Verification Suite for Phase 3 (Archer Ranged & AI-02) & Phase 4 (STAGGER AI-04, AI-03, AI-05)
+## Automated Verification Suite for Phase 3 (Archer Ranged &) & Phase 4 (STAGGER)
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -46,10 +46,10 @@ func assert_eq(val1: Variant, val2: Variant, message: String) -> void:
 		print("  [FAIL] %s: expected %s, got %s" % [message, str(val2), str(val1)])
 
 # ==============================================================================
-# GROUP 1: Archer Hold Distance & No Kiting (AI-02, SRS 3.7.3, EN-11)
+# GROUP 1: Archer Hold Distance & No Kiting
 # ==============================================================================
 func test_group_1_archer_hold_distance_and_no_kiting() -> void:
-	print("[GROUP 1] Testing Archer Hold Distance (11m) & No Kiting (EN-11)")
+	print("[GROUP 1] Testing Archer Hold Distance (11m) & No Kiting")
 
 	var target_dummy := StaticBody3D.new()
 	target_dummy.name = "TargetDummy"
@@ -78,7 +78,7 @@ func test_group_1_archer_hold_distance_and_no_kiting() -> void:
 	assert_eq(archer.current_state, Enums.EnemyState.ATTACK, "Archer enters ATTACK when target is within 11.0m")
 	assert_eq(archer.velocity.x, 0.0, "Archer stops horizontal velocity in ATTACK (holds distance)")
 
-	# 2. EN-11: Target moves very close (< 2m), Archer continues ATTACK without kiting
+	# 2. Target moves very close (< 2m), Archer continues ATTACK without kiting
 	target_dummy.global_position = Vector3(9.0, 0.0, 0.0) # 1.5m away
 	archer._update_state(0.016)
 	assert_eq(archer.current_state, Enums.EnemyState.ATTACK, "Archer stays in ATTACK when target is < 2m (no kiting)")
@@ -94,10 +94,10 @@ func test_group_1_archer_hold_distance_and_no_kiting() -> void:
 	archer.free()
 
 # ==============================================================================
-# GROUP 2: Archer Projectile Specifications (AI-02)
+# GROUP 2: Archer Projectile Specifications
 # ==============================================================================
 func test_group_2_archer_projectile_parabolic_specs() -> void:
-	print("\n[GROUP 2] Testing Archer Projectile Specs (AI-02: 20 m/s, Parabolic, PIERCE)")
+	print("\n[GROUP 2] Testing Archer Projectile Specs (20 m/s, Parabolic, PIERCE)")
 
 	var proj_scene: PackedScene = load("res://entities/projectile/enemy_projectile.tscn")
 	var proj := proj_scene.instantiate() as Projectile
@@ -120,10 +120,10 @@ func test_group_2_archer_projectile_parabolic_specs() -> void:
 	proj.free()
 
 # ==============================================================================
-# GROUP 3: Barricade Bypass for Parabolic Arrows (AI-02)
+# GROUP 3: Barricade Bypass for Parabolic Arrows
 # ==============================================================================
 func test_group_3_barricade_bypass_for_parabolic_arrows() -> void:
-	print("\n[GROUP 3] Testing Arrow Bypasses Intervening Barricade (AI-02: không bị Barricade chắn)")
+	print("\n[GROUP 3] Testing Arrow Bypasses Intervening Barricade (không bị Barricade chắn)")
 
 	var fortress := StaticBody3D.new()
 	fortress.name = "Fortress"
@@ -164,10 +164,10 @@ func test_group_3_barricade_bypass_for_parabolic_arrows() -> void:
 	barricade.free()
 
 # ==============================================================================
-# GROUP 4: Dodge Evades Arrow (AI-02, CMB-06)
+# GROUP 4: Dodge Evades Arrow
 # ==============================================================================
 func test_group_4_dodge_evades_arrow() -> void:
-	print("\n[GROUP 4] Testing Dodge Evades Arrow (AI-02 & CMB-06: Dodge i-frame)")
+	print("\n[GROUP 4] Testing Dodge Evades Arrow (Dodge i-frame)")
 
 	var commander_scene: PackedScene = load("res://entities/commander/commander.tscn")
 	var commander := commander_scene.instantiate() as CharacterBody3D
@@ -191,9 +191,9 @@ func test_group_4_dodge_evades_arrow() -> void:
 	add_child(proj_dodge)
 	proj_dodge.launch(Vector3(5.0, 1.2, 0.0), commander.global_position, 8, null, Enums.DamageType.PIERCE, true, 2.5, commander)
 	proj_dodge._apply_hit(commander)
-	assert_eq(int(commander.health.hp), hp_before_dodge_shot, "Commander takes 0 damage when DODGING (AI-02 Dodge né được)")
+	assert_eq(int(commander.health.hp), hp_before_dodge_shot, "Commander takes 0 damage when DODGING (Dodge né được)")
 
-	# Case C: Commander walks 2m sideways before impact -> arrow lands and does not damage Commander (AI-02 no homing)
+	# Case C: Commander walks 2m sideways before impact -> arrow lands and does not damage Commander (no homing)
 	commander.is_dodging = false
 	var hp_before_move_shot: int = int(commander.health.hp)
 	var proj_move := proj_scene.instantiate() as Projectile
@@ -202,15 +202,15 @@ func test_group_4_dodge_evades_arrow() -> void:
 	commander.global_position = Vector3(0.0, 0.0, 2.0)
 	proj_move.global_position = Vector3(0.0, 0.0, 0.0)
 	proj_move._on_impact_at_target()
-	assert_eq(int(commander.health.hp), hp_before_move_shot, "Commander takes 0 damage when walking 2m sideways away from landing spot (AI-02)")
+	assert_eq(int(commander.health.hp), hp_before_move_shot, "Commander takes 0 damage when walking 2m sideways away from landing spot")
 
 	commander.free()
 
 # ==============================================================================
-# GROUP 5: STAGGER Interrupts Wind-up & Applies 2s Immunity (AI-04)
+# GROUP 5: STAGGER Interrupts Wind-up & Applies 2s Immunity
 # ==============================================================================
 func test_group_5_stagger_interrupts_windup_and_grants_immunity() -> void:
-	print("\n[GROUP 5] Testing STAGGER (AI-04: Ngắt wind-up, miễn knockback 2s)")
+	print("\n[GROUP 5] Testing STAGGER (Ngắt wind-up, miễn knockback 2s)")
 
 	var grunt_scene: PackedScene = load("res://entities/enemy/grunt.tscn")
 	var grunt := grunt_scene.instantiate() as Enemy
@@ -243,10 +243,10 @@ func test_group_5_stagger_interrupts_windup_and_grants_immunity() -> void:
 	grunt.free()
 
 # ==============================================================================
-# GROUP 6: Brute is Knockback Immune (AI-04, AI-05, SRS 3.7.1)
+# GROUP 6: Brute is Knockback Immune
 # ==============================================================================
 func test_group_6_brute_knockback_immune() -> void:
-	print("\n[GROUP 6] Testing Brute Knockback & Stun Immunity (SRS 3.7.1)")
+	print("\n[GROUP 6] Testing Brute Knockback & Stun Immunity")
 
 	var brute_scene: PackedScene = load("res://entities/enemy/brute.tscn")
 	var brute := brute_scene.instantiate() as Enemy
@@ -267,10 +267,10 @@ func test_group_6_brute_knockback_immune() -> void:
 	brute.free()
 
 # ==============================================================================
-# GROUP 7: No Friendly Fire (AI-03)
+# GROUP 7: No Friendly Fire
 # ==============================================================================
 func test_group_7_no_friendly_fire() -> void:
-	print("\n[GROUP 7] Testing No Friendly Fire Between Enemies (AI-03)")
+	print("\n[GROUP 7] Testing No Friendly Fire Between Enemies")
 
 	var archer_scene: PackedScene = load("res://entities/enemy/archer.tscn")
 	var archer := archer_scene.instantiate() as Archer
@@ -296,17 +296,17 @@ func test_group_7_no_friendly_fire() -> void:
 		proj.free()
 
 # ==============================================================================
-# GROUP 8: No Stun On Enemies (AI-05)
+# GROUP 8: No Stun On Enemies
 # ==============================================================================
 func test_group_8_no_stun_on_enemies() -> void:
-	print("\n[GROUP 8] Testing No Stun State On Enemies (AI-05)")
+	print("\n[GROUP 8] Testing No Stun State On Enemies")
 
 	var grunt_scene: PackedScene = load("res://entities/enemy/grunt.tscn")
 	var grunt := grunt_scene.instantiate() as Enemy
 	add_child(grunt)
 
 	# Verify EnemyState enum has no STUN state
-	assert_true(not Enums.EnemyState.has("STUN"), "Enums.EnemyState has no STUN state (AI-05: không có khống chế lên kẻ địch ở MVP)")
+	assert_true(not Enums.EnemyState.has("STUN"), "Enums.EnemyState has no STUN state (không có khống chế lên kẻ địch ở MVP)")
 	assert_true(Enums.EnemyState.has("STAGGER"), "Enums.EnemyState contains STAGGER for interruption")
 
 	grunt.free()
