@@ -1,7 +1,9 @@
 class_name RewardService
 extends Node
 ## Holds the run's skill state and builds REWARD_PICK offers from the reward pool.
-## The REWARD_PICK screen calls offer_next() for each pending pick and skip() to give one up.
+## The REWARD_PICK screen talks to it through EventBus only: reward_offer_requested asks for the next
+## offer, reward_pick_requested and reward_skip_requested answer it. The public functions below are for
+## tests and internal use; the UI does not call them.
 # TODO(week 9): apply a picked card to the run state and notify the skill slots
 # TODO(week 10): take the run seed and the pick state from RunState (RunState)
 
@@ -24,7 +26,9 @@ func _ready() -> void:
 		push_warning("RewardService has no reward pool")
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.tower_built.connect(_on_tower_built)
-	EventBus.reward_picked.connect(_on_reward_picked)
+	EventBus.reward_offer_requested.connect(_on_offer_requested)
+	EventBus.reward_pick_requested.connect(_on_pick_requested)
+	EventBus.reward_skip_requested.connect(_on_skip_requested)
 
 func get_catalog() -> Array[SkillData]:
 	if pool == null:
@@ -36,11 +40,13 @@ func has_offer() -> bool:
 	return RewardOfferGenerator.has_offer(state, get_catalog())
 
 ## Same state and seed give the same cards, so calling again before a pick returns the same offer.
+## Returns [] and emits nothing when no card can be offered.
 func offer_next() -> Array[Dictionary]:
 	var rng := RewardOfferGenerator.make_rng(_run_seed(), state.picks_used)
 	_offer = RewardOfferGenerator.generate(state, get_catalog(), rng, pool.cards_per_pick if pool else 0)
 	_offer_open = not _offer.is_empty()
-	EventBus.reward_offered.emit(_offer, REROLLS_LEFT)
+	if _offer_open:
+		EventBus.reward_offered.emit(_offer, REROLLS_LEFT)
 	return _offer
 
 func get_current_offer() -> Array[Dictionary]:
@@ -50,13 +56,41 @@ func get_current_offer() -> Array[Dictionary]:
 func skip() -> bool:
 	if not _offer_open:
 		return false
+	_close_offer()
 	EventBus.reward_picked.emit(&"", SKIP_KIND, 0)
 	return true
 
-func _on_reward_picked(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
+## Takes one card of the open offer. False when no offer is open or card_id is not in it.
+func pick(card_id: StringName, kind: StringName, level: int) -> bool:
+	if not _offer_open or not _offer_has(card_id):
+		return false
+	_close_offer()
+	EventBus.reward_picked.emit(card_id, kind, level)
+	return true
+
+## Counts the pick before reward_picked goes out, so listeners already see the new picks_used.
+func _close_offer() -> void:
 	state.picks_used += 1
 	_offer_open = false
 	_offer = []
+
+func _offer_has(card_id: StringName) -> bool:
+	for card in _offer:
+		if card.get("id") == card_id:
+			return true
+	return false
+
+func _on_offer_requested() -> void:
+	if _offer_open:
+		EventBus.reward_offered.emit(_offer, REROLLS_LEFT)
+	elif has_offer():
+		offer_next()
+
+func _on_pick_requested(card_id: StringName, kind: StringName, level: int) -> void:
+	pick(card_id, kind, level)
+
+func _on_skip_requested() -> void:
+	skip()
 
 func _on_tower_built(_slot_id: StringName, type: StringName) -> void:
 	if heal_station_data != null and type == heal_station_data.id:

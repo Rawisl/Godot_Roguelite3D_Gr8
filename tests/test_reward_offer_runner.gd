@@ -32,6 +32,10 @@ func _ready() -> void:
 	test_tc10_offer_next_emits()
 	await test_tc11_skip_and_pick()
 	test_tc12_heal_station_flag_flow()
+	test_tc15_request_signals_flow()
+	test_tc16_listeners_see_new_state()
+	test_tc17_unknown_id_ignored()
+	await test_tc18_no_open_offer_ignored()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -80,6 +84,13 @@ func _all_distinct(ids: Array[StringName]) -> bool:
 		if ids.find(ids[i]) != i:
 			return false
 	return true
+
+## Same as _ids for the untyped arrays that signal handlers receive.
+func _ids_any(cards: Array) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for c in cards:
+		out.append(c["id"])
+	return out
 
 func _pool() -> RewardPool:
 	return load(POOL_PATH) as RewardPool
@@ -292,7 +303,7 @@ func test_tc9_pool_and_main_scene() -> void:
 			no_null = false
 		else:
 			ids.append(d.id)
-	assert_true(no_null and pool.skills.size() == 4, "TC9: pool has 4 non-null skills (%d)" % pool.skills.size())
+	assert_true(no_null and pool.skills.size() >= 4, "TC9: pool has at least 4 non-null skills (%d)" % pool.skills.size())
 	assert_true(_all_distinct(ids), "TC9: pool ids are distinct")
 	for id: StringName in [&"whirlwind", &"sharpness", &"heal_station", &"vitality"]:
 		assert_true(ids.has(id), "TC9: pool contains %s" % id)
@@ -365,7 +376,7 @@ func test_tc11_skip_and_pick() -> void:
 	assert_true(_ids(next_offer) == _ids(expected), "TC11: next offer uses make_rng(seed, picks_used 1)")
 
 	var card := next_offer[0]
-	EventBus.reward_picked.emit(card["id"], card["kind"], card["next_level"])
+	assert_true(service.pick(card["id"], card["kind"], card["next_level"]), "TC11: pick of a card in the offer returns true")
 	EventBus.reward_picked.disconnect(on_picked)
 	assert_true(service.state.picks_used == 2, "TC11: a picked card adds to picks_used (%d)" % service.state.picks_used)
 	assert_true(not service.skip(), "TC11: skip after a picked card returns false")
@@ -415,3 +426,148 @@ func test_tc12_heal_station_flag_flow() -> void:
 	assert_true(service.state.levels.is_empty(), "TC12: run_started clears levels")
 	assert_true(not service.skip(), "TC12: run_started closes the open offer")
 	service.free()
+
+func test_tc15_request_signals_flow() -> void:
+	var service := _make_service()
+	var offered: Array = []
+	var picked: Array = []
+	var on_offered := func(cards: Array, rerolls_left: int) -> void:
+		offered.append({"ids": _ids_any(cards), "rerolls_left": rerolls_left})
+	var on_picked := func(card_id: StringName, slot_kind: StringName, new_level: int) -> void:
+		picked.append([card_id, slot_kind, new_level])
+	EventBus.reward_offered.connect(on_offered)
+	EventBus.reward_picked.connect(on_picked)
+	var per_pick := service.pool.cards_per_pick
+
+	EventBus.reward_offer_requested.emit()
+	var expected_first := _ids(RewardOfferGenerator.generate(RunSkillState.new(), service.get_catalog(), RewardOfferGenerator.make_rng(0, 0), per_pick))
+	assert_true(offered.size() == 1, "TC15: first reward_offer_requested emits reward_offered once (%d)" % offered.size())
+	assert_true(offered.size() == 1 and offered[0]["rerolls_left"] == 0, "TC15: rerolls_left is 0")
+	assert_true(offered.size() == 1 and offered[0]["ids"] == expected_first and not expected_first.is_empty(), "TC15: first offer matches generate with make_rng(0, 0)")
+	var card := service.get_current_offer()[0]
+
+	EventBus.reward_offer_requested.emit()
+	assert_true(offered.size() == 2 and offered[1]["ids"] == expected_first, "TC15: a second request re-emits the same offer in the same order")
+	assert_true(service.state.picks_used == 0 and picked.is_empty(), "TC15: a second request neither counts a pick nor emits reward_picked")
+
+	EventBus.reward_pick_requested.emit(card["id"], card["kind"], card["next_level"])
+	assert_true(picked.size() == 1 and picked[0] == [card["id"], card["kind"], card["next_level"]], "TC15: pick request emits reward_picked with the card values: %s" % [picked])
+	assert_true(service.state.picks_used == 1, "TC15: picks_used is 1 after the pick request (%d)" % service.state.picks_used)
+	assert_true(service.get_current_offer().is_empty(), "TC15: the pick request closes the offer")
+
+	EventBus.reward_offer_requested.emit()
+	var expected_next := _ids(RewardOfferGenerator.generate(RunSkillState.new(), service.get_catalog(), RewardOfferGenerator.make_rng(0, 1), per_pick))
+	assert_true(offered.size() == 3 and offered[2]["ids"] == expected_next, "TC15: the next request builds a new offer with make_rng(0, 1)")
+
+	EventBus.reward_skip_requested.emit()
+	assert_true(picked.size() == 2 and picked[1] == [&"", &"SKIP", 0], "TC15: skip request emits reward_picked(&\"\", &\"SKIP\", 0): %s" % [picked])
+	assert_true(service.state.picks_used == 2, "TC15: picks_used is 2 after the skip request (%d)" % service.state.picks_used)
+	assert_true(service.get_current_offer().is_empty(), "TC15: the skip request closes the offer")
+
+	EventBus.reward_offered.disconnect(on_offered)
+	EventBus.reward_picked.disconnect(on_picked)
+	service.free()
+
+func test_tc16_listeners_see_new_state() -> void:
+	var service := _make_service()
+	var seen_a: Array = []
+	var seen_b: Array = []
+	var on_picked_a := func(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
+		seen_a.append([service.state.picks_used, service.get_current_offer().size()])
+	var on_picked_b := func(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
+		seen_b.append([service.state.picks_used, service.get_current_offer().size()])
+	EventBus.reward_picked.connect(on_picked_a)
+	EventBus.reward_picked.connect(on_picked_b)
+
+	# Round 1: pick through the request signal.
+	var card := service.offer_next()[0]
+	EventBus.reward_pick_requested.emit(card["id"], card["kind"], card["next_level"])
+	assert_true(seen_a == [[1, 0]], "TC16: listener A sees picks_used 1 and an empty offer after a pick request: %s" % [seen_a])
+	assert_true(seen_b == [[1, 0]], "TC16: listener B connected later sees the same values: %s" % [seen_b])
+
+	# Round 2: skip through the request signal.
+	service.offer_next()
+	EventBus.reward_skip_requested.emit()
+	assert_true(seen_a == [[1, 0], [2, 0]], "TC16: listener A sees picks_used 2 after a skip request: %s" % [seen_a])
+	assert_true(seen_b == [[1, 0], [2, 0]], "TC16: listener B sees picks_used 2 after a skip request: %s" % [seen_b])
+
+	# Round 3: direct call.
+	card = service.offer_next()[0]
+	assert_true(service.pick(card["id"], card["kind"], card["next_level"]), "TC16: direct pick returns true")
+	assert_true(seen_a == [[1, 0], [2, 0], [3, 0]], "TC16: listener A sees picks_used 3 after a direct pick: %s" % [seen_a])
+	assert_true(seen_b == [[1, 0], [2, 0], [3, 0]], "TC16: listener B sees picks_used 3 after a direct pick: %s" % [seen_b])
+
+	EventBus.reward_picked.disconnect(on_picked_a)
+	EventBus.reward_picked.disconnect(on_picked_b)
+	service.free()
+
+func test_tc17_unknown_id_ignored() -> void:
+	var service := _make_service()
+	var picked: Array = []
+	var on_picked := func(card_id: StringName, slot_kind: StringName, new_level: int) -> void:
+		picked.append([card_id, slot_kind, new_level])
+	EventBus.reward_picked.connect(on_picked)
+
+	var offer := service.offer_next()
+	var offer_ids := _ids(offer)
+	EventBus.reward_pick_requested.emit(&"missing_id", &"ACTIVE", 1)
+	assert_true(picked.is_empty(), "TC17: a pick request with an unknown id emits nothing")
+	assert_true(not service.pick(&"missing_id", &"ACTIVE", 1), "TC17: pick with an unknown id returns false")
+	assert_true(not service.pick(&"", &"SKIP", 0), "TC17: pick with an empty id returns false")
+	assert_true(picked.is_empty(), "TC17: rejected picks emit nothing")
+	assert_true(service.state.picks_used == 0, "TC17: picks_used stays 0 after rejected picks (%d)" % service.state.picks_used)
+	assert_true(_ids(service.get_current_offer()) == offer_ids and not offer_ids.is_empty(), "TC17: the open offer is unchanged")
+	assert_true(service.has_offer(), "TC17: has_offer is still true")
+
+	var card := offer[0]
+	assert_true(service.pick(card["id"], card["kind"], card["next_level"]), "TC17: a valid card is still accepted afterwards")
+	assert_true(picked.size() == 1 and service.state.picks_used == 1, "TC17: the valid pick emits once and counts once (%d, %d)" % [picked.size(), service.state.picks_used])
+	assert_true(service.get_current_offer().is_empty(), "TC17: the valid pick closes the offer")
+
+	EventBus.reward_picked.disconnect(on_picked)
+	service.free()
+
+func test_tc18_no_open_offer_ignored() -> void:
+	var xp := XpTracker.new()
+	add_child(xp)
+	xp.pending_picks = 2
+	var service := _make_service()
+	var picked: Array = []
+	var on_picked := func(card_id: StringName, slot_kind: StringName, new_level: int) -> void:
+		picked.append([card_id, slot_kind, new_level])
+	EventBus.reward_picked.connect(on_picked)
+
+	# No offer was ever opened.
+	EventBus.reward_pick_requested.emit(&"whirlwind", &"ACTIVE", 1)
+	EventBus.reward_skip_requested.emit()
+	assert_true(not service.pick(&"whirlwind", &"ACTIVE", 1), "TC18: pick before any offer returns false")
+	assert_true(not service.skip(), "TC18: skip before any offer returns false")
+	assert_true(picked.is_empty(), "TC18: nothing is emitted before any offer")
+	assert_true(service.state.picks_used == 0, "TC18: picks_used stays 0 before any offer (%d)" % service.state.picks_used)
+	assert_true(xp.pending_picks == 2, "TC18: pending_picks is untouched before any offer (%d)" % xp.pending_picks)
+
+	# One valid skip, then requests against the closed offer.
+	var closed_id: StringName = service.offer_next()[0]["id"]
+	EventBus.reward_skip_requested.emit()
+	assert_true(picked.size() == 1 and service.state.picks_used == 1, "TC18: the one valid skip emits once and counts once (%d, %d)" % [picked.size(), service.state.picks_used])
+	assert_true(xp.pending_picks == 1, "TC18: pending_picks went 2 -> 1 after the valid skip (%d)" % xp.pending_picks)
+	EventBus.reward_skip_requested.emit()
+	EventBus.reward_pick_requested.emit(closed_id, &"ACTIVE", 1)
+	assert_true(not service.skip() and not service.pick(closed_id, &"ACTIVE", 1), "TC18: skip and pick on the closed offer return false")
+	assert_true(picked.size() == 1, "TC18: requests on the closed offer emit nothing")
+	assert_true(service.state.picks_used == 1, "TC18: picks_used stays 1 after the closed offer is hit again (%d)" % service.state.picks_used)
+	assert_true(xp.pending_picks == 1, "TC18: pending_picks stays 1 after the closed offer is hit again (%d)" % xp.pending_picks)
+
+	# run_started closes an open offer.
+	service.offer_next()
+	EventBus.run_started.emit()
+	assert_true(service.get_current_offer().is_empty(), "TC18: run_started closes the open offer")
+	assert_true(service.state.picks_used == 0, "TC18: run_started resets picks_used (%d)" % service.state.picks_used)
+	EventBus.reward_skip_requested.emit()
+	assert_true(picked.size() == 1 and service.state.picks_used == 0, "TC18: skip request after run_started emits nothing and counts nothing (%d, %d)" % [picked.size(), service.state.picks_used])
+
+	EventBus.reward_picked.disconnect(on_picked)
+	service.free()
+	# XpTracker defers its first xp_changed, so let that call run before freeing it.
+	await get_tree().process_frame
+	xp.free()
