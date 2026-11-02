@@ -1,6 +1,6 @@
 extends Node3D
 
-## Automated Verification Suite for Phase 1 (Data & Assets) & Phase 2 (AI Targeting ETG-01..07)
+## Automated Verification Suite for Phase 1 (Data & Assets) & Phase 2 (AI Targeting)
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -48,7 +48,7 @@ func assert_eq(val1: Variant, val2: Variant, message: String) -> void:
 # GROUP 1: Resource Validation
 # ==============================================================================
 func test_group_1_resource_validation() -> void:
-	print("[GROUP 1] Testing EnemyData Resources (SRS 3.7.1, 3.7.3)")
+	print("[GROUP 1] Testing EnemyData Resources")
 
 	var grunt_data: EnemyData = load("res://data/enemies/grunt.tres")
 	assert_true(grunt_data != null, "grunt.tres loaded")
@@ -173,10 +173,10 @@ func test_group_3_kaykit_facing_direction() -> void:
 	grunt.free()
 
 # ==============================================================================
-# GROUP 4: ETG-01 Wall Tower Exclusion for Melee
+# GROUP 4: Wall Tower Exclusion for Melee
 # ==============================================================================
 func test_group_4_melee_wall_tower_exclusion() -> void:
-	print("\n[GROUP 4] Testing Melee Cannot Target Wall Tower (ETG-01)")
+	print("\n[GROUP 4] Testing Melee Cannot Target Wall Tower")
 
 	var wall_tower := StaticBody3D.new()
 	wall_tower.name = "WallTower"
@@ -213,7 +213,7 @@ func test_group_4_melee_wall_tower_exclusion() -> void:
 # GROUP 5: Grunt Priority (Barricade before Tower)
 # ==============================================================================
 func test_group_5_grunt_barricade_before_tower() -> void:
-	print("\n[GROUP 5] Testing Grunt Chooses Barricade Before Ground Tower (SRS 3.7.3)")
+	print("\n[GROUP 5] Testing Grunt Chooses Barricade Before Ground Tower")
 
 	var ground_tower := StaticBody3D.new()
 	ground_tower.name = "GroundTower"
@@ -401,10 +401,10 @@ func test_group_7_brute_straight_to_fortress() -> void:
 	brute.free()
 
 # ==============================================================================
-# GROUP 8: Tie-Break Rule (ETG-07)
+# GROUP 8: Tie-Break Rule
 # ==============================================================================
 func test_group_8_tie_break_rule() -> void:
-	print("\n[GROUP 8] Testing Deterministic Tie-Break (ETG-07)")
+	print("\n[GROUP 8] Testing Deterministic Tie-Break")
 
 	var tower_a := StaticBody3D.new()
 	tower_a.name = "TowerA"
