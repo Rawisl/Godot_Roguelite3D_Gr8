@@ -276,6 +276,8 @@ func _do_repair_fortress(step_ratio: float) -> bool:
 	if result.heal <= 0:
 		return false
 	var used: int = result.cost
+	# Cannot fail: the Fortress spends at most the cost budget, and can_afford(cost) passed above
+	# inside the same locked transaction. The warning only guards a future change to that contract.
 	if not gold.try_spend(used):
 		push_warning("BuildService: repair cost %d no longer affordable" % used)
 		return false
