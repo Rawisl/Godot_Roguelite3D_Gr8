@@ -46,7 +46,7 @@ script = ExtResource("4_dg77c")
 
 [node name="Effects" type="Node3D" parent="Gameplay" unique_id=74705817]
 
-[node name="RewardService" type="Node" parent="Gameplay" unique_id=1928374650]
+[node name="RewardService" type="Node" parent="Gameplay" unique_id=1533692419]
 script = ExtResource("20_reward_service")
 pool = ExtResource("21_reward_pool")
 
