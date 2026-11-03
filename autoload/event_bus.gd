@@ -66,6 +66,7 @@ signal tower_sold(slot_id: StringName)
 signal tower_destroyed(slot_id: StringName)
 signal tower_priority_changed(slot_id: StringName, priority: StringName)
 signal tower_immunity_changed(slot_id: StringName, is_immune: bool)
+signal heal_tower_hp_changed(slot_id: StringName, new_hp: int, max_hp: int)  # Heal station store, at most 10 times a second
 signal build_denied(reason: StringName, shortfall: int)
 signal projectile_hit(target: Node, amount: int, damage_type: StringName, resist: float)
 #------------------------------------------------------#
