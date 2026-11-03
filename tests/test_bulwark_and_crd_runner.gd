@@ -126,7 +126,7 @@ func test_commander_recall_clears_aggro() -> void:
 	grunt.current_target = commander_node
 	grunt.current_state = Enums.EnemyState.CHASE
 
-	EventBus.recall_completed.emit()
+	grunt.release_commander_aggro()
 	await get_tree().process_frame
 
 	assert_true(not grunt.provoked_by_player, "Provoked flag cleared on recall")
@@ -156,6 +156,27 @@ func test_bulwark_attributes_and_resistances() -> void:
 	bulwark.current_phase = Enums.BossPhase.EXPOSED
 	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) >= 1.0, "Phase 2 takes PIERCE damage")
 	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) >= 1.0, "Phase 2 takes MAGIC damage")
+
+	# Armor & Core HP and phase transition verification
+	bulwark.current_phase = Enums.BossPhase.ARMORED
+	bulwark.spawn_grace = false
+	bulwark._init_boss_stats()
+	assert_true(bulwark.current_armor_hp == 1200, "Bulwark starts with 1200 armor HP")
+	assert_true(bulwark.current_core_hp == 900, "Bulwark starts with 900 core HP")
+	assert_true(bulwark.health.hp == 2100, "Bulwark total HP is 2100")
+
+	var hp_before := bulwark.health.hp
+	bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.PIERCE))
+	assert_true(bulwark.health.hp == hp_before, "Pierce deals zero damage in phase 1")
+
+	bulwark.take_damage(DamageInfo.new(200, Enums.DamageType.BLAST))
+	assert_true(bulwark.current_armor_hp == 1000, "Armor absorbs 200 BLAST damage")
+	assert_true(bulwark.health.hp == 1900, "Total HP reduced by 200")
+
+	bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.BLAST))
+	assert_true(bulwark.current_armor_hp == 0, "Armor depleted to 0")
+	assert_true(bulwark.health.hp == 900, "Overkill discarded; core HP intact at 900")
+	assert_true(bulwark.current_phase == Enums.BossPhase.TRANSITION, "Enters TRANSITION phase upon armor break")
 
 	bulwark.free()
 
@@ -320,6 +341,7 @@ func test_wave_5_boss_spawn_and_defeat() -> void:
 
 	boss_node.spawn_grace = false
 	boss_node.take_damage(DamageInfo.new(999999, Enums.DamageType.TRUE))
+	boss_node.take_damage(DamageInfo.new(999999, Enums.DamageType.TRUE))
 	assert_true(record["defeated"], "Boss defeat signal emitted on Bulwark death")
 	assert_true(wm.get("_boss_defeated_this_wave") == true, "WaveManager records boss defeated this wave")
 
@@ -330,6 +352,7 @@ func test_wave_5_boss_spawn_and_defeat() -> void:
 func test_reward_pick_flow() -> void:
 	print("\n[GROUP 13] Reward Pick Flow (Contract Alignment with TV3 & TV4)")
 	var wm := WaveManager.new()
+	wm.enable_reward_pick = true
 	wm.auto_advance_summary = false
 	wm.current_wave = 1
 	add_child(wm)

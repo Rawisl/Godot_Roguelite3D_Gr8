@@ -18,6 +18,7 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var spawn_interval: float = 0.6
 @export var default_wave_1_count: int = 8
 @export var auto_advance_summary: bool = true
+@export var enable_reward_pick: bool = false
 
 var current_wave: int = 1
 var wave_state: Enums.WaveState = Enums.WaveState.PREP
@@ -55,12 +56,12 @@ var _clear_time: float = 0.0
 var _first_enemy_spawned: bool = false
 var _is_run_lost: bool = false
 var _boss_defeated_this_wave: bool = false
+var _boss_instance: Enemy = null
 
 var _xp_tracker: Node = null
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group(&"wave_manager")
 	EventBus.early_call_requested.connect(_on_early_call_requested)
 	EventBus.enemy_died.connect(_on_enemy_died)
@@ -93,6 +94,7 @@ func _exit_tree() -> void:
 
 func _on_boss_defeated() -> void:
 	_boss_defeated_this_wave = true
+	_boss_instance = null
 
 
 func _setup_xp_tracker() -> void:
@@ -155,6 +157,7 @@ func start_prep() -> void:
 	_clear_time = 0.0
 	_first_enemy_spawned = false
 	_boss_defeated_this_wave = false
+	_boss_instance = null
 
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"PREP")
@@ -397,7 +400,8 @@ func _physics_process(delta: float) -> void:
 				_combat_timer += delta
 			spawn_timer += delta
 			if spawn_timer >= _next_spawn_delay and not spawn_queue.is_empty():
-				if enemies_alive < GameConfig.max_alive:
+				var non_boss_count: int = enemies_alive - (1 if (_boss_instance != null and is_instance_valid(_boss_instance)) else 0)
+				if non_boss_count < GameConfig.max_alive:
 					_try_spawn_next_enemy()
 
 		Enums.WaveState.SUMMARY:
@@ -637,7 +641,7 @@ func advance_from_summary() -> void:
 	_cleanup_projectiles()
 
 	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
-	if pending > 0:
+	if enable_reward_pick and pending > 0:
 		start_reward_pick()
 	else:
 		advance_to_next_wave()
@@ -697,6 +701,7 @@ func _spawn_boss() -> void:
 	else:
 		add_child(boss_inst)
 
+	_boss_instance = boss_inst
 	_first_enemy_spawned = true
 	enemies_alive += 1
 	total_wave_enemies += 1

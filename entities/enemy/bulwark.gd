@@ -1,6 +1,8 @@
 class_name Bulwark
 extends Enemy
 
+const WALK_ANIM_BASE_SPEED: float = 1.42
+
 var stomp_damage: int:
 	get:
 		var boss_data := data as BossData
@@ -28,11 +30,43 @@ var stomp_stun_duration: float:
 		return boss_data.stomp_stun_duration if boss_data != null else 1.5
 
 var current_phase: Enums.BossPhase = Enums.BossPhase.ARMORED
+var current_armor_hp: int = 1200
+var max_armor_hp: int = 1200
+var current_core_hp: int = 900
+var max_core_hp: int = 900
+var phase_broken: bool = false
+
+var _cached_boss_melee_point: Node3D = null
 
 
 func _ready() -> void:
 	super._ready()
 	add_to_group(&"boss")
+	_init_boss_stats()
+
+
+func _init_boss_stats() -> void:
+	var boss_data := data as BossData
+	if boss_data != null:
+		max_armor_hp = boss_data.get_scaled_armor_hp(wave_hp_mult)
+		current_armor_hp = max_armor_hp
+		max_core_hp = boss_data.get_scaled_core_hp(wave_hp_mult)
+		current_core_hp = max_core_hp
+		if health != null:
+			health.max_hp = max_armor_hp + max_core_hp
+			health.hp = health.max_hp
+
+
+func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave_num: int = 1, p_scale_config: ScaleConfig = null) -> void:
+	super.apply_wave_scale(hp_mult, dmg_mult, p_speed_mult, wave_num, p_scale_config)
+	_init_boss_stats()
+
+
+func _physics_process(delta: float) -> void:
+	if current_phase == Enums.BossPhase.TRANSITION:
+		velocity = Vector3.ZERO
+		return
+	super._physics_process(delta)
 
 
 func get_resist(dmg_type: Enums.DamageType) -> float:
@@ -40,6 +74,79 @@ func get_resist(dmg_type: Enums.DamageType) -> float:
 	if boss_data == null:
 		return 1.0
 	return boss_data.get_resist(dmg_type, current_phase)
+
+
+func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
+	if is_dead or spawn_grace:
+		return
+
+	var info: DamageInfo = null
+	if damage_input is DamageInfo:
+		info = damage_input
+	elif damage_input is int:
+		info = DamageInfo.new(damage_input, p_damage_type)
+
+	if info == null:
+		return
+
+	if info.source != null and is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
+		provoked_by_player = true
+		provoked_timer = GameConfig.aggro_duration
+
+	var resist: float = get_resist(info.damage_type)
+	if resist <= 0.0:
+		return
+
+	var effective_damage: int = int(round(float(info.amount) * resist))
+	if effective_damage <= 0:
+		return
+
+	match current_phase:
+		Enums.BossPhase.ARMORED:
+			if effective_damage >= current_armor_hp:
+				var absorbed := current_armor_hp
+				current_armor_hp = 0
+				if health != null:
+					health.hp = current_core_hp
+					health.hp_changed.emit(health.hp, health.max_hp)
+					health.damaged.emit(absorbed, info)
+				_start_armor_break_transition()
+			else:
+				current_armor_hp -= effective_damage
+				if health != null:
+					health.hp = current_core_hp + current_armor_hp
+					health.hp_changed.emit(health.hp, health.max_hp)
+					health.damaged.emit(effective_damage, info)
+
+		Enums.BossPhase.TRANSITION, Enums.BossPhase.EXPOSED:
+			current_core_hp = maxi(0, current_core_hp - effective_damage)
+			if health != null:
+				health.hp = current_core_hp
+				health.hp_changed.emit(health.hp, health.max_hp)
+				health.damaged.emit(effective_damage, info)
+				if current_core_hp == 0:
+					health.died.emit()
+
+
+func _start_armor_break_transition() -> void:
+	if phase_broken:
+		return
+	phase_broken = true
+	current_phase = Enums.BossPhase.TRANSITION
+
+	var boss_data := data as BossData
+	var dur: float = boss_data.transition_duration if boss_data != null else 2.5
+	var timer := get_tree().create_timer(dur)
+	timer.timeout.connect(_on_transition_finished)
+
+
+func _on_transition_finished() -> void:
+	if is_dead:
+		return
+	current_phase = Enums.BossPhase.EXPOSED
+	var boss_data := data as BossData
+	if boss_data != null:
+		speed_multiplier = wave_speed_mult * boss_data.phase2_speed_mult
 
 
 func _on_died() -> void:
@@ -58,7 +165,20 @@ func _get_attack_interval() -> float:
 	var boss_data := data as BossData
 	if boss_data == null:
 		return 2.5
-	return boss_data.stomp_cadence_phase2 if current_phase == Enums.BossPhase.EXPOSED else boss_data.stomp_cadence_phase1
+	if current_phase == Enums.BossPhase.EXPOSED:
+		return boss_data.attack_interval / maxf(0.1, boss_data.phase2_attack_rate_mult)
+	return boss_data.attack_interval
+
+
+func _play_locomotion_anim() -> void:
+	if anim_player == null:
+		return
+	var walk_clip: StringName = data.anim_walk if (data != null and not data.anim_walk.is_empty()) else &"move/Walking_A"
+	if anim_player.has_animation(walk_clip):
+		var base_speed: float = data.move_speed if data != null else 1.6
+		var target_speed: float = base_speed * speed_multiplier
+		anim_player.speed_scale = target_speed / WALK_ANIM_BASE_SPEED
+		anim_player.play(walk_clip)
 
 
 func _play_attack_anim() -> void:
@@ -71,7 +191,9 @@ func _play_attack_anim() -> void:
 func _execute_attack_action() -> void:
 	execute_stomp()
 	if current_phase == Enums.BossPhase.EXPOSED and anim_player != null and anim_player.is_playing():
-		anim_player.speed_scale = 1.87
+		var recovery_time: float = _get_attack_interval() - _get_attack_windup() - 0.15
+		var recovery_speed: float = (2.37 - 0.97) / maxf(0.1, recovery_time)
+		anim_player.speed_scale = recovery_speed
 
 
 func execute_stomp() -> void:
@@ -82,7 +204,9 @@ func execute_stomp() -> void:
 	if tree == null:
 		return
 
-	EventBus.screen_shake_requested.emit(0.6, &"stomp")
+	var boss_data := data as BossData
+	var shake: float = boss_data.stomp_screen_shake if boss_data != null else 0.6
+	EventBus.screen_shake_requested.emit(shake, &"stomp")
 
 	var radius := stomp_radius
 	var stomp_pos := global_position
@@ -129,14 +253,15 @@ func execute_stomp() -> void:
 
 func _get_attack_point(t: Node3D) -> Vector3:
 	if t != null and is_instance_valid(t) and t.is_in_group(&"fortress"):
-		var bmp := get_tree().get_first_node_in_group(&"boss_melee_point") as Node3D
-		if bmp == null:
-			var root := get_tree().current_scene
-			if root != null:
-				bmp = root.find_child("BossMeleePoint", true, false) as Node3D
-		if bmp != null and is_instance_valid(bmp):
-			return bmp.global_position
-		return Vector3(-6.5, 0.0, 0.0)
+		if _cached_boss_melee_point == null or not is_instance_valid(_cached_boss_melee_point):
+			_cached_boss_melee_point = get_tree().get_first_node_in_group(&"boss_melee_point") as Node3D
+			if _cached_boss_melee_point == null:
+				var root := get_tree().current_scene
+				if root != null:
+					_cached_boss_melee_point = root.find_child("BossMeleePoint", true, false) as Node3D
+		if _cached_boss_melee_point != null and is_instance_valid(_cached_boss_melee_point):
+			return _cached_boss_melee_point.global_position
+		return t.global_position
 	return super._get_attack_point(t)
 
 

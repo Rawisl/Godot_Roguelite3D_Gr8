@@ -9,7 +9,7 @@
 script = ExtResource("2_j8uxv")
 data = ExtResource("2_5mda6")
 
-[node name="BossBulwarkModel" parent="Model" index="0" instance=ExtResource("3_bulwark_model")]
+[node name="BossBulwarkModel" parent="Model" index="0" unique_id=1849204812 instance=ExtResource("3_bulwark_model")]
 
 [node name="PhaseController" type="Node" parent="." index="6" unique_id=1288198212]
 

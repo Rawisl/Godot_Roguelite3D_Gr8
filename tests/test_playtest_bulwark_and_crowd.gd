@@ -140,11 +140,15 @@ func toggle_bulwark_phase() -> void:
 		return
 
 	if _bulwark_instance.current_phase == Enums.BossPhase.ARMORED:
+		_bulwark_instance.current_armor_hp = 0
 		_bulwark_instance.current_phase = Enums.BossPhase.EXPOSED
-		_log_event("Bulwark switched to Phase: EXPOSED (Piercing/Magic vulnerabilities active).")
+		_bulwark_instance.health.hp = _bulwark_instance.current_core_hp
+		_log_event("Bulwark switched to Phase: EXPOSED (Pierce/Magic vulnerabilities active).")
 	else:
 		_bulwark_instance.current_phase = Enums.BossPhase.ARMORED
-		_log_event("Bulwark switched to Phase: ARMORED (Immune to Piercing & Magic).")
+		_bulwark_instance.current_armor_hp = _bulwark_instance.max_armor_hp
+		_bulwark_instance.health.hp = _bulwark_instance.max_armor_hp + _bulwark_instance.current_core_hp
+		_log_event("Bulwark switched to Phase: ARMORED (Immune to Pierce & Magic).")
 
 
 func test_damage_bulwark(type: Enums.DamageType, amount: int = 30) -> void:
@@ -290,6 +294,7 @@ func start_wave_5_combat() -> void:
 func trigger_reward_pick_simulation(picks: int = 2) -> void:
 	if wave_manager == null:
 		return
+	wave_manager.enable_reward_pick = true
 	var tracker := wave_manager.get("_xp_tracker") as Node
 	if tracker != null:
 		tracker.set("pending_picks", picks)
@@ -333,9 +338,11 @@ func _update_status_display() -> void:
 
 	var boss_info := "BULWARK: Not Spawned"
 	if _bulwark_instance != null and is_instance_valid(_bulwark_instance) and not _bulwark_instance.is_dead:
-		var phase_str: String = "EXPOSED" if _bulwark_instance.current_phase == Enums.BossPhase.EXPOSED else "ARMORED"
-		boss_info = "BULWARK: HP %d | Phase: %s | Pierce: %.1f | Magic: %.1f" % [
+		var phase_str: String = Enums.BossPhase.keys()[_bulwark_instance.current_phase]
+		boss_info = "BULWARK: Total HP %d (Armor %d, Core %d) | Phase: %s | Pierce: %.1f | Magic: %.1f" % [
 			_bulwark_instance.health.hp,
+			_bulwark_instance.current_armor_hp,
+			_bulwark_instance.current_core_hp,
 			phase_str,
 			_bulwark_instance.get_resist(Enums.DamageType.PIERCE),
 			_bulwark_instance.get_resist(Enums.DamageType.MAGIC)

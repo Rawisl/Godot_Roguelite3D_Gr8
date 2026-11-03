@@ -129,9 +129,6 @@ func _ready() -> void:
 		EventBus.tower_destroyed.connect(func(_slot_id): invalidate_node_cache())
 		EventBus.tower_sold.connect(func(_slot_id): invalidate_node_cache())
 
-	if EventBus != null and not EventBus.recall_completed.is_connected(_on_commander_recall_completed):
-		EventBus.recall_completed.connect(_on_commander_recall_completed)
- 
 	# Phase-offset timers to prevent frame spikes across groups
 	_path_timer = randf_range(0.0, PATH_UPDATE_INTERVAL)
 	_retarget_timer = randf_range(0.0, GameConfig.retarget_interval)
@@ -167,17 +164,6 @@ func _ready() -> void:
 	_setup_navigation.call_deferred()
 
 
-func _exit_tree() -> void:
-	if EventBus != null and EventBus.recall_completed.is_connected(_on_commander_recall_completed):
-		EventBus.recall_completed.disconnect(_on_commander_recall_completed)
-
-
-func _on_commander_recall_completed() -> void:
-	if is_dead:
-		return
-	if current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"commander"):
-		release_commander_aggro()
- 
 func _setup_anim_player() -> void:
 	anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
 	_update_anim_speed()
