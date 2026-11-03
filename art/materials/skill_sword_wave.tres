@@ -1,0 +1,20 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://nio3kh3yy180"]
+
+[ext_resource type="Shader" uid="uid://bwongdrumudqa" path="res://art/shaders/skill_sword_wave.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "skill_sword_wave"
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/core_color = Color(0.95, 0.97, 1, 1)
+shader_parameter/tail_color = Color(0.61, 0.77, 0.94, 0.8)
+shader_parameter/bulge = 0.9
+shader_parameter/head_thickness = 0.7
+shader_parameter/head_fade = 0.6
+shader_parameter/tail_length = 3.5
+shader_parameter/body_alpha = 0.45
+shader_parameter/end_fade = 0.4
+shader_parameter/streak_density = 5.0
+shader_parameter/streak_breakup = 0.3
+shader_parameter/streak_min_length = 0.25
+shader_parameter/edge_softness = 0.04

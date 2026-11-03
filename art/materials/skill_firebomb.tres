@@ -1,0 +1,6 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b8ujckui04a6r"]
+
+[resource]
+resource_name = "skill_firebomb"
+shading_mode = 0
+albedo_color = Color(1, 0.7, 0.28, 1)
