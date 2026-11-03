@@ -27,7 +27,7 @@ var stomp_knockback: float:
 var stomp_stun_duration: float:
 	get:
 		var boss_data := data as BossData
-		return boss_data.stomp_stun_duration if boss_data != null else 1.5
+		return boss_data.stomp_stun_duration if boss_data != null else 0.0
 
 var current_phase: Enums.BossPhase = Enums.BossPhase.ARMORED
 var current_armor_hp: int = 1200
@@ -36,6 +36,7 @@ var current_core_hp: int = 900
 var max_core_hp: int = 900
 var phase_broken: bool = false
 
+var _transition_timer: float = 0.0
 var _cached_boss_melee_point: Node3D = null
 
 
@@ -55,6 +56,8 @@ func _init_boss_stats() -> void:
 		if health != null:
 			health.max_hp = max_armor_hp + max_core_hp
 			health.hp = health.max_hp
+		EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
+		EventBus.boss_phase_changed.emit(_get_phase_name())
 
 
 func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave_num: int = 1, p_scale_config: ScaleConfig = null) -> void:
@@ -65,6 +68,9 @@ func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave
 func _physics_process(delta: float) -> void:
 	if current_phase == Enums.BossPhase.TRANSITION:
 		velocity = Vector3.ZERO
+		_transition_timer -= delta
+		if _transition_timer <= 0.0:
+			_on_transition_finished()
 		return
 	super._physics_process(delta)
 
@@ -101,6 +107,10 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 	if effective_damage <= 0:
 		return
 
+	if effective_damage >= 1 and health != null and not health.hit_by_commander:
+		if info != null and (info.hit_by_commander or info.is_from_commander()):
+			health.hit_by_commander = true
+
 	match current_phase:
 		Enums.BossPhase.ARMORED:
 			if effective_damage >= current_armor_hp:
@@ -110,6 +120,7 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 					health.hp = current_core_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
 					health.damaged.emit(absorbed, info)
+				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 				_start_armor_break_transition()
 			else:
 				current_armor_hp -= effective_damage
@@ -117,6 +128,7 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 					health.hp = current_core_hp + current_armor_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
 					health.damaged.emit(effective_damage, info)
+				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 
 		Enums.BossPhase.TRANSITION, Enums.BossPhase.EXPOSED:
 			current_core_hp = maxi(0, current_core_hp - effective_damage)
@@ -126,6 +138,7 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 				health.damaged.emit(effective_damage, info)
 				if current_core_hp == 0:
 					health.died.emit()
+			EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 
 
 func _start_armor_break_transition() -> void:
@@ -135,9 +148,9 @@ func _start_armor_break_transition() -> void:
 	current_phase = Enums.BossPhase.TRANSITION
 
 	var boss_data := data as BossData
-	var dur: float = boss_data.transition_duration if boss_data != null else 2.5
-	var timer := get_tree().create_timer(dur)
-	timer.timeout.connect(_on_transition_finished)
+	_transition_timer = boss_data.transition_duration if boss_data != null else 2.5
+	EventBus.boss_phase_changed.emit(&"TRANSITION")
+	EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, &"TRANSITION")
 
 
 func _on_transition_finished() -> void:
@@ -147,11 +160,25 @@ func _on_transition_finished() -> void:
 	var boss_data := data as BossData
 	if boss_data != null:
 		speed_multiplier = wave_speed_mult * boss_data.phase2_speed_mult
+	EventBus.boss_phase_changed.emit(&"EXPOSED")
+	EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, &"EXPOSED")
+
+
+func _get_phase_name() -> StringName:
+	match current_phase:
+		Enums.BossPhase.ARMORED:
+			return &"ARMORED"
+		Enums.BossPhase.TRANSITION:
+			return &"TRANSITION"
+		Enums.BossPhase.EXPOSED:
+			return &"EXPOSED"
+	return &"ARMORED"
 
 
 func _on_died() -> void:
 	if is_dead:
 		return
+	EventBus.boss_hp_changed.emit(0, 0, _get_phase_name())
 	super._on_died()
 	EventBus.boss_defeated.emit()
 

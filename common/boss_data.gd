@@ -43,7 +43,7 @@ func _init() -> void:
 @export var stomp_damage: int = 45
 @export var stomp_radius: float = 3.0
 @export var stomp_knockback: float = 3.0
-@export var stomp_stun_duration: float = 1.5
+@export var stomp_stun_duration: float = 0.0
 @export var stomp_windup: float = 1.0
 @export var stomp_screen_shake: float = 0.6
 

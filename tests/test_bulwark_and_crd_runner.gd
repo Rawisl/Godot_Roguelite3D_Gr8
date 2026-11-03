@@ -145,7 +145,7 @@ func test_bulwark_attributes_and_resistances() -> void:
 	assert_true(bulwark.stomp_damage == 45, "Bulwark stomp damage is 45")
 	assert_true(bulwark.stomp_radius == 3.0, "Bulwark stomp radius is 3.0")
 	assert_true(bulwark.stomp_knockback == 3.0, "Bulwark stomp knockback is 3.0")
-	assert_true(bulwark.stomp_stun_duration == 1.5, "Bulwark stomp stun duration is 1.5")
+	assert_true(bulwark.stomp_stun_duration == 0.0, "Bulwark stomp stun duration default is 0.0")
 	assert_true(bulwark.data.knockback_immune == true, "Bulwark is knockback immune")
 
 	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) <= 0.0, "Phase 1 immune to PIERCE")
@@ -164,19 +164,34 @@ func test_bulwark_attributes_and_resistances() -> void:
 	assert_true(bulwark.current_armor_hp == 1200, "Bulwark starts with 1200 armor HP")
 	assert_true(bulwark.current_core_hp == 900, "Bulwark starts with 900 core HP")
 	assert_true(bulwark.health.hp == 2100, "Bulwark total HP is 2100")
+	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander initially false")
 
 	var hp_before := bulwark.health.hp
 	bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.PIERCE))
 	assert_true(bulwark.health.hp == hp_before, "Pierce deals zero damage in phase 1")
+	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander remains false on zero damage")
 
-	bulwark.take_damage(DamageInfo.new(200, Enums.DamageType.BLAST))
-	assert_true(bulwark.current_armor_hp == 1000, "Armor absorbs 200 BLAST damage")
-	assert_true(bulwark.health.hp == 1900, "Total HP reduced by 200")
+	bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.BLAST))
+	assert_true(bulwark.current_armor_hp == 1100, "Armor absorbs 100 BLAST damage")
+	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander false for non-commander damage")
+
+	var cmd_damage := DamageInfo.new(100, Enums.DamageType.BLAST)
+	cmd_damage.hit_by_commander = true
+	bulwark.take_damage(cmd_damage)
+	assert_true(bulwark.current_armor_hp == 1000, "Armor absorbs commander BLAST damage")
+	assert_true(bulwark.health.hit_by_commander == true, "Bulwark hit_by_commander true after commander damage")
+
+	var phase_data := {}
+	var on_phase_changed := func(phase: StringName) -> void:
+		phase_data["phase"] = phase
+	EventBus.boss_phase_changed.connect(on_phase_changed)
 
 	bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.BLAST))
 	assert_true(bulwark.current_armor_hp == 0, "Armor depleted to 0")
 	assert_true(bulwark.health.hp == 900, "Overkill discarded; core HP intact at 900")
 	assert_true(bulwark.current_phase == Enums.BossPhase.TRANSITION, "Enters TRANSITION phase upon armor break")
+	assert_true(phase_data.get("phase") == &"TRANSITION", "boss_phase_changed emitted TRANSITION")
+	EventBus.boss_phase_changed.disconnect(on_phase_changed)
 
 	bulwark.free()
 
@@ -270,7 +285,13 @@ func test_bulwark_stomp_commander_interaction() -> void:
 	bulwark.execute_stomp()
 	assert_true(cmd_mock.damage_taken == 45, "Commander takes 45 BLAST damage")
 	assert_true(cmd_mock.knockback_taken == 3.0, "Commander receives 3.0 knockback")
-	assert_true(cmd_mock.stun_duration == 1.5, "Commander receives 1.5s stun")
+	assert_true(cmd_mock.stun_duration == 0.0, "Commander receives zero stun by default")
+
+	var boss_data := bulwark.data.duplicate() as BossData
+	boss_data.stomp_stun_duration = 1.5
+	bulwark.data = boss_data
+	bulwark.execute_stomp()
+	assert_true(cmd_mock.stun_duration == 1.5, "Commander receives 1.5s stun when configured")
 
 	cmd_mock.free()
 	bulwark.free()
@@ -281,6 +302,10 @@ func test_bulwark_stomp_dodge_evasion() -> void:
 	var bulwark := BULWARK_SCENE.instantiate() as Bulwark
 	bulwark.position = Vector3(0.0, 0.0, 0.0)
 	add_child(bulwark)
+
+	var boss_data := bulwark.data.duplicate() as BossData
+	boss_data.stomp_stun_duration = 1.5
+	bulwark.data = boss_data
 
 	var cmd_mock := MockCommander.new()
 	cmd_mock.position = Vector3(1.5, 0.0, 0.0)
@@ -310,7 +335,13 @@ func test_bulwark_stomp_deploy_immunity() -> void:
 	bulwark.execute_stomp()
 	assert_true(cmd_mock.damage_taken == 45, "Deploying commander still takes damage")
 	assert_true(cmd_mock.knockback_taken == 0.0, "Deploying commander has zero knockback")
-	assert_true(cmd_mock.stun_duration == 1.5, "Deploying commander still takes stun")
+	assert_true(cmd_mock.stun_duration == 0.0, "Deploying commander receives zero stun by default")
+
+	var boss_data := bulwark.data.duplicate() as BossData
+	boss_data.stomp_stun_duration = 1.5
+	bulwark.data = boss_data
+	bulwark.execute_stomp()
+	assert_true(cmd_mock.stun_duration == 1.5, "Deploying commander still takes stun when configured")
 
 	cmd_mock.free()
 	bulwark.free()
