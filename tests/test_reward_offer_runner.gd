@@ -36,6 +36,9 @@ func _ready() -> void:
 	test_tc16_listeners_see_new_state()
 	test_tc17_unknown_id_ignored()
 	await test_tc18_no_open_offer_ignored()
+	test_pick_writes_run_state()
+	test_picked_signal_ignores_ui_values()
+	test_empty_pool_request_emits_empty_offer()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -381,7 +384,8 @@ func test_tc11_skip_and_pick() -> void:
 	assert_true(service.state.picks_used == 2, "TC11: a picked card adds to picks_used (%d)" % service.state.picks_used)
 	assert_true(not service.skip(), "TC11: skip after a picked card returns false")
 	assert_true(service.get_current_offer().is_empty(), "TC11: a picked card closes the offer")
-	assert_true(service.state.levels.is_empty(), "TC11: levels are unchanged after a pick")
+	# A pick writes the card to the run state.
+	assert_true(service.state.get_level(card["id"]) == 1, "TC11: a picked card is written to the run state at level 1 (%d)" % service.state.get_level(card["id"]))
 
 	service.free()
 	# XpTracker defers its first xp_changed, so let that call run before freeing it.
@@ -571,3 +575,89 @@ func test_tc18_no_open_offer_ignored() -> void:
 	# XpTracker defers its first xp_changed, so let that call run before freeing it.
 	await get_tree().process_frame
 	xp.free()
+
+func _make_service_with(skills: Array[SkillData]) -> RewardService:
+	var service := RewardService.new()
+	var pool := RewardPool.new()
+	pool.skills = skills
+	service.pool = pool
+	add_child(service)
+	return service
+
+func _card_by_id(cards: Array[Dictionary], id: StringName) -> Dictionary:
+	for c in cards:
+		if c["id"] == id:
+			return c
+	return {}
+
+func test_pick_writes_run_state() -> void:
+	var service := _make_service_with([WHIRLWIND, SHARPNESS, VITALITY])
+	var first := service.offer_next()
+	var card := _card_by_id(first, &"whirlwind")
+	assert_true(not card.is_empty(), "pick state: whirlwind is in the first offer")
+	assert_true(service.pick(&"whirlwind", &"ACTIVE", 1), "pick state: pick returns true")
+	assert_true(service.state.get_level(&"whirlwind") == 1, "pick state: whirlwind level is 1 after the pick (%d)" % service.state.get_level(&"whirlwind"))
+	assert_true(service.state.active.has(&"whirlwind"), "pick state: whirlwind sits in an active slot")
+	assert_true(service.state.picks_used == 1, "pick state: picks_used is 1")
+
+	var next_offer := service.offer_next()
+	var owned := _card_by_id(next_offer, &"whirlwind")
+	assert_true(not owned.is_empty() and owned["level"] == 1 and owned["next_level"] == 2 and owned["kind"] == &"ACTIVE" and not owned["is_new"], "pick state: next offer shows whirlwind as owned level 1 -> 2: %s" % [owned])
+	assert_true(RewardOfferGenerator.get_weight(service.state, WHIRLWIND) == GameConfig.reward_weight_owned, "pick state: owned weight applies to the picked skill")
+
+	# A pool with one skill: it keeps coming back until max, then the pool is empty.
+	var single := _make_service_with([WHIRLWIND])
+	var max_level := WHIRLWIND.get_max_level()
+	for i in max_level:
+		var offer := single.offer_next()
+		assert_true(_ids(offer) == [&"whirlwind"], "pick state: round %d still offers whirlwind" % (i + 1))
+		single.pick(&"whirlwind", &"", 0)
+	assert_true(single.state.get_level(&"whirlwind") == max_level, "pick state: level reaches max (%d)" % single.state.get_level(&"whirlwind"))
+	assert_true(single.offer_next().is_empty() and not single.has_offer(), "pick state: a maxed skill is not offered again")
+	single.free()
+	service.free()
+
+func test_picked_signal_ignores_ui_values() -> void:
+	var service := _make_service_with([WHIRLWIND, SHARPNESS, VITALITY])
+	var picked: Array = []
+	var on_picked := func(card_id: StringName, slot_kind: StringName, new_level: int) -> void:
+		picked.append([card_id, slot_kind, new_level])
+	EventBus.reward_picked.connect(on_picked)
+
+	service.offer_next()
+	EventBus.reward_pick_requested.emit(&"whirlwind", &"PASSIVE", 0)
+	assert_true(picked == [[&"whirlwind", &"ACTIVE", 1]], "ui values: wrong kind and level 0 are replaced by the card's: %s" % [picked])
+
+	service.offer_next()
+	EventBus.reward_pick_requested.emit(&"whirlwind", &"STAT", 99)
+	assert_true(picked.size() == 2 and picked[1] == [&"whirlwind", &"ACTIVE", 2], "ui values: second pick reports level 2 from the state: %s" % [picked])
+
+	service.offer_next()
+	EventBus.reward_pick_requested.emit(&"vitality", &"", -5)
+	assert_true(picked.size() == 3 and picked[2] == [&"vitality", &"STAT", 1], "ui values: a stat card reports STAT level 1: %s" % [picked])
+
+	EventBus.reward_picked.disconnect(on_picked)
+	service.free()
+
+func test_empty_pool_request_emits_empty_offer() -> void:
+	var service := _make_service_with([])
+	var offered: Array = []
+	var picked: Array = []
+	var on_offered := func(cards: Array, rerolls_left: int) -> void:
+		offered.append([cards.size(), rerolls_left])
+	var on_picked := func(card_id: StringName, slot_kind: StringName, new_level: int) -> void:
+		picked.append([card_id, slot_kind, new_level])
+	EventBus.reward_offered.connect(on_offered)
+	EventBus.reward_picked.connect(on_picked)
+
+	EventBus.reward_offer_requested.emit()
+	assert_true(offered == [[0, 0]], "empty pool: the request emits reward_offered([], 0) once: %s" % [offered])
+	assert_true(service.state.picks_used == 0 and picked.is_empty(), "empty pool: picks_used stays 0 and nothing is picked")
+	assert_true(service.get_current_offer().is_empty(), "empty pool: no offer is opened")
+
+	service.offer_next()
+	assert_true(offered.size() == 1, "empty pool: offer_next called directly stays silent (%d)" % offered.size())
+
+	EventBus.reward_offered.disconnect(on_offered)
+	EventBus.reward_picked.disconnect(on_picked)
+	service.free()

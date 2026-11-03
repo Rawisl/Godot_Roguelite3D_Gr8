@@ -4,7 +4,7 @@ extends Node
 ## The REWARD_PICK screen talks to it through EventBus only: reward_offer_requested asks for the next
 ## offer, reward_pick_requested and reward_skip_requested answer it. The public functions below are for
 ## tests and internal use; the UI does not call them.
-# TODO(week 9): apply a picked card to the run state and notify the skill slots
+# TODO(week 9): notify the skill slots after a pick
 # TODO(week 10): take the run seed and the pick state from RunState (RunState)
 
 const HEAL_STATION_FLAG := &"heal_station_built"
@@ -60,12 +60,23 @@ func skip() -> bool:
 	EventBus.reward_picked.emit(&"", SKIP_KIND, 0)
 	return true
 
-## Takes one card of the open offer. False when no offer is open or card_id is not in it.
-func pick(card_id: StringName, kind: StringName, level: int) -> bool:
-	if not _offer_open or not _offer_has(card_id):
+## Takes one card of the open offer. False when no offer is open, card_id is not in it, or the run state refuses the card.
+## The card in the offer decides what happens: it is written to the run state, and reward_picked carries
+## the card's kind and the new level from the state. The kind and level parameters are ignored.
+func pick(card_id: StringName, _kind: StringName, _level: int) -> bool:
+	if not _offer_open:
+		return false
+	var card := _find_card(card_id)
+	if card.is_empty():
+		return false
+	var data := card.get("data") as SkillData
+	if data == null:
+		return false
+	var result := state.take(data)
+	if result.is_empty():
 		return false
 	_close_offer()
-	EventBus.reward_picked.emit(card_id, kind, level)
+	EventBus.reward_picked.emit(card_id, result["slot_kind"], result["new_level"])
 	return true
 
 ## Counts the pick before reward_picked goes out, so listeners already see the new picks_used.
@@ -74,17 +85,21 @@ func _close_offer() -> void:
 	_offer_open = false
 	_offer = []
 
-func _offer_has(card_id: StringName) -> bool:
+func _find_card(card_id: StringName) -> Dictionary:
 	for card in _offer:
 		if card.get("id") == card_id:
-			return true
-	return false
+			return card
+	return {}
 
+## An open offer is sent again as it is. With nothing left to offer, reward_offered([], 0) tells the
+## REWARD_PICK screen the pool is empty; offer_next called directly stays silent in that case.
 func _on_offer_requested() -> void:
 	if _offer_open:
 		EventBus.reward_offered.emit(_offer, REROLLS_LEFT)
 	elif has_offer():
 		offer_next()
+	else:
+		EventBus.reward_offered.emit([], 0)
 
 func _on_pick_requested(card_id: StringName, kind: StringName, level: int) -> void:
 	pick(card_id, kind, level)
