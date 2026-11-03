@@ -106,7 +106,7 @@ static func invalidate_node_cache() -> void:
 	_cached_barricades.clear()
 	_cached_towers.clear()
 	_cached_enemies.clear()
-# Lane used for nav_progress, shared by every enemy. Looked up again when the lane node is gone, e.g. a new run reloads the level.
+# Shared lane reference used for nav_progress calculation.
 static var _lane: Path3D = null
 static var _lane_ref_length: float = 0.0
  
@@ -1014,8 +1014,7 @@ func _walk_to_wait_ring(delta: float) -> void:
 		dir = ring_point - global_position
 	_move_towards_direction(dir)
  
-## A unit that already holds a melee slot keeps that target on the periodic scan, even when it
-## walks a little past it to reach its slot. The commander hit or taunt still pulls it away, and a dead or ruined target ends it.
+## Preserves current melee target if slot is held and valid.
 func _keeps_slot_target() -> bool:
 	if provoked_by_player or taunted_by_player:
 		return false
@@ -1078,7 +1077,7 @@ func _retarget_now() -> void:
 	change_state(Enums.EnemyState.ADVANCE)
 	_find_best_target()
 
-## After waiting crowd_wait_retarget_time on a full melee target, ignore it so the unit picks another one. The Fortress is never skipped.
+## Temporarily ignores full melee target so unit can pick another.
 func _skip_full_target(t) -> void:
 	if not is_instance_valid(t) or not _uses_melee_slot(t):
 		return
