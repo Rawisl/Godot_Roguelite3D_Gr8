@@ -92,14 +92,18 @@ func _find_card(card_id: StringName) -> Dictionary:
 	return {}
 
 ## An open offer is sent again as it is. With nothing left to offer, reward_offered([], 0) tells the
-## REWARD_PICK screen the pool is empty; offer_next called directly stays silent in that case.
+## REWARD_PICK screen the pool is empty, then the request is skipped on the spot so the pick still
+## counts and reward_picked reaches the XP tracker; offer_next called directly stays silent in that case.
+## Each request is answered once; the screen asks again while picks are pending.
 func _on_offer_requested() -> void:
 	if _offer_open:
 		EventBus.reward_offered.emit(_offer, REROLLS_LEFT)
 	elif has_offer():
 		offer_next()
 	else:
-		EventBus.reward_offered.emit([], 0)
+		EventBus.reward_offered.emit([], REROLLS_LEFT)
+		_close_offer()
+		EventBus.reward_picked.emit(&"", SKIP_KIND, 0)
 
 func _on_pick_requested(card_id: StringName, kind: StringName, level: int) -> void:
 	pick(card_id, kind, level)

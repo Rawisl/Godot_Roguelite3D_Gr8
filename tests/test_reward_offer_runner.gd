@@ -39,6 +39,7 @@ func _ready() -> void:
 	test_pick_writes_run_state()
 	test_picked_signal_ignores_ui_values()
 	test_empty_pool_request_emits_empty_offer()
+	await test_empty_pool_drains_pending_picks()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -652,12 +653,51 @@ func test_empty_pool_request_emits_empty_offer() -> void:
 
 	EventBus.reward_offer_requested.emit()
 	assert_true(offered == [[0, 0]], "empty pool: the request emits reward_offered([], 0) once: %s" % [offered])
-	assert_true(service.state.picks_used == 0 and picked.is_empty(), "empty pool: picks_used stays 0 and nothing is picked")
+	assert_true(picked == [[&"", &"SKIP", 0]], "empty pool: the request emits reward_picked skip once: %s" % [picked])
+	assert_true(service.state.picks_used == 1, "empty pool: the request counts as one skip (%d)" % service.state.picks_used)
 	assert_true(service.get_current_offer().is_empty(), "empty pool: no offer is opened")
+	assert_true(not service.skip(), "empty pool: skip() still returns false without an open offer")
+
+	EventBus.reward_offer_requested.emit()
+	assert_true(offered.size() == 2 and picked.size() == 2 and service.state.picks_used == 2, "empty pool: each request is answered once and skipped once")
 
 	service.offer_next()
-	assert_true(offered.size() == 1, "empty pool: offer_next called directly stays silent (%d)" % offered.size())
+	assert_true(offered.size() == 2 and picked.size() == 2, "empty pool: offer_next called directly stays silent (%d)" % offered.size())
 
 	EventBus.reward_offered.disconnect(on_offered)
 	EventBus.reward_picked.disconnect(on_picked)
 	service.free()
+
+## Real XpTracker with 3 pending picks and an empty pool: a listener standing in for the screen asks again
+## after every pick until the tracker has nothing pending.
+func test_empty_pool_drains_pending_picks() -> void:
+	var service := _make_service_with([])
+	var tracker := XpTracker.new()
+	add_child(tracker)
+	tracker.pending_picks = 3
+	var skips := [0]
+	var requests := [0]
+	var max_requests := 10
+	var ask_next := func() -> void:
+		if tracker.pending_picks > 0 and requests[0] < max_requests:
+			requests[0] += 1
+			EventBus.reward_offer_requested.emit()
+	var on_picked := func(_card_id: StringName, slot_kind: StringName, _new_level: int) -> void:
+		if slot_kind == &"SKIP":
+			skips[0] += 1
+		ask_next.call_deferred()
+	EventBus.reward_picked.connect(on_picked)
+
+	requests[0] += 1
+	EventBus.reward_offer_requested.emit()
+	for i in 20:
+		await get_tree().process_frame
+
+	assert_true(tracker.pending_picks == 0, "empty pool drain: pending_picks reaches 0 (%d)" % tracker.pending_picks)
+	assert_true(skips[0] == 3, "empty pool drain: three skips are reported (%d)" % skips[0])
+	assert_true(requests[0] == 3, "empty pool drain: no request beyond the pending picks (%d)" % requests[0])
+
+	EventBus.reward_picked.disconnect(on_picked)
+	tracker.free()
+	service.free()
+
