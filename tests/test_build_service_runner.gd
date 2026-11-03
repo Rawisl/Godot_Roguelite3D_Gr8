@@ -5,6 +5,7 @@ extends Node
 ## - commander level limits on upgrades, and rebuild level checks
 ## - slot lock during a transaction, HP refill at the start of PREP
 ## - rubble clearing and the ground building cap
+## - commander level from the real XpTracker (level_up and xp_changed)
 
 const SLOT_SCENE: PackedScene = preload("res://systems/build/slot.tscn")
 const ARROW: TowerData = preload("res://data/towers/arrow.tres")
@@ -54,6 +55,7 @@ func _ready() -> void:
 	test_ground_cap_clear()
 	test_ground_cap_sell()
 	test_clear_rubble_lock()
+	test_real_xp_tracker()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -98,7 +100,7 @@ func _make_slot(id: StringName, zone: Enums.SlotZone) -> Slot:
 	_root.add_child(slot)
 	return slot
 
-## Empty slots, PREP, commander level 1, lots of gold, no recorded events.
+## Empty slots, PREP, commander level 0, lots of gold, no recorded events.
 func _reset() -> void:
 	for node in get_tree().get_nodes_in_group(&"slot"):
 		(node as Slot).set_state(Enums.SlotState.EMPTY)
@@ -201,15 +203,16 @@ func test_not_enough_gold() -> void:
 func test_commander_level() -> void:
 	print("\n[GROUP 7] Commander level limits")
 	_reset()
+	assert_true(_service.get_commander_level() == 0, "TC1: a new run starts at commander level 0")
 	_service.build(&"W1", &"arrow")
 	var g := _gold.gold
-	assert_true(not _service.can_upgrade(&"W1"), "can_upgrade false at commander level 1")
-	assert_true(not _service.upgrade(&"W1"), "upgrade to 2 blocked")
-	assert_true(_denied.size() == 1 and _denied[0] == [&"COMMANDER_LEVEL", 0], "build_denied COMMANDER_LEVEL, 0")
-	assert_true(_gold.gold == g, "gold unchanged when blocked")
+	assert_true(not _service.can_upgrade(&"W1"), "TC1: can_upgrade false at commander level 0")
+	assert_true(not _service.upgrade(&"W1"), "TC1: upgrade to 2 blocked")
+	assert_true(_denied == [[&"COMMANDER_LEVEL", 0]], "TC1: build_denied COMMANDER_LEVEL, 0")
+	assert_true(_gold.gold == g, "TC1: gold unchanged when blocked")
 	var info := _service.get_tower_info(&"W1")
-	assert_true(info.get("upgrade_required_level") == GameConfig.tower_gate_lv2, "info has the level 2 requirement")
-	assert_true(info.get("upgrade_locked") == true, "info says locked")
+	assert_true(info.get("upgrade_required_level") == GameConfig.tower_gate_lv2, "TC1: info has the level 2 requirement")
+	assert_true(info.get("upgrade_locked") == true, "TC1: info says locked")
 	EventBus.level_up.emit(GameConfig.tower_gate_lv2, 0)
 	assert_true(_service.upgrade(&"W1"), "upgrade to 2 allowed")
 	assert_true(not _service.upgrade(&"W1"), "upgrade to 3 blocked")
@@ -220,7 +223,11 @@ func test_commander_level() -> void:
 	EventBus.level_up.emit(3, 0)
 	assert_true(_service.get_commander_level() == GameConfig.tower_gate_lv3, "a lower level_up does not lower the level")
 	EventBus.run_started.emit()
-	assert_true(_service.get_commander_level() == 1, "run_started resets the level")
+	assert_true(_service.get_commander_level() == 0, "TC2: run_started resets the level")
+	# A fresh level 1 tower is gated again after the reset.
+	_service.build(&"W2", &"arrow")
+	assert_true(not _service.upgrade(&"W2"), "TC2: upgrade blocked again after run_started")
+	assert_true(_service.get_upgrade_block_reason(&"W2") == &"COMMANDER_LEVEL", "TC2: reason is COMMANDER_LEVEL after run_started")
 
 func test_rebuild() -> void:
 	print("\n[GROUP 8] Rebuild")
@@ -230,12 +237,12 @@ func test_rebuild() -> void:
 	_service.upgrade(&"G1")
 	_service.upgrade(&"G1")
 	_slot(&"G1").ruin()
-	# Back to commander level 1: rebuilding must not need the level again.
+	# Back to commander level 0: rebuilding must not need the level again.
 	EventBus.run_started.emit()
 	_gold.gold = 5000
 	assert_true(not _service.build(&"G1", &"arrow", 2), "wrong level refused")
 	assert_true(_gold.gold == 5000, "gold unchanged after the wrong level")
-	assert_true(_service.build(&"G1", &"arrow", 3), "rebuild at the lost level works at commander level 1")
+	assert_true(_service.build(&"G1", &"arrow", 3), "rebuild at the lost level works at commander level 0")
 	var t := _slot(&"G1").tower
 	assert_true(_gold.gold == 5000 - ARROW.get_total_cost(3), "rebuild costs the total up to the level")
 	assert_true(t.invested_gold == ARROW.get_total_cost(3), "invested_gold equals the rebuild price")
@@ -392,3 +399,85 @@ func test_clear_rubble_lock() -> void:
 	assert_true(not _nested_result, "nested build on the slot being cleared refused")
 	assert_true(_slot(&"G1").state == Enums.SlotState.EMPTY, "slot is EMPTY after the outer clear")
 	assert_true(_gold.gold == gold_before, "gold unchanged")
+
+## Total XP a fresh tracker needs to reach the given commander level.
+func _xp_to_reach(level: int) -> float:
+	var total := 0.0
+	for n in range(1, level + 1):
+		total += float(GameConfig.get_xp_to_level(n))
+	return total
+
+func test_real_xp_tracker() -> void:
+	print("\n[GROUP 18] Commander level from the real XpTracker")
+	var lv2 := GameConfig.tower_gate_lv2
+	var lv3 := GameConfig.tower_gate_lv3
+	# Stays in the tree until the runner quits, so its deferred first emit has a live node.
+	var tracker := XpTracker.new()
+	add_child(tracker)
+
+	# Just below the level 2 gate.
+	_reset()
+	_service.build(&"W1", &"arrow")
+	var g := _gold.gold
+	tracker.add_xp(_xp_to_reach(lv2 - 1))
+	assert_true(tracker.commander_level == lv2 - 1, "TC3: tracker reaches the level below the level 2 gate")
+	assert_true(_service.get_commander_level() == lv2 - 1, "TC3: service level matches the tracker")
+	assert_true(_service.get_upgrade_block_reason(&"W1") == &"COMMANDER_LEVEL", "TC3: reason is COMMANDER_LEVEL")
+	assert_true(_service.get_tower_info(&"W1").get("upgrade_locked") == true, "TC3: info says locked")
+	assert_true(not _service.upgrade(&"W1"), "TC3: upgrade to 2 refused")
+	assert_true(_denied == [[&"COMMANDER_LEVEL", 0]], "TC3: build_denied COMMANDER_LEVEL, 0")
+	assert_true(_slot(&"W1").tower.level == 1, "TC3: tower stays at level 1")
+	assert_true(_gold.gold == g, "TC3: gold unchanged")
+
+	# Exactly on the level 2 gate.
+	if GameConfig.xp_base == 5 and GameConfig.xp_step == 4:
+		assert_true(_xp_to_reach(lv2) == 44.0, "TC4: total XP to the level 2 gate is 44")
+	else:
+		print("  [SKIP] TC4: XP milestone check needs xp_base 5 and xp_step 4")
+	tracker.add_xp(_xp_to_reach(lv2) - _xp_to_reach(lv2 - 1))
+	assert_true(_service.get_commander_level() == lv2, "TC4: service reaches the level 2 gate")
+	assert_true(_service.get_tower_info(&"W1").get("upgrade_locked") == false, "TC4: info says unlocked")
+	assert_true(_service.upgrade(&"W1"), "TC4: upgrade to 2 allowed")
+	assert_true(_slot(&"W1").tower.level == 2, "TC4: tower is level 2")
+	var info := _service.get_tower_info(&"W1")
+	assert_true(info.get("upgrade_required_level") == lv3, "TC4: next requirement is the level 3 gate")
+	assert_true(info.get("upgrade_locked") == true, "TC4: level 3 upgrade is locked")
+
+	# Exactly on the level 3 gate.
+	tracker.add_xp(_xp_to_reach(lv3) - _xp_to_reach(lv2))
+	assert_true(_service.get_commander_level() == lv3, "TC5: service reaches the level 3 gate")
+	assert_true(_service.upgrade(&"W1"), "TC5: upgrade to 3 allowed")
+	assert_true(_slot(&"W1").tower.level == 3, "TC5: tower is level 3")
+
+	# xp_changed alone, as after restoring a run.
+	_reset()
+	var level_ups: Array = []
+	var count_level_up := func(level: int, _picks: int) -> void: level_ups.append(level)
+	EventBus.level_up.connect(count_level_up)
+	EventBus.xp_changed.emit(0.0, lv2, 17.0, 0)
+	EventBus.level_up.disconnect(count_level_up)
+	assert_true(_service.get_commander_level() == lv2, "TC6: xp_changed alone sets the level")
+	assert_true(level_ups.is_empty(), "TC6: no level_up was emitted")
+	_service.build(&"W2", &"arrow")
+	assert_true(_service.upgrade(&"W2"), "TC6: upgrade to 2 allowed after xp_changed alone")
+
+	# One add_xp call crossing several levels.
+	_reset()
+	level_ups.clear()
+	EventBus.level_up.connect(count_level_up)
+	tracker.add_xp(_xp_to_reach(lv3))
+	EventBus.level_up.disconnect(count_level_up)
+	assert_true(level_ups.size() == lv3, "TC8: level_up emitted once per level gained")
+	assert_true(tracker.commander_level == lv3, "TC8: tracker reaches the level 3 gate")
+	assert_true(_service.get_commander_level() == lv3, "TC8: service level matches the tracker")
+	assert_true(tracker.pending_picks == lv3, "TC8: one pending pick per level gained")
+
+	# run_started resets both the tracker and the service.
+	_reset()
+	tracker.add_xp(_xp_to_reach(lv3))
+	_service.build(&"W3", &"arrow")
+	EventBus.run_started.emit()
+	assert_true(tracker.commander_level == 0 and tracker.xp == 0.0, "TC9: tracker is reset by run_started")
+	assert_true(_service.get_commander_level() == 0, "TC9: service level is reset by run_started")
+	assert_true(_service.get_tower_info(&"W3").get("upgrade_locked") == true, "TC9: level 1 tower is locked again")
+	assert_true(not _service.upgrade(&"W3"), "TC9: upgrade blocked again")

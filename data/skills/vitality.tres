@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="SkillData" format=3]
 
 [ext_resource type="Script" path="res://common/skill_data.gd" id="1_skill"]
+[ext_resource type="Texture2D" uid="uid://bmj4bwry2d01t" path="res://art/icons/skills/vitality_icon.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -8,3 +9,4 @@ id = &"vitality"
 kind = 2
 name_key = &"skill.vitality.name"
 description_key = &"skill.vitality.desc"
+icon = ExtResource("2_icon")
