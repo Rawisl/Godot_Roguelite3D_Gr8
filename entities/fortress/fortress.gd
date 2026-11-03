@@ -136,6 +136,15 @@ static func quote_repair(step_pct: float, hp: int, max_hp: int, gold: int, gold_
 	return {heal = _pct_to_hp(affordable_pct, max_hp, missing_hp), cost = affordable_pct * gold_per_pct, pct = float(affordable_pct)}
 
 
+## Gold for the smallest repair the buttons allow: 1% of max HP, or the whole gap when it is smaller.
+## Shared by BuildService's refusal and the Fortress panel's greyed buttons.
+static func min_repair_cost(hp: int, max_hp: int, gold_per_pct: int) -> int:
+	if max_hp <= 0 or hp >= max_hp:
+		return 0
+	var missing_pct := float(max_hp - hp) / float(max_hp) * 100.0
+	return ceili(minf(1.0, missing_pct) * gold_per_pct - PCT_EPSILON)
+
+
 ## Healed HP is rounded down and never exceeds the missing HP.
 static func _pct_to_hp(pct: float, max_hp: int, missing_hp: int) -> int:
 	return mini(missing_hp, floori(pct * max_hp / 100.0 + PCT_EPSILON))
