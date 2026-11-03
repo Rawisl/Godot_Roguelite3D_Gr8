@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://c7hs4tn5x0a1b"]
+
+[ext_resource type="PackedScene" uid="uid://c8i7qjsqqke46" path="res://entities/tower/tower.tscn" id="1_tower"]
+[ext_resource type="Script" uid="uid://sfcl0ytbdw1j" path="res://entities/tower/heal_station.gd" id="2_hscript"]
+[ext_resource type="Resource" path="res://data/towers/heal_station.tres" id="3_hdata"]
+[ext_resource type="PackedScene" uid="uid://d07b3hic7ijcr" path="res://contents/assets/towers/heal_station_model.tscn" id="4_hmodel"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_body"]
+height = 1.6
+radius = 0.8
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_click"]
+height = 2.0
+radius = 0.9
+
+[node name="HealStation" unique_id=457661571 instance=ExtResource("1_tower")]
+script = ExtResource("2_hscript")
+data = ExtResource("3_hdata")
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=668314301]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("CylinderShape3D_body")
+
+[node name="HealStationModel" parent="Model" parent_id_path=PackedInt32Array(155594529) index="0" unique_id=623208620 instance=ExtResource("4_hmodel")]
+
+[node name="CollisionShape3D" parent="ClickArea" parent_id_path=PackedInt32Array(521694951) index="0" unique_id=444085316]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CylinderShape3D_click")
