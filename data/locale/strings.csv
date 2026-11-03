@@ -230,3 +230,4 @@ panel.heal.level,Cấp
 panel.heal.max,Tối đa
 panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
+panel.build.heal_limit,Tối đa {max} trạm hồi phục
