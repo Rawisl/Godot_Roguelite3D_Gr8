@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="SkillData" format=3]
 
 [ext_resource type="Script" path="res://common/skill_data.gd" id="1_skill"]
+[ext_resource type="Texture2D" uid="uid://dj8k2ep61dv0w" path="res://art/icons/skills/whirlwind_icon.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -8,6 +9,7 @@ id = &"whirlwind"
 kind = 0
 name_key = &"skill.whirlwind.name"
 description_key = &"skill.whirlwind.desc"
+icon = ExtResource("2_icon")
 damage_type = 2
 values = Dictionary[StringName, PackedFloat32Array]({
 &"damage": PackedFloat32Array(15, 20, 25),
