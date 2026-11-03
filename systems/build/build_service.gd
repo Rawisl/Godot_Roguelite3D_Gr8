@@ -3,6 +3,7 @@ extends Node
 ## Build, upgrade, sell, rubble clearing and Fortress repair for the panels. Each call checks the wave state, the slot and
 ## the gold in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice.
+# TODO(week 9): keep gold spent on Fortress repairs out of the prestige tally
 
 ## Lock key for Fortress repairs in _busy; slot ids never take this value.
 const FORTRESS_LOCK := &"FORTRESS"
@@ -12,7 +13,7 @@ const FORTRESS_LOCK := &"FORTRESS"
 
 var _wave_state: StringName = &""
 var _mode: StringName = &"FRONTLINE"
-var _commander_level: int = 1
+var _commander_level: int = 0
 var _busy: Dictionary[StringName, bool] = {}  # slot_id -> true while a transaction runs
 
 func _ready() -> void:
@@ -21,6 +22,7 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.level_up.connect(_on_level_up)
+	EventBus.xp_changed.connect(_on_xp_changed)
 
 func is_prep() -> bool:
 	return _wave_state == &"PREP"
@@ -190,7 +192,6 @@ func get_upgrade_block_reason(slot_id: StringName) -> StringName:
 	var t := slot.tower
 	if t.level >= t.data.levels.size():
 		return &"MAX_LEVEL"
-	# TODO(week 8): commander level comes from XpTracker level_up; tune thresholds with the real XP curve.
 	if _commander_level < get_upgrade_required_level(t.level + 1):
 		return &"COMMANDER_LEVEL"
 	if not gold.can_afford(t.data.levels[t.level].build_cost):
@@ -270,7 +271,6 @@ func _do_repair_fortress(step_ratio: float) -> bool:
 	var used: int = result.cost if result.heal > 0 else 0
 	if used < cost:
 		gold.add(cost - used)
-	# TODO(week 9): gold repairs give no prestige; keep this spending out of the prestige tally.
 	return used > 0
 
 ## Gold for the smallest repair the panel allows: 1% of max HP, or the whole gap when it is smaller.
@@ -329,9 +329,14 @@ func _on_mode_changed(mode: StringName) -> void:
 	_mode = mode
 
 func _on_run_started() -> void:
-	_commander_level = 1
+	_commander_level = 0
 	_busy.clear()
 
 ## The level never goes down, so a late or repeated signal cannot lock upgrades again.
 func _on_level_up(new_level: int, _pending_picks: int) -> void:
 	_commander_level = maxi(_commander_level, new_level)
+
+## XpTracker sends its level on start, reset and every XP change, so a restored run
+## that never emits level_up still opens the right upgrades.
+func _on_xp_changed(_xp: float, level: int, _to_next: float, _pending_picks: int) -> void:
+	_commander_level = maxi(_commander_level, level)
