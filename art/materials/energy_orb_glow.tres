@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" uid="uid://3wgxr370gabu" path="res://art/shaders/energy_orb_glow.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "energy_orb_glow"
+shader = ExtResource("1_shader")
+shader_parameter/glow_color = Color(0.45, 0.92, 0.55, 1)
+shader_parameter/strength = 0.28

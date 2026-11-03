@@ -21,11 +21,11 @@ const HEALING := &"HEALING"
 @export var default_heal_range := 3.0
 
 @export_group("Hold ring")
-@export var progress_shader: Shader = preload("res://art/shaders/heal_progress.gdshader")
+@export var progress_material: ShaderMaterial = preload("res://art/materials/heal_hold_ring.tres")
 @export var progress_lift := 0.05
 
 @export_group("Beam")
-@export var beam_shader: Shader = preload("res://art/shaders/heal_beam.gdshader")
+@export var beam_material: ShaderMaterial = preload("res://art/materials/heal_beam.tres")
 @export var beam_radius := 0.1
 ## Where the beam lands on the commander, above its feet.
 @export var beam_target_height := 0.9
@@ -35,7 +35,7 @@ const HEALING := &"HEALING"
 ## Seconds to fade any of these in or out. Fades, never blinks.
 @export var fade_time := 0.15
 
-var _rings: Dictionary = {}  # station -> {mesh, fade, radius}
+var _rings: Dictionary = {}  # station -> {mesh, fade, radius, meshes, store}
 var _progress_ring: MeshInstance3D
 var _progress_fade := 0.0
 var _progress := 0.0
@@ -46,7 +46,7 @@ var _source_slot: StringName = &""
 
 
 func _ready() -> void:
-	_progress_ring = _flat_mesh("HealHoldRing", 2.0, _material(progress_shader))
+	_progress_ring = _flat_mesh("HealHoldRing", 2.0, progress_material)
 	_beam = MeshInstance3D.new()
 	_beam.name = "HealBeam"
 	var cylinder := CylinderMesh.new()
@@ -56,7 +56,7 @@ func _ready() -> void:
 	cylinder.radial_segments = 8
 	cylinder.rings = 1
 	_beam.mesh = cylinder
-	_beam.material_override = _material(beam_shader)
+	_beam.material_override = beam_material
 	_beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_beam.visible = false
 	add_child(_beam)
@@ -101,7 +101,8 @@ func _update_rings(commander: Node3D, step: float) -> void:
 			continue
 		var entry: Dictionary = _rings.get(station, {})
 		if entry.is_empty():
-			entry = {"mesh": _flat_mesh("HealRangeRing", 2.0 * (radius + ring_margin), ring_material), "fade": 0.0, "radius": -1.0}
+			entry = {"mesh": _flat_mesh("HealRangeRing", 2.0 * (radius + ring_margin), ring_material), "fade": 0.0, "radius": -1.0,
+				"meshes": station.find_children("*", "MeshInstance3D", true, false), "store": -1.0}
 			_rings[station] = entry
 		var mesh: MeshInstance3D = entry.mesh
 		if not is_equal_approx(entry.radius, radius):
@@ -113,13 +114,13 @@ func _update_rings(commander: Node3D, step: float) -> void:
 		mesh.visible = entry.fade > 0.0
 		mesh.global_position = station.global_position + Vector3.UP * ring_lift
 		mesh.set_instance_shader_parameter(&"fade", entry.fade)
-		_update_pool(station)
+		_update_pool(station, entry)
 
 
 func _update_progress(commander: Node3D, step: float) -> void:
 	var wanted := _state == HOLD and commander != null
 	_progress_fade = move_toward(_progress_fade, 1.0 if wanted else 0.0, step)
-	_progress_ring.visible = _progress_fade > 0.0
+	_progress_ring.visible = _progress_fade > 0.0 and commander != null
 	if not _progress_ring.visible:
 		return
 	_progress_ring.global_position = commander.global_position + Vector3.UP * progress_lift
@@ -156,14 +157,19 @@ func _update_beam(commander: Node3D, step: float) -> void:
 
 
 ## Pool colour follows the store: full is bright, empty fades to grey water.
-func _update_pool(station: Node3D) -> void:
+## The station's meshes are listed once per ring and only written when the store changes.
+func _update_pool(station: Node3D, entry: Dictionary) -> void:
 	var max_hp: float = station.get(&"max_hp") if station.get(&"max_hp") != null else 0.0
 	var hp = station.get(&"hp")
 	if max_hp <= 0.0 or hp == null:
 		return
 	var store := clampf(float(hp) / max_hp, 0.0, 1.0)
-	for mesh in station.find_children("*", "MeshInstance3D", true, false):
-		(mesh as MeshInstance3D).set_instance_shader_parameter(&"store", store)
+	if is_equal_approx(store, entry.store):
+		return
+	entry.store = store
+	for mesh in entry.meshes:
+		if is_instance_valid(mesh):
+			(mesh as MeshInstance3D).set_instance_shader_parameter(&"store", store)
 
 
 func _beam_origin(station: Node3D) -> Vector3:
@@ -207,9 +213,3 @@ func _flat_mesh(mesh_name: String, size: float, material: Material) -> MeshInsta
 	mesh.visible = false
 	add_child(mesh)
 	return mesh
-
-
-func _material(shader: Shader) -> ShaderMaterial:
-	var mat := ShaderMaterial.new()
-	mat.shader = shader
-	return mat

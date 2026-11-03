@@ -5,33 +5,39 @@ extends Node3D
 ## HealFxManager sets the "store" shader parameter on the orb's meshes from the station's HP
 ## store; the sparks and the light follow that value, so the orb fades to grey when empty.
 ## The heal beam starts at the BeamOrigin child, so it follows the bob.
+## The light and the sparks take their colour from core_material (halfway between core_color
+## and rim_color, and empty_color when empty), so the orb's colours are set in one place.
 
+@export var core_material: ShaderMaterial = preload("res://art/materials/energy_orb_core.tres")
+@export var glow_material: ShaderMaterial = preload("res://art/materials/energy_orb_glow.tres")
 @export var radius := 0.27
 @export var glow_radius := 0.3
 ## Metres up and down, and seconds for one bob.
 @export var bob_height := 0.1
 @export var bob_period := 3.0
 @export var spin_speed := 0.4
-@export var orb_color := Color(0.56, 0.93, 0.62)
-@export var empty_color := Color(0.46, 0.49, 0.52)
 @export var light_energy := 0.45
 @export var light_range := 2.2
 
 var _core: MeshInstance3D
 var _sparks: CPUParticles3D
 var _light: OmniLight3D
+var _orb_color := Color.WHITE
+var _empty_color := Color.GRAY
 var _base_y := 0.0
 var _time := 0.0
 
 
 func _ready() -> void:
 	_base_y = position.y
-	_core = _sphere("Core", radius, preload("res://art/shaders/energy_orb.gdshader"))
-	_sphere("Glow", glow_radius, preload("res://art/shaders/energy_orb_glow.gdshader"))
+	_orb_color = _material_color(&"core_color", _orb_color).lerp(_material_color(&"rim_color", _orb_color), 0.5)
+	_empty_color = _material_color(&"empty_color", _empty_color)
+	_core = _sphere("Core", radius, core_material)
+	_sphere("Glow", glow_radius, glow_material)
 	_sparks = _make_sparks()
 	_light = OmniLight3D.new()
 	_light.name = "Light"
-	_light.light_color = orb_color
+	_light.light_color = _orb_color
 	_light.omni_range = light_range
 	_light.shadow_enabled = false
 	add_child(_light)
@@ -47,14 +53,19 @@ func _process(delta: float) -> void:
 	position.y = _base_y + sin(_time / bob_period * TAU) * bob_height
 	rotate_y(spin_speed * delta)
 	var store := get_store()
-	var color := empty_color.lerp(orb_color, store)
+	var color := _empty_color.lerp(_orb_color, store)
 	_light.light_color = color
 	_light.light_energy = light_energy * store
 	_sparks.color = color
 	_sparks.emitting = store > 0.0
 
 
-func _sphere(mesh_name: String, r: float, shader: Shader) -> MeshInstance3D:
+func _material_color(param: StringName, fallback: Color) -> Color:
+	var value = core_material.get_shader_parameter(param) if core_material != null else null
+	return value if value is Color else fallback
+
+
+func _sphere(mesh_name: String, r: float, material: Material) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()
 	mesh.name = mesh_name
 	var sphere := SphereMesh.new()
@@ -63,9 +74,7 @@ func _sphere(mesh_name: String, r: float, shader: Shader) -> MeshInstance3D:
 	sphere.radial_segments = 24
 	sphere.rings = 12
 	mesh.mesh = sphere
-	var mat := ShaderMaterial.new()
-	mat.shader = shader
-	mesh.material_override = mat
+	mesh.material_override = material
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh)
 	return mesh
