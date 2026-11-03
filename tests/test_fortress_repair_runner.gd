@@ -5,6 +5,8 @@ extends Node
 ## - step prices, partial repairs when gold is short, the minimum repair
 ## - refusals: full HP, outside PREP, destroyed Fortress, nested calls
 ## - the gold taken always equals what Fortress.quote_repair promises
+## - one gold_changed per repair, none when refused
+## - Fortress.min_repair_cost matches the smallest repair the buttons allow
 
 const FORTRESS_SCENE: PackedScene = preload("res://entities/fortress/fortress.tscn")
 
@@ -53,7 +55,7 @@ func _run() -> void:
 	await get_tree().process_frame
 	test_small_step()
 	test_large_step_capped()
-	test_srs_example()
+	test_worked_example()
 	test_short_gold()
 	test_below_minimum()
 	test_gap_under_one_percent()
@@ -63,6 +65,8 @@ func _run() -> void:
 	test_destroyed()
 	test_transaction_lock()
 	test_quote_matches_spend()
+	test_gold_changed_once()
+	test_min_repair_cost()
 	await test_click_area()
 
 func _setup() -> void:
@@ -149,7 +153,7 @@ func test_large_step_capped() -> void:
 	assert_true(_fortress.is_full(), "HP is full")
 	assert_true(5000 - _gold.gold == ceili(missing_pct * _price() - Fortress.PCT_EPSILON), "price follows the gap, not the step")
 
-func test_srs_example() -> void:
+func test_worked_example() -> void:
 	print("\n[GROUP 3] Worked example with FORT_HP level 1")
 	_spawn_fortress(1)
 	var m := _max_hp()
@@ -223,13 +227,14 @@ func test_not_prep() -> void:
 	assert_true(_service.repair_fortress(_small()), "allowed in Frontline mode during PREP")
 
 func test_fortress_refuses() -> void:
-	print("\n[GROUP 9] Fortress refuses after the gold was taken")
+	print("\n[GROUP 9] Fortress refuses: no gold taken")
 	var m := _max_hp()
 	var hp := m - floori(m * 0.2)
 	_prepare(hp, 5000)
 	_fortress.set(&"_wave_state", &"COMBAT")
 	assert_true(not _service.repair_fortress(_small()), "returns false")
-	assert_true(_gold.gold == 5000, "gold refunded")
+	assert_true(_gold.gold == 5000, "gold unchanged")
+	assert_true(_gold_changes == 0, "no gold_changed when the Fortress refuses")
 	assert_true(_fortress.get_hp() == hp, "HP unchanged")
 	_reset()
 
@@ -286,6 +291,46 @@ func test_quote_matches_spend() -> void:
 	if first_bad != "":
 		printerr("  first mismatch: %s" % first_bad)
 	assert_true(first_bad == "", "all %d combinations match the quote" % count)
+
+func test_gold_changed_once() -> void:
+	print("\n[GROUP 14] One gold_changed per repair")
+	var m := _max_hp()
+	var hp := m - floori(m * 0.2)
+	_prepare(hp, 5000)
+	assert_true(_service.repair_fortress(_small()), "small step with enough gold works")
+	assert_true(_gold_changes == 1, "one gold_changed for the small step")
+	_prepare(hp, _price() + 2)
+	assert_true(_service.repair_fortress(_small()), "short gold repairs 1% at a time")
+	assert_true(_gold_changes == 1, "one gold_changed when the gold is short")
+	_prepare(hp, _price() - 1)
+	assert_true(not _service.repair_fortress(_small()), "gold below the minimum refused")
+	assert_true(_gold_changes == 0, "no gold_changed below the minimum")
+
+func test_min_repair_cost() -> void:
+	print("\n[GROUP 15] Fortress.min_repair_cost")
+	var m := _max_hp()
+	var price := _price()
+	var gaps: Array[int] = [1, floori(m * 0.005), floori(m * 0.2), m - 1]
+	var first_bad := ""
+	for gap in gaps:
+		var hp := m - gap
+		var missing_pct := float(gap) / float(m) * 100.0
+		var expected := ceili(minf(1.0, missing_pct) * price - Fortress.PCT_EPSILON)
+		var got := Fortress.min_repair_cost(hp, m, price)
+		if got != expected and first_bad == "":
+			first_bad = "hp %d: got %d, expected %d" % [hp, got, expected]
+	if first_bad != "":
+		printerr("  first mismatch: %s" % first_bad)
+	assert_true(first_bad == "", "matches the 1% / whole-gap formula for every gap")
+	assert_true(Fortress.min_repair_cost(m, m, price) == 0, "zero at full HP")
+	assert_true(Fortress.min_repair_cost(m - 10, 0, price) == 0, "zero when max HP is not set")
+	# Gap under 1%: the refusal shortfall is measured against this minimum.
+	var small_hp := m - floori(m * 0.005)
+	var min_cost := Fortress.min_repair_cost(small_hp, m, price)
+	_prepare(small_hp, min_cost - 1)
+	assert_true(not _service.repair_fortress(_small()), "gold one short of the whole small gap refused")
+	assert_true(_denied == [[&"NOT_ENOUGH_GOLD", 1]], "build_denied NOT_ENOUGH_GOLD with shortfall 1")
+	assert_true(_gold.gold == min_cost - 1 and _fortress.get_hp() == small_hp, "gold and HP unchanged")
 
 func test_click_area() -> void:
 	print("\n[GROUP 13] Click area")
