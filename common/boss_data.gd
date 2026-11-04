@@ -13,7 +13,7 @@ extends EnemyData
 @export var phase2_attack_rate_mult: float = 1.3
 
 @export_group("Phase 1 Resistances")
-## Resistance multipliers per damage type in phase 1 (0.0 = immune)
+## Resistance multipliers per damage type in phase 1 (0.0 = immune).
 @export var resist_table_phase1: Dictionary = {
 	Enums.DamageType.PIERCE: 0.0,
 	Enums.DamageType.MAGIC: 0.0,
@@ -31,12 +31,27 @@ extends EnemyData
 
 func _init() -> void:
 	xp_value = 30
+	move_speed = 1.6
+	avoid_radius = 1.6
+	attack_range = 3.0
+	attack_interval = 2.5
+	knockback_immune = true
+	base_hp = armor_hp + core_hp
+	anim_walk = &"move/Walking_A"
 
 @export_group("Stomp Attack")
 @export var stomp_damage: int = 45
 @export var stomp_radius: float = 3.0
 @export var stomp_knockback: float = 3.0
-@export var stomp_stun_duration: float = 1.5
+@export var stomp_stun_duration: float = 0.0
+@export var stomp_windup: float = 1.0
+@export var stomp_screen_shake: float = 0.6
+
+var stomp_cadence_phase1: float:
+	get: return attack_interval
+
+var stomp_cadence_phase2: float:
+	get: return attack_interval / maxf(0.1, phase2_attack_rate_mult)
 
 
 
@@ -54,6 +69,9 @@ func get_resist(dmg_type: Enums.DamageType, phase: Enums.BossPhase) -> float:
 
 func is_immune(dmg_type: Enums.DamageType, phase: Enums.BossPhase) -> bool:
 	return is_zero_approx(get_resist(dmg_type, phase))
+
+func get_scaled_hp(hp_mult: float) -> int:
+	return get_scaled_armor_hp(hp_mult) + get_scaled_core_hp(hp_mult)
 
 func get_scaled_armor_hp(hp_mult: float) -> int:
 	return maxi(1, int(round(float(armor_hp) * hp_mult)))

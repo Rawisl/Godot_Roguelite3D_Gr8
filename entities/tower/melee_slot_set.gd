@@ -84,11 +84,13 @@ func _world_point(i: int) -> Vector3:
 	return get_parent().to_global(_local_points[i])
 
 
-## Free slots whose owner was freed from memory or is dead.
+## Free slots whose owner was freed from memory, is dead, or retargeted away.
 func _audit() -> void:
 	for i in _owners.size():
 		var a = _owners[i]
 		if a == null:
 			continue
 		if not is_instance_valid(a) or not a.is_inside_tree() or ("is_dead" in a and a.is_dead):
+			_owners[i] = null
+		elif "current_target" in a and a.current_target != get_parent():
 			_owners[i] = null

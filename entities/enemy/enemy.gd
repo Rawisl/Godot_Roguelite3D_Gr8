@@ -106,7 +106,7 @@ static func invalidate_node_cache() -> void:
 	_cached_barricades.clear()
 	_cached_towers.clear()
 	_cached_enemies.clear()
-# Lane used for nav_progress, shared by every enemy. Looked up again when the lane node is gone, e.g. a new run reloads the level.
+# Shared lane reference used for nav_progress calculation.
 static var _lane: Path3D = null
 static var _lane_ref_length: float = 0.0
  
@@ -128,7 +128,7 @@ func _ready() -> void:
 		EventBus.tower_built.connect(func(_slot_id, _type): invalidate_node_cache())
 		EventBus.tower_destroyed.connect(func(_slot_id): invalidate_node_cache())
 		EventBus.tower_sold.connect(func(_slot_id): invalidate_node_cache())
- 
+
 	# Phase-offset timers to prevent frame spikes across groups
 	_path_timer = randf_range(0.0, PATH_UPDATE_INTERVAL)
 	_retarget_timer = randf_range(0.0, GameConfig.retarget_interval)
@@ -162,7 +162,8 @@ func _ready() -> void:
 	_init_spawn_zone_bounds()
 	_play_locomotion_anim()
 	_setup_navigation.call_deferred()
- 
+
+
 func _setup_anim_player() -> void:
 	anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
 	_update_anim_speed()
@@ -431,7 +432,7 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.ATTACK:
 			velocity.x = 0.0
 			velocity.z = 0.0
-			# Finish the swing before choosing again, unless the target died or became RUINED.
+			# Finish the swing before choosing again, unless the target died or became ruined.
 			if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 				_retarget_now()
 				return
@@ -445,12 +446,12 @@ func _update_state(delta: float) -> void:
  
 			if not is_attacking_active:
 				attack_windup_timer += delta
-				if attack_windup_timer >= GameConfig.enemy_windup_time:
+				if attack_windup_timer >= _get_attack_windup():
 					is_attacking_active = true
 					attack_windup_timer = 0.0
 					_execute_attack_action()
-					var total_interval: float = data.attack_interval if data else 1.0
-					attack_recovery_timer = maxf(0.0, total_interval - GameConfig.enemy_windup_time)
+					var total_interval: float = _get_attack_interval()
+					attack_recovery_timer = maxf(0.0, total_interval - _get_attack_windup())
 			else:
 				attack_recovery_timer -= delta
 				if attack_recovery_timer <= 0.0:
@@ -520,6 +521,14 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.DEAD:
 			velocity = Vector3.ZERO
  
+func _get_attack_windup() -> float:
+	return GameConfig.enemy_windup_time
+
+
+func _get_attack_interval() -> float:
+	return data.attack_interval if data != null else 1.0
+
+
 func _execute_attack_action() -> void:
 	_execute_melee_strike()
  
@@ -656,7 +665,7 @@ func _is_target_valid(t: Node3D) -> bool:
 		elif t.global_position.y >= 2.5:
 			is_wall = true
  
-		# Melee ground units cannot target wall towers
+		# Melee ground units cannot target wall towers.
 		var can_target_wall := (data != null and (data.is_ranged or data.is_flying))
 		if is_wall and not can_target_wall:
 			return false
@@ -719,7 +728,7 @@ func _find_closest_valid_barricade() -> Node3D:
 					weight = 1.5
 			var score: float = d / maxf(0.1, weight)
  
-			# Tie-break: score first, then instance id
+			# Tie-break: score first, then instance id.
 			if score < min_score - 0.001:
 				min_score = score
 				closest = b_node
@@ -1005,8 +1014,7 @@ func _walk_to_wait_ring(delta: float) -> void:
 		dir = ring_point - global_position
 	_move_towards_direction(dir)
  
-## A unit that already holds a melee slot keeps that target on the periodic scan, even when it
-## walks a little past it to reach its slot . The commander hit or taunt it still pulls it away, and a dead or RUINED target ends it.
+## Preserves current melee target if slot is held and valid.
 func _keeps_slot_target() -> bool:
 	if provoked_by_player or taunted_by_player:
 		return false
@@ -1069,7 +1077,7 @@ func _retarget_now() -> void:
 	change_state(Enums.EnemyState.ADVANCE)
 	_find_best_target()
 
-## After waiting crowd_wait_retarget_time on a full melee target, ignore it so the unit picks another one. The Fortress is never skipped.
+## Temporarily ignores full melee target so unit can pick another.
 func _skip_full_target(t) -> void:
 	if not is_instance_valid(t) or not _uses_melee_slot(t):
 		return
