@@ -48,6 +48,30 @@ Màu phẳng theo từng mặt đá của `contents/assets/environment/rubble/to
 | rubble_roof | `#3D4C36` | Mảnh ngói xanh, mặt trên |
 | rubble_roof_dark | `#2B3625` | Mảnh ngói xanh, mặt bên và mặt dưới |
 
+### Trạm hồi lực
+
+Thân trạm (`contents/assets/towers/heal_station.glb`) dùng màu phẳng, mỗi màu một file `contents/assets/towers/texture/heal_station_*.tres`. Đá xám lạnh hơn `struct_stone` để trạm không lẫn với Arrow và Cannon. Hồ nước, quả cầu, vòng tầm và tia sáng nằm trong `art/materials/`. Hồ nước và quả cầu chuyển dần sang màu "cạn" theo HP còn trong kho.
+
+| Tên | Hex | Dùng cho | File |
+|---|---|---|---|
+| heal_stone_light | `#C5CBD8` | Mặt đá sáng, bậc trên | `heal_station_stone_light.tres` |
+| heal_stone | `#959DAC` | Thân đá | `heal_station_stone.tres` |
+| heal_panel | `#595F6C` | Tấm ốp, khe tối | `heal_station_panel.tres` |
+| heal_door | `#6F6961` | Cửa ở bốn góc | `heal_station_door.tres` |
+| heal_crystal | `#4B8952` | Bốn tinh thể chỉa vào quả cầu | `heal_station_crystal.tres` |
+| heal_water_rim | `#80DBF0` | Mép hồ nước | `heal_water.tres` |
+| heal_water_core | `#DBFAFF` | Giữa hồ nước | `heal_water.tres` |
+| heal_water_empty | `#52616B` | Hồ nước khi kho cạn | `heal_water.tres` |
+| heal_orb_core | `#B8F7C2` | Tâm quả cầu | `energy_orb_core.tres` |
+| heal_orb_rim | `#61DB80` | Viền quả cầu | `energy_orb_core.tres` |
+| heal_orb_empty | `#757D85` | Quả cầu khi kho cạn | `energy_orb_core.tres` |
+| heal_orb_glow | `#73EB8C` | Quầng sáng quanh quả cầu (cộng màu) | `energy_orb_glow.tres` |
+| heal_ring | `#9EFFAD` | Vòng heal_range quanh trạm, tia sáng sang chỉ huy | `heal_ring.tres`, `heal_beam.tres` |
+| heal_hold_track | `#5BE37A` 25% alpha | Rãnh vòng tiến trình lúc giữ E (màu `heal`) | `heal_hold_ring.tres` |
+| heal_hold_fill | `#9EFFB2` 95% alpha | Phần đã đầy của vòng tiến trình | `heal_hold_ring.tres` |
+
+Đèn và hạt sáng của quả cầu không có màu riêng: `energy_orb.gd` lấy giữa `heal_orb_core` và `heal_orb_rim`, nên chỉ cần chỉnh trong `energy_orb_core.tres`.
+
 ## Nhân vật
 
 | Tên | Hex | Dùng cho | Nguồn |

@@ -39,7 +39,6 @@ func _ready() -> void:
 	_full.pressed.connect(_on_repair_pressed.bind(0.0))
 	EventBus.fortress_hp_changed.connect(_on_hp_changed)
 	EventBus.gold_changed.connect(_on_gold_changed)
-	# TODO(Rawisl): emit emergency_repair_state_changed and skill_cooldown_changed(&"emg_repair") from the commander.
 	EventBus.emergency_repair_state_changed.connect(_on_emg_state_changed)
 	EventBus.skill_cooldown_changed.connect(_on_cooldown_changed)
 
@@ -81,10 +80,7 @@ func _set_repair(button: PanelButton, step_ratio: float) -> void:
 
 ## The buttons stay usable while the gold covers at least 1% (or the whole gap when it is smaller).
 func _min_cost() -> int:
-	if _max_hp <= 0:
-		return 0
-	var missing_pct := float(_max_hp - _hp) / float(_max_hp) * 100.0
-	return ceili(minf(1.0, missing_pct) * STATS.repair_gold_per_pct - Fortress.PCT_EPSILON)
+	return Fortress.min_repair_cost(_hp, _max_hp, STATS.repair_gold_per_pct)
 
 func _refresh_emergency() -> void:
 	var max_charges := GameConfig.emg_repair_charges_max
@@ -98,11 +94,9 @@ func _on_repair_pressed(step_ratio: float) -> void:
 	if not _try_lock():
 		return
 	var service := get_tree().get_first_node_in_group(&"build_service") as BuildService
-	# TODO(kiezroth): add BuildService.repair_fortress(step_ratio) that spends the gold and repairs in one call.
-	if service == null or not service.has_method(&"repair_fortress"):
-		push_warning("FortressPanel: BuildService.repair_fortress() is missing")
+	if service == null:
 		return
-	service.call(&"repair_fortress", step_ratio)
+	service.repair_fortress(step_ratio)
 	refresh()
 
 func _on_hp_changed(hp: int, max_hp: int, _delta: int) -> void:
