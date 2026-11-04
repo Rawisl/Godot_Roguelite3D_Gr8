@@ -1,0 +1,12 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" uid="uid://b3tjkqf6dsr47" path="res://art/shaders/heal_beam.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "heal_beam"
+shader = ExtResource("1_shader")
+shader_parameter/beam_color = Color(0.62, 1, 0.68, 1)
+shader_parameter/band_count = 3.0
+shader_parameter/band_speed = 1.2
+shader_parameter/band_strength = 0.25
+shader_parameter/end_fade = 0.12
