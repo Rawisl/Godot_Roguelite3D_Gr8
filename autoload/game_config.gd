@@ -145,6 +145,10 @@ extends Node
 @export var skill_slots_active: int = 3
 @export var skill_slots_passive: int = 3
 @export var stat_max_stacks: int = 3
+## Offer weights: an owned skill below max, a new skill while its kind has a free slot, a stat card below max stacks.
+@export var reward_weight_owned: int = 40
+@export var reward_weight_new: int = 30
+@export var reward_weight_stat: int = 20
 
 @export_group("Commander Progression")
 @export var tower_gate_lv2: int = 4

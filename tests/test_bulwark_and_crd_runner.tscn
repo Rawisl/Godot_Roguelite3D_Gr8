@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dfqm0a5vd8k5u"]
+
+[ext_resource type="Script" uid="uid://bs76vrek5oyr0" path="res://tests/test_bulwark_and_crd_runner.gd" id="1_runner"]
+
+[node name="TestBulwarkAndCrdRunner" type="Node3D"]
+script = ExtResource("1_runner")

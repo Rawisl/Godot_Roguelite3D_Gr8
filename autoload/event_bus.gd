@@ -99,7 +99,9 @@ signal settings_changed(key: StringName, value: Variant)
 
 
 #-----------------------Skill and reward-----------------------#
-signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # UI -> StatBlock, SkillRunner, RunState. new_level is the absolute level after the pick
+signal reward_pick_requested(card_id: StringName, kind: StringName, level: int)  # UI -> RewardService: the player picked a card of the open offer
+signal reward_skip_requested  # UI -> RewardService: the player gave up the open offer
+signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # RewardService -> StatBlock, SkillRunner, XpTracker, RunState. new_level is the absolute level after the pick; (&"", &"SKIP", 0) for a skip
 signal skill_cast(skill_id: StringName, slot_index: int, level: int, origin: Vector3, radius: float)  # SkillRunner -> VFX, audio, once per cast
 #------------------------------------------------------#
 
@@ -115,7 +117,8 @@ signal tutorial_step_completed(step_id: StringName)
 #-----------------------Progression-----------------------#
 signal xp_changed(xp: float, level: int, to_next: float, pending_picks: int)
 signal level_up(new_level: int, pending_picks: int)
-signal reward_offered(cards: Array, rerolls_left: int)
+signal reward_offer_requested  # UI -> RewardService: ask for the next offer (re-sends the open one)
+signal reward_offered(cards: Array, rerolls_left: int)  # RewardService -> UI
 signal skill_slots_changed(active: Array, passive: Array)
 #------------------------------------------------------#
 

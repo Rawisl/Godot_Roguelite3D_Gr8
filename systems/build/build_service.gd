@@ -17,6 +17,8 @@ const HEAL_LIMIT := &"HEAL_LIMIT"
 var _wave_state: StringName = &""
 var _mode: StringName = &"FRONTLINE"
 var _commander_level: int = 0
+## A transaction that stops on a script error never reaches _end(), so its key stays
+## locked until run_started clears _busy.
 var _busy: Dictionary[StringName, bool] = {}  # slot_id -> true while a transaction runs
 
 func _ready() -> void:
@@ -216,7 +218,9 @@ func can_upgrade(slot_id: StringName) -> bool:
 func get_upgrade_block_reason(slot_id: StringName) -> StringName:
 	var slot := find_slot(slot_id)
 	var gold := _gold()
-	if not is_prep() or gold == null:
+	if gold == null:
+		return &"NO_GOLD_MANAGER"
+	if not is_prep():
 		return &"NOT_PREP"
 	if slot == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
 		return &"NO_TOWER"
@@ -295,18 +299,24 @@ func _do_repair_fortress(step_ratio: float) -> bool:
 		EventBus.build_denied.emit(&"NOT_ENOUGH_GOLD", gold.shortfall(_min_repair_cost(fortress)))
 		return false
 	var cost: int = quote.cost
-	if not gold.try_spend(cost):
+	if not gold.can_afford(cost):
 		return false
-	# Passing the spent gold as the budget makes the Fortress quote the same step again.
+	# Passing the quoted cost as the budget makes the Fortress repair the same step; gold is
+	# taken only after it did, so a refusal leaves the wallet and the HUD untouched.
 	var result := fortress.repair_with_gold(step_ratio, cost)
-	var used: int = result.cost if result.heal > 0 else 0
-	if used < cost:
-		gold.add(cost - used)
-	return used > 0
+	if result.heal <= 0:
+		return false
+	var used: int = result.cost
+	# Cannot fail: the Fortress spends at most the cost budget, and can_afford(cost) passed above
+	# inside the same locked transaction. The warning only guards a future change to that contract.
+	if not gold.try_spend(used):
+		push_warning("BuildService: repair cost %d no longer affordable" % used)
+		return false
+	return true
 
-## Gold for the smallest repair the panel allows: 1% of max HP, or the whole gap when it is smaller.
+## Gold for the smallest repair the panel allows; see Fortress.min_repair_cost.
 func _min_repair_cost(fortress: Fortress) -> int:
-	return ceili(minf(1.0, fortress.get_missing_pct()) * fortress.stats.repair_gold_per_pct - Fortress.PCT_EPSILON)
+	return Fortress.min_repair_cost(fortress.get_hp(), fortress.get_max_hp(), fortress.stats.repair_gold_per_pct)
 
 ## In combat only Commander mode can change it, and never while paused.
 func can_change_priority() -> bool:

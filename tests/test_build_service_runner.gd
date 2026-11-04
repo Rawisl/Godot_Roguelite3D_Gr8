@@ -4,6 +4,8 @@ extends Node
 ## - build / upgrade / sell prices and invested_gold on the Tower
 ## - commander level limits on upgrades, and rebuild level checks
 ## - slot lock during a transaction, HP refill at the start of PREP
+## - one gold_changed per finished transaction, none when refused
+## - a missing GoldManager refuses everything, and the wallet has no interest or cap
 ## - rubble clearing and the ground building cap
 ## - commander level from the real XpTracker (level_up and xp_changed)
 
@@ -30,6 +32,7 @@ var _sold: Array[StringName] = []
 var _denied: Array = []
 var _nested_result := true
 var _nested_ran := false
+var _nested_results: Array = []
 var _slot_changes: Array = []
 
 func _ready() -> void:
@@ -56,6 +59,9 @@ func _ready() -> void:
 	test_ground_cap_sell()
 	test_clear_rubble_lock()
 	test_real_xp_tracker()
+	test_gold_changed_once()
+	test_missing_gold_manager()
+	test_wallet()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -256,20 +262,66 @@ func test_level_range() -> void:
 	assert_true(not _service.build(&"W1", &"arrow", ARROW.levels.size() + 1), "level above max refused")
 	assert_true(_gold.gold == 5000, "gold unchanged")
 
-func _nested_build(slot_id: StringName, _type: StringName) -> void:
-	_nested_result = _service.build(slot_id, &"arrow")
-	_nested_ran = true
+## Runs `action` from inside `signal_ref`, so it only succeeds when the slot is not locked.
+## The result of each nested call lands in _nested_results.
+func _connect_nested(signal_ref: Signal, action: Callable) -> Callable:
+	var handler := func(slot_id: StringName, _a = null, _b = null) -> void:
+		_nested_results.append(action.call(slot_id))
+	signal_ref.connect(handler)
+	return handler
 
 func test_transaction_lock() -> void:
 	print("\n[GROUP 10] Slot lock during a transaction")
+	var cost1 := ARROW.levels[0].build_cost
+
+	# build -> nested sell on the same slot.
 	_reset()
-	_nested_ran = false
-	EventBus.tower_built.connect(_nested_build)
+	_nested_results.clear()
+	var handler := _connect_nested(EventBus.tower_built, func(id): return _service.sell(id))
+	var ok := _service.build(&"W1", &"arrow")
+	EventBus.tower_built.disconnect(handler)
+	assert_true(ok, "outer build works")
+	assert_true(_nested_results == [false], "nested sell during build refused")
+	assert_true(_slot(&"W1").state == Enums.SlotState.OCCUPIED, "tower still stands after the nested sell")
+	assert_true(_gold.gold == 5000 - cost1, "gold spent once, nothing refunded")
+
+	# build -> nested upgrade on the same slot (would succeed at commander level 8).
+	_reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
+	_nested_results.clear()
+	handler = _connect_nested(EventBus.tower_built, func(id): return _service.upgrade(id))
+	ok = _service.build(&"W1", &"arrow")
+	EventBus.tower_built.disconnect(handler)
+	assert_true(ok, "outer build works with the upgrade handler")
+	assert_true(_nested_results == [false], "nested upgrade during build refused")
+	assert_true(_slot(&"W1").tower.level == 1, "tower stays at level 1")
+	assert_true(_gold.gold == 5000 - cost1, "gold spent once for the build")
+
+	# upgrade -> nested sell on the same slot.
+	_reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
 	_service.build(&"W1", &"arrow")
-	EventBus.tower_built.disconnect(_nested_build)
-	assert_true(_nested_ran, "nested handler ran")
-	assert_true(not _nested_result, "nested build on the same slot refused")
-	assert_true(_gold.gold == 5000 - ARROW.levels[0].build_cost, "gold spent once")
+	_nested_results.clear()
+	handler = _connect_nested(EventBus.tower_upgraded, func(id): return _service.sell(id))
+	ok = _service.upgrade(&"W1")
+	EventBus.tower_upgraded.disconnect(handler)
+	assert_true(ok, "outer upgrade works")
+	assert_true(_nested_results == [false], "nested sell during upgrade refused")
+	assert_true(_slot(&"W1").state == Enums.SlotState.OCCUPIED and _slot(&"W1").tower.level == 2, "level 2 tower still stands")
+
+	# sell -> nested build on the same slot (the slot is already EMPTY, so it would succeed).
+	_reset()
+	_service.build(&"W1", &"arrow")
+	var before := _gold.gold
+	var refund := floori(float(_slot(&"W1").tower.invested_gold) * GameConfig.sell_refund_pct)
+	_nested_results.clear()
+	handler = _connect_nested(EventBus.tower_sold, func(id): return _service.build(id, &"arrow"))
+	ok = _service.sell(&"W1")
+	EventBus.tower_sold.disconnect(handler)
+	assert_true(ok, "outer sell works")
+	assert_true(_nested_results == [false], "nested build during sell refused")
+	assert_true(_slot(&"W1").state == Enums.SlotState.EMPTY, "slot is EMPTY after the sell")
+	assert_true(_gold.gold == before + refund, "gold rose by the refund only")
 
 func test_heal_on_prep() -> void:
 	print("\n[GROUP 11] HP refill at the start of PREP")
@@ -481,3 +533,67 @@ func test_real_xp_tracker() -> void:
 	assert_true(_service.get_commander_level() == 0, "TC9: service level is reset by run_started")
 	assert_true(_service.get_tower_info(&"W3").get("upgrade_locked") == true, "TC9: level 1 tower is locked again")
 	assert_true(not _service.upgrade(&"W3"), "TC9: upgrade blocked again")
+
+## Counts gold_changed while `action` runs. The counter is an Array so the lambda can fill it.
+func _count_gold_changes(action: Callable) -> int:
+	var changes: Array = []
+	var counter := func(_g: int) -> void: changes.append(_g)
+	EventBus.gold_changed.connect(counter)
+	action.call()
+	EventBus.gold_changed.disconnect(counter)
+	return changes.size()
+
+func test_gold_changed_once() -> void:
+	print("\n[GROUP 19] One gold_changed per finished transaction")
+	_reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_lv3, 0)
+	assert_true(_count_gold_changes(func(): _service.build(&"W1", &"arrow")) == 1, "build emits gold_changed once")
+	assert_true(_count_gold_changes(func(): _service.upgrade(&"W1")) == 1, "upgrade emits gold_changed once")
+	assert_true(_count_gold_changes(func(): _service.sell(&"W1")) == 1, "sell emits gold_changed once")
+
+	_reset()
+	_gold.gold = ARROW.levels[0].build_cost - 1
+	assert_true(_count_gold_changes(func(): _service.build(&"W1", &"arrow")) == 0, "refused build (not enough gold) emits none")
+
+	_reset()
+	_service.build(&"W1", &"arrow")
+	assert_true(_count_gold_changes(func(): _service.upgrade(&"W1")) == 0, "upgrade blocked by commander level emits none")
+
+	_reset()
+	_service.build(&"W1", &"arrow")
+	_slot(&"W1").ruin()
+	assert_true(_count_gold_changes(func(): _service.sell(&"W1")) == 0, "sell on a RUINED slot emits none")
+
+	_reset()
+	EventBus.state_changed.emit(&"COMBAT")
+	assert_true(_count_gold_changes(func(): _service.build(&"W1", &"arrow")) == 0, "build outside PREP emits none")
+	EventBus.state_changed.emit(&"PREP")
+
+func test_missing_gold_manager() -> void:
+	print("\n[GROUP 20] Missing GoldManager")
+	_reset()
+	_service.build(&"W1", &"arrow")
+	remove_child(_gold)
+	assert_true(_service.get_upgrade_block_reason(&"W1") == &"NO_GOLD_MANAGER", "reason is NO_GOLD_MANAGER")
+	assert_true(not _service.build(&"W2", &"arrow"), "build refused")
+	assert_true(not _service.sell(&"W1"), "sell refused")
+	assert_true(not _service.upgrade(&"W1"), "upgrade refused")
+	assert_true(_slot(&"W1").state == Enums.SlotState.OCCUPIED and _slot(&"W2").state == Enums.SlotState.EMPTY, "slots unchanged")
+	add_child(_gold)
+	assert_true(_service.get_upgrade_block_reason(&"W1") != &"NO_GOLD_MANAGER", "reason clears when the GoldManager is back")
+	assert_true(_service.sell(&"W1"), "sell works again")
+
+func test_wallet() -> void:
+	print("\n[GROUP 21] Wallet: no interest, no cap, never negative")
+	_reset()
+	_gold.gold = 1000
+	for state in [&"COMBAT", &"SUMMARY", &"PREP"]:
+		EventBus.state_changed.emit(state)
+	assert_true(_gold.gold == 1000, "BuildService adds no gold across a wave")
+	_gold.add(1_000_000)
+	assert_true(_gold.gold == 1_001_000, "no cap on the wallet")
+	EventBus.run_started.emit()
+	assert_true(_gold.gold == GameConfig.starting_gold, "run_started resets to the starting gold")
+	var g := _gold.gold
+	assert_true(not _gold.try_spend(g + 1), "cannot spend more than the wallet holds")
+	assert_true(_gold.gold == g, "gold unchanged after the refused spend")

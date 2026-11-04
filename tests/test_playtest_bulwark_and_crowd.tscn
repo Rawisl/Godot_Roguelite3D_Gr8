@@ -1,0 +1,289 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bp6l8r6trqjcn" path="res://tests/test_playtest_bulwark_and_crowd.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://levels/corridor/level.tscn" id="2_level"]
+[ext_resource type="PackedScene" path="res://systems/wave/wave_manager.tscn" id="3_wave"]
+[ext_resource type="PackedScene" path="res://entities/commander/commander.tscn" id="4_commander"]
+
+[node name="TestPlaytestBulwarkAndCrowd" type="Node3D" unique_id=107919000]
+script = ExtResource("1_script")
+
+[node name="Level" parent="." instance=ExtResource("2_level") unique_id=107926919]
+unique_name_in_owner = true
+
+[node name="Gameplay" type="Node3D" parent="." unique_id=107934838]
+
+[node name="WaveManager" parent="Gameplay" instance=ExtResource("3_wave") unique_id=107942757]
+unique_name_in_owner = true
+
+[node name="Commander" parent="Gameplay" instance=ExtResource("4_commander") unique_id=107950676]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0)
+
+[node name="Enemy" type="Node3D" parent="Gameplay" groups=["enemy_container"] unique_id=107958595]
+unique_name_in_owner = true
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=107966514]
+
+[node name="TopPanel" type="PanelContainer" parent="UI" unique_id=107974433]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 120.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/TopPanel" unique_id=107982352]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="StatusLabel" type="Label" parent="UI/TopPanel/Margin" unique_id=107990271]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 14
+text = "Loading simulation status..."
+
+[node name="RightPanel" type="PanelContainer" parent="UI" unique_id=107998190]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -390.0
+offset_top = 130.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/RightPanel" unique_id=108006109]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Scroll" type="ScrollContainer" parent="UI/RightPanel/Margin" unique_id=108014028]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/RightPanel/Margin/Scroll" unique_id=108021947]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108029866]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "=== INTERACTIVE TEST ACTIONS ==="
+horizontal_alignment = 1
+
+[node name="BossHeader" type="Label" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108037785]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.4, 1)
+text = "-- Boss Bulwark Controls --"
+
+[node name="BtnSpawnBulwark" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108045704]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Spawn Bulwark Boss"
+
+[node name="BtnTriggerStomp" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108053623]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Trigger Stomp Attack"
+
+[node name="BtnTogglePhase" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108061542]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Toggle Phase (Armored / Exposed)"
+
+[node name="DamageRow" type="HBoxContainer" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108069461]
+layout_mode = 2
+
+[node name="BtnDamagePierce" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/DamageRow" unique_id=108077380]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pierce (Arrow)"
+
+[node name="BtnDamageMagic" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/DamageRow" unique_id=108085299]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Magic"
+
+[node name="DamageRow2" type="HBoxContainer" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108093218]
+layout_mode = 2
+
+[node name="BtnDamageBlast" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/DamageRow2" unique_id=108101137]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Blast (Cannon)"
+
+[node name="BtnDamageSlash" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/DamageRow2" unique_id=108109056]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Slash (Melee)"
+
+[node name="BtnKillBulwark" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108116975]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Kill Bulwark (Defeat Signal)"
+
+[node name="CmdHeader" type="Label" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108124894]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+text = "-- Commander Controls --"
+
+[node name="BtnToggleDodge" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108132813]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Toggle Dodge (I-Frame Evasion)"
+
+[node name="BtnToggleDeploy" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108140732]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Toggle Deploying (Knockback Immune)"
+
+[node name="BtnRecall" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108148651]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Commander Recall (Drop Aggro)"
+
+[node name="BtnMoveCommander" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108156570]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Move Commander to Boss Range"
+
+[node name="BtnHealCommander" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108164489]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset Commander HP"
+
+[node name="CrowdHeader" type="Label" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108172408]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 1, 0.6, 1)
+text = "-- Crowd & Fortress Slots --"
+
+[node name="BtnSpawn20Grunts" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108180327]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Spawn 20 Grunts (12 Atk, 8 Wait)"
+
+[node name="BtnSpawnAllyNearBoss" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108188246]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Spawn Ally Grunt at Boss (Friendly Fire)"
+
+[node name="BtnKill1Attacker" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108196165]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Kill 1 Slot Attacker"
+
+[node name="BtnKnockbackAttacker" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108204084]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Knockback Attacker >3m"
+
+[node name="BtnKillAllEnemies" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108212003]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Kill All Enemies"
+
+[node name="WaveHeader" type="Label" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108219922]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.8, 1)
+text = "-- Wave 5 & Reward Flow --"
+
+[node name="BtnStartWave5" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108227841]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start Wave 5 Combat (Boss Spawn)"
+
+[node name="BtnTriggerRewardPick" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108235760]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Trigger Reward Pick (2 Pending Picks)"
+
+[node name="CardRow" type="HBoxContainer" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108243679]
+layout_mode = 2
+
+[node name="BtnPickCard1" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/CardRow" unique_id=108251598]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pick Whirlwind"
+
+[node name="BtnPickCard2" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/CardRow" unique_id=108259517]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pick Vitality"
+
+[node name="SpeedHeader" type="Label" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108267436]
+layout_mode = 2
+text = "-- Simulation Speed --"
+
+[node name="SpeedRow" type="HBoxContainer" parent="UI/RightPanel/Margin/Scroll/VBox" unique_id=108275355]
+layout_mode = 2
+
+[node name="BtnSpeed1" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/SpeedRow" unique_id=108283274]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1x"
+
+[node name="BtnSpeed2" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/SpeedRow" unique_id=108291193]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "2x"
+
+[node name="BtnSpeed3" type="Button" parent="UI/RightPanel/Margin/Scroll/VBox/SpeedRow" unique_id=108299112]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "3x"
+
+[node name="LogPanel" type="PanelContainer" parent="UI" unique_id=108307031]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -240.0
+offset_right = 550.0
+offset_bottom = -16.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/LogPanel" unique_id=108314950]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="UI/LogPanel/Margin" unique_id=108322869]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="LogTitle" type="Label" parent="UI/LogPanel/Margin/VBox" unique_id=108330788]
+layout_mode = 2
+mouse_filter = 2
+text = "Combat & Event Activity Log:"
+
+[node name="LogText" type="RichTextLabel" parent="UI/LogPanel/Margin/VBox" unique_id=108338707]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
