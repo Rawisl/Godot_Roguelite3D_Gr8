@@ -7,9 +7,12 @@ extends Node
 
 ## Lock key for Fortress repairs in _busy; slot ids never take this value.
 const FORTRESS_LOCK := &"FORTRESS"
+const HEAL_LIMIT := &"HEAL_LIMIT"
 
 @export var towers: Array[TowerData] = []
 @export var tower_scenes: Dictionary[StringName, PackedScene] = {}
+## Towers of this type count against GameConfig.heal_tower_max_count.
+@export var heal_station_data: TowerData = preload("res://data/towers/heal_station.tres")
 
 var _wave_state: StringName = &""
 var _mode: StringName = &"FRONTLINE"
@@ -67,10 +70,13 @@ func get_build_options(slot_id: StringName) -> Array[Dictionary]:
 	for data in towers:
 		if not slot.allows(data):
 			continue
+		var reason := locked_reason
+		if reason == &"" and _heal_limit_blocks(slot, data):
+			reason = HEAL_LIMIT
 		var cost := data.get_total_cost(1)
 		result.append({"data": data, "level": 1,
 			"cost": cost, "shortfall": gold.shortfall(cost), "rebuild": false,
-			"locked_reason": locked_reason})
+			"locked_reason": reason})
 	return result
 
 func build(slot_id: StringName, type: StringName, level: int = 1) -> bool:
@@ -92,6 +98,9 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 		return false
 	if _ground_blocks(slot):
 		EventBus.build_denied.emit(&"GROUND_FULL", 0)
+		return false
+	if _heal_limit_blocks(slot, data):
+		EventBus.build_denied.emit(HEAL_LIMIT, 0)
 		return false
 	# A level above 1 is only a rebuild of the tower that stood here, at the level it had.
 	var is_rebuild := level > 1
@@ -140,6 +149,28 @@ func is_ground_full() -> bool:
 func _ground_blocks(slot: Slot) -> bool:
 	return slot.is_ground() and slot.state == Enums.SlotState.EMPTY and is_ground_full()
 
+func is_heal_station(data: TowerData) -> bool:
+	return data != null and heal_station_data != null and data.id == heal_station_data.id
+
+## Heal stations standing or left as rubble, except on except_slot. Counted from the slots
+## on every call, like get_ground_used().
+func get_heal_station_count(except_slot: StringName = &"") -> int:
+	var count := 0
+	for node in get_tree().get_nodes_in_group(&"slot"):
+		var slot := node as Slot
+		if slot == null or slot.slot_id == except_slot:
+			continue
+		if slot.state == Enums.SlotState.OCCUPIED and slot.tower != null and is_heal_station(slot.tower.data):
+			count += 1
+		elif slot.state == Enums.SlotState.RUINED and is_heal_station(slot.last_data):
+			count += 1
+	return count
+
+## A new station may not pass the cap. Its own rubble on this slot does not count, so a rebuild
+## never adds one; building another type on a station's rubble frees that place.
+func _heal_limit_blocks(slot: Slot, data: TowerData) -> bool:
+	return is_heal_station(data) and get_heal_station_count(slot.slot_id) >= GameConfig.heal_tower_max_count
+
 ## Everything the Tower panel shows. Empty when the slot holds no tower.
 func get_tower_info(slot_id: StringName) -> Dictionary:
 	var slot := find_slot(slot_id)
@@ -157,7 +188,7 @@ func get_tower_info(slot_id: StringName) -> Dictionary:
 		"priority": t.priority,
 		"can_target": t.can_attack(),
 		"is_max": t.level >= t.data.levels.size(),
-		"sell_value": floori(float(t.invested_gold) * GameConfig.sell_refund_pct),
+		"sell_value": t.get_sell_value(),
 	}
 	if not info.is_max:
 		var cost: int = t.data.levels[t.level].build_cost
@@ -240,7 +271,7 @@ func _do_sell(slot_id: StringName) -> bool:
 	var gold := _gold()
 	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
 		return false
-	var refund := floori(float(slot.tower.invested_gold) * GameConfig.sell_refund_pct)
+	var refund := slot.tower.get_sell_value()
 	slot.clear_tower()
 	gold.add(refund)
 	EventBus.tower_sold.emit(slot_id)
