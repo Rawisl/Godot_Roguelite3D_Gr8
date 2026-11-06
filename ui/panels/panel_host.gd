@@ -38,7 +38,7 @@ func _ready() -> void:
 	EventBus.tower_destroyed.connect(_on_tower_destroyed)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
-	EventBus.early_call_requested.connect(close_all)
+	EventBus.wave_start_requested.connect(close_all)
 
 ## Runs before GameState in the tree order, so Esc closes the panel before opening Pause.
 ## While the pause menu is open, Esc belongs to it.
