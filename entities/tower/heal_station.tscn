@@ -9,8 +9,11 @@
 height = 1.6
 radius = 0.8
 
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_o0tnf"]
+resource_local_to_scene = true
+height = 20.0
+
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_click"]
-height = 2.0
 radius = 0.9
 
 [node name="HealStation" unique_id=457661571 instance=ExtResource("1_tower")]
@@ -22,6 +25,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("CylinderShape3D_body")
 
 [node name="HealStationModel" parent="Model" parent_id_path=PackedInt32Array(155594529) index="0" unique_id=623208620 instance=ExtResource("4_hmodel")]
+
+[node name="CollisionShape3D" parent="RangeArea" parent_id_path=PackedInt32Array(666926964) index="0" unique_id=49393706]
+shape = SubResource("CylinderShape3D_o0tnf")
 
 [node name="CollisionShape3D" parent="ClickArea" parent_id_path=PackedInt32Array(521694951) index="0" unique_id=444085316]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

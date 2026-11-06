@@ -4,7 +4,13 @@
 
 [resource]
 resource_name = "env_grass"
+render_priority = 0
 shader = ExtResource("1_toon")
 shader_parameter/albedo_color = Color(0.498, 0.627, 0.353, 1)
+shader_parameter/bands = 2
+shader_parameter/band_softness = 0.03
+shader_parameter/shadow_tint = Color(0.3, 0.32, 0.45, 1)
 shader_parameter/light_strength = 0.6
 shader_parameter/ambient_strength = 0.4
+shader_parameter/rim_strength = 0.0
+shader_parameter/rim_width = 0.3

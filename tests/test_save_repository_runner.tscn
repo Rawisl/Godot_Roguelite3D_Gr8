@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bouhydrril0ts"]
 
-[ext_resource type="Script" path="res://tests/test_save_repository_runner.gd" id="1_saverepo"]
+[ext_resource type="Script" uid="uid://bmri3gfkbkgpw" path="res://tests/test_save_repository_runner.gd" id="1_saverepo"]
 
-[node name="TestSaveRepositoryRunner" type="Node"]
+[node name="TestSaveRepositoryRunner" type="Node" unique_id=1056897802]
 script = ExtResource("1_saverepo")

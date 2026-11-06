@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://w8verunnertscn"]
+[gd_scene format=3 uid="uid://5yyo8yioyy86"]
 
-[ext_resource type="Script" uid="uid://w8verunner001" path="res://tests/test_wave_fsm_runner.gd" id="1_runner"]
+[ext_resource type="Script" uid="uid://dwt1tk2ekrm77" path="res://tests/test_wave_fsm_runner.gd" id="1_runner"]
 
 [node name="TestWaveFsmRunner" type="Node" unique_id=981240182]
 script = ExtResource("1_runner")

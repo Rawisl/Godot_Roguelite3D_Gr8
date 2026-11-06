@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bor5ydkqisf5y"]
 
-[ext_resource type="Script" path="res://tests/test_heal_station_data_runner.gd" id="1_healdata"]
+[ext_resource type="Script" uid="uid://4n4aeo34s6fb" path="res://tests/test_heal_station_data_runner.gd" id="1_healdata"]
 
-[node name="TestHealStationDataRunner" type="Node"]
+[node name="TestHealStationDataRunner" type="Node" unique_id=1653394959]
 script = ExtResource("1_healdata")
