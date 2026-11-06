@@ -110,6 +110,18 @@ Không trùng màu với model để vòng chọn, thanh máu, aura luôn tách 
 | ruined_ring | `#A8876B` 80% alpha | Vòng slot RUINED trên sàn (sáng hơn `ruined` để đọc được trên cỏ) |
 | gold | `#FFC83D` | Gold, phần thưởng |
 
+## Skill chỉ huy (VFX)
+
+Whirlwind và Sword Wave dùng chung màu kiếm (trắng thép, viền xanh nhạt gần `ally_primary`) để không trùng vàng của aura. Firebomb dùng hổ phách có họa tiết lửa, không gạch chéo, để không nhầm với telegraph đỏ của boss.
+
+| Tên | Hex | Dùng cho |
+|---|---|---|
+| skill_slash_core | `#F2F7FF` | Phần đầu trắng và các vệt trail của Whirlwind, Sword Wave (`skill_whirlwind.tres`, `skill_sword_wave.tres`) |
+| skill_slash_edge | `#9CC4F0` | Đuôi nhạt dần của Whirlwind và Sword Wave |
+| skill_fire_core | `#FFB347` | Vùng cháy Firebomb, quả bom, tàn lửa (`skill_fire_zone.tres`, `skill_firebomb.tres`) |
+| skill_fire_rim | `#FFD46B` | Viền vùng cháy |
+| skill_fire_dark | `#C7541F` | Mảng lửa tối trong vùng cháy |
+
 ## Số nổi (FBK-01)
 
 | Tên | Hex | Dùng cho |

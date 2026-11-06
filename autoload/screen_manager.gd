@@ -90,6 +90,13 @@ func show_notice(title_key: StringName, body_key: StringName, params: Dictionary
 func has_dialog() -> bool:
 	return _dialog_holder.get_child_count() > 0
 
+## A sell or repair dialog is open, so starting the wave must wait.
+func has_transaction_dialog() -> bool:
+	for dialog in _dialog_holder.get_children():
+		if dialog.has_method(&"is_transaction") and dialog.is_transaction():
+			return true
+	return false
+
 func close_top_dialog() -> void:
 	if not has_dialog():
 		return
