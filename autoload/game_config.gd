@@ -106,6 +106,9 @@ extends Node
 @export var boss_timer_base: float = 90.0
 @export var boss_timer_step: float = 3.0
 @export var boss_timer_max: float = 120.0
+## Boss timer marks: the HUD timer turns yellow at enrage_warn_time and red at enrage_countdown_time seconds left.
+@export var enrage_warn_time: float = 30.0
+@export var enrage_countdown_time: float = 10.0
 @export var overload_pct_base: float = 0.30
 @export var overload_pct_step: float = 0.05
 @export var overload_pct_max: float = 0.60
