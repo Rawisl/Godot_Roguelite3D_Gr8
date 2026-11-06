@@ -38,12 +38,13 @@ func get_cells() -> Array[Vector2i]:
 	return out
 
 
+## Columns are one cell plus GameConfig.grid_cell_gap apart; rows sit at row_offsets.
 func cell_position(cell: Vector2i) -> Vector3:
 	if cell.y < 0 or cell.y >= row_offsets.size():
 		push_error("GridData: row %d is out of range (0..%d)" % [cell.y, row_offsets.size() - 1])
 		return origin
-	var size: float = GameConfig.grid_cell_size
-	return origin + column_dir.normalized() * (cell.x * size) + row_dir() * row_offsets[cell.y]
+	var step: float = GameConfig.grid_cell_size + GameConfig.grid_cell_gap
+	return origin + column_dir.normalized() * (cell.x * step) + row_dir() * row_offsets[cell.y]
 
 
 ## Cells that pass the placement rules; each rejected cell is logged with its reason.

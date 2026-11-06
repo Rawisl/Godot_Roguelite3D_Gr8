@@ -232,3 +232,5 @@ hud.start_wave,Bắt đầu wave
 hud.start_wave.boss,Bắt đầu wave boss
 hud.start_wave.paused,Không bắt đầu được khi tạm dừng
 hud.start_wave.dialog,Hãy đóng hộp thoại đang mở trước
+panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
+panel.need_commander_level,Cần Chỉ huy cấp {level}
