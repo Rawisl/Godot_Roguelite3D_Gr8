@@ -3,7 +3,7 @@ extends Node
 ## Global game configuration constants and parameters
 
 @export_group("Run and Wave")
-@export var starting_gold: int = 150
+@export var starting_gold: int = 0
 @export var prep_time_early: float = 25.0
 @export var prep_early_until_wave: int = 3
 @export var prep_time_late: float = 30.0
@@ -59,7 +59,7 @@ extends Node
 @export_group("Ground Grid")
 @export var grid_cell_size: float = 2.0
 @export var grid_pick_size: float = 1.9
-@export var max_ground_buildings: int = 8
+@export var max_ground_buildings: int = 3
 @export var no_build_lane_min_width: float = 4.0
 @export var no_build_lane_min_ratio: float = 0.30
 @export var grid_min_gap_to_command_post: float = 3.0

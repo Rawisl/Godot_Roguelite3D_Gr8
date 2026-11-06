@@ -231,6 +231,7 @@ func test_commander_level() -> void:
 	EventBus.run_started.emit()
 	assert_true(_service.get_commander_level() == 0, "TC2: run_started resets the level")
 	# A fresh level 1 tower is gated again after the reset.
+	_gold.gold = 5000
 	_service.build(&"W2", &"arrow")
 	assert_true(not _service.upgrade(&"W2"), "TC2: upgrade blocked again after run_started")
 	assert_true(_service.get_upgrade_block_reason(&"W2") == &"COMMANDER_LEVEL", "TC2: reason is COMMANDER_LEVEL after run_started")
