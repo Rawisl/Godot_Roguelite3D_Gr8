@@ -25,7 +25,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_1:
 			_enter(2)
 		KEY_2:
-			EventBus.skill_slots_changed.emit([&"whirlwind", &"", &""], [&"sharpness", &"vitality", &""])
+			EventBus.skill_slots_changed.emit([&"whirlwind", &"", &""], [&"sharpness", &"vitality", &""],
+				{&"whirlwind": 2, &"sharpness": 1, &"vitality": 3})
 		KEY_3:
 			EventBus.reward_offered.emit([], 0)
 		KEY_4:
@@ -45,7 +46,7 @@ func _on_reward_picked(card_id: StringName, slot_kind: StringName, new_level: in
 	print("reward_picked ", card_id, " ", slot_kind, " ", new_level)
 	var service := get_tree().get_first_node_in_group(&"reward_service") as RewardService
 	if service != null:
-		EventBus.skill_slots_changed.emit(service.state.active, service.state.passive)
+		EventBus.skill_slots_changed.emit(service.state.active, service.state.passive, service.state.levels)
 	_pending -= 1
 	EventBus.xp_changed.emit(0.0, 2, 10.0, _pending)
 	if _pending <= 0:

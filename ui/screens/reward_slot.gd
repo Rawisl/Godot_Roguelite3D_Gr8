@@ -17,5 +17,10 @@ func set_skill(data: SkillData, level: int = 0) -> void:
 	_icon.texture = data.icon if filled else null
 	_name.text = tr(data.name_key) if filled else tr(&"reward.slot.empty")
 	_name.theme_type_variation = &"" if filled else &"DimLabel"
-	_circle.tooltip_text = UiFormat.tr_fmt(&"reward.slot.tip",
-		{"name": _name.text, "level": level, "max": data.get_max_level()}) if filled else ""
+	if not filled:
+		_circle.tooltip_text = ""
+	elif level > 0:
+		_circle.tooltip_text = UiFormat.tr_fmt(&"reward.slot.tip",
+			{"name": _name.text, "level": level, "max": data.get_max_level()})
+	else:
+		_circle.tooltip_text = _name.text

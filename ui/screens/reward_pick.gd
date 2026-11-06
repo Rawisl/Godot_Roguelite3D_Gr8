@@ -12,10 +12,6 @@ const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
 
 var _busy := false
 var _skip_dialog: Control
-## Level of each skill taken this run, from reward_picked; skill_slots_changed only carries ids.
-var _levels: Dictionary[StringName, int] = {}
-var _active_ids: Array = []
-var _passive_ids: Array = []
 
 @onready var _title: Label = %Title
 @onready var _hint: Label = %Hint
@@ -41,7 +37,7 @@ func _ready() -> void:
 	for card: RewardCard in _cards.get_children():
 		card.chosen.connect(_on_card_chosen)
 	_show_slots([], [])
-	EventBus.run_started.connect(_on_run_started)
+	EventBus.run_started.connect(func() -> void: _show_slots([], []))
 	# TODO(Ender-Via): turn enable_reward_pick on in the wave manager so a real run reaches this state.
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.reward_offered.connect(_on_reward_offered)
@@ -105,16 +101,9 @@ func _on_skip_confirmed() -> void:
 	EventBus.reward_skip_requested.emit()
 
 ## The wave manager may leave REWARD_PICK inside the same emit, so the next offer waits a frame.
-func _on_reward_picked(card_id: StringName, _slot_kind: StringName, new_level: int) -> void:
-	if card_id != &"":
-		_levels[card_id] = new_level
-		_show_slots(_active_ids, _passive_ids)
+func _on_reward_picked(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
 	if visible:
 		_request_next.call_deferred()
-
-func _on_run_started() -> void:
-	_levels.clear()
-	_show_slots([], [])
 
 func _request_next() -> void:
 	if visible:
@@ -135,20 +124,18 @@ func _set_enabled(value: bool) -> void:
 		card.disabled = not value
 	_skip.disabled = not value
 
-func _show_slots(active: Array, passive: Array) -> void:
-	_active_ids = active
-	_passive_ids = passive
-	_fill_slots(_active_slots, active, GameConfig.skill_slots_active)
-	_fill_slots(_passive_slots, passive, GameConfig.skill_slots_passive)
+func _show_slots(active: Array, passive: Array, levels: Dictionary = {}) -> void:
+	_fill_slots(_active_slots, active, levels, GameConfig.skill_slots_active)
+	_fill_slots(_passive_slots, passive, levels, GameConfig.skill_slots_passive)
 
-## Slots past the configured count stay hidden. A skill in a slot is at least level 1.
-func _fill_slots(row: HBoxContainer, ids: Array, count: int) -> void:
+## Slots past the configured count stay hidden.
+func _fill_slots(row: HBoxContainer, ids: Array, levels: Dictionary, count: int) -> void:
 	var slots := row.get_children()
 	for i in slots.size():
 		var slot := slots[i] as RewardSlot
 		slot.visible = i < count
 		var id: StringName = ids[i] if i < ids.size() else &""
-		slot.set_skill(_find_skill(id), _levels.get(id, 1))
+		slot.set_skill(_find_skill(id), levels.get(id, 0))
 
 func _find_skill(id: StringName) -> SkillData:
 	if pool == null or id == &"":
