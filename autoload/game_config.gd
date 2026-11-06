@@ -3,7 +3,7 @@ extends Node
 ## Global game configuration constants and parameters
 
 @export_group("Run and Wave")
-@export var starting_gold: int = 150
+@export var starting_gold: int = 0
 @export var prep_time_early: float = 25.0
 @export var prep_early_until_wave: int = 3
 @export var prep_time_late: float = 30.0
@@ -58,8 +58,10 @@ extends Node
 
 @export_group("Ground Grid")
 @export var grid_cell_size: float = 2.0
+## Space between two neighbouring cells, on top of grid_cell_size.
+@export var grid_cell_gap: float = 0.5
 @export var grid_pick_size: float = 1.9
-@export var max_ground_buildings: int = 8
+@export var max_ground_buildings: int = 3
 @export var no_build_lane_min_width: float = 4.0
 @export var no_build_lane_min_ratio: float = 0.30
 @export var grid_min_gap_to_command_post: float = 3.0
@@ -151,8 +153,12 @@ extends Node
 @export var reward_weight_stat: int = 20
 
 @export_group("Commander Progression")
-@export var tower_gate_lv2: int = 4
-@export var tower_gate_lv3: int = 8
+@export var tower_max_level: int = 36
+## First level of tower tiers 2 and 3; only the upgrade onto these levels needs a commander level.
+@export var tower_tier2_level: int = 13
+@export var tower_tier3_level: int = 25
+@export var tower_gate_tier2: int = 4
+@export var tower_gate_tier3: int = 8
 @export var xp_base: int = 5
 @export var xp_step: int = 4
 @export var xp_commander_pct: float = 1.0

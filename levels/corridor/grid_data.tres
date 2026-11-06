@@ -6,7 +6,7 @@
 script = ExtResource("1_grid")
 origin = Vector3(-7, 0, 0)
 column_dir = Vector3(1, 0, 0)
-columns = 8
+columns = 6
 row_offsets = PackedFloat32Array(-6, -4, 4, 6)
 corridor_width = 16.0
 no_build_lane_width = 6.0

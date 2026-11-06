@@ -48,7 +48,7 @@ func test_input_map() -> void:
 	var expected_actions := [
 		&"move_up", &"move_down", &"move_left", &"move_right",
 		&"attack", &"dodge", &"battle_cry", &"mode_switch",
-		&"emergency_repair", &"retreat", &"call_wave", &"build_toggle",
+		&"emergency_repair", &"retreat", &"build_toggle",
 		&"upgrade", &"sell", &"show_ranges", &"pause",
 		&"select", &"cancel", &"toggle_hud"
 	]
