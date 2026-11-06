@@ -42,6 +42,9 @@ func setup_notice(title_key: StringName, body_key: StringName, params: Dictionar
 func is_notice() -> bool:
 	return _cancel_key == &""
 
+func is_transaction() -> bool:
+	return _is_transaction
+
 func _ready() -> void:
 	_title.text = tr(_title_key)
 	_body.text = tr(_body_key).format(_params)
