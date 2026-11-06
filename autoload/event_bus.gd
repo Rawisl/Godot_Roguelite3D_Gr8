@@ -8,9 +8,7 @@ signal run_recovered(prestige_gain: int)  # recover interrupted run
 signal wave_started(wave_index: int)
 signal wave_cleared(wave_index: int)
 signal state_changed(new_state: StringName)  # PREP | COMBAT | SUMMARY | BOSS_INTRO | BOSS_COMBAT
-signal prep_timer_changed(remaining: float)
 signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: bool)
-signal early_call_requested  # UI -> Wave (call wave early - press G)
 signal wave_start_requested  # UI -> Wave: the Start wave button ends PREP
 signal wave_summary_ready(summary: Dictionary)  # emitted AFTER save completes
 signal summary_continue_requested  # UI -> Wave: press Continue or after 10s countdown in SUMMARY
