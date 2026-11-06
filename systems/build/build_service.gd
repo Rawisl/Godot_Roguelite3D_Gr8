@@ -4,6 +4,7 @@ extends Node
 ## the gold in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice.
 # TODO(week 9): keep gold spent on Fortress repairs out of the prestige tally
+# TODO(week 10): give all four tower types levels 1 to 36
 
 ## Lock key for Fortress repairs in _busy; slot ids never take this value.
 const FORTRESS_LOCK := &"FORTRESS"
@@ -49,6 +50,10 @@ func get_data(type: StringName) -> TowerData:
 			return data
 	return null
 
+## Highest level a tower of this type reaches: its data, capped by GameConfig.tower_max_level.
+func get_max_level(data: TowerData) -> int:
+	return mini(data.levels.size(), GameConfig.tower_max_level)
+
 func get_slot_position(slot_id: StringName) -> Vector3:
 	var slot := find_slot(slot_id)
 	return slot.global_position if slot != null else Vector3.ZERO
@@ -92,7 +97,7 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	var gold := _gold()
 	if not is_prep() or slot == null or data == null or gold == null:
 		return false
-	if level < 1 or level > data.levels.size():
+	if level < 1 or level > get_max_level(data):
 		return false
 	if not tower_scenes.has(type) or not slot.can_build(data):
 		return false
@@ -187,7 +192,7 @@ func get_tower_info(slot_id: StringName) -> Dictionary:
 		"range": lv.attack_range,
 		"priority": t.priority,
 		"can_target": t.can_attack(),
-		"is_max": t.level >= t.data.levels.size(),
+		"is_max": t.level >= get_max_level(t.data),
 		"sell_value": t.get_sell_value(),
 	}
 	if not info.is_max:
@@ -202,13 +207,13 @@ func get_tower_info(slot_id: StringName) -> Dictionary:
 func get_commander_level() -> int:
 	return _commander_level
 
-## Commander level needed to upgrade a tower to next_level.
+## Commander level needed to upgrade a tower to next_level. Only the first level of
+## tiers 2 and 3 has a gate; every other upgrade needs none.
 func get_upgrade_required_level(next_level: int) -> int:
-	match next_level:
-		2:
-			return GameConfig.tower_gate_lv2
-		3:
-			return GameConfig.tower_gate_lv3
+	if next_level == GameConfig.tower_tier3_level:
+		return GameConfig.tower_gate_tier3
+	if next_level == GameConfig.tower_tier2_level:
+		return GameConfig.tower_gate_tier2
 	return 0
 
 func can_upgrade(slot_id: StringName) -> bool:
@@ -225,7 +230,7 @@ func get_upgrade_block_reason(slot_id: StringName) -> StringName:
 	if slot == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
 		return &"NO_TOWER"
 	var t := slot.tower
-	if t.level >= t.data.levels.size():
+	if t.level >= get_max_level(t.data):
 		return &"MAX_LEVEL"
 	if _commander_level < get_upgrade_required_level(t.level + 1):
 		return &"COMMANDER_LEVEL"

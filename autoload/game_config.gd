@@ -151,8 +151,12 @@ extends Node
 @export var reward_weight_stat: int = 20
 
 @export_group("Commander Progression")
-@export var tower_gate_lv2: int = 4
-@export var tower_gate_lv3: int = 8
+@export var tower_max_level: int = 36
+## First level of tower tiers 2 and 3; only the upgrade onto these levels needs a commander level.
+@export var tower_tier2_level: int = 13
+@export var tower_tier3_level: int = 25
+@export var tower_gate_tier2: int = 4
+@export var tower_gate_tier3: int = 8
 @export var xp_base: int = 5
 @export var xp_step: int = 4
 @export var xp_commander_pct: float = 1.0
