@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://6hoxmkangx64"]
 
-[ext_resource type="PackedScene" path="res://ui/screens/reward_pick.tscn" id="1_pick"]
+[ext_resource type="PackedScene" uid="uid://d122kdw4htjem" path="res://ui/screens/reward_pick.tscn" id="1_pick"]
 [ext_resource type="Script" uid="uid://wucg8pi62c72" path="res://systems/reward/reward_service.gd" id="2_service"]
 [ext_resource type="Resource" path="res://data/config/reward_pool.tres" id="3_pool"]
 [ext_resource type="Script" uid="uid://yu8ty2k23kip" path="res://tests/test_reward_pick.gd" id="4_fake"]
