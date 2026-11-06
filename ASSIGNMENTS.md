@@ -286,7 +286,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-KT1
 - Người: Kiệt
 - Tuần: 8 | Giờ ước tính: 6 | Nguồn: MỚI (kéo sớm từ W10-KT1)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: RunConfig và RunState khung: lớp RunState với wave_index, gold, mithril, owned_weapons, equipped_weapon, chain_cd, hazard_used, hazard_session, victory_reached, run_elapsed (RUN-02), is_starter theo slot; không ghi đĩa; WaveManager và GoldManager đọc ghi qua RunState
 - Nghiệm thu: Mọi trường có giá trị mặc định đúng mục 3.2.2; không trường nào được ghi xuống đĩa (RUN-01); các task tuần 9-11 cắm vào RunState thay vì tự giữ biến
 - Tệp liên quan: mới: systems/run/run_state.gd, run_config.gd; systems/wave/wave_manager.gd, systems/economy/gold_manager.gd; autoload/game_state.gd (abandon_run TODO)
