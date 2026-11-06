@@ -550,7 +550,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH1
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 6 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: BossIntro SCR-10, HUD-02 thanh HP boss, HUD-04 đồng hồ Cuồng nộ
 - Nghiệm thu: Thanh hai đoạn, nhãn CUỒNG NỘ có biểu tượng
 - Cần xong trước: W9-KT2, W9-MH1
