@@ -13,6 +13,9 @@ extends Node
 ## - Losing window focus mutes Master (setting mute_on_focus_loss, on by default);
 ##   getting it back fades Master in over focus_fade_time real seconds.
 ## - Positional sound is optional, so the request position is ignored and sounds play in stereo.
+## - The music dips for a moment when the boss changes phase or enrages, and on duck_requested.
+##   The dip runs on real time; a deeper or longer request extends the one in progress.
+## - The boss enraging also plays its own cue (boss_enraged), as a T1 so it is never dropped.
 ##
 ## Settings keys on EventBus.settings_changed: volume_master, volume_music, volume_sfx and
 ## volume_ui (0 to 1), mute_on_focus_loss (bool).
@@ -58,6 +61,15 @@ const VOLUME_BUSES := {
 ## Real-time seconds for Master to come back after the window gets focus again.
 @export var focus_fade_time: float = 0.5
 
+@export_group("Ducking")
+## Music dip when the boss changes phase or enrages: depth in dB and how long it holds,
+## in real seconds.
+@export var boss_duck_db: float = -8.0
+@export var boss_duck_time: float = 0.5
+## Real seconds for the music to go down at the start of a dip and to come back after it.
+@export var duck_attack: float = 0.05
+@export var duck_release: float = 0.25
+
 class Voice:
 	var player: AudioStreamPlayer
 	var id: StringName
@@ -79,6 +91,10 @@ var _sting: AudioStreamPlayer
 ## Track to start once the sting playing now ends.
 var _after_sting: AudioStream
 var _settings: Dictionary = DEFAULT_SETTINGS.duplicate()
+## Dip applied to the music now, in dB (0 or below), the deepest one asked for, and when it ends.
+var _duck_db := 0.0
+var _duck_depth := 0.0
+var _duck_until := 0.0
 var _focus_gain := 1.0
 var _focus_target := 1.0
 var _last_real := 0.0
@@ -115,6 +131,9 @@ func _ready() -> void:
 	EventBus.pause_changed.connect(_on_pause_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	EventBus.settings_changed.connect(_on_settings_changed)
+	EventBus.duck_requested.connect(duck)
+	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
+	EventBus.boss_enraged.connect(_on_boss_enraged)
 	GameState.app_state_changed.connect(_on_app_state_changed)
 
 func set_library(value: SfxLibrary) -> void:
@@ -176,6 +195,7 @@ func _process(_delta: float) -> void:
 		_deck_gain[i] = move_toward(_deck_gain[i], _deck_target[i], step)
 		if _deck_gain[i] <= 0.0 and _deck_target[i] <= 0.0 and _decks[i].playing:
 			_decks[i].stop()
+	_update_duck(now, real_delta)
 	_update_music_volume()
 	if _focus_gain != _focus_target:
 		_focus_gain = move_toward(_focus_gain, _focus_target, real_delta / maxf(focus_fade_time, 0.001))
@@ -256,10 +276,41 @@ func _on_app_state_changed(new_state: int, _old_state: int) -> void:
 			play_sting(music.lose_sting, music.run_end)
 
 func _update_music_volume() -> void:
-	var offset := _music_db + (pause_music_db if get_tree().paused else 0.0)
+	var offset := _music_db + _duck_db + (pause_music_db if get_tree().paused else 0.0)
 	for i in _decks.size():
 		_decks[i].volume_db = linear_to_db(maxf(_deck_gain[i], 0.0001)) + offset
 	_sting.volume_db = offset
+#endregion
+
+#region Ducking
+## Dips the music by amount_db (the sign is ignored) for duration real seconds. A dip already in
+## progress keeps the deeper depth and the later end.
+func duck(amount_db: float, duration: float) -> void:
+	var now: float = TimeManager.real_time
+	var depth := -absf(amount_db)
+	_duck_depth = minf(_duck_depth, depth) if now < _duck_until else depth
+	_duck_until = maxf(_duck_until, now + maxf(duration, 0.0))
+
+## Dip applied to the music now, in dB. For tests.
+func duck_db() -> float:
+	return _duck_db
+
+func _update_duck(now: float, real_delta: float) -> void:
+	var goal := _duck_depth if now < _duck_until else 0.0
+	var time := duck_attack if goal < _duck_db else duck_release
+	var speed := absf(_duck_depth) / maxf(time, 0.001)
+	_duck_db = move_toward(_duck_db, goal, speed * real_delta)
+	if goal == 0.0 and _duck_db == 0.0:
+		_duck_depth = 0.0
+
+## The armor breaking (ARMORED to TRANSITION) dips the music once.
+func _on_boss_phase_changed(phase: StringName) -> void:
+	if phase == &"TRANSITION":
+		duck(boss_duck_db, boss_duck_time)
+
+func _on_boss_enraged() -> void:
+	duck(boss_duck_db, boss_duck_time)
+	play(&"boss_enraged", PRIORITY_T1)
 #endregion
 
 #region Settings and focus
