@@ -37,7 +37,7 @@ func _ready() -> void:
 	# Connect UI controls
 	start_btn.pressed.connect(_on_start_pressed)
 	prep_btn.pressed.connect(_on_prep_pressed)
-	call_btn.pressed.connect(_on_call_early_pressed)
+	call_btn.pressed.connect(_on_start_wave_pressed)
 	kill_all_btn.pressed.connect(kill_all_enemies)
 
 	wave_spin.value_changed.connect(func(_v): _update_preview())
@@ -62,7 +62,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_ENTER, KEY_KP_ENTER:
 				_on_start_pressed()
 			KEY_G:
-				_on_call_early_pressed()
+				_on_start_wave_pressed()
 			KEY_K:
 				kill_all_enemies()
 			KEY_1:
@@ -104,9 +104,9 @@ func _on_prep_pressed() -> void:
 	_update_preview()
 
 
-func _on_call_early_pressed() -> void:
+func _on_start_wave_pressed() -> void:
 	if wave_manager.wave_state == Enums.WaveState.PREP:
-		wave_manager.call_early()
+		wave_manager.start_combat()
 
 
 func kill_all_enemies() -> void:
@@ -171,7 +171,7 @@ func _update_status_display() -> void:
 	var state_name: String = Enums.WaveState.keys()[wave_manager.wave_state]
 	var timer_text := ""
 	if wave_manager.wave_state == Enums.WaveState.PREP:
-		timer_text = " (%.1fs remaining)" % maxf(0.0, wave_manager.prep_timer)
+		timer_text = " (Ready)"
 	elif wave_manager.wave_state == Enums.WaveState.SUMMARY:
 		timer_text = " (Next in %.1fs)" % maxf(0.0, wave_manager.summary_timer)
 

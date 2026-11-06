@@ -296,7 +296,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-KT2
 - Người: Kiệt
 - Tuần: 8 | Giờ ước tính: 4 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Bỏ đếm ngược PREP và gọi wave sớm phía wave: xóa prep_timer, get_prep_time, prep_timer_changed, call_early, early_call_bonus, tham số prep_time_* và early_call_*; PREP chỉ kết thúc khi nhận wave_start_requested; bỏ early_call_bonus khỏi summary_data
 - Nghiệm thu: PREP không tự kết thúc dù để yên 10 phút; phím G không làm gì; wave_cleared/summary_data không còn early_call_bonus
 - Tệp liên quan: systems/wave/wave_manager.gd (prep_timer, call_early, _early_call_bonus), autoload/game_config.gd (prep_time_*, early_call_*), autoload/event_bus.gd (prep_timer_changed, early_call_requested)

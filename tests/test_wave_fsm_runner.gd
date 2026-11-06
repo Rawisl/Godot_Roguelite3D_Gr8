@@ -8,7 +8,7 @@ extends Node
 ## - FRENZY persists after STAGGER without signal spam
 ## - Data.target_rules prioritization, behind-target filter, wall tower filter
 ## - Spawn queue, spawn_zone, spawn_grace, cannot be targeted in spawn_zone
-## - WaveManager PREP on ready, early call gold bonus
+## - WaveManager PREP on ready, manual wave start transition to COMBAT
 ## - Wave FSM: PREP -> COMBAT -> SUMMARY transitions with 8 Grunts
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
@@ -349,16 +349,23 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 	var on_wave_cleared := func(w: int): waves_cleared.append(w)
 	EventBus.wave_cleared.connect(on_wave_cleared)
 
+	var summaries_received: Array[Dictionary] = []
+	var on_wave_summary_ready := func(s: Dictionary): summaries_received.append(s)
+	EventBus.wave_summary_ready.connect(on_wave_summary_ready)
+
 	# 1. Adding WaveManager automatically enters PREP via _ready()
 	add_child(wave_manager)
 	assert_true(wave_manager.wave_state == Enums.WaveState.PREP, "WaveManager enters PREP automatically on _ready()")
-	assert_true(wave_manager.prep_timer > 0.0, "prep_timer initialized to prep_time_early (25s)")
 	assert_true(states_received.has(&"PREP"), "EventBus emitted state_changed(&'PREP')")
 
-	# 2. Call Early -> Grants early call bonus gold and enters COMBAT
-	wave_manager.call_early()
-	assert_true(wave_manager.wave_state == Enums.WaveState.COMBAT, "WaveManager enters COMBAT on early call")
-	assert_true(gold_deltas.size() > 0 and gold_deltas[0] > 0, "Early call gold bonus granted via EventBus.gold_delta")
+	# Verify PREP does not advance automatically after simulated elapsed time
+	for _i in range(50):
+		wave_manager._physics_process(1.0)
+	assert_true(wave_manager.wave_state == Enums.WaveState.PREP, "PREP does not advance automatically over time")
+
+	# 2. Trigger wave start via wave_start_requested -> enters COMBAT
+	EventBus.wave_start_requested.emit()
+	assert_true(wave_manager.wave_state == Enums.WaveState.COMBAT, "WaveManager enters COMBAT on wave_start_requested")
 	assert_true(states_received.has(&"COMBAT"), "EventBus emitted state_changed(&'COMBAT')")
 	assert_true(waves_started.has(1), "EventBus emitted wave_started(1)")
 	assert_true(wave_manager.spawn_queue.size() == 8, "spawn_queue has exactly 8 Grunts queued")
@@ -395,7 +402,11 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 	assert_true(wave_manager.wave_state == Enums.WaveState.SUMMARY, "Wave transitions to SUMMARY when queue is empty and enemies_alive == 0")
 	assert_true(states_received.has(&"SUMMARY"), "EventBus emitted state_changed(&'SUMMARY')")
 	assert_true(waves_cleared.has(1), "EventBus emitted wave_cleared(1)")
+	assert_true(summaries_received.size() > 0, "EventBus emitted wave_summary_ready")
+	if not summaries_received.is_empty():
+		assert_true(not summaries_received[0].has("early_call_bonus"), "summary_data excludes early_call_bonus")
 
+	EventBus.wave_summary_ready.disconnect(on_wave_summary_ready)
 	EventBus.state_changed.disconnect(on_state_changed)
 	EventBus.gold_delta.disconnect(on_gold_delta)
 	EventBus.wave_started.disconnect(on_wave_started)
