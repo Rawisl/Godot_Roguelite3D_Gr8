@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://6hoxmkangx64"]
+
+[ext_resource type="PackedScene" path="res://ui/screens/reward_pick.tscn" id="1_pick"]
+[ext_resource type="Script" uid="uid://wucg8pi62c72" path="res://systems/reward/reward_service.gd" id="2_service"]
+[ext_resource type="Resource" path="res://data/config/reward_pool.tres" id="3_pool"]
+[ext_resource type="Script" uid="uid://yu8ty2k23kip" path="res://tests/test_reward_pick.gd" id="4_fake"]
+
+[node name="TestRewardPick" type="Control" unique_id=1573920468]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RewardPick" parent="." unique_id=1840273361 instance=ExtResource("1_pick")]
+layout_mode = 1
+
+[node name="RewardService" type="Node" parent="." unique_id=1533692419]
+script = ExtResource("2_service")
+pool = ExtResource("3_pool")
+
+[node name="FakeSignals" type="Node" parent="." unique_id=784390125]
+script = ExtResource("4_fake")
