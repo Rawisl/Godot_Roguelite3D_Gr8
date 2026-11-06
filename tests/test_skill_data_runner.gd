@@ -165,7 +165,7 @@ func test_dict_roundtrip() -> void:
 func test_event_bus_signals() -> void:
 	var expected := {
 		&"xp_changed": 4, &"level_up": 2, &"reward_offered": 2,
-		&"reward_picked": 3, &"skill_slots_changed": 2, &"aura_changed": 1,
+		&"reward_picked": 3, &"skill_slots_changed": 3, &"aura_changed": 1,
 		&"heal_tower_hp_changed": 3,
 	}
 	for sig: StringName in expected:
