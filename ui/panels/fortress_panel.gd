@@ -1,6 +1,8 @@
 class_name FortressPanel
 extends PanelContainer
-## Fortress HP, gold repairs and the Emergency repair status, drawn from EventBus values.
+## Fortress HP, the Mithril repair and the Emergency repair status, drawn from EventBus values.
+## One Mithril heals a fixed share of max HP. The button stays usable when less is missing
+## (the extra is lost), and turns grey with the reason outside PREP, at full HP or without Mithril.
 
 signal closed
 
@@ -9,7 +11,7 @@ const BUTTON_LOCK_TIME := 0.15
 
 var _hp := 0
 var _max_hp := 0
-var _gold := 0
+var _mithril := 0
 var _charges := 0
 var _cd_until := 0.0  # game time when the emergency cooldown ends
 var _locked := false
@@ -18,9 +20,8 @@ var _locked := false
 @onready var _close: Button = %CloseButton
 @onready var _hp_label: Label = %HpLabel
 @onready var _hp_bar: ProgressBar = %HpBar
-@onready var _small: PanelButton = %RepairSmall
-@onready var _large: PanelButton = %RepairLarge
-@onready var _full: PanelButton = %RepairFull
+@onready var _mithril_label: Label = %MithrilLabel
+@onready var _repair: PanelButton = %RepairMithril
 @onready var _emg_label: Label = %EmgLabel
 @onready var _emg_cd: Label = %EmgCooldown
 @onready var _emg_hint: Label = %EmgHint
@@ -34,11 +35,12 @@ func _ready() -> void:
 	_emg_hint.text = tr(&"panel.fortress.emg_hint")
 	_emg_label.tooltip_text = tr(&"panel.fortress.emg_tip")
 	_emg_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	_small.pressed.connect(_on_repair_pressed.bind(STATS.repair_step_small_pct))
-	_large.pressed.connect(_on_repair_pressed.bind(STATS.repair_step_large_pct))
-	_full.pressed.connect(_on_repair_pressed.bind(0.0))
+	_repair.pressed.connect(_on_repair_pressed)
 	EventBus.fortress_hp_changed.connect(_on_hp_changed)
-	EventBus.gold_changed.connect(_on_gold_changed)
+	# TODO(Ender-Via): emit mithril_changed from RunState whenever mithril changes.
+	EventBus.mithril_changed.connect(_on_mithril_changed)
+	EventBus.state_changed.connect(_on_state_changed)
+	EventBus.run_started.connect(_on_run_started)
 	EventBus.emergency_repair_state_changed.connect(_on_emg_state_changed)
 	EventBus.skill_cooldown_changed.connect(_on_cooldown_changed)
 
@@ -53,34 +55,39 @@ func refresh() -> void:
 	_hp_label.text = UiFormat.tr_fmt(&"panel.tower.hp", {"value": _hp, "max": _max_hp})
 	_hp_bar.max_value = maxi(1, _max_hp)
 	_hp_bar.value = _hp
-	_set_repair(_small, STATS.repair_step_small_pct)
-	_set_repair(_large, STATS.repair_step_large_pct)
-	_set_repair(_full, 0.0)
+	_mithril_label.text = UiFormat.tr_fmt(&"panel.fortress.mithril", {"value": _mithril})
+	_refresh_repair()
 	_refresh_emergency()
 
-## step_ratio <= 0 means "to full HP". Disabled first, so the label takes the right colour.
-func _set_repair(button: PanelButton, step_ratio: float) -> void:
-	var per_pct := STATS.repair_gold_per_pct
-	var quote := Fortress.quote_repair(step_ratio * 100.0, _hp, _max_hp, _gold, per_pct)
-	var price := Fortress.quote_repair(step_ratio * 100.0, _hp, _max_hp, 1 << 30, per_pct)
-	var is_full := _hp >= _max_hp
-	button.disabled = quote.heal <= 0
-	var main := tr(&"panel.fortress.repair_full") if step_ratio <= 0.0 \
-		else UiFormat.tr_fmt(&"panel.fortress.repair_step", {"pct": roundi(step_ratio * 100.0)})
-	if not is_full:
-		main += " · " + UiFormat.tr_fmt(&"panel.fortress.gold", {"gold": price.cost})
-	var warning := ""
-	if is_full:
-		warning = tr(&"panel.fortress.full")
-	elif quote.heal <= 0:
-		warning = UiFormat.tr_fmt(&"panel.need_gold", {"gold": _min_cost() - _gold})
-	button.set_lines(main, warning)
-	button.tooltip_text = "" if quote.heal <= 0 else UiFormat.tr_fmt(&"panel.fortress.repair_tip",
-		{"pct": UiFormat.decimal(quote.pct), "gold": quote.cost})
+## HP one Mithril gives back at most.
+func _heal_per_mithril() -> int:
+	return floori(STATS.mithril_repair_pct * _max_hp)
 
-## The buttons stay usable while the gold covers at least 1% (or the whole gap when it is smaller).
-func _min_cost() -> int:
-	return Fortress.min_repair_cost(_hp, _max_hp, STATS.repair_gold_per_pct)
+## Empty when the repair can go ahead. Paused PREP still counts as PREP.
+func _lock_reason() -> StringName:
+	if GameState.wave_state != &"PREP":
+		return &"panel.fortress.prep_only"
+	if _hp >= _max_hp:
+		return &"panel.fortress.full"
+	if _mithril <= 0:
+		return &"panel.fortress.need_mithril"
+	return &""
+
+## Disabled first, so the label takes the right colour.
+func _refresh_repair() -> void:
+	var reason := _lock_reason()
+	_repair.disabled = reason != &""
+	var main := UiFormat.tr_fmt(&"panel.fortress.repair_mithril",
+		{"pct": roundi(STATS.mithril_repair_pct * 100.0)})
+	_repair.set_lines(main, tr(reason) if reason != &"" else "")
+	if reason != &"":
+		_repair.tooltip_text = tr(reason)
+		return
+	var missing := _max_hp - _hp
+	var heal := mini(_heal_per_mithril(), missing)
+	var key := &"panel.fortress.repair_overheal" if missing < _heal_per_mithril() \
+		else &"panel.fortress.repair_mithril_tip"
+	_repair.tooltip_text = UiFormat.tr_fmt(key, {"hp": heal})
 
 func _refresh_emergency() -> void:
 	var max_charges := GameConfig.emg_repair_charges_max
@@ -90,13 +97,14 @@ func _refresh_emergency() -> void:
 	_emg_cd.text = UiFormat.tr_fmt(&"panel.fortress.emg_cd", {"sec": ceili(left)})
 	_emg_hint.visible = _charges < max_charges
 
-func _on_repair_pressed(step_ratio: float) -> void:
-	if not _try_lock():
+## The service checks PREP, HP and Mithril again when it runs, so a press on the frame PREP ends is refused.
+func _on_repair_pressed() -> void:
+	if not _try_lock() or _lock_reason() != &"":
 		return
-	var service := get_tree().get_first_node_in_group(&"build_service") as BuildService
-	if service == null:
-		return
-	service.repair_fortress(step_ratio)
+	var service := get_tree().get_first_node_in_group(&"build_service")
+	# TODO(kiezroth): add repair_fortress_mithril() to BuildService (spend 1 Mithril, heal the share, refuse at full HP or 0 Mithril); this button already calls it.
+	if service != null and service.has_method(&"repair_fortress_mithril"):
+		service.call(&"repair_fortress_mithril")
 	refresh()
 
 func _on_hp_changed(hp: int, max_hp: int, _delta: int) -> void:
@@ -105,10 +113,17 @@ func _on_hp_changed(hp: int, max_hp: int, _delta: int) -> void:
 	if visible:
 		refresh()
 
-func _on_gold_changed(gold: int) -> void:
-	_gold = gold
+func _on_mithril_changed(new_mithril: int, _delta: int) -> void:
+	_mithril = new_mithril
 	if visible:
 		refresh()
+
+func _on_state_changed(_new_state: StringName) -> void:
+	if visible:
+		refresh()
+
+func _on_run_started() -> void:
+	_mithril = 0
 
 func _on_emg_state_changed(charges: int, _cooldown: float, _heal_pct: float) -> void:
 	_charges = charges
