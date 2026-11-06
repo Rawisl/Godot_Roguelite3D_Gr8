@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://3qupeh2kq53j"]
+
+[ext_resource type="Script" uid="uid://cup2jpn5fmsu5" path="res://ui/screens/reward_card.gd" id="1_card"]
+[ext_resource type="FontFile" uid="uid://c5eh65su1iw4t" path="res://ui/theme/fonts/BeVietnamPro-Bold.ttf" id="2_bold"]
+
+[node name="RewardCard" type="Button" unique_id=2068423320]
+custom_minimum_size = Vector2(340, 440)
+clip_contents = true
+focus_mode = 0
+script = ExtResource("1_card")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1311500421]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Body" type="VBoxContainer" parent="Margin" unique_id=1764093355]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Kind" type="Label" parent="Margin/Body" unique_id=482516640]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.70980394, 0.11764706, 0.11764706, 1)
+theme_override_fonts/font = ExtResource("2_bold")
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Margin/Body" unique_id=1958392041]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 112)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Margin/Body" unique_id=703926817]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Level" type="Label" parent="Margin/Body" unique_id=1125388740]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="Margin/Body" unique_id=596187202]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+autowrap_mode = 3
