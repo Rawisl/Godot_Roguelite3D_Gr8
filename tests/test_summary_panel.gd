@@ -31,7 +31,7 @@ func _full() -> Dictionary:
 	return {
 		"wave_index": 4, "clear_time": 47.3, "clear_tier": "FAST",
 		"kills_by_type": {"grunt": 12, "archer": 3},
-		"gold_base": 66, "gold_mult": 1.25, "early_call_bonus": 20, "gold_total": 102,
+		"gold_base": 66, "gold_mult": 1.25, "gold_total": 102,
 		"prestige_gain_wave": 18, "fortress_hp": 820, "fortress_max_hp": 1000,
 		"ruined_towers": [{"type": "arrow", "level": 2, "rebuild_cost": 90}],
 		"emg_repair_gained": 1,
