@@ -17,7 +17,7 @@
 [ext_resource type="PackedScene" uid="uid://csopdaxvf7sac" path="res://ui/hud/parts/speed_buttons.tscn" id="9_aixkq"]
 [ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="10_cxhb7"]
 [ext_resource type="PackedScene" uid="uid://b0k826c63b0wy" path="res://ui/panels/fortress_panel.tscn" id="10_m6r7j"]
-[ext_resource type="PackedScene" uid="uid://c3jndrrp8vrgp" path="res://ui/hud/parts/call_wave_button.tscn" id="12_uyo40"]
+[ext_resource type="PackedScene" uid="uid://c3jndrrp8vrgp" path="res://ui/hud/parts/start_wave_button.tscn" id="12_uyo40"]
 [ext_resource type="PackedScene" uid="uid://c8hs4tp2nl6qa" path="res://ui/panels/heal_station_panel.tscn" id="14_fs87q"]
 [ext_resource type="Script" uid="uid://chy1j70x80shi" path="res://ui/world/selection_controller.gd" id="14_olkg6"]
 [ext_resource type="PackedScene" uid="uid://chvg4qcatao1s" path="res://ui/hud/parts/mode_indicator.tscn" id="14_sm7np"]
@@ -185,7 +185,7 @@ offset_top = -165.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="CallWaveButton" parent="Root/SafeArea/Frame/BottomCenter" unique_id=1260135002 instance=ExtResource("12_uyo40")]
+[node name="StartWaveButton" parent="Root/SafeArea/Frame/BottomCenter" unique_id=1260135002 instance=ExtResource("12_uyo40")]
 layout_mode = 2
 
 [node name="BottomRight" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=1544337224]
