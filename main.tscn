@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" uid="uid://c7hs4tn5x0a1b" path="res://entities/tower/heal_station.tscn" id="15_heal_station_scene"]
 [ext_resource type="Script" uid="uid://wucg8pi62c72" path="res://systems/reward/reward_service.gd" id="20_reward_service"]
 [ext_resource type="Resource" path="res://data/config/reward_pool.tres" id="21_reward_pool"]
+[ext_resource type="Script" uid="uid://banqev1rqsfq0" path="res://systems/run/run_state.gd" id="22_run_state"]
 
 [node name="Main" type="Node" unique_id=631834920]
 
@@ -25,6 +26,9 @@
 [node name="Level" parent="LevelHolder" unique_id=1239096197 instance=ExtResource("1_0xm2m")]
 
 [node name="Gameplay" type="Node3D" parent="." unique_id=471339749]
+
+[node name="RunState" type="Node" parent="Gameplay" unique_id=1910283741]
+script = ExtResource("22_run_state")
 
 [node name="BuildService" type="Node" parent="Gameplay" unique_id=1054043857]
 script = ExtResource("5_ycdy4")

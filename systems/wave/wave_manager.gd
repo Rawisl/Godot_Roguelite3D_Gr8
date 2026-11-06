@@ -20,14 +20,34 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var auto_advance_summary: bool = true
 @export var enable_reward_pick: bool = false
 
-var current_wave: int = 1
+var _fallback_current_wave: int = 1
+var current_wave: int:
+	get:
+		var rs := _get_run_state()
+		return rs.wave_index if rs != null else _fallback_current_wave
+	set(value):
+		_fallback_current_wave = value
+		var rs := _get_run_state()
+		if rs != null:
+			rs.wave_index = value
+
 var wave_state: Enums.WaveState = Enums.WaveState.PREP
 
 var spawn_queue: Array[PackedScene] = []
 var _spawn_delays: Array[float] = []
 var _next_spawn_delay: float = 0.6
 
-var enemies_alive: int = 0
+var _fallback_enemies_alive: int = 0
+var enemies_alive: int:
+	get:
+		var rs := _get_run_state()
+		return rs.enemies_alive if rs != null else _fallback_enemies_alive
+	set(value):
+		_fallback_enemies_alive = value
+		var rs := _get_run_state()
+		if rs != null:
+			rs.enemies_alive = value
+
 var total_wave_enemies: int = 0
 
 var prep_timer: float = 0.0
@@ -44,8 +64,27 @@ var _last_candidate_pos: Vector3 = Vector3.ZERO
 
 # Early call & Wave gold rewards
 var _early_call_bonus: int = 0
-var _wave_gold_base: float = 0.0
-var _wave_prestige: int = 0
+var _fallback_wave_gold_base: float = 0.0
+var _wave_gold_base: float:
+	get:
+		var rs := _get_run_state()
+		return rs.wave_gold_base if rs != null else _fallback_wave_gold_base
+	set(value):
+		_fallback_wave_gold_base = value
+		var rs := _get_run_state()
+		if rs != null:
+			rs.wave_gold_base = value
+
+var _fallback_wave_prestige: int = 0
+var _wave_prestige: int:
+	get:
+		var rs := _get_run_state()
+		return rs.wave_prestige_buffer if rs != null else _fallback_wave_prestige
+	set(value):
+		_fallback_wave_prestige = value
+		var rs := _get_run_state()
+		if rs != null:
+			rs.wave_prestige_buffer = value
 var _kills_by_type: Dictionary = {}
 
 const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
@@ -158,6 +197,10 @@ func start_prep() -> void:
 	_first_enemy_spawned = false
 	_boss_defeated_this_wave = false
 	_boss_instance = null
+
+	var rs := _get_run_state()
+	if rs != null:
+		rs.hazard_used = false
 
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"PREP")
@@ -578,6 +621,10 @@ func _end_combat_to_summary() -> void:
 		run_flag["waves_cleared"] = current_wave
 		SaveManager.save()
 
+	var rs := _get_run_state()
+	if rs != null:
+		rs.waves_cleared = current_wave
+
 	# Fortress HP
 	var fortress_hp := 0
 	var fortress_max_hp := 0
@@ -721,3 +768,10 @@ func _on_run_lost() -> void:
 func advance_to_next_wave() -> void:
 	current_wave += 1
 	start_prep()
+
+
+func _get_run_state() -> RunState:
+	if not is_inside_tree():
+		return null
+	return get_tree().get_first_node_in_group(&"run_state") as RunState
+
