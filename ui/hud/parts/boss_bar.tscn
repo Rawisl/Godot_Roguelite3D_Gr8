@@ -1,26 +1,131 @@
 [gd_scene format=3 uid="uid://cbnuvwg1yjryl"]
 
 [ext_resource type="Script" uid="uid://bt1ys01cdjyws" path="res://ui/hud/parts/boss_bar.gd" id="1_8sfhq"]
+[ext_resource type="Resource" uid="uid://dmtjvtt64ofto" path="res://data/bosses/bulwark_boss.tres" id="2_blwk"]
+[ext_resource type="Texture2D" uid="uid://doqo8lphfl3mu" path="res://art/icons/boss_icon.png" id="3_bicon"]
+[ext_resource type="Texture2D" uid="uid://bs1qm0yx4mf1r" path="res://art/icons/shield_icon.png" id="4_shield"]
+[ext_resource type="Script" uid="uid://bhfhlrn5orfb" path="res://common/boss_data.gd" id="5_bdata"]
 
-[node name="BossBar" type="VBoxContainer" unique_id=615647234]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor"]
+bg_color = Color(0.6627, 0.6549, 0.6235, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.1098, 0.1216, 0.149, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="BossBar" type="PanelContainer" unique_id=615647234]
 visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+custom_minimum_size = Vector2(640, 0)
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
 script = ExtResource("1_8sfhq")
+bosses = Array[ExtResource("5_bdata")]([ExtResource("2_blwk")])
+warn_icon = ExtResource("3_bicon")
+enrage_icon = ExtResource("3_bicon")
 
-[node name="ProgressBar" type="ProgressBar" parent="." unique_id=1960063032]
+[node name="Body" type="VBoxContainer" parent="." unique_id=1580395716]
 layout_mode = 2
 mouse_filter = 2
-show_percentage = false
+theme_override_constants/separation = 6
 
-[node name="ProgressBar2" type="ProgressBar" parent="." unique_id=1588035000]
+[node name="Header" type="HBoxContainer" parent="Body" unique_id=1960063032]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BossName" type="Label" parent="Body/Header" unique_id=1081849974]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+theme_override_font_sizes/font_size = 26
+
+[node name="TimerIcon" type="TextureRect" parent="Body/Header" unique_id=1735204981]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Timer" type="Label" parent="Body/Header" unique_id=1588035000]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 2
+
+[node name="Bars" type="HBoxContainer" parent="Body" unique_id=1297346051]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="CoreBar" type="ProgressBar" parent="Body/Bars" unique_id=508237194]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"BossBar"
 show_percentage = false
 
-[node name="Label" type="Label" parent="." unique_id=1081849974]
+[node name="ArmorBar" type="ProgressBar" parent="Body/Bars" unique_id=1820463529]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_armor")
+show_percentage = false
+
+[node name="InfoRow" type="HBoxContainer" parent="Body" unique_id=713948205]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="HpText" type="Label" parent="Body/InfoRow" unique_id=1239561847]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+
+[node name="ResistRow" type="HBoxContainer" parent="Body/InfoRow" unique_id=362915084]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="ShieldIcon" type="TextureRect" parent="Body/InfoRow/ResistRow" unique_id=1905728463]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("4_shield")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Resist" type="Label" parent="Body/InfoRow/ResistRow" unique_id=1471820395]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
