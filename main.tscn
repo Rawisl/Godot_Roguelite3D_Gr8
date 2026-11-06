@@ -17,7 +17,7 @@
 [ext_resource type="Script" uid="uid://co2bi4w4nhvw5" path="res://systems/run/commander_spawner.gd" id="13_cmdspawn"]
 [ext_resource type="Script" uid="uid://wucg8pi62c72" path="res://systems/reward/reward_service.gd" id="20_reward_service"]
 [ext_resource type="Resource" path="res://data/config/reward_pool.tres" id="21_reward_pool"]
-[ext_resource type="Script" path="res://systems/run/run_state.gd" id="22_run_state"]
+[ext_resource type="Script" uid="uid://banqev1rqsfq0" path="res://systems/run/run_state.gd" id="22_run_state"]
 
 [node name="Main" type="Node" unique_id=631834920]
 
