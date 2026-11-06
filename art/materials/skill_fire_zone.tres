@@ -1,0 +1,17 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c5q48h2hvbj4v"]
+
+[ext_resource type="Shader" uid="uid://xc4jqsjxipnd" path="res://art/shaders/skill_fire_zone.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "skill_fire_zone"
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/core_color = Color(1, 0.7, 0.28, 0.55)
+shader_parameter/rim_color = Color(1, 0.83, 0.42, 0.9)
+shader_parameter/dark_color = Color(0.78, 0.33, 0.12, 0.35)
+shader_parameter/rim_width = 0.15
+shader_parameter/edge_softness = 0.1
+shader_parameter/noise_scale = 1.4
+shader_parameter/drift_speed = 0.35
+shader_parameter/flicker_hz = 1.2
+shader_parameter/flicker_amount = 0.2

@@ -1,0 +1,21 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c22j4h5s6kbdv"]
+
+[ext_resource type="Shader" uid="uid://dgdoxt6irbus2" path="res://art/shaders/skill_whirlwind.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "skill_whirlwind"
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/core_color = Color(0.95, 0.97, 1, 1)
+shader_parameter/tail_color = Color(0.61, 0.77, 0.94, 0.8)
+shader_parameter/blade_band = 0.65
+shader_parameter/tail = 1.0
+shader_parameter/head_part = 0.12
+shader_parameter/head_fade = 0.25
+shader_parameter/head_slant = 0.04
+shader_parameter/body_alpha = 0.45
+shader_parameter/end_fade = 0.4
+shader_parameter/streak_density = 5.0
+shader_parameter/streak_breakup = 0.3
+shader_parameter/streak_min_length = 0.25
+shader_parameter/edge_softness = 0.08

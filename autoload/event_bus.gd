@@ -79,6 +79,7 @@ signal boss_timer_changed(t: float)
 signal boss_timer_milestone(t_mark: int)  # 30, 20, 15, 5
 signal boss_hp_changed(armor_hp: int, core_hp: int, phase: StringName)
 signal boss_phase_changed(phase: StringName)  # ARMORED | TRANSITION | EXPOSED
+signal boss_enraged  # once per boss wave, when boss_timer reaches 0 with the boss still alive
 signal telegraph_started(kind: StringName, position: Vector3, radius: float, duration: float) 
 signal overload_resolved(fortress_damage: int, commander_exposed: bool)  # emitted once per boss wave
 signal boss_defeated
