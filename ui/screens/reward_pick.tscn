@@ -1,0 +1,193 @@
+[gd_scene format=3 uid="uid://d122kdw4htjem"]
+
+[ext_resource type="Script" uid="uid://cohk0pdkr8o2k" path="res://ui/screens/reward_pick.gd" id="1_pick"]
+[ext_resource type="Resource" path="res://data/config/reward_pool.tres" id="2_pool"]
+[ext_resource type="PackedScene" uid="uid://3qupeh2kq53j" path="res://ui/screens/reward_card.tscn" id="3_card"]
+[ext_resource type="PackedScene" uid="uid://bttte5f7hjsj6" path="res://ui/screens/reward_slot.tscn" id="4_slot"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_active"]
+content_margin_left = 20.0
+content_margin_top = 14.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.14901961, 0.16862746, 0.20784314, 1)
+border_width_left = 6
+border_width_right = 6
+border_color = Color(1, 0.78431374, 0.23921569, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_passive"]
+content_margin_left = 20.0
+content_margin_top = 14.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.14901961, 0.16862746, 0.20784314, 1)
+border_width_left = 6
+border_width_right = 6
+border_color = Color(0.47843137, 0.30980393, 0.627451, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="RewardPick" type="Control" unique_id=1840273361]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_pick")
+pool = ExtResource("2_pool")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1027364518]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1580413727]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Window" type="PanelContainer" parent="Center" unique_id=394028117]
+custom_minimum_size = Vector2(1360, 0)
+layout_mode = 2
+theme_type_variation = &"DialogPanel"
+
+[node name="Margin" type="MarginContainer" parent="Center/Window" unique_id=1102938475]
+layout_mode = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 36
+
+[node name="Body" type="VBoxContainer" parent="Center/Window/Margin" unique_id=1693047528]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Center/Window/Margin/Body" unique_id=772209184]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Center/Window/Margin/Body" unique_id=1209843365]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+horizontal_alignment = 1
+
+[node name="Pending" type="Label" parent="Center/Window/Margin/Body" unique_id=1450938076]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Cards" type="HBoxContainer" parent="Center/Window/Margin/Body" unique_id=268813950]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="Card1" parent="Center/Window/Margin/Body/Cards" unique_id=1395870722 instance=ExtResource("3_card")]
+layout_mode = 2
+
+[node name="Card2" parent="Center/Window/Margin/Body/Cards" unique_id=2010364785 instance=ExtResource("3_card")]
+layout_mode = 2
+
+[node name="Card3" parent="Center/Window/Margin/Body/Cards" unique_id=887123546 instance=ExtResource("3_card")]
+layout_mode = 2
+
+[node name="Empty" type="Label" parent="Center/Window/Margin/Body" unique_id=1631029487]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Slots" type="HBoxContainer" parent="Center/Window/Margin/Body" unique_id=1748501926]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="ActiveGroup" type="PanelContainer" parent="Center/Window/Margin/Body/Slots" unique_id=1172836049]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_active")
+
+[node name="Column" type="VBoxContainer" parent="Center/Window/Margin/Body/Slots/ActiveGroup" unique_id=1820471935]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ActiveTitle" type="Label" parent="Center/Window/Margin/Body/Slots/ActiveGroup/Column" unique_id=503917264]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78431374, 0.23921569, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="ActiveSlots" type="HBoxContainer" parent="Center/Window/Margin/Body/Slots/ActiveGroup/Column" unique_id=1938401662]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="RewardSlot1" parent="Center/Window/Margin/Body/Slots/ActiveGroup/Column/ActiveSlots" unique_id=611058823 instance=ExtResource("4_slot")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RewardSlot2" parent="Center/Window/Margin/Body/Slots/ActiveGroup/Column/ActiveSlots" unique_id=1748291530 instance=ExtResource("4_slot")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RewardSlot3" parent="Center/Window/Margin/Body/Slots/ActiveGroup/Column/ActiveSlots" unique_id=239485716 instance=ExtResource("4_slot")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PassiveGroup" type="PanelContainer" parent="Center/Window/Margin/Body/Slots" unique_id=1290374658]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_passive")
+
+[node name="Column" type="VBoxContainer" parent="Center/Window/Margin/Body/Slots/PassiveGroup" unique_id=1039571826]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PassiveTitle" type="Label" parent="Center/Window/Margin/Body/Slots/PassiveGroup/Column" unique_id=905736214]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7176, 0.5804, 0.8588, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="PassiveSlots" type="HBoxContainer" parent="Center/Window/Margin/Body/Slots/PassiveGroup/Column" unique_id=1587230496]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="RewardSlot1" parent="Center/Window/Margin/Body/Slots/PassiveGroup/Column/PassiveSlots" unique_id=1021847365 instance=ExtResource("4_slot")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RewardSlot2" parent="Center/Window/Margin/Body/Slots/PassiveGroup/Column/PassiveSlots" unique_id=433870129 instance=ExtResource("4_slot")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RewardSlot3" parent="Center/Window/Margin/Body/Slots/PassiveGroup/Column/PassiveSlots" unique_id=1866023094 instance=ExtResource("4_slot")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SkipButton" type="Button" parent="Center/Window/Margin/Body" unique_id=1349206871]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 60)
+layout_mode = 2
+size_flags_horizontal = 4
