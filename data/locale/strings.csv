@@ -231,3 +231,5 @@ panel.heal.max,Tối đa
 panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
 panel.build.heal_limit,Tối đa {max} trạm hồi phục
+panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
+panel.need_commander_level,Cần Chỉ huy cấp {level}
