@@ -50,7 +50,6 @@ var enemies_alive: int:
 
 var total_wave_enemies: int = 0
 
-var prep_timer: float = 0.0
 var spawn_timer: float = 0.0
 var summary_timer: float = 0.0
 
@@ -62,8 +61,6 @@ var _wave_rng: RandomNumberGenerator = null
 var _retry_elapsed: float = 0.0
 var _last_candidate_pos: Vector3 = Vector3.ZERO
 
-# Early call & Wave gold rewards
-var _early_call_bonus: int = 0
 var _fallback_wave_gold_base: float = 0.0
 var _wave_gold_base: float:
 	get:
@@ -102,7 +99,7 @@ var _xp_tracker: Node = null
 
 func _ready() -> void:
 	add_to_group(&"wave_manager")
-	EventBus.early_call_requested.connect(_on_early_call_requested)
+	EventBus.wave_start_requested.connect(_on_wave_start_requested)
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.summary_continue_requested.connect(_on_summary_continue_requested)
 	EventBus.fortress_destroyed.connect(_on_run_lost)
@@ -115,8 +112,8 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	if EventBus.early_call_requested.is_connected(_on_early_call_requested):
-		EventBus.early_call_requested.disconnect(_on_early_call_requested)
+	if EventBus.wave_start_requested.is_connected(_on_wave_start_requested):
+		EventBus.wave_start_requested.disconnect(_on_wave_start_requested)
 	if EventBus.enemy_died.is_connected(_on_enemy_died):
 		EventBus.enemy_died.disconnect(_on_enemy_died)
 	if EventBus.summary_continue_requested.is_connected(_on_summary_continue_requested):
@@ -183,12 +180,9 @@ func _get_scene_for_enemy_id(enemy_id: StringName) -> PackedScene:
 func start_prep() -> void:
 	var old_state := wave_state
 	wave_state = Enums.WaveState.PREP
-	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
-	prep_timer = GameConfig.get_prep_time(current_wave, is_boss)
 	_build_spawn_queue_for_wave(current_wave)
 
 	# Reset per-wave tracking
-	_early_call_bonus = 0
 	_wave_gold_base = 0.0
 	_wave_prestige = 0
 	_kills_by_type.clear()
@@ -204,20 +198,11 @@ func start_prep() -> void:
 
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"PREP")
-	EventBus.prep_timer_changed.emit(prep_timer)
 
 
-func call_early() -> void:
+func _on_wave_start_requested() -> void:
 	if wave_state == Enums.WaveState.PREP:
-		var bonus_gold := mini(GameConfig.early_call_cap, int(floor(prep_timer * float(GameConfig.early_call_gold_per_sec))))
-		_early_call_bonus = bonus_gold
-		if bonus_gold > 0:
-			EventBus.gold_delta.emit(bonus_gold)
 		start_combat()
-
-
-func _on_early_call_requested() -> void:
-	call_early()
 
 
 func start_combat() -> void:
@@ -433,10 +418,7 @@ func _build_spawn_queue_for_wave(wave_num: int) -> void:
 func _physics_process(delta: float) -> void:
 	match wave_state:
 		Enums.WaveState.PREP:
-			prep_timer -= delta
-			EventBus.prep_timer_changed.emit(maxf(0.0, prep_timer))
-			if prep_timer <= 0.0:
-				start_combat()
+			pass
 
 		Enums.WaveState.COMBAT, Enums.WaveState.BOSS_COMBAT:
 			if _first_enemy_spawned:
@@ -603,7 +585,7 @@ func _end_combat_to_summary() -> void:
 	var gold_pct_total: float = 0.0
 	var wave_gold_scaled: int = int(floor(_wave_gold_base * (1.0 + gold_pct_total) * clear_mult))
 	var boss_gold_scaled: int = int(floor(boss_gold * (1.0 + gold_pct_total)))
-	var total_gold_gain: int = wave_gold_scaled + boss_gold_scaled + _early_call_bonus
+	var total_gold_gain: int = wave_gold_scaled + boss_gold_scaled
 
 	# Credit gold to GoldManager, false avoids double "+xx" popup on SUMMARY
 	var gold_mgr := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
@@ -662,7 +644,6 @@ func _end_combat_to_summary() -> void:
 		"kills_by_type": _kills_by_type.duplicate(),
 		"gold_base": int(round(_wave_gold_base)),
 		"gold_mult": clear_mult,
-		"early_call_bonus": _early_call_bonus,
 		"gold_total": total_gold_gain,
 		"prestige_gain_wave": _wave_prestige,
 		"fortress_hp": fortress_hp,
