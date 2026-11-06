@@ -34,6 +34,9 @@ var last_run_summary: Dictionary = {}
 ## Last value sent for each setting on EventBus.settings_changed. Parts created later, such as
 ## the HUD of a new run, read it here instead of starting from a default.
 var _settings: Dictionary = {}
+## Last wave state sent on EventBus.state_changed, so HUD parts created after the first PREP
+## still know it.
+var wave_state: StringName = &""
 ## Why the saved sign-in could not be restored at start, empty when it was fine.
 var session_restore_error: StringName = &""
 
@@ -48,6 +51,7 @@ func _ready() -> void:
 	add_child(_pause_layer)
 	EventBus.run_ended.connect(_on_run_ended)
 	EventBus.settings_changed.connect(_on_settings_changed)
+	EventBus.state_changed.connect(_on_wave_state_changed)
 	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_sync_with_current_scene.call_deferred()
 	_restore_session.call_deferred()
@@ -157,3 +161,6 @@ func _restore_session() -> void:
 ## A sign in or a sign out replaces whatever went wrong while restoring.
 func _on_session_changed(_signed_in: bool) -> void:
 	session_restore_error = &""
+
+func _on_wave_state_changed(new_state: StringName) -> void:
+	wave_state = new_state

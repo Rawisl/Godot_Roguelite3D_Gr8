@@ -8,9 +8,15 @@ func _ready() -> void:
 	EventBus.commander_hp_changed.emit(200, 200)
 	EventBus.gold_changed.emit(150)
 	EventBus.state_changed.emit(&"PREP")
-	for t in range(5, -1, -1):
-		EventBus.prep_timer_changed.emit(float(t))
-		await get_tree().create_timer(1.0).timeout
+	EventBus.wave_start_requested.connect(func() -> void: print("[test_hud] wave_start_requested"), CONNECT_ONE_SHOT)
+	print("[test_hud] PREP: Start wave button shows, no countdown")
+	await get_tree().create_timer(1.5).timeout
+	print("[test_hud] paused: the button is grey with the reason")
+	EventBus.pause_changed.emit(true)
+	await get_tree().create_timer(1.5).timeout
+	EventBus.pause_changed.emit(false)
+	print("[test_hud] click the button now to see wave_start_requested")
+	await get_tree().create_timer(3.0).timeout
 	EventBus.state_changed.emit(&"COMBAT")
 	EventBus.wave_started.emit(1)
 	EventBus.enemy_count_changed.emit(0, 8, 8)

@@ -10,7 +10,6 @@ const STATE_KEYS := {
 
 @onready var _wave: Label = %Wave
 @onready var _state: Label = %State
-@onready var _countdown: Label = %Countdown
 @onready var _enemies_title: Label = %EnemiesTitle
 @onready var _enemies: Label = %Enemies
 @onready var _enemies_row: HBoxContainer = %EnemiesRow
@@ -19,7 +18,6 @@ const STATE_KEYS := {
 
 func _ready() -> void:
 	_enemies_title.text = tr(&"hud.enemies")
-	_countdown.visible = false
 	_set_enemies_visible(false)
 	_boss_label.text = tr(&"hud.offscreen.boss")
 	_boss_row.visible = false
@@ -28,13 +26,11 @@ func _ready() -> void:
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.wave_started.connect(_on_wave_started)
-	EventBus.prep_timer_changed.connect(_on_prep_timer_changed)
 	EventBus.enemy_count_changed.connect(_on_enemy_count_changed)
 
 func _on_state_changed(new_state: StringName) -> void:
 	_state.text = tr(STATE_KEYS.get(new_state, &""))
 	# TODO: clear time in COMBAT and the boss timer.
-	_countdown.visible = new_state == &"PREP"
 	_set_enemies_visible(new_state == &"COMBAT" or new_state == &"BOSS_COMBAT")
 	if new_state == &"PREP" or new_state == &"SUMMARY":
 		_boss_row.visible = false
@@ -45,9 +41,6 @@ func _set_enemies_visible(value: bool) -> void:
 # TODO: show the upcoming wave during PREP once wave_preview_ready is emitted.
 func _on_wave_started(wave_index: int) -> void:
 	_wave.text = UiFormat.tr_fmt(&"hud.wave_value", {"wave": wave_index})
-
-func _on_prep_timer_changed(remaining: float) -> void:
-	_countdown.text = UiFormat.time_mmss(remaining)
 
 func _on_enemy_count_changed(alive: int, queued: int, total: int) -> void:
 	_enemies.text = UiFormat.tr_fmt(&"hud.ratio", {"value": alive + queued, "max": total})
