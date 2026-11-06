@@ -25,7 +25,7 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 
 @export_group("Sword Wave")
 @export var wave_material: ShaderMaterial = preload("res://art/materials/skill_sword_wave.tres")
-## Used while data/skills/sword_wave.tres has no width, distance, or GameConfig no speed.
+## Used while data/skills/sword_wave.tres has no width or range, or GameConfig no speed.
 @export var fallback_wave_width := 3.0
 @export var fallback_wave_distance := 4.0
 @export var fallback_wave_speed := 20.0
@@ -95,7 +95,7 @@ func _on_skill_cast(skill_id: StringName, _slot: int, level: int, origin: Vector
 		&"sword_wave":
 			play_sword_wave(origin, _aim_dir(),
 				_value(skill_id, &"width", level, fallback_wave_width),
-				_value(skill_id, &"distance", level, fallback_wave_distance),
+				_value(skill_id, &"range", level, fallback_wave_distance),
 				_wave_speed())
 		&"firebomb":
 			var c := _get_commander()
