@@ -330,7 +330,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-KH1
 - Người: Khang
 - Tuần: 8 | Giờ ước tính: 7 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nút 'Bắt đầu wave' (HUD-19) thay nút gọi wave sớm: phát wave_start_requested, ghi 'Bắt đầu wave boss' ở wave boss, xám khi Pause hoặc có hộp thoại giao dịch; dọn UI cũ: call_wave_button, EarlyRow ở SummaryPanel, đồng hồ đếm ngược ở wave_counter, action call_wave, chuỗi hud.call_wave*
 - Nghiệm thu: Bấm nút thì sang COMBAT hoặc BOSS_INTRO; không có phím tắt; không còn chuỗi hoặc node gọi wave sớm; SummaryPanel không còn dòng thưởng gọi sớm
 - Tệp liên quan: ui/hud/parts/call_wave_button.*, ui/hud/hud.tscn, ui/hud/parts/wave_counter.*, ui/screens/summary_panel.gd (EarlyRow), ui/panels/panel_host.gd:41, project.godot (call_wave), data/locale/strings.csv
