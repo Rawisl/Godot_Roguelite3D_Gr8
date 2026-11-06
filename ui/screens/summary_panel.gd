@@ -16,7 +16,6 @@ var _sent := false
 @onready var _clear_time: SummaryRow = %ClearTimeRow
 @onready var _kills: SummaryRow = %KillsRow
 @onready var _gold: SummaryRow = %GoldRow
-@onready var _early: SummaryRow = %EarlyRow
 @onready var _gold_total: SummaryRow = %GoldTotalRow
 @onready var _prestige: SummaryRow = %PrestigeRow
 @onready var _fortress: SummaryRow = %FortressRow
@@ -85,8 +84,6 @@ func _refresh() -> void:
 	_set_row(_gold, "gold_base", &"summary.row.gold", func(v: int) -> String:
 		return UiFormat.tr_fmt(&"summary.value.gold", {"base": v,
 			"mult": UiFormat.decimal(_summary.get("gold_mult", 1.0), 2)}))
-	_set_row(_early, "early_call_bonus", &"summary.row.early", func(v: int) -> String:
-		return UiFormat.tr_fmt(&"summary.value.gold_total", {"value": v}))
 	_set_row(_gold_total, "gold_total", &"summary.row.gold_total", func(v: int) -> String:
 		return UiFormat.tr_fmt(&"summary.value.gold_total", {"value": v}))
 	_set_row(_prestige, "prestige_gain_wave", &"summary.row.prestige", func(v: int) -> String:
@@ -107,7 +104,7 @@ func _refresh() -> void:
 func _set_row(row: SummaryRow, key: String, name_key: StringName, format: Callable) -> void:
 	var value: Variant = _summary.get(key)
 	var shown := value != null
-	if shown and key in ["emg_repair_gained", "early_call_bonus"]:
+	if shown and key == "emg_repair_gained":
 		shown = int(value) > 0
 	elif shown and key == "ruined_towers":
 		shown = not (value as Array).is_empty()
