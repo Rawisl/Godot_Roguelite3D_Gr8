@@ -6,6 +6,7 @@ extends Node
 ## - no_build_lane is wide enough for the corridor
 ## - cells sit inside the walls and do not overlap
 ## - a bad cell is dropped on load
+## - neighbouring columns are one cell plus the gap apart
 
 const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 const GRID: GridData = preload("res://levels/corridor/grid_data.tres")
@@ -62,6 +63,7 @@ func _ready() -> void:
 			if absf(d.x) < GameConfig.grid_cell_size - 0.001 and absf(d.z) < GameConfig.grid_cell_size - 0.001:
 				overlap = true
 	assert_true(not overlap, "cells do not overlap")
+	assert_true(is_equal_approx(GRID.cell_position(Vector2i(1, 0)).distance_to(GRID.cell_position(Vector2i(0, 0))), GameConfig.grid_cell_size + GameConfig.grid_cell_gap), "neighbouring columns are one cell plus the gap apart")
 
 	var bad := GRID.duplicate() as GridData
 	bad.row_offsets = PackedFloat32Array([-6, -1, 4, 6])

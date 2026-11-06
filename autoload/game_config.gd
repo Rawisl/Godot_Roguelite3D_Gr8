@@ -58,6 +58,8 @@ extends Node
 
 @export_group("Ground Grid")
 @export var grid_cell_size: float = 2.0
+## Space between two neighbouring cells, on top of grid_cell_size.
+@export var grid_cell_gap: float = 0.5
 @export var grid_pick_size: float = 1.9
 @export var max_ground_buildings: int = 3
 @export var no_build_lane_min_width: float = 4.0
