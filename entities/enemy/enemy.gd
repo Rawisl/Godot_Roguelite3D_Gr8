@@ -1176,9 +1176,9 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	elif current_state == Enums.EnemyState.CHASE:
 		_retarget_timer = 0.0
  
-func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
+func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
 	if is_dead or spawn_grace:
-		return
+		return 0
  
 	var info: DamageInfo = null
 	if damage_input is DamageInfo:
@@ -1187,11 +1187,14 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		info = DamageInfo.new(damage_input, p_damage_type)
  
 	if info == null:
-		return
+		return 0
  
 	if info.source != null and is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
 		provoked_by_player = true
 		provoked_timer = GameConfig.aggro_duration
+
+	if DamageCalc.resolve(info, self) <= 0:
+		return 0
  
 	if info.knockback_force > 0.0:
 		var kb_dir := info.hit_direction
@@ -1199,7 +1202,13 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		var dir_norm := kb_dir.normalized() if kb_dir.length_squared() > 0.001 else Vector3.FORWARD
 		apply_knockback(dir_norm * info.knockback_force)
  
-	health.take_damage(info)
+	return health.take_damage(info)
+
+
+## Product of the receiver's damage reduction factors (for example Armored). 1.0 = none.
+func get_taken_mult() -> float:
+	return 1.0
+
  
 ## Staggers the enemy and pushes it about `distance` metres along `direction`.
 ## Bosses and knockback-immune units ignore it, like any knockback.
