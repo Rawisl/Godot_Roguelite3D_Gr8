@@ -66,6 +66,7 @@ signal tower_sold(slot_id: StringName)
 signal tower_destroyed(slot_id: StringName)
 signal tower_priority_changed(slot_id: StringName, priority: StringName)
 signal tower_immunity_changed(slot_id: StringName, is_immune: bool)
+signal heal_tower_hp_changed(slot_id: StringName, new_hp: int, max_hp: int)  # Heal station store, at most 10 times a second
 signal build_denied(reason: StringName, shortfall: int)
 signal projectile_hit(target: Node, amount: int, damage_type: StringName, resist: float)
 #------------------------------------------------------#
@@ -99,7 +100,9 @@ signal settings_changed(key: StringName, value: Variant)
 
 
 #-----------------------Skill and reward-----------------------#
-signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # UI -> StatBlock, SkillRunner, RunState. new_level is the absolute level after the pick
+signal reward_pick_requested(card_id: StringName, kind: StringName, level: int)  # UI -> RewardService: the player picked a card of the open offer
+signal reward_skip_requested  # UI -> RewardService: the player gave up the open offer
+signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # RewardService -> StatBlock, SkillRunner, XpTracker, RunState. new_level is the absolute level after the pick; (&"", &"SKIP", 0) for a skip
 signal skill_cast(skill_id: StringName, slot_index: int, level: int, origin: Vector3, radius: float)  # SkillRunner -> VFX, audio, once per cast
 #------------------------------------------------------#
 
@@ -115,7 +118,8 @@ signal tutorial_step_completed(step_id: StringName)
 #-----------------------Progression-----------------------#
 signal xp_changed(xp: float, level: int, to_next: float, pending_picks: int)
 signal level_up(new_level: int, pending_picks: int)
-signal reward_offered(cards: Array, rerolls_left: int)
+signal reward_offer_requested  # UI -> RewardService: ask for the next offer (re-sends the open one)
+signal reward_offered(cards: Array, rerolls_left: int)  # RewardService -> UI
 signal skill_slots_changed(active: Array, passive: Array)
 #------------------------------------------------------#
 

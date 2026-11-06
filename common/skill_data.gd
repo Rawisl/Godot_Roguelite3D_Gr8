@@ -13,7 +13,6 @@ enum Kind { ACTIVE, PASSIVE, STAT }
 ## 0 = use GameConfig (skill_max_level, or stat_max_stacks for STAT).
 @export var max_level_override: int = 0
 ## Run flag that must be true before the card can be offered, e.g. &"heal_station_built". Empty = always.
-# TODO(week 8): RewardOfferGenerator filters by this flag and GameConfig reward weights.
 @export var requires_flag: StringName = &""
 ## Per-level numbers that active-skill code reads: key -> one value per level (index 0 = level 1).
 ## Passive and stat numbers are not stored here; they come from the stat card table (same id).

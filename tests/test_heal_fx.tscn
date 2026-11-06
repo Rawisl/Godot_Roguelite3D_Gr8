@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dgk8farp1umr"]
+
+[ext_resource type="Script" uid="uid://co12mxrw7yqqb" path="res://tests/test_heal_fx.gd" id="1_healfx"]
+
+[node name="TestHealFx" type="Node3D" unique_id=1106414754]
+script = ExtResource("1_healfx")

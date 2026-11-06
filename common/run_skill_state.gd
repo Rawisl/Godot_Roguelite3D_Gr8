@@ -1,10 +1,14 @@
-# TODO(week 10): move into RunState once it exists (RunState).
 class_name RunSkillState
 extends RefCounted
+# TODO(week 10): move into RunState once it exists (RunState).
 
 var active: Array[StringName] = []  # size GameConfig.skill_slots_active, &"" = empty slot
 var passive: Array[StringName] = []
 var levels: Dictionary[StringName, int] = {}  # skill or stat id -> level / stacks
+## Run flags that gate cards, e.g. &"heal_station_built". Never cleared during a run.
+var flags: Dictionary[StringName, bool] = {}
+## Picks used this run, skips included; seeds the reward RNG.
+var picks_used: int = 0
 
 func _init() -> void:
 	reset()
@@ -17,9 +21,17 @@ func reset() -> void:
 	active.fill(&"")
 	passive.fill(&"")
 	levels.clear()
+	flags.clear()
+	picks_used = 0
 
 func get_level(id: StringName) -> int:
 	return levels.get(id, 0)
+
+func set_flag(flag: StringName, value: bool = true) -> void:
+	flags[flag] = value
+
+func has_flag(flag: StringName) -> bool:
+	return flags.get(flag, false)
 
 func is_maxed(data: SkillData) -> bool:
 	return get_level(data.id) >= data.get_max_level()
@@ -42,7 +54,6 @@ func can_take(data: SkillData) -> bool:
 	return free_slot_index(data.kind) != -1
 
 ## Pure state change, no signal. Returns {"slot_kind": &"ACTIVE"/&"PASSIVE"/&"STAT", "slot_index": int, "new_level": int}, {} when refused.
-# TODO(week 9): apply_pick emits reward_picked and skill_slots_changed after take().
 func take(data: SkillData) -> Dictionary:
 	if not can_take(data):
 		return {}
@@ -66,7 +77,13 @@ func _slot_array(kind: SkillData.Kind) -> Array[StringName]:
 	return active if kind == SkillData.Kind.ACTIVE else passive
 
 func to_dict() -> Dictionary:
-	return {"active": active.duplicate(), "passive": passive.duplicate(), "levels": levels.duplicate()}
+	return {
+		"active": active.duplicate(),
+		"passive": passive.duplicate(),
+		"levels": levels.duplicate(),
+		"flags": flags.duplicate(),
+		"picks_used": picks_used,
+	}
 
 func from_dict(d: Dictionary) -> void:
 	reset()
@@ -77,3 +94,7 @@ func from_dict(d: Dictionary) -> void:
 	var saved: Dictionary = d.get("levels", {})
 	for key in saved:
 		levels[StringName(key)] = int(saved[key])
+	var saved_flags: Dictionary = d.get("flags", {})
+	for key in saved_flags:
+		flags[StringName(key)] = bool(saved_flags[key])
+	picks_used = int(d.get("picks_used", 0))

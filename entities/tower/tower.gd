@@ -75,9 +75,12 @@ func restore_full_hp() -> void:
 	health.heal(health.max_hp - health.hp)
 
 ## Whether the full refill at the start of PREP applies to this tower.
-# TODO(week 8): Heal Station overrides this to false, it never refills.
 func heals_on_prep() -> bool:
 	return true
+
+## Gold back when this tower is sold: sell_refund_pct of the gold spent on it.
+func get_sell_value() -> int:
+	return floori(float(invested_gold) * GameConfig.sell_refund_pct)
 
 func apply_level(new_level: int) -> void:
 	level = new_level
