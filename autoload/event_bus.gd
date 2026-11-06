@@ -121,7 +121,7 @@ signal xp_changed(xp: float, level: int, to_next: float, pending_picks: int)
 signal level_up(new_level: int, pending_picks: int)
 signal reward_offer_requested  # UI -> RewardService: ask for the next offer (re-sends the open one)
 signal reward_offered(cards: Array, rerolls_left: int)  # RewardService -> UI
-signal skill_slots_changed(active: Array, passive: Array)
+signal skill_slots_changed(active: Array, passive: Array, levels: Dictionary)  # Player & Combat -> HUD; levels: id -> level of each skill in a slot
 #------------------------------------------------------#
 
 @warning_ignore_restore("unused_signal")

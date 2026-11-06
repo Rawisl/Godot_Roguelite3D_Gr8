@@ -74,7 +74,7 @@ func test_slots_and_levels() -> void:
 
 	assert_true(runner.get_skill_id(0) == &"", "slots start empty")
 	var slots_emitted: Array = []
-	var on_slots := func(a: Array, p: Array) -> void: slots_emitted.append([a, p])
+	var on_slots := func(a: Array, p: Array, _l: Dictionary) -> void: slots_emitted.append([a, p])
 	EventBus.skill_slots_changed.connect(on_slots)
 	EventBus.reward_picked.emit(&"whirlwind", &"ACTIVE", 1)
 	EventBus.skill_slots_changed.disconnect(on_slots)

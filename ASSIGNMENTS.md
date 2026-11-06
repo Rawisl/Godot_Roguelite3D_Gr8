@@ -558,7 +558,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH2
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 6 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Màn REWARD_PICK SCR-17 (3 thẻ, tooltip, Skip xác nhận, Esc chỉ mở Pause RWP-08; cắt Reroll, dòng giải thích tĩnh)
 - Nghiệm thu: Chọn bằng chuột; Skip hỏi xác nhận
 - Cần xong trước: W9-KT3, W8-MH1
