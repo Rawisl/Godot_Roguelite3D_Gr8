@@ -6,6 +6,7 @@
 [node name="RewardCard" type="Button" unique_id=2068423320]
 custom_minimum_size = Vector2(340, 440)
 clip_contents = true
+focus_mode = 0
 script = ExtResource("1_card")
 
 [node name="Margin" type="MarginContainer" parent="." unique_id=1311500421]
