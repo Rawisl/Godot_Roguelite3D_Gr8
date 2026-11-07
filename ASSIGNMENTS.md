@@ -511,7 +511,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH3
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Gold chỉ huy FRT-02 (hit_by_commander x1.25) và TGT-04 lọc miễn nhiễm
 - Nghiệm thu: Grunt wave 1 có cờ cho 5 gold base, không cờ 4
 - Cần xong trước: W8-MH3
