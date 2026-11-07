@@ -57,7 +57,7 @@ func _ready() -> void:
 	actions.add_child(hold)
 
 	EventBus.slot_state_changed.connect(_on_slot_state_changed)
-	call_button.pressed.connect(func(): EventBus.early_call_requested.emit())
+	call_button.pressed.connect(func(): EventBus.wave_start_requested.emit())
 
 
 func _flat_mat(c: Color) -> StandardMaterial3D:
@@ -76,13 +76,10 @@ func _make_button(text: String, cb: Callable) -> Button:
 
 
 func _process(delta: float) -> void:
-	if _hold_prep and wave_manager.wave_state == Enums.WaveState.PREP:
-		wave_manager.prep_timer = maxf(wave_manager.prep_timer, 5.0)
-
 	var state: String = Enums.WaveState.keys()[wave_manager.wave_state]
 	var text := "Wave %d  %s" % [wave_manager.current_wave, state]
 	if wave_manager.wave_state == Enums.WaveState.PREP:
-		text += "  %ds%s" % [ceili(maxf(0.0, wave_manager.prep_timer)), " (held)" if _hold_prep else ""]
+		text += "  (Ready)"
 	text += "  |  alive %d  queue %d" % [wave_manager.enemies_alive, wave_manager.spawn_queue.size()]
 	wave_label.text = text
 	call_button.disabled = wave_manager.wave_state != Enums.WaveState.PREP

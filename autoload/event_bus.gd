@@ -8,9 +8,7 @@ signal run_recovered(prestige_gain: int)  # recover interrupted run
 signal wave_started(wave_index: int)
 signal wave_cleared(wave_index: int)
 signal state_changed(new_state: StringName)  # PREP | COMBAT | SUMMARY | BOSS_INTRO | BOSS_COMBAT
-signal prep_timer_changed(remaining: float)
 signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: bool)
-signal early_call_requested  # UI -> Wave (call wave early - press G)
 signal wave_start_requested  # UI -> Wave: the Start wave button ends PREP
 signal wave_summary_ready(summary: Dictionary)  # emitted AFTER save completes
 signal summary_continue_requested  # UI -> Wave: press Continue or after 10s countdown in SUMMARY
@@ -121,7 +119,7 @@ signal xp_changed(xp: float, level: int, to_next: float, pending_picks: int)
 signal level_up(new_level: int, pending_picks: int)
 signal reward_offer_requested  # UI -> RewardService: ask for the next offer (re-sends the open one)
 signal reward_offered(cards: Array, rerolls_left: int)  # RewardService -> UI
-signal skill_slots_changed(active: Array, passive: Array)
+signal skill_slots_changed(active: Array, passive: Array, levels: Dictionary)  # Player & Combat -> HUD; levels: id -> level of each skill in a slot
 #------------------------------------------------------#
 
 @warning_ignore_restore("unused_signal")

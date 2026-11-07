@@ -4,6 +4,7 @@ extends Node
 ## - focus is clamped inside the hand-placed rectangle
 ## - Frontline sees 12-14 m each side of the commander along the corridor
 ## - Overview keeps the full corridor width in frame anywhere inside the bounds
+## - Frontline keeps the commander in frame next to either wall
 ## - Overview at the bounds' ends shows the Fortress and the far end of the spawn zone
 ## - Overview is larger than Frontline
 
@@ -39,12 +40,25 @@ func _ready() -> void:
 	assert_true(left >= 12.0 and left <= 14.0 and right >= 12.0 and right <= 14.0,
 		"Frontline sees %.1f m left, %.1f m right (12-14 m)" % [left, right])
 
+	# Corridor 23.5 m wide: floor edge at 11.75 m, wall (3 m tall at the back) at 12.25 m.
 	var width_ok := true
 	for x in [r.position.x, 0.0, r.end.x]:
-		_aim(bounds, Vector3(x, 0, 0), bounds.camera_size_overview)
-		for p in [Vector3(x, 0, -8), Vector3(x, 0, 8), Vector3(x, 3, -9), Vector3(x, 0, 9)]:
-			width_ok = width_ok and cam.is_position_in_frustum(p)
+		for z in [r.position.y, 0.0, r.end.y]:
+			_aim(bounds, Vector3(x, 0, z), bounds.camera_size_overview)
+			for p in [Vector3(x, 0, -11.75), Vector3(x, 0, 11.75), Vector3(x, 3, -12.25), Vector3(x, 0, 12.25)]:
+				width_ok = width_ok and cam.is_position_in_frustum(p)
 	assert_true(width_ok, "overview keeps the corridor width in frame")
+
+	# Frontline follows the commander across the corridor: at either wall they stay well inside the frame.
+	var inner := Rect2(Vector2(1920, 1080) * 0.075, Vector2(1920, 1080) * 0.85)
+	var walls_ok := true
+	for z in [-11.25, 11.25]:
+		var feet := Vector3(0, 0, z)
+		cam.global_position = bounds.camera_position_for(feet, true)
+		cam.size = bounds.camera_size_frontline
+		for p in [feet, feet + Vector3(0, 2, 0)]:
+			walls_ok = walls_ok and inner.has_point(cam.unproject_position(p))
+	assert_true(walls_ok, "Frontline keeps the commander in frame next to either wall")
 
 	_aim(bounds, Vector3(-100, 0, 0), bounds.camera_size_overview)
 	var fortress: Node3D = level.get_node("NavigationRegion3D/Geometry/Fortress")

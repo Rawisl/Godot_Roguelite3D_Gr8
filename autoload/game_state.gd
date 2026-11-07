@@ -108,7 +108,7 @@ func resume() -> void:
 	TimeManager.release_pause(TimeManager.REASON_USER)
 
 ## Run HUD buttons give focus back right away so Space and Enter never press them again.
-## Dialogs and anything shown while the run is paused (pause menu, Settings, reward pick)
+## Dialogs and anything shown while the run is paused (pause menu, Settings)
 ## keep focus for arrow and Enter navigation.
 func _on_gui_focus_changed(control: Control) -> void:
 	if current != AppState.RUN or TimeManager.is_paused or ScreenManager.has_dialog():
@@ -117,15 +117,30 @@ func _on_gui_focus_changed(control: Control) -> void:
 		if is_instance_valid(control) and control.has_focus():
 			control.release_focus()).call_deferred()
 
-## TODO: request it from RunState so it emits run_ended.
+## Concludes the active run as abandoned and transitions to run end.
 func abandon_run() -> void:
-	_on_run_ended(&"ABANDONED", {})
+	var rs := _get_run_state()
+	if rs != null and is_instance_valid(rs):
+		rs.end_run(&"ABANDONED")
+	else:
+		_on_run_ended(&"ABANDONED", {})
 
-## Settles the run as ABANDONED, then exits.
-## TODO: settle through RunState and wait for the save before quitting.
+
+## Settles the run as abandoned through runtime state and exits application.
 func quit_from_run() -> void:
-	last_run_end_type = &"ABANDONED"
+	var rs := _get_run_state()
+	if rs != null and is_instance_valid(rs):
+		rs.end_run(&"ABANDONED")
+	else:
+		last_run_end_type = &"ABANDONED"
 	get_tree().quit()
+
+
+func _get_run_state() -> RunState:
+	if not is_inside_tree():
+		return null
+	return get_tree().get_first_node_in_group(&"run_state") as RunState
+
 
 func _on_run_ended(end_type: StringName, summary: Dictionary) -> void:
 	last_run_end_type = end_type

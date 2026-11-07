@@ -4,17 +4,11 @@ extends Node
 
 @export_group("Run and Wave")
 @export var starting_gold: int = 0
-@export var prep_time_early: float = 25.0
-@export var prep_early_until_wave: int = 3
-@export var prep_time_late: float = 30.0
-@export var prep_time_boss: float = 45.0
 @export var max_alive: int = 70
 @export var summary_auto_advance: float = 10.0
 @export var boss_wave_interval: int = 5
 
 @export_group("Economy")
-@export var early_call_gold_per_sec: int = 2
-@export var early_call_cap: int = 40
 @export var clear_mult_fast: float = 1.25
 @export var clear_mult_normal: float = 1.00
 @export var clear_mult_slow: float = 0.80
@@ -167,12 +161,6 @@ extends Node
 
 func get_xp_to_level(level: int) -> int:
 	return xp_base + xp_step * (maxi(1, level) - 1)
-
-
-func get_prep_time(wave: int, is_boss: bool) -> float:
-	if is_boss:
-		return prep_time_boss
-	return prep_time_early if wave <= prep_early_until_wave else prep_time_late
 
 
 func get_par_time(spawn_duration: float, is_boss: bool, boss_timer: float = 90.0) -> float:
