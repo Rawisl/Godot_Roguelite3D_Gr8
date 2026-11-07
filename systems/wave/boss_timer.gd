@@ -149,6 +149,9 @@ func _stop_and_clear() -> void:
 	_boss_defeated = false
 	_run_lost = false
 	_fired_marks.clear()
+	# Normal waves must not show the seconds left over from the last boss wave.
+	time_left = 0.0
+	_write_run_state()
 	_write_run_state_enraged()
 
 

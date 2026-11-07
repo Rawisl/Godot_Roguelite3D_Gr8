@@ -258,6 +258,32 @@ func test_enrage_effects() -> void:
 	assert_true(boss.health.hp == hp_before and is_equal_approx(boss.get_resist(Enums.DamageType.SLASH), resist_before), "test_enrage_effects: HP and resist unchanged")
 	await _wait_frames(2)
 	boss.free()
+	await _check_phase1_recovery_anim()
+
+
+# The slam recovery clip speeds up in phase 1 only when enraged, to fit the shorter interval.
+func _check_phase1_recovery_anim() -> void:
+	var calm := _spawn_boss()
+	var angry := _spawn_boss()
+	# Let the deferred navigation setup finish before the bosses are freed.
+	await get_tree().process_frame
+	await _wait_frames(2)
+	if calm.anim_player == null or angry.anim_player == null:
+		assert_true(false, "test_enrage_effects: Bulwark has an AnimationPlayer")
+		calm.free()
+		angry.free()
+		return
+	calm.current_phase = Enums.BossPhase.ARMORED
+	angry.current_phase = Enums.BossPhase.ARMORED
+	angry.enter_enrage()
+	calm._play_attack_anim()
+	angry._play_attack_anim()
+	calm._execute_attack_action()
+	angry._execute_attack_action()
+	assert_true(is_equal_approx(calm.anim_player.speed_scale, 1.0), "test_enrage_effects: phase 1 recovery keeps normal speed when calm")
+	assert_true(angry.anim_player.speed_scale > 1.0, "test_enrage_effects: phase 1 recovery speeds up when enraged")
+	calm.free()
+	angry.free()
 
 
 func test_enrage_survives_phase_change() -> void:
@@ -302,3 +328,10 @@ func test_reset_next_wave() -> void:
 	EventBus.wave_started.emit(15)
 	assert_true(not _timer.enraged and not _run_state.boss_enraged, "test_reset_next_wave: next wave_started clears boss_enraged")
 	boss.free()
+	EventBus.state_changed.emit(&"PREP")
+	_start_boss_wave(GameConfig.boss_wave_interval)
+	_timer.tick(1.0)
+	assert_true(_run_state.boss_timer > 0.0, "test_reset_next_wave: boss wave writes time left")
+	EventBus.state_changed.emit(&"SUMMARY")
+	EventBus.wave_started.emit(GameConfig.boss_wave_interval + 1)
+	assert_true(is_zero_approx(_timer.time_left) and is_zero_approx(_run_state.boss_timer), "test_reset_next_wave: normal wave clears the leftover time")

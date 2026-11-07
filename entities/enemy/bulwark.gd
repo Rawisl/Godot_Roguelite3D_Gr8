@@ -242,10 +242,14 @@ func _play_attack_anim() -> void:
 
 func _execute_attack_action() -> void:
 	execute_stomp()
-	if current_phase == Enums.BossPhase.EXPOSED and anim_player != null and anim_player.is_playing():
-		var recovery_time: float = _get_attack_interval() - _get_attack_windup() - 0.15
-		var recovery_speed: float = (2.37 - 0.97) / maxf(0.1, recovery_time)
-		anim_player.speed_scale = recovery_speed
+	if anim_player == null or not anim_player.is_playing():
+		return
+	# Enrage shortens the interval in phase 1 too, so the recovery clip must speed up there as well.
+	if current_phase != Enums.BossPhase.EXPOSED and not is_enraged:
+		return
+	var recovery_time: float = _get_attack_interval() - _get_attack_windup() - 0.15
+	var recovery_speed: float = (2.37 - 0.97) / maxf(0.1, recovery_time)
+	anim_player.speed_scale = recovery_speed
 
 
 func execute_stomp() -> void:
