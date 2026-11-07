@@ -6,13 +6,6 @@
 [ext_resource type="Texture2D" uid="uid://bs1qm0yx4mf1r" path="res://art/icons/shield_icon.png" id="4_shield"]
 [ext_resource type="Script" uid="uid://bhfhlrn5orfb" path="res://common/boss_data.gd" id="5_bdata"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor"]
-bg_color = Color(0.6627, 0.6549, 0.6235, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
 content_margin_left = 16.0
 content_margin_top = 8.0
@@ -28,6 +21,13 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor"]
+bg_color = Color(0.6627, 0.6549, 0.6235, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="BossBar" type="PanelContainer" unique_id=615647234]
 visible = false
@@ -45,6 +45,7 @@ mouse_filter = 2
 theme_override_constants/separation = 6
 
 [node name="Header" type="HBoxContainer" parent="Body" unique_id=1960063032]
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
