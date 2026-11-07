@@ -16,8 +16,8 @@
 [ext_resource type="Script" uid="uid://bq062ooam7kqg" path="res://art/vfx/aura_fx_manager.gd" id="16_aurafx"]
 [ext_resource type="Script" uid="uid://7b1ybgbmvkdo" path="res://art/vfx/destroy_fx_manager.gd" id="17_destroyfx"]
 [ext_resource type="Script" uid="uid://b1g5qc0fjeal3" path="res://art/vfx/telegraph_fx_manager.gd" id="18_telegraphfx"]
-[ext_resource type="Script" uid="uid://s8tk5ayl5tn6" path="res://art/vfx/skill_fx_manager.gd" id="19_skillfx"]
 [ext_resource type="Script" uid="uid://bd6nitpisuc5m" path="res://art/vfx/heal_fx_manager.gd" id="19_healfx"]
+[ext_resource type="Script" uid="uid://s8tk5ayl5tn6" path="res://art/vfx/skill_fx_manager.gd" id="19_skillfx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -32,18 +32,18 @@ ambient_light_energy = 0.5
 tonemap_mode = 3
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_41ihd"]
-vertices = PackedVector3Array(-19.5, 4.5, -7.5, -19.5, 4.5, 7.5, -15.5, 4.5, 7.5, -15.5, 4.5, -7.5, -19.25, 0.5, -7.25, -19.25, 0.5, 7.5, -15.5, 0.5, 7.5, -15.5, 0.5, -7.25, -14.25, 0.5, -7.25, -14.25, 0.5, 7.5, 19.5, 0.5, 7.5, 19.5, 0.5, -7.25)
-polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9)]
+vertices = PackedVector3Array(-19.5, 4.5, -11.75, -19.5, 4.5, 11.75, -15.5, 4.5, 11.75, -15.5, 4.5, -11.75, -19.25, 0.5, -11, -19.25, 0.5, -8.5, -15.5, 0.5, -8.5, -15.5, 0.5, -11, -14.25, 0.5, -11, -14.25, 0.5, 11.25, 19.5, 0.5, 11.25, 19.5, 0.5, -11, -19.25, 0.5, -7.25, -19.25, 0.5, 7.5, -15.5, 0.5, 7.5, -15.5, 0.5, -7.25, -19.25, 0.5, 8.75, -19.25, 0.5, 11.25, -15.5, 0.5, 11.25, -15.5, 0.5, 8.75)
+polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9), PackedInt32Array(15, 14, 12), PackedInt32Array(12, 14, 13), PackedInt32Array(19, 18, 16), PackedInt32Array(16, 18, 17)]
 geometry_parsed_geometry_type = 1
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_xepy2"]
-size = Vector2(40, 20)
+size = Vector2(40, 28)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ocplc"]
-size = Vector3(40, 1, 20)
+size = Vector3(40, 1, 28)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ocplc"]
-size = Vector3(40, 1, 20)
+size = Vector3(40, 1, 28)
 
 [sub_resource type="BoxMesh" id="BoxMesh_wall_back"]
 size = Vector3(40, 3, 1)
@@ -57,11 +57,17 @@ size = Vector3(40, 1, 1)
 [sub_resource type="BoxShape3D" id="Box_wall_front"]
 size = Vector3(40, 3, 1)
 
+[sub_resource type="BoxMesh" id="BoxMesh_fortress_wing"]
+size = Vector3(5, 4, 4.25)
+
+[sub_resource type="BoxShape3D" id="Box_fortress_wing"]
+size = Vector3(5, 4, 4.25)
+
 [sub_resource type="BoxMesh" id="BoxMesh_gate"]
 size = Vector3(0.2, 3, 4)
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_large"]
-vertices = PackedVector3Array(-18.25, 4.5, -6.25, -18.25, 4.5, 6.25, -16.75, 4.5, 6.25, -16.75, 4.5, -6.25, -18, 0.5, -6, -18, 0.5, 6.25, -16.75, 0.5, 6.25, -16.75, 0.5, -6, -13, 0.5, -6, -13, 0.5, 6.25, 18.25, 0.5, 6.25, 18.25, 0.5, -6)
+vertices = PackedVector3Array(-18.25, 4.5, -10.5, -18.25, 4.5, 10.5, -16.75, 4.5, 10.5, -16.75, 4.5, -10.5, -13, 0.5, -9.75, -13, 0.5, 10, 18.25, 0.5, 10, 18.25, 0.5, -9.75, -18, 0.5, -6, -18, 0.5, 6.25, -16.75, 0.5, 6.25, -16.75, 0.5, -6)
 polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9)]
 geometry_parsed_geometry_type = 1
 geometry_source_geometry_mode = 1
@@ -80,7 +86,7 @@ height = 4.0
 radius = 5.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_8dto7"]
-size = Vector3(12, 4, 16)
+size = Vector3(12, 4, 23.5)
 
 [node name="Level" type="Node3D" unique_id=1239096197]
 
@@ -105,6 +111,8 @@ size = 14.0
 
 [node name="CameraBounds" type="Node3D" parent="." unique_id=1873304521]
 script = ExtResource("13_cambounds")
+frontline_depth = 12.0
+camera_size_overview = 23.5
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=481712762]
 navigation_mesh = SubResource("NavigationMesh_41ihd")
@@ -127,7 +135,7 @@ surface_material_override/0 = ExtResource("9_grass")
 shape = SubResource("BoxShape3D_ocplc")
 
 [node name="WallBack" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=524161426]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -8.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -12.25)
 
 [node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/WallBack" unique_id=940552965]
 mesh = SubResource("BoxMesh_wall_back")
@@ -137,7 +145,7 @@ surface_material_override/0 = ExtResource("9_stone")
 shape = SubResource("Box_wall_back")
 
 [node name="WallFront" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=1866284497]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 8.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 12.25)
 
 [node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/WallFront" unique_id=1529551795]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
@@ -149,6 +157,26 @@ shape = SubResource("Box_wall_front")
 
 [node name="Fortress" parent="NavigationRegion3D/Geometry" unique_id=792113795 instance=ExtResource("11_fortress")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 0, 0)
+
+[node name="FortressWingBack" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=1408833127]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 2, -10.125)
+
+[node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/FortressWingBack" unique_id=1602544918]
+mesh = SubResource("BoxMesh_fortress_wing")
+surface_material_override/0 = ExtResource("9_stone")
+
+[node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/FortressWingBack" unique_id=1131965204]
+shape = SubResource("Box_fortress_wing")
+
+[node name="FortressWingFront" type="StaticBody3D" parent="NavigationRegion3D/Geometry" unique_id=1745110297]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 2, 10.125)
+
+[node name="Mesh" type="MeshInstance3D" parent="NavigationRegion3D/Geometry/FortressWingFront" unique_id=1288176610]
+mesh = SubResource("BoxMesh_fortress_wing")
+surface_material_override/0 = ExtResource("9_stone")
+
+[node name="Shape" type="CollisionShape3D" parent="NavigationRegion3D/Geometry/FortressWingFront" unique_id=1923457716]
+shape = SubResource("Box_fortress_wing")
 
 [node name="GateVisual" type="MeshInstance3D" parent="NavigationRegion3D/Geometry" unique_id=1693307904]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.9, 1.5, 0)

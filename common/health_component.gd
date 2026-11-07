@@ -8,6 +8,8 @@ signal died
 @export var max_hp: int = 100
 var hp: int
 var hit_by_commander: bool = false
+## Fractional DoT damage carried between ticks.
+var dot_remainder: float = 0.0
 
 
 func _ready() -> void:

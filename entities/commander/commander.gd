@@ -786,12 +786,12 @@ func _execute_sword_strike(combo_step: int) -> void:
 	var half_arc_rad: float = deg_to_rad(arc_deg * 0.5)
 
 	var max_targets: int = stats.sword_max_targets
-	var sword_damage: float = stat_block.get_value(&"sword_damage")
-	var damage_amount: int = roundi(sword_damage)
+	var sword_raw: float = stat_block.get_base(&"sword_damage") + stat_block.get_add_total(&"sword_damage")
+	var sword_dealt: float = get_sword_dealt_mult()
 	var knockback: float = 0.0
 
 	if combo_step == 3:
-		damage_amount = roundi(sword_damage * stats.combo_hit3_mult)
+		sword_raw *= stats.combo_hit3_mult
 		knockback = stats.combo_hit3_knockback
 
 	var candidates: Array[Dictionary] = []
@@ -840,8 +840,9 @@ func _execute_sword_strike(combo_step: int) -> void:
 			continue
 		var hit_dir: Vector3 = target_data.dir
 
-		var info := DamageInfo.new(
-			damage_amount,
+		var info := DamageInfo.outgoing(
+			sword_raw,
+			sword_dealt,
 			stats.sword_damage_type,
 			self,
 			knockback,
@@ -853,6 +854,11 @@ func _execute_sword_strike(combo_step: int) -> void:
 
 		if target_node.has_method("take_damage"):
 			target_node.take_damage(info)
+
+
+## Total dealt multiplier for sword hits: 1 + sum of the percentage bonuses.
+func get_sword_dealt_mult() -> float:
+	return 1.0 + stat_block.get_mul_total(&"sword_damage")
 
 
 func take_damage(damage_input: Variant) -> void:
