@@ -54,6 +54,7 @@ signal retreat_performed
 #-----------------------Currency and build-----------------------#
 signal gold_changed(gold: int)
 signal gold_delta(delta: int)  # floating "+xx" text on HUD
+signal mithril_changed(new_mithril: int, delta: int)  # RunState -> HUD, Fortress panel
 signal prestige_pending_changed(value: int)
 signal prestige_balance_changed(value: int)
 signal slot_state_changed(slot_id: StringName, state: StringName)  # EMPTY | OCCUPIED | RUINED

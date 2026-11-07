@@ -10,6 +10,12 @@ var _sent := false
 var _next_wave := 1
 var _next_is_boss := false
 
+## True while the tutorial waits for the first two towers.
+var tutorial_lock := false:
+	set(value):
+		tutorial_lock = value
+		_refresh()
+
 func _ready() -> void:
 	focus_mode = Control.FOCUS_NONE
 	pressed.connect(_request)
@@ -34,7 +40,6 @@ func _request() -> void:
 		return
 	_sent = true
 	_refresh()
-	# TODO(Ender-Via): end PREP on wave_start_requested and drop the PREP countdown.
 	EventBus.wave_start_requested.emit()
 
 func _lock_reason() -> StringName:
@@ -42,7 +47,9 @@ func _lock_reason() -> StringName:
 		return &"hud.start_wave.paused"
 	if ScreenManager.has_transaction_dialog():
 		return &"hud.start_wave.dialog"
-	# TODO(WhoKeng): stay grey until the tutorial has built both towers.
+		# TODO(WhoKeng): the tutorial sets tutorial_lock until both starter towers are built.
+	if tutorial_lock:
+		return &"hud.start_wave.tutorial"
 	return &""
 
 func _set_next_wave(wave: int) -> void:
