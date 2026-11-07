@@ -7,4 +7,4 @@
 [node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_715x1")]
 data = ExtResource("2_tms1j")
 
-[node name="GruntModel" parent="Model" index="0" instance=ExtResource("3_grunt_model")]
+[node name="GruntModel" parent="Model" parent_id_path=PackedInt32Array(1049866202) index="0" unique_id=664745781 instance=ExtResource("3_grunt_model")]

@@ -82,9 +82,9 @@ func get_resist(dmg_type: Enums.DamageType) -> float:
 	return boss_data.get_resist(dmg_type, current_phase)
 
 
-func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> void:
+func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
 	if is_dead or spawn_grace:
-		return
+		return 0
 
 	var info: DamageInfo = null
 	if damage_input is DamageInfo:
@@ -93,19 +93,15 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		info = DamageInfo.new(damage_input, p_damage_type)
 
 	if info == null:
-		return
+		return 0
 
 	if info.source != null and is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
 		provoked_by_player = true
 		provoked_timer = GameConfig.aggro_duration
 
-	var resist: float = get_resist(info.damage_type)
-	if resist <= 0.0:
-		return
-
-	var effective_damage: int = int(round(float(info.amount) * resist))
+	var effective_damage: int = DamageCalc.resolve(info, self)
 	if effective_damage <= 0:
-		return
+		return 0
 
 	if effective_damage >= 1 and health != null and not health.hit_by_commander:
 		if info != null and (info.hit_by_commander or info.is_from_commander()):
@@ -139,6 +135,7 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 				if current_core_hp == 0:
 					health.died.emit()
 			EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
+	return effective_damage
 
 
 func _start_armor_break_transition() -> void:

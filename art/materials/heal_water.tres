@@ -1,9 +1,10 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c7m2ptjwjsawd"]
 
-[ext_resource type="Shader" path="res://art/shaders/heal_water.gdshader" id="1_water"]
+[ext_resource type="Shader" uid="uid://csylk3k8r18cx" path="res://art/shaders/heal_water.gdshader" id="1_water"]
 
 [resource]
 resource_name = "heal_water"
+render_priority = 0
 shader = ExtResource("1_water")
 shader_parameter/rim_color = Color(0.5, 0.86, 0.94, 1)
 shader_parameter/core_color = Color(0.86, 0.98, 1, 1)

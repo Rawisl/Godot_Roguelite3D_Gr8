@@ -12,7 +12,7 @@
 [node name="Skeleton_Minion" parent="." unique_id=1490186426 instance=ExtResource("1_1yaok")]
 transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0, 0)
 
-[node name="Skeleton3D" parent="Skeleton_Minion/Rig_Medium" parent_id_path=PackedInt32Array(1490186426, 667163974) index="0" unique_id=1019443883]
+[node name="Skeleton3D" parent="Skeleton_Minion/Rig_Medium" parent_id_path=PackedInt32Array(1490186426, 94927911) index="0" unique_id=1563832680]
 bones/1/position = Vector3(0, 0.39206383, 0)
 bones/1/rotation = Quaternion(-1.11122625e-10, 0.043157753, 2.5724098e-09, 0.9990683)
 bones/1/scale = Vector3(0.99999994, 1, 0.99999994)
@@ -65,6 +65,33 @@ bones/21/scale = Vector3(0.99999976, 1.0000006, 0.9999992)
 bones/22/rotation = Quaternion(-8.934892e-05, 0.9202217, -0.3913977, 2.0290998e-05)
 bones/22/scale = Vector3(1.0000002, 0.9999979, 1.0000024)
 
+[node name="Skeleton_Minion_ArmLeft" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="0" unique_id=1116934263]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_ArmRight" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="1" unique_id=123039843]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_Body" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="2" unique_id=921579958]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_Cloak" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="3" unique_id=1664806268]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_Eyes" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="4" unique_id=709239468]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_Head" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="5" unique_id=1350051792]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_Jaw" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="6" unique_id=147199304]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_LegLeft" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="7" unique_id=983538813]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Minion_LegRight" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="8" unique_id=1617801889]
+material_override = ExtResource("9_matb")
+
 [node name="RightHandSlot" type="BoneAttachment3D" parent="Skeleton_Minion/Rig_Medium/Skeleton3D" index="9" unique_id=925476396]
 unique_name_in_owner = true
 transform = Transform3D(6.0328017e-07, -0.14989421, -0.9887017, -0.99999887, 2.0861614e-07, 9.416043e-08, -3.5968725e-07, 0.9887013, -0.1498949, -0.4910608, 0.64102995, 0.10659543)
@@ -74,34 +101,7 @@ bone_idx = 12
 [node name="Skeleton_Blade2" parent="Skeleton_Minion/Rig_Medium/Skeleton3D/RightHandSlot" unique_id=29959550 instance=ExtResource("3_1fqmi")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
-[node name="Skeleton_Minion_ArmLeft" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_ArmRight" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_Body" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_Cloak" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_Eyes" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_Head" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_Jaw" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_LegLeft" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Minion_LegRight" parent="Skeleton_Minion/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Blade" parent="Skeleton_Minion/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Blade2"]
+[node name="Skeleton_Blade" parent="Skeleton_Minion/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Blade2" index="0" unique_id=2031028756]
 material_override = ExtResource("9_matb")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Skeleton_Minion" unique_id=1302143187]
