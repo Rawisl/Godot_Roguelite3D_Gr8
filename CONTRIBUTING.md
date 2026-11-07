@@ -159,6 +159,31 @@ Mỗi khi hoàn thành một phần việc nhỏ, hãy thực hiện commit, đ�
 * [ ] Đã commit đầy đủ các file đuôi `.uid` và `.import` mới được tạo ra.
 * [ ] Đã dọn sạch các file rác như thư mục `.godot/`, file đuôi `*.tmp` hoặc các bản sao scene trùng lặp.
 
+### 5.4 Ghi chú TODO trong code
+
+**Cú pháp.** Mỗi TODO phải theo đúng một dạng để người và script cùng grep được:
+
+```
+# TODO(<github_username>): <nội dung cụ thể>
+
+```
+
+* `<github_username>` là username GitHub chính xác của thành viên được giao việc, không dùng tên thật hay biệt danh, để `grep "TODO(username)"` tìm đúng 100%.
+* Nội dung nêu rõ khi nào hoặc điều kiện gì thì làm, làm cái gì và tác động vào đâu (ví dụ nối signal nào, lấy giá trị gì từ component nào).
+* Không viết `TODO:` trơ trọi vì không ai nhận việc.
+* Không viết `TODO(week X):` chung chung khi không gán cho một cá nhân cụ thể. Mốc tuần được ghi ở `ASSIGNMENTS.md`, không ghi trong comment.
+* TODO cũ chưa đúng dạng được sửa lại theo cú pháp này khi bạn đụng vào dòng đó.
+
+**Đầu mỗi phiên làm việc.** Khi bắt đầu phiên mới trên một nhánh mới, việc đầu tiên (kể cả khi làm cùng AI Agent) là quét toàn bộ codebase tìm `TODO(<github_username_của_bạn>)`, rồi đánh giá từng cái:
+
+* Khả thi ngay: việc nằm trong phạm vi task hiện tại, hoặc phần phụ thuộc đã có sẵn (ví dụ phía kia đã emit signal). Làm gộp luôn trong Pull Request này.
+* Chưa khả thi: cần dữ liệu từ task tuần sau hoặc Pull Request của người khác chưa merge. Giữ nguyên TODO, ghi lý do vào task tương ứng trong `ASSIGNMENTS.md` để làm đúng tuần.
+
+**Khi hoàn tất.**
+
+* Làm xong phần việc thì xóa đúng dòng `TODO(...)` đó ngay trong commit hoặc Pull Request thực hiện nó.
+* Không xóa TODO của người khác khi chưa làm xong phần việc đó, và không đánh dấu hoàn thành nửa vời. Làm được một phần thì sửa nội dung TODO cho khớp phần còn lại.
+
 
 
 ---

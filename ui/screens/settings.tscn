@@ -39,9 +39,9 @@ size_flags_horizontal = 0
 
 [node name="Tabs" type="TabContainer" parent="Margin/Content" unique_id=2026071650]
 unique_name_in_owner = true
-theme = ExtResource("7_light")
 layout_mode = 2
 size_flags_vertical = 3
+theme = ExtResource("7_light")
 current_tab = 4
 
 [node name="TabGameplay" parent="Margin/Content/Tabs" unique_id=500120670 instance=ExtResource("5_wpins")]

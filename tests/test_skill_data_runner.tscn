@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://b1oye32gfyl2k"]
 
-[ext_resource type="Script" path="res://tests/test_skill_data_runner.gd" id="1_skilldata"]
+[ext_resource type="Script" uid="uid://bt7ky6inutuwa" path="res://tests/test_skill_data_runner.gd" id="1_skilldata"]
 
-[node name="TestSkillDataRunner" type="Node"]
+[node name="TestSkillDataRunner" type="Node" unique_id=216871087]
 script = ExtResource("1_skilldata")

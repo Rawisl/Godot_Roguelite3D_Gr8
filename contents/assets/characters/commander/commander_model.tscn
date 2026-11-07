@@ -14,7 +14,7 @@
 [node name="Knight" parent="." unique_id=1404373090 instance=ExtResource("1_gh3ln")]
 transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0, 0)
 
-[node name="Skeleton3D" parent="Knight/Rig_Medium" parent_id_path=PackedInt32Array(1404373090, 1251981551) index="0" unique_id=1849754511]
+[node name="Skeleton3D" parent="Knight/Rig_Medium" parent_id_path=PackedInt32Array(1404373090, 362701467) index="0" unique_id=650776783]
 bones/1/position = Vector3(0, 0.4371587, 0)
 bones/1/rotation = Quaternion(0.095845774, -1.1866046e-07, 1.1425705e-08, 0.9953962)
 bones/2/rotation = Quaternion(7.5231634e-37, 7.105427e-15, 1.0587911e-22, 1)
@@ -45,31 +45,31 @@ bones/20/rotation = Quaternion(0.0019691067, 6.904272e-08, -1.3675262e-09, 0.999
 bones/21/rotation = Quaternion(-0.49649605, 1.7175507e-08, -9.8757184e-08, 0.868039)
 bones/22/rotation = Quaternion(2.354348e-08, 0.918349, -0.3957716, 6.431701e-08)
 
-[node name="Knight_ArmLeft" parent="Knight/Rig_Medium/Skeleton3D" index="0" unique_id=843525567]
+[node name="Knight_ArmLeft" parent="Knight/Rig_Medium/Skeleton3D" index="0" unique_id=1286965490]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_ArmRight" parent="Knight/Rig_Medium/Skeleton3D" index="1" unique_id=550039681]
+[node name="Knight_ArmRight" parent="Knight/Rig_Medium/Skeleton3D" index="1" unique_id=681778408]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_Body" parent="Knight/Rig_Medium/Skeleton3D" index="2" unique_id=2074670192]
+[node name="Knight_Body" parent="Knight/Rig_Medium/Skeleton3D" index="2" unique_id=1464197025]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_Cape" parent="Knight/Rig_Medium/Skeleton3D" index="3" unique_id=1208629981]
+[node name="Knight_Cape" parent="Knight/Rig_Medium/Skeleton3D" index="3" unique_id=868862607]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_Head" parent="Knight/Rig_Medium/Skeleton3D" index="4" unique_id=334059174]
+[node name="Knight_Head" parent="Knight/Rig_Medium/Skeleton3D" index="4" unique_id=1450698631]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_Helmet" parent="Knight/Rig_Medium/Skeleton3D" index="5" unique_id=854702793]
+[node name="Knight_Helmet" parent="Knight/Rig_Medium/Skeleton3D" index="5" unique_id=908396214]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_HelmetVisor" parent="Knight/Rig_Medium/Skeleton3D" index="6" unique_id=1563720677]
+[node name="Knight_HelmetVisor" parent="Knight/Rig_Medium/Skeleton3D" index="6" unique_id=1125851389]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_LegLeft" parent="Knight/Rig_Medium/Skeleton3D" index="7" unique_id=1622494614]
+[node name="Knight_LegLeft" parent="Knight/Rig_Medium/Skeleton3D" index="7" unique_id=1838970165]
 material_override = ExtResource("9_matc")
 
-[node name="Knight_LegRight" parent="Knight/Rig_Medium/Skeleton3D" index="8" unique_id=1733364143]
+[node name="Knight_LegRight" parent="Knight/Rig_Medium/Skeleton3D" index="8" unique_id=993947427]
 material_override = ExtResource("9_matc")
 
 [node name="RightHandSlot" type="BoneAttachment3D" parent="Knight/Rig_Medium/Skeleton3D" index="9" unique_id=823504566]
@@ -80,7 +80,7 @@ bone_idx = 13
 
 [node name="sword_2handed_color2" parent="Knight/Rig_Medium/Skeleton3D/RightHandSlot" unique_id=606987103 instance=ExtResource("2_xdwxc")]
 
-[node name="sword_2handed_color" parent="Knight/Rig_Medium/Skeleton3D/RightHandSlot/sword_2handed_color2" index="0" unique_id=1959517]
+[node name="sword_2handed_color" parent="Knight/Rig_Medium/Skeleton3D/RightHandSlot/sword_2handed_color2" index="0" unique_id=1716223568]
 material_override = ExtResource("9_matc")
 
 [node name="KnightAnimationPlayer" type="AnimationPlayer" parent="Knight" unique_id=916960605]

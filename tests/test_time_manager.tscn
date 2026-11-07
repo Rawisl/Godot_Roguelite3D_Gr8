@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://ce3tvg1143e6w"]
 
-[ext_resource type="Script" path="res://tests/test_time_manager.gd" id="1_tm"]
+[ext_resource type="Script" uid="uid://ddyin2qbt8nik" path="res://tests/test_time_manager.gd" id="1_tm"]
 
-[node name="TestTimeManager" type="Node"]
+[node name="TestTimeManager" type="Node" unique_id=2069217253]
 script = ExtResource("1_tm")

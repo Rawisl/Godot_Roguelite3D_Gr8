@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cifta32qmh5ae"]
 
-[ext_resource type="Script" path="res://tests/test_wave_scale.gd" id="1_scale_test"]
+[ext_resource type="Script" uid="uid://c5cn58n0dvkj6" path="res://tests/test_wave_scale.gd" id="1_scale_test"]
 
-[node name="TestWaveScale" type="Node"]
+[node name="TestWaveScale" type="Node" unique_id=1463762768]
 script = ExtResource("1_scale_test")

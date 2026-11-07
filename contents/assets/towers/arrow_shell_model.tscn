@@ -10,19 +10,19 @@
 [node name="Level1" parent="." unique_id=155374345 instance=ExtResource("1_cgy4u")]
 visible = false
 
-[node name="Archer_tower_LVL_1" parent="Level1" index="0" unique_id=1717571627]
+[node name="Archer_tower_LVL_1" parent="Level1" index="0" unique_id=1479398486]
 material_override = ExtResource("2_dnqiq")
 
 [node name="Level2" parent="." unique_id=1932706127 instance=ExtResource("3_il77n")]
 visible = false
 
-[node name="Archer_shell_LVL_2" parent="Level2" index="0" unique_id=1768725818]
+[node name="Archer_shell_LVL_2" parent="Level2" index="0" unique_id=1816165133]
 material_override = ExtResource("2_dnqiq")
 
 [node name="Level3" parent="." unique_id=259952934 instance=ExtResource("4_eahsi")]
 visible = false
 
-[node name="Archer_shell_LVL_4" parent="Level3" index="0" unique_id=1637223588]
+[node name="Archer_shell_LVL_4" parent="Level3" index="0" unique_id=506816580]
 material_override = ExtResource("2_dnqiq")
 
 [editable path="Level1"]

@@ -13,7 +13,7 @@
 [node name="Skeleton_Warrior" parent="." unique_id=579878053 instance=ExtResource("1_jt6cn")]
 transform = Transform3D(0.95, 0, 0, 0, 0.95, 0, 0, 0, 0.95, 0, 0, 0)
 
-[node name="Skeleton3D" parent="Skeleton_Warrior/Rig_Medium" parent_id_path=PackedInt32Array(579878053, 1640851731) index="0" unique_id=1212381536]
+[node name="Skeleton3D" parent="Skeleton_Warrior/Rig_Medium" parent_id_path=PackedInt32Array(579878053, 600027939) index="0" unique_id=975629687]
 bones/1/position = Vector3(0, 0.39206383, 0)
 bones/1/rotation = Quaternion(-1.11122625e-10, 0.043157753, 2.5724098e-09, 0.9990683)
 bones/2/rotation = Quaternion(-6.938893e-18, 7.1054274e-15, 4.93038e-32, 1)
@@ -46,8 +46,38 @@ bones/20/rotation = Quaternion(0.16501395, 6.49408e-08, -1.1140696e-07, 0.986291
 bones/21/rotation = Quaternion(-0.53372866, -0.26089525, -1.7298482e-05, 0.80440503)
 bones/22/rotation = Quaternion(0.00026347244, 0.9202156, -0.39141193, -5.963906e-05)
 
-[node name="head" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="0" unique_id=1994916705]
+[node name="head" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="0" unique_id=1194430791]
 transform = Transform3D(0.9997204, -1.4014349e-09, 0.023646597, 1.3934147e-09, 0.99999994, 3.5568634e-10, -0.023646597, -3.226374e-10, 0.9997204, -4.3038546e-09, 1.2278259, 1.5739471e-15)
+
+[node name="Skeleton_Warrior_Helmet" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/head" index="0" unique_id=1749689363]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_ArmLeft" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="1" unique_id=1091871191]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_ArmRight" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="2" unique_id=1997138301]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_Body" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="3" unique_id=1655980290]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_Cloak" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="4" unique_id=1716441484]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_Eyes" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="5" unique_id=1078200429]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_Head" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="6" unique_id=1931186706]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_Jaw" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="7" unique_id=2124309463]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_LegLeft" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="8" unique_id=1847371775]
+material_override = ExtResource("9_matb")
+
+[node name="Skeleton_Warrior_LegRight" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="9" unique_id=331031167]
+material_override = ExtResource("9_matb")
 
 [node name="RightHandSlot" type="BoneAttachment3D" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="10" unique_id=185827917]
 unique_name_in_owner = true
@@ -57,6 +87,9 @@ bone_idx = 8
 
 [node name="Skeleton_Axe2" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot" unique_id=1967680080 instance=ExtResource("2_wb3mh")]
 
+[node name="Skeleton_Axe" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Axe2" index="0" unique_id=1229735938]
+material_override = ExtResource("9_matb")
+
 [node name="LeftHandSlot" type="BoneAttachment3D" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D" index="11" unique_id=1518003297]
 unique_name_in_owner = true
 transform = Transform3D(5.3484914e-08, 0.26286304, 0.9648325, 0.99999917, -7.283063e-14, 3.6238131e-07, 3.630696e-07, 0.96483254, -0.26286307, 0.5077683, 0.63670504, -0.018521195)
@@ -65,40 +98,7 @@ bone_idx = 13
 
 [node name="Skeleton_Shield_Large_A2" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/LeftHandSlot" unique_id=2048332599 instance=ExtResource("3_3dblv")]
 
-[node name="Skeleton_Warrior_ArmLeft" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_ArmRight" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_Body" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_Cloak" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_Eyes" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_Head" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_Jaw" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_LegLeft" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_LegRight" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Warrior_Helmet" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/head"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Axe" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Axe2"]
-material_override = ExtResource("9_matb")
-
-[node name="Skeleton_Shield_Large_A" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/LeftHandSlot/Skeleton_Shield_Large_A2"]
+[node name="Skeleton_Shield_Large_A" parent="Skeleton_Warrior/Rig_Medium/Skeleton3D/LeftHandSlot/Skeleton_Shield_Large_A2" index="0" unique_id=1081490234]
 material_override = ExtResource("9_matb")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Skeleton_Warrior" unique_id=900034506]

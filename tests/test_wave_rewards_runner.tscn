@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cr0ghlpp0peou"]
 
-[ext_resource type="Script" path="res://tests/test_wave_rewards_runner.gd" id="1_test_wave_rewards"]
+[ext_resource type="Script" uid="uid://ba2qw10672ktv" path="res://tests/test_wave_rewards_runner.gd" id="1_test_wave_rewards"]
 
-[node name="TestWaveRewardsRunner" type="Node"]
+[node name="TestWaveRewardsRunner" type="Node" unique_id=434647960]
 script = ExtResource("1_test_wave_rewards")
