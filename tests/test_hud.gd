@@ -1,6 +1,8 @@
 extends Node
 ## Drives the HUD with fake EventBus signals. Press F6 on this scene.
 
+const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
+
 func _ready() -> void:
 	await get_tree().process_frame
 	EventBus.run_started.emit()
@@ -15,10 +17,13 @@ func _ready() -> void:
 	EventBus.pause_changed.emit(true)
 	await get_tree().create_timer(1.5).timeout
 	EventBus.pause_changed.emit(false)
+	await _start_wave_locks()
+	await _mithril()
 	print("[test_hud] click the button now to see wave_start_requested")
 	await get_tree().create_timer(3.0).timeout
 	EventBus.state_changed.emit(&"COMBAT")
 	EventBus.wave_started.emit(1)
+	print("[test_hud] wave counter: Wave 1 / victory wave when GameConfig has victory_wave, else Wave 1")
 	EventBus.enemy_count_changed.emit(0, 8, 8)
 	EventBus.commander_hp_changed.emit(150, 200)
 	for killed in range(1, 9):
@@ -34,7 +39,52 @@ func _ready() -> void:
 	await _emergency()
 	await _boss()
 	EventBus.state_changed.emit(&"SUMMARY")
+	await _wave_counter()
 	print("[test_hud] done, press F1 to toggle the HUD")
+
+## The Start wave button is grey with its reason for each of the three locks, one at a time.
+func _start_wave_locks() -> void:
+	var button := get_tree().root.find_child("StartWaveButton", true, false) as StartWaveButton
+	print("[test_hud] sell dialog open: the button is grey, close the dialog first")
+	var dialog := DIALOG_SCENE.instantiate()
+	dialog.setup(&"dialog.sell.title", &"dialog.sell.body",
+		{"name": tr(&"tower.arrow"), "level": 2, "gold": 45}, true)
+	ScreenManager.open_dialog(dialog)
+	await get_tree().create_timer(1.5).timeout
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+	print("[test_hud] tutorial waiting for two towers: the button is grey with the tutorial reason")
+	button.tutorial_lock = true
+	await get_tree().create_timer(1.5).timeout
+	button.tutorial_lock = false
+	print("[test_hud] no lock: the button is ready again")
+	await get_tree().create_timer(1.0).timeout
+
+## Mithril next to gold: glow on a gain, repair hint only in PREP with HP missing and Mithril left.
+func _mithril() -> void:
+	print("[test_hud] Mithril 0, Fortress full: no hint")
+	EventBus.mithril_changed.emit(0, 0)
+	await get_tree().create_timer(1.0).timeout
+	print("[test_hud] +1 Mithril: the cell glows for 0.3 s")
+	EventBus.mithril_changed.emit(1, 1)
+	await get_tree().create_timer(1.0).timeout
+	print("[test_hud] Fortress at 70% in PREP: the repair hint shows")
+	EventBus.fortress_hp_changed.emit(700, 1000, -300)
+	await get_tree().create_timer(1.5).timeout
+	print("[test_hud] Mithril spent: the hint goes, no glow")
+	EventBus.mithril_changed.emit(0, -1)
+	await get_tree().create_timer(1.0).timeout
+	EventBus.fortress_hp_changed.emit(1000, 1000, 300)
+
+## State names, including Hazard Trial.
+func _wave_counter() -> void:
+	print("[test_hud] Hazard Trial state shown under the wave number")
+	EventBus.state_changed.emit(&"HAZARD_TRIAL")
+	await get_tree().create_timer(1.5).timeout
+	print("[test_hud] reward pick state shown")
+	EventBus.state_changed.emit(&"REWARD_PICK")
+	await get_tree().create_timer(1.5).timeout
+	EventBus.state_changed.emit(&"PREP")
 
 func _fortress_low() -> void:
 	print("[test_hud] Fortress at 25%: border blinks, tag shown")

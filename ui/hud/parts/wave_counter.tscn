@@ -15,11 +15,26 @@ mouse_filter = 2
 alignment = 1
 script = ExtResource("1_57oc4")
 
-[node name="Wave" type="Label" parent="." unique_id=999281154]
+[node name="WaveRow" type="HBoxContainer" parent="." unique_id=1460297318]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Wave" type="Label" parent="WaveRow" unique_id=999281154]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
 horizontal_alignment = 1
+
+[node name="EndlessTag" type="Label" parent="WaveRow" unique_id=1873402956]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"HudHint"
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 22
 
 [node name="StatusRow" type="HBoxContainer" parent="." unique_id=362338397]
 layout_mode = 2
