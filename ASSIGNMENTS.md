@@ -318,7 +318,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-MH2
 - Người: Mạnh
 - Tuần: 8 | Giờ ước tính: 3 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Đổi hằng số nền: starting_gold 150 sang 0, max_ground_buildings 8 sang 3, thêm grid_cell_gap 0.5, thêm tower_max_level 36 và tower_tier2/3_level 13/25, đổi tower_gate_lv2/3 sang tower_gate_tier2/3 áp ở cấp 13 và 25; sửa các test dựa vào giá trị cũ
 - Nghiệm thu: Run mới bắt đầu 0 gold; xây công trình thứ 4 trên grid bị từ chối với lý do 'Đã đủ 3 công trình'; nâng lên cấp 13 cần Chỉ huy cấp 4
 - Tệp liên quan: autoload/game_config.gd (starting_gold, max_ground_buildings, tower_gate_lv2/lv3), systems/build/build_service.gd (get_upgrade_required_level), levels/corridor/grid_data.gd (cell_position)
@@ -493,7 +493,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH1
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Đồng hồ boss và Cuồng nộ (BTM-01..04, ENR-01..06, EVB-17, BOSS-43, BOSS-27, 28)
 - Nghiệm thu: Hết giờ thì boss_enraged một lần, x1.3, x1.3, x1.5; boss chết cùng frame T=0 không Cuồng nộ
 - Cần xong trước: W9-KT2, W8-MH3
@@ -550,7 +550,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH1
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 6 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: BossIntro SCR-10, HUD-02 thanh HP boss, HUD-04 đồng hồ Cuồng nộ
 - Nghiệm thu: Thanh hai đoạn, nhãn CUỒNG NỘ có biểu tượng
 - Cần xong trước: W9-KT2, W9-MH1
@@ -566,7 +566,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH3
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: HUD theo v2.0: wave_counter bỏ đếm ngược, thêm khóa state HAZARD_TRIAL, hiển thị 'Đợt N / 30' và nhãn 'Endless'; ô Mithril cạnh gold (HUD-20) kèm gợi ý khi Fortress thiếu máu
 - Nghiệm thu: Nhận Mithril thì ô viền sáng 0.3 s; không dùng màu làm kênh duy nhất (UI-05)
 - Tệp liên quan: ui/hud/parts/wave_counter.gd, ui/hud/parts/gold_label.*, ui/hud/hud.tscn
@@ -576,7 +576,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH4
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Panel Fortress viết lại (PNL-04, PNL-13): một nút 'Sửa bằng Mithril (+20%)', tooltip 'Hồi thừa', xám kèm lý do khi đầy máu hoặc mithril = 0; bỏ nút +10%, +25%, đầy; sửa chuỗi panel.fortress.*
 - Nghiệm thu: Nút xám đúng lý do; trạng thái Emergency repair n/3 vẫn hiển thị; panel dùng được ở cả hai chế độ ở PREP (CMD-05)
 - Tệp liên quan: ui/panels/fortress_panel.*, data/locale/strings.csv (panel.fortress.*)
@@ -586,7 +586,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH5
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa test giao diện hỏng do đổi HUD và panel Fortress (test_hud, test_hud_speed_heal, test_summary_panel, test_fortress_panel) và thêm test cho nút Bắt đầu wave
 - Nghiệm thu: Test HUD chạy lại đạt; nút Bắt đầu wave xám đúng ba lý do
 - Tệp liên quan: tests/test_hud*.gd, tests/test_summary_panel.gd, tests/test_fortress_panel.gd

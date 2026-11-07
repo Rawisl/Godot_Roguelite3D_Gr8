@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cjjubp8apufe8"]
+
+[ext_resource type="Script" uid="uid://coymgjbq8qexh" path="res://tests/test_boss_timer_runner.gd" id="1_runner"]
+
+[node name="TestBossTimerRunner" type="Node3D" unique_id=1491216323]
+script = ExtResource("1_runner")

@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_00uft")
 id = &"bulwark"
+display_name_key = "enemy.bulwark"
 base_hp = 2100
 attack_interval = 2.5
 attack_range = 3.0
