@@ -4,6 +4,8 @@ extends Node
 ## - Wave FSM (PREP-COMBAT-SUMMARY), clear time, par_time, clear_mult, x1 downscale, projectile cleanup
 ## - XpTracker (hit_by_commander 100% vs 50%, level curve 5, 14, 27, 44, pending_picks)
 ## - Commander kill gold bonus (frontline_gold_mult = 1.25)
+## - Commander kill gold in the wave total: wave_gold_base, cull, summary gold_base (group 3B)
+## - Boss gold in gold_total is not multiplied by frontline_gold_mult (group 3C)
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const ARCHER_SCENE: PackedScene = preload("res://entities/enemy/archer.tscn")
@@ -37,6 +39,8 @@ func _ready() -> void:
 	test_xp_tracker_level_curve_and_caps()
 	test_xp_tracker_damage_sources_and_cull()
 	test_commander_kill_gold_multiplier()
+	await test_commander_kill_gold_in_wave_total()
+	await test_boss_gold_ignores_commander_multiplier()
 	test_clear_time_multiplier_and_tiers()
 	test_wave_summary_and_wallet_crediting()
 	test_ruined_towers_from_slots()
@@ -190,6 +194,115 @@ func test_commander_kill_gold_multiplier() -> void:
 
 	grunt_comm.free()
 	EventBus.gold_delta.disconnect(on_gold_delta)
+
+
+## A Grunt that stays put; the Enemy sets up navigation deferred, so free it only after it ran.
+func _kill_grunt(commander: bool) -> Enemy:
+	var g: Enemy = GRUNT_SCENE.instantiate() as Enemy
+	add_child(g)
+	g.spawn_grace = false
+	g.hit_by_commander = commander
+	g._on_died()
+	return g
+
+
+func _free_after_nav_setup(nodes: Array) -> void:
+	await get_tree().process_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	for n in nodes:
+		if is_instance_valid(n):
+			n.free()
+
+
+func test_commander_kill_gold_in_wave_total() -> void:
+	print("\n[GROUP 3B] Commander kill gold in the wave total (WaveManager wave 1)")
+	var mult: float = GameConfig.frontline_gold_mult
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	add_child(wave_manager)
+	EventBus.wave_start_requested.emit()
+	assert_true(wave_manager.current_wave == 1, "WaveManager is on wave 1")
+	assert_true(wave_manager._wave_gold_base == 0.0, "wave_gold_base starts at 0 in COMBAT")
+
+	# Without the flag: base gold (4 for a wave 1 Grunt).
+	var plain := _kill_grunt(false)
+	var base: int = plain.scaled_gold
+	var cfg: ScaleConfig = plain._get_effective_scale_config()
+	assert_true(base == cfg.get_gold_reward(plain.data.gold_reward, 1), "Grunt scaled_gold on wave 1 comes from ScaleConfig.get_gold_reward")
+	assert_true(base > 0, "Grunt scaled_gold is positive")
+	assert_true(is_equal_approx(wave_manager._wave_gold_base, float(base)), "Kill without the commander flag adds base gold to wave_gold_base")
+
+	# With the flag: base x frontline_gold_mult (4 x 1.25 = 5.0).
+	var before: float = wave_manager._wave_gold_base
+	var flagged := _kill_grunt(true)
+	assert_true(flagged.scaled_gold == base, "Second Grunt has the same scaled_gold")
+	assert_true(is_equal_approx(wave_manager._wave_gold_base - before, float(base) * mult), "Kill with the commander flag adds base x frontline_gold_mult to wave_gold_base")
+	assert_true(wave_manager._wave_gold_base > before + float(base), "Flagged kill adds more than an unflagged one")
+
+	# A culled enemy adds nothing, flag or not.
+	var culled_before: float = wave_manager._wave_gold_base
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, base, 1, true, true)
+	assert_true(wave_manager._wave_gold_base == culled_before, "Culled kill with the commander flag adds no gold")
+	wave_manager.free()
+	await _free_after_nav_setup([plain, flagged])
+
+	# Wave with a single flagged Grunt: the summary reports base x mult as gold_base.
+	var summary_manager := WaveManager.new()
+	summary_manager.auto_advance_summary = false
+	add_child(summary_manager)
+	var summaries: Array[Dictionary] = []
+	var on_summary := func(s: Dictionary): summaries.append(s)
+	EventBus.wave_summary_ready.connect(on_summary)
+	EventBus.wave_start_requested.emit()
+	var single := _kill_grunt(true)
+	summary_manager.set("spawn_queue", [])
+	summary_manager.set("enemies_alive", 0)
+	summary_manager._end_combat_to_summary()
+	assert_true(summaries.size() == 1, "Summary emitted for the single-Grunt wave")
+	var expected_base: int = int(round(float(base) * mult))
+	assert_true(summaries.size() == 1 and summaries[0].get("gold_base") == expected_base, "Summary gold_base is base x frontline_gold_mult rounded (5 for a wave 1 Grunt)")
+	assert_true(is_equal_approx(summary_manager._wave_gold_base, float(base) * mult), "wave_gold_base holds base x frontline_gold_mult at SUMMARY")
+	EventBus.wave_summary_ready.disconnect(on_summary)
+	summary_manager.free()
+	await _free_after_nav_setup([single])
+
+
+func test_boss_gold_ignores_commander_multiplier() -> void:
+	print("\n[GROUP 3C] Boss gold is not multiplied by frontline_gold_mult")
+	var wave := 5
+	var wave_manager := WaveManager.new()
+	wave_manager.auto_advance_summary = false
+	wave_manager.current_wave = wave
+	add_child(wave_manager)
+	var summaries: Array[Dictionary] = []
+	var on_summary := func(s: Dictionary): summaries.append(s)
+	EventBus.wave_summary_ready.connect(on_summary)
+
+	var bulwark: Bulwark = preload("res://entities/enemy/bulwark.tscn").instantiate() as Bulwark
+	bulwark.data = preload("res://data/bosses/bulwark_boss.tres")
+	bulwark.spawn_grace = false
+	bulwark.is_in_spawn_zone = false
+	add_child(bulwark)
+	bulwark.hit_by_commander = true
+	# Emits boss_defeated and enemy_died with the commander flag.
+	bulwark._on_died()
+	assert_true(wave_manager._boss_defeated_this_wave, "Boss death marks the boss as defeated this wave")
+
+	wave_manager.set("spawn_queue", [])
+	wave_manager.set("enemies_alive", 0)
+	wave_manager._end_combat_to_summary()
+	assert_true(summaries.size() == 1, "Summary emitted for the boss wave")
+	if summaries.size() == 1:
+		var s: Dictionary = summaries[0]
+		var expected_boss := int(floor(float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * float(wave - 1))))
+		var wave_part := int(floor(wave_manager._wave_gold_base * float(s.get("gold_mult"))))
+		assert_true(int(s.get("gold_total")) - wave_part == expected_boss, "Boss part of gold_total is boss_gold_base scaled by wave only, no frontline_gold_mult")
+		assert_true(int(s.get("gold_total")) - wave_part != int(floor(float(expected_boss) * GameConfig.frontline_gold_mult)), "Boss part differs from the boss gold with frontline_gold_mult applied")
+
+	EventBus.wave_summary_ready.disconnect(on_summary)
+	wave_manager.free()
+	await _free_after_nav_setup([bulwark])
 
 
 func test_clear_time_multiplier_and_tiers() -> void:
