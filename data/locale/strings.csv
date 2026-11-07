@@ -145,15 +145,11 @@ settings.audio.ui,Giao diện
 settings.audio.percent,{value}%
 settings.audio.mute_on_focus_loss,Tắt tiếng khi chuyển cửa sổ
 hud.offscreen.boss,Boss
-panel.fortress.repair_step,Sửa +{pct}%
-panel.fortress.repair_full,Sửa đầy
-panel.fortress.gold,{gold} vàng
-panel.fortress.repair_tip,"Sửa {pct}% máu thành, dùng {gold} vàng"
 panel.fortress.full,Thành đã đầy máu
 panel.fortress.emg,Sửa khẩn cấp: {value}/{max} lượt
 panel.fortress.emg_cd,Đang hồi (còn {sec} s)
 panel.fortress.emg_hint,Nhận +1 lượt khi diệt boss
-panel.fortress.emg_tip,"Lúc chuẩn bị nên sửa bằng vàng, để dành lượt khẩn cấp cho lúc chiến đấu"
+panel.fortress.emg_tip,"Lúc chuẩn bị nên sửa bằng Mithril, để dành lượt khẩn cấp cho lúc chiến đấu"
 summary.title,Đợt {wave} hoàn thành
 summary.continue,Tiếp tục
 summary.auto_continue,Tự tiếp tục sau {sec} s
@@ -255,3 +251,27 @@ reward.skip.title,Bỏ qua lượt chọn?
 reward.skip.body,"Bỏ qua sẽ mất lượt chọn này, không được bù vàng."
 reward.slot.tip,"{name}
 Cấp {level}/{max}"
+hud.state.reward_pick,Chọn thưởng
+hud.state.hazard_trial,Thử thách Hazard
+hud.wave_of,Đợt {wave} / {max}
+hud.endless,Endless
+hud.mithril,Mithril
+hud.mithril.tip,Dùng Mithril để sửa thành lúc chuẩn bị
+hud.mithril.hint,Sửa thành
+hud.mithril.hint_tip,Bấm để mở bảng thành và sửa bằng Mithril
+hud.start_wave.tutorial,Hãy xây xong hai trụ đầu tiên
+panel.fortress.mithril,Mithril: {value}
+panel.fortress.repair_mithril,Sửa bằng Mithril (+{pct}%)
+panel.fortress.repair_mithril_tip,Hồi {hp} máu thành
+panel.fortress.repair_overheal,"Hồi thừa: thành chỉ thiếu {hp} máu"
+panel.fortress.need_mithril,"Cần Mithril, thắng Hazard Trial để nhận"
+panel.fortress.prep_only,Chỉ sửa được lúc chuẩn bị
+hud.boss.hp,Giáp {armor}/{armor_max} · Lõi {core}/{core_max}
+hud.boss.immune,Miễn nhiễm: {types}
+hud.boss.enraged,CUỒNG NỘ
+damage.pierce,Xuyên
+damage.blast,Nổ
+damage.slash,Chém
+damage.magic,Phép
+damage.trap,Bẫy
+damage.true,Chuẩn

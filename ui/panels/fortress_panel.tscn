@@ -19,38 +19,31 @@ custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 show_percentage = false
 
-[node name="RepairSmall" type="Button" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="3" unique_id=1429151908]
-unique_name_in_owner = true
-layout_mode = 2
-script = ExtResource("2_st31k")
-metadata/_custom_type_script = "uid://bxyhqnpa4du2p"
-
-[node name="RepairLarge" type="Button" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="4" unique_id=1726571506]
-unique_name_in_owner = true
-layout_mode = 2
-script = ExtResource("2_st31k")
-metadata/_custom_type_script = "uid://bxyhqnpa4du2p"
-
-[node name="RepairFull" type="Button" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="5" unique_id=208339324]
-unique_name_in_owner = true
-layout_mode = 2
-script = ExtResource("2_st31k")
-metadata/_custom_type_script = "uid://bxyhqnpa4du2p"
-
-[node name="HSeparator" type="HSeparator" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="6" unique_id=2128677604]
-layout_mode = 2
-
-[node name="EmgLabel" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="7" unique_id=479012877]
+[node name="MithrilLabel" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="3" unique_id=1704592318]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 
-[node name="EmgCooldown" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="8" unique_id=1977493561]
+[node name="RepairMithril" type="Button" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="4" unique_id=1429151908]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_st31k")
+metadata/_custom_type_script = "uid://bxyhqnpa4du2p"
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="5" unique_id=2128677604]
+layout_mode = 2
+
+[node name="EmgLabel" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="6" unique_id=479012877]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+
+[node name="EmgCooldown" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="7" unique_id=1977493561]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"DimLabel"
 
-[node name="EmgHint" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="9" unique_id=1464399545]
+[node name="EmgHint" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="8" unique_id=1464399545]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HudHint"

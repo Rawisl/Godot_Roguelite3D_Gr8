@@ -25,6 +25,7 @@ var _selected_ring: Slot = null
 func _ready() -> void:
 	# Building is allowed while paused in PREP.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group(&"selection_controller")
 	hovered_changed.connect(_on_hovered_changed)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
@@ -121,11 +122,17 @@ func _select(node: Node) -> void:
 			_set_selected_ring(slot)
 			EventBus.slot_selected.emit(slot.slot_id)
 	elif node is Fortress and _is_prep():
-		selected_slot = FORTRESS_ID
-		_set_selected_ring(null)
-		fortress_selected.emit()
+		select_fortress()
 	else:
 		clear_selection()
+
+## Also used by the HUD Mithril button, so both open the Fortress panel the same way. PREP only.
+func select_fortress() -> void:
+	if not _is_prep():
+		return
+	selected_slot = FORTRESS_ID
+	_set_selected_ring(null)
+	fortress_selected.emit()
 
 func _select_tower(slot: Slot) -> void:
 	if slot == null:
