@@ -278,7 +278,7 @@ func _screen_to_ground(input: Vector2) -> Vector3:
 
 
 func _clamped(focus: Vector3) -> Vector3:
-	return bounds.clamp_focus(focus) if bounds != null else focus
+	return bounds.clamp_focus(focus, _context() == CONTEXT_FRONTLINE) if bounds != null else focus
 
 
 func _on_mode_changed(mode: StringName) -> void:
