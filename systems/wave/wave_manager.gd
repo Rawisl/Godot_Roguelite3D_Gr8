@@ -4,6 +4,8 @@ extends Node
 ## Wave FSM (PREP - COMBAT - SUMMARY) and Spawner.
 ## Supports queue-based spawning, spawn_zone placement, spawn_grace,
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
+# TODO(Ender-Via): when meta progression lands, add the meta gold bonus (gold_pct_meta + gold_pct_buff) to the wave gold computed in the summary step.
+# TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -85,6 +87,7 @@ var _wave_prestige: int:
 var _kills_by_type: Dictionary = {}
 
 const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
+const BOSS_TIMER_SCRIPT := preload("res://systems/wave/boss_timer.gd")
 
 # Clear time tracking
 var _combat_timer: float = 0.0
@@ -95,6 +98,7 @@ var _boss_defeated_this_wave: bool = false
 var _boss_instance: Enemy = null
 
 var _xp_tracker: Node = null
+var _boss_timer: Node = null
 
 
 func _ready() -> void:
@@ -106,6 +110,7 @@ func _ready() -> void:
 	EventBus.commander_died.connect(_on_run_lost)
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 	_setup_xp_tracker()
+	_setup_boss_timer()
 	EventBus.reward_picked.connect(_on_reward_picked)
 	_setup_container.call_deferred()
 	start_prep()
@@ -139,6 +144,14 @@ func _setup_xp_tracker() -> void:
 		_xp_tracker = XP_TRACKER_SCRIPT.new()
 		_xp_tracker.name = "XpTracker"
 		add_child(_xp_tracker)
+
+
+func _setup_boss_timer() -> void:
+	_boss_timer = get_tree().get_first_node_in_group(&"boss_timer")
+	if _boss_timer == null:
+		_boss_timer = BOSS_TIMER_SCRIPT.new()
+		_boss_timer.name = "BossTimer"
+		add_child(_boss_timer)
 
 
 func _setup_container() -> void:
@@ -581,7 +594,6 @@ func _end_combat_to_summary() -> void:
 		boss_gold = float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * float(current_wave - 1))
 
 	# Total gold gain
-	# TODO(week 10): Apply meta gold bonus (gold_pct_total = gold_pct_meta + gold_pct_buff)
 	var gold_pct_total: float = 0.0
 	var wave_gold_scaled: int = int(floor(_wave_gold_base * (1.0 + gold_pct_total) * clear_mult))
 	var boss_gold_scaled: int = int(floor(boss_gold * (1.0 + gold_pct_total)))
@@ -597,7 +609,6 @@ func _end_combat_to_summary() -> void:
 		EventBus.prestige_pending_changed.emit(_wave_prestige)
 
 	# Save progress
-	# TODO(week 10): Handle start_wave > 1 when calculating waves_cleared (RunFlag start_wave).
 	if SaveManager != null and SaveManager.can_write:
 		var run_flag: Dictionary = SaveManager.get_section(SaveManager.RUN_FLAG)
 		run_flag["waves_cleared"] = current_wave

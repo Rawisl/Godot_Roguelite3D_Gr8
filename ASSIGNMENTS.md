@@ -318,7 +318,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-MH2
 - Người: Mạnh
 - Tuần: 8 | Giờ ước tính: 3 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Đổi hằng số nền: starting_gold 150 sang 0, max_ground_buildings 8 sang 3, thêm grid_cell_gap 0.5, thêm tower_max_level 36 và tower_tier2/3_level 13/25, đổi tower_gate_lv2/3 sang tower_gate_tier2/3 áp ở cấp 13 và 25; sửa các test dựa vào giá trị cũ
 - Nghiệm thu: Run mới bắt đầu 0 gold; xây công trình thứ 4 trên grid bị từ chối với lý do 'Đã đủ 3 công trình'; nâng lên cấp 13 cần Chỉ huy cấp 4
 - Tệp liên quan: autoload/game_config.gd (starting_gold, max_ground_buildings, tower_gate_lv2/lv3), systems/build/build_service.gd (get_upgrade_required_level), levels/corridor/grid_data.gd (cell_position)
@@ -493,7 +493,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH1
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Đồng hồ boss và Cuồng nộ (BTM-01..04, ENR-01..06, EVB-17, BOSS-43, BOSS-27, 28)
 - Nghiệm thu: Hết giờ thì boss_enraged một lần, x1.3, x1.3, x1.5; boss chết cùng frame T=0 không Cuồng nộ
 - Cần xong trước: W9-KT2, W8-MH3
