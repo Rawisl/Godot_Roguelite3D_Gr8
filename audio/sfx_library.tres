@@ -8,6 +8,7 @@
 [ext_resource type="AudioStream" uid="uid://b6ae7djtrb30n" path="res://audio/sfx/394186__saturdaysoundguy__slingshot-fly-by-2.wav" id="6_hx12n"]
 [ext_resource type="AudioStream" uid="uid://dtrylat6t7xml" path="res://audio/sfx/impactWood_light_001.ogg" id="7_exlo3"]
 [ext_resource type="Script" uid="uid://djjstbfgh1hvx" path="res://audio/sfx_library.gd" id="8_vgvlt"]
+[ext_resource type="AudioStream" uid="uid://dtr4tjn8rmn6i" path="res://audio/sfx/565954__algoto__monster-cry.wav" id="9_enrage"]
 
 [sub_resource type="Resource" id="Resource_c0njm"]
 script = ExtResource("1_hx12n")
@@ -48,6 +49,12 @@ id = &"enemy_hit"
 stream = ExtResource("7_exlo3")
 volume_db = -2.0
 
+[sub_resource type="Resource" id="Resource_enrage"]
+script = ExtResource("1_hx12n")
+id = &"boss_enraged"
+stream = ExtResource("9_enrage")
+priority = 4
+
 [resource]
 script = ExtResource("8_vgvlt")
-entries = Array[ExtResource("1_hx12n")]([SubResource("Resource_c0njm"), SubResource("Resource_yjrhu"), SubResource("Resource_6encv"), SubResource("Resource_qcjyq"), SubResource("Resource_7uqqq"), SubResource("Resource_nmj7l")])
+entries = Array[ExtResource("1_hx12n")]([SubResource("Resource_c0njm"), SubResource("Resource_yjrhu"), SubResource("Resource_6encv"), SubResource("Resource_qcjyq"), SubResource("Resource_7uqqq"), SubResource("Resource_nmj7l"), SubResource("Resource_enrage")])

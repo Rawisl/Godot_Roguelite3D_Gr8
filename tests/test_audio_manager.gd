@@ -1,6 +1,7 @@
 extends Node
 ## Manual test for AudioManager voice limits, priorities, repeat window, Pause, pitch, music
-## crossfade and tracks per state, audio settings and focus mute. Not shipped.
+## crossfade and tracks per state, music dips and the boss cues, audio settings and focus mute.
+## Not shipped.
 ## Run with F6, prints OK/FAIL per case then quits.
 
 const AM_SCENE := preload("res://autoload/audio_manager.tscn")
@@ -17,11 +18,17 @@ func _ready() -> void:
 	EventBus.sfx_requested.disconnect(autoload._on_sfx_requested)
 	EventBus.pause_changed.disconnect(autoload._on_pause_changed)
 	EventBus.settings_changed.disconnect(autoload._on_settings_changed)
+	EventBus.duck_requested.disconnect(autoload.duck)
+	EventBus.boss_phase_changed.disconnect(autoload._on_boss_phase_changed)
+	EventBus.boss_enraged.disconnect(autoload._on_boss_enraged)
 	_run()
 	_free_manager()
 	EventBus.sfx_requested.connect(autoload._on_sfx_requested)
 	EventBus.pause_changed.connect(autoload._on_pause_changed)
 	EventBus.settings_changed.connect(autoload._on_settings_changed)
+	EventBus.duck_requested.connect(autoload.duck)
+	EventBus.boss_phase_changed.connect(autoload._on_boss_phase_changed)
+	EventBus.boss_enraged.connect(autoload._on_boss_enraged)
 	# The test instances wrote to the shared buses; put back the autoload's volumes.
 	autoload._apply_buses()
 	TimeManager.reset()
@@ -52,6 +59,7 @@ func _new_manager() -> void:
 	lib.entries.append(_entry(&"tower", &"SFX", AudioManager.PRIORITY_TOWER))
 	lib.entries.append(_entry(&"commander", &"SFX", AudioManager.PRIORITY_COMMANDER))
 	lib.entries.append(_entry(&"click", &"UI", AudioManager.PRIORITY_COMMANDER))
+	lib.entries.append(_entry(&"boss_enraged", &"SFX", AudioManager.PRIORITY_T1))
 	_am.set_library(lib)
 	TimeManager.real_time = 100.0
 
@@ -77,7 +85,7 @@ func _run() -> void:
 	# Library from the autoload scene loads every placeholder sound.
 	var shipped: Node = AM_SCENE.instantiate()
 	add_child(shipped)
-	for id in [&"ui_click", &"alert_t1", &"commander_hit", &"boss_stomp_windup", &"tower_arrow_shot", &"enemy_hit"]:
+	for id in [&"ui_click", &"alert_t1", &"commander_hit", &"boss_stomp_windup", &"tower_arrow_shot", &"enemy_hit", &"boss_enraged"]:
 		_check("shipped library has %s" % id, shipped._entries.has(id) and shipped._entries[id].stream != null)
 	_check("pool has 32 voices", shipped._voices.size() == 32)
 	# every state has a track; loops loop, stings play once.
@@ -162,6 +170,7 @@ func _run() -> void:
 	_check("sfx_requested plays through EventBus with the entry priority", _am.playing_count(&"tower") == 1)
 
 	_run_music()
+	_run_ducking()
 	_run_settings()
 
 func _run_music() -> void:
@@ -215,6 +224,71 @@ func _run_music() -> void:
 	_am.music = MusicLibrary.new()
 	_am._on_wave_state_changed(&"COMBAT")
 	_check("a missing track fades to silence", _am.current_music() == null)
+
+func _run_ducking() -> void:
+	# A dip goes down fast, holds for its time in real seconds, then comes back.
+	_new_manager()
+	_am.play_music(_track(1.0))
+	_tick(2.0)
+	var deck: AudioStreamPlayer = _am._decks[_am._front]
+	EventBus.duck_requested.emit(-8.0, 0.5)
+	_tick(0.05)
+	_check("duck_requested dips the music by its depth", is_equal_approx(_am.duck_db(), -8.0) and is_equal_approx(deck.volume_db, -8.0))
+	_tick(0.4)
+	_check("the dip holds for its time", is_equal_approx(_am.duck_db(), -8.0))
+	_tick(0.05 + _am.duck_release)
+	_check("the music comes back after the dip", is_equal_approx(_am.duck_db(), 0.0) and is_equal_approx(deck.volume_db, 0.0))
+
+	_am.duck(-4.0, 1.0)
+	_am.duck(8.0, 0.2)
+	_tick(0.6)
+	_check("two dips together keep the deeper depth and the later end", is_equal_approx(_am.duck_db(), -8.0))
+	_tick(0.4 + _am.duck_release)
+	_check("and end together", is_equal_approx(_am.duck_db(), 0.0))
+
+	TimeManager.set_time_scale(3)
+	TimeManager.request_pause(TimeManager.REASON_USER)
+	_am.duck(-8.0, 0.5)
+	_tick(0.05)
+	_check("paused at x3 the dip adds to the Pause drop", is_equal_approx(deck.volume_db, -8.0 + _am.pause_music_db))
+	_tick(0.45 + _am.duck_release)
+	_check("paused at x3 the dip still ends after its real time", is_equal_approx(_am.duck_db(), 0.0))
+	TimeManager.release_pause(TimeManager.REASON_USER)
+	TimeManager.set_time_scale(1)
+
+	# The boss armor breaking dips the music; other phases do not.
+	EventBus.boss_phase_changed.emit(&"EXPOSED")
+	_tick(0.05)
+	_check("EXPOSED alone does not dip the music", is_equal_approx(_am.duck_db(), 0.0))
+	EventBus.boss_phase_changed.emit(&"TRANSITION")
+	_tick(0.05)
+	_check("the armor breaking dips the music", is_equal_approx(_am.duck_db(), _am.boss_duck_db))
+	_tick(_am.boss_duck_time + _am.duck_release)
+	_check("for boss_duck_time", is_equal_approx(_am.duck_db(), 0.0))
+
+	# Enrage: dip and its own cue, never dropped even with every voice taken.
+	_fill(&"unit_", 10)
+	_fill(&"t1_", 8)
+	EventBus.boss_enraged.emit()
+	_tick(0.05)
+	_check("boss_enraged dips the music", is_equal_approx(_am.duck_db(), _am.boss_duck_db))
+	_check("boss_enraged plays its cue over a full pool", _am.playing_count(&"boss_enraged") == 1)
+
+	# The boss track runs on from BOSS_INTRO into BOSS_COMBAT without starting over.
+	_new_manager()
+	var lib := MusicLibrary.new()
+	lib.prep = _track(1.0)
+	lib.boss = _track(1.0)
+	_am.music = lib
+	_am._on_wave_state_changed(&"PREP")
+	_tick(2.0)
+	_am._on_wave_state_changed(&"BOSS_INTRO")
+	_tick(2.0)
+	var front: int = _am._front
+	_am._on_wave_state_changed(&"BOSS_COMBAT")
+	_tick(0.1)
+	_check("BOSS_COMBAT keeps the boss track from BOSS_INTRO playing", _am._front == front and _am.current_music() == lib.boss
+		and is_equal_approx(_am.music_gains()[front], 1.0) and _playing_decks() == 1)
 
 func _run_settings() -> void:
 	_new_manager()

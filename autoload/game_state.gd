@@ -34,6 +34,9 @@ var last_run_summary: Dictionary = {}
 ## Last value sent for each setting on EventBus.settings_changed. Parts created later, such as
 ## the HUD of a new run, read it here instead of starting from a default.
 var _settings: Dictionary = {}
+## Last wave state sent on EventBus.state_changed, so HUD parts created after the first PREP
+## still know it.
+var wave_state: StringName = &""
 ## Why the saved sign-in could not be restored at start, empty when it was fine.
 var session_restore_error: StringName = &""
 
@@ -48,6 +51,7 @@ func _ready() -> void:
 	add_child(_pause_layer)
 	EventBus.run_ended.connect(_on_run_ended)
 	EventBus.settings_changed.connect(_on_settings_changed)
+	EventBus.state_changed.connect(_on_wave_state_changed)
 	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_sync_with_current_scene.call_deferred()
 	_restore_session.call_deferred()
@@ -104,7 +108,7 @@ func resume() -> void:
 	TimeManager.release_pause(TimeManager.REASON_USER)
 
 ## Run HUD buttons give focus back right away so Space and Enter never press them again.
-## Dialogs and anything shown while the run is paused (pause menu, Settings, reward pick)
+## Dialogs and anything shown while the run is paused (pause menu, Settings)
 ## keep focus for arrow and Enter navigation.
 func _on_gui_focus_changed(control: Control) -> void:
 	if current != AppState.RUN or TimeManager.is_paused or ScreenManager.has_dialog():
@@ -113,15 +117,30 @@ func _on_gui_focus_changed(control: Control) -> void:
 		if is_instance_valid(control) and control.has_focus():
 			control.release_focus()).call_deferred()
 
-## TODO: request it from RunState so it emits run_ended.
+## Concludes the active run as abandoned and transitions to run end.
 func abandon_run() -> void:
-	_on_run_ended(&"ABANDONED", {})
+	var rs := _get_run_state()
+	if rs != null and is_instance_valid(rs):
+		rs.end_run(&"ABANDONED")
+	else:
+		_on_run_ended(&"ABANDONED", {})
 
-## Settles the run as ABANDONED, then exits.
-## TODO: settle through RunState and wait for the save before quitting.
+
+## Settles the run as abandoned through runtime state and exits application.
 func quit_from_run() -> void:
-	last_run_end_type = &"ABANDONED"
+	var rs := _get_run_state()
+	if rs != null and is_instance_valid(rs):
+		rs.end_run(&"ABANDONED")
+	else:
+		last_run_end_type = &"ABANDONED"
 	get_tree().quit()
+
+
+func _get_run_state() -> RunState:
+	if not is_inside_tree():
+		return null
+	return get_tree().get_first_node_in_group(&"run_state") as RunState
+
 
 func _on_run_ended(end_type: StringName, summary: Dictionary) -> void:
 	last_run_end_type = end_type
@@ -157,3 +176,6 @@ func _restore_session() -> void:
 ## A sign in or a sign out replaces whatever went wrong while restoring.
 func _on_session_changed(_signed_in: bool) -> void:
 	session_restore_error = &""
+
+func _on_wave_state_changed(new_state: StringName) -> void:
+	wave_state = new_state

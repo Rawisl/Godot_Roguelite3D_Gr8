@@ -34,7 +34,6 @@ func _disable_auto_wave_spawning() -> void:
 	wave_manager.set_physics_process(false)
 	wave_manager.auto_advance_summary = false
 	wave_manager.spawn_queue.clear()
-	wave_manager.prep_timer = 999999.0
 
 
 func _setup_ui_connections() -> void:
@@ -272,7 +271,6 @@ func kill_all_enemies() -> void:
 	if wave_manager != null:
 		wave_manager.set_physics_process(false)
 		wave_manager.spawn_queue.clear()
-		wave_manager.prep_timer = 999999.0
 	var count := 0
 	for enemy in get_tree().get_nodes_in_group(&"enemy"):
 		var e := enemy as Enemy

@@ -2,7 +2,6 @@ extends Node
 
 ## Automated test runner for:
 ## - Wave FSM (PREP-COMBAT-SUMMARY), clear time, par_time, clear_mult, x1 downscale, projectile cleanup
-## - Early call gold bonus (early_call_cap = 40, loss cancellation)
 ## - XpTracker (hit_by_commander 100% vs 50%, level curve 5, 14, 27, 44, pending_picks)
 ## - Commander kill gold bonus (frontline_gold_mult = 1.25)
 
@@ -38,7 +37,6 @@ func _ready() -> void:
 	test_xp_tracker_level_curve_and_caps()
 	test_xp_tracker_damage_sources_and_cull()
 	test_commander_kill_gold_multiplier()
-	test_early_call_bonus_calculation_and_cap()
 	test_clear_time_multiplier_and_tiers()
 	test_wave_summary_and_wallet_crediting()
 	test_ruined_towers_from_slots()
@@ -49,7 +47,6 @@ func _ready() -> void:
 	test_time03_auto_revert_to_x1_on_boss_intro()
 	test_clear_multiplier_invariance_under_fast_forward()
 	test_cmb10_firebomb_dot_tick_commander_xp()
-	test_boss_wave_prep_time_and_early_call()
 	test_bulwark_get_resist_and_death_signal()
 	await test_pooled_arrow_reuse_after_five_seconds()
 
@@ -195,28 +192,8 @@ func test_commander_kill_gold_multiplier() -> void:
 	EventBus.gold_delta.disconnect(on_gold_delta)
 
 
-func test_early_call_bonus_calculation_and_cap() -> void:
-	print("\n[GROUP 4] Testing Early Call Gold Bonus & Cap")
-	var wave_manager := WaveManager.new()
-	wave_manager.auto_advance_summary = false
-	add_child(wave_manager)
-
-	# In PREP with 25s remaining: bonus = mini(40, floor(25 * 2)) = 40 (capped)
-	wave_manager.prep_timer = 25.0
-	wave_manager.call_early()
-	assert_true(wave_manager.get("_early_call_bonus") == 40, "Early call at 25s hits cap of 40 gold")
-
-	# In PREP with 10.5s remaining: bonus = mini(40, floor(10.5 * 2)) = 21
-	wave_manager.start_prep()
-	wave_manager.prep_timer = 10.5
-	wave_manager.call_early()
-	assert_true(wave_manager.get("_early_call_bonus") == 21, "Early call at 10.5s gives 21 gold (10.5 * 2 = 21)")
-
-	wave_manager.free()
-
-
 func test_clear_time_multiplier_and_tiers() -> void:
-	print("\n[GROUP 5] Testing Par Time & Clear Multiplier (Fast 1.25, Normal 1.00, Slow 0.80)")
+	print("\n[GROUP 4] Testing Par Time & Clear Multiplier (Fast 1.25, Normal 1.00, Slow 0.80)")
 	var par_time := 30.0 # e.g. 15s spawn + 15s offset
 	# Fast: <= 0.7 * 30.0 = 21.0s -> 1.25
 	assert_true(GameConfig.get_clear_mult(20.0, par_time) == 1.25, "Clear time 20s (<= 21s) gets Fast 1.25x")
@@ -231,11 +208,11 @@ func test_clear_time_multiplier_and_tiers() -> void:
 
 
 func test_wave_summary_and_wallet_crediting() -> void:
-	print("\n[GROUP 6] Testing Wave Summary & Wallet Crediting")
+	print("\n[GROUP 5] Testing Wave Summary & Wallet Crediting")
 	var gold_mgr := GoldManager.new()
 	add_child(gold_mgr)
 	gold_mgr.reset()
-	var starting_gold := gold_mgr.gold # 150
+	var starting_gold := gold_mgr.gold
 
 	var wave_manager := WaveManager.new()
 	wave_manager.auto_advance_summary = false
@@ -245,10 +222,9 @@ func test_wave_summary_and_wallet_crediting() -> void:
 	var on_summary := func(s: Dictionary): summaries.append(s)
 	EventBus.wave_summary_ready.connect(on_summary)
 
-	# 1. Start prep and early call at 10s -> early_bonus = 20
-	wave_manager.prep_timer = 10.0
-	wave_manager.call_early()
-	assert_true(gold_mgr.gold == starting_gold, "Wallet does NOT change upon early call")
+	# 1. Start prep and begin combat via wave_start_requested
+	EventBus.wave_start_requested.emit()
+	assert_true(gold_mgr.gold == starting_gold, "Wallet does NOT change when combat starts")
 
 	# 2. Simulate 4 Grunts dying: 2 with hit_by_commander (4 * 1.25 = 5.0), 2 tower-only (4 * 1.0 = 4.0)
 	# Total wave_gold_base = 5.0 + 5.0 + 4.0 + 4.0 = 18.0
@@ -269,10 +245,9 @@ func test_wave_summary_and_wallet_crediting() -> void:
 
 	# Verify wallet crediting:
 	# wave_gold_base = 18.0 * 1.25 (Fast) = 22.5 -> floor = 22
-	# early_call_bonus = 20
-	# Expected gain = 22 + 20 = 42 gold
-	var expected_gain := 42
-	assert_true(gold_mgr.gold == starting_gold + expected_gain, "Wallet credited exactly 42 gold at SUMMARY")
+	# Expected gain = 22 gold
+	var expected_gain := 22
+	assert_true(gold_mgr.gold == starting_gold + expected_gain, "Wallet credited exactly 22 gold at SUMMARY")
 
 	# Verify Summary dictionary
 	assert_true(summaries.size() == 1, "EventBus.wave_summary_ready emitted exactly once")
@@ -280,8 +255,8 @@ func test_wave_summary_and_wallet_crediting() -> void:
 	assert_true(s.get("wave_index") == 1, "Summary wave_index is 1")
 	assert_true(s.get("clear_tier") == "FAST", "Summary clear_tier is FAST")
 	assert_true(s.get("gold_mult") == 1.25, "Summary gold_mult is 1.25")
-	assert_true(s.get("early_call_bonus") == 20, "Summary early_call_bonus is 20")
-	assert_true(s.get("gold_total") == expected_gain, "Summary gold_total is 42")
+	assert_true(not s.has("early_call_bonus"), "Summary excludes early_call_bonus")
+	assert_true(s.get("gold_total") == expected_gain, "Summary gold_total is 22")
 	assert_true(s.get("kills_by_type", {}).get("grunt") == 4, "Summary records 4 Grunt kills")
 
 	# Verify Time scale auto resets to x1
@@ -359,7 +334,7 @@ func test_boss_gold_only_on_boss_defeated() -> void:
 
 
 func test_loss_cancels_wave_gold_and_bonus() -> void:
-	print("\n[GROUP 9] Testing Loss: Abandons pending gold & bonus")
+	print("\n[GROUP 8] Testing Loss: Abandons pending gold")
 	var gold_mgr := GoldManager.new()
 	add_child(gold_mgr)
 	gold_mgr.reset()
@@ -369,8 +344,7 @@ func test_loss_cancels_wave_gold_and_bonus() -> void:
 	wave_manager.auto_advance_summary = false
 	add_child(wave_manager)
 
-	wave_manager.prep_timer = 15.0
-	wave_manager.call_early() # 30 bonus
+	EventBus.wave_start_requested.emit()
 
 	# Kill enemy
 	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4, 1, false, true)
@@ -518,29 +492,6 @@ func test_cmb10_firebomb_dot_tick_commander_xp() -> void:
 
 	xp_tracker.free()
 	grunt.free()
-
-
-func test_boss_wave_prep_time_and_early_call() -> void:
-	print("\n[GROUP 15] Testing Boss Wave Prep Time (45s) and Early Call")
-	var wave_manager := WaveManager.new()
-	wave_manager.auto_advance_summary = false
-	add_child(wave_manager)
-
-	# Regular wave 1
-	wave_manager.current_wave = 1
-	wave_manager.start_prep()
-	assert_true(wave_manager.prep_timer == GameConfig.prep_time_early, "Wave 1 prep_timer is prep_time_early (25s)")
-
-	# Boss wave 5
-	wave_manager.current_wave = 5
-	wave_manager.start_prep()
-	assert_true(wave_manager.prep_timer == GameConfig.prep_time_boss, "Boss Wave 5 prep_timer is prep_time_boss (45s)")
-
-	# Early call at 45s: 45 * 2 = 90, capped at early_call_cap = 40
-	wave_manager.call_early()
-	assert_true(wave_manager.get("_early_call_bonus") == GameConfig.early_call_cap, "Boss wave early call is capped at early_call_cap (40 gold)")
-
-	wave_manager.free()
 
 
 func test_bulwark_get_resist_and_death_signal() -> void:

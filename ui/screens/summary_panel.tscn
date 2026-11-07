@@ -58,19 +58,6 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_36xju"]
-content_margin_left = 16.0
-content_margin_top = 10.0
-content_margin_right = 16.0
-content_margin_bottom = 10.0
-bg_color = Color(0.14901961, 0.16862746, 0.20784314, 1)
-border_width_left = 6
-border_color = Color(1, 0.78431374, 0.23921569, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qtkdd"]
 content_margin_left = 16.0
 content_margin_top = 10.0
@@ -258,12 +245,6 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_ougvs")
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_lydwv")
-value_color = Color(1, 0.78431374, 0.23921569, 1)
-
-[node name="EarlyRow" parent="Frame/Box/Rows/Columns/BattleCol" unique_id=741705039 instance=ExtResource("2_qtkdd")]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_36xju")
 value_color = Color(1, 0.78431374, 0.23921569, 1)
 
 [node name="GoldTotalRow" parent="Frame/Box/Rows/Columns/BattleCol" unique_id=20176237 instance=ExtResource("2_qtkdd")]

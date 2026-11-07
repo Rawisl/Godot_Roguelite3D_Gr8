@@ -144,8 +144,6 @@ settings.audio.sfx,Hiệu ứng
 settings.audio.ui,Giao diện
 settings.audio.percent,{value}%
 settings.audio.mute_on_focus_loss,Tắt tiếng khi chuyển cửa sổ
-hud.call_wave,Gọi đợt sớm (G) · +{gold} vàng
-hud.call_wave.paused,Không gọi được khi tạm dừng
 hud.offscreen.boss,Boss
 panel.fortress.repair_step,Sửa +{pct}%
 panel.fortress.repair_full,Sửa đầy
@@ -178,7 +176,6 @@ summary.row.emg,Sửa khẩn cấp
 summary.row.xp,XP nhận
 summary.row.level,Cấp Chỉ huy
 summary.row.picks,LƯỢT CHỌN THƯỞNG
-summary.row.early,Thưởng gọi sớm
 summary.value.gold_total,+{value} vàng
 summary.value.plus,+{value}
 summary.value.charges,+{value} lượt
@@ -231,3 +228,30 @@ panel.heal.max,Tối đa
 panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
 panel.build.heal_limit,Tối đa {max} trạm hồi phục
+panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
+panel.need_commander_level,Cần Chỉ huy cấp {level}
+hud.start_wave,Bắt đầu wave
+hud.start_wave.boss,Bắt đầu wave boss
+hud.start_wave.paused,Không bắt đầu được khi tạm dừng
+hud.start_wave.dialog,Hãy đóng hộp thoại đang mở trước
+panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
+panel.need_commander_level,Cần Chỉ huy cấp {level}
+reward.title,Chọn phần thưởng
+reward.hint,Chọn 1 trong 3 thẻ. Thẻ không chọn sẽ mất.
+reward.pending,Lượt chọn còn lại: {value}
+reward.kind.active,Kỹ năng chủ động
+reward.kind.passive,Kỹ năng bị động
+reward.kind.stat,Chỉ số
+reward.level.new,Mới
+reward.level.up,Cấp {from} → {to}
+reward.card.tip,"{desc}
+Cấp tối đa: {max}"
+reward.slots.active,Chủ động
+reward.slots.passive,Bị động
+reward.slot.empty,Trống
+reward.empty,Không còn thẻ nào để chọn
+reward.skip,Bỏ qua
+reward.skip.title,Bỏ qua lượt chọn?
+reward.skip.body,"Bỏ qua sẽ mất lượt chọn này, không được bù vàng."
+reward.slot.tip,"{name}
+Cấp {level}/{max}"
