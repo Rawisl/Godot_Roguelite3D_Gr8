@@ -4,10 +4,13 @@ extends PanelContainer
 ## the last seconds, then the "ENRAGED" tag with its icon once the timer runs out. The text always
 ## says what the colours mean, so colour is never the only cue.
 
+enum TimerTier { NORMAL, WARN, DANGER, ENRAGED }
+
 ## Bosses the bar can show; the first one stands in until the wave says which boss it is.
 @export var bosses: Array[BossData] = []
-@export var warn_color := Color(1.0, 0.7843, 0.2392)
-@export var danger_color := Color(1.0, 0.3, 0.3)
+## ui_alert_t2 and ui_alert_t1 in art/palette.md, like the T2 and T1 alerts.
+@export var warn_color := Color(1.0, 0.6039, 0.1804)
+@export var danger_color := Color(1.0, 0.1765, 0.1765)
 @export var timer_font_size := 28
 @export var danger_font_size := 40
 @export var warn_icon: Texture2D
@@ -17,6 +20,7 @@ var _data: BossData
 var _max_armor := 0
 var _max_core := 0
 var _enraged := false
+var _tier := -1
 
 @onready var _name: Label = %BossName
 @onready var _timer: Label = %Timer
@@ -58,6 +62,7 @@ func _show_boss(data: BossData) -> void:
 	_name.text = tr(data.display_name_key) if data != null else ""
 	_timer.visible = false
 	_timer_icon.visible = false
+	_tier = -1
 	_hp_text.text = ""
 	# No HP before the boss spawns at the end of the intro, so an empty bar never reads as a dead boss.
 	_bars.visible = false
@@ -94,25 +99,40 @@ func _on_boss_timer_changed(seconds_left: float) -> void:
 		return
 	_timer.visible = true
 	_timer.text = UiFormat.time_mmss(seconds_left)
-	var danger := seconds_left <= GameConfig.enrage_countdown_time
-	var warn := seconds_left <= GameConfig.enrage_warn_time
-	_timer_icon.visible = warn
-	_timer_icon.texture = warn_icon
-	if warn:
-		_timer.add_theme_color_override(&"font_color", danger_color if danger else warn_color)
+	if seconds_left <= _mark(&"enrage_countdown_time"):
+		_set_tier(TimerTier.DANGER)
+	elif seconds_left <= _mark(&"enrage_warn_time"):
+		_set_tier(TimerTier.WARN)
 	else:
-		_timer.remove_theme_color_override(&"font_color")
-	_timer.add_theme_font_size_override(&"font_size", danger_font_size if danger else timer_font_size)
+		_set_tier(TimerTier.NORMAL)
 
 ## The timer stops at 0 and turns into the ENRAGED tag until the boss dies.
 func _on_boss_enraged() -> void:
 	_enraged = true
 	_timer.visible = true
 	_timer.text = tr(&"hud.boss.enraged")
-	_timer.add_theme_color_override(&"font_color", danger_color)
-	_timer.add_theme_font_size_override(&"font_size", danger_font_size)
-	_timer_icon.texture = enrage_icon
-	_timer_icon.visible = true
+	_set_tier(TimerTier.ENRAGED)
+
+## Seconds left at which the timer changes tier, from GameConfig. 0 while GameConfig does not
+## have it yet, which keeps the timer plain until the boss timer values land.
+func _mark(key: StringName) -> float:
+	# TODO(WhoKeng): read GameConfig.enrage_warn_time and enrage_countdown_time directly once the boss timer values are on main.
+	var value: Variant = GameConfig.get(key)
+	return float(value) if value != null else 0.0
+
+## The timer ticks every frame, so the colour, size and icon change only when the tier does.
+func _set_tier(tier: TimerTier) -> void:
+	if tier == _tier:
+		return
+	_tier = tier
+	if tier == TimerTier.NORMAL:
+		_timer.remove_theme_color_override(&"font_color")
+	else:
+		_timer.add_theme_color_override(&"font_color", warn_color if tier == TimerTier.WARN else danger_color)
+	var large := tier == TimerTier.DANGER or tier == TimerTier.ENRAGED
+	_timer.add_theme_font_size_override(&"font_size", danger_font_size if large else timer_font_size)
+	_timer_icon.visible = tier != TimerTier.NORMAL
+	_timer_icon.texture = enrage_icon if tier == TimerTier.ENRAGED else warn_icon
 
 func _on_state_changed(new_state: StringName) -> void:
 	if new_state == &"PREP" or new_state == &"SUMMARY":
