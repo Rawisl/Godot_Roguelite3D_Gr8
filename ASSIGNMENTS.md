@@ -550,7 +550,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH1
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 6 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: BossIntro SCR-10, HUD-02 thanh HP boss, HUD-04 đồng hồ Cuồng nộ
 - Nghiệm thu: Thanh hai đoạn, nhãn CUỒNG NỘ có biểu tượng
 - Cần xong trước: W9-KT2, W9-MH1
@@ -566,7 +566,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH3
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: HUD theo v2.0: wave_counter bỏ đếm ngược, thêm khóa state HAZARD_TRIAL, hiển thị 'Đợt N / 30' và nhãn 'Endless'; ô Mithril cạnh gold (HUD-20) kèm gợi ý khi Fortress thiếu máu
 - Nghiệm thu: Nhận Mithril thì ô viền sáng 0.3 s; không dùng màu làm kênh duy nhất (UI-05)
 - Tệp liên quan: ui/hud/parts/wave_counter.gd, ui/hud/parts/gold_label.*, ui/hud/hud.tscn
@@ -576,7 +576,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH4
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Panel Fortress viết lại (PNL-04, PNL-13): một nút 'Sửa bằng Mithril (+20%)', tooltip 'Hồi thừa', xám kèm lý do khi đầy máu hoặc mithril = 0; bỏ nút +10%, +25%, đầy; sửa chuỗi panel.fortress.*
 - Nghiệm thu: Nút xám đúng lý do; trạng thái Emergency repair n/3 vẫn hiển thị; panel dùng được ở cả hai chế độ ở PREP (CMD-05)
 - Tệp liên quan: ui/panels/fortress_panel.*, data/locale/strings.csv (panel.fortress.*)
@@ -586,7 +586,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KH5
 - Người: Khang
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa test giao diện hỏng do đổi HUD và panel Fortress (test_hud, test_hud_speed_heal, test_summary_panel, test_fortress_panel) và thêm test cho nút Bắt đầu wave
 - Nghiệm thu: Test HUD chạy lại đạt; nút Bắt đầu wave xám đúng ba lý do
 - Tệp liên quan: tests/test_hud*.gd, tests/test_summary_panel.gd, tests/test_fortress_panel.gd
