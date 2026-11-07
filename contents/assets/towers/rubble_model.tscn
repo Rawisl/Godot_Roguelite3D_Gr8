@@ -13,10 +13,8 @@
 
 [node name="tower_rubble" parent="." unique_id=141947930 instance=ExtResource("1_glb")]
 unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="model" parent="tower_rubble" index="0" unique_id=1972313008]
-cast_shadow = 1
+[node name="model" parent="tower_rubble" index="0" unique_id=2053489576]
 surface_material_override/0 = ExtResource("2_stone_light")
 surface_material_override/1 = ExtResource("3_stone")
 surface_material_override/2 = ExtResource("4_stone_dark")

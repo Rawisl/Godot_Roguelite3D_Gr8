@@ -1,9 +1,10 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c2drtrrfy5ti3"]
 
 [ext_resource type="Shader" uid="uid://ccx3e8miydgor" path="res://art/shaders/energy_orb.gdshader" id="1_shader"]
 
 [resource]
 resource_name = "energy_orb_core"
+render_priority = 0
 shader = ExtResource("1_shader")
 shader_parameter/core_color = Color(0.72, 0.97, 0.76, 1)
 shader_parameter/rim_color = Color(0.38, 0.86, 0.5, 1)

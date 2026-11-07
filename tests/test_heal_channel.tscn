@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cewig76w37hke"]
 
-[ext_resource type="Script" path="res://tests/test_heal_channel.gd" id="1_heal"]
+[ext_resource type="Script" uid="uid://3806wyia28pf" path="res://tests/test_heal_channel.gd" id="1_heal"]
 
-[node name="TestHealChannel" type="Node3D"]
+[node name="TestHealChannel" type="Node3D" unique_id=1081940098]
 script = ExtResource("1_heal")
