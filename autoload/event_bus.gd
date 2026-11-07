@@ -74,7 +74,7 @@ signal projectile_hit(target: Node, amount: int, damage_type: StringName, resist
 signal boss_spawned
 signal boss_intro_started(boss_id: StringName)
 signal boss_timer_changed(t: float)
-signal boss_timer_milestone(t_mark: int)  # 30, 20, 15, 5
+signal boss_timer_milestone(t_mark: int)  # 30, then 10..1 once per second
 signal boss_hp_changed(armor_hp: int, core_hp: int, phase: StringName)
 signal boss_phase_changed(phase: StringName)  # ARMORED | TRANSITION | EXPOSED
 signal boss_enraged  # once per boss wave, when boss_timer reaches 0 with the boss still alive
