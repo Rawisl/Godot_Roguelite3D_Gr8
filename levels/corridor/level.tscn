@@ -216,7 +216,7 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -13, 0, 0)
 [node name="CommandPost" type="Marker3D" parent="Markers" unique_id=2075346717]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -19, 4, 0)
 
-[node name="BossMeleePoint" type="Marker3D" parent="Markers" unique_id=1392566955]
+[node name="BossMeleePoint" type="Marker3D" parent="Markers" unique_id=1392566955 groups=["boss_melee_point"]]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13, 0, 0)
 
 [node name="SpawnZone" type="Area3D" parent="." unique_id=232184628 groups=["level", "spawn_zone"]]

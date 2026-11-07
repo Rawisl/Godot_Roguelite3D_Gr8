@@ -2,7 +2,7 @@ class_name SlotManager
 extends Node3D
 
 @export var required_wall_ids: Array[StringName] = [
-	&"W1", &"W2", &"W3", &"W4", &"W5", &"W6"
+	&"W1", &"W2", &"W3"
 ]
 ## Where slots are collected from. Empty = every Slot in group "slot".
 ## GroundGrid only has to spawn its cells before reload_slots() runs.
@@ -72,7 +72,7 @@ func _gather_candidates() -> Array[Node]:
 			result.append(node)
 	return result
 
-# W1-W6 exist, each slot_id prefix matches its zone, no duplicate slot_id
+# W1-W3 exist, each slot_id prefix matches its zone, no duplicate slot_id
 func _validate_layout() -> void:
 	for id in required_wall_ids:
 		if not _slots.has(id):
