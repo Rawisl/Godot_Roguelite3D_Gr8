@@ -112,7 +112,7 @@ func _mode_switch() -> void:
 	await get_tree().create_timer(2.0).timeout
 
 func _boss() -> void:
-	print("[test_hud] boss row shown, then hidden when the boss dies")
+	print("[test_hud] boss bar shown, then hidden when the boss dies")
 	EventBus.state_changed.emit(&"BOSS_COMBAT")
 	EventBus.boss_spawned.emit()
 	await get_tree().create_timer(2.0).timeout

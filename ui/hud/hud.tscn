@@ -26,6 +26,7 @@
 [ext_resource type="Script" uid="uid://cjfiuiol141y4" path="res://ui/world/hover_highlight.gd" id="17_olkg6"]
 [ext_resource type="PackedScene" uid="uid://d122kdw4htjem" path="res://ui/screens/reward_pick.tscn" id="18_rwpck"]
 [ext_resource type="PackedScene" uid="uid://driypvc7vblux" path="res://ui/hud/parts/mithril_label.tscn" id="19_mthl"]
+[ext_resource type="PackedScene" uid="uid://cy7wcfr5ks16g" path="res://ui/screens/boss_intro.tscn" id="20_bintro"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -103,6 +104,9 @@ grow_horizontal = 2
 mouse_filter = 2
 
 [node name="WaveCounter" parent="Root/SafeArea/Frame/TopCenter" unique_id=1849850089 instance=ExtResource("10_cxhb7")]
+layout_mode = 2
+
+[node name="BossBar" parent="Root/SafeArea/Frame/TopCenter" unique_id=615647234 instance=ExtResource("1_4d6w6")]
 layout_mode = 2
 
 [node name="TopRight" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=215340958]
@@ -235,7 +239,7 @@ mouse_filter = 2
 layout_mode = 2
 size_flags_horizontal = 8
 
-[node name="BossBar" parent="Root" unique_id=615647234 instance=ExtResource("1_4d6w6")]
+[node name="BossIntro" parent="Root" unique_id=297996740 instance=ExtResource("20_bintro")]
 layout_mode = 1
 
 [node name="SummaryPanel" parent="Root" unique_id=1994441246 instance=ExtResource("16_3rj2y")]
