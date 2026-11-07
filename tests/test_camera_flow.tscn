@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" uid="uid://cbjil0or23k5o" path="res://tests/test_camera_flow.gd" id="1_flow"]
 
-[node name="TestCameraFlow" type="Node"]
+[node name="TestCameraFlow" type="Node" unique_id=1125829739]
 script = ExtResource("1_flow")

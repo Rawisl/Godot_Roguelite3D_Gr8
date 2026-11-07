@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_2gr2f"]
 [ext_resource type="Resource" uid="uid://e7bep37g0mum" path="res://data/enemies/brute.tres" id="2_b260c"]
-[ext_resource type="Script" path="res://entities/enemy/brute.gd" id="2_brute_script"]
+[ext_resource type="Script" uid="uid://d4k5i0tku286" path="res://entities/enemy/brute.gd" id="2_brute_script"]
 [ext_resource type="PackedScene" uid="uid://b6omvmb0o2xm" path="res://contents/assets/characters/enemy and boss/brute_model.tscn" id="3_brute_model"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_brute"]
@@ -13,12 +13,12 @@ height = 2.3
 script = ExtResource("2_brute_script")
 data = ExtResource("2_b260c")
 
-[node name="CollisionShape3D" parent="." index="0"]
+[node name="CollisionShape3D" parent="." index="0" unique_id=427987062]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
 shape = SubResource("CapsuleShape3D_brute")
 
-[node name="BruteModel" parent="Model" index="0" instance=ExtResource("3_brute_model")]
+[node name="BruteModel" parent="Model" parent_id_path=PackedInt32Array(1049866202) index="0" unique_id=1036178556 instance=ExtResource("3_brute_model")]
 
-[node name="CollisionShape3D" parent="HurtBox" index="0"]
+[node name="CollisionShape3D" parent="HurtBox" parent_id_path=PackedInt32Array(1842004067) index="0" unique_id=755120625]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
 shape = SubResource("CapsuleShape3D_brute")

@@ -308,7 +308,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-MH1
 - Người: Mạnh
 - Tuần: 8 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Dựng balance/balance.xlsx khung: 7 sheet (character, skills, towers, weapons, enemies, waves, wave_rewards) với tên cột cố định; điền số khởi điểm lấy từ các .tres v1.9, tower 36 cấp theo công thức tăng đơn giản, wave 1-30 bằng công thức scale v1.9
 - Nghiệm thu: Mở bằng Excel được; mỗi sheet đủ cột theo mục 6.10; towers đủ 4 loại x 36 dòng; waves đủ 30 dòng; không ô trống
 - Tệp liên quan: mới: balance/balance.xlsx; nguồn số: data/config/commander_stats.tres, data/skills/*, data/towers/*, data/enemies/*, data/config/scale_config.tres

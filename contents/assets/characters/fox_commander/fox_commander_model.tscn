@@ -13,10 +13,10 @@
 
 [node name="Fox" parent="." unique_id=586281845 instance=ExtResource("1_fox")]
 
-[node name="FoxSword" parent="Fox/Fox_Rig/Skeleton3D/forearm_R" parent_id_path=PackedInt32Array(586281845, 2116804947) index="0" unique_id=1683384966]
+[node name="FoxSword" parent="Fox/Fox_Rig/Skeleton3D/forearm_R" parent_id_path=PackedInt32Array(586281845, 466134360) index="0" unique_id=1298860549]
 material_override = ExtResource("3_swordmat")
 
-[node name="model_low_25" parent="Fox/Fox_Rig/Skeleton3D" parent_id_path=PackedInt32Array(586281845, 1470066541) index="1" unique_id=1197367577]
+[node name="model_low_25" parent="Fox/Fox_Rig/Skeleton3D" parent_id_path=PackedInt32Array(586281845, 525493986) index="1" unique_id=1499854818]
 material_override = ExtResource("2_foxmat")
 
 [node name="FoxAnimationPlayer" type="AnimationPlayer" parent="Fox" unique_id=1927168160]

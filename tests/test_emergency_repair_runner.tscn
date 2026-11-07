@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dbljv3l7u0c7c"]
 
-[ext_resource type="Script" path="res://tests/test_emergency_repair_runner.gd" id="1_runner"]
+[ext_resource type="Script" uid="uid://dc2tqsf2x8plt" path="res://tests/test_emergency_repair_runner.gd" id="1_runner"]
 
-[node name="TestEmergencyRepairRunner" type="Node"]
+[node name="TestEmergencyRepairRunner" type="Node" unique_id=1709400133]
 script = ExtResource("1_runner")

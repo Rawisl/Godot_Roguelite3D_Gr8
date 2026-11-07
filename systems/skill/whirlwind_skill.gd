@@ -11,7 +11,7 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 	if caster == null or not is_instance_valid(caster) or not caster.is_inside_tree() or data == null:
 		return 0
 	var radius := data.get_value(&"radius", level)
-	var base_damage := data.get_value(&"damage", level) * damage_mult
+	var base_damage := data.get_value(&"damage", level)
 	var radius_sq := radius * radius
 	var hits := 0
 	for node in caster.get_tree().get_nodes_in_group(ENEMY_GROUP):
@@ -24,14 +24,7 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 		offset.y = 0.0
 		if offset.length_squared() > radius_sq:
 			continue
-		# Boss resistance: 0 is immune, the armored Bulwark takes 0.6 from SLASH.
-		var resist := 1.0
-		if enemy.has_method(&"get_resist"):
-			resist = float(enemy.call(&"get_resist", data.damage_type))
-		if resist <= 0.0:
-			continue
-		var amount := roundi(base_damage * resist)
 		var direction := offset.normalized() if not offset.is_zero_approx() else Vector3.FORWARD
-		enemy.call(&"take_damage", DamageInfo.new(amount, data.damage_type, caster, 0.0, direction))
+		enemy.call(&"take_damage", DamageInfo.outgoing(base_damage, damage_mult, data.damage_type, caster, 0.0, direction))
 		hits += 1
 	return hits

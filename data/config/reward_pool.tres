@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="RewardPool" format=3]
+[gd_resource type="Resource" script_class="RewardPool" format=3 uid="uid://c5sjr4mtdttky"]
 
-[ext_resource type="Script" path="res://systems/reward/reward_pool.gd" id="1_pool"]
-[ext_resource type="Script" path="res://common/skill_data.gd" id="2_skill"]
+[ext_resource type="Script" uid="uid://b5rr83yrj3s24" path="res://systems/reward/reward_pool.gd" id="1_pool"]
+[ext_resource type="Script" uid="uid://bpmylfxrdyoyc" path="res://common/skill_data.gd" id="2_skill"]
 [ext_resource type="Resource" path="res://data/skills/whirlwind.tres" id="3_whirlwind"]
 [ext_resource type="Resource" path="res://data/skills/sharpness.tres" id="4_sharpness"]
 [ext_resource type="Resource" path="res://data/skills/heal_station.tres" id="5_heal_station"]
@@ -10,4 +10,3 @@
 [resource]
 script = ExtResource("1_pool")
 skills = Array[ExtResource("2_skill")]([ExtResource("3_whirlwind"), ExtResource("4_sharpness"), ExtResource("5_heal_station"), ExtResource("6_vitality")])
-cards_per_pick = 3
