@@ -21,7 +21,7 @@ radius = 0.9
 data = ExtResource("2_1d1k7")
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=668314301]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("CylinderShape3D_body")
 
 [node name="Model" parent="." index="1" unique_id=155594529]
@@ -32,7 +32,7 @@ shoot_anim = &""
 [node name="ArrowTowerModel" parent="Model" index="0" unique_id=1862043915 instance=ExtResource("4_sbbfw")]
 
 [node name="Muzzle" type="Marker3D" parent="Model" index="1" unique_id=1739204857]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 
 [node name="CollisionShape3D" parent="RangeArea" parent_id_path=PackedInt32Array(666926964) index="0" unique_id=49393706]
 shape = SubResource("CylinderShape3D_d7nuf")

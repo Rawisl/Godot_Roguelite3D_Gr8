@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cxe8iauxhh56d"]
 
-[ext_resource type="Script" path="res://tests/test_auth_service.gd" id="1_auth"]
+[ext_resource type="Script" uid="uid://iolw15ulglra" path="res://tests/test_auth_service.gd" id="1_auth"]
 
-[node name="TestAuthService" type="Node"]
+[node name="TestAuthService" type="Node" unique_id=1751812363]
 script = ExtResource("1_auth")

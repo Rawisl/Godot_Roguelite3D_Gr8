@@ -12,7 +12,7 @@
 [node name="Necromancer" parent="." unique_id=837197046 instance=ExtResource("1_yycss")]
 transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0, 0)
 
-[node name="Skeleton3D" parent="Necromancer/Rig_Medium" parent_id_path=PackedInt32Array(837197046, 1763486069) index="0" unique_id=1007025156]
+[node name="Skeleton3D" parent="Necromancer/Rig_Medium" parent_id_path=PackedInt32Array(837197046, 1817982024) index="0" unique_id=1111145410]
 bones/0/rotation = Quaternion(0, 1.19209275e-07, 0, 1)
 bones/1/position = Vector3(0, 0.39206383, 0)
 bones/1/rotation = Quaternion(-1.11122625e-10, 0.043157753, 2.5724098e-09, 0.9990683)
@@ -66,25 +66,25 @@ bones/21/scale = Vector3(0.99999976, 1.0000006, 0.9999992)
 bones/22/rotation = Quaternion(-8.934892e-05, 0.9202217, -0.3913977, 2.0291003e-05)
 bones/22/scale = Vector3(1.0000002, 0.9999979, 1.0000024)
 
-[node name="Necromancer_ArmLeft" parent="Necromancer/Rig_Medium/Skeleton3D" index="0" unique_id=443708995]
+[node name="Necromancer_ArmLeft" parent="Necromancer/Rig_Medium/Skeleton3D" index="0" unique_id=955694327]
 material_override = ExtResource("9_mata")
 
-[node name="Necromancer_ArmRight" parent="Necromancer/Rig_Medium/Skeleton3D" index="1" unique_id=1220642562]
+[node name="Necromancer_ArmRight" parent="Necromancer/Rig_Medium/Skeleton3D" index="1" unique_id=1404505634]
 material_override = ExtResource("9_mata")
 
-[node name="Necromancer_Body" parent="Necromancer/Rig_Medium/Skeleton3D" index="2" unique_id=349026942]
+[node name="Necromancer_Body" parent="Necromancer/Rig_Medium/Skeleton3D" index="2" unique_id=1987020777]
 material_override = ExtResource("9_mata")
 
-[node name="Necromancer_Crown" parent="Necromancer/Rig_Medium/Skeleton3D" index="3" unique_id=1386716861]
+[node name="Necromancer_Crown" parent="Necromancer/Rig_Medium/Skeleton3D" index="3" unique_id=2114891100]
 material_override = ExtResource("9_mata")
 
-[node name="Necromancer_Head" parent="Necromancer/Rig_Medium/Skeleton3D" index="4" unique_id=1853460170]
+[node name="Necromancer_Head" parent="Necromancer/Rig_Medium/Skeleton3D" index="4" unique_id=1761584792]
 material_override = ExtResource("9_mata")
 
-[node name="Necromancer_LegLeft" parent="Necromancer/Rig_Medium/Skeleton3D" index="5" unique_id=1575861648]
+[node name="Necromancer_LegLeft" parent="Necromancer/Rig_Medium/Skeleton3D" index="5" unique_id=1311722544]
 material_override = ExtResource("9_mata")
 
-[node name="Necromancer_LegRight" parent="Necromancer/Rig_Medium/Skeleton3D" index="6" unique_id=1916858052]
+[node name="Necromancer_LegRight" parent="Necromancer/Rig_Medium/Skeleton3D" index="6" unique_id=468723092]
 material_override = ExtResource("9_mata")
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="Necromancer/Rig_Medium/Skeleton3D" index="7" unique_id=1066663843]
@@ -96,7 +96,7 @@ bone_idx = 18
 [node name="Skeleton_Staff2" parent="Necromancer/Rig_Medium/Skeleton3D/BoneAttachment3D" unique_id=768297254 instance=ExtResource("2_bysgx")]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
 
-[node name="Skeleton_Staff" parent="Necromancer/Rig_Medium/Skeleton3D/BoneAttachment3D/Skeleton_Staff2" index="0" unique_id=2028198474]
+[node name="Skeleton_Staff" parent="Necromancer/Rig_Medium/Skeleton3D/BoneAttachment3D/Skeleton_Staff2" index="0" unique_id=918976795]
 material_override = ExtResource("9_mata")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Necromancer" unique_id=78699361]

@@ -12,7 +12,7 @@
 [node name="Skeleton_Golem" parent="." unique_id=103280744 instance=ExtResource("1_2okll")]
 transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0, 0)
 
-[node name="Skeleton3D" parent="Skeleton_Golem/Rig_Large" parent_id_path=PackedInt32Array(103280744, 639231228) index="0" unique_id=1948454925]
+[node name="Skeleton3D" parent="Skeleton_Golem/Rig_Large" parent_id_path=PackedInt32Array(103280744, 1610981106) index="0" unique_id=1803626970]
 bones/1/position = Vector3(0, 0.95983857, 0)
 bones/1/rotation = Quaternion(2.255949e-10, 0.17319314, 2.5649072e-09, 0.9848879)
 bones/2/position = Vector3(-0.34189013, 0.22717452, 2.0398836e-08)
@@ -41,6 +41,30 @@ bones/21/rotation = Quaternion(-0.027678039, 0.28841054, -0.07522256, 0.95414615
 bones/22/position = Vector3(-1.0046796e-09, 0.2307003, -0.13799965)
 bones/22/rotation = Quaternion(-0.09439981, -0.107380465, 0.6451188, 0.7505864)
 
+[node name="Skeleton_Golem_ArmLeft" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="0" unique_id=2090432378]
+material_override = ExtResource("9_mata")
+
+[node name="Skeleton_Golem_ArmRight" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="1" unique_id=1561553392]
+material_override = ExtResource("9_mata")
+
+[node name="Skeleton_Golem_Body" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="2" unique_id=1237658156]
+material_override = ExtResource("9_mata")
+
+[node name="Skeleton_Golem_Eyes" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="3" unique_id=60689680]
+material_override = ExtResource("9_mata")
+
+[node name="Skeleton_Golem_Head" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="4" unique_id=448181235]
+material_override = ExtResource("9_mata")
+
+[node name="Skeleton_Golem_Jaw" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="5" unique_id=1975222953]
+material_override = ExtResource("9_mata")
+
+[node name="Skeleton_Golem_LegLeft" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="6" unique_id=1955770744]
+material_override = ExtResource("9_mata")
+
+[node name="Skeleton_Golem_LegRight" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="7" unique_id=1476395201]
+material_override = ExtResource("9_mata")
+
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="Skeleton_Golem/Rig_Large/Skeleton3D" index="8" unique_id=2121123257]
 unique_name_in_owner = true
 transform = Transform3D(-0.16078013, 0.1062496, -0.9812546, -0.9839094, 0.061229087, 0.16784514, 0.07791458, 0.99245214, 0.09469564, -1.1793679, 1.2554864, 0.20234384)
@@ -49,31 +73,7 @@ bone_idx = 22
 
 [node name="Skeleton_Mace_Large2" parent="Skeleton_Golem/Rig_Large/Skeleton3D/BoneAttachment3D" unique_id=964589394 instance=ExtResource("2_jscia")]
 
-[node name="Skeleton_Golem_ArmLeft" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Golem_ArmRight" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Golem_Body" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Golem_Eyes" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Golem_Head" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Golem_Jaw" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Golem_LegLeft" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Golem_LegRight" parent="Skeleton_Golem/Rig_Large/Skeleton3D"]
-material_override = ExtResource("9_mata")
-
-[node name="Skeleton_Mace_Large" parent="Skeleton_Golem/Rig_Large/Skeleton3D/BoneAttachment3D/Skeleton_Mace_Large2"]
+[node name="Skeleton_Mace_Large" parent="Skeleton_Golem/Rig_Large/Skeleton3D/BoneAttachment3D/Skeleton_Mace_Large2" index="0" unique_id=1446583153]
 material_override = ExtResource("9_mata")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Skeleton_Golem" unique_id=1365563294]

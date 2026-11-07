@@ -1,7 +1,7 @@
 extends Node
 
 ## Automated test runner verifying:
-## - SlotZone is only WALL and GROUND; corridor has 6 WALL slots + one GROUND slot per GridData cell
+## - SlotZone is only WALL and GROUND; corridor has 3 WALL slots + one GROUND slot per GridData cell
 ## - WALL menu has Arrow and Cannon only, GROUND menu has Arrow, Cannon, Barricade
 ## - Slot.allowed_types narrows the zone, never widens it
 ## - Missing W slot, wrong prefix and duplicate slot_id are logged on load
@@ -60,7 +60,7 @@ func _make_slot(parent: Node, id: StringName, zone: Enums.SlotZone) -> Slot:
 	parent.add_child(slot)
 	return slot
 
-## require_walls = false skips the W1-W6 check for small hand-made layouts.
+## require_walls = false skips the W1-W3 check for small hand-made layouts.
 func _make_manager(root: Node, require_walls := true) -> SlotManager:
 	var mgr := SlotManager.new()
 	mgr.slot_root = root
@@ -77,19 +77,19 @@ func test_zone_enum() -> void:
 	slot.free()
 
 func test_corridor_layout() -> void:
-	print("\n[GROUP 2] Corridor layout: 6 WALL + GridData GROUND cells")
+	print("\n[GROUP 2] Corridor layout: 3 WALL + GridData GROUND cells")
 	var level := LEVEL_SCENE.instantiate()
 	add_child(level)
 	var mgr := _make_manager(level)
 	var cells: int = (level.get_node("Slots/GroundGrid") as GroundGrid).cells.size()
-	assert_true(mgr.get_all_slots().size() == 6 + cells, "corridor has %d slots (got %d)" % [6 + cells, mgr.get_all_slots().size()])
-	assert_true(mgr.get_slots_in_zone(Enums.SlotZone.WALL).size() == 6, "6 WALL slots")
+	assert_true(mgr.get_all_slots().size() == 3 + cells, "corridor has %d slots (got %d)" % [3 + cells, mgr.get_all_slots().size()])
+	assert_true(mgr.get_slots_in_zone(Enums.SlotZone.WALL).size() == 3, "3 WALL slots")
 	assert_true(mgr.get_slots_in_zone(Enums.SlotZone.GROUND).size() == cells, "%d GROUND slots, one per grid cell" % cells)
 	assert_true(mgr.get_layout_problems().is_empty(), "no layout problems: %s" % ", ".join(mgr.get_layout_problems()))
 	var order: PackedStringArray = []
 	for s in mgr.get_all_slots():
 		order.append(String(s.slot_id))
-	assert_true(",".join(order.slice(0, 6)) == "W1,W2,W3,W4,W5,W6", "WALL slots listed first, W1..W6")
+	assert_true(",".join(order.slice(0, 3)) == "W1,W2,W3", "WALL slots listed first, W1..W3")
 	mgr.free()
 	level.free()
 
@@ -128,19 +128,19 @@ func test_layout_validation_logs() -> void:
 	print("\n[GROUP 5] Load-time checks ([LOG])")
 	var root := Node3D.new()
 	add_child(root)
-	for i in range(1, 6):  # W6 left out on purpose
+	for i in range(1, 3):  # W3 left out on purpose
 		_make_slot(root, StringName("W%d" % i), Enums.SlotZone.WALL)
 	_make_slot(root, &"G_0_0", Enums.SlotZone.WALL)   # G prefix on a WALL slot
-	_make_slot(root, &"W3", Enums.SlotZone.WALL).name = "W3_copy"  # duplicate id
+	_make_slot(root, &"W2", Enums.SlotZone.WALL).name = "W2_copy"  # duplicate id
 	_make_slot(root, &"X1", Enums.SlotZone.GROUND)    # unknown prefix
 	_make_slot(root, &"G_2_0", 2 as Enums.SlotZone)   # old FAR value left in a scene
 	var mgr := _make_manager(root)
 	var problems := "\n".join(mgr.get_layout_problems())
-	assert_true("missing slot 'W6'" in problems, "missing W6 is logged")
-	assert_true("duplicate slot_id 'W3'" in problems, "duplicate W3 is logged")
+	assert_true("missing slot 'W3'" in problems, "missing W3 is logged")
+	assert_true("duplicate slot_id 'W2'" in problems, "duplicate W2 is logged")
 	assert_true("slot 'G_0_0' has zone WALL, expected GROUND" in problems, "G prefix on WALL is logged")
 	assert_true("slot 'X1' has unknown prefix" in problems, "unknown prefix is logged")
 	assert_true("slot 'G_2_0' has invalid zone value 2" in problems, "old NEAR/FAR value is logged")
-	assert_true(mgr.get_all_slots().size() == 8, "duplicate is skipped, 8 slots kept")
+	assert_true(mgr.get_all_slots().size() == 5, "duplicate is skipped, 5 slots kept")
 	mgr.free()
 	root.free()

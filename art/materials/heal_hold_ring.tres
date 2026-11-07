@@ -1,9 +1,10 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://b5byxkqirk8ny"]
 
 [ext_resource type="Shader" uid="uid://dicy3rx0ewjo" path="res://art/shaders/heal_progress.gdshader" id="1_shader"]
 
 [resource]
 resource_name = "heal_hold_ring"
+render_priority = 0
 shader = ExtResource("1_shader")
 shader_parameter/track_color = Color(0.357, 0.89, 0.478, 0.25)
 shader_parameter/fill_color = Color(0.62, 1, 0.7, 0.95)

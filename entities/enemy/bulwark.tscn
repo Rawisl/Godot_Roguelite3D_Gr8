@@ -9,8 +9,8 @@
 script = ExtResource("2_j8uxv")
 data = ExtResource("2_5mda6")
 
-[node name="BossBulwarkModel" parent="Model" index="0" unique_id=1849204812 instance=ExtResource("3_bulwark_model")]
+[node name="BossBulwarkModel" parent="Model" parent_id_path=PackedInt32Array(1049866202) index="0" unique_id=1849204812 instance=ExtResource("3_bulwark_model")]
 
-[node name="PhaseController" type="Node" parent="." index="6" unique_id=1288198212]
+[node name="PhaseController" type="Node" parent="." index="5" unique_id=1288198212]
 
-[node name="StompArea" type="Area3D" parent="." index="7" unique_id=2081881949]
+[node name="StompArea" type="Area3D" parent="." index="6" unique_id=2081881949]
