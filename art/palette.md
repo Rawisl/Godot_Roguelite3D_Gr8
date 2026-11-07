@@ -144,6 +144,9 @@ Whirlwind và Sword Wave dùng chung màu kiếm (trắng thép, viền xanh nh�
 | ui_alert_t2 | `#FF9A2E` | Cảnh báo T2 |
 | ui_alert_t3 | `#E8E05A` | Cảnh báo T3 |
 | ui_error | `#FF6B57` | Chữ báo lỗi trong form (không dùng `ui_alert_t2`, màu đó dành cho cảnh báo T2) |
+| ui_border | `#474D5A` | Viền mảnh của khung Vàng/Mithril, khung thanh boss và ô slot màn chọn thưởng |
+| ui_badge_hover | `#FFDC73` | Nút "Sửa thành" trên HUD khi rê chuột (nền thường dùng `gold`) |
+| ui_badge_pressed | `#DAA32B` | Nút "Sửa thành" trên HUD khi bấm |
 
 Nút và vùng nội dung dùng màu đá `struct_stone`, `struct_stone_light`, `env_dirt`, `struct_stone_dark` (mục Công trình, Môi trường) để đồng bộ với tường và tháp.
 

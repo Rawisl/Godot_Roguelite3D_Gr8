@@ -124,6 +124,8 @@ func _on_state_changed(_new_state: StringName) -> void:
 
 func _on_run_started() -> void:
 	_mithril = 0
+	if visible:
+		refresh()
 
 func _on_emg_state_changed(charges: int, _cooldown: float, _heal_pct: float) -> void:
 	_charges = charges
