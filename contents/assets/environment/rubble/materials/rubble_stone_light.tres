@@ -6,7 +6,7 @@
 resource_name = "rubble_stone_light"
 render_priority = 0
 shader = ExtResource("1_sll3r")
-shader_parameter/albedo_color = Color(0.5608, 0.5294, 0.4980, 1)
+shader_parameter/albedo_color = Color(0.5608, 0.5294, 0.498, 1)
 shader_parameter/bands = 2
 shader_parameter/band_softness = 0.03
 shader_parameter/shadow_tint = Color(0.3, 0.32, 0.45, 1)

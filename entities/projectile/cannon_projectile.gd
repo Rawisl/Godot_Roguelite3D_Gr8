@@ -91,15 +91,15 @@ func explode(center: Vector3) -> int:
 		if d > _radius:
 			continue
 		# Falloff and dealt_mult are applied before the single rounding.
-		var amount := scaled_damage(blast_raw(damage, d, _radius, _edge_mult), mult)
-		if amount <= 0:
+		var raw := blast_raw(damage, d, _radius, _edge_mult)
+		if raw <= 0.0:
 			continue
 		var dir := e.global_position - center
 		dir.y = 0.0
-		var info := DamageInfo.new(amount, damage_type, valid_src, 0.0, dir.normalized())
-		e.take_damage(info)
+		var info := DamageInfo.outgoing(raw, mult, damage_type, valid_src, 0.0, dir.normalized())
+		var amount: int = e.take_damage(info)
 		EventBus.projectile_hit.emit(e, amount,
-				StringName(Enums.DamageType.keys()[damage_type]), 1.0)
+				StringName(Enums.DamageType.keys()[damage_type]), info.resist)
 		hits += 1
 	exploded.emit(center, _radius, hits)
 	return hits

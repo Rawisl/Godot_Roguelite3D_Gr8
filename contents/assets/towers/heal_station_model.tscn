@@ -14,7 +14,7 @@
 [node name="Level1" parent="." unique_id=298098890 instance=ExtResource("1_glb")]
 unique_name_in_owner = true
 
-[node name="heal_station_v3" parent="Level1" index="0" unique_id=542559080]
+[node name="heal_station_v3" parent="Level1" index="0" unique_id=554023196]
 surface_material_override/0 = ExtResource("2_stone_light")
 surface_material_override/1 = ExtResource("3_stone")
 surface_material_override/2 = ExtResource("4_panel")

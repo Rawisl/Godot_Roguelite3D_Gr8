@@ -220,7 +220,7 @@ func hit_dealt_mult() -> float:
 static func scaled_damage(raw: float, mult: float) -> int:
 	if raw <= 0.0:
 		return 0
-	return maxi(1, roundi(raw * mult))
+	return DamageCalc.hit(raw, mult, 1.0, 1.0, false)
  
 func release() -> void:
 	if pool_key.is_empty():
