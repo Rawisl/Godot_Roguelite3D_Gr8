@@ -6,3 +6,4 @@
 script = ExtResource("1_grid")
 origin = Vector3(-7, 0, 0)
 columns = 6
+row_offsets = PackedFloat32Array(-6, -4, 4, 6)

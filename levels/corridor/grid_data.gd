@@ -7,8 +7,10 @@ extends Resource
 ## Direction columns advance in, from the gate towards spawn.
 @export var column_dir: Vector3 = Vector3.RIGHT
 @export var columns: int = 0
+# The default must be a typed PackedFloat32Array: with a plain [] the editor reads the saved
+# offsets back as empty and drops them on the next resave.
 ## Lateral offset of each row's cell centre from the lane, along column_dir rotated 90 degrees.
-@export var row_offsets: PackedFloat32Array = []
+@export var row_offsets: PackedFloat32Array = PackedFloat32Array()
 ## Cells left out of the layout, as (column, row).
 @export var holes: Array[Vector2i] = []
 ## Inner width of the corridor, wall to wall.
