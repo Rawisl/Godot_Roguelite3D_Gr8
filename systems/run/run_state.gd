@@ -1,6 +1,8 @@
 class_name RunState
 extends Node
 
+const BASE_WEAPON := &"sword_base"
+
 ## In-memory runtime state container for the active run session.
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
@@ -130,6 +132,30 @@ func init_from_config(config: RunConfig) -> void:
 	commander_max_hp = config.commander_max_hp
 	emg_repair_heal_pct = config.emg_repair_heal_pct
 	rerolls_left = config.rerolls_per_run
+
+
+## Adds a weapon to the run. False when the id is empty or the weapon is already owned.
+func grant_weapon(id: StringName) -> bool:
+	if id == &"" or owned_weapons.has(id):
+		return false
+	owned_weapons.append(id)
+	return true
+
+
+## Equips an owned weapon. Only in PREP (anything else, HAZARD_TRIAL included, is refused) and
+## never after the run has ended. False when the weapon is not owned or the state is wrong;
+## weapon_equipped is sent only on success.
+func equip_weapon(id: StringName) -> bool:
+	if _run_is_ended or not owned_weapons.has(id) or get_current_state() != &"PREP":
+		return false
+	equipped_weapon = id
+	EventBus.weapon_equipped.emit(id)
+	return true
+
+
+## The last wave state received. PREP until the first state_changed arrives.
+func get_current_state() -> StringName:
+	return _current_state if _current_state != &"" else &"PREP"
 
 
 func end_run(end_type: StringName = &"DEFEAT") -> void:

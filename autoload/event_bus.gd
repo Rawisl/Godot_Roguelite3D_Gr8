@@ -36,6 +36,7 @@ signal commander_hp_changed(hp: int, max_hp: int)
 signal heal_state_changed(state: StringName, source_slot: StringName, hold_progress: float)  # IDLE | HOLD | HEALING | CANCELLED | DEPLETED, progress 0..1 and sent at most 10 times a second while holding
 signal commander_low_hp_changed(is_low: bool)  # HP below commander_low_hp_warning_pct, emitted only when it flips
 signal mode_changed(mode: StringName)  # FRONTLINE | COMMANDER
+signal weapon_equipped(weapon_id: StringName)  # RunState -> HUD, weapon panel, Commander, Art
 signal mode_switch_denied(reason: StringName, remaining: float)
 signal mode_switch_cooldown_started(duration: float)  # ModeSwitch -> HUD, only when the switch costs a cooldown
 signal recall_started(duration: float)
