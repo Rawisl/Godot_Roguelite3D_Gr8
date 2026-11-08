@@ -4,6 +4,8 @@ extends Node
 ## signals on EventBus and the sample skill locale keys.
 
 const WHIRLWIND: SkillData = preload("res://data/skills/whirlwind.tres")
+const SWORD_WAVE: SkillData = preload("res://data/skills/sword_wave.tres")
+const FIREBOMB: SkillData = preload("res://data/skills/firebomb.tres")
 const SHARPNESS: SkillData = preload("res://data/skills/sharpness.tres")
 const VITALITY: SkillData = preload("res://data/skills/vitality.tres")
 const HEAL_STATION: SkillData = preload("res://data/skills/heal_station.tres")
@@ -55,7 +57,7 @@ func _make_skill(id: StringName, kind: SkillData.Kind) -> SkillData:
 	return d
 
 func test_resources_load() -> void:
-	for d: SkillData in [WHIRLWIND, SHARPNESS, VITALITY, HEAL_STATION]:
+	for d: SkillData in [WHIRLWIND, SWORD_WAVE, FIREBOMB, SHARPNESS, VITALITY, HEAL_STATION]:
 		assert_true(d is SkillData, "%s loads as SkillData" % d.id)
 		assert_true(d.validate().is_empty(), "%s validate() is empty: %s" % [d.id, d.validate()])
 
@@ -178,6 +180,6 @@ func test_event_bus_signals() -> void:
 
 func test_locale_keys() -> void:
 	TranslationServer.set_locale("vi")
-	for d: SkillData in [WHIRLWIND, SHARPNESS, VITALITY, HEAL_STATION]:
+	for d: SkillData in [WHIRLWIND, SWORD_WAVE, FIREBOMB, SHARPNESS, VITALITY, HEAL_STATION]:
 		assert_true(tr(d.name_key) != String(d.name_key), "%s name translated" % d.id)
 		assert_true(tr(d.description_key) != String(d.description_key), "%s description translated" % d.id)
