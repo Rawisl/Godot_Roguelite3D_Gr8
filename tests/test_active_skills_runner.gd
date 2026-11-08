@@ -107,7 +107,7 @@ func test_data_tables() -> void:
 	for i in 3:
 		assert_true(is_equal_approx(wave.get_value(&"damage", i + 1), [18.0, 21.0, 24.0][i]), "Sword Wave level %d damage" % [i + 1])
 		assert_true(is_equal_approx(wave.get_value(&"width", i + 1), [3.0, 3.5, 4.0][i]), "Sword Wave level %d width" % [i + 1])
-		assert_true(is_equal_approx(bomb.get_value(&"damage", i + 1), [6.0, 8.0, 10.0][i]), "Firebomb level %d damage per second" % [i + 1])
+		assert_true(is_equal_approx(bomb.get_value(&"dps", i + 1), [6.0, 8.0, 10.0][i]), "Firebomb level %d damage per second" % [i + 1])
 		assert_true(is_equal_approx(bomb.get_value(&"radius", i + 1), [2.5, 3.0, 3.5][i]), "Firebomb level %d radius" % [i + 1])
 	assert_true(is_equal_approx(wave.get_value(&"cooldown", 1), 5.0) and is_equal_approx(bomb.get_value(&"cooldown", 1), 8.0), "cooldowns 5 s and 8 s")
 	assert_true(SkillRunner.SKILLS.has(wave) and SkillRunner.SKILLS.has(bomb), "SkillRunner knows both skills")

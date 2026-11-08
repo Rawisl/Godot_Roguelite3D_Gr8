@@ -21,7 +21,7 @@ var _clock: float = 0.0
 ## Call before adding the zone to the tree. duration is in game seconds, one tick per second.
 func setup(p_caster: Node3D, data: SkillData, level: int, p_mult: float) -> void:
 	caster = p_caster
-	damage_per_tick = data.get_value(&"damage", level)
+	damage_per_tick = data.get_value(&"dps", level)
 	radius = data.get_value(&"radius", level)
 	tick_count = maxi(1, roundi(data.get_value(&"duration", level) / TICK_SECONDS))
 	damage_mult = p_mult

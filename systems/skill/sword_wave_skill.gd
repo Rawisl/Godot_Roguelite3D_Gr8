@@ -45,7 +45,7 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 static func spawn_zone_distance(caster: Node3D, dir: Vector3, limit: float) -> float:
 	var result := limit
 	for node in caster.get_tree().get_nodes_in_group(&"spawn_zone"):
-		var shape_node := FirebombSkill.find_box_shape(node as Area3D)
+		var shape_node := SkillGeometry.find_box_shape(node as Area3D)
 		if shape_node == null:
 			continue
 		var origin := shape_node.to_local(caster.global_position)
