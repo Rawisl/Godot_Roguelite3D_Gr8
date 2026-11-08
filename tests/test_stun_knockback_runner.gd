@@ -316,11 +316,15 @@ func test_bulwark_stomp_mechanics() -> void:
 		assert_true(boss_data.stomp_damage == 45, "Boss stomp_damage == 45")
 		assert_true(is_equal_approx(boss_data.stomp_radius, 3.0), "Boss stomp_radius == 3.0 m")
 		assert_true(is_equal_approx(boss_data.stomp_knockback, 3.0), "Boss stomp_knockback == 3.0 m")
-		assert_true(is_equal_approx(boss_data.stomp_stun_duration, 1.5), "Boss stomp_stun_duration == 1.5 s")
+		assert_true(is_equal_approx(boss_data.stomp_stun_duration, 0.0), "Boss stomp_stun_duration == 0.0 s")
 
 	# 1. Execute stomp
 	var initial_cmd_hp: int = int(commander.health.hp)
 	var start_cmd_pos := commander.global_position
+
+	var test_boss_data := boss_data.duplicate() as BossData
+	test_boss_data.stomp_stun_duration = 1.5
+	bulwark.data = test_boss_data
 
 	bulwark.execute_stomp()
 
