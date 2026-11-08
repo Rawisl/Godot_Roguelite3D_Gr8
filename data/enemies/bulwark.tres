@@ -1,10 +1,25 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ywhqu1yuhudw"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
 [ext_resource type="Script" uid="uid://b5nxx0eyswlc0" path="res://common/enemy_data.gd" id="1_x7rpu"]
 
 [resource]
 script = ExtResource("1_x7rpu")
 id = &"bulwark"
+base_hp = 40
+base_damage = 6
+attack_interval = 1
+attack_range = 1.5
+move_speed = 3.5
+damage_type = 2
+knockback_force = 0
+projectile_speed = 20
+spawn_cost = 1
+is_flying = false
+is_ranged = false
 knockback_immune = true
+aggro_range = 10
+gold_reward = 4
+prestige_reward = 1
 xp_value = 30
 metadata/_custom_type_script = "uid://b5nxx0eyswlc0"

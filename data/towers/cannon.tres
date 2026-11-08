@@ -1,11 +1,45 @@
 [gd_resource type="Resource" script_class="TowerData" format=3 uid="uid://bm0wnqjyjmnq8"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
-[ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_t20fp"]
-[ext_resource type="Resource" uid="uid://beoejy0vpkyjb" path="res://data/towers/cannon_l1.tres" id="2_7luwv"]
 [ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="2_yxcx4"]
+[ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_t20fp"]
+[ext_resource type="PackedScene" uid="uid://d0r1pq1be01t0" path="res://entities/projectile/cannon_projectile.tscn" id="5_cannonprj"]
+[ext_resource type="Resource" uid="uid://beoejy0vpkyjb" path="res://data/towers/cannon_l1.tres" id="2_7luwv"]
 [ext_resource type="Resource" uid="uid://drnqhtvrwrwyc" path="res://data/towers/cannon_l2.tres" id="3_dxqy6"]
 [ext_resource type="Resource" uid="uid://bpj2rucbr4p5j" path="res://data/towers/cannon_l3.tres" id="4_s70g0"]
-[ext_resource type="PackedScene" uid="uid://d0r1pq1be01t0" path="res://entities/projectile/cannon_projectile.tscn" id="5_cannonprj"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l4.tres" id="l4"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l5.tres" id="l5"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l6.tres" id="l6"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l7.tres" id="l7"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l8.tres" id="l8"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l9.tres" id="l9"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l10.tres" id="l10"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l11.tres" id="l11"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l12.tres" id="l12"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l13.tres" id="l13"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l14.tres" id="l14"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l15.tres" id="l15"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l16.tres" id="l16"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l17.tres" id="l17"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l18.tres" id="l18"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l19.tres" id="l19"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l20.tres" id="l20"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l21.tres" id="l21"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l22.tres" id="l22"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l23.tres" id="l23"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l24.tres" id="l24"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l25.tres" id="l25"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l26.tres" id="l26"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l27.tres" id="l27"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l28.tres" id="l28"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l29.tres" id="l29"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l30.tres" id="l30"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l31.tres" id="l31"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l32.tres" id="l32"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l33.tres" id="l33"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l34.tres" id="l34"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l35.tres" id="l35"]
+[ext_resource type="Resource" path="res://data/towers/cannon_l36.tres" id="l36"]
 
 [resource]
 script = ExtResource("2_yxcx4")
@@ -17,5 +51,5 @@ default_priority = 1
 min_range = 4.0
 projectile_scene = ExtResource("5_cannonprj")
 splash_falloff_edge = 0.5
-levels = Array[ExtResource("1_t20fp")]([ExtResource("2_7luwv"), ExtResource("3_dxqy6"), ExtResource("4_s70g0")])
+levels = Array[ExtResource("1_t20fp")]([ExtResource("2_7luwv"), ExtResource("3_dxqy6"), ExtResource("4_s70g0"), ExtResource("l4"), ExtResource("l5"), ExtResource("l6"), ExtResource("l7"), ExtResource("l8"), ExtResource("l9"), ExtResource("l10"), ExtResource("l11"), ExtResource("l12"), ExtResource("l13"), ExtResource("l14"), ExtResource("l15"), ExtResource("l16"), ExtResource("l17"), ExtResource("l18"), ExtResource("l19"), ExtResource("l20"), ExtResource("l21"), ExtResource("l22"), ExtResource("l23"), ExtResource("l24"), ExtResource("l25"), ExtResource("l26"), ExtResource("l27"), ExtResource("l28"), ExtResource("l29"), ExtResource("l30"), ExtResource("l31"), ExtResource("l32"), ExtResource("l33"), ExtResource("l34"), ExtResource("l35"), ExtResource("l36")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"
