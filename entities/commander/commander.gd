@@ -1008,6 +1008,8 @@ func _apply_equipped_weapon() -> void:
 func _apply_weapon(weapon_id: StringName) -> void:
 	var path := WEAPON_DATA_PATH % weapon_id
 	var weapon := load(path) as WeaponData if ResourceLoader.exists(path) else null
+	if weapon == null:
+		push_warning("Commander: no WeaponData at %s, the sword keeps the base range" % path)
 	var range_mult := weapon.range_mult if weapon != null else 1.0
 	stat_block.set_mul(&"sword_range", WEAPON_SOURCE, range_mult - 1.0)
 	_setup_sword_area()

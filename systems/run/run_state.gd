@@ -1,11 +1,12 @@
 class_name RunState
 extends Node
 
-const BASE_WEAPON := &"sword_base"
-
 ## In-memory runtime state container for the active run session.
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
+
+## The base sword: owned and equipped at the start of every run.
+const BASE_WEAPON := &"sword_base"
 
 # --- Progress ---
 var wave_index: int = 1
@@ -26,8 +27,8 @@ var hazard_used: bool = false
 var hazard_session: Dictionary = {}
 
 # --- Weapons ---
-var owned_weapons: Array[StringName] = [&"sword_base"]
-var equipped_weapon: StringName = &"sword_base"
+var owned_weapons: Array[StringName] = [BASE_WEAPON]
+var equipped_weapon: StringName = BASE_WEAPON
 var chain_cd: float = 0.0
 
 # --- Fortress & Emergency Repair ---
