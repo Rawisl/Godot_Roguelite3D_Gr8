@@ -198,7 +198,7 @@ func test_upgrade_to_max() -> void:
 	assert_true(_upgrade_to(&"W1", GameConfig.tower_max_level), "Arrow upgrades up to tower_max_level")
 	assert_true(_service.get_upgrade_block_reason(&"W1") == &"MAX_LEVEL", "reason is MAX_LEVEL at the top")
 	var g := _gold.gold
-	assert_true(not _service.upgrade(&"W1"), "third upgrade refused")
+	assert_true(not _service.upgrade(&"W1"), "upgrade past tower_max_level refused")
 	assert_true(_gold.gold == g, "gold unchanged after the refused upgrade")
 
 func test_sell_refund() -> void:
