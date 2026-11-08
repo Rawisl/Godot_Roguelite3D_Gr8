@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="SkillData" format=3]
+[gd_resource type="Resource" script_class="SkillData" format=3 uid="uid://c5u1fvha6qwpx"]
 
-[ext_resource type="Script" path="res://common/skill_data.gd" id="1_skill"]
+[ext_resource type="Script" uid="uid://bpmylfxrdyoyc" path="res://common/skill_data.gd" id="1_skill"]
 [ext_resource type="Texture2D" uid="uid://cv4xutvvmph6g" path="res://art/icons/skills/sharpness_icon.png" id="2_icon"]
 
 [resource]

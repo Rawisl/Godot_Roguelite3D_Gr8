@@ -12,19 +12,23 @@ offset_right = 36.0
 offset_bottom = 8.0
 grow_horizontal = 0
 grow_vertical = 0
+theme_override_constants/separation = 6
 script = ExtResource("1_guc8t")
 
 [node name="X1" type="Button" parent="." unique_id=595896115]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 48)
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="X2" type="Button" parent="." unique_id=1362937404]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 48)
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="X3" type="Button" parent="." unique_id=1127845285]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 48)
 layout_mode = 2
+size_flags_horizontal = 3

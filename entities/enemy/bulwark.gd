@@ -10,9 +10,14 @@ var stomp_damage: int:
 
 var effective_stomp_damage: int:
 	get:
+		if wave_dmg_mult <= 0.0 and not is_enraged:
+			return stomp_damage
+		var dmg: float = float(stomp_damage)
 		if wave_dmg_mult > 0.0:
-			return maxi(1, int(round(float(stomp_damage) * wave_dmg_mult)))
-		return stomp_damage
+			dmg *= wave_dmg_mult
+		if is_enraged:
+			dmg *= GameConfig.enrage_damage_mult
+		return maxi(1, int(round(dmg)))
 
 var stomp_radius: float:
 	get:
@@ -35,6 +40,7 @@ var max_armor_hp: int = 1200
 var current_core_hp: int = 900
 var max_core_hp: int = 900
 var phase_broken: bool = false
+var is_enraged: bool = false
 
 var _transition_timer: float = 0.0
 var _cached_boss_melee_point: Node3D = null
@@ -44,6 +50,20 @@ func _ready() -> void:
 	super._ready()
 	add_to_group(&"boss")
 	_init_boss_stats()
+	EventBus.boss_enraged.connect(enter_enrage)
+
+
+func _exit_tree() -> void:
+	if EventBus.boss_enraged.is_connected(enter_enrage):
+		EventBus.boss_enraged.disconnect(enter_enrage)
+
+
+## Faster movement, quicker stomps and harder hits for the rest of the fight. Idempotent.
+func enter_enrage() -> void:
+	if is_enraged or is_dead:
+		return
+	is_enraged = true
+	speed_multiplier *= GameConfig.enrage_speed_mult
 
 
 func _init_boss_stats() -> void:
@@ -157,6 +177,8 @@ func _on_transition_finished() -> void:
 	var boss_data := data as BossData
 	if boss_data != null:
 		speed_multiplier = wave_speed_mult * boss_data.phase2_speed_mult
+		if is_enraged:
+			speed_multiplier *= GameConfig.enrage_speed_mult
 	EventBus.boss_phase_changed.emit(&"EXPOSED")
 	EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, &"EXPOSED")
 
@@ -189,9 +211,12 @@ func _get_attack_interval() -> float:
 	var boss_data := data as BossData
 	if boss_data == null:
 		return 2.5
+	var interval: float = boss_data.attack_interval
 	if current_phase == Enums.BossPhase.EXPOSED:
-		return boss_data.attack_interval / maxf(0.1, boss_data.phase2_attack_rate_mult)
-	return boss_data.attack_interval
+		interval /= maxf(0.1, boss_data.phase2_attack_rate_mult)
+	if is_enraged:
+		interval /= maxf(0.1, GameConfig.enrage_attack_rate_mult)
+	return interval
 
 
 func _play_locomotion_anim() -> void:
@@ -214,10 +239,14 @@ func _play_attack_anim() -> void:
 
 func _execute_attack_action() -> void:
 	execute_stomp()
-	if current_phase == Enums.BossPhase.EXPOSED and anim_player != null and anim_player.is_playing():
-		var recovery_time: float = _get_attack_interval() - _get_attack_windup() - 0.15
-		var recovery_speed: float = (2.37 - 0.97) / maxf(0.1, recovery_time)
-		anim_player.speed_scale = recovery_speed
+	if anim_player == null or not anim_player.is_playing():
+		return
+	# Enrage shortens the interval in phase 1 too, so the recovery clip must speed up there as well.
+	if current_phase != Enums.BossPhase.EXPOSED and not is_enraged:
+		return
+	var recovery_time: float = _get_attack_interval() - _get_attack_windup() - 0.15
+	var recovery_speed: float = (2.37 - 0.97) / maxf(0.1, recovery_time)
+	anim_player.speed_scale = recovery_speed
 
 
 func execute_stomp() -> void:

@@ -5,21 +5,14 @@
 [resource]
 script = ExtResource("1_00uft")
 id = &"bulwark"
-move_speed = 1.6
-avoid_radius = 1.6
+display_name_key = "enemy.bulwark"
+base_hp = 2100
 attack_interval = 2.5
 attack_range = 3.0
+move_speed = 1.6
+anim_walk = &"move/Walking_A"
 knockback_immune = true
 aggro_range = 4.0
+avoid_radius = 1.6
 target_rules = Array[StringName]([&"PLAYER", &"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
-base_hp = 2100
-armor_hp = 1200
-core_hp = 900
-stomp_damage = 45
-stomp_radius = 3.0
-stomp_knockback = 3.0
-stomp_stun_duration = 0.0
-stomp_windup = 1.0
-stomp_screen_shake = 0.6
-anim_walk = &"move/Walking_A"
 metadata/_custom_type_script = "uid://bhfhlrn5orfb"

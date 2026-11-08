@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cmytj3e7hor74"]
 
 [ext_resource type="Script" uid="uid://byaqow6uyse5x" path="res://tests/test_fortress_runner.gd" id="1_runner"]
 
-[node name="TestFortressRunner" type="Node3D"]
+[node name="TestFortressRunner" type="Node3D" unique_id=1271827511]
 script = ExtResource("1_runner")

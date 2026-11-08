@@ -9,10 +9,18 @@ extends Node
 ##   anywhere across the spawn zone
 ## - lane_curve, the return zone and the command post sit inside the corridor at the gate
 ## - Grunts spawned across the spawn zone all reach the gate
+## - only W1-W3 are left, on top of the Fortress wall, and the command post keeps 3 m from every slot
+## - boss_melee_point is 1.6-2.0 m from the Fortress face, on the large-agent navmesh, and the
+##   Bulwark walks up to it and starts attacking within its attack_range
 ## Headless it runs the checks and quits.
+
+# TODO(Ender-Via): the Bulwark should stand on boss_melee_point so its 3 m Stomp reaches the wall
+# (BOSS-40). It stops attack_range short of the point today, so this test only checks it gets there.
 
 const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
+const BULWARK_SCENE: PackedScene = preload("res://entities/enemy/bulwark.tscn")
+const FORTRESS_FACE_X := -15.0
 const HALF_WIDTH := 11.75
 const SPAWN_LENGTH := 12.0
 const NAV_LAYER_NORMAL := 1
@@ -44,7 +52,10 @@ func _ready() -> void:
 	test_corridor_end_closed()
 	test_nav_paths()
 	test_markers()
+	test_wall_slots()
+	test_boss_melee_point()
 	await test_grunts_reach_gate()
+	await test_bulwark_reaches_point()
 
 	Engine.time_scale = 1.0
 	_level.queue_free()
@@ -138,6 +149,40 @@ func test_markers() -> void:
 		"the command post stands on the Fortress wall")
 
 
+func test_wall_slots() -> void:
+	var walls: Array[Slot] = []
+	var all: Array[Slot] = []
+	for node in _level.get_node("Slots").find_children("*", "", true, false):
+		if node is Slot:
+			all.append(node)
+			if node.zone == Enums.SlotZone.WALL:
+				walls.append(node)
+	var ids := walls.map(func(w: Slot) -> String: return String(w.slot_id))
+	ids.sort()
+	assert_true(ids == ["W1", "W2", "W3"], "only W1-W3 are WALL slots (%s)" % ", ".join(ids))
+	var on_wall := true
+	for w in walls:
+		var p := w.global_position
+		on_wall = on_wall and p.x > -20.0 and p.x < FORTRESS_FACE_X and is_equal_approx(p.y, 4.0) and absf(p.z) < 8.0
+	assert_true(on_wall, "W1-W3 stand on top of the Fortress wall")
+	var post: Marker3D = _level.get_node("Markers/CommandPost")
+	var nearest := INF
+	for slot in all:
+		nearest = minf(nearest, slot.global_position.distance_to(post.global_position))
+	assert_true(nearest >= 3.0 - 0.001, "the command post is at least 3 m from every slot (nearest %.2f m)" % nearest)
+
+
+func test_boss_melee_point() -> void:
+	var point: Marker3D = _level.get_node("Markers/BossMeleePoint")
+	var gap := point.global_position.x - FORTRESS_FACE_X
+	assert_true(gap >= 1.6 - 0.001 and gap <= 2.0 + 0.001 and absf(point.global_position.z) < 0.01,
+		"boss_melee_point is %.2f m from the Fortress face, in the middle of the wall (1.6-2.0 m)" % gap)
+	var large := _path(Vector3(15, 0, 0), point.global_position, NAV_LAYER_LARGE)
+	assert_true(not large.is_empty() and _flat(large[-1]).distance_to(_flat(point.global_position)) < 0.3,
+		"boss_melee_point lies on the large-agent navmesh")
+	assert_true(point.is_in_group(&"boss_melee_point"), "boss_melee_point is in its group, so the Bulwark finds it")
+
+
 func test_grunts_reach_gate() -> void:
 	EventBus.state_changed.emit(&"COMBAT")
 	var grunts: Array[Enemy] = []
@@ -164,6 +209,36 @@ func test_grunts_reach_gate() -> void:
 		"Grunts spawned across the spawn zone all reach the gate (%d / %d in %.1f s game time)" % [at_gate, grunts.size(), elapsed])
 	EventBus.state_changed.emit(&"PREP")
 #endregion
+
+
+func test_bulwark_reaches_point() -> void:
+	EventBus.state_changed.emit(&"BOSS_COMBAT")
+	var point: Marker3D = _level.get_node("Markers/BossMeleePoint")
+	var boss := BULWARK_SCENE.instantiate() as Enemy
+	boss.position = Vector3(15, 0.1, 6)
+	_level.add_child(boss)
+	boss.spawn_grace = false
+	boss.is_in_spawn_zone = false
+	boss.change_state(Enums.EnemyState.ADVANCE)
+	# Measured until the first swing: after it the Bulwark has no target in this test and wanders.
+	var reach := boss.data.attack_range + 0.2
+	Engine.time_scale = 3.0
+	var elapsed := 0.0
+	var distance := INF
+	var attacking := false
+	while elapsed < 40.0 and is_instance_valid(boss):
+		await get_tree().physics_frame
+		elapsed += get_physics_process_delta_time()
+		distance = _flat(boss.global_position).distance_to(_flat(point.global_position))
+		if boss.current_state == Enums.EnemyState.ATTACK:
+			attacking = true
+			break
+	Engine.time_scale = 1.0
+	assert_true(attacking and distance <= reach,
+		"the Bulwark reaches boss_melee_point and starts attacking within %.1f m (%.2f m)" % [reach, distance])
+	if is_instance_valid(boss):
+		boss.queue_free()
+	EventBus.state_changed.emit(&"PREP")
 
 
 func _ray(from: Vector3, to: Vector3) -> Dictionary:

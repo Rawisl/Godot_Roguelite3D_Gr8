@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bh1c6lwivpdv0"]
 
-[ext_resource type="Script" path="res://tests/test_aura_runner.gd" id="1_aura"]
+[ext_resource type="Script" uid="uid://cjmqlclmkimoh" path="res://tests/test_aura_runner.gd" id="1_aura"]
 
-[node name="TestAuraRunner" type="Node3D"]
+[node name="TestAuraRunner" type="Node3D" unique_id=1769035485]
 script = ExtResource("1_aura")

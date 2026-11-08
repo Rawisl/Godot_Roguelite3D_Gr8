@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://cq44hfvyi502b"]
 
 [ext_resource type="Script" uid="uid://drcvppewnldl2" path="res://ui/hud/parts/wave_counter.gd" id="1_57oc4"]
-[ext_resource type="Texture2D" uid="uid://doqo8lphfl3mu" path="res://art/icons/boss_icon.png" id="2_tckok"]
 
 [node name="WaveCounter" type="VBoxContainer" unique_id=1024785064]
 anchors_preset = 5
@@ -15,11 +14,26 @@ mouse_filter = 2
 alignment = 1
 script = ExtResource("1_57oc4")
 
-[node name="Wave" type="Label" parent="." unique_id=999281154]
+[node name="WaveRow" type="HBoxContainer" parent="." unique_id=1460297318]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Wave" type="Label" parent="WaveRow" unique_id=999281154]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
 horizontal_alignment = 1
+
+[node name="EndlessTag" type="Label" parent="WaveRow" unique_id=1873402956]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"HudHint"
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 22
 
 [node name="StatusRow" type="HBoxContainer" parent="." unique_id=362338397]
 layout_mode = 2
@@ -44,25 +58,6 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 
 [node name="Enemies" type="Label" parent="EnemiesRow" unique_id=1367545860]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-
-[node name="BossRow" type="HBoxContainer" parent="." unique_id=910565149]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="TextureRect" type="TextureRect" parent="BossRow" unique_id=1618281733]
-custom_minimum_size = Vector2(28, 28)
-layout_mode = 2
-texture = ExtResource("2_tckok")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BossLabel" type="Label" parent="BossRow" unique_id=2066832527]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 20

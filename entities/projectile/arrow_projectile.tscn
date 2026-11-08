@@ -5,13 +5,15 @@
 [ext_resource type="PackedScene" uid="uid://ce3tkwlrmtfe1" path="res://contents/assets/towers/fbx/Shells/Archer_shell_LVL_1.fbx" id="3_shell"]
 [ext_resource type="Material" uid="uid://dx2octrxvyqqu" path="res://contents/assets/towers/texture/projectile_material.tres" id="4_mat"]
 
-[node name="ArrowProjectile" instance=ExtResource("1_base")]
+[node name="ArrowProjectile" unique_id=2136692734 instance=ExtResource("1_base")]
 script = ExtResource("2_arrow")
+aim_height = 0.9
+max_flight_time = 5.0
 
-[node name="ArrowShell" parent="Model" index="0" instance=ExtResource("3_shell")]
+[node name="ArrowShell" parent="Model" parent_id_path=PackedInt32Array(1420644310) index="0" unique_id=1961767054 instance=ExtResource("3_shell")]
 transform = Transform3D(0.35, 0, 0, 0, 0, 0.35, 0, -0.35, 0, 0, 0, 0.38)
 
-[node name="Archer_tower_LVL_1" parent="Model/ArrowShell" index="0"]
+[node name="Archer_tower_LVL_1" parent="Model/ArrowShell" index="0" unique_id=1479398486]
 material_override = ExtResource("4_mat")
 
 [editable path="Model/ArrowShell"]

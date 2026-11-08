@@ -12,7 +12,7 @@
 [node name="Skeleton_Rogue" parent="." unique_id=965624739 instance=ExtResource("1_fpt8a")]
 transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0, 0)
 
-[node name="Skeleton3D" parent="Skeleton_Rogue/Rig_Medium" parent_id_path=PackedInt32Array(965624739, 1752556544) index="0" unique_id=548073585]
+[node name="Skeleton3D" parent="Skeleton_Rogue/Rig_Medium" parent_id_path=PackedInt32Array(965624739, 324637620) index="0" unique_id=436334261]
 bones/1/position = Vector3(0, 0.4371587, 0)
 bones/1/rotation = Quaternion(0.095845774, -1.1866046e-07, 1.1425705e-08, 0.9953962)
 bones/2/position = Vector3(0.17094506, 0.11358723, 0.100000046)
@@ -43,40 +43,40 @@ bones/20/rotation = Quaternion(0.3915314, -6.35308e-08, 2.719049e-07, 0.9201648)
 bones/21/rotation = Quaternion(-0.44524628, 2.920535e-07, -1.02233074e-07, 0.89540815)
 bones/22/rotation = Quaternion(8.168461e-09, 0.9203663, -0.39105743, 5.8903904e-08)
 
-[node name="head" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="0" unique_id=937843917]
+[node name="head" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="0" unique_id=1514411253]
 transform = Transform3D(0.9997451, -0.021961601, 0.005238045, 0.022035161, 0.99965304, -0.014425173, -0.004919428, 0.0145368725, 0.9998822, -0.0059032026, 1.2522435, 0.181502)
 
-[node name="Skeleton_Rogue_Hood" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/head" index="0" unique_id=1906612359]
+[node name="Skeleton_Rogue_Hood" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/head" index="0" unique_id=1238258219]
 material_override = ExtResource("2_matb")
 
-[node name="chest" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="1" unique_id=7070435]
+[node name="chest" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="1" unique_id=948116618]
 transform = Transform3D(0.9997451, -0.0219616, 0.005238044, 0.022557572, 0.96182823, -0.27272224, 0.00095131784, 0.27277085, 0.9620785, -7.940678e-23, 0.9937074, 0.10818213)
 
-[node name="Skeleton_Rogue_Cape" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/chest" index="0" unique_id=1572607756]
+[node name="Skeleton_Rogue_Cape" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/chest" index="0" unique_id=1221719569]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_ArmLeft" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="2" unique_id=1290686237]
+[node name="Skeleton_Rogue_ArmLeft" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="2" unique_id=1010093118]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_ArmRight" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="3" unique_id=995206195]
+[node name="Skeleton_Rogue_ArmRight" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="3" unique_id=27316706]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_Body" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="4" unique_id=1943140893]
+[node name="Skeleton_Rogue_Body" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="4" unique_id=1211275820]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_Eyes" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="5" unique_id=510195134]
+[node name="Skeleton_Rogue_Eyes" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="5" unique_id=731811175]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_Head" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="6" unique_id=601568784]
+[node name="Skeleton_Rogue_Head" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="6" unique_id=232237380]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_Jaw" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="7" unique_id=803638843]
+[node name="Skeleton_Rogue_Jaw" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="7" unique_id=1652012965]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_LegLeft" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="8" unique_id=1595052939]
+[node name="Skeleton_Rogue_LegLeft" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="8" unique_id=1238915307]
 material_override = ExtResource("2_matb")
 
-[node name="Skeleton_Rogue_LegRight" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="9" unique_id=1426299862]
+[node name="Skeleton_Rogue_LegRight" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="9" unique_id=941287785]
 material_override = ExtResource("2_matb")
 
 [node name="RightHandSlot" type="BoneAttachment3D" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D" index="10" unique_id=1252735163]
@@ -88,7 +88,7 @@ bone_idx = 12
 [node name="Skeleton_Crossbow2" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/RightHandSlot" unique_id=1949952293 instance=ExtResource("3_r7244")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
 
-[node name="Skeleton_Crossbow" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Crossbow2" index="0" unique_id=367315750]
+[node name="Skeleton_Crossbow" parent="Skeleton_Rogue/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Crossbow2" index="0" unique_id=16560866]
 material_override = ExtResource("2_matb")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Skeleton_Rogue" unique_id=1350729062]

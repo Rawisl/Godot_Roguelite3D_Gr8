@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://31fypgqwfmap"]
+
+[ext_resource type="PackedScene" uid="uid://b0ncj75b0jni1" path="res://ui/hud/hud.tscn" id="1_hud"]
+[ext_resource type="Script" uid="uid://ds31kv7nvnicf" path="res://tests/test_boss_hud.gd" id="2_fake"]
+
+[node name="TestBossHud" type="Node" unique_id=1946027381]
+
+[node name="Hud" parent="." unique_id=1623823647 instance=ExtResource("1_hud")]
+
+[node name="FakeSignals" type="Node" parent="." unique_id=1078243569]
+script = ExtResource("2_fake")

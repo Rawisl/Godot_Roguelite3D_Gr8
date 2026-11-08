@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TowerLevelData" format=3]
+[gd_resource type="Resource" script_class="TowerLevelData" format=3 uid="uid://c344ltk2rnab2"]
 
 [ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_lvl"]
 

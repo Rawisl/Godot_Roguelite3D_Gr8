@@ -4,25 +4,4 @@
 
 [resource]
 script = ExtResource("1_h4kaj")
-id = &"grunt"
-display_name_key = "enemy.grunt"
-base_hp = 40
-base_damage = 6
-attack_interval = 1.0
-attack_range = 1.5
-move_speed = 3.5
-damage_type = 2
-anim_walk = &"move/Running_A"
-anim_attack = &"melee/Melee_1H_Attack_Slice_Diagonal"
-spawn_cost = 1
-is_flying = false
-is_ranged = false
-knockback_immune = false
-aggro_range = 10.0
-avoid_radius = 0.5
-avoid_priority = 1
-target_rules = Array[StringName]([&"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
-gold_reward = 4
-prestige_reward = 1
-xp_value = 1
 metadata/_custom_type_script = "uid://b5nxx0eyswlc0"

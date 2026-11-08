@@ -8,6 +8,7 @@ extends Node3D
 ## - an enemy immune to the tower's damage type (resist 0) is skipped
 ## - a priority change applies after retarget_delay in real time, at x1 and x3
 ## - 14 towers scanning 70 enemies stay under 1 ms per frame
+## - The Bulwark in its armored phase is skipped by the Arrow, hit by the Cannon, and the Arrow picks it again when exposed
 ## - The tower picks again on every scan, so a unit that overtakes
 ##   becomes the First target (and a unit that comes closer the Nearest target) within one scan
 
@@ -15,6 +16,8 @@ const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
 const CANNON_SCENE: PackedScene = preload("res://entities/tower/cannon.tscn")
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const POOL_SCENE: PackedScene = preload("res://entities/projectile/projectile_pool.tscn")
+const BULWARK_SCENE: PackedScene = preload("res://entities/enemy/bulwark.tscn")
+const BULWARK_DATA: BossData = preload("res://data/bosses/bulwark_boss.tres")
 const IMMUNE_STUB: Script = preload("res://tests/resist_enemy_stub.gd")
 
 ## Same shape as the corridor level: spawn at x = 20, Fortress gate at x = -15 (35 m).
@@ -46,6 +49,7 @@ func _ready() -> void:
 	await test_retarget_delay()
 	await test_scan_cost()
 	await test_repick_every_scan()
+	await test_boss_immune_phase()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -402,3 +406,68 @@ func test_repick_every_scan() -> void:
 	assert_true(took > 0 and took <= budget,
 		"Nearest: B comes closer, target switches to B within one scan (%d frames, budget %d)" % [took, budget])
 	_clear([a, b, t])
+
+
+func _bulwark(pos: Vector3) -> Bulwark:
+	var b := BULWARK_SCENE.instantiate() as Bulwark
+	b.data = BULWARK_DATA
+	_strip_model(b)
+	b.position = pos
+	add_child(b)
+	b.set_physics_process(false)
+	b.spawn_grace = false
+	b.is_in_spawn_zone = false
+	b.update_nav_progress()
+	return b
+
+
+func test_boss_immune_phase() -> void:
+	print("
+[GROUP 8] Bulwark immunity by phase")
+	var pierce_resist: float = BULWARK_DATA.resist_table_phase1[Enums.DamageType.PIERCE]
+	var blast_resist: float = BULWARK_DATA.resist_table_phase1[Enums.DamageType.BLAST]
+	var arrow := _arrow(Vector3.ZERO)
+	var cannon := CANNON_SCENE.instantiate() as Tower
+	# Outside the Cannon's minimum range, inside the Arrow's range.
+	cannon.position = Vector3(5, 0, 0)
+	add_child(cannon)
+	var boss := _bulwark(Vector3(-3, 0, 0))
+	await _physics_frames()
+	# Picks are driven by hand below; the towers' own periodic scan would emit extra events.
+	arrow.set_physics_process(false)
+	cannon.set_physics_process(false)
+	assert_true(boss.current_phase == Enums.BossPhase.ARMORED, "Bulwark starts in the armored phase")
+	assert_true(arrow.data.damage_type == Enums.DamageType.PIERCE and is_zero_approx(pierce_resist),
+		"the Arrow deals PIERCE and the boss table has no PIERCE resist in phase 1")
+	assert_true(cannon.data.damage_type == Enums.DamageType.BLAST and blast_resist > 0.0,
+		"the Cannon deals BLAST and the boss table resists it in phase 1")
+
+	var events: Array = []
+	var on_immunity := func(id: StringName, is_immune: bool): events.append([id, is_immune])
+	EventBus.tower_immunity_changed.connect(on_immunity)
+	arrow.slot_id = &"BossSlot"
+	assert_true(arrow._pick_target() == null, "armored Bulwark in range: the Arrow has no target")
+	assert_true(arrow.is_immune_blocked and events == [[&"BossSlot", true]],
+		"armored Bulwark: Arrow is immune-blocked and emits tower_immunity_changed(slot, true)")
+	assert_true(cannon._pick_target() == boss, "armored Bulwark: the Cannon picks it")
+	assert_true(not cannon.is_immune_blocked, "the Cannon is not immune-blocked")
+
+	# A Grunt next to the armored boss: the Arrow shoots the Grunt, the boss is skipped.
+	var grunt := _grunt(Vector3(-2, 0, 1), "Grunt")
+	await _physics_frames()
+	assert_true(_pick_name(arrow) == "Grunt", "armored Bulwark and a Grunt in range: the Arrow picks the Grunt")
+	assert_true(not arrow.is_immune_blocked and events.size() == 2 and events[1] == [&"BossSlot", false],
+		"a hittable Grunt arrives: immune-blocked clears with tower_immunity_changed(slot, false)")
+	_clear([grunt])
+
+	# Exposed phase: PIERCE hits the boss, the Arrow picks it again.
+	boss.current_phase = Enums.BossPhase.EXPOSED
+	assert_true(arrow._pick_target() == boss, "exposed Bulwark: the Arrow picks it")
+	assert_true(not arrow.is_immune_blocked, "exposed Bulwark: Arrow is no longer immune-blocked")
+	assert_true(cannon._pick_target() == boss, "exposed Bulwark: the Cannon still picks it")
+
+	EventBus.tower_immunity_changed.disconnect(on_immunity)
+	arrow.slot_id = &""
+	await get_tree().process_frame
+	await _physics_frames()
+	_clear([boss, arrow, cannon])
