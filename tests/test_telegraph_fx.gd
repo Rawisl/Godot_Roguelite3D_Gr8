@@ -125,7 +125,7 @@ func test_rings_cleared_after_boss() -> void:
 
 func test_draws_on_top() -> void:
 	var code := _fx.ring_material.shader.code
-	assert_true(code.contains("depth_test_disabled"), "the telegraph shader ignores depth, so nothing hides it")
+	assert_true(not code.contains("depth_test_disabled"), "the telegraph shader enables depth test so units stand on top")
 	assert_true(_fx.ring_material.render_priority > 0, "the telegraph draws after other transparent things")
 
 

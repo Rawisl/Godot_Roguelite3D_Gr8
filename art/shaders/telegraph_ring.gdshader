@@ -2,8 +2,8 @@ shader_type spatial;
 // Telegraph of a boss AoE: a thick red border with a dark outline, diagonal hatching inside so
 // the area reads without relying on colour, a solid fill growing from the centre to the edge over
 // the wind-up and a countdown arc just inside the border, so the hit time reads without sound.
-// Depth test is off so walls, towers and units never hide it. Nothing blinks.
-render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never, depth_test_disabled;
+// Depth test stays on so units and obstacles stand on top of the ground ring.
+render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never;
 
 // danger and danger_fill in art/palette.md.
 uniform vec4 danger_color : source_color = vec4(1.0, 0.176, 0.176, 1.0);
