@@ -278,7 +278,7 @@ func _do_sell(slot_id: StringName) -> bool:
 		return false
 	var refund := slot.tower.get_sell_value()
 	slot.clear_tower()
-	gold.add(refund)
+	gold.add(refund, true, false)
 	EventBus.tower_sold.emit(slot_id)
 	return true
 

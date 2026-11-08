@@ -54,6 +54,7 @@ func _ready() -> void:
 	test_upgrade_to_max()
 	test_sell_refund()
 	test_sell_refused()
+	test_sell_not_earned()
 	test_not_prep()
 	test_not_enough_gold()
 	test_commander_level()
@@ -225,6 +226,42 @@ func test_sell_refused() -> void:
 	assert_true(not _service.sell(&"W1"), "RUINED slot cannot be sold")
 	assert_true(not _service.sell(&"W2"), "EMPTY slot cannot be sold")
 	assert_true(_gold.gold == g, "gold unchanged")
+
+func test_sell_not_earned() -> void:
+	print("\n[GROUP 4b] Sell refunds are not counted as earned gold")
+	_reset()
+	var rs := RunState.new()
+	add_child(rs)
+	_gold.gold = 5000
+	_service.build(&"W1", &"arrow")
+	var expected: int = _service.get_tower_info(&"W1").sell_value
+	var g := _gold.gold
+	var earned := rs.run_gold_earned
+	assert_true(_service.sell(&"W1"), "sell works with a RunState in the tree")
+	assert_true(_gold.gold - g == expected and expected > 0, "gold rises by the shown sell value")
+	assert_true(rs.run_gold_earned == earned, "run_gold_earned unchanged after the sell")
+	_gold.add(40)
+	assert_true(rs.run_gold_earned == earned + 40, "other gold still counts as earned")
+
+	# Heal station, refunded by its remaining HP.
+	var saved_towers := _service.towers.duplicate()
+	var saved_scenes := _service.tower_scenes.duplicate()
+	_service.towers.append(_service.heal_station_data)
+	_service.tower_scenes[&"heal_station"] = HEAL_STATION_SCENE
+	var gid := _ground_id(0)
+	assert_true(_service.build(gid, &"heal_station"), "heal station built")
+	var station = _slot(gid).tower
+	station.drain(float(station.health.max_hp) / 2.0)
+	var heal_value: int = _service.get_tower_info(gid).sell_value
+	g = _gold.gold
+	earned = rs.run_gold_earned
+	assert_true(_service.sell(gid), "heal station sold")
+	assert_true(_gold.gold - g == heal_value and heal_value > 0, "gold rises by the HP-based refund")
+	assert_true(rs.run_gold_earned == earned, "run_gold_earned unchanged after selling the heal station")
+	_service.towers.assign(saved_towers)
+	_service.tower_scenes = saved_scenes
+	remove_child(rs)
+	rs.free()
 
 func test_not_prep() -> void:
 	print("\n[GROUP 5] Nothing works outside PREP")

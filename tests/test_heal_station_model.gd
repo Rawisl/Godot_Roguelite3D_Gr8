@@ -44,7 +44,7 @@ func _ready() -> void:
 	var row := [
 		[ARROW_TOWER, "Arrow", false],
 		[CANNON_TOWER, "Cannon", false],
-		[HEAL_STATION, "Trạm hồi lực", false],
+		[HEAL_STATION, "Trạm hồi phục", false],
 		[RUBBLE, "Đổ nát (RUINED)", true],
 		[COMMANDER, "Chỉ huy", false],
 	]

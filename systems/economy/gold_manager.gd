@@ -44,11 +44,12 @@ func try_spend(cost: int) -> bool:
 	return true
 
 
-func add(amount: int, show_delta: bool = true) -> void:
+## count_as_earned is false for refunds (tower sales), which must not raise run_gold_earned.
+func add(amount: int, show_delta: bool = true, count_as_earned: bool = true) -> void:
 	if amount <= 0:
 		return
 	var rs := _get_run_state()
-	if rs != null:
+	if rs != null and count_as_earned:
 		rs.run_gold_earned += amount
 	_set_gold(gold + amount, show_delta)
 
