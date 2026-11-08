@@ -32,6 +32,10 @@ func _ready() -> void:
 	var valid := GRID.get_valid_cells(lane, spawn, ret, post)
 	assert_true(cells.size() > 0, "GridData declares cells (%d)" % cells.size())
 	assert_true(valid.size() == cells.size(), "every declared cell is valid (%d/%d)" % [valid.size(), cells.size()])
+	# Every check below indexes rows and cells, so an empty layout would stop the runner with a script error.
+	if cells.is_empty():
+		_finish(level)
+		return
 
 	var ids := {}
 	for c in cells:
@@ -89,7 +93,9 @@ func _ready() -> void:
 	assert_true(GRID.get_valid_cells(lane, empty_zone, ret, post).size() == cells.size(), "zone without a shape is skipped, not a crash")
 	bare_lane.queue_free()
 	empty_zone.queue_free()
+	_finish(level)
 
+func _finish(level: Node) -> void:
 	level.queue_free()
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
