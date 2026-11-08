@@ -16,7 +16,7 @@ signal fortress_destroyed
 signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 on HP loss
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
 signal fortress_low_hp(ratio: float)  #once per wave
-signal fortress_repaired(amount: int, source: StringName)  # source: GOLD | EMERGENCY
+signal fortress_repaired(amount: int, source: StringName)  # source: MITHRIL | EMERGENCY
 #------------------------------------------------------#
 
 #-----------------------Enemy-----------------------#

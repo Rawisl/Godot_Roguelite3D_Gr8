@@ -4,7 +4,7 @@ extends StaticBody3D
 ## Its HP is shared across the whole run. Damage, repairs and melee attack slots all go through here.
 
 ## Heal source names for fortress_repaired.
-const REPAIR_SOURCE_GOLD := &"GOLD"
+const REPAIR_SOURCE_MITHRIL := &"MITHRIL"
 const REPAIR_SOURCE_EMERGENCY := &"EMERGENCY"
 ## Tolerance for float comparisons of HP percentages.
 const PCT_EPSILON := 0.000001
@@ -115,61 +115,23 @@ static func _damage_type_name(t: Enums.DamageType) -> StringName:
 
 
 #region Repair
-## Quote for one repair button. step_pct is a percentage of max HP (10 or 25); <= 0 means "to full HP".
-## Returns {heal: HP to restore, cost: gold to deduct, pct: percentage actually repaired}.
-## If gold does not cover the full step, repair floor(gold / price per 1%) percent.
-static func quote_repair(step_pct: float, hp: int, max_hp: int, gold: int, gold_per_pct: int) -> Dictionary:
-	var none := {heal = 0, cost = 0, pct = 0.0}
-	var missing_hp := max_hp - hp
-	if missing_hp <= 0 or max_hp <= 0 or gold_per_pct <= 0 or gold <= 0:
-		return none
-	var missing_pct := float(missing_hp) / float(max_hp) * 100.0
-	var to_full := step_pct <= 0.0 or step_pct >= missing_pct - PCT_EPSILON
-	var pct := missing_pct if to_full else step_pct
-	var cost := ceili(pct * gold_per_pct - PCT_EPSILON)
-	if gold >= cost:
-		var heal := missing_hp if to_full else _pct_to_hp(pct, max_hp, missing_hp)
-		return {heal = heal, cost = cost, pct = pct}
-	var affordable_pct := floori(float(gold) / float(gold_per_pct))
-	if affordable_pct <= 0:
-		return none
-	return {heal = _pct_to_hp(affordable_pct, max_hp, missing_hp), cost = affordable_pct * gold_per_pct, pct = float(affordable_pct)}
-
-
-## Gold for the smallest repair the buttons allow: 1% of max HP, or the whole gap when it is smaller.
-## Shared by BuildService's refusal and the Fortress panel's greyed buttons.
-static func min_repair_cost(hp: int, max_hp: int, gold_per_pct: int) -> int:
-	if max_hp <= 0 or hp >= max_hp:
+## Mithril repair: heals mithril_repair_pct × effective max HP, clamped at max. The Mithril itself is owned by
+## RunState and spent by BuildService after this heals. Refused (0) when destroyed, outside PREP or at full HP.
+## Returns the HP actually healed.
+func repair_with_mithril() -> int:
+	if _destroyed:
 		return 0
-	var missing_pct := float(max_hp - hp) / float(max_hp) * 100.0
-	return ceili(minf(1.0, missing_pct) * gold_per_pct - PCT_EPSILON)
-
-
-## Healed HP is rounded down and never exceeds the missing HP.
-static func _pct_to_hp(pct: float, max_hp: int, missing_hp: int) -> int:
-	return mini(missing_hp, floori(pct * max_hp / 100.0 + PCT_EPSILON))
-
-
-## Quote based on current HP, for the Fortress panel. step_ratio is a ratio as in
-## FortressStats (repair_step_small_pct 0.10, repair_step_large_pct 0.25); <= 0 means "to full HP".
-func quote_repair_now(step_ratio: float, gold: int) -> Dictionary:
-	return quote_repair(step_ratio * 100.0, health.hp, health.max_hp, gold, stats.repair_gold_per_pct)
-
-
-## Repair with gold. The Fortress does not own gold: the economy system passes the current gold and deducts
-## exactly the returned "cost". Refused (cost 0) outside PREP, at full HP or when destroyed.
-func repair_with_gold(step_ratio: float, gold: int) -> Dictionary:
-	var none := {heal = 0, cost = 0, pct = 0.0}
-	if _destroyed or _wave_state != &"PREP" or is_full():
-		return none
-	var quote := quote_repair_now(step_ratio, gold)
-	if quote.heal <= 0:
-		return none
-	var healed := health.heal(quote.heal)
+	if _wave_state != &"PREP":
+		return 0
+	if is_full():
+		return 0
+	var amount := floori(health.max_hp * stats.mithril_repair_pct + PCT_EPSILON)
+	var hp_before := health.hp
+	health.heal(amount)
+	var healed := health.hp - hp_before
 	if healed > 0:
-		EventBus.fortress_repaired.emit(healed, REPAIR_SOURCE_GOLD)
-	quote.heal = healed
-	return quote
+		EventBus.fortress_repaired.emit(healed, REPAIR_SOURCE_MITHRIL)
+	return healed
 
 
 ## Emergency repair: heals heal_pct × max_hp at no gold cost. Charges, cooldown and the

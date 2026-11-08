@@ -1,10 +1,9 @@
 class_name BuildService
 extends Node
-## Build, upgrade, sell, rubble clearing and Fortress repair for the panels. Each call checks the wave state, the slot and
-## the gold in the same frame and either finishes or changes nothing. Calls are
+## Build, upgrade, sell, rubble clearing and Fortress repair (paid in Mithril) for the panels. Each call checks the wave state, the slot and
+## the gold or Mithril in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice.
-# TODO(week 9): keep gold spent on Fortress repairs out of the prestige tally
-# TODO(week 10): give all four tower types levels 1 to 36
+# TODO(kiezroth): when tower data for levels 1 to 36 lands, give all four tower types those levels
 
 ## Lock key for Fortress repairs in _busy; slot ids never take this value.
 const FORTRESS_LOCK := &"FORTRESS"
@@ -282,46 +281,38 @@ func _do_sell(slot_id: StringName) -> bool:
 	EventBus.tower_sold.emit(slot_id)
 	return true
 
-## Spends gold and repairs the Fortress in one call. step_ratio as in FortressStats
-## (repair_step_small_pct, repair_step_large_pct); <= 0 repairs to full HP.
-## Returns true when HP was restored and gold spent.
-func repair_fortress(step_ratio: float) -> bool:
+## Spends 1 Mithril and repairs the Fortress in one call. Returns true when HP was restored and the Mithril spent.
+func repair_fortress_mithril() -> bool:
 	if not _begin(FORTRESS_LOCK):
 		return false
-	var ok := _do_repair_fortress(step_ratio)
+	var ok := _do_repair_fortress_mithril()
 	_end(FORTRESS_LOCK)
 	return ok
 
-func _do_repair_fortress(step_ratio: float) -> bool:
+func _do_repair_fortress_mithril() -> bool:
+	if not is_prep():
+		return false
 	var fortress := _fortress()
-	var gold := _gold()
-	if not is_prep() or fortress == null or gold == null:
+	if fortress == null or fortress.is_destroyed():
 		return false
-	if fortress.is_destroyed() or fortress.is_full():
+	if fortress.is_full():
 		return false
-	var quote := fortress.quote_repair_now(step_ratio, gold.gold)
-	if quote.heal <= 0:
-		EventBus.build_denied.emit(&"NOT_ENOUGH_GOLD", gold.shortfall(_min_repair_cost(fortress)))
+	var rs := _run_state()
+	if rs == null:
 		return false
-	var cost: int = quote.cost
-	if not gold.can_afford(cost):
+	if rs.mithril <= 0:
+		EventBus.build_denied.emit(&"NOT_ENOUGH_MITHRIL", 1)
 		return false
-	# Passing the quoted cost as the budget makes the Fortress repair the same step; gold is
-	# taken only after it did, so a refusal leaves the wallet and the HUD untouched.
-	var result := fortress.repair_with_gold(step_ratio, cost)
-	if result.heal <= 0:
+	# The Mithril is taken only after the Fortress healed, so a refusal leaves the wallet and the HUD untouched.
+	var healed := fortress.repair_with_mithril()
+	if healed <= 0:
 		return false
-	var used: int = result.cost
-	# Cannot fail: the Fortress spends at most the cost budget, and can_afford(cost) passed above
-	# inside the same locked transaction. The warning only guards a future change to that contract.
-	if not gold.try_spend(used):
-		push_warning("BuildService: repair cost %d no longer affordable" % used)
+	# Cannot fail: mithril > 0 was checked above inside the same locked transaction. The warning only
+	# guards a future change to that contract.
+	if not rs.spend_mithril(1):
+		push_warning("BuildService: Mithril no longer available after repair")
 		return false
 	return true
-
-## Gold for the smallest repair the panel allows; see Fortress.min_repair_cost.
-func _min_repair_cost(fortress: Fortress) -> int:
-	return Fortress.min_repair_cost(fortress.get_hp(), fortress.get_max_hp(), fortress.stats.repair_gold_per_pct)
 
 ## In combat only Commander mode can change it, and never while paused.
 func can_change_priority() -> bool:
@@ -346,6 +337,9 @@ func _do_set_priority(slot_id: StringName, priority: Enums.TargetPriority) -> bo
 
 func _gold() -> GoldManager:
 	return get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
+
+func _run_state() -> RunState:
+	return get_tree().get_first_node_in_group(&"run_state") as RunState
 
 func _fortress() -> Fortress:
 	return get_tree().get_first_node_in_group(&"fortress") as Fortress
