@@ -146,6 +146,7 @@ extends Node
 @export var skill_slots_active: int = 3
 @export var skill_slots_passive: int = 3
 @export var stat_max_stacks: int = 3
+## Sword Wave flight speed in metres per second, used by the VFX.
 @export var skill_sword_wave_speed: float = 20.0
 ## How far from the commander a Firebomb can land.
 @export var skill_firebomb_cast_range: float = 10.0

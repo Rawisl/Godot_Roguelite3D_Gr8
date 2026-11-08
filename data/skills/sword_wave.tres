@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SkillData" format=3]
+[gd_resource type="Resource" script_class="SkillData" format=3 uid="uid://d2qllu2ivcvxr"]
 
 [ext_resource type="Script" uid="uid://bpmylfxrdyoyc" path="res://common/skill_data.gd" id="1_skill"]
 [ext_resource type="Texture2D" uid="uid://bto2t6kusnm4m" path="res://art/icons/skills/sword_wave_icon.png" id="2_icon"]

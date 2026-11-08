@@ -2,7 +2,7 @@ class_name SwordWaveSkill
 extends RefCounted
 ## Sword Wave: one instant strike along the aim. Hits every enemy in a rectangle that starts at the
 ## caster and runs range metres forward, width metres across. A barricade or a wall in the way
-## shortens the rectangle. The flying slash is only a visual and is drawn by the VFX.
+## shortens the rectangle, and so does the edge of the spawn zone. The flying slash is only a visual and is drawn by the VFX.
 
 const ENEMY_GROUP: StringName = &"enemy"
 const WORLD_MASK := 1
@@ -22,6 +22,7 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 	var base_damage := data.get_value(&"damage", level)
 	var half_width := data.get_value(&"width", level) * 0.5
 	var reach := clear_distance(caster, dir, data.get_value(&"range", level))
+	reach = minf(reach, spawn_zone_distance(caster, dir, reach))
 	var hits := 0
 	for node in caster.get_tree().get_nodes_in_group(ENEMY_GROUP):
 		var enemy := node as Node3D
@@ -38,6 +39,32 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 		enemy.call(&"take_damage", DamageInfo.outgoing(base_damage, damage_mult, data.damage_type, caster, 0.0, dir))
 		hits += 1
 	return hits
+
+
+## Distance along dir to the first spawn zone edge, limit when the path stays clear of every zone.
+static func spawn_zone_distance(caster: Node3D, dir: Vector3, limit: float) -> float:
+	var result := limit
+	for node in caster.get_tree().get_nodes_in_group(&"spawn_zone"):
+		var shape_node := FirebombSkill.find_box_shape(node as Area3D)
+		if shape_node == null:
+			continue
+		var origin := shape_node.to_local(caster.global_position)
+		var local_dir := shape_node.global_transform.basis.inverse() * dir
+		var half := (shape_node.shape as BoxShape3D).size * 0.5
+		var enter := 0.0
+		var leave := INF
+		for axis in [Vector3.AXIS_X, Vector3.AXIS_Z]:
+			if absf(local_dir[axis]) < 0.00001:
+				if absf(origin[axis]) > half[axis]:
+					leave = -1.0
+				continue
+			var t1: float = (-half[axis] - origin[axis]) / local_dir[axis]
+			var t2: float = (half[axis] - origin[axis]) / local_dir[axis]
+			enter = maxf(enter, minf(t1, t2))
+			leave = minf(leave, maxf(t1, t2))
+		if enter <= leave and enter < result:
+			result = enter
+	return result
 
 
 ## How far the wave gets before the first wall or barricade. Towers other than barricades let it through.

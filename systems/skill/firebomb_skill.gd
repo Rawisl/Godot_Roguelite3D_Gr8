@@ -37,12 +37,23 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 	return zone
 
 
+## First box shape among the children of an area, whatever the node is called. Null when there is none.
+static func find_box_shape(area: Area3D) -> CollisionShape3D:
+	if area == null:
+		return null
+	for child in area.get_children():
+		var shape_node := child as CollisionShape3D
+		if shape_node != null and shape_node.shape is BoxShape3D:
+			return shape_node
+	return null
+
+
 ## A point inside the zone box moves to the nearest face of the box; any other point stays.
 static func _push_out_of_zone(area: Area3D, point: Vector3) -> Vector3:
 	if area == null:
 		return point
-	var shape_node := area.get_node_or_null("CollisionShape3D") as CollisionShape3D
-	if shape_node == null or not (shape_node.shape is BoxShape3D):
+	var shape_node := find_box_shape(area)
+	if shape_node == null:
 		return point
 	var local := shape_node.to_local(point)
 	var half := (shape_node.shape as BoxShape3D).size * 0.5

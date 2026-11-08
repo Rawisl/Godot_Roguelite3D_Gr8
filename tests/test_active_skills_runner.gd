@@ -25,7 +25,10 @@ func _ready() -> void:
 	await test_whirlwind()
 	await test_sword_wave()
 	await test_sword_wave_blocked()
+	await test_sword_wave_spawn_zone()
+	await test_sword_wave_levels_and_bulwark()
 	await test_firebomb()
+	await test_firebomb_levels()
 	await test_firebomb_landing()
 	await test_boss_intro_lock()
 	await test_reward_slots()
@@ -181,6 +184,96 @@ func test_sword_wave_blocked() -> void:
 	await get_tree().process_frame
 
 
+func _spawn_zone(center: Vector3, shape_name: String) -> Area3D:
+	var spawn := Area3D.new()
+	spawn.add_to_group(&"spawn_zone")
+	var shape := CollisionShape3D.new()
+	shape.name = shape_name
+	var box := BoxShape3D.new()
+	box.size = Vector3(6, 2, 20)
+	shape.shape = box
+	spawn.add_child(shape)
+	add_child(spawn)
+	spawn.global_position = center
+	return spawn
+
+
+func test_sword_wave_spawn_zone() -> void:
+	print("
+[GROUP 4b] Sword Wave stops at the spawn zone edge")
+	var commander := _new_commander()
+	commander.aim_dir = Vector3.RIGHT
+	var spawn := _spawn_zone(Vector3(5, 0, 0), "SpawnShape")
+	var before_edge := _new_enemy(GRUNT, Vector3(1.5, 0, 0))
+	var inside_zone := _new_enemy(GRUNT, Vector3(3.0, 0, 0))
+	EventBus.reward_picked.emit(&"sword_wave", &"ACTIVE", 1)
+	commander.skill_runner.activate(0)
+	assert_true(before_edge.health.hp < before_edge.health.max_hp, "enemy before the zone edge (x = 2) is hit")
+	assert_true(inside_zone.health.hp == inside_zone.health.max_hp, "enemy inside the zone is not")
+	var clear := SwordWaveSkill.spawn_zone_distance(commander, Vector3.LEFT, 4.0)
+	assert_true(is_equal_approx(clear, 4.0), "aiming away from the zone leaves the range alone")
+	for node in [before_edge, inside_zone, spawn, commander]:
+		node.free()
+	await get_tree().process_frame
+
+
+func test_sword_wave_levels_and_bulwark() -> void:
+	print("
+[GROUP 4c] Sword Wave width by level, armored Bulwark takes 60%")
+	var commander := _new_commander()
+	commander.aim_dir = Vector3.RIGHT
+	var runner: SkillRunner = commander.skill_runner
+	var edge_15 := _new_enemy(GRUNT, Vector3(2.0, 0, 1.7))
+	var edge_19 := _new_enemy(GRUNT, Vector3(2.0, 0, -1.9))
+	for level in [1, 2, 3]:
+		edge_15.health.hp = edge_15.health.max_hp
+		edge_19.health.hp = edge_19.health.max_hp
+		EventBus.reward_picked.emit(&"sword_wave", &"ACTIVE", level)
+		runner.tick(10.0)
+		runner.activate(0)
+		var hit_15 := edge_15.health.hp < edge_15.health.max_hp
+		var hit_19 := edge_19.health.hp < edge_19.health.max_hp
+		assert_true(hit_15 == (level >= 2), "level %d: enemy 1.7 m aside is %s" % [level, "hit" if level >= 2 else "outside"])
+		assert_true(hit_19 == (level == 3), "level %d: enemy 1.9 m aside is %s" % [level, "hit" if level == 3 else "outside"])
+	edge_15.free()
+	edge_19.free()
+	var boss := _new_enemy(BULWARK, Vector3(2.0, 0, 0))
+	boss.current_phase = Enums.BossPhase.ARMORED
+	EventBus.reward_picked.emit(&"sword_wave", &"ACTIVE", 1)
+	runner.tick(10.0)
+	var boss_start := boss.health.hp
+	runner.activate(0)
+	assert_true(boss_start - boss.health.hp == 11, "18 x 0.6 = 10.8 rounds to 11 on the armored Bulwark")
+	boss.free()
+	commander.free()
+	await get_tree().process_frame
+
+
+func test_firebomb_levels() -> void:
+	print("
+[GROUP 5d] Firebomb radius by level")
+	var commander := _new_commander()
+	var runner: SkillRunner = commander.skill_runner
+	commander.aim_point = Vector3(5, 0, 0)
+	var near := _new_enemy(GRUNT, Vector3(7.8, 0, 0))
+	var far := _new_enemy(GRUNT, Vector3(8.3, 0, 0))
+	for level in [1, 2, 3]:
+		near.health.hp = near.health.max_hp
+		far.health.hp = far.health.max_hp
+		EventBus.reward_picked.emit(&"firebomb", &"ACTIVE", level)
+		runner.tick(10.0)
+		runner.activate(0)
+		var zone := _zones()[-1]
+		zone.tick(1.0)
+		assert_true((near.health.hp < near.health.max_hp) == (level >= 2), "level %d: enemy 2.8 m from the centre is %s" % [level, "burnt" if level >= 2 else "outside"])
+		assert_true((far.health.hp < far.health.max_hp) == (level == 3), "level %d: enemy 3.3 m from the centre is %s" % [level, "burnt" if level == 3 else "outside"])
+		zone.free()
+	near.free()
+	far.free()
+	commander.free()
+	await get_tree().process_frame
+
+
 func test_firebomb() -> void:
 	print("\n[GROUP 5] Firebomb: 4 ticks of 6, XP flag, skill damage bonus, Bulwark")
 	var commander := _new_commander()
@@ -255,16 +348,7 @@ func test_firebomb_landing() -> void:
 	var unseen := FirebombSkill.landing_point(commander, Vector3.INF, Vector3.RIGHT)
 	assert_true(unseen.is_equal_approx(Vector3(range_limit, 0, 0)), "no mouse point lands at full range along the aim")
 
-	var spawn := Area3D.new()
-	spawn.add_to_group(&"spawn_zone")
-	var shape := CollisionShape3D.new()
-	shape.name = "CollisionShape3D"
-	var box := BoxShape3D.new()
-	box.size = Vector3(6, 2, 20)
-	shape.shape = box
-	spawn.add_child(shape)
-	add_child(spawn)
-	spawn.global_position = Vector3(8, 0, 0)
+	var spawn := _spawn_zone(Vector3(8, 0, 0), "SpawnShape")
 	var pulled := FirebombSkill.landing_point(commander, Vector3(7, 0, 1))
 	assert_true(is_equal_approx(pulled.x, 5.0) and is_equal_approx(pulled.z, 1.0), "a point inside the spawn zone moves to its edge")
 	var outside := FirebombSkill.landing_point(commander, Vector3(4, 0, 1))
