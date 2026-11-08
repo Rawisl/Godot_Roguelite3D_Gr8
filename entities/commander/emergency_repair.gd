@@ -13,6 +13,7 @@ const FORTRESS_GROUP: StringName = &"fortress"
 
 # Refusal reasons sent on EventBus.emergency_repair_denied, in the order they are checked.
 const REASON_PAUSED: StringName = &"PAUSED"
+const REASON_BOSS_INTRO: StringName = &"BOSS_INTRO"
 const REASON_NOT_COMMANDER: StringName = &"NOT_COMMANDER"
 const REASON_NO_CHARGES: StringName = &"NO_CHARGES"
 const REASON_COOLDOWN: StringName = &"COOLDOWN"
@@ -86,6 +87,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func get_denial_reason() -> StringName:
 	if TimeManager.is_paused or get_tree().paused:
 		return REASON_PAUSED
+	if GameState.wave_state == &"BOSS_INTRO":
+		return REASON_BOSS_INTRO
 	if not _commander_mode:
 		return REASON_NOT_COMMANDER
 	if charges <= 0:
