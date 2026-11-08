@@ -158,14 +158,8 @@ extends Node
 @export var tower_tier3_level: int = 25
 @export var tower_gate_tier2: int = 4
 @export var tower_gate_tier3: int = 8
-@export var xp_base: int = 5
-@export var xp_step: int = 4
 @export var xp_commander_pct: float = 1.0
 @export var xp_tower_only_pct: float = 0.5
-
-
-func get_xp_to_level(level: int) -> int:
-	return xp_base + xp_step * (maxi(1, level) - 1)
 
 
 func get_par_time(spawn_duration: float, is_boss: bool, boss_timer: float = 90.0) -> float:

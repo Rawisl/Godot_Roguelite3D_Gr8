@@ -59,3 +59,13 @@ extends Resource
 @export_group("Status Effects")
 @export var max_stun_duration: float = 1.5
 @export var stun_immunity_duration: float = 3.0
+
+@export_group("Commander Progression")
+## XP needed for the first level, and how much more each next level needs.
+@export var xp_base: int = 5
+@export var xp_step: int = 4
+
+
+## XP needed to go from level - 1 to level.
+func get_xp_to_level(level: int) -> int:
+	return xp_base + xp_step * (maxi(1, level) - 1)
