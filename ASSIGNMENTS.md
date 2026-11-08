@@ -501,7 +501,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH2
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 7 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa Fortress bằng Mithril thay cho sửa bằng gold (MTH-01, 03..06, REP-07): bỏ Fortress.quote_repair/repair, BuildService.repair, repair_gold_per_pct và repair_step_*; thêm mithril_repair_pct 0.20; nguồn fortress_repaired đổi sang MITHRIL; uy tín PRS-01..04
 - Nghiệm thu: Mỗi viên Mithril hồi 20% max hiệu dụng, kẹp max, từ chối khi đầy máu; mithril = 0 thì từ chối; giao dịch nguyên tử; Emergency repair không đổi; cấp Mithril bằng debug để thử
 - Tệp liên quan: entities/fortress/fortress.gd (quote_repair, repair), systems/build/build_service.gd (repair, _min_repair_cost), common/fortress_stats.gd, data/config/fortress_stats.tres
