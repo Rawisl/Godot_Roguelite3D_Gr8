@@ -376,12 +376,14 @@ func can_be_culled() -> bool:
 
 
 func _update_stuck_detection(delta: float) -> void:
-	if is_dead or spawn_grace or current_phase == Enums.BossPhase.TRANSITION:
+	if is_dead or spawn_grace or is_in_spawn_zone or current_phase == Enums.BossPhase.TRANSITION:
 		_stuck_timer = 0.0
 		_last_stuck_progress = -INF
 		return
 
 	if current_state != Enums.EnemyState.ADVANCE and current_state != Enums.EnemyState.CHASE:
+		_last_stuck_progress = nav_progress
+		_stuck_timer = 0.0
 		return
 
 	if current_target == null or not is_instance_valid(current_target):
@@ -392,14 +394,17 @@ func _update_stuck_detection(delta: float) -> void:
 
 	var progress_delta: float = nav_progress - _last_stuck_progress
 	if progress_delta >= GameConfig.stuck_progress_min:
-		_normal_progress_timer += delta
 		_last_stuck_progress = nav_progress
+		_stuck_timer = 0.0
+		_normal_progress_timer += delta
 		if _normal_progress_timer >= GameConfig.stuck_reset_time:
-			_stuck_timer = 0.0
 			_current_stuck_tier = 0
 	else:
-		_normal_progress_timer = 0.0
 		_stuck_timer += delta
+		if _stuck_timer < 1.0:
+			_normal_progress_timer += delta
+		else:
+			_normal_progress_timer = 0.0
 
 	_evaluate_stuck_ladder()
 
