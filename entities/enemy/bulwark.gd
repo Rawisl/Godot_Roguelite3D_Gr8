@@ -483,11 +483,10 @@ func _find_blocking_structure() -> Node3D:
 		var n3d := cand as Node3D
 		if n3d == null or not is_instance_valid(n3d):
 			continue
-		if n3d.is_in_group(&"fortress"):
+		if n3d.is_in_group(&"fortress") or n3d.is_in_group(&"tower_wall"):
 			continue
-		if "slot" in n3d and n3d.slot != null and "zone" in n3d.slot:
-			if n3d.slot.zone == Enums.SlotZone.WALL:
-				continue
+		if "health" in n3d and n3d.health != null and n3d.health.hp <= 0:
+			continue
 		var diff := n3d.global_position - global_position
 		var d := diff.length()
 		if d < min_dist:
