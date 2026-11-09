@@ -8,6 +8,7 @@ const GRUNT_DATA: EnemyData = preload("res://data/enemies/grunt.tres")
 const BRUTE_DATA: EnemyData = preload("res://data/enemies/brute.tres")
 const BULWARK_DATA: BossData = preload("res://data/bosses/bulwark_boss.tres")
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
+const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 
 @export var quit_when_done: bool = true
 
@@ -46,7 +47,7 @@ func _ready() -> void:
 	test_bulwark_stomp_deploy_immunity()
 	await test_wave_5_boss_spawn_and_defeat()
 	await test_reward_pick_flow()
-	test_no_unit_collision_and_fortress_slots()
+	await test_no_unit_collision_and_fortress_slots()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -483,12 +484,26 @@ func test_no_unit_collision_and_fortress_slots() -> void:
 	var fstats: FortressStats = preload("res://data/config/fortress_stats.tres")
 	assert_true(fstats != null and fstats.melee_slots == 12, "Fortress max attackers remains exactly 12")
 
-	# 2. Instantiate 20 Grunts at the exact same location
+	# Instantiate corridor level containing Fortress and navigation mesh
+	var level: Node = LEVEL_SCENE.instantiate()
+	add_child(level)
+	var fortress := get_tree().get_first_node_in_group(&"fortress") as Fortress
+	EventBus.state_changed.emit(&"COMBAT")
+	for _i in range(3):
+		await get_tree().physics_frame
+
+	# 2. Instantiate 20 Grunts at the exact same location walking to the Fortress
 	var grunts: Array[Enemy] = []
+	var spawn_pos := Vector3(-6.0, 0.1, 0.0)
 	for i in range(20):
 		var g := GRUNT_SCENE.instantiate() as Enemy
-		g.position = Vector3(10.0, 0.0, 5.0)
-		add_child(g)
+		g.data = g.data.duplicate()
+		g.data.target_rules = [&"FORTRESS"] as Array[StringName]
+		g.position = spawn_pos
+		level.add_child(g)
+		g.spawn_grace = false
+		g.is_in_spawn_zone = false
+		g.change_state(Enums.EnemyState.ADVANCE)
 		grunts.append(g)
 
 	# 3. Check all grunts have avoidance enabled with layer separation (agents on layer 2, mask excludes layer 2)
@@ -499,21 +514,30 @@ func test_no_unit_collision_and_fortress_slots() -> void:
 			break
 	assert_true(all_layer_separated, "All 20 Grunts have unit-to-unit avoidance disabled via layer separation")
 
-	# 4. Simulate physics process frames
-	for frame in range(10):
+	# 4. Await physics frames while walking to Fortress and assert no separation push
+	var no_separation_push := true
+	var max_attacking := 0
+	for frame in range(250):
+		await get_tree().physics_frame
+		if frame < 30:
+			for g in grunts:
+				if not g.position.is_equal_approx(grunts[0].position):
+					no_separation_push = false
+					break
+		var attacking_count := 0
 		for g in grunts:
-			g._physics_process(0.016)
-
-	# 5. Verify they did not push each other apart (all 20 grunts share the exact same trajectory)
-	var all_share_same_position := true
-	for g in grunts:
-		if not g.position.is_equal_approx(grunts[0].position):
-			all_share_same_position = false
+			if g.current_target == fortress and g.current_state == Enums.EnemyState.ATTACK:
+				attacking_count += 1
+		max_attacking = maxi(max_attacking, attacking_count)
+		if max_attacking == 12:
 			break
-	assert_true(all_share_same_position, "All 20 Grunts share the exact same position without pushing each other apart")
+
+	assert_true(no_separation_push, "All 20 Grunts share the exact same position without pushing each other apart")
+	assert_true(max_attacking > 0 and max_attacking <= 12, "At most 12 Grunts attack the Fortress (got %d attacking)" % max_attacking)
 
 	for g in grunts:
 		g.free()
+	level.free()
 
 
 class MockCommander extends Node3D:
