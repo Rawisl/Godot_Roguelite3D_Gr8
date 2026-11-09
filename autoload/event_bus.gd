@@ -122,7 +122,6 @@ signal tutorial_completed  # emitted when tutorial_done flag is saved
 
 #-----------------------Weapons and Hazard Trial-----------------------#
 signal weapon_gained(weapon_id: StringName)  # RunState -> UI, SummaryPanel, HUD
-signal weapon_equipped(weapon_id: StringName)  # Player & Combat -> UI, Art
 signal hazard_trial_entered(wave_index: int, enemy_types: Array)  # Wave -> UI, Camera, Combat
 signal hazard_trial_exited(result: StringName, kills: int, gold: int, xp: float, mithril: int)  # result: WON | LEFT | DIED
 #------------------------------------------------------#
