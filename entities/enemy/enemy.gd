@@ -91,6 +91,14 @@ var _retarget_timer: float = 0.0
 var _path_timer: float = 0.0
 var _progress_timer: float = 0.0
 var _full_targets_until: Dictionary = {}
+## Avoidance: safe velocity the NavAgent returned for the last desired velocity.
+var _safe_velocity: Vector3 = Vector3.ZERO
+var _has_safe_velocity: bool = false
+var _stall_time: float = 0.0
+## Side of the current sidestep while blocked: +1 left, -1 right, 0 none chosen yet.
+var _sidestep_sign: float = 0.0
+## Stall time at which the sidestep tries the other side.
+var _sidestep_flip_at: float = 1.0
  
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
  
@@ -158,7 +166,12 @@ func _ready() -> void:
 	nav.radius = data.agent_radius if (data != null and "agent_radius" in data) else 0.5
 	nav.path_desired_distance = 1.0
 	nav.target_desired_distance = data.attack_range if data else 1.0
-	nav.avoidance_enabled = false
+	# Steer around Barricades, rubble (NavigationObstacle3D) and static obstacles;
+	# layer 2 is used for units and layer 1 for obstacles, so units do not avoid each other.
+	nav.avoidance_enabled = true
+	nav.avoidance_layers = 2
+	nav.avoidance_mask = 1
+	nav.velocity_computed.connect(_on_velocity_computed)
  
 	_init_spawn_zone_bounds()
 	_play_locomotion_anim()
@@ -331,6 +344,7 @@ func _physics_process(delta: float) -> void:
  
 	_update_timers(delta)
 	_update_state(delta)
+	_apply_avoidance(delta)
 	move_and_slide()
  
 ## Slows the unit by pct (0.2 = 20% slower) for duration game seconds. A new hit only refreshes
@@ -1152,6 +1166,61 @@ func _is_skipped_full_target(t: Node3D) -> bool:
 		_full_targets_until.erase(id)
 		return false
 	return true
+
+## Walking states hand their velocity to the NavAgent and move with the safe velocity it
+## returns (one physics frame later). Standing, attacking and knockback keep their own velocity.
+func _apply_avoidance(delta: float) -> void:
+	if not nav.avoidance_enabled:
+		return
+	var walking := (current_state == Enums.EnemyState.ADVANCE
+		or current_state == Enums.EnemyState.CHASE
+		or current_state == Enums.EnemyState.FRENZY
+		or (current_state == Enums.EnemyState.WAIT and _wait_phase == WaitPhase.WALKING_IN))
+	var desired := Vector3(velocity.x, 0.0, velocity.z) if walking else Vector3.ZERO
+	var blocked := (walking and _has_safe_velocity and desired.length() > 0.1
+		and _safe_velocity.length() < desired.length() * 0.25)
+	_stall_time = _stall_time + delta if blocked else 0.0
+	if not blocked:
+		_sidestep_sign = 0.0
+		_sidestep_flip_at = 1.0
+	var feed := desired
+	# RVO stops when walking straight at an obstacle and never picks a side. Ask for a sideways move instead.
+	var to_dest := Vector3(nav.target_position.x - global_position.x, 0.0, nav.target_position.z - global_position.z)
+	if blocked and to_dest.length() > 1.5:
+		var left := Vector3(-desired.z, 0.0, desired.x).normalized()
+		if _sidestep_sign == 0.0:
+			_sidestep_sign = _pick_sidestep(left, to_dest)
+		elif _stall_time >= _sidestep_flip_at:
+			_sidestep_sign = -_sidestep_sign
+			_sidestep_flip_at += 1.0
+		feed = (desired.normalized() * 0.35 + left * _sidestep_sign).normalized() * desired.length()
+	nav.max_speed = maxf(desired.length(), 0.01)
+	nav.velocity = feed
+	if walking and _has_safe_velocity and desired.length_squared() > 0.001:
+		velocity.x = _safe_velocity.x
+		velocity.z = _safe_velocity.z
+
+
+## +1 = step left, -1 = step right. The side the destination lies on; when it is straight ahead,
+## the side with open navmesh (not a corridor wall).
+func _pick_sidestep(left: Vector3, to_dest: Vector3) -> float:
+	var lean := left.dot(to_dest.normalized())
+	if absf(lean) > 0.3:
+		return signf(lean)
+	var map := nav.get_navigation_map()
+	if NavigationServer3D.map_get_iteration_id(map) == 0:
+		return 1.0  # map not synced yet (first frames)
+	var l := global_position + left * 1.2
+	var r := global_position - left * 1.2
+	var off_l := Vector2(NavigationServer3D.map_get_closest_point(map, l).x - l.x, NavigationServer3D.map_get_closest_point(map, l).z - l.z).length()
+	var off_r := Vector2(NavigationServer3D.map_get_closest_point(map, r).x - r.x, NavigationServer3D.map_get_closest_point(map, r).z - r.z).length()
+	return 1.0 if off_l <= off_r else -1.0
+
+
+func _on_velocity_computed(safe_velocity: Vector3) -> void:
+	_safe_velocity = safe_velocity
+	_has_safe_velocity = true
+
 
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if is_dead or spawn_grace or is_in_spawn_zone:
