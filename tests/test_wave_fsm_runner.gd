@@ -441,8 +441,15 @@ func test_boss_intro_and_boss_combat_flow() -> void:
 	wm.skip_boss_intro()
 	assert_true(wm.wave_state == Enums.WaveState.BOSS_INTRO, "Cannot skip before boss_intro_skip_delay")
 
-	# 3. Advance time past skip_delay
+	# 2b. Pause input does not skip intro even after delay
 	wm._physics_process(1.1)
+	var pause_event := InputEventAction.new()
+	pause_event.action = &"pause"
+	pause_event.pressed = true
+	wm._unhandled_input(pause_event)
+	assert_true(wm.wave_state == Enums.WaveState.BOSS_INTRO, "Pause input does not skip boss intro")
+
+	# 3. Dedicated skip input or skip_boss_intro() enters BOSS_COMBAT
 	wm.skip_boss_intro()
 	assert_true(wm.wave_state == Enums.WaveState.BOSS_COMBAT, "Enters BOSS_COMBAT after skipping intro")
 	assert_true(recorded_states.has(&"BOSS_COMBAT"), "EventBus emitted state_changed(&'BOSS_COMBAT')")

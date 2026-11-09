@@ -256,7 +256,9 @@ func skip_boss_intro() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if wave_state == Enums.WaveState.BOSS_INTRO:
-		if event.is_action_pressed(&"select") or event.is_action_pressed(&"cancel") or (event is InputEventKey and event.pressed and not event.echo):
+		if event.is_action_pressed(&"pause"):
+			return
+		if event.is_action_pressed(&"select") or event.is_action_pressed(&"ui_accept"):
 			if _intro_elapsed >= GameConfig.boss_intro_skip_delay:
 				skip_boss_intro()
 
