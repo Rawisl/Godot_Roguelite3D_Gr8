@@ -168,31 +168,88 @@ func test_bulwark_attributes_and_resistances() -> void:
 	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander initially false")
 
 	var hp_before := bulwark.health.hp
-	bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.PIERCE))
+	var dealt_zero := bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.PIERCE))
+	assert_true(dealt_zero == 0, "take_damage returns 0 on immune hit")
 	assert_true(bulwark.health.hp == hp_before, "Pierce deals zero damage in phase 1")
 	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander remains false on zero damage")
 
-	bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.BLAST))
+	var dealt_normal := bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.BLAST))
+	assert_true(dealt_normal == 100, "take_damage returns actual HP deducted (100)")
 	assert_true(bulwark.current_armor_hp == 1100, "Armor absorbs 100 BLAST damage")
 	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander false for non-commander damage")
 
 	var cmd_damage := DamageInfo.new(100, Enums.DamageType.BLAST)
 	cmd_damage.hit_by_commander = true
-	bulwark.take_damage(cmd_damage)
+	var dealt_cmd := bulwark.take_damage(cmd_damage)
+	assert_true(dealt_cmd == 100, "take_damage returns actual HP deducted (100)")
 	assert_true(bulwark.current_armor_hp == 1000, "Armor absorbs commander BLAST damage")
 	assert_true(bulwark.health.hit_by_commander == true, "Bulwark hit_by_commander true after commander damage")
+
+	# Set up active attack state to verify interruption upon TRANSITION (Item 2)
+	bulwark.current_state = Enums.EnemyState.ATTACK
+	bulwark.attack_windup_timer = 0.8
+	bulwark.attack_recovery_timer = 0.5
+	bulwark.is_attacking_active = true
 
 	var phase_data := {}
 	var on_phase_changed := func(phase: StringName) -> void:
 		phase_data["phase"] = phase
 	EventBus.boss_phase_changed.connect(on_phase_changed)
 
-	bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.BLAST))
+	# Break armor: current_armor_hp is 1000, hit is 2000.
+	# Overkill discarded, actual damage returned should be 1000 (Item 1).
+	var dealt_break := bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.BLAST))
+	assert_true(dealt_break == 1000, "take_damage returns actual damage deducted (1000) instead of incoming 2000 (no phantom damage)")
 	assert_true(bulwark.current_armor_hp == 0, "Armor depleted to 0")
 	assert_true(bulwark.health.hp == 900, "Overkill discarded; core HP intact at 900")
 	assert_true(bulwark.current_phase == Enums.BossPhase.TRANSITION, "Enters TRANSITION phase upon armor break")
 	assert_true(phase_data.get("phase") == &"TRANSITION", "boss_phase_changed emitted TRANSITION")
+
+	# Verify attack state was cancelled upon TRANSITION (Item 2)
+	assert_true(bulwark.attack_windup_timer == 0.0, "attack_windup_timer reset to 0.0 on TRANSITION")
+	assert_true(bulwark.attack_recovery_timer == 0.0, "attack_recovery_timer reset to 0.0 on TRANSITION")
+	assert_true(bulwark.is_attacking_active == false, "is_attacking_active cancelled on TRANSITION")
+	assert_true(bulwark.current_state != Enums.EnemyState.ATTACK, "current_state reset from ATTACK on TRANSITION")
+
+	# Phase TRANSITION resistances (Item 6: 1.5x for all types, no immunities)
+	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) == 1.5, "TRANSITION takes 1.5x PIERCE")
+	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) == 1.5, "TRANSITION takes 1.5x MAGIC")
+	assert_true(bulwark.get_resist(Enums.DamageType.BLAST) == 1.5, "TRANSITION takes 1.5x BLAST")
+	assert_true(bulwark.get_resist(Enums.DamageType.SLASH) == 1.5, "TRANSITION takes 1.5x SLASH")
+
+	# Simulate 2.5s transition elapsed via _physics_process (Item 6)
+	var dt: float = 0.1
+	for i in range(25):
+		bulwark._physics_process(dt)
+
+	assert_true(bulwark.current_phase == Enums.BossPhase.EXPOSED, "Transitions from TRANSITION to EXPOSED after 2.5s")
+	assert_true(phase_data.get("phase") == &"EXPOSED", "boss_phase_changed emitted EXPOSED")
 	EventBus.boss_phase_changed.disconnect(on_phase_changed)
+
+	# Phase 2 speed multiplier application (Item 6: 1.2x)
+	assert_true(is_equal_approx(bulwark.speed_multiplier, 1.2), "Phase 2 speed multiplier 1.2 applied in EXPOSED")
+
+	# Phase EXPOSED resistances (Item 6: 1.25x for all types, no immunities)
+	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) == 1.25, "EXPOSED takes 1.25x PIERCE")
+	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) == 1.25, "EXPOSED takes 1.25x MAGIC")
+	assert_true(bulwark.get_resist(Enums.DamageType.BLAST) == 1.25, "EXPOSED takes 1.25x BLAST")
+	assert_true(bulwark.get_resist(Enums.DamageType.SLASH) == 1.25, "EXPOSED takes 1.25x SLASH")
+
+	# Boss death and boss_defeated signal emission upon core HP depletion (Item 6)
+	var death_event := {"defeated": false}
+	var on_boss_defeated := func() -> void:
+		death_event["defeated"] = true
+	EventBus.boss_defeated.connect(on_boss_defeated)
+
+	# Fatal core hit: current_core_hp is 900. Hit with 2000 TRUE damage.
+	# Actual damage deducted should be 900, not 2000 (Item 1).
+	var fatal_dealt := bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.TRUE))
+	assert_true(fatal_dealt == 900, "take_damage returns remaining core HP (900) instead of incoming 2000 on fatal hit")
+	assert_true(bulwark.current_core_hp == 0, "Core HP reduced to 0")
+	assert_true(bulwark.health.hp == 0, "Total health reduced to 0")
+	assert_true(bulwark.is_dead == true, "Boss marked as dead")
+	assert_true(death_event["defeated"] == true, "EventBus.boss_defeated signal emitted upon core HP depletion")
+	EventBus.boss_defeated.disconnect(on_boss_defeated)
 
 	bulwark.free()
 
@@ -299,6 +356,41 @@ func test_bulwark_anti_stuck_ladder_and_cull_protection() -> void:
 		bulwark.nav_progress += 1.6 * tick_dt
 		bulwark._update_stuck_detection(tick_dt)
 	assert_true(bulwark._current_stuck_tier == 0, "Stuck tier cleared after 10s of sustained progress")
+
+	# 6. Obstacle search direction and distance constraints (Item 4)
+	barricade.position = Vector3(25.0, 0.0, 0.0) # Behind boss at x=20
+	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
+	var rear_obstacle := bulwark._find_blocking_structure()
+	assert_true(rear_obstacle == null, "Obstacle search ignores structures behind the boss")
+
+	barricade.position = Vector3(10.0, 0.0, 0.0) # Ahead at distance 10m (> 8.0m cap)
+	var distant_obstacle := bulwark._find_blocking_structure()
+	assert_true(distant_obstacle == null, "Obstacle search ignores structures beyond 8.0m distance cap")
+
+	barricade.position = Vector3(16.0, 0.0, 0.0) # Ahead at distance 4m (<= 8.0m cap)
+	var valid_obstacle := bulwark._find_blocking_structure()
+	assert_true(valid_obstacle == barricade, "Obstacle search detects structure ahead within 8.0m")
+
+	# 7. Hop direction when target is behind the boss (Item 3)
+	var rear_target := Node3D.new()
+	rear_target.position = Vector3(35.0, 0.0, 0.0) # Commander kiting behind boss
+	add_child(rear_target)
+	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
+	bulwark.current_target = rear_target
+	bulwark._resolve_stuck_tier_3()
+	assert_true(bulwark.global_position.x < 20.0, "Tier 3 hop leaps forward toward Fortress, not backwards toward rear target")
+	rear_target.free()
+
+	# 8. Fortress boundary clamp survives navmesh map_get_closest_point snapping (Item 3)
+	var test_fortress := Node3D.new()
+	test_fortress.position = Vector3(-6.5, 0.0, 0.0)
+	test_fortress.add_to_group(&"fortress")
+	add_child(test_fortress)
+	bulwark.global_position = Vector3(-5.0, 0.0, 0.0)
+	bulwark.current_target = test_fortress
+	bulwark._resolve_stuck_tier_3()
+	assert_true(bulwark.global_position.x >= -6.5, "Tier 3 hop position does not exceed Fortress attack point boundary")
+	test_fortress.free()
 
 	EventBus.stuck_event_logged.disconnect(on_stuck)
 	wall_tower.free()
