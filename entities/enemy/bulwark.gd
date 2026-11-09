@@ -45,6 +45,11 @@ var is_enraged: bool = false
 var _transition_timer: float = 0.0
 var _cached_boss_melee_point: Node3D = null
 
+var _stuck_timer: float = 0.0
+var _last_stuck_progress: float = -INF
+var _normal_progress_timer: float = 0.0
+var _current_stuck_tier: int = 0
+
 
 func _ready() -> void:
 	super._ready()
@@ -94,6 +99,7 @@ func _physics_process(delta: float) -> void:
 			_on_transition_finished()
 		return
 	super._physics_process(delta)
+	_update_stuck_detection(delta)
 
 
 func get_resist(dmg_type: Enums.DamageType) -> float:
@@ -362,3 +368,137 @@ func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
 	var diff := target.global_position - from_pos
 	diff.y = 0.0
 	return diff.length()
+
+
+func can_be_recycled() -> bool:
+	return false
+
+
+func can_be_culled() -> bool:
+	return false
+
+
+func _update_stuck_detection(delta: float) -> void:
+	if is_dead or spawn_grace or current_phase == Enums.BossPhase.TRANSITION:
+		_stuck_timer = 0.0
+		_last_stuck_progress = -INF
+		return
+
+	if current_state != Enums.EnemyState.ADVANCE and current_state != Enums.EnemyState.CHASE:
+		return
+
+	if current_target == null or not is_instance_valid(current_target):
+		return
+
+	if _last_stuck_progress == -INF:
+		_last_stuck_progress = nav_progress
+
+	var progress_delta: float = nav_progress - _last_stuck_progress
+	if progress_delta >= GameConfig.stuck_progress_min:
+		_normal_progress_timer += delta
+		_last_stuck_progress = nav_progress
+		if _normal_progress_timer >= GameConfig.stuck_reset_time:
+			_stuck_timer = 0.0
+			_current_stuck_tier = 0
+	else:
+		_normal_progress_timer = 0.0
+		_stuck_timer += delta
+
+	_evaluate_stuck_ladder()
+
+
+func _evaluate_stuck_ladder() -> void:
+	var wave_idx: int = _get_wave_index()
+	if _stuck_timer >= GameConfig.boss_stuck_time + GameConfig.boss_stuck_step_time * 2.0:
+		if _current_stuck_tier < 3:
+			_current_stuck_tier = 3
+			EventBus.stuck_event_logged.emit(3, &"bulwark", global_position, wave_idx)
+			_resolve_stuck_tier_3()
+			_stuck_timer = 0.0
+			_current_stuck_tier = 0
+			_last_stuck_progress = nav_progress
+	elif _stuck_timer >= GameConfig.boss_stuck_time + GameConfig.boss_stuck_step_time:
+		if _current_stuck_tier < 2:
+			_current_stuck_tier = 2
+			EventBus.stuck_event_logged.emit(2, &"bulwark", global_position, wave_idx)
+			_resolve_stuck_tier_2()
+	elif _stuck_timer >= GameConfig.boss_stuck_time:
+		if _current_stuck_tier < 1:
+			_current_stuck_tier = 1
+			EventBus.stuck_event_logged.emit(1, &"bulwark", global_position, wave_idx)
+			_resolve_stuck_tier_1()
+
+
+func _resolve_stuck_tier_1() -> void:
+	if current_target != null and is_instance_valid(current_target):
+		nav.target_position = _get_attack_point(current_target)
+
+
+func _resolve_stuck_tier_2() -> void:
+	var obstacle := _find_blocking_structure()
+	if obstacle != null:
+		current_target = obstacle
+		nav.target_position = obstacle.global_position
+		if _get_distance_to_target(obstacle, global_position) <= stomp_radius:
+			execute_stomp()
+
+
+func _resolve_stuck_tier_3() -> void:
+	var hop_dist: float = GameConfig.boss_hop_radius
+	var forward_dir := Vector3.LEFT
+	if current_target != null and is_instance_valid(current_target):
+		var diff := current_target.global_position - global_position
+		diff.y = 0.0
+		if diff.length_squared() > 0.01:
+			forward_dir = diff.normalized()
+	var target_hop_pos := global_position + forward_dir * hop_dist
+	var tree := get_tree()
+	if tree != null:
+		var fortress := tree.get_first_node_in_group(&"fortress") as Node3D
+		if fortress != null:
+			if forward_dir.x < 0.0 and target_hop_pos.x < fortress.global_position.x:
+				target_hop_pos.x = fortress.global_position.x + 1.0
+	var map := nav.get_navigation_map()
+	if map.is_valid():
+		var nav_pt := NavigationServer3D.map_get_closest_point(map, target_hop_pos)
+		global_position = nav_pt
+	else:
+		global_position = target_hop_pos
+	if current_target != null and is_instance_valid(current_target):
+		nav.target_position = _get_attack_point(current_target)
+
+
+func _find_blocking_structure() -> Node3D:
+	var tree := get_tree()
+	if tree == null:
+		return null
+	var best: Node3D = null
+	var min_dist: float = INF
+	var candidates: Array[Node] = []
+	candidates.append_array(tree.get_nodes_in_group(&"barricade"))
+	candidates.append_array(tree.get_nodes_in_group(&"tower"))
+	for cand in candidates:
+		var n3d := cand as Node3D
+		if n3d == null or not is_instance_valid(n3d):
+			continue
+		if n3d.is_in_group(&"fortress"):
+			continue
+		if "slot" in n3d and n3d.slot != null and "zone" in n3d.slot:
+			if n3d.slot.zone == Enums.SlotZone.WALL:
+				continue
+		var diff := n3d.global_position - global_position
+		var d := diff.length()
+		if d < min_dist:
+			min_dist = d
+			best = n3d
+	return best
+
+
+func _get_wave_index() -> int:
+	var tree := get_tree()
+	if tree != null and tree.current_scene != null:
+		var wm := tree.current_scene.find_child("WaveManager", true, false)
+		if wm != null and "current_wave" in wm:
+			return int(wm.current_wave)
+	return spawn_wave if spawn_wave > 0 else 1
+

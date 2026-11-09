@@ -38,6 +38,7 @@ func _ready() -> void:
 	await test_commander_recall_clears_aggro()
 	test_bulwark_attributes_and_resistances()
 	test_bulwark_fortress_targeting_point()
+	test_bulwark_anti_stuck_ladder_and_cull_protection()
 	await test_bulwark_stomp_telegraph_and_shake()
 	test_bulwark_stomp_no_friendly_fire()
 	test_bulwark_stomp_commander_interaction()
@@ -217,6 +218,70 @@ func test_bulwark_fortress_targeting_point() -> void:
 	bulwark.free()
 	boss_point.free()
 	fortress.free()
+
+
+func test_bulwark_anti_stuck_ladder_and_cull_protection() -> void:
+	print("\n[GROUP 6B] Bulwark Anti-Stuck Ladder & Protection")
+	var grunt := GRUNT_SCENE.instantiate() as Enemy
+	var bulwark := BULWARK_SCENE.instantiate() as Bulwark
+	add_child(grunt)
+	add_child(bulwark)
+
+	assert_true(grunt.can_be_recycled() == true, "Normal enemy can be recycled")
+	assert_true(grunt.can_be_culled() == true, "Normal enemy can be culled")
+	assert_true(bulwark.can_be_recycled() == false, "Boss cannot be recycled")
+	assert_true(bulwark.can_be_culled() == false, "Boss cannot be culled")
+
+	grunt.free()
+
+	var target_dummy := Node3D.new()
+	target_dummy.position = Vector3(0.0, 0.0, 0.0)
+	add_child(target_dummy)
+
+	var barricade := Node3D.new()
+	barricade.position = Vector3(18.0, 0.0, 0.0)
+	barricade.add_to_group(&"barricade")
+	add_child(barricade)
+
+	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
+	bulwark.current_target = target_dummy
+	bulwark.current_state = Enums.EnemyState.ADVANCE
+	bulwark.spawn_grace = false
+	bulwark.nav_progress = 10.0
+
+	var logged_tiers: Array[int] = []
+	var on_stuck := func(tier: int, _enemy_type: StringName, _pos: Vector3, _wave_idx: int):
+		logged_tiers.append(tier)
+	EventBus.stuck_event_logged.connect(on_stuck)
+
+	bulwark._update_stuck_detection(1.0)
+	assert_true(logged_tiers.is_empty(), "No stuck events before threshold")
+
+	bulwark._update_stuck_detection(4.0)
+	assert_true(logged_tiers.has(1), "Tier 1 event logged at 5s")
+	assert_true(bulwark._current_stuck_tier == 1, "Current stuck tier is 1")
+
+	bulwark._update_stuck_detection(5.0)
+	assert_true(logged_tiers.has(2), "Tier 2 event logged at 10s")
+	assert_true(bulwark._current_stuck_tier == 2, "Current stuck tier is 2")
+	assert_true(bulwark.current_target == barricade, "Tier 2 switches target to blocking structure")
+
+	var pos_before_hop := bulwark.global_position
+	bulwark._update_stuck_detection(5.0)
+	assert_true(logged_tiers.has(3), "Tier 3 event logged at 15s")
+	assert_true(bulwark._current_stuck_tier == 0, "Stuck tier resets to 0 after Tier 3 hop")
+	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer resets to 0 after Tier 3 hop")
+	assert_true(bulwark.global_position.distance_to(pos_before_hop) > 0.0, "Bulwark position hopped forward")
+
+	bulwark._stuck_timer = 3.0
+	bulwark.nav_progress += 2.0
+	bulwark._update_stuck_detection(GameConfig.stuck_reset_time)
+	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer cleared after sustained progress")
+
+	EventBus.stuck_event_logged.disconnect(on_stuck)
+	barricade.free()
+	target_dummy.free()
+	bulwark.free()
 
 
 func test_bulwark_stomp_telegraph_and_shake() -> void:
