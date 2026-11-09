@@ -428,7 +428,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT1
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Pha giáp Bulwark (BOSS-09..14)
 - Nghiệm thu: Chuyển pha đúng một lần, sát thương dư bị bỏ
 - Cần xong trước: W9-NG3, W8-KT2
@@ -452,7 +452,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT4
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thang kẹt boss BOSS-04 rút gọn theo v2.0 (bậc 1 tính lại đường, bậc 2 phá Barricade hoặc tower trên grid, bậc 3 hop; bỏ bậc xuyên hộ tống)
 - Nghiệm thu: Boss không bao giờ bị recycle hoặc cull
 - ID SRS: BOSS-04
