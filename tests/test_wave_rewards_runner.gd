@@ -81,10 +81,10 @@ func test_xp_tracker_level_curve_and_caps() -> void:
 
 	assert_true(xp_tracker.commander_level == 0, "Commander starts at level 0")
 	assert_true(xp_tracker.pending_picks == 0, "pending_picks starts at 0")
-	assert_true(GameConfig.get_xp_to_level(1) == 5, "Level 1 requires 5 XP")
-	assert_true(GameConfig.get_xp_to_level(2) == 9, "Level 2 requires 9 XP")
-	assert_true(GameConfig.get_xp_to_level(3) == 13, "Level 3 requires 13 XP")
-	assert_true(GameConfig.get_xp_to_level(4) == 17, "Level 4 requires 17 XP")
+	assert_true(xp_tracker.stats.get_xp_to_level(1) == 5, "Level 1 requires 5 XP")
+	assert_true(xp_tracker.stats.get_xp_to_level(2) == 9, "Level 2 requires 9 XP")
+	assert_true(xp_tracker.stats.get_xp_to_level(3) == 13, "Level 3 requires 13 XP")
+	assert_true(xp_tracker.stats.get_xp_to_level(4) == 17, "Level 4 requires 17 XP")
 
 	var levels_emitted: Array[int] = []
 	var on_level_up := func(lv: int, _picks: int): levels_emitted.append(lv)

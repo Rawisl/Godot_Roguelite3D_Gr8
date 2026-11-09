@@ -1,10 +1,44 @@
 [gd_resource type="Resource" script_class="TowerData" format=3 uid="uid://bakx85mq5louq"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
+[ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="2_vbqcx"]
 [ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_l87fw"]
 [ext_resource type="Resource" uid="uid://bx3oq00w6v46p" path="res://data/towers/barricade_l1.tres" id="2_uhiiq"]
-[ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="2_vbqcx"]
 [ext_resource type="Resource" uid="uid://btes1ffisudw3" path="res://data/towers/barricade_l2.tres" id="3_edo0w"]
 [ext_resource type="Resource" uid="uid://cljcqjf3fgm4r" path="res://data/towers/barricade_l3.tres" id="4_q017b"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l4.tres" id="l4"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l5.tres" id="l5"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l6.tres" id="l6"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l7.tres" id="l7"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l8.tres" id="l8"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l9.tres" id="l9"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l10.tres" id="l10"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l11.tres" id="l11"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l12.tres" id="l12"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l13.tres" id="l13"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l14.tres" id="l14"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l15.tres" id="l15"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l16.tres" id="l16"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l17.tres" id="l17"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l18.tres" id="l18"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l19.tres" id="l19"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l20.tres" id="l20"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l21.tres" id="l21"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l22.tres" id="l22"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l23.tres" id="l23"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l24.tres" id="l24"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l25.tres" id="l25"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l26.tres" id="l26"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l27.tres" id="l27"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l28.tres" id="l28"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l29.tres" id="l29"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l30.tres" id="l30"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l31.tres" id="l31"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l32.tres" id="l32"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l33.tres" id="l33"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l34.tres" id="l34"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l35.tres" id="l35"]
+[ext_resource type="Resource" path="res://data/towers/barricade_l36.tres" id="l36"]
 
 [resource]
 script = ExtResource("2_vbqcx")
@@ -12,5 +46,5 @@ id = &"barricade"
 display_name = "tower.barricade"
 allowed_zones = Array[int]([1])
 targets_ground = false
-levels = Array[ExtResource("1_l87fw")]([ExtResource("2_uhiiq"), ExtResource("3_edo0w"), ExtResource("4_q017b")])
+levels = Array[ExtResource("1_l87fw")]([ExtResource("2_uhiiq"), ExtResource("3_edo0w"), ExtResource("4_q017b"), ExtResource("l4"), ExtResource("l5"), ExtResource("l6"), ExtResource("l7"), ExtResource("l8"), ExtResource("l9"), ExtResource("l10"), ExtResource("l11"), ExtResource("l12"), ExtResource("l13"), ExtResource("l14"), ExtResource("l15"), ExtResource("l16"), ExtResource("l17"), ExtResource("l18"), ExtResource("l19"), ExtResource("l20"), ExtResource("l21"), ExtResource("l22"), ExtResource("l23"), ExtResource("l24"), ExtResource("l25"), ExtResource("l26"), ExtResource("l27"), ExtResource("l28"), ExtResource("l29"), ExtResource("l30"), ExtResource("l31"), ExtResource("l32"), ExtResource("l33"), ExtResource("l34"), ExtResource("l35"), ExtResource("l36")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"

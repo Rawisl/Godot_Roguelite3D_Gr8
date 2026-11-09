@@ -1,7 +1,48 @@
 [gd_resource type="Resource" script_class="CharacterStats" format=3 uid="uid://dsl0yhckk2q4f"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
 [ext_resource type="Script" uid="uid://dwmou5l5vufl6" path="res://common/character_stats.gd" id="1_6r4ea"]
 
 [resource]
 script = ExtResource("1_6r4ea")
+commander_max_hp = 100
+armor_pct = 0
+prep_heal_pct = 0.35
+commander_low_hp_warning_pct = 0.25
+fall_damage_pct = 0.15
+move_speed = 6
+dodge_distance = 4
+dodge_iframe = 0.3
+dodge_cooldown = 1.5
+sword_damage = 20
+sword_damage_type = 2
+sword_range = 2.2
+sword_arc_deg = 120
+sword_max_targets = 3
+attack_interval = 0.45
+combo_hit3_mult = 1.5
+combo_window = 0.35
+combo_hit3_knockback = 1.5
+input_buffer_time = 0.15
+skill_cooldown = 12
+skill_animation_time = 0.5
+battle_cry_radius = 6
+battle_cry_duration = 4
+battle_cry_damage_mult = 0.7
+mode_switch_cooldown = 5
+recall_time_in_zone = 0.6
+recall_time_outside = 3
+deploy_invuln_time = 0.6
+deploy_point_search_radius = 4
+deploy_clear_radius = 0.8
+deploy_shockwave_radius = 3
+deploy_shockwave_distance = 2
+heal_hold_time = 1
+heal_range = 3
+heal_drain_rate = 20
+heal_rate_base = 10
+max_stun_duration = 1.5
+stun_immunity_duration = 3
+xp_base = 5
+xp_step = 4
 metadata/_custom_type_script = "uid://dwmou5l5vufl6"

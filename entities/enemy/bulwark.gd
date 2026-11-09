@@ -45,6 +45,11 @@ var is_enraged: bool = false
 var _transition_timer: float = 0.0
 var _cached_boss_melee_point: Node3D = null
 
+var _stuck_timer: float = 0.0
+var _last_stuck_progress: float = -INF
+var _normal_progress_timer: float = 0.0
+var _current_stuck_tier: int = 0
+
 
 func _ready() -> void:
 	super._ready()
@@ -88,11 +93,13 @@ func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave
 func _physics_process(delta: float) -> void:
 	if current_phase == Enums.BossPhase.TRANSITION:
 		velocity = Vector3.ZERO
+		_tick_status(delta)
 		_transition_timer -= delta
 		if _transition_timer <= 0.0:
 			_on_transition_finished()
 		return
 	super._physics_process(delta)
+	_update_stuck_detection(delta)
 
 
 func get_resist(dmg_type: Enums.DamageType) -> float:
@@ -121,41 +128,46 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 
 	var effective_damage: int = DamageCalc.resolve(info, self)
 	if effective_damage <= 0:
+		if info.immune and info.is_from_commander():
+			EventBus.damage_immune.emit(self, info)
 		return 0
 
 	if effective_damage >= 1 and health != null and not health.hit_by_commander:
 		if info != null and (info.hit_by_commander or info.is_from_commander()):
 			health.hit_by_commander = true
 
+	var actual_damage := 0
 	match current_phase:
 		Enums.BossPhase.ARMORED:
 			if effective_damage >= current_armor_hp:
-				var absorbed := current_armor_hp
+				actual_damage = current_armor_hp
 				current_armor_hp = 0
 				if health != null:
 					health.hp = current_core_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
-					health.damaged.emit(absorbed, info)
+					health.damaged.emit(actual_damage, info)
 				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 				_start_armor_break_transition()
 			else:
-				current_armor_hp -= effective_damage
+				actual_damage = effective_damage
+				current_armor_hp -= actual_damage
 				if health != null:
 					health.hp = current_core_hp + current_armor_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
-					health.damaged.emit(effective_damage, info)
+					health.damaged.emit(actual_damage, info)
 				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 
 		Enums.BossPhase.TRANSITION, Enums.BossPhase.EXPOSED:
-			current_core_hp = maxi(0, current_core_hp - effective_damage)
+			actual_damage = mini(current_core_hp, effective_damage)
+			current_core_hp = maxi(0, current_core_hp - actual_damage)
 			if health != null:
 				health.hp = current_core_hp
 				health.hp_changed.emit(health.hp, health.max_hp)
-				health.damaged.emit(effective_damage, info)
+				health.damaged.emit(actual_damage, info)
 				if current_core_hp == 0:
 					health.died.emit()
 			EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
-	return effective_damage
+	return actual_damage
 
 
 func _start_armor_break_transition() -> void:
@@ -163,6 +175,14 @@ func _start_armor_break_transition() -> void:
 		return
 	phase_broken = true
 	current_phase = Enums.BossPhase.TRANSITION
+
+	attack_windup_timer = 0.0
+	attack_recovery_timer = 0.0
+	is_attacking_active = false
+	if anim_player != null and is_instance_valid(anim_player):
+		anim_player.stop()
+	if current_state == Enums.EnemyState.ATTACK:
+		current_state = Enums.EnemyState.ADVANCE
 
 	var boss_data := data as BossData
 	_transition_timer = boss_data.transition_duration if boss_data != null else 2.5
@@ -179,6 +199,7 @@ func _on_transition_finished() -> void:
 		speed_multiplier = wave_speed_mult * boss_data.phase2_speed_mult
 		if is_enraged:
 			speed_multiplier *= GameConfig.enrage_speed_mult
+	_play_locomotion_anim()
 	EventBus.boss_phase_changed.emit(&"EXPOSED")
 	EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, &"EXPOSED")
 
@@ -225,7 +246,7 @@ func _play_locomotion_anim() -> void:
 	var walk_clip: StringName = data.anim_walk if (data != null and not data.anim_walk.is_empty()) else &"move/Walking_A"
 	if anim_player.has_animation(walk_clip):
 		var base_speed: float = data.move_speed if data != null else 1.6
-		var target_speed: float = base_speed * speed_multiplier
+		var target_speed: float = base_speed * speed_multiplier * get_slow_factor()
 		anim_player.speed_scale = target_speed / WALK_ANIM_BASE_SPEED
 		anim_player.play(walk_clip)
 
@@ -359,3 +380,152 @@ func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
 	var diff := target.global_position - from_pos
 	diff.y = 0.0
 	return diff.length()
+
+
+func can_be_recycled() -> bool:
+	return false
+
+
+func can_be_culled() -> bool:
+	return false
+
+
+func _update_stuck_detection(delta: float) -> void:
+	if is_dead or spawn_grace or is_in_spawn_zone or current_phase == Enums.BossPhase.TRANSITION:
+		_stuck_timer = 0.0
+		_last_stuck_progress = -INF
+		return
+
+	if current_state != Enums.EnemyState.ADVANCE and current_state != Enums.EnemyState.CHASE:
+		_last_stuck_progress = nav_progress
+		_stuck_timer = 0.0
+		return
+
+	if current_target == null or not is_instance_valid(current_target):
+		return
+
+	if _last_stuck_progress == -INF:
+		_last_stuck_progress = nav_progress
+
+	var progress_delta: float = nav_progress - _last_stuck_progress
+	if progress_delta >= GameConfig.stuck_progress_min:
+		_last_stuck_progress = nav_progress
+		_stuck_timer = 0.0
+		_normal_progress_timer += delta
+		if _normal_progress_timer >= GameConfig.stuck_reset_time:
+			_current_stuck_tier = 0
+	else:
+		_stuck_timer += delta
+		if _stuck_timer < GameConfig.stuck_detect_time:
+			_normal_progress_timer += delta
+		else:
+			_normal_progress_timer = 0.0
+
+	_evaluate_stuck_ladder()
+
+
+func _evaluate_stuck_ladder() -> void:
+	var wave_idx: int = _get_wave_index()
+	if _stuck_timer >= GameConfig.boss_stuck_time + GameConfig.boss_stuck_step_time * 2.0:
+		if _current_stuck_tier < 3:
+			_current_stuck_tier = 3
+			EventBus.stuck_event_logged.emit(3, &"bulwark", global_position, wave_idx)
+			_resolve_stuck_tier_3()
+			_stuck_timer = 0.0
+			_current_stuck_tier = 0
+			_last_stuck_progress = nav_progress
+	elif _stuck_timer >= GameConfig.boss_stuck_time + GameConfig.boss_stuck_step_time:
+		if _current_stuck_tier < 2:
+			_current_stuck_tier = 2
+			EventBus.stuck_event_logged.emit(2, &"bulwark", global_position, wave_idx)
+			_resolve_stuck_tier_2()
+	elif _stuck_timer >= GameConfig.boss_stuck_time:
+		if _current_stuck_tier < 1:
+			_current_stuck_tier = 1
+			EventBus.stuck_event_logged.emit(1, &"bulwark", global_position, wave_idx)
+			_resolve_stuck_tier_1()
+
+
+func _resolve_stuck_tier_1() -> void:
+	if current_target != null and is_instance_valid(current_target):
+		nav.target_position = _get_attack_point(current_target)
+
+
+func _resolve_stuck_tier_2() -> void:
+	var obstacle := _find_blocking_structure()
+	if obstacle != null:
+		current_target = obstacle
+		nav.target_position = obstacle.global_position
+		if _get_distance_to_target(obstacle, global_position) <= stomp_radius:
+			execute_stomp()
+
+
+func _resolve_stuck_tier_3() -> void:
+	var hop_dist: float = GameConfig.boss_hop_radius
+	var forward_dir := Vector3.LEFT
+	var tree := get_tree()
+	var has_fortress := false
+	var fortress_pt := Vector3.ZERO
+	if tree != null:
+		var fortress := tree.get_first_node_in_group(&"fortress") as Node3D
+		if fortress != null and is_instance_valid(fortress):
+			has_fortress = true
+			fortress_pt = _get_attack_point(fortress)
+			var to_fortress := fortress_pt - global_position
+			to_fortress.y = 0.0
+			if to_fortress.length_squared() > 0.01:
+				forward_dir = to_fortress.normalized()
+	if forward_dir.x > 0.0:
+		forward_dir = Vector3.LEFT
+
+	var target_hop_pos := global_position + forward_dir * hop_dist
+	if has_fortress and forward_dir.x < 0.0 and target_hop_pos.x < fortress_pt.x:
+		target_hop_pos.x = fortress_pt.x
+
+	var final_pos := target_hop_pos
+	var map := nav.get_navigation_map()
+	if map.is_valid():
+		final_pos = NavigationServer3D.map_get_closest_point(map, target_hop_pos)
+		if has_fortress and forward_dir.x < 0.0 and final_pos.x < fortress_pt.x:
+			final_pos.x = fortress_pt.x
+	global_position = final_pos
+	if current_target != null and is_instance_valid(current_target):
+		nav.target_position = _get_attack_point(current_target)
+
+
+func _find_blocking_structure(max_distance: float = 8.0) -> Node3D:
+	var tree := get_tree()
+	if tree == null:
+		return null
+	var best: Node3D = null
+	var min_dist: float = max_distance
+	var candidates: Array[Node] = []
+	candidates.append_array(tree.get_nodes_in_group(&"barricade"))
+	candidates.append_array(tree.get_nodes_in_group(&"tower"))
+	for cand in candidates:
+		var n3d := cand as Node3D
+		if n3d == null or not is_instance_valid(n3d):
+			continue
+		if n3d.is_in_group(&"fortress") or n3d.is_in_group(&"tower_wall"):
+			continue
+		if "health" in n3d and n3d.health != null and n3d.health.hp <= 0:
+			continue
+		if not _is_target_ahead(n3d.global_position):
+			continue
+		var diff := n3d.global_position - global_position
+		diff.y = 0.0
+		var d := diff.length()
+		if d <= min_dist:
+			min_dist = d
+			best = n3d
+	return best
+
+
+func _get_wave_index() -> int:
+	var tree := get_tree()
+	if tree != null and tree.current_scene != null:
+		var wm := tree.current_scene.find_child("WaveManager", true, false)
+		if wm != null and "current_wave" in wm:
+			return int(wm.current_wave)
+	return spawn_wave if spawn_wave > 0 else 1
+
