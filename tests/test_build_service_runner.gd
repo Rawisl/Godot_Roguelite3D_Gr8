@@ -194,9 +194,11 @@ func test_upgrade_to_max() -> void:
 	assert_true(CANNON.get_total_cost(3) == 390, "Cannon level 3 total is 390 (price table)")
 	assert_true(BARRICADE.get_total_cost(3) == 190, "Barricade level 3 total is 190 (price table)")
 	assert_true(before - _gold.gold == ARROW.levels[1].build_cost + ARROW.levels[2].build_cost, "gold dropped by both upgrade prices")
+	_gold.gold = 100000
+	assert_true(_upgrade_to(&"W1", GameConfig.tower_max_level), "Arrow upgrades up to tower_max_level")
 	assert_true(_service.get_upgrade_block_reason(&"W1") == &"MAX_LEVEL", "reason is MAX_LEVEL at the top")
 	var g := _gold.gold
-	assert_true(not _service.upgrade(&"W1"), "third upgrade refused")
+	assert_true(not _service.upgrade(&"W1"), "upgrade past tower_max_level refused")
 	assert_true(_gold.gold == g, "gold unchanged after the refused upgrade")
 
 func test_sell_refund() -> void:
@@ -607,9 +609,10 @@ func test_clear_rubble_lock() -> void:
 
 ## Total XP a fresh tracker needs to reach the given commander level.
 func _xp_to_reach(level: int) -> float:
+	var stats: CharacterStats = load("res://data/config/commander_stats.tres")
 	var total := 0.0
 	for n in range(1, level + 1):
-		total += float(GameConfig.get_xp_to_level(n))
+		total += float(stats.get_xp_to_level(n))
 	return total
 
 func test_real_xp_tracker() -> void:
@@ -639,7 +642,8 @@ func test_real_xp_tracker() -> void:
 	assert_true(_gold.gold == g, "TC3: gold unchanged")
 
 	# Exactly on the tier 2 gate.
-	if GameConfig.xp_base == 5 and GameConfig.xp_step == 4:
+	var xp_stats: CharacterStats = load("res://data/config/commander_stats.tres")
+	if xp_stats.xp_base == 5 and xp_stats.xp_step == 4:
 		assert_true(_xp_to_reach(g2) == 44.0, "TC4: total XP to the tier 2 gate is 44")
 	else:
 		print("  [SKIP] TC4: XP milestone check needs xp_base 5 and xp_step 4")

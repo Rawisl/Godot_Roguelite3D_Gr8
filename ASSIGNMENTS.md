@@ -408,7 +408,8 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG7
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 7 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
+- Ghi chú: sau khi W9-NG1/NG2 (sword_wave, firebomb) và W9-NG6 (data/weapons) vào main, chạy lại `python tools/balance/generate.py` để sinh các .tres đó từ bảng
 - Việc: Công cụ dịch bảng cân bằng, phần lõi: script Python (openpyxl) đọc balance.xlsx, sinh CharacterStats, SkillData, TowerData và TowerLevelData x36, EnemyData; dòng chú thích 'sinh tự động', thứ tự khóa ổn định
 - Nghiệm thu: Chạy hai lần cho bộ .tres giống hệt; game nạp được các .tres sinh ra; diff git gọn; XpTracker đọc xp_base và xp_step từ CharacterStats (hiện nằm ở GameConfig)
 - Tệp liên quan: mới: tools/balance/*.py; common/csv_loader.gd (không dùng, có thể xóa); data/enemies/enemies.csv; autoload/game_config.gd (xp_base, xp_step)

@@ -3,6 +3,9 @@ extends Node
 
 ## Tracks Commander XP, leveling, pending skill picks, and commander-vs-tower XP contributions.
 
+## Where the level curve (xp_base, xp_step) comes from.
+@export var stats: CharacterStats = preload("res://data/config/commander_stats.tres")
+
 var commander_level: int = 0
 var xp: float = 0.0
 var pending_picks: int = 0
@@ -133,17 +136,17 @@ func add_xp(amount: float) -> void:
 		return
 	xp += amount
 
-	var to_next := float(GameConfig.get_xp_to_level(commander_level + 1))
+	var to_next := float(stats.get_xp_to_level(commander_level + 1))
 	while xp >= to_next:
 		xp -= to_next
 		commander_level += 1
 		pending_picks += 1
 		EventBus.level_up.emit(commander_level, pending_picks)
-		to_next = float(GameConfig.get_xp_to_level(commander_level + 1))
+		to_next = float(stats.get_xp_to_level(commander_level + 1))
 
 	_emit_xp_changed()
 
 
 func _emit_xp_changed() -> void:
-	var to_next := float(GameConfig.get_xp_to_level(commander_level + 1))
+	var to_next := float(stats.get_xp_to_level(commander_level + 1))
 	EventBus.xp_changed.emit(xp, commander_level, to_next, pending_picks)

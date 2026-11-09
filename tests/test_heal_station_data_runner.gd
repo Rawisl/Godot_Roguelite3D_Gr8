@@ -34,13 +34,13 @@ func test_tower_data() -> void:
 		return
 	assert_true(data.id == &"heal_station", "id is heal_station")
 	assert_true(data.display_name == "tower.heal_station", "display_name key")
-	assert_true(data.levels.size() == 1, "has exactly 1 level")
+	assert_true(data.levels.size() == GameConfig.tower_max_level, "one data file per level up to tower_max_level")
 	assert_true(data.allowed_zones.size() == 1 and data.allowed_zones[0] == Enums.SlotZone.GROUND,
 			"allowed only on GROUND")
 	assert_true(not data.targets_ground, "does not target ground")
 	assert_true(not data.targets_air, "does not target air")
 	assert_true(data.projectile_scene == null, "has no projectile scene")
-	if data.levels.size() == 1:
+	if data.levels.size() >= 1:
 		assert_true(data.levels[0].max_hp == 300, "level 1 max_hp is 300")
 		assert_true(data.levels[0].build_cost == 80, "level 1 build_cost is 80")
 

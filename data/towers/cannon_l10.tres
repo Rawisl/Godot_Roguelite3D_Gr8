@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TowerLevelData" format=3]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+build_cost = 600
+max_hp = 680
+damage = 255
+attack_range = 14
+fire_rate = 0.5
+splash_radius = 3.5
+aggro_weight = 1
