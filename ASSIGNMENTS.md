@@ -372,7 +372,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG3
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hệ kháng boss DMG-01..05, miễn taunt/knockback (AI-06, BOSS-01), hiển thị IMMUNE và RESIST
 - Nghiệm thu: Bulwark pha 1: Arrow không bắn, Cannon 100%, kiếm 60%
 - Cần xong trước: W8-NG2, W8B-NG1
@@ -388,7 +388,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG5
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Trạng thái Slow và DoT trên Enemy và Bulwark (Frost áp được lên boss, ngoại lệ BOSS-01; Burn tick qua dot_remainder)
 - Nghiệm thu: Slow 20% 3 s làm mới không cộng dồn; DoT 5 tick đúng tổng; Bulwark nhận Slow nhưng vẫn miễn taunt/knockback
 - Tệp liên quan: entities/enemy/enemy.gd, entities/enemy/bulwark.gd, common/health_component.gd
@@ -398,7 +398,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG6
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: WeaponData và trạng thái vũ khí: Resource WeaponData (range_mult, effect_id, tham số), owned_weapons và equipped_weapon trong RunState (kiếm gốc mặc định), tín hiệu weapon_equipped, đổi vũ khí chỉ ở PREP
 - Nghiệm thu: Đầu run chỉ có kiếm gốc; trao thử vũ khí bằng debug thì equip được ở PREP, bị từ chối ở COMBAT và HAZARD_TRIAL
 - Tệp liên quan: mới: common/weapon_data.gd, data/weapons/; entities/commander/commander.gd; common/run_skill_state.gd (nơi lưu trạng thái run)
@@ -501,7 +501,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH2
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 7 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa Fortress bằng Mithril thay cho sửa bằng gold (MTH-01, 03..06, REP-07): bỏ Fortress.quote_repair/repair, BuildService.repair, repair_gold_per_pct và repair_step_*; thêm mithril_repair_pct 0.20; nguồn fortress_repaired đổi sang MITHRIL; uy tín PRS-01..04
 - Nghiệm thu: Mỗi viên Mithril hồi 20% max hiệu dụng, kẹp max, từ chối khi đầy máu; mithril = 0 thì từ chối; giao dịch nguyên tử; Emergency repair không đổi; cấp Mithril bằng debug để thử
 - Tệp liên quan: entities/fortress/fortress.gd (quote_repair, repair), systems/build/build_service.gd (repair, _min_repair_cost), common/fortress_stats.gd, data/config/fortress_stats.tres

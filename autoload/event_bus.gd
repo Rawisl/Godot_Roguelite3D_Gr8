@@ -16,7 +16,7 @@ signal fortress_destroyed
 signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 on HP loss
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
 signal fortress_low_hp(ratio: float)  #once per wave
-signal fortress_repaired(amount: int, source: StringName)  # source: GOLD | EMERGENCY
+signal fortress_repaired(amount: int, source: StringName)  # source: MITHRIL | EMERGENCY
 #------------------------------------------------------#
 
 #-----------------------Enemy-----------------------#
@@ -36,6 +36,7 @@ signal commander_hp_changed(hp: int, max_hp: int)
 signal heal_state_changed(state: StringName, source_slot: StringName, hold_progress: float)  # IDLE | HOLD | HEALING | CANCELLED | DEPLETED, progress 0..1 and sent at most 10 times a second while holding
 signal commander_low_hp_changed(is_low: bool)  # HP below commander_low_hp_warning_pct, emitted only when it flips
 signal mode_changed(mode: StringName)  # FRONTLINE | COMMANDER
+signal weapon_equipped(weapon_id: StringName)  # RunState -> HUD, weapon panel, Commander, Art
 signal mode_switch_denied(reason: StringName, remaining: float)
 signal mode_switch_cooldown_started(duration: float)  # ModeSwitch -> HUD, only when the switch costs a cooldown
 signal recall_started(duration: float)
@@ -69,6 +70,7 @@ signal tower_immunity_changed(slot_id: StringName, is_immune: bool)
 signal heal_tower_hp_changed(slot_id: StringName, new_hp: int, max_hp: int)  # Heal station store, at most 10 times a second
 signal build_denied(reason: StringName, shortfall: int)
 signal projectile_hit(target: Node, amount: int, damage_type: StringName, resist: float)
+signal damage_immune(target: Node3D, info: DamageInfo)  # Enemy / Bulwark -> damage numbers: a commander hit on a target whose resist is 0, once per hit
 #------------------------------------------------------#
 
 #-----------------------Boss-----------------------#

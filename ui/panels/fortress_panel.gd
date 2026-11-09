@@ -37,7 +37,6 @@ func _ready() -> void:
 	_emg_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	_repair.pressed.connect(_on_repair_pressed)
 	EventBus.fortress_hp_changed.connect(_on_hp_changed)
-	# TODO(Ender-Via): emit mithril_changed from RunState whenever mithril changes.
 	EventBus.mithril_changed.connect(_on_mithril_changed)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.run_started.connect(_on_run_started)
@@ -102,7 +101,6 @@ func _on_repair_pressed() -> void:
 	if not _try_lock() or _lock_reason() != &"":
 		return
 	var service := get_tree().get_first_node_in_group(&"build_service")
-	# TODO(kiezroth): add repair_fortress_mithril() to BuildService (spend 1 Mithril, heal the share, refuse at full HP or 0 Mithril); this button already calls it.
 	if service != null and service.has_method(&"repair_fortress_mithril"):
 		service.call(&"repair_fortress_mithril")
 	refresh()
