@@ -64,7 +64,6 @@ func _on_summary_ready(summary: Dictionary) -> void:
 	_wave = summary.get("wave_index", _wave)
 	_refresh()
 
-# TODO(Ender-Via): listen to summary_continue_requested and go to REWARD_PICK or PREP, instead of the FSM's own timer.
 func _request_continue() -> void:
 	if _sent:
 		return

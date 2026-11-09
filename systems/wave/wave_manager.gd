@@ -20,7 +20,12 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var spawn_interval: float = 0.6
 @export var default_wave_1_count: int = 8
 @export var auto_advance_summary: bool = true
-@export var enable_reward_pick: bool = false
+@export var enable_reward_pick: bool = true
+
+var _intro_timer: float = 0.0
+var _intro_elapsed: float = 0.0
+var _victory_handled: bool = false
+var _waiting_victory_continue: bool = false
 
 var _fallback_current_wave: int = 1
 var current_wave: int:
@@ -112,6 +117,8 @@ func _ready() -> void:
 	_setup_xp_tracker()
 	_setup_boss_timer()
 	EventBus.reward_picked.connect(_on_reward_picked)
+	EventBus.reward_skip_requested.connect(_on_reward_skip_requested)
+	EventBus.victory_continue_requested.connect(_on_victory_continue_requested)
 	_setup_container.call_deferred()
 	start_prep()
 
@@ -131,6 +138,10 @@ func _exit_tree() -> void:
 		EventBus.boss_defeated.disconnect(_on_boss_defeated)
 	if EventBus.reward_picked.is_connected(_on_reward_picked):
 		EventBus.reward_picked.disconnect(_on_reward_picked)
+	if EventBus.reward_skip_requested.is_connected(_on_reward_skip_requested):
+		EventBus.reward_skip_requested.disconnect(_on_reward_skip_requested)
+	if EventBus.victory_continue_requested.is_connected(_on_victory_continue_requested):
+		EventBus.victory_continue_requested.disconnect(_on_victory_continue_requested)
 
 
 func _on_boss_defeated() -> void:
@@ -213,14 +224,48 @@ func start_prep() -> void:
 	EventBus.state_changed.emit(&"PREP")
 
 
+func is_boss_wave(w: int = -1) -> bool:
+	var wave_num := current_wave if w < 0 else w
+	return (wave_num > 0 and wave_num % GameConfig.boss_wave_interval == 0)
+
+
 func _on_wave_start_requested() -> void:
 	if wave_state == Enums.WaveState.PREP:
-		start_combat()
+		if is_boss_wave(current_wave):
+			start_boss_intro()
+		else:
+			start_combat()
+
+
+func start_boss_intro() -> void:
+	var old_state := wave_state
+	wave_state = Enums.WaveState.BOSS_INTRO
+	_intro_timer = GameConfig.boss_intro_duration
+	_intro_elapsed = 0.0
+	TimeManager.set_time_scale(1)
+	wave_fsm_state_changed.emit(wave_state, old_state)
+	EventBus.state_changed.emit(&"BOSS_INTRO")
+	EventBus.boss_intro_started.emit(&"bulwark")
+
+
+func skip_boss_intro() -> void:
+	if wave_state != Enums.WaveState.BOSS_INTRO:
+		return
+	if _intro_elapsed < GameConfig.boss_intro_skip_delay:
+		return
+	start_combat()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if wave_state == Enums.WaveState.BOSS_INTRO:
+		if event.is_action_pressed(&"select") or event.is_action_pressed(&"cancel") or (event is InputEventKey and event.pressed and not event.echo):
+			if _intro_elapsed >= GameConfig.boss_intro_skip_delay:
+				skip_boss_intro()
 
 
 func start_combat() -> void:
 	var old_state := wave_state
-	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
+	var is_boss: bool = is_boss_wave(current_wave)
 	wave_state = Enums.WaveState.BOSS_COMBAT if is_boss else Enums.WaveState.COMBAT
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"BOSS_COMBAT" if is_boss else &"COMBAT")
@@ -251,6 +296,9 @@ func start_combat() -> void:
 func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dictionary]:
 	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
 	var budget: int = cfg.get_budget(wave_num)
+	var is_boss: bool = is_boss_wave(wave_num)
+	if is_boss:
+		budget = maxi(1, int(floor(float(budget) * 0.5)))
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([p_run_seed, wave_num])
@@ -432,6 +480,12 @@ func _physics_process(delta: float) -> void:
 	match wave_state:
 		Enums.WaveState.PREP:
 			pass
+
+		Enums.WaveState.BOSS_INTRO:
+			_intro_elapsed += delta
+			_intro_timer -= delta
+			if _intro_timer <= 0.0:
+				start_combat()
 
 		Enums.WaveState.COMBAT, Enums.WaveState.BOSS_COMBAT:
 			if _first_enemy_spawned:
@@ -679,6 +733,25 @@ func advance_from_summary() -> void:
 
 	_cleanup_projectiles()
 
+	if current_wave == GameConfig.victory_wave and not _victory_handled:
+		_victory_handled = true
+		_waiting_victory_continue = true
+		EventBus.run_victory.emit(current_wave)
+		TimeManager.request_pause(TimeManager.REASON_VICTORY)
+		return
+
+	_advance_past_summary_and_rewards()
+
+
+func _on_victory_continue_requested() -> void:
+	if not _waiting_victory_continue:
+		return
+	_waiting_victory_continue = false
+	TimeManager.release_pause(TimeManager.REASON_VICTORY)
+	_advance_past_summary_and_rewards()
+
+
+func _advance_past_summary_and_rewards() -> void:
 	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
 	if enable_reward_pick and pending > 0:
 		start_reward_pick()
@@ -702,6 +775,14 @@ func finish_reward_pick() -> void:
 
 
 func _on_reward_picked(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
+	if wave_state != Enums.WaveState.REWARD_PICK:
+		return
+	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
+	if pending <= 0:
+		finish_reward_pick()
+
+
+func _on_reward_skip_requested() -> void:
 	if wave_state != Enums.WaveState.REWARD_PICK:
 		return
 	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0

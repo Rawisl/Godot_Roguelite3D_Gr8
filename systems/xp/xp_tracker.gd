@@ -32,6 +32,7 @@ func _ready() -> void:
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.run_started.connect(reset)
 	EventBus.reward_picked.connect(_on_reward_picked)
+	EventBus.reward_skip_requested.connect(_on_reward_skip_requested)
 	EventBus.wave_started.connect(_on_wave_started)
 	# Emit initial state deferred so HUD gets it
 	_emit_xp_changed.call_deferred()
@@ -46,6 +47,8 @@ func _exit_tree() -> void:
 		EventBus.run_started.disconnect(reset)
 	if EventBus.reward_picked.is_connected(_on_reward_picked):
 		EventBus.reward_picked.disconnect(_on_reward_picked)
+	if EventBus.reward_skip_requested.is_connected(_on_reward_skip_requested):
+		EventBus.reward_skip_requested.disconnect(_on_reward_skip_requested)
 	if EventBus.wave_started.is_connected(_on_wave_started):
 		EventBus.wave_started.disconnect(_on_wave_started)
 
@@ -95,6 +98,11 @@ func _on_wave_started(_wave_index: int) -> void:
 
 
 func _on_reward_picked(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
+	pending_picks = maxi(0, pending_picks - 1)
+	_emit_xp_changed()
+
+
+func _on_reward_skip_requested() -> void:
 	pending_picks = maxi(0, pending_picks - 1)
 	_emit_xp_changed()
 

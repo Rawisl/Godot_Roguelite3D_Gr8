@@ -13,7 +13,6 @@ var _boss_id := &""
 
 func _ready() -> void:
 	visible = false
-	# TODO(Ender-Via): enter BOSS_INTRO before a boss wave and emit boss_intro_started(boss_id) when it starts.
 	EventBus.boss_intro_started.connect(_on_boss_intro_started)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.run_started.connect(func() -> void: _boss_id = &"")
