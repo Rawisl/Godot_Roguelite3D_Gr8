@@ -13,7 +13,7 @@ const COLOR_INFO := Color(0.85, 0.85, 0.9)
 const COLOR_HEAL := Color(0.4, 1.0, 0.6)
 const COLOR_DAMAGE := Color(1.0, 0.55, 0.35)
 const COLOR_BLOCKED := Color(0.6, 0.75, 1.0)
-const STAGE_COUNT := 9
+const STAGE_COUNT := 8
 
 ## Seconds between visible steps. Ignored in headless mode.
 @export var step_delay: float = 0.6
@@ -61,8 +61,7 @@ func _run() -> void:
 	await test_damage_formula()
 	await test_damage_gating_and_destroy_once()
 	await test_low_hp_alert_once_per_wave()
-	await test_repair_quotes()
-	await test_repair_with_gold()
+	await test_repair_with_mithril()
 	await test_emergency_repair()
 	await test_melee_slot_capacity()
 	await test_grunts_attack_fortress_in_level()
@@ -505,8 +504,13 @@ func test_low_hp_alert_once_per_wave() -> void:
 
 	_alert_banner.visible = false
 	_set_state(&"PREP")
-	var healed := f.repair_with_gold(0.0, 10000)
-	_heal_pop(f, healed.heal, "+%d" % healed.heal)
+	var healed := 0
+	while not f.is_full():
+		var step := f.repair_with_mithril()
+		if step <= 0:
+			break
+		healed += step
+	_heal_pop(f, healed, "+%d" % healed)
 	_note("PREP: full repair before wave 2")
 	await _wait(step_delay)
 	EventBus.wave_started.emit(2)
@@ -518,73 +522,39 @@ func test_low_hp_alert_once_per_wave() -> void:
 	EventBus.alert_requested.disconnect(on_alert)
 
 
-func test_repair_quotes() -> void:
-	await _begin_stage(5, "Repair prices", "4 gold per 1% missing, partial repair when gold is short")
-	_spawn_fortress()
-	var cases := [
-		[0.0, 800, 1000, 9999, 80, 200, "Missing 20% of 1000: full repair 80 gold"],
-		[0.0, 1200, 1500, 9999, 80, 300, "Missing 20% of 1500: still 80 gold"],
-		[10.0, 1033, 1050, 9999, 7, 17, "1050 HP at 1033: +10% repairs the 1.619% left for 7 gold"],
-		[10.0, 800, 1000, 6, 4, 10, "Gold 6, missing 20%: +10% repairs 1% for 4 gold"],
-		[25.0, 800, 1000, 50, 48, 120, "Gold 50, +25% on 20% missing: 12% for 48 gold"],
-		[10.0, 500, 1000, 9999, 40, 100, "+10% on 50% missing: 100 HP for 40 gold"],
-		[25.0, 500, 1000, 9999, 100, 250, "+25% on 50% missing: 250 HP for 100 gold"],
-		[10.0, 1000, 1000, 9999, 0, 0, "Full HP: refused, no gold"],
-		[10.0, 995, 1000, 1, 0, 0, "Missing 0.5%, gold 1 < ceil(2): refused"],
-		[10.0, 995, 1000, 2, 2, 5, "Missing 0.5%, gold 2: repairs all of it"],
-	]
-	for c in cases:
-		var q := Fortress.quote_repair(c[0], c[1], c[2], c[3], 4)
-		_hp_bar.max_value = c[2]
-		_hp_bar.value = c[1]
-		_hp_label.text = "Quote on %d / %d HP" % [c[1], c[2]]
-		var step := "full" if c[0] <= 0.0 else "+%d%%" % roundi(c[0])
-		var gold := "unlimited" if c[3] >= 9999 else str(c[3])
-		_info_label.text = "%s with %s gold  ->  +%d HP for %d gold" % [step, gold, q.heal, q.cost]
-		await assert_true(q.cost == c[4] and q.heal == c[5], c[6])
-
-
-func test_repair_with_gold() -> void:
-	await _begin_stage(6, "Gold repair rules", "refused at full HP. only in PREP")
+func test_repair_with_mithril() -> void:
+	await _begin_stage(5, "Mithril repair rules", "heals a share of max HP. refused at full HP. only in PREP")
 	var f := _spawn_fortress()
 	var repaired: Array = []
 	var on_repaired := func(amount: int, source: StringName): repaired.append([amount, source])
 	EventBus.fortress_repaired.connect(on_repaired)
-	var gold := [1000]
+	var share := floori(f.get_max_hp() * f.stats.mithril_repair_pct + Fortress.PCT_EPSILON)
 
 	_set_state(&"PREP")
-	var r := f.repair_with_gold(f.stats.repair_step_small_pct, 100)
-	await assert_true(r.cost == 0, "Full HP in PREP: refused")
+	await assert_true(f.repair_with_mithril() == 0, "Full HP in PREP: refused")
 
 	_set_state(&"COMBAT")
-	_hit(f, 400)
+	_hit(f, share * 2)
 	await _wait(step_delay)
-	r = f.repair_with_gold(f.stats.repair_step_small_pct, gold[0])
-	await assert_true(r.cost == 0 and f.get_hp() == 600, "COMBAT: gold repair refused")
+	var hp_before := f.get_hp()
+	await assert_true(f.repair_with_mithril() == 0 and f.get_hp() == hp_before, "COMBAT: Mithril repair refused")
 
 	_set_state(&"PREP")
 	await _wait(step_delay)
-	r = _gold_repair(f, f.stats.repair_step_small_pct, gold)
-	await assert_true(r.cost == 40 and f.get_hp() == 700, "PREP +10%: 700 HP, 40 gold")
-	r = _gold_repair(f, f.stats.repair_step_large_pct, gold)
-	await assert_true(r.cost == 100 and f.get_hp() == 950, "PREP +25%: 950 HP, 100 gold")
-	r = _gold_repair(f, 0.0, gold)
-	await assert_true(r.cost == 20 and f.get_hp() == 1000, "PREP full: exactly max HP, 20 gold")
-	await assert_true(repaired.size() == 3 and repaired[0][1] == &"GOLD", "fortress_repaired(GOLD) emitted per repair")
+	var healed := f.repair_with_mithril()
+	_heal_pop(f, healed, "+%d" % healed)
+	await assert_true(healed == share and f.get_hp() == hp_before + share, "PREP: heals the configured share of max HP")
+	healed = f.repair_with_mithril()
+	_heal_pop(f, healed, "+%d" % healed)
+	await assert_true(healed == share and f.is_full(), "Second repair reaches max HP exactly")
+	await assert_true(repaired.size() == 2 and repaired[0] == [share, &"MITHRIL"], "fortress_repaired(MITHRIL) emitted per repair")
+	await assert_true(f.repair_with_mithril() == 0 and repaired.size() == 2, "Full again: refused, nothing emitted")
 
 	EventBus.fortress_repaired.disconnect(on_repaired)
 
 
-func _gold_repair(fortress: Fortress, step: float, gold: Array) -> Dictionary:
-	var r := fortress.repair_with_gold(step, gold[0])
-	gold[0] -= r.cost
-	_heal_pop(fortress, r.heal, "+%d HP  -%d gold" % [r.heal, r.cost])
-	_info_label.text = "Wave state: PREP    Gold: %d" % gold[0]
-	return r
-
-
 func test_emergency_repair() -> void:
-	await _begin_stage(7, "Emergency repair", "heal a share of max HP for free. refused at full HP. overheal clamps")
+	await _begin_stage(6, "Emergency repair", "heal a share of max HP for free. refused at full HP. overheal clamps")
 	var f := _spawn_fortress()
 	await assert_true(f.emergency_repair(0.2) == 0, "Full HP: refused")
 	_set_state(&"COMBAT")
@@ -602,7 +572,7 @@ func test_emergency_repair() -> void:
 
 
 func test_melee_slot_capacity() -> void:
-	await _begin_stage(8, "Melee slots", "12 slots on the gate, extra attackers wait, a dead attacker frees its slot")
+	await _begin_stage(7, "Melee slots", "12 slots on the gate, extra attackers wait, a dead attacker frees its slot")
 	var f := _spawn_fortress()
 	var attackers: Array[MeshInstance3D] = []
 	for i in 20:
@@ -659,7 +629,7 @@ func test_melee_slot_capacity() -> void:
 
 
 func test_grunts_attack_fortress_in_level() -> void:
-	await _begin_stage(9, "Grunts attack the gate in the level", "7.1 'Slot Fortress': 20 Grunts reach the gate, 12 attack from slots, the rest wait")
+	await _begin_stage(8, "Grunts attack the gate in the level", "20 Grunts reach the gate, 12 attack from slots, the rest wait")
 	_base_world.visible = false
 	var level := LEVEL_SCENE.instantiate()
 	_stage_root.add_child(level)

@@ -16,7 +16,7 @@ signal fortress_destroyed
 signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 on HP loss
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
 signal fortress_low_hp(ratio: float)  #once per wave
-signal fortress_repaired(amount: int, source: StringName)  # source: GOLD | EMERGENCY
+signal fortress_repaired(amount: int, source: StringName)  # source: MITHRIL | EMERGENCY
 #------------------------------------------------------#
 
 #-----------------------Enemy-----------------------#
@@ -70,6 +70,7 @@ signal tower_immunity_changed(slot_id: StringName, is_immune: bool)
 signal heal_tower_hp_changed(slot_id: StringName, new_hp: int, max_hp: int)  # Heal station store, at most 10 times a second
 signal build_denied(reason: StringName, shortfall: int)
 signal projectile_hit(target: Node, amount: int, damage_type: StringName, resist: float)
+signal damage_immune(target: Node3D, info: DamageInfo)  # Enemy / Bulwark -> damage numbers: a commander hit on a target whose resist is 0, once per hit
 #------------------------------------------------------#
 
 #-----------------------Boss-----------------------#

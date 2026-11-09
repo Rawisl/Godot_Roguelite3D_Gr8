@@ -92,6 +92,7 @@ func _ready() -> void:
 	EventBus.commander_hp_changed.connect(_on_commander_hp_changed)
 	EventBus.emergency_repair_state_changed.connect(_on_emergency_repair_state_changed)
 	EventBus.mode_changed.connect(_on_commander_mode_changed)
+	EventBus.run_started.connect(_on_run_started)
 
 
 func _exit_tree() -> void:
@@ -113,6 +114,8 @@ func _exit_tree() -> void:
 		EventBus.emergency_repair_state_changed.disconnect(_on_emergency_repair_state_changed)
 	if EventBus.mode_changed.is_connected(_on_commander_mode_changed):
 		EventBus.mode_changed.disconnect(_on_commander_mode_changed)
+	if EventBus.run_started.is_connected(_on_run_started):
+		EventBus.run_started.disconnect(_on_run_started)
 
 
 func _process(delta: float) -> void:
@@ -159,6 +162,25 @@ func equip_weapon(id: StringName) -> bool:
 ## The last wave state received. PREP until the first state_changed arrives.
 func get_current_state() -> StringName:
 	return _current_state if _current_state != &"" else &"PREP"
+
+
+## Adds Mithril and tells the HUD and the Fortress panel. Zero or negative amounts are ignored.
+func add_mithril(amount: int) -> void:
+	if amount <= 0:
+		return
+	mithril += amount
+	EventBus.mithril_changed.emit(mithril, amount)
+
+
+## Takes Mithril in one step. Returns false and changes nothing when the amount is not positive or exceeds the stock.
+func spend_mithril(amount: int) -> bool:
+	if amount <= 0:
+		return false
+	if mithril < amount:
+		return false
+	mithril -= amount
+	EventBus.mithril_changed.emit(mithril, -amount)
+	return true
 
 
 func end_run(end_type: StringName = &"DEFEAT") -> void:
@@ -253,3 +275,11 @@ func _on_emergency_repair_state_changed(charges: int, cooldown: float, heal_pct:
 
 func _on_commander_mode_changed(mode: StringName) -> void:
 	commander_mode = mode
+
+
+## Mithril does not carry over between runs.
+func _on_run_started() -> void:
+	var previous := mithril
+	mithril = 0
+	if previous != 0:
+		EventBus.mithril_changed.emit(0, -previous)

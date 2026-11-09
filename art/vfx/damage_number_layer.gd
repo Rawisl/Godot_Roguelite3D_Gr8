@@ -50,6 +50,7 @@ func _ready() -> void:
 		_labels.append(label)
 		_items.append({})
 	get_tree().node_added.connect(_on_node_added)
+	EventBus.damage_immune.connect(_on_damage_immune)
 	for h in get_tree().root.find_children("*", "HealthComponent", true, false):
 		_on_node_added(h)
 
@@ -68,9 +69,17 @@ func _on_node_added(node: Node) -> void:
 
 
 func _on_damaged(amount: int, info: DamageInfo, target: Node3D) -> void:
-	var kind := Kind.COMMANDER if target.is_in_group(&"commander") else Kind.NORMAL
+	var kind := Kind.NORMAL
+	if target.is_in_group(&"commander"):
+		kind = Kind.COMMANDER
+	elif info != null and info.resist < 1.0:
+		kind = Kind.RESIST
 	var tower: Node = info.source if info != null and info.source is Tower else null
 	show_number(target, amount, kind, tower)
+
+
+func _on_damage_immune(target: Node3D, _info: DamageInfo) -> void:
+	show_number(target, 0, Kind.IMMUNE)
 
 
 func _on_hp_changed(hp: int, _max_hp: int, health: HealthComponent, target: Node3D) -> void:
