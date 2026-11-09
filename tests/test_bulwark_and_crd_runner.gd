@@ -491,13 +491,13 @@ func test_no_unit_collision_and_fortress_slots() -> void:
 		add_child(g)
 		grunts.append(g)
 
-	# 3. Check all grunts have avoidance disabled
-	var all_avoidance_disabled := true
+	# 3. Check all grunts have avoidance enabled with layer separation (agents on layer 2, mask excludes layer 2)
+	var all_layer_separated := true
 	for g in grunts:
-		if g.nav.avoidance_enabled:
-			all_avoidance_disabled = false
+		if not g.nav.avoidance_enabled or g.nav.avoidance_layers != 2 or (g.nav.avoidance_mask & 2) != 0:
+			all_layer_separated = false
 			break
-	assert_true(all_avoidance_disabled, "All 20 Grunts have nav.avoidance_enabled = false")
+	assert_true(all_layer_separated, "All 20 Grunts have unit-to-unit avoidance disabled via layer separation")
 
 	# 4. Simulate physics process frames
 	for frame in range(10):
