@@ -117,7 +117,6 @@ func _ready() -> void:
 	_setup_xp_tracker()
 	_setup_boss_timer()
 	EventBus.reward_picked.connect(_on_reward_picked)
-	EventBus.reward_skip_requested.connect(_on_reward_skip_requested)
 	EventBus.victory_continue_requested.connect(_on_victory_continue_requested)
 	_setup_container.call_deferred()
 	start_prep()
@@ -138,8 +137,6 @@ func _exit_tree() -> void:
 		EventBus.boss_defeated.disconnect(_on_boss_defeated)
 	if EventBus.reward_picked.is_connected(_on_reward_picked):
 		EventBus.reward_picked.disconnect(_on_reward_picked)
-	if EventBus.reward_skip_requested.is_connected(_on_reward_skip_requested):
-		EventBus.reward_skip_requested.disconnect(_on_reward_skip_requested)
 	if EventBus.victory_continue_requested.is_connected(_on_victory_continue_requested):
 		EventBus.victory_continue_requested.disconnect(_on_victory_continue_requested)
 
@@ -775,14 +772,6 @@ func finish_reward_pick() -> void:
 
 
 func _on_reward_picked(_card_id: StringName, _slot_kind: StringName, _new_level: int) -> void:
-	if wave_state != Enums.WaveState.REWARD_PICK:
-		return
-	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
-	if pending <= 0:
-		finish_reward_pick()
-
-
-func _on_reward_skip_requested() -> void:
 	if wave_state != Enums.WaveState.REWARD_PICK:
 		return
 	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0

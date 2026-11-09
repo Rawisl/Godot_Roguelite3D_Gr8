@@ -490,8 +490,8 @@ func test_wave_victory_and_reward_pick_flow() -> void:
 	assert_true(wm.wave_state == Enums.WaveState.REWARD_PICK, "Transitions to REWARD_PICK because pending_picks > 0")
 	assert_true(TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "Simulation paused under REASON_REWARD_PICK")
 
-	# 3. Player skips reward pick
-	EventBus.reward_skip_requested.emit()
+	# 3. Player skips reward pick (RewardService sends reward_picked with SKIP kind)
+	EventBus.reward_picked.emit(&"", &"SKIP", 0)
 	assert_true(tracker.get("pending_picks") == 0, "pending_picks decremented to 0 on skip")
 	assert_true(wm.wave_state == Enums.WaveState.PREP, "Transitions to PREP once all picks consumed")
 	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "REASON_REWARD_PICK pause released")
