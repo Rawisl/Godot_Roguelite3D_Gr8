@@ -133,6 +133,8 @@ func init_from_config(config: RunConfig) -> void:
 	commander_max_hp = config.commander_max_hp
 	emg_repair_heal_pct = config.emg_repair_heal_pct
 	rerolls_left = config.rerolls_per_run
+	owned_weapons = [BASE_WEAPON]
+	equipped_weapon = BASE_WEAPON
 
 
 ## Adds a weapon to the run. False when the id is empty or the weapon is already owned.

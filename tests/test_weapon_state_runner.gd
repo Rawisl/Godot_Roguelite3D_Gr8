@@ -91,6 +91,10 @@ func test_start_of_run() -> void:
 	assert_true(not run_state.grant_weapon(&"sword_base") and not run_state.grant_weapon(&""), "an owned or empty id is not granted")
 	assert_true(run_state.grant_weapon(&"swift") and run_state.owned_weapons == [&"sword_base", &"swift"], "swift is granted")
 	assert_true(not run_state.grant_weapon(&"swift") and run_state.owned_weapons.size() == 2, "granting twice adds nothing")
+	run_state.equipped_weapon = &"swift"
+	var config := RunConfig.new()
+	run_state.init_from_config(config)
+	assert_true(run_state.owned_weapons == [&"sword_base"] and run_state.equipped_weapon == &"sword_base", "init_from_config puts the run back to the base sword only")
 	run_state.free()
 
 
