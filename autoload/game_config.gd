@@ -4,9 +4,20 @@ extends Node
 
 @export_group("Run and Wave")
 @export var starting_gold: int = 0
+@export var victory_wave: int = 30
+@export var starter_arrow_slot: StringName = &"G_0_4"
+@export var starter_cannon_slot: StringName = &"W2"
+@export var starter_sell_unlock_wave: int = 3
 @export var max_alive: int = 70
+@export var wave_max_enemy_types: int = 5
 @export var summary_auto_advance: float = 10.0
 @export var boss_wave_interval: int = 5
+@export var weapon_drop_waves: Array[int] = [5, 10, 15, 20, 25]
+
+@export_group("Hazard Trial and Mithril")
+@export var hazard_enemy_count: int = 5
+@export var hazard_boss_escorts: int = 4
+@export var hazard_damage_cap_pct: float = 0.10
 
 @export_group("Economy")
 @export var clear_mult_fast: float = 1.25
@@ -56,6 +67,8 @@ extends Node
 @export var grid_cell_gap: float = 0.5
 @export var grid_pick_size: float = 1.9
 @export var max_ground_buildings: int = 3
+@export var path_check_min_width: float = 3.2
+@export var boss_point_clear_radius: float = 3.2
 @export var no_build_lane_min_width: float = 4.0
 @export var no_build_lane_min_ratio: float = 0.30
 @export var grid_min_gap_to_command_post: float = 3.0
@@ -99,7 +112,7 @@ extends Node
 @export var hop_max_advance: float = 4.0
 @export var no_damage_timeout: float = 10.0
 
-@export_group("Boss and Overload")
+@export_group("Boss")
 @export var boss_intro_duration: float = 4.0
 @export var boss_intro_skip_delay: float = 1.0
 @export var boss_transition_time: float = 2.5
@@ -111,14 +124,6 @@ extends Node
 @export var enrage_speed_mult: float = 1.3
 @export var enrage_attack_rate_mult: float = 1.3
 @export var enrage_damage_mult: float = 1.5
-@export var overload_pct_base: float = 0.30
-@export var overload_pct_step: float = 0.05
-@export var overload_pct_max: float = 0.60
-@export var overload_commander_pct: float = 0.60
-@export var overload_warn_time: float = 30.0
-@export var speed_lock_time: float = 20.0
-@export var retreat_open_time: float = 15.0
-@export var overload_countdown_time: float = 5.0
 
 @export_group("Online")
 @export var online_enabled: bool = true
@@ -129,6 +134,7 @@ extends Node
 @export var lbd_top_n: int = 50
 ## The server enforces its own copy of this limit; this one is for the client to explain it.
 @export var lbd_min_seconds_per_wave: float = 15.0
+@export var lbd_elapsed_tolerance: float = 1.0
 @export var display_name_min_len: int = 3
 @export var display_name_max_len: int = 16
 
@@ -184,7 +190,3 @@ func get_clear_mult(clear_time: float, par_time: float) -> float:
 
 func get_boss_timer(n: int) -> float:
 	return minf(boss_timer_max, boss_timer_base + boss_timer_step * float(maxi(1, n) - 1))
-
-
-func get_overload_fortress_pct(n: int) -> float:
-	return minf(overload_pct_max, overload_pct_base + overload_pct_step * float(maxi(1, n)))

@@ -471,7 +471,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT6
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Gom thay đổi dùng chung vào một PR: GameConfig (victory_wave, starter_*_slot, starter_sell_unlock_wave, wave_max_enemy_types, weapon_drop_waves, hazard_*, path_check_min_width, boss_point_clear_radius, lbd_elapsed_tolerance), EventBus (EVB-35, EVB-38..46; bỏ tín hiệu cũ), InputMap (thêm hazard_enter, bỏ call_wave)
 - Nghiệm thu: Mọi tham số và tín hiệu v2.0 có sẵn để các task sau cắm vào; không còn tham chiếu tới tín hiệu đã bỏ
 - Tệp liên quan: autoload/game_config.gd, autoload/event_bus.gd, project.godot (InputMap), data/locale/strings.csv

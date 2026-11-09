@@ -12,6 +12,8 @@ signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: boo
 signal wave_start_requested  # UI -> Wave: the Start wave button ends PREP
 signal wave_summary_ready(summary: Dictionary)  # emitted AFTER save completes
 signal summary_continue_requested  # UI -> Wave: press Continue or after 10s countdown in SUMMARY
+signal run_victory(wave_index: int)  # RunState -> UI, Audio, Save: opened the victory screen after victory_wave
+signal victory_continue_requested  # UI -> Wave: the player clicked Continue on the victory screen
 signal fortress_destroyed
 signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 on HP loss
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
@@ -80,7 +82,6 @@ signal boss_hp_changed(armor_hp: int, core_hp: int, phase: StringName)
 signal boss_phase_changed(phase: StringName)  # ARMORED | TRANSITION | EXPOSED
 signal boss_enraged  # once per boss wave, when boss_timer reaches 0 with the boss still alive
 signal telegraph_started(kind: StringName, position: Vector3, radius: float, duration: float) 
-signal overload_resolved(fortress_damage: int, commander_exposed: bool)  # emitted once per boss wave
 signal boss_defeated
 #------------------------------------------------------#
 
@@ -108,11 +109,20 @@ signal skill_cast(skill_id: StringName, slot_index: int, level: int, origin: Vec
 
 
 #------------------Warning, sfx, audio, tutorial,...------------------#
+signal camera_frame_changed(frame: StringName)  # FRONTLINE | OVERVIEW | BOSS_INTRO | HAZARD_TRIAL
 signal alert_requested(tier: int, key: StringName, params: Dictionary)  # tier 1 | 2 | 3; key = locale key
 signal screen_shake_requested(intensity: float, source: StringName)
 signal sfx_requested(sound_id: StringName, position: Vector3, priority: int)
 signal duck_requested(amount_db: float, duration: float)
 signal tutorial_step_completed(step_id: StringName)
+signal tutorial_completed  # emitted when tutorial_done flag is saved
+#------------------------------------------------------#
+
+#-----------------------Weapons and Hazard Trial-----------------------#
+signal weapon_gained(weapon_id: StringName)  # RunState -> UI, SummaryPanel, HUD
+signal weapon_equipped(weapon_id: StringName)  # Player & Combat -> UI, Art
+signal hazard_trial_entered(wave_index: int, enemy_types: Array)  # Wave -> UI, Camera, Combat
+signal hazard_trial_exited(result: StringName, kills: int, gold: int, xp: float, mithril: int)  # result: WON | LEFT | DIED
 #------------------------------------------------------#
 
 #-----------------------Progression-----------------------#
