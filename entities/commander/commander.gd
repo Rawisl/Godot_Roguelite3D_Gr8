@@ -36,6 +36,8 @@ const KNOCKBACK_DURATION: float = 0.25
 const POST_ACTION_DURATION: float = 0.1
 
 var aim_dir: Vector3 = Vector3.FORWARD
+## Mouse point on the ground plane, Vector3.INF until the mouse has been seen. Firebomb lands near it.
+var aim_point: Vector3 = Vector3.INF
 ## Radius the sword area has in the scene; a weapon can only make it bigger.
 var _sword_area_base_radius: float = -1.0
 var is_commander_mode: bool = false
@@ -660,6 +662,7 @@ func _update_aim(camera: Camera3D) -> void:
 		return
 
 	var hit_point: Vector3 = hit
+	aim_point = hit_point
 	if debug_aim_marker:
 		debug_aim_marker.global_position = hit_point
 
@@ -870,7 +873,7 @@ func get_sword_dealt_mult() -> float:
 
 
 func take_damage(damage_input: Variant) -> void:
-	if is_dead or is_commander_mode or _wave_state == &"PREP" or _wave_state == &"SUMMARY":
+	if is_dead or is_commander_mode or _wave_state == &"PREP" or _wave_state == &"SUMMARY" or _wave_state == &"BOSS_INTRO":
 		return
 
 	var info: DamageInfo = null

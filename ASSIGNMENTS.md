@@ -356,7 +356,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG1
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Skill Sword Wave (SKL-11)
 - Nghiệm thu: 18 SLASH, rộng 3 m, trúng mọi quân; đi qua pipeline sát thương DMG-06
 - Cần xong trước: W8-NG1, W8B-NG1
@@ -364,7 +364,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG2
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Skill Firebomb (SKL-12), vùng cháy tick BLAST
 - Nghiệm thu: 6/s, 2.5 m, 4 s; tick bật cờ hit_by_commander; tick đi qua pipeline DMG-06 (sau này kích hoạt hiệu ứng vũ khí và chịu trần Hazard)
 - Cần xong trước: W8-KT2, W8B-NG1
@@ -380,7 +380,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG4
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Khóa input BOSS_INTRO (BOSS-18), test đơn vị skill
 - Nghiệm thu: Test GUT cho Whirlwind, Sword Wave, Firebomb
 - Cần xong trước: W9-NG1, W9-NG2
@@ -418,7 +418,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH4a
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: apply_pick: ghi vào RunSkillState, gọi StatBlock, phát skill_slots_changed
 - Nghiệm thu: Chọn thẻ vào đúng ô, level tăng đúng
 - Cần xong trước: W9-KT3

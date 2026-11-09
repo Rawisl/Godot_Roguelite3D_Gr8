@@ -181,6 +181,10 @@ summary.value.gold,{base} × {mult}
 summary.value.clear_time,{time} · {tier}
 skill.whirlwind.name,Lốc xoáy
 skill.whirlwind.desc,Xoay vũ khí gây sát thương chém lên mọi kẻ địch xung quanh.
+skill.sword_wave.name,Kiếm khí
+skill.sword_wave.desc,Chém ra một luồng kiếm khí gây sát thương lên mọi kẻ địch trên đường bay.
+skill.firebomb.name,Bom lửa
+skill.firebomb.desc,Ném bom lửa tạo vùng cháy gây sát thương mỗi giây lên kẻ địch trong vùng.
 skill.sharpness.name,Sắc bén
 skill.sharpness.desc,Tăng sát thương gây ra.
 skill.vitality.name,Sinh lực
