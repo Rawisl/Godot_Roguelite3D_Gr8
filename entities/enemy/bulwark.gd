@@ -458,8 +458,9 @@ func _resolve_stuck_tier_3() -> void:
 	if tree != null:
 		var fortress := tree.get_first_node_in_group(&"fortress") as Node3D
 		if fortress != null:
-			if forward_dir.x < 0.0 and target_hop_pos.x < fortress.global_position.x:
-				target_hop_pos.x = fortress.global_position.x + 1.0
+			var attack_pt: Vector3 = _get_attack_point(fortress)
+			if forward_dir.x < 0.0 and target_hop_pos.x < attack_pt.x:
+				target_hop_pos.x = attack_pt.x
 	var map := nav.get_navigation_map()
 	if map.is_valid():
 		var nav_pt := NavigationServer3D.map_get_closest_point(map, target_hop_pos)
