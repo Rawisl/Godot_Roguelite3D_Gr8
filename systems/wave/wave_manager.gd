@@ -14,6 +14,7 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
 @export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
 @export var bulwark_scene: PackedScene = preload("res://entities/enemy/bulwark.tscn")
+@export var boss_data: BossData = preload("res://data/bosses/bulwark_boss.tres")
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
 @export var wave_table: WaveTable = preload("res://data/waves/wave_table.tres")
 
@@ -243,7 +244,8 @@ func start_boss_intro() -> void:
 	TimeManager.set_time_scale(1)
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"BOSS_INTRO")
-	EventBus.boss_intro_started.emit(&"bulwark")
+	var b_id: StringName = boss_data.id if boss_data != null else &"bulwark"
+	EventBus.boss_intro_started.emit(b_id)
 
 
 func skip_boss_intro() -> void:
@@ -800,7 +802,16 @@ func _spawn_boss() -> void:
 	var boss_inst := bulwark_scene.instantiate() as Enemy
 	if boss_inst == null:
 		return
-	boss_inst.position = spawn_point
+
+	var boss_sp := get_tree().get_first_node_in_group(&"boss_spawn_point") as Node3D
+	if boss_sp == null:
+		var root := get_tree().current_scene
+		if root != null:
+			boss_sp = root.find_child("BossSpawnPoint", true, false) as Node3D
+	var boss_pos: Vector3 = boss_sp.global_position if boss_sp != null else spawn_point
+	boss_pos.y = 0.0
+
+	boss_inst.position = boss_pos
 	boss_inst.spawn_grace = true
 	boss_inst.is_in_spawn_zone = true
 
