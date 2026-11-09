@@ -6,6 +6,8 @@ extends Node
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
 # TODO(Ender-Via): when meta progression lands, add the meta gold bonus (gold_pct_meta + gold_pct_buff) to the wave gold computed in the summary step.
 # TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
+# TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
+# TODO(Ender-Via): pause with REASON_VICTORY once the victory screen lands; currently disabled by default.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -300,7 +302,6 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 	var budget: int = cfg.get_budget(wave_num)
 	var is_boss: bool = is_boss_wave(wave_num)
 	if is_boss:
-		# TODO(Ender-Via): SPN-10: escorts for waves 1-30 come from WaveScript; only from wave 31 is it 0.5x budget.
 		budget = maxi(1, int(floor(float(budget) * 0.5)))
 
 	var rng := RandomNumberGenerator.new()
@@ -739,7 +740,6 @@ func advance_from_summary() -> void:
 	if current_wave == GameConfig.victory_wave and not _victory_handled:
 		_victory_handled = true
 		EventBus.run_victory.emit(current_wave)
-		# TODO(Ender-Via): pause with REASON_VICTORY once SCR-20 victory screen lands; currently disabled by default.
 		if enable_victory_screen:
 			_waiting_victory_continue = true
 			TimeManager.request_pause(TimeManager.REASON_VICTORY)
@@ -758,10 +758,19 @@ func _on_victory_continue_requested() -> void:
 
 func _advance_past_summary_and_rewards() -> void:
 	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
-	if enable_reward_pick and pending > 0:
+	if enable_reward_pick and pending > 0 and _has_reward_offer():
 		start_reward_pick()
 	else:
 		advance_to_next_wave()
+
+
+func _has_reward_offer() -> bool:
+	var service := get_tree().get_first_node_in_group(&"reward_service")
+	if service == null:
+		return true
+	if service.has_method(&"has_offer"):
+		return service.has_offer()
+	return true
 
 
 func start_reward_pick() -> void:
