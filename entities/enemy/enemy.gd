@@ -10,6 +10,8 @@ const PATH_UPDATE_INTERVAL: float = 0.3
 const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
 ## Speed lost per second while staggered.
 const KNOCKBACK_DECAY: float = 10.0
+## slot holder blocked by units or obstacles swings when in reach.
+const STALL_ATTACK_TIME: float = 0.5
 ## A waiting unit this close to crowd_wait_ring has reached the ring and stands still.
 const WAIT_RING_TOLERANCE: float = 0.3
 ## A knockback that carries a slot holder further than this from where it was hit frees its slot.
@@ -499,6 +501,19 @@ func _update_state(delta: float) -> void:
 			attack_rng = minf(attack_rng, _slot_arrive_distance(current_target))
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
+				return
+			# Holding a slot but blocked by an obstacle/building; hit from here when in reach.
+			if (_stall_time >= STALL_ATTACK_TIME and dist_to_target <= _melee_reach()
+					and _uses_melee_slot(current_target) and current_target.has_melee_slot(self)):
+				change_state(Enums.EnemyState.ATTACK)
+				return
+			# Give the slot up, skip this target for a while and choose another one.
+			if _stall_time >= GameConfig.crowd_wait_retarget_time and _uses_melee_slot(current_target):
+				var stuck_on := current_target
+				_release_melee_slot()
+				_skip_full_target(stuck_on)
+				_stall_time = 0.0
+				_retarget_now()
 				return
 			_update_target_tracking(delta)
 			_update_navigation_movement(delta)
@@ -1068,7 +1083,8 @@ func _walk_to_wait_ring(delta: float) -> void:
 	if _wait_phase == WaitPhase.STANDING or not _uses_melee_slot(t):
 		return
 	var arrived := _slot_target_distance(t) <= GameConfig.crowd_wait_ring + WAIT_RING_TOLERANCE
-	if arrived:
+	var boxed_in := _wait_phase == WaitPhase.WALKING_IN and _stall_time >= STALL_ATTACK_TIME
+	if arrived or boxed_in:
 		if _wait_phase == WaitPhase.WALKING_IN:
 			play_anim(&"general/Idle_B", 1.0)
 		_wait_phase = WaitPhase.STANDING
