@@ -9,6 +9,8 @@ extends CharacterBody3D
 # Combat & hit constants
 const COLLISION_LAYER_ENEMY: int = 3
 const TARGET_COLLIDER_PADDING: float = 0.4
+const WEAPON_DATA_PATH := "res://data/weapons/%s.tres"
+const WEAPON_SOURCE: StringName = &"weapon"
 const COMBO_HIT3_ARC_DEG: float = 240.0
 const STRIKE_RATIO_MELEE: float = 0.38
 const STRIKE_RATIO_SPIN: float = 0.45
@@ -34,6 +36,8 @@ const KNOCKBACK_DURATION: float = 0.25
 const POST_ACTION_DURATION: float = 0.1
 
 var aim_dir: Vector3 = Vector3.FORWARD
+## Radius the sword area has in the scene; a weapon can only make it bigger.
+var _sword_area_base_radius: float = -1.0
 var is_commander_mode: bool = false
 var is_deploying: bool = false
 var is_dead: bool = false
@@ -113,7 +117,9 @@ func _ready() -> void:
 	_setup_skill_runner()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
+	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	_sync_wave_state()
+	_apply_equipped_weapon()
 	_refresh_aura.call_deferred()
 
 
@@ -203,8 +209,10 @@ func _setup_sword_area() -> void:
 	var col_shape := _sword_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col_shape != null and col_shape.shape is CylinderShape3D:
 		var cylinder := col_shape.shape as CylinderShape3D
-		var required_radius: float = (stats.sword_range if stats else 2.2) + TARGET_COLLIDER_PADDING
-		cylinder.radius = maxf(cylinder.radius, required_radius)
+		if _sword_area_base_radius < 0.0:
+			_sword_area_base_radius = cylinder.radius
+		var required_radius: float = get_stat(&"sword_range", 2.2) + TARGET_COLLIDER_PADDING
+		cylinder.radius = maxf(_sword_area_base_radius, required_radius)
 
 
 func _physics_process(delta: float) -> void:
@@ -781,7 +789,7 @@ func _execute_sword_strike(combo_step: int) -> void:
 	if _sword_area == null or stats == null:
 		return
 
-	var max_range: float = stats.sword_range + TARGET_COLLIDER_PADDING
+	var max_range: float = get_stat(&"sword_range", 2.2) + TARGET_COLLIDER_PADDING
 	var arc_deg: float = COMBO_HIT3_ARC_DEG if combo_step == 3 else stats.sword_arc_deg
 	var half_arc_rad: float = deg_to_rad(arc_deg * 0.5)
 
@@ -983,6 +991,28 @@ func _sync_wave_state() -> void:
 	var index: int = wave_manager.wave_state
 	if index >= 0 and index < state_names.size():
 		_wave_state = StringName(state_names[index])
+
+
+## Weapon range goes into the StatBlock as a multiplier on the base sword range.
+func _on_weapon_equipped(weapon_id: StringName) -> void:
+	_apply_weapon(weapon_id)
+
+
+## A commander that appears after the weapon was equipped still picks it up.
+func _apply_equipped_weapon() -> void:
+	var run_state := get_tree().get_first_node_in_group(&"run_state") as RunState
+	if run_state != null:
+		_apply_weapon(run_state.equipped_weapon)
+
+
+func _apply_weapon(weapon_id: StringName) -> void:
+	var path := WEAPON_DATA_PATH % weapon_id
+	var weapon := load(path) as WeaponData if ResourceLoader.exists(path) else null
+	if weapon == null:
+		push_warning("Commander: no WeaponData at %s, the sword keeps the base range" % path)
+	var range_mult := weapon.range_mult if weapon != null else 1.0
+	stat_block.set_mul(&"sword_range", WEAPON_SOURCE, range_mult - 1.0)
+	_setup_sword_area()
 
 
 func _on_wave_state_changed(new_state: StringName) -> void:

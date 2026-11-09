@@ -2,8 +2,10 @@ extends Node3D
 ## Manual playtest for the shared damage formula. Not shipped. Run with F6.
 ## Swing at the dummies to feel sword damage, cast Whirlwind (same call SkillRunner makes), stack
 ## Sharpness, switch the per-hit cap and the fire patch on and off, and fire non-sword hits at
-## the Bulwark to see RESIST and IMMUNE, and put Slow and Burn on the dummies. Floating damage
-## numbers are on, so a sword swing at the armoured Bulwark shows RESIST and a PIERCE hit shows
+
+## the Bulwark to see RESIST and IMMUNE, and put Slow and Burn on the dummies. 
+## F1-F3 try the weapon state: grant the next weapon, equip the next owned one (PREP only) and flip between PREP and COMBAT; the ring shows the sword range.
+## Floating damage numbers are on, so a sword swing at the armoured Bulwark shows RESIST and a PIERCE hit shows
 ## IMMUNE. Keys here are test-only, game input is untouched.
 
 const COMMANDER_SCENE := preload("res://entities/commander/commander.tscn")
@@ -18,6 +20,7 @@ const DOT_RAW := 6.0
 const DOT_DEALT := 1.05
 const DOT_INTERVAL := 0.25
 const TEST_HIT_RAW := 40.0
+const WEAPON_ORDER: Array[StringName] = [&"sword_base", &"frost", &"chain_lightning", &"burn", &"rampage", &"swift"]
 const SLOW_PCT := 0.20
 const SLOW_TIME := 3.0
 const BURN_PCT := 0.50
@@ -35,6 +38,9 @@ var _dot_timer: float = 0.0
 var _dot_total: int = 0
 var _dot_ticks: int = 0
 var _last_hit: String = "-"
+var _run_state: RunState
+var _range_ring: MeshInstance3D
+var _wave_state: StringName = &"COMBAT"
 var _walking: bool = false
 var _walk_dir: Vector3 = Vector3.RIGHT
 var _burn_ticks: int = 0
@@ -48,12 +54,19 @@ var _log_lines: Array[String] = []
 
 
 func _ready() -> void:
+	_run_state = RunState.new()
+	add_child(_run_state)
 	_commander = COMMANDER_SCENE.instantiate() as CharacterBody3D
 	add_child(_commander)
+	_build_range_ring()
 	_grunts.append(_spawn_dummy(GRUNT_SCENE, Vector3(3.0, 0.0, 0.0), "Grunt A"))
 	_grunts.append(_spawn_dummy(GRUNT_SCENE, Vector3(3.0, 0.0, 3.0), "Grunt B"))
 	_grunts.append(_spawn_dummy(GRUNT_SCENE, Vector3(-4.0, 0.0, 0.0), "Grunt C"))
 	_bulwark = _spawn_dummy(BULWARK_SCENE, Vector3(0.0, 0.0, -5.0), "Bulwark")
+	_grunts.append(_spawn_dummy(GRUNT_SCENE, Vector3(0.0, 0.0, 2.3), "Grunt D 2.3 m (swift misses)"))
+	EventBus.mode_changed.emit(&"FRONTLINE")
+	EventBus.state_changed.emit(&"COMBAT")
+	_log("Ready. Swing with left click, keys 1-6 run the tests, F1-F3 try weapons.")
 	var numbers := CanvasLayer.new()
 	numbers.add_child(DamageNumberLayer.new())
 	add_child(numbers)
@@ -86,11 +99,41 @@ func _process(delta: float) -> void:
 		while _dot_timer >= DOT_INTERVAL:
 			_dot_timer -= DOT_INTERVAL
 			_grunts[0].take_damage(DamageInfo.outgoing(DOT_RAW, DOT_DEALT, Enums.DamageType.BLAST, _commander, 0.0, Vector3.ZERO, true))
+	_range_ring.global_position = _commander.global_position + Vector3(0.0, 0.05, 0.0)
+	_range_ring.scale = Vector3.ONE * _sword_reach()
 	for e: Enemy in _titles:
 		var status := _status_text(e)
 		(e.get_node("TitleLabel") as Label3D).text = _titles[e] if status.is_empty() else "%s
 %s" % [_titles[e], status]
 	_update_info()
+
+
+## Centre-to-centre distance at which the sword still reaches a target.
+func _sword_reach() -> float:
+	return _commander.get_stat(&"sword_range", 2.2) + _commander.TARGET_COLLIDER_PADDING
+
+
+func _build_range_ring() -> void:
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.98
+	torus.outer_radius = 1.0
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(1.0, 0.8, 0.2, 0.6)
+	_range_ring = MeshInstance3D.new()
+	_range_ring.mesh = torus
+	_range_ring.material_override = mat
+	add_child(_range_ring)
+
+
+func _next_weapon(owned: bool) -> StringName:
+	var start := WEAPON_ORDER.find(_run_state.equipped_weapon) if owned else -1
+	for step in WEAPON_ORDER.size():
+		var id := WEAPON_ORDER[(start + 1 + step) % WEAPON_ORDER.size()]
+		if _run_state.owned_weapons.has(id) == owned:
+			return id
+	return &""
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -120,6 +163,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			_test_hit(Enums.DamageType.PIERCE)
 		KEY_6:
 			_test_hit(Enums.DamageType.BLAST)
+		KEY_F1:
+			var id := _next_weapon(false)
+			_log("Granted %s" % id if id != &"" and _run_state.grant_weapon(id) else "Every weapon is owned already")
+		KEY_F2:
+			var id := _next_weapon(true)
+			if _run_state.equip_weapon(id):
+				_log("Equipped %s: sword range %.2f m (+0.4 padding)" % [id, _commander.get_stat(&"sword_range", 2.2)])
+			else:
+				_log("Equip %s refused: state is %s, only PREP allows it" % [id, _run_state.get_current_state()])
+		KEY_F3:
+			_wave_state = &"PREP" if _wave_state == &"COMBAT" else &"COMBAT"
+			EventBus.state_changed.emit(_wave_state)
+			_log("State %s%s" % [_wave_state, " (weapons can change, the commander cannot fight)" if _wave_state == &"PREP" else " (the commander fights, weapons are locked)"])
 		KEY_7:
 			_apply_slow()
 		KEY_8:
@@ -260,6 +316,9 @@ BULWARK HP  %d / %d
 [3] Toggle cap   [4] Toggle fire patch on Grunt A
 [5] PIERCE %d on all (Bulwark must be IMMUNE, no damage)
 [6] BLAST %d on all (Bulwark armour takes full damage)
+[F1] Grant next weapon   [F2] Equip next owned (PREP only)   [F3] Toggle PREP / COMBAT
+WEAPON  %s   sword range %.2f m   ring radius %.2f m   state %s
+        owned: %s
 [7] Slow 20%% 3 s on all   [8] Burn 50%% sword raw over 5 s on all   [9] Grunt C walks (watch Slow)
 Sword on the armoured Bulwark: grey RESIST number.  [5] on the Bulwark: IMMUNE number.
 [R] Reset     [WASD] move     [Left click] sword""" % [
@@ -272,6 +331,8 @@ Sword on the armoured Bulwark: grey RESIST number.  [5] on the Bulwark: IMMUNE n
 		_burn_ticks, _burn_total,
 		_bulwark.health.hp, _bulwark.health.max_hp,
 		int(TEST_HIT_RAW), int(TEST_HIT_RAW),
+		_run_state.equipped_weapon, _commander.get_stat(&"sword_range", 2.2), _sword_reach(), _run_state.get_current_state(),
+		", ".join(_run_state.owned_weapons.map(func(w: StringName) -> String: return String(w))),
 	]
 
 

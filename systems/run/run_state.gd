@@ -5,6 +5,9 @@ extends Node
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
 
+## The base sword: owned and equipped at the start of every run.
+const BASE_WEAPON := &"sword_base"
+
 # --- Progress ---
 var wave_index: int = 1
 var waves_cleared: int = 0
@@ -24,8 +27,8 @@ var hazard_used: bool = false
 var hazard_session: Dictionary = {}
 
 # --- Weapons ---
-var owned_weapons: Array[StringName] = [&"sword_base"]
-var equipped_weapon: StringName = &"sword_base"
+var owned_weapons: Array[StringName] = [BASE_WEAPON]
+var equipped_weapon: StringName = BASE_WEAPON
 var chain_cd: float = 0.0
 
 # --- Fortress & Emergency Repair ---
@@ -133,6 +136,32 @@ func init_from_config(config: RunConfig) -> void:
 	commander_max_hp = config.commander_max_hp
 	emg_repair_heal_pct = config.emg_repair_heal_pct
 	rerolls_left = config.rerolls_per_run
+	owned_weapons = [BASE_WEAPON]
+	equipped_weapon = BASE_WEAPON
+
+
+## Adds a weapon to the run. False when the id is empty or the weapon is already owned.
+func grant_weapon(id: StringName) -> bool:
+	if id == &"" or owned_weapons.has(id):
+		return false
+	owned_weapons.append(id)
+	return true
+
+
+## Equips an owned weapon. Only in PREP (anything else, HAZARD_TRIAL included, is refused) and
+## never after the run has ended. False when the weapon is not owned or the state is wrong;
+## weapon_equipped is sent only on success.
+func equip_weapon(id: StringName) -> bool:
+	if _run_is_ended or not owned_weapons.has(id) or get_current_state() != &"PREP":
+		return false
+	equipped_weapon = id
+	EventBus.weapon_equipped.emit(id)
+	return true
+
+
+## The last wave state received. PREP until the first state_changed arrives.
+func get_current_state() -> StringName:
+	return _current_state if _current_state != &"" else &"PREP"
 
 
 ## Adds Mithril and tells the HUD and the Fortress panel. Zero or negative amounts are ignored.

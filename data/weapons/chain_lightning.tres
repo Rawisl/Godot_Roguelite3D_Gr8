@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://cl7fghhytp172"]
+
+[ext_resource type="Script" uid="uid://x7apaf51e872" path="res://common/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"chain_lightning"
+name_key = &"weapon.chain_lightning.name"
+effect_id = &"chain"
+params = Dictionary[StringName, float]({
+&"chain_damage_pct": 0.2,
+&"chain_max_targets": 3,
+&"chain_radius": 2,
+&"chain_cooldown": 5
+})
