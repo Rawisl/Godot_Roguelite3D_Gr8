@@ -300,6 +300,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 	var budget: int = cfg.get_budget(wave_num)
 	var is_boss: bool = is_boss_wave(wave_num)
 	if is_boss:
+		# TODO(Ender-Via): SPN-10: escorts for waves 1-30 come from WaveScript; only from wave 31 is it 0.5x budget.
 		budget = maxi(1, int(floor(float(budget) * 0.5)))
 
 	var rng := RandomNumberGenerator.new()
