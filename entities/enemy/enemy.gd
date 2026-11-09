@@ -30,6 +30,18 @@ var has_target_position: bool = false
 ## Updated every path_update_interval by the unit itself; towers only read it.
 var nav_progress: float = 0.0
 var speed_multiplier: float = 1.0
+## Slow from weapon effects: share of speed lost and game seconds left. Kept apart from
+## speed_multiplier, which is overwritten when the unit enrages or changes phase.
+var slow_pct: float = 0.0
+var slow_timer: float = 0.0
+## Burn: damage per tick, game seconds left, progress to the next tick and who set it.
+var burn_per_tick: float = 0.0
+var burn_timer: float = 0.0
+var burn_dealt_mult: float = 1.0
+var burn_damage_type: Enums.DamageType = Enums.DamageType.SLASH
+var burn_source: Node = null
+var _burn_clock: float = 0.0
+var _burn_from_commander: bool = false
 var is_dead: bool = false
 
 var spawn_wave: int = 1
@@ -40,6 +52,7 @@ var scaled_damage: int = 0
 var scaled_gold: int = 0
 var scale_config: ScaleConfig = null
 
+const BURN_EPSILON := 0.0001
 const DEFAULT_SCALE_CONFIG: ScaleConfig = preload("res://data/config/scale_config.tres")
 
 func _get_effective_scale_config() -> ScaleConfig:
@@ -325,8 +338,74 @@ func _physics_process(delta: float) -> void:
 	_apply_avoidance(delta)
 	move_and_slide()
  
+## Slows the unit by pct (0.2 = 20% slower) for duration game seconds. A new hit only refreshes
+## the slow, it never adds up. Refused for dead or spawning units and when the hit's damage type
+## cannot hurt the unit (resist 0). damage_type -1 means no type to check.
+func apply_slow(pct: float, duration: float, damage_type: int = -1) -> bool:
+	if is_dead or spawn_grace or duration <= 0.0 or pct <= 0.0:
+		return false
+	if damage_type >= 0 and has_method(&"get_resist") and float(call(&"get_resist", damage_type)) <= 0.0:
+		return false
+	slow_pct = clampf(pct, 0.0, 1.0)
+	slow_timer = duration
+	return true
+
+
+## 1.0 while not slowed, otherwise the share of speed that is left.
+func get_slow_factor() -> float:
+	return 1.0 - slow_pct if slow_timer > 0.0 else 1.0
+
+
+## Sets the unit on fire: raw_total damage spread evenly over duration game seconds, one tick per
+## second through take_damage as a DoT hit. A new hit only resets the time left, it does not add
+## damage. Refused under the same rules as apply_slow.
+func apply_burn(raw_total: float, duration: float, damage_type: Enums.DamageType, source: Node = null, dealt_mult: float = 1.0) -> bool:
+	if is_dead or spawn_grace or duration <= 0.0 or raw_total <= 0.0:
+		return false
+	if has_method(&"get_resist") and float(call(&"get_resist", damage_type)) <= 0.0:
+		return false
+	if burn_timer <= 0.0:
+		_burn_clock = 0.0
+	burn_per_tick = raw_total / duration
+	burn_timer = duration
+	burn_damage_type = damage_type
+	burn_dealt_mult = dealt_mult
+	burn_source = source if is_instance_valid(source) else null
+	_burn_from_commander = burn_source != null and burn_source.is_in_group(&"commander")
+	return true
+
+
+## Runs the slow and burn clocks. Called from _update_timers and from states that skip it.
+func _tick_status(delta: float) -> void:
+	if is_dead:
+		return
+	if slow_timer > 0.0:
+		slow_timer = maxf(0.0, slow_timer - delta)
+		if slow_timer == 0.0:
+			slow_pct = 0.0
+	if burn_timer > 0.0:
+		var step := minf(delta, burn_timer)
+		burn_timer -= step
+		_burn_clock += step
+		while _burn_clock >= 1.0 - BURN_EPSILON and not is_dead:
+			_burn_clock -= 1.0
+			_burn_tick()
+		if burn_timer <= BURN_EPSILON:
+			burn_timer = 0.0
+			_burn_clock = 0.0
+
+
+func _burn_tick() -> void:
+	var source: Node = burn_source if is_instance_valid(burn_source) else null
+	var info := DamageInfo.outgoing(burn_per_tick, burn_dealt_mult, burn_damage_type, source, 0.0, Vector3.ZERO, true)
+	info.hit_by_commander = info.hit_by_commander or _burn_from_commander
+	take_damage(info)
+
+
 func _update_timers(delta: float) -> void:
 	life_timer += delta
+
+	_tick_status(delta)
 
 	_progress_timer -= delta
 	if _progress_timer <= 0.0:
@@ -556,7 +635,7 @@ func _move_towards_direction(dir: Vector3) -> void:
 	move_dir.y = 0.0
 	if move_dir.length_squared() > 0.001:
 		move_dir = move_dir.normalized()
-		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier
+		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier * get_slow_factor()
 		velocity.x = move_dir.x * move_speed
 		velocity.z = move_dir.z * move_speed
 		var target_yaw := atan2(move_dir.x, move_dir.z)
@@ -603,7 +682,7 @@ func _update_navigation_movement(_delta: float) -> void:
  
 	if move_dir.length_squared() > 0.001:
 		move_dir = move_dir.normalized()
-		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier
+		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier * get_slow_factor()
 		velocity.x = move_dir.x * move_speed
 		velocity.z = move_dir.z * move_speed
  
@@ -1194,6 +1273,8 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		provoked_timer = GameConfig.aggro_duration
 
 	if DamageCalc.resolve(info, self) <= 0:
+		if info.immune and info.is_from_commander():
+			EventBus.damage_immune.emit(self, info)
 		return 0
  
 	if info.knockback_force > 0.0:

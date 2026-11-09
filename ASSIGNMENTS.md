@@ -372,7 +372,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG3
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hệ kháng boss DMG-01..05, miễn taunt/knockback (AI-06, BOSS-01), hiển thị IMMUNE và RESIST
 - Nghiệm thu: Bulwark pha 1: Arrow không bắn, Cannon 100%, kiếm 60%
 - Cần xong trước: W8-NG2, W8B-NG1
@@ -388,7 +388,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG5
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Trạng thái Slow và DoT trên Enemy và Bulwark (Frost áp được lên boss, ngoại lệ BOSS-01; Burn tick qua dot_remainder)
 - Nghiệm thu: Slow 20% 3 s làm mới không cộng dồn; DoT 5 tick đúng tổng; Bulwark nhận Slow nhưng vẫn miễn taunt/knockback
 - Tệp liên quan: entities/enemy/enemy.gd, entities/enemy/bulwark.gd, common/health_component.gd
