@@ -21,6 +21,7 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var default_wave_1_count: int = 8
 @export var auto_advance_summary: bool = true
 @export var enable_reward_pick: bool = true
+@export var enable_victory_screen: bool = false
 
 var _intro_timer: float = 0.0
 var _intro_elapsed: float = 0.0
@@ -732,10 +733,12 @@ func advance_from_summary() -> void:
 
 	if current_wave == GameConfig.victory_wave and not _victory_handled:
 		_victory_handled = true
-		_waiting_victory_continue = true
 		EventBus.run_victory.emit(current_wave)
-		TimeManager.request_pause(TimeManager.REASON_VICTORY)
-		return
+		# TODO(Ender-Via): pause with REASON_VICTORY once SCR-20 victory screen lands; currently disabled by default.
+		if enable_victory_screen:
+			_waiting_victory_continue = true
+			TimeManager.request_pause(TimeManager.REASON_VICTORY)
+			return
 
 	_advance_past_summary_and_rewards()
 

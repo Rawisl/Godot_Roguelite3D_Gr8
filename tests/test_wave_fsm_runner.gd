@@ -466,6 +466,7 @@ func test_wave_victory_and_reward_pick_flow() -> void:
 	print("\n[GROUP 11] Testing Wave Victory Hook and Reward Pick Skip")
 	var wm := WaveManager.new()
 	wm.auto_advance_summary = false
+	wm.enable_victory_screen = true
 	wm.current_wave = GameConfig.victory_wave
 	add_child(wm)
 
