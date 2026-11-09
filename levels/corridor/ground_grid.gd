@@ -60,5 +60,5 @@ func get_boss_point() -> Vector3:
 		return grid_data.origin
 	var gate_end := lane.global_transform * lane.curve.get_point_position(lane.curve.point_count - 1)
 	var fallback := gate_end + grid_data.column_dir.normalized() * BOSS_POINT_FALLBACK_GAP
-	push_error("GroundGrid: no boss_melee_point, using the fallback at %s" % fallback)
+	push_warning("GroundGrid: no boss_melee_point, using the fallback at %s" % fallback)
 	return fallback
