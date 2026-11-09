@@ -152,6 +152,10 @@ extends Node
 @export var skill_slots_active: int = 3
 @export var skill_slots_passive: int = 3
 @export var stat_max_stacks: int = 3
+## Sword Wave flight speed in metres per second, used by the VFX.
+@export var skill_sword_wave_speed: float = 20.0
+## How far from the commander a Firebomb can land.
+@export var skill_firebomb_cast_range: float = 10.0
 ## Offer weights: an owned skill below max, a new skill while its kind has a free slot, a stat card below max stacks.
 @export var reward_weight_owned: int = 40
 @export var reward_weight_new: int = 30
@@ -164,14 +168,8 @@ extends Node
 @export var tower_tier3_level: int = 25
 @export var tower_gate_tier2: int = 4
 @export var tower_gate_tier3: int = 8
-@export var xp_base: int = 5
-@export var xp_step: int = 4
 @export var xp_commander_pct: float = 1.0
 @export var xp_tower_only_pct: float = 0.5
-
-
-func get_xp_to_level(level: int) -> int:
-	return xp_base + xp_step * (maxi(1, level) - 1)
 
 
 func get_par_time(spawn_duration: float, is_boss: bool, boss_timer: float = 90.0) -> float:

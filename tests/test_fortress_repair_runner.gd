@@ -1,12 +1,11 @@
 extends Node
 
-## Automated test runner: tests BuildService.repair_fortress against the Fortress quote,
-## and the Fortress click area:
-## - step prices, partial repairs when gold is short, the minimum repair
-## - refusals: full HP, outside PREP, destroyed Fortress, nested calls
-## - the gold taken always equals what Fortress.quote_repair promises
-## - one gold_changed per repair, none when refused
-## - Fortress.min_repair_cost matches the smallest repair the buttons allow
+## Automated test runner: tests BuildService.repair_fortress_mithril, Fortress.repair_with_mithril,
+## RunState's Mithril API and the Fortress click area:
+## - one Mithril heals mithril_repair_pct of the effective max HP, clamped at max
+## - refusals: full HP, no Mithril, outside PREP, destroyed Fortress, no RunState
+## - the Mithril is taken only when HP was restored, and both signals are out before the call returns
+## - RunState add_mithril / spend_mithril and the reset on run_started
 
 const FORTRESS_SCENE: PackedScene = preload("res://entities/fortress/fortress.tscn")
 
@@ -18,13 +17,13 @@ var fails: int = 0
 var failed_names: PackedStringArray = []
 
 var _root: Node3D
-var _gold: GoldManager
+var _run_state: RunState
 var _service: BuildService
 var _fortress: Fortress
 var _repaired: Array = []
 var _denied: Array = []
-var _gold_changes: int = 0
-var _nested_results: Array = []
+var _mithril_events: Array = []
+var _hp_events: Array = []
 
 func _ready() -> void:
 	print("\n=======================================================")
@@ -51,34 +50,32 @@ func assert_true(cond: bool, test_name: String) -> void:
 
 func _run() -> void:
 	_setup()
-	# GoldManager resets itself on a deferred call; let it land before gold is set by hand.
 	await get_tree().process_frame
-	test_small_step()
-	test_large_step_capped()
-	test_worked_example()
-	test_short_gold()
-	test_below_minimum()
-	test_gap_under_one_percent()
+	test_heals_share_and_spends_one()
+	test_clamped_at_max()
 	test_full_hp()
+	test_no_mithril()
 	test_not_prep()
-	test_fortress_refuses()
 	test_destroyed()
-	test_transaction_lock()
-	test_quote_matches_spend()
-	test_gold_changed_once()
-	test_min_repair_cost()
+	test_no_run_state()
+	test_signals_before_return()
+	test_repaired_source()
+	test_second_call_without_mithril()
+	test_effective_max_hp()
+	test_run_state_api()
 	await test_click_area()
 
 func _setup() -> void:
 	_root = Node3D.new()
 	add_child(_root)
-	_gold = GoldManager.new()
-	add_child(_gold)
+	_run_state = RunState.new()
+	add_child(_run_state)
 	_service = BuildService.new()
 	add_child(_service)
 	EventBus.fortress_repaired.connect(func(heal, source): _repaired.append([heal, source]))
 	EventBus.build_denied.connect(func(reason, shortfall): _denied.append([reason, shortfall]))
-	EventBus.gold_changed.connect(func(_g): _gold_changes += 1)
+	EventBus.mithril_changed.connect(func(n, delta): _mithril_events.append([n, delta]))
+	EventBus.fortress_hp_changed.connect(func(hp, max_hp, delta): _hp_events.append([hp, max_hp, delta]))
 	_spawn_fortress()
 
 ## Frees the old Fortress at once so the "fortress" group never holds two.
@@ -99,238 +96,146 @@ func _set_hp(target: int) -> void:
 		_fortress.health.heal(target - hp)
 	EventBus.state_changed.emit(&"PREP")
 
-## PREP, Frontline, no recorded events.
-func _reset() -> void:
-	EventBus.run_started.emit()
-	EventBus.state_changed.emit(&"PREP")
-	EventBus.mode_changed.emit(&"FRONTLINE")
-	_clear_records()
-
 func _clear_records() -> void:
 	_repaired.clear()
 	_denied.clear()
-	_gold_changes = 0
-	_nested_results.clear()
+	_mithril_events.clear()
+	_hp_events.clear()
 
-## Fresh PREP with the given HP and gold, nothing recorded.
-func _prepare(hp: int, gold: int) -> void:
-	_reset()
+## Fresh PREP with the given HP and Mithril, nothing recorded.
+func _prepare(hp: int, mithril: int) -> void:
+	EventBus.run_started.emit()
+	EventBus.state_changed.emit(&"PREP")
 	_set_hp(hp)
-	_gold.gold = gold
+	_run_state.mithril = mithril
 	_clear_records()
 
 func _max_hp() -> int:
 	return _fortress.get_max_hp()
 
-func _price() -> int:
-	return _fortress.stats.repair_gold_per_pct
+## What one Mithril heals at the Fortress' effective max HP.
+func _share() -> int:
+	return floori(_max_hp() * _fortress.stats.mithril_repair_pct + Fortress.PCT_EPSILON)
 
-func _small() -> float:
-	return _fortress.stats.repair_step_small_pct
+func test_heals_share_and_spends_one() -> void:
+	print("\n[GROUP 1] One Mithril heals the configured share")
+	var hp := _max_hp() - _share() * 2
+	_prepare(hp, 3)
+	assert_true(_service.repair_fortress_mithril(), "repair_fortress_mithril returns true")
+	assert_true(_fortress.get_hp() == hp + _share(), "HP rose by floor(max × mithril_repair_pct)")
+	assert_true(_run_state.mithril == 2, "exactly 1 Mithril was spent")
 
-func _large() -> float:
-	return _fortress.stats.repair_step_large_pct
-
-func test_small_step() -> void:
-	print("\n[GROUP 1] Small step")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.2)
-	_prepare(hp, 5000)
-	assert_true(_service.repair_fortress(_small()), "repair_fortress returns true")
-	assert_true(_fortress.get_hp() == hp + floori(_small() * m), "HP rose by the small step")
-	var cost := ceili(_small() * 100.0 * _price())
-	assert_true(5000 - _gold.gold == cost, "gold dropped by the step price")
-	var quoted: Dictionary = Fortress.quote_repair(_small() * 100.0, hp, m, 1 << 30, _price())
-	assert_true(5000 - _gold.gold == int(quoted.cost), "gold equals the price the panel quotes")
-	assert_true(_repaired.size() == 1 and _repaired[0] == [floori(_small() * m), &"GOLD"], "fortress_repaired emitted once with GOLD")
-
-func test_large_step_capped() -> void:
-	print("\n[GROUP 2] Large step bigger than the gap")
-	var m := _max_hp()
-	_prepare(m - floori(m * 0.2), 5000)
-	var missing_pct := _fortress.get_missing_pct()
-	assert_true(_service.repair_fortress(_large()), "repair_fortress returns true")
-	assert_true(_fortress.is_full(), "HP is full")
-	assert_true(5000 - _gold.gold == ceili(missing_pct * _price() - Fortress.PCT_EPSILON), "price follows the gap, not the step")
-
-func test_worked_example() -> void:
-	print("\n[GROUP 3] Worked example with FORT_HP level 1")
-	_spawn_fortress(1)
-	var m := _max_hp()
-	if _fortress.stats.max_hp != 1000 or _price() != 4:
-		print("  [SKIP] needs max_hp 1000 and 4 gold per percent")
-		_spawn_fortress()
-		return
-	assert_true(m == 1050, "max HP is 1050")
-	_prepare(1033, 5000)
-	assert_true(_service.repair_fortress(0.0), "repair to full returns true")
-	assert_true(_fortress.get_hp() == 1050, "HP back to 1050")
-	assert_true(5000 - _gold.gold == 7, "cost 7 gold")
-	_prepare(1033, 5000)
-	assert_true(_service.repair_fortress(_small()), "small step returns true")
-	assert_true(_fortress.get_hp() == 1050, "small step also reaches 1050")
-	assert_true(5000 - _gold.gold == 7, "small step also costs 7 gold")
-	_spawn_fortress()
-
-func test_short_gold() -> void:
-	print("\n[GROUP 4] Short on gold, repaired 1% at a time")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.2)
-	for step in [_small(), 0.0]:
-		_prepare(hp, _price() + 2)
-		assert_true(_service.repair_fortress(step), "step %s returns true" % step)
-		assert_true(_fortress.get_hp() == hp + floori(m / 100.0), "HP rose by 1%%, step %s" % step)
-		assert_true(_gold.gold == 2, "two gold left, step %s" % step)
-
-func test_below_minimum() -> void:
-	print("\n[GROUP 5] Gold below the smallest repair")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.2)
-	_prepare(hp, _price() - 1)
-	assert_true(not _service.repair_fortress(_small()), "returns false")
-	assert_true(_gold.gold == _price() - 1, "gold unchanged")
-	assert_true(_fortress.get_hp() == hp, "HP unchanged")
-	assert_true(_denied == [[&"NOT_ENOUGH_GOLD", 1]], "build_denied NOT_ENOUGH_GOLD with shortfall 1")
-	assert_true(_repaired.is_empty(), "no fortress_repaired")
-
-func test_gap_under_one_percent() -> void:
-	print("\n[GROUP 6] Gap smaller than 1%")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.005)
-	var cost: int = Fortress.quote_repair(_small() * 100.0, hp, m, 1 << 30, _price()).cost
-	_prepare(hp, cost)
-	assert_true(_service.repair_fortress(_small()), "returns true")
-	assert_true(_fortress.is_full(), "HP is full")
-	assert_true(_gold.gold == 0, "all the gold was needed")
+func test_clamped_at_max() -> void:
+	print("\n[GROUP 2] Gap smaller than the share")
+	_prepare(_max_hp() - 1, 2)
+	assert_true(_service.repair_fortress_mithril(), "still allowed")
+	assert_true(_fortress.get_hp() == _max_hp(), "HP clamped at max")
+	assert_true(_run_state.mithril == 1, "still costs 1 Mithril")
+	assert_true(_repaired.size() == 1 and _repaired[0][0] == 1, "fortress_repaired reports the HP really healed")
 
 func test_full_hp() -> void:
-	print("\n[GROUP 7] Full HP")
-	_prepare(_max_hp(), 5000)
-	for step in [_small(), _large(), 0.0]:
-		assert_true(not _service.repair_fortress(step), "step %s refused" % step)
-	assert_true(_gold.gold == 5000, "gold unchanged")
-	assert_true(_gold_changes == 0 and _repaired.is_empty() and _denied.is_empty(), "no signals emitted")
+	print("\n[GROUP 3] Full HP")
+	_prepare(_max_hp(), 2)
+	assert_true(not _service.repair_fortress_mithril(), "refused")
+	assert_true(_run_state.mithril == 2, "Mithril unchanged")
+	assert_true(_repaired.is_empty(), "no fortress_repaired")
+	assert_true(_mithril_events.is_empty(), "no mithril_changed")
+
+func test_no_mithril() -> void:
+	print("\n[GROUP 4] No Mithril")
+	var hp := _max_hp() - _share()
+	_prepare(hp, 0)
+	assert_true(not _service.repair_fortress_mithril(), "refused")
+	assert_true(_denied.size() == 1 and _denied[0] == [&"NOT_ENOUGH_MITHRIL", 1], "build_denied NOT_ENOUGH_MITHRIL with shortfall 1")
+	assert_true(_fortress.get_hp() == hp, "HP unchanged")
 
 func test_not_prep() -> void:
-	print("\n[GROUP 8] Outside PREP, and both modes in PREP")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.2)
-	_prepare(hp, 5000)
-	for state in [&"COMBAT", &"BOSS_COMBAT"]:
+	print("\n[GROUP 5] Outside PREP")
+	var hp := _max_hp() - _share()
+	for state in [&"COMBAT", &"HAZARD_TRIAL", &"BOSS_COMBAT"]:
+		_prepare(hp, 2)
 		EventBus.state_changed.emit(state)
-		assert_true(not _service.repair_fortress(_small()), "refused in %s" % state)
-	assert_true(_gold.gold == 5000 and _fortress.get_hp() == hp, "gold and HP unchanged")
+		assert_true(not _service.repair_fortress_mithril(), "%s: refused" % state)
+		assert_true(_run_state.mithril == 2 and _fortress.get_hp() == hp, "%s: nothing spent, HP unchanged" % state)
+		assert_true(_fortress.repair_with_mithril() == 0, "%s: Fortress itself refuses" % state)
 	EventBus.state_changed.emit(&"PREP")
-	EventBus.mode_changed.emit(&"COMMANDER")
-	assert_true(_service.repair_fortress(_small()), "allowed in Commander mode during PREP")
-	EventBus.mode_changed.emit(&"FRONTLINE")
-	assert_true(_service.repair_fortress(_small()), "allowed in Frontline mode during PREP")
-
-func test_fortress_refuses() -> void:
-	print("\n[GROUP 9] Fortress refuses: no gold taken")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.2)
-	_prepare(hp, 5000)
-	_fortress.set(&"_wave_state", &"COMBAT")
-	assert_true(not _service.repair_fortress(_small()), "returns false")
-	assert_true(_gold.gold == 5000, "gold unchanged")
-	assert_true(_gold_changes == 0, "no gold_changed when the Fortress refuses")
-	assert_true(_fortress.get_hp() == hp, "HP unchanged")
-	_reset()
 
 func test_destroyed() -> void:
-	print("\n[GROUP 10] Destroyed Fortress")
-	_prepare(_max_hp(), 5000)
-	_set_hp(0)
+	print("\n[GROUP 6] Destroyed Fortress")
+	_spawn_fortress()
+	_prepare(_max_hp(), 2)
+	EventBus.state_changed.emit(&"COMBAT")
+	_fortress.take_damage(_max_hp(), Enums.DamageType.TRUE)
+	EventBus.state_changed.emit(&"PREP")
 	assert_true(_fortress.is_destroyed(), "Fortress is destroyed")
-	assert_true(not _service.repair_fortress(_small()), "repair refused")
-	assert_true(_gold.gold == 5000, "gold unchanged")
+	assert_true(not _service.repair_fortress_mithril(), "refused")
+	assert_true(_run_state.mithril == 2, "Mithril unchanged")
 	_spawn_fortress()
 
-func test_transaction_lock() -> void:
-	print("\n[GROUP 11] Nested calls from signal handlers")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.2)
-	var quoted: Dictionary = Fortress.quote_repair(_small() * 100.0, hp, m, 5000, _price())
-	var nest := func(): _nested_results.append(_service.repair_fortress(_small()))
-	var on_repaired := func(_heal, _source): nest.call()
-	var on_gold := func(_g): nest.call()
-	EventBus.fortress_repaired.connect(on_repaired)
-	EventBus.gold_changed.connect(on_gold)
-	_prepare(hp, 5000)
-	var ok := _service.repair_fortress(_small())
-	EventBus.fortress_repaired.disconnect(on_repaired)
-	EventBus.gold_changed.disconnect(on_gold)
-	assert_true(ok, "outer call succeeds")
-	assert_true(_nested_results.size() >= 2 and not _nested_results.has(true), "every nested call returned false")
-	assert_true(5000 - _gold.gold == int(quoted.cost), "gold dropped by one step only")
-	_prepare(hp, 5000)
-	assert_true(_service.repair_fortress(_small()), "lock released after the transaction")
+func test_no_run_state() -> void:
+	print("\n[GROUP 7] No RunState")
+	var hp := _max_hp() - _share()
+	_prepare(hp, 2)
+	_run_state.remove_from_group(&"run_state")
+	assert_true(not _service.repair_fortress_mithril(), "refused")
+	assert_true(_fortress.get_hp() == hp, "HP unchanged")
+	_run_state.add_to_group(&"run_state")
 
-func test_quote_matches_spend() -> void:
-	print("\n[GROUP 12] Gold spent always equals the Fortress quote")
-	var m := _max_hp()
-	var hps: Array[int] = [m - 1, m - 5, m - floori(m * 0.1) - 3, floori(m * 0.5), 1]
-	var golds: Array[int] = [5000, 7, _price(), _price() - 1]
-	var first_bad := ""
-	var count := 0
-	for hp in hps:
-		for step in [_small(), _large(), 0.0]:
-			for gold in golds:
-				_prepare(hp, gold)
-				var start_hp := _fortress.get_hp()
-				var q: Dictionary = Fortress.quote_repair(step * 100.0, start_hp, m, gold, _price())
-				var ok := _service.repair_fortress(step)
-				var expected_cost: int = q.cost if q.heal > 0 else 0
-				var good: bool = ok == (q.heal > 0) and gold - _gold.gold == expected_cost \
-					and _fortress.get_hp() - start_hp == int(q.heal)
-				count += 1
-				if not good and first_bad == "":
-					first_bad = "hp %d step %s gold %d: ok %s, spent %d, healed %d, quote %s" % [
-						start_hp, step, gold, ok, gold - _gold.gold, _fortress.get_hp() - start_hp, q]
-	if first_bad != "":
-		printerr("  first mismatch: %s" % first_bad)
-	assert_true(first_bad == "", "all %d combinations match the quote" % count)
+func test_signals_before_return() -> void:
+	print("\n[GROUP 8] Signals are out when the call returns")
+	var hp := _max_hp() - _share()
+	_prepare(hp, 3)
+	_service.repair_fortress_mithril()
+	assert_true(_mithril_events == [[2, -1]], "mithril_changed(n - 1, -1)")
+	assert_true(_hp_events.size() == 1 and _hp_events[0] == [hp + _share(), _max_hp(), _share()], "fortress_hp_changed with the new HP and delta")
 
-func test_gold_changed_once() -> void:
-	print("\n[GROUP 14] One gold_changed per repair")
-	var m := _max_hp()
-	var hp := m - floori(m * 0.2)
-	_prepare(hp, 5000)
-	assert_true(_service.repair_fortress(_small()), "small step with enough gold works")
-	assert_true(_gold_changes == 1, "one gold_changed for the small step")
-	_prepare(hp, _price() + 2)
-	assert_true(_service.repair_fortress(_small()), "short gold repairs 1% at a time")
-	assert_true(_gold_changes == 1, "one gold_changed when the gold is short")
-	_prepare(hp, _price() - 1)
-	assert_true(not _service.repair_fortress(_small()), "gold below the minimum refused")
-	assert_true(_gold_changes == 0, "no gold_changed below the minimum")
+func test_repaired_source() -> void:
+	print("\n[GROUP 9] fortress_repaired source")
+	_prepare(_max_hp() - _share(), 1)
+	_service.repair_fortress_mithril()
+	assert_true(_repaired.size() == 1 and _repaired[0] == [_share(), &"MITHRIL"], "source MITHRIL and amount equal to the HP healed")
 
-func test_min_repair_cost() -> void:
-	print("\n[GROUP 15] Fortress.min_repair_cost")
+func test_second_call_without_mithril() -> void:
+	print("\n[GROUP 10] Two calls, one Mithril")
+	_prepare(_max_hp() - _share() * 2, 1)
+	var first := _service.repair_fortress_mithril()
+	var second := _service.repair_fortress_mithril()
+	assert_true(first and not second, "second call refused")
+	assert_true(_run_state.mithril == 0, "only 1 Mithril spent in total")
+	assert_true(_fortress.get_hp() == _max_hp() - _share(), "only one share healed")
+
+func test_effective_max_hp() -> void:
+	print("\n[GROUP 11] FORT_HP level raises the share")
+	_spawn_fortress(5)
 	var m := _max_hp()
-	var price := _price()
-	var gaps: Array[int] = [1, floori(m * 0.005), floori(m * 0.2), m - 1]
-	var first_bad := ""
-	for gap in gaps:
-		var hp := m - gap
-		var missing_pct := float(gap) / float(m) * 100.0
-		var expected := ceili(minf(1.0, missing_pct) * price - Fortress.PCT_EPSILON)
-		var got := Fortress.min_repair_cost(hp, m, price)
-		if got != expected and first_bad == "":
-			first_bad = "hp %d: got %d, expected %d" % [hp, got, expected]
-	if first_bad != "":
-		printerr("  first mismatch: %s" % first_bad)
-	assert_true(first_bad == "", "matches the 1% / whole-gap formula for every gap")
-	assert_true(Fortress.min_repair_cost(m, m, price) == 0, "zero at full HP")
-	assert_true(Fortress.min_repair_cost(m - 10, 0, price) == 0, "zero when max HP is not set")
-	# Gap under 1%: the refusal shortfall is measured against this minimum.
-	var small_hp := m - floori(m * 0.005)
-	var min_cost := Fortress.min_repair_cost(small_hp, m, price)
-	_prepare(small_hp, min_cost - 1)
-	assert_true(not _service.repair_fortress(_small()), "gold one short of the whole small gap refused")
-	assert_true(_denied == [[&"NOT_ENOUGH_GOLD", 1]], "build_denied NOT_ENOUGH_GOLD with shortfall 1")
-	assert_true(_gold.gold == min_cost - 1 and _fortress.get_hp() == small_hp, "gold and HP unchanged")
+	assert_true(m == Fortress.compute_max_hp(_fortress.stats.max_hp, 5), "max HP includes the level")
+	var hp := m - _share() * 2
+	_prepare(hp, 1)
+	assert_true(_service.repair_fortress_mithril(), "repair works")
+	assert_true(_fortress.get_hp() == hp + floori(m * _fortress.stats.mithril_repair_pct + Fortress.PCT_EPSILON), "share follows the effective max HP")
+	_spawn_fortress()
+
+func test_run_state_api() -> void:
+	print("\n[GROUP 12] RunState Mithril API")
+	EventBus.run_started.emit()
+	_clear_records()
+	_run_state.add_mithril(3)
+	assert_true(_run_state.mithril == 3 and _mithril_events == [[3, 3]], "add_mithril emits (n, +amount)")
+	_run_state.add_mithril(0)
+	_run_state.add_mithril(-2)
+	assert_true(_run_state.mithril == 3 and _mithril_events.size() == 1, "amount <= 0 is ignored")
+	_clear_records()
+	assert_true(not _run_state.spend_mithril(4), "spending more than owned returns false")
+	assert_true(_run_state.mithril == 3 and _mithril_events.is_empty(), "nothing changed or emitted")
+	assert_true(not _run_state.spend_mithril(0) and not _run_state.spend_mithril(-1), "amount <= 0 returns false")
+	assert_true(_run_state.spend_mithril(2) and _run_state.mithril == 1 and _mithril_events == [[1, -2]], "spend_mithril emits (n, -amount)")
+	_run_state.add_mithril(1)
+	_clear_records()
+	EventBus.run_started.emit()
+	assert_true(_run_state.mithril == 0 and _mithril_events == [[0, -2]], "run_started resets Mithril to 0 and emits the drop")
+	_clear_records()
+	EventBus.run_started.emit()
+	assert_true(_mithril_events.is_empty(), "run_started with no Mithril emits nothing")
 
 func test_click_area() -> void:
 	print("\n[GROUP 13] Click area")

@@ -24,7 +24,6 @@ func _ready() -> void:
 	_hint.pressed.connect(_on_hint_pressed)
 	_glow.modulate.a = 0.0
 	# TODO(kimvux): add the Mithril icon to %Icon.
-	# TODO(Ender-Via): emit mithril_changed from RunState whenever mithril changes.
 	EventBus.mithril_changed.connect(_on_mithril_changed)
 	EventBus.fortress_hp_changed.connect(_on_fortress_hp_changed)
 	EventBus.state_changed.connect(_on_state_changed)

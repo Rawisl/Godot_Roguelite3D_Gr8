@@ -57,7 +57,7 @@ size = 22.0
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 700.0
-offset_bottom = 560.0
+offset_bottom = 680.0
 
 [node name="Panel" type="PanelContainer" parent="CanvasLayer/Margin"]
 layout_mode = 2

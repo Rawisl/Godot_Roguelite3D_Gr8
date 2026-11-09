@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://6a14w2y61wji"]
+
+[ext_resource type="Script" uid="uid://x7apaf51e872" path="res://common/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"frost"
+name_key = &"weapon.frost.name"
+effect_id = &"slow"
+params = Dictionary[StringName, float]({
+&"frost_slow_pct": 0.2,
+&"frost_duration": 3
+})
