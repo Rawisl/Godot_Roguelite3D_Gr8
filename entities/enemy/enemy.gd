@@ -255,6 +255,14 @@ func can_be_targeted() -> bool:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return false
 	return true
+
+
+func can_be_recycled() -> bool:
+	return true
+
+
+func can_be_culled() -> bool:
+	return true
  
 ## Apply wave scale factors at spawn time. Immutable while alive.
 func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave_num: int = 1, p_scale_config: ScaleConfig = null) -> void:
