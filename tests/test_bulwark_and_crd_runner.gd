@@ -32,7 +32,7 @@ func _ready() -> void:
 	print("       BULWARK FRAMEWORK & CROWD DYNAMICS TESTS        ")
 	print("=======================================================")
 
-	test_avoid_radii()
+	test_agent_radii()
 	await test_slot_freed_on_knockback()
 	await test_slot_freed_on_target_changed()
 	await test_commander_recall_clears_aggro()
@@ -46,6 +46,7 @@ func _ready() -> void:
 	test_bulwark_stomp_deploy_immunity()
 	await test_wave_5_boss_spawn_and_defeat()
 	await test_reward_pick_flow()
+	test_no_unit_collision_and_fortress_slots()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -59,12 +60,12 @@ func _ready() -> void:
 		get_tree().quit(0 if fails == 0 else 1)
 
 
-func test_avoid_radii() -> void:
-	print("\n[GROUP 1] Avoid Radii Validation")
-	assert_true(GRUNT_DATA.avoid_radius == 0.5, "Grunt avoid_radius is 0.5")
-	assert_true(ARCHER_DATA.avoid_radius == 0.5, "Archer avoid_radius is 0.5")
-	assert_true(BRUTE_DATA.avoid_radius == 0.9, "Brute avoid_radius is 0.9")
-	assert_true(BULWARK_DATA.avoid_radius == 1.6, "Bulwark avoid_radius is 1.6")
+func test_agent_radii() -> void:
+	print("\n[GROUP 1] Agent Radii Validation")
+	assert_true(GRUNT_DATA.agent_radius == 0.5, "Grunt agent_radius is 0.5")
+	assert_true(ARCHER_DATA.agent_radius == 0.5, "Archer agent_radius is 0.5")
+	assert_true(BRUTE_DATA.agent_radius == 0.9, "Brute agent_radius is 0.9")
+	assert_true(BULWARK_DATA.agent_radius == 1.6, "Bulwark agent_radius is 1.6")
 
 
 func test_slot_freed_on_knockback() -> void:
@@ -474,6 +475,45 @@ func test_reward_pick_flow() -> void:
 	assert_true(wm.current_wave == 2, "Wave advanced to 2")
 
 	wm.free()
+
+
+func test_no_unit_collision_and_fortress_slots() -> void:
+	print("\n[GROUP 14] 20 Grunts Pass Through Same Point Without Avoidance Pushing")
+	# 1. Verify Fortress slot cap remains 12
+	var fstats: FortressStats = preload("res://data/config/fortress_stats.tres")
+	assert_true(fstats != null and fstats.melee_slots == 12, "Fortress max attackers remains exactly 12")
+
+	# 2. Instantiate 20 Grunts at the exact same location
+	var grunts: Array[Enemy] = []
+	for i in range(20):
+		var g := GRUNT_SCENE.instantiate() as Enemy
+		g.position = Vector3(10.0, 0.0, 5.0)
+		add_child(g)
+		grunts.append(g)
+
+	# 3. Check all grunts have avoidance disabled
+	var all_avoidance_disabled := true
+	for g in grunts:
+		if g.nav.avoidance_enabled:
+			all_avoidance_disabled = false
+			break
+	assert_true(all_avoidance_disabled, "All 20 Grunts have nav.avoidance_enabled = false")
+
+	# 4. Simulate physics process frames
+	for frame in range(10):
+		for g in grunts:
+			g._physics_process(0.016)
+
+	# 5. Verify they did not push each other apart (all 20 grunts share the exact same trajectory)
+	var all_share_same_position := true
+	for g in grunts:
+		if not g.position.is_equal_approx(grunts[0].position):
+			all_share_same_position = false
+			break
+	assert_true(all_share_same_position, "All 20 Grunts share the exact same position without pushing each other apart")
+
+	for g in grunts:
+		g.free()
 
 
 class MockCommander extends Node3D:

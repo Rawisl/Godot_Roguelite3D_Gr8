@@ -32,7 +32,7 @@ extends EnemyData
 func _init() -> void:
 	xp_value = 30
 	move_speed = 1.6
-	avoid_radius = 1.6
+	agent_radius = 1.6
 	attack_range = 3.0
 	attack_interval = 2.5
 	knockback_immune = true

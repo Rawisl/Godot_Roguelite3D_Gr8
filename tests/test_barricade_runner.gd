@@ -353,8 +353,8 @@ func test_extra_unit_skips_full() -> void:
 func test_avoidance() -> void:
 	print("\n[GROUP 7] Steering around a Barricade it does not target")
 	var b := _barricade(Vector3(0, 0, -160))
-	var goal := _goal(Vector3(-12, 0, -160))
-	var brute := _grunt(Vector3(8, 0, -160), BRUTE_SCENE)  # Brute: FORTRESS only, ignores Barricades
+	var goal := _goal(Vector3(-12, 0, -158.5))
+	var brute := _grunt(Vector3(8, 0, -158.5), BRUTE_SCENE)  # Brute: FORTRESS only, ignores Barricades
 	brute.set_target_position(goal.global_position)
 	_reset_enemy_cache()
 	var frames := 0

@@ -10,14 +10,12 @@ const PATH_UPDATE_INTERVAL: float = 0.3
 const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
 ## Speed lost per second while staggered.
 const KNOCKBACK_DECAY: float = 10.0
-## slot holder blocked by the units already at the target swings.
-const STALL_ATTACK_TIME: float = 0.5
 ## A waiting unit this close to crowd_wait_ring has reached the ring and stands still.
 const WAIT_RING_TOLERANCE: float = 0.3
 ## A knockback that carries a slot holder further than this from where it was hit frees its slot.
 const KNOCKBACK_RELEASE_DISTANCE: float = 3.0
 
-## WAIT: not moved yet, walking in to the wait ring (avoidance and walk animation apply),
+## WAIT: not moved yet, walking in to the wait ring (walk animation applies),
 ## standing for the rest of this WAIT.
 enum WaitPhase { NOT_MOVED, WALKING_IN, STANDING }
 
@@ -93,14 +91,6 @@ var _retarget_timer: float = 0.0
 var _path_timer: float = 0.0
 var _progress_timer: float = 0.0
 var _full_targets_until: Dictionary = {}
-## Avoidance: safe velocity the NavAgent returned for the last desired velocity.
-var _safe_velocity: Vector3 = Vector3.ZERO
-var _has_safe_velocity: bool = false
-var _stall_time: float = 0.0
-## Side of the current sidestep while blocked: +1 left, -1 right, 0 none chosen yet.
-var _sidestep_sign: float = 0.0
-## Stall time at which the sidestep tries the other side.
-var _sidestep_flip_at: float = 1.0
  
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
  
@@ -165,12 +155,10 @@ func _ready() -> void:
 		var cfg := _get_effective_scale_config()
 		scaled_gold = cfg.get_gold_reward(data.gold_reward, spawn_wave)
  
-	nav.radius = data.avoid_radius
+	nav.radius = data.agent_radius if (data != null and "agent_radius" in data) else 0.5
 	nav.path_desired_distance = 1.0
 	nav.target_desired_distance = data.attack_range if data else 1.0
-	# Steer around Barricades, rubble (NavigationObstacle3D) and other units; the navmesh is not re-baked.
-	nav.avoidance_enabled = true
-	nav.velocity_computed.connect(_on_velocity_computed)
+	nav.avoidance_enabled = false
  
 	_init_spawn_zone_bounds()
 	_play_locomotion_anim()
@@ -343,7 +331,6 @@ func _physics_process(delta: float) -> void:
  
 	_update_timers(delta)
 	_update_state(delta)
-	_apply_avoidance(delta)
 	move_and_slide()
  
 ## Slows the unit by pct (0.2 = 20% slower) for duration game seconds. A new hit only refreshes
@@ -499,20 +486,6 @@ func _update_state(delta: float) -> void:
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
 				return
-			# Holding a slot but boxed in by the units already there; hit from here when in reach.
-			if (_stall_time >= STALL_ATTACK_TIME and dist_to_target <= _melee_reach()
-					and _uses_melee_slot(current_target) and current_target.has_melee_slot(self)):
-				change_state(Enums.EnemyState.ATTACK)
-				return
-			# Give the slot up, skip this target for a while and choose another one.
-			if _stall_time >= GameConfig.crowd_wait_retarget_time and _uses_melee_slot(current_target):
-				var stuck_on := current_target
-				_release_melee_slot()
-				_skip_full_target(stuck_on)
-				_stall_time = 0.0
-				_retarget_now()
-				return
- 
 			_update_target_tracking(delta)
 			_update_navigation_movement(delta)
  
@@ -1081,8 +1054,7 @@ func _walk_to_wait_ring(delta: float) -> void:
 	if _wait_phase == WaitPhase.STANDING or not _uses_melee_slot(t):
 		return
 	var arrived := _slot_target_distance(t) <= GameConfig.crowd_wait_ring + WAIT_RING_TOLERANCE
-	var boxed_in := _wait_phase == WaitPhase.WALKING_IN and _stall_time >= STALL_ATTACK_TIME
-	if arrived or boxed_in:
+	if arrived:
 		if _wait_phase == WaitPhase.WALKING_IN:
 			play_anim(&"general/Idle_B", 1.0)
 		_wait_phase = WaitPhase.STANDING
@@ -1181,58 +1153,6 @@ func _is_skipped_full_target(t: Node3D) -> bool:
 		return false
 	return true
 
-## Walking states hand their velocity to the NavAgent and move with the safe velocity it
-## returns (one physics frame later). Standing, attacking and knockback keep their own velocity.
-func _apply_avoidance(delta: float) -> void:
-	if not nav.avoidance_enabled:
-		return
-	var walking := (current_state == Enums.EnemyState.ADVANCE
-		or current_state == Enums.EnemyState.CHASE
-		or current_state == Enums.EnemyState.FRENZY
-		or (current_state == Enums.EnemyState.WAIT and _wait_phase == WaitPhase.WALKING_IN))
-	var desired := Vector3(velocity.x, 0.0, velocity.z) if walking else Vector3.ZERO
-	var blocked := (walking and _has_safe_velocity and desired.length() > 0.1
-		and _safe_velocity.length() < desired.length() * 0.25)
-	_stall_time = _stall_time + delta if blocked else 0.0
-	if not blocked:
-		_sidestep_sign = 0.0
-		_sidestep_flip_at = 1.0
-	var feed := desired
-	# RVO stops that walks straight at an obstacle or at a standing crowd, and never picks a side. Ask for a sideways move instead
-	var to_dest := Vector3(nav.target_position.x - global_position.x, 0.0, nav.target_position.z - global_position.z)
-	if blocked and to_dest.length() > 1.5:
-		var left := Vector3(-desired.z, 0.0, desired.x).normalized()
-		if _sidestep_sign == 0.0:
-			_sidestep_sign = _pick_sidestep(left, to_dest)
-		elif _stall_time >= _sidestep_flip_at:
-			_sidestep_sign = -_sidestep_sign
-			_sidestep_flip_at += 1.0
-		feed = (desired.normalized() * 0.35 + left * _sidestep_sign).normalized() * desired.length()
-	nav.max_speed = maxf(desired.length(), 0.01)
-	nav.velocity = feed
-	if walking and _has_safe_velocity and desired.length_squared() > 0.001:
-		velocity.x = _safe_velocity.x
-		velocity.z = _safe_velocity.z
-
-## +1 = step left, -1 = step right. The side the destination lies on; when it is straight ahead,
-## the side with open navmesh (not a corridor wall).
-func _pick_sidestep(left: Vector3, to_dest: Vector3) -> float:
-	var lean := left.dot(to_dest.normalized())
-	if absf(lean) > 0.3:
-		return signf(lean)
-	var map := nav.get_navigation_map()
-	if NavigationServer3D.map_get_iteration_id(map) == 0:
-		return 1.0  # map not synced yet (first frames)
-	var l := global_position + left * 1.2
-	var r := global_position - left * 1.2
-	var off_l := Vector2(NavigationServer3D.map_get_closest_point(map, l).x - l.x, NavigationServer3D.map_get_closest_point(map, l).z - l.z).length()
-	var off_r := Vector2(NavigationServer3D.map_get_closest_point(map, r).x - r.x, NavigationServer3D.map_get_closest_point(map, r).z - r.z).length()
-	return 1.0 if off_l <= off_r else -1.0
-
-func _on_velocity_computed(safe_velocity: Vector3) -> void:
-	_safe_velocity = safe_velocity
-	_has_safe_velocity = true
- 
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return
