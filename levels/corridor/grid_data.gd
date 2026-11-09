@@ -10,13 +10,12 @@ extends Resource
 # The default must be a typed PackedFloat32Array: with a plain [] the editor reads the saved
 # offsets back as empty and drops them on the next resave.
 ## Lateral offset of each row's cell centre from the lane, along column_dir rotated 90 degrees.
+## Row 0 is on one wall side, the last row on the other; the middle row sits on the lane.
 @export var row_offsets: PackedFloat32Array = PackedFloat32Array()
 ## Cells left out of the layout, as (column, row).
 @export var holes: Array[Vector2i] = []
-## Inner width of the corridor, wall to wall.
-@export var corridor_width: float = 16.0
-## Width of the strip along the lane kept free of cells.
-@export var no_build_lane_width: float = 6.0
+## Inner width of the corridor, wall to wall. Every cell must fit inside it.
+@export var corridor_width: float = 23.5
 
 const EPS := 0.001
 
@@ -27,6 +26,11 @@ static func cell_id(c: int, r: int) -> StringName:
 
 func row_dir() -> Vector3:
 	return column_dir.normalized().cross(Vector3.UP)
+
+
+## Index of the row on the lane centre line (the row starter_arrow_slot sits in).
+func middle_row() -> int:
+	return row_offsets.size() / 2
 
 
 ## Every declared cell, as (column, row), before validation.
@@ -50,15 +54,12 @@ func cell_position(cell: Vector2i) -> Vector3:
 
 
 ## Cells that pass the placement rules; each rejected cell is logged with its reason.
-## spawn_zone and return_zone are Area3D with one box / cylinder shape; lane is the level's Path3D.
-func get_valid_cells(lane: Path3D, spawn_zone: Area3D, return_zone: Area3D, command_post: Node3D) -> Array[Vector2i]:
-	var min_lane: float = maxf(GameConfig.no_build_lane_min_width, GameConfig.no_build_lane_min_ratio * corridor_width)
-	if no_build_lane_width + EPS < min_lane:
-		push_error("GridData: no_build_lane %.1f m is narrower than %.1f m" % [no_build_lane_width, min_lane])
-
+## spawn_zone and return_zone are Area3D with one box / cylinder shape. boss_point is where
+## the Bulwark stands at the Fortress (the marker, or its fallback when the level has none).
+func get_valid_cells(spawn_zone: Area3D, return_zone: Area3D, command_post: Node3D, boss_point: Vector3) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	for cell in get_cells():
-		var reason := _check_cell(cell, lane, spawn_zone, return_zone, command_post)
+		var reason := check_cell(cell, spawn_zone, return_zone, command_post, boss_point)
 		if reason == "":
 			out.append(cell)
 		else:
@@ -66,15 +67,15 @@ func get_valid_cells(lane: Path3D, spawn_zone: Area3D, return_zone: Area3D, comm
 	return out
 
 
-func _check_cell(cell: Vector2i, lane: Path3D, spawn_zone: Area3D, return_zone: Area3D, command_post: Node3D) -> String:
+## Why a cell may not be built on, or "" when it is valid.
+func check_cell(cell: Vector2i, spawn_zone: Area3D, return_zone: Area3D, command_post: Node3D, boss_point: Vector3) -> String:
 	var corners := _corners(cell)
 	var centre := cell_position(cell)
 
-	if lane and lane.curve:
-		var half := no_build_lane_width * 0.5
-		for p in corners + [centre]:
-			if _lane_distance(lane, p) + EPS < half:
-				return "inside no_build_lane"
+	var half_w := corridor_width * 0.5
+	for p in corners:
+		if absf((p - origin).dot(row_dir())) > half_w + EPS:
+			return "outside the %.1f m corridor" % corridor_width
 
 	if spawn_zone and _overlaps_box(corners, spawn_zone):
 		return "inside spawn_zone"
@@ -87,6 +88,11 @@ func _check_cell(cell: Vector2i, lane: Path3D, spawn_zone: Area3D, return_zone: 
 		if gap + EPS < GameConfig.grid_min_gap_to_command_post:
 			return "%.1f m from command_post" % gap
 
+	# The Bulwark needs room to walk in, stop and turn at its standing point.
+	var boss_gap := _square_distance(centre, boss_point)
+	if boss_gap + EPS < GameConfig.boss_point_clear_radius:
+		return "%.1f m from boss_melee_point" % boss_gap
+
 	return ""
 
 
@@ -96,12 +102,6 @@ func _corners(cell: Vector2i) -> Array:
 	var a := column_dir.normalized() * h
 	var b := row_dir() * h
 	return [c + a + b, c + a - b, c - a + b, c - a - b, c + a, c - a, c + b, c - b]
-
-
-func _lane_distance(lane: Path3D, p: Vector3) -> float:
-	var local := lane.global_transform.affine_inverse() * p
-	var q := lane.global_transform * lane.curve.get_closest_point(local)
-	return Vector2(p.x - q.x, p.z - q.z).length()
 
 
 func _overlaps_box(corners: Array, area: Area3D) -> bool:
