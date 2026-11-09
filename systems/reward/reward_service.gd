@@ -4,7 +4,6 @@ extends Node
 ## The REWARD_PICK screen talks to it through EventBus only: reward_offer_requested asks for the next
 ## offer, reward_pick_requested and reward_skip_requested answer it. The public functions below are for
 ## tests and internal use; the UI does not call them.
-# TODO(week 9): notify the skill slots after a pick
 # TODO(week 10): take the run seed and the pick state from RunState (RunState)
 
 const HEAL_STATION_FLAG := &"heal_station_built"
@@ -58,6 +57,7 @@ func skip() -> bool:
 		return false
 	_close_offer()
 	EventBus.reward_picked.emit(&"", SKIP_KIND, 0)
+	_emit_slots()
 	return true
 
 ## Takes one card of the open offer. False when no offer is open, card_id is not in it, or the run state refuses the card.
@@ -77,6 +77,7 @@ func pick(card_id: StringName, _kind: StringName, _level: int) -> bool:
 		return false
 	_close_offer()
 	EventBus.reward_picked.emit(card_id, result["slot_kind"], result["new_level"])
+	_emit_slots()
 	return true
 
 ## Counts the pick before reward_picked goes out, so listeners already see the new picks_used.
@@ -104,6 +105,7 @@ func _on_offer_requested() -> void:
 		EventBus.reward_offered.emit([], REROLLS_LEFT)
 		_close_offer()
 		EventBus.reward_picked.emit(&"", SKIP_KIND, 0)
+		_emit_slots()
 
 func _on_pick_requested(card_id: StringName, kind: StringName, level: int) -> void:
 	pick(card_id, kind, level)
@@ -119,6 +121,15 @@ func _on_run_started() -> void:
 	state.reset()
 	_offer = []
 	_offer_open = false
+	_emit_slots()
+
+## Tells the HUD and the REWARD_PICK screen what sits in the slots. levels holds only the ids in a slot.
+func _emit_slots() -> void:
+	var levels: Dictionary = {}
+	for id in state.active + state.passive:
+		if id != &"":
+			levels[id] = state.get_level(id)
+	EventBus.skill_slots_changed.emit(state.active.duplicate(), state.passive.duplicate(), levels)
 
 ## Reads run_seed from the wave manager; 0 when there is none.
 func _run_seed() -> int:
