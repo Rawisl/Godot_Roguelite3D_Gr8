@@ -93,6 +93,7 @@ func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave
 func _physics_process(delta: float) -> void:
 	if current_phase == Enums.BossPhase.TRANSITION:
 		velocity = Vector3.ZERO
+		_tick_status(delta)
 		_transition_timer -= delta
 		if _transition_timer <= 0.0:
 			_on_transition_finished()
@@ -127,6 +128,8 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 
 	var effective_damage: int = DamageCalc.resolve(info, self)
 	if effective_damage <= 0:
+		if info.immune and info.is_from_commander():
+			EventBus.damage_immune.emit(self, info)
 		return 0
 
 	if effective_damage >= 1 and health != null and not health.hit_by_commander:
@@ -231,7 +234,7 @@ func _play_locomotion_anim() -> void:
 	var walk_clip: StringName = data.anim_walk if (data != null and not data.anim_walk.is_empty()) else &"move/Walking_A"
 	if anim_player.has_animation(walk_clip):
 		var base_speed: float = data.move_speed if data != null else 1.6
-		var target_speed: float = base_speed * speed_multiplier
+		var target_speed: float = base_speed * speed_multiplier * get_slow_factor()
 		anim_player.speed_scale = target_speed / WALK_ANIM_BASE_SPEED
 		anim_player.play(walk_clip)
 

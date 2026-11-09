@@ -43,7 +43,6 @@ func _ready() -> void:
 	EventBus.reward_offered.connect(_on_reward_offered)
 	EventBus.reward_picked.connect(_on_reward_picked)
 	EventBus.xp_changed.connect(_on_xp_changed)
-	# TODO(Rawisl): emit skill_slots_changed after each pick so the slot rows follow the run.
 	EventBus.skill_slots_changed.connect(_show_slots)
 
 func _on_state_changed(new_state: StringName) -> void:
