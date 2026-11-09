@@ -243,10 +243,17 @@ func test_bulwark_anti_stuck_ladder_and_cull_protection() -> void:
 	barricade.add_to_group(&"barricade")
 	add_child(barricade)
 
+	var wall_tower := Node3D.new()
+	wall_tower.position = Vector3(19.0, 0.0, 0.0) # Closer than barricade
+	wall_tower.add_to_group(&"tower")
+	wall_tower.add_to_group(&"tower_wall")
+	add_child(wall_tower)
+
 	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
 	bulwark.current_target = target_dummy
 	bulwark.current_state = Enums.EnemyState.ADVANCE
 	bulwark.spawn_grace = false
+	bulwark.is_in_spawn_zone = false
 	bulwark.nav_progress = 10.0
 
 	var logged_tiers: Array[int] = []
@@ -254,31 +261,47 @@ func test_bulwark_anti_stuck_ladder_and_cull_protection() -> void:
 		logged_tiers.append(tier)
 	EventBus.stuck_event_logged.connect(on_stuck)
 
-	bulwark._update_stuck_detection(1.0)
-	assert_true(logged_tiers.is_empty(), "No stuck events before threshold")
+	# 1. Unimpeded boss movement over 6.0 seconds of physics ticks does not trigger stuck
+	var tick_dt: float = 0.016
+	for i in range(375):
+		bulwark.nav_progress += 1.6 * tick_dt
+		bulwark._update_stuck_detection(tick_dt)
+	assert_true(logged_tiers.is_empty(), "Unimpeded continuous movement triggers zero stuck events over 6s")
+	assert_true(bulwark._current_stuck_tier == 0, "Current stuck tier remains 0 during continuous movement")
 
-	bulwark._update_stuck_detection(4.0)
+	# 2. Blocked boss for 5.0 seconds triggers Tier 1
+	for i in range(320):
+		bulwark._update_stuck_detection(tick_dt)
 	assert_true(logged_tiers.has(1), "Tier 1 event logged at 5s")
 	assert_true(bulwark._current_stuck_tier == 1, "Current stuck tier is 1")
 
-	bulwark._update_stuck_detection(5.0)
+	# 3. Blocked for another 5.0 seconds triggers Tier 2 and targets blocking structure (ignoring closer wall tower)
+	for i in range(320):
+		bulwark._update_stuck_detection(tick_dt)
 	assert_true(logged_tiers.has(2), "Tier 2 event logged at 10s")
 	assert_true(bulwark._current_stuck_tier == 2, "Current stuck tier is 2")
-	assert_true(bulwark.current_target == barricade, "Tier 2 switches target to blocking structure")
+	assert_true(bulwark.current_target == barricade, "Tier 2 ignores closer wall tower and targets ground barricade")
 
+	# 4. Blocked for another 5.0 seconds triggers Tier 3 hop
 	var pos_before_hop := bulwark.global_position
-	bulwark._update_stuck_detection(5.0)
+	for i in range(320):
+		bulwark._update_stuck_detection(tick_dt)
+		if logged_tiers.has(3):
+			break
 	assert_true(logged_tiers.has(3), "Tier 3 event logged at 15s")
 	assert_true(bulwark._current_stuck_tier == 0, "Stuck tier resets to 0 after Tier 3 hop")
 	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer resets to 0 after Tier 3 hop")
 	assert_true(bulwark.global_position.distance_to(pos_before_hop) > 0.0, "Bulwark position hopped forward")
 
-	bulwark._stuck_timer = 3.0
-	bulwark.nav_progress += 2.0
-	bulwark._update_stuck_detection(GameConfig.stuck_reset_time)
-	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer cleared after sustained progress")
+	# 5. Sustained movement over stuck_reset_time (10s = 625 ticks) clears stuck tier
+	bulwark._current_stuck_tier = 2
+	for i in range(650):
+		bulwark.nav_progress += 1.6 * tick_dt
+		bulwark._update_stuck_detection(tick_dt)
+	assert_true(bulwark._current_stuck_tier == 0, "Stuck tier cleared after 10s of sustained progress")
 
 	EventBus.stuck_event_logged.disconnect(on_stuck)
+	wall_tower.free()
 	barricade.free()
 	target_dummy.free()
 	bulwark.free()
