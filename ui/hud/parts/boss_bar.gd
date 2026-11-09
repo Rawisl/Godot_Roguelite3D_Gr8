@@ -40,7 +40,6 @@ func _ready() -> void:
 	EventBus.boss_spawned.connect(_on_boss_spawned)
 	EventBus.boss_hp_changed.connect(_on_boss_hp_changed)
 	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
-	# TODO(kiezroth): emit boss_timer_changed with the full time in BOSS_INTRO and while it runs in BOSS_COMBAT, then boss_enraged at 0.
 	EventBus.boss_timer_changed.connect(_on_boss_timer_changed)
 	EventBus.boss_enraged.connect(_on_boss_enraged)
 	EventBus.boss_defeated.connect(_hide)

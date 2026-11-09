@@ -6,7 +6,9 @@
 [ext_resource type="Resource" path="res://data/skills/sharpness.tres" id="4_sharpness"]
 [ext_resource type="Resource" path="res://data/skills/heal_station.tres" id="5_heal_station"]
 [ext_resource type="Resource" path="res://data/skills/vitality.tres" id="6_vitality"]
+[ext_resource type="Resource" path="res://data/skills/sword_wave.tres" id="7_sword_wave"]
+[ext_resource type="Resource" path="res://data/skills/firebomb.tres" id="8_firebomb"]
 
 [resource]
 script = ExtResource("1_pool")
-skills = Array[ExtResource("2_skill")]([ExtResource("3_whirlwind"), ExtResource("4_sharpness"), ExtResource("5_heal_station"), ExtResource("6_vitality")])
+skills = Array[ExtResource("2_skill")]([ExtResource("3_whirlwind"), ExtResource("4_sharpness"), ExtResource("5_heal_station"), ExtResource("6_vitality"), ExtResource("7_sword_wave"), ExtResource("8_firebomb")])

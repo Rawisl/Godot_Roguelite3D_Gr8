@@ -6,6 +6,8 @@ extends Node
 
 const SKILLS: Array[SkillData] = [
 	preload("res://data/skills/whirlwind.tres"),
+	preload("res://data/skills/sword_wave.tres"),
+	preload("res://data/skills/firebomb.tres"),
 ]
 const SLOT_IDS: Array[StringName] = [&"skill_1", &"skill_2", &"skill_3"]
 
@@ -92,7 +94,17 @@ func activate(slot: int) -> SkillData:
 	match data.id:
 		&"whirlwind":
 			WhirlwindSkill.cast(caster, data, level, mult)
-	EventBus.skill_cast.emit(data.id, slot, level, caster.global_position, data.get_value(&"radius", level))
+			EventBus.skill_cast.emit(data.id, slot, level, caster.global_position, data.get_value(&"radius", level))
+		&"sword_wave":
+			SwordWaveSkill.cast(caster, data, level, mult, _aim_dir())
+			EventBus.skill_cast.emit(data.id, slot, level, caster.global_position, data.get_value(&"width", level))
+		&"firebomb":
+			var aim_point: Variant = caster.get("aim_point")
+			var point := FirebombSkill.landing_point(caster, aim_point if aim_point is Vector3 else Vector3.INF, _aim_dir())
+			FirebombSkill.cast(caster, data, level, mult, point)
+			EventBus.skill_cast.emit(data.id, slot, level, point, data.get_value(&"radius", level))
+		_:
+			EventBus.skill_cast.emit(data.id, slot, level, caster.global_position, 0.0)
 	return data
 
 
@@ -131,6 +143,12 @@ func _caster_can_act() -> bool:
 	if caster.get("is_commander_mode") == true or caster.get("is_stunned") == true:
 		return false
 	return caster.get("is_dead") != true
+
+
+## Direction the caster aims in; forward when the caster has none.
+func _aim_dir() -> Vector3:
+	var aim: Variant = caster.get("aim_dir")
+	return aim if aim is Vector3 else Vector3.FORWARD
 
 
 func _find(skill_id: StringName) -> SkillData:
