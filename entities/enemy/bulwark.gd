@@ -136,35 +136,38 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		if info != null and (info.hit_by_commander or info.is_from_commander()):
 			health.hit_by_commander = true
 
+	var actual_damage := 0
 	match current_phase:
 		Enums.BossPhase.ARMORED:
 			if effective_damage >= current_armor_hp:
-				var absorbed := current_armor_hp
+				actual_damage = current_armor_hp
 				current_armor_hp = 0
 				if health != null:
 					health.hp = current_core_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
-					health.damaged.emit(absorbed, info)
+					health.damaged.emit(actual_damage, info)
 				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 				_start_armor_break_transition()
 			else:
-				current_armor_hp -= effective_damage
+				actual_damage = effective_damage
+				current_armor_hp -= actual_damage
 				if health != null:
 					health.hp = current_core_hp + current_armor_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
-					health.damaged.emit(effective_damage, info)
+					health.damaged.emit(actual_damage, info)
 				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 
 		Enums.BossPhase.TRANSITION, Enums.BossPhase.EXPOSED:
-			current_core_hp = maxi(0, current_core_hp - effective_damage)
+			actual_damage = mini(current_core_hp, effective_damage)
+			current_core_hp = maxi(0, current_core_hp - actual_damage)
 			if health != null:
 				health.hp = current_core_hp
 				health.hp_changed.emit(health.hp, health.max_hp)
-				health.damaged.emit(effective_damage, info)
+				health.damaged.emit(actual_damage, info)
 				if current_core_hp == 0:
 					health.died.emit()
 			EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
-	return effective_damage
+	return actual_damage
 
 
 func _start_armor_break_transition() -> void:
@@ -172,6 +175,14 @@ func _start_armor_break_transition() -> void:
 		return
 	phase_broken = true
 	current_phase = Enums.BossPhase.TRANSITION
+
+	attack_windup_timer = 0.0
+	attack_recovery_timer = 0.0
+	is_attacking_active = false
+	if anim_player != null and is_instance_valid(anim_player):
+		anim_player.stop()
+	if current_state == Enums.EnemyState.ATTACK:
+		current_state = Enums.EnemyState.ADVANCE
 
 	var boss_data := data as BossData
 	_transition_timer = boss_data.transition_duration if boss_data != null else 2.5
@@ -188,6 +199,7 @@ func _on_transition_finished() -> void:
 		speed_multiplier = wave_speed_mult * boss_data.phase2_speed_mult
 		if is_enraged:
 			speed_multiplier *= GameConfig.enrage_speed_mult
+	_play_locomotion_anim()
 	EventBus.boss_phase_changed.emit(&"EXPOSED")
 	EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, &"EXPOSED")
 
@@ -404,7 +416,7 @@ func _update_stuck_detection(delta: float) -> void:
 			_current_stuck_tier = 0
 	else:
 		_stuck_timer += delta
-		if _stuck_timer < 1.0:
+		if _stuck_timer < GameConfig.stuck_detect_time:
 			_normal_progress_timer += delta
 		else:
 			_normal_progress_timer = 0.0
@@ -451,35 +463,42 @@ func _resolve_stuck_tier_2() -> void:
 func _resolve_stuck_tier_3() -> void:
 	var hop_dist: float = GameConfig.boss_hop_radius
 	var forward_dir := Vector3.LEFT
-	if current_target != null and is_instance_valid(current_target):
-		var diff := current_target.global_position - global_position
-		diff.y = 0.0
-		if diff.length_squared() > 0.01:
-			forward_dir = diff.normalized()
-	var target_hop_pos := global_position + forward_dir * hop_dist
 	var tree := get_tree()
+	var has_fortress := false
+	var fortress_pt := Vector3.ZERO
 	if tree != null:
 		var fortress := tree.get_first_node_in_group(&"fortress") as Node3D
-		if fortress != null:
-			var attack_pt: Vector3 = _get_attack_point(fortress)
-			if forward_dir.x < 0.0 and target_hop_pos.x < attack_pt.x:
-				target_hop_pos.x = attack_pt.x
+		if fortress != null and is_instance_valid(fortress):
+			has_fortress = true
+			fortress_pt = _get_attack_point(fortress)
+			var to_fortress := fortress_pt - global_position
+			to_fortress.y = 0.0
+			if to_fortress.length_squared() > 0.01:
+				forward_dir = to_fortress.normalized()
+	if forward_dir.x > 0.0:
+		forward_dir = Vector3.LEFT
+
+	var target_hop_pos := global_position + forward_dir * hop_dist
+	if has_fortress and forward_dir.x < 0.0 and target_hop_pos.x < fortress_pt.x:
+		target_hop_pos.x = fortress_pt.x
+
+	var final_pos := target_hop_pos
 	var map := nav.get_navigation_map()
 	if map.is_valid():
-		var nav_pt := NavigationServer3D.map_get_closest_point(map, target_hop_pos)
-		global_position = nav_pt
-	else:
-		global_position = target_hop_pos
+		final_pos = NavigationServer3D.map_get_closest_point(map, target_hop_pos)
+		if has_fortress and forward_dir.x < 0.0 and final_pos.x < fortress_pt.x:
+			final_pos.x = fortress_pt.x
+	global_position = final_pos
 	if current_target != null and is_instance_valid(current_target):
 		nav.target_position = _get_attack_point(current_target)
 
 
-func _find_blocking_structure() -> Node3D:
+func _find_blocking_structure(max_distance: float = 8.0) -> Node3D:
 	var tree := get_tree()
 	if tree == null:
 		return null
 	var best: Node3D = null
-	var min_dist: float = INF
+	var min_dist: float = max_distance
 	var candidates: Array[Node] = []
 	candidates.append_array(tree.get_nodes_in_group(&"barricade"))
 	candidates.append_array(tree.get_nodes_in_group(&"tower"))
@@ -491,9 +510,12 @@ func _find_blocking_structure() -> Node3D:
 			continue
 		if "health" in n3d and n3d.health != null and n3d.health.hp <= 0:
 			continue
+		if not _is_target_ahead(n3d.global_position):
+			continue
 		var diff := n3d.global_position - global_position
+		diff.y = 0.0
 		var d := diff.length()
-		if d < min_dist:
+		if d <= min_dist:
 			min_dist = d
 			best = n3d
 	return best
