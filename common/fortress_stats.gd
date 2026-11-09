@@ -12,11 +12,6 @@ extends Resource
 
 
 @export_group("Repair")
-## Gold per 1% of max_hp missing.
-@export var repair_gold_per_pct: int = 4
-## Two quick repair buttons, as a fraction of max_hp. The third button is "full HP".
-@export_range(0.01, 1.0, 0.01) var repair_step_small_pct: float = 0.10
-@export_range(0.01, 1.0, 0.01) var repair_step_large_pct: float = 0.25
 ## Share of max_hp one Mithril heals, capped at max_hp.
 @export_range(0.01, 1.0, 0.01) var mithril_repair_pct: float = 0.20
 

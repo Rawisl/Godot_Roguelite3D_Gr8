@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://brd5ep2wjb484"]
+
+[ext_resource type="Script" uid="uid://x7apaf51e872" path="res://common/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"swift"
+name_key = &"weapon.swift.name"
+range_mult = 0.7
+effect_id = &"swift"
+params = Dictionary[StringName, float]({
+&"swift_attack_speed_mult": 1.5
+})

@@ -2,12 +2,13 @@ extends Node
 ## Runs main.tscn for testing the build panels by hand. F6 on this scene.
 ## K: ruin the selected tower, to test rebuild. X: clear the selected rubble. L: add 500 gold.
 ## J: raise the commander level by 1, to test the upgrade limits.
-## H: damage the Fortress. N / M / O: repair it by the small step, the large step, to full.
+## H: damage the Fortress. N: add 1 Mithril. M: repair the Fortress with 1 Mithril.
 ## Adds the ProjectilePool that main.tscn does not have yet, so towers shoot.
 
 const MAIN := preload("res://main.tscn")
 const PROJECTILE_POOL := preload("res://entities/projectile/projectile_pool.tscn")
 const DEBUG_GOLD := 500
+const DEBUG_MITHRIL := 1
 const DEBUG_FORTRESS_DAMAGE_PCT := 0.33
 
 var _main: Node
@@ -34,11 +35,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_H:
 			_damage_fortress()
 		KEY_N:
-			_repair_fortress(&"small")
+			var rs := get_tree().get_first_node_in_group(&"run_state") as RunState
+			if rs != null:
+				rs.add_mithril(DEBUG_MITHRIL)
 		KEY_M:
-			_repair_fortress(&"large")
-		KEY_O:
-			_repair_fortress(&"full")
+			_repair_fortress()
 		KEY_L:
 			var gold := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
 			if gold != null:
@@ -68,16 +69,11 @@ func _damage_fortress() -> void:
 	# Straight to the HealthComponent: Fortress.take_damage ignores hits outside combat.
 	fortress.health.take_damage(floori(fortress.get_max_hp() * DEBUG_FORTRESS_DAMAGE_PCT), Enums.DamageType.TRUE)
 
-func _repair_fortress(step: StringName) -> void:
+func _repair_fortress() -> void:
 	var fortress := get_tree().get_first_node_in_group(&"fortress") as Fortress
 	var service := get_tree().get_first_node_in_group(&"build_service") as BuildService
-	var gold := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
-	if fortress == null or service == null or gold == null:
+	var rs := get_tree().get_first_node_in_group(&"run_state") as RunState
+	if fortress == null or service == null or rs == null:
 		return
-	var ratio := 0.0
-	if step == &"small":
-		ratio = fortress.stats.repair_step_small_pct
-	elif step == &"large":
-		ratio = fortress.stats.repair_step_large_pct
-	var ok := service.repair_fortress(ratio)
-	print("repair_fortress(%s) -> %s, hp %d/%d, gold %d" % [ratio, ok, fortress.get_hp(), fortress.get_max_hp(), gold.gold])
+	var ok := service.repair_fortress_mithril()
+	print("repair_fortress_mithril() -> %s, hp %d/%d, mithril %d" % [ok, fortress.get_hp(), fortress.get_max_hp(), rs.mithril])

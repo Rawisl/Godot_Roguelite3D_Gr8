@@ -116,20 +116,20 @@ func _clear(nodes: Array) -> void:
 
 func test_data() -> void:
 	print("\n[GROUP 1] Barricade data")
-	assert_true(BARRICADE.levels.size() == 3, "3 levels")
+	assert_true(BARRICADE.levels.size() == GameConfig.tower_max_level, "one data file per level up to tower_max_level")
 	var hp: Array[int] = []
 	var w: Array[float] = []
 	var cost: Array[int] = []
-	for lv in BARRICADE.levels:
+	for lv in BARRICADE.levels.slice(0, 3):
 		hp.append(lv.max_hp)
 		w.append(lv.aggro_weight)
 		cost.append(lv.build_cost)
 	var hp_ok: Array[int] = [300, 500, 800]
 	var w_ok: Array[float] = [1.0, 1.2, 1.5]
 	var cost_ok: Array[int] = [40, 60, 90]
-	assert_true(hp == hp_ok, "HP 300 / 500 / 800 (got %s)" % [hp])
-	assert_true(w == w_ok, "aggro_weight 1.0 / 1.2 / 1.5 (got %s)" % [w])
-	assert_true(cost == cost_ok, "cost 40 / 60 / 90 (got %s)" % [cost])
+	assert_true(hp == hp_ok, "first 3 levels: HP 300 / 500 / 800 (got %s)" % [hp])
+	assert_true(w == w_ok, "first 3 levels: aggro_weight 1.0 / 1.2 / 1.5 (got %s)" % [w])
+	assert_true(cost == cost_ok, "first 3 levels: cost 40 / 60 / 90 (got %s)" % [cost])
 	assert_true(BARRICADE.allowed_zones.size() == 1 and BARRICADE.allowed_zones[0] == Enums.SlotZone.GROUND, "GROUND zone only")
 
 	var b := _barricade(Vector3(0, 0, -40))
