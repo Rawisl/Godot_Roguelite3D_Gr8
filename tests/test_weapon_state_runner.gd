@@ -1,5 +1,5 @@
 extends Node
-## Runner for weapon data, the weapon state in RunState and the sword range of the commander.
+## Runner for weapon data, equipment and combat modifiers.
 ## Prints PASS/FAIL then quits.
 
 const WEAPON_IDS: Array[StringName] = [&"sword_base", &"frost", &"chain_lightning", &"burn", &"rampage", &"swift"]
@@ -21,6 +21,7 @@ func _ready() -> void:
 	await test_equip_in_prep()
 	test_equip_refused()
 	await test_late_commander()
+	await test_rampage_damage()
 
 	print("=======================================================")
 	print("WEAPON STATE TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -105,6 +106,12 @@ func test_equip_in_prep() -> void:
 	await get_tree().process_frame
 	var area_shape := (commander.get("_sword_area") as Area3D).get_node("CollisionShape3D") as CollisionShape3D
 	var base_radius := (area_shape.shape as CylinderShape3D).radius
+	var animator := commander.get("_anim_player") as AnimationPlayer
+	var input_buffer: float = commander._cmd_input.buffer_time
+	commander._start_attack(1)
+	var base_animation_speed := animator.get_playing_speed()
+	var base_strike_delay: float = commander._strike_timer
+	commander._end_attack()
 	assert_true(is_equal_approx(commander.get_stat(&"sword_range", 2.2), 2.2), "base sword range 2.2 m")
 	run_state.grant_weapon(&"swift")
 	_equipped.clear()
@@ -114,11 +121,21 @@ func test_equip_in_prep() -> void:
 	assert_true(is_equal_approx(commander.get_stat(&"sword_range", 2.2), 2.2 * 0.7), "sword range is 2.2 x 0.7")
 	assert_true((area_shape.shape as CylinderShape3D).radius >= 2.2 * 0.7 + commander.TARGET_COLLIDER_PADDING, "sword area still covers the new range")
 	assert_true(is_equal_approx((commander.get("stats") as CharacterStats).sword_range, 2.2), "CharacterStats is not written to")
+	commander._start_attack(1)
+	assert_true(is_equal_approx(commander._attack_timer, 0.30), "Swift starts an attack with a 0.30 s interval")
+	assert_true(is_equal_approx(commander._strike_timer, base_strike_delay / 1.5), "Swift moves the strike earlier in proportion to the interval")
+	assert_true(base_animation_speed > 0.0 and is_equal_approx(animator.get_playing_speed(), base_animation_speed * 1.5), "Swift plays the sword animation at 1.5x speed")
+	commander._end_attack()
+	assert_true(is_equal_approx(commander._combo_reset_timer, 0.35), "Swift keeps the 0.35 s combo window")
+	assert_true(is_equal_approx(commander._cmd_input.buffer_time, input_buffer), "Swift keeps the input buffer")
 
 	assert_true(run_state.equip_weapon(&"sword_base"), "the base sword can always be picked again")
 	assert_true(is_equal_approx(commander.get_stat(&"sword_range", 2.2), 2.2), "range is back to 2.2 m")
 	assert_true((area_shape.shape as CylinderShape3D).radius == base_radius, "sword area is back to its scene radius")
 	assert_true(_equipped == [&"swift", &"sword_base"], "each equip sent weapon_equipped")
+	commander._start_attack(1)
+	assert_true(is_equal_approx(commander._attack_timer, 0.45), "base sword restores the attack interval")
+	assert_true(is_equal_approx(animator.get_playing_speed(), base_animation_speed), "base sword restores the sword animation speed")
 	commander.free()
 	run_state.free()
 
@@ -154,5 +171,78 @@ func test_late_commander() -> void:
 	var commander := _new_commander()
 	await get_tree().process_frame
 	assert_true(is_equal_approx(commander.get_stat(&"sword_range", 2.2), 2.2 * 0.7), "new commander starts with the swift range")
+	assert_true(is_equal_approx(commander.get_stat(&"attack_interval", 0.45), 0.30), "new commander starts with the Swift attack interval")
+	commander.free()
+	run_state.free()
+
+
+func test_rampage_damage() -> void:
+	print("\n[GROUP 6] Rampage uses the commander's HP when damage lands")
+	var run_state := _new_run_state()
+	var commander := _new_commander()
+	EventBus.state_changed.emit(&"PREP")
+	run_state.grant_weapon(&"rampage")
+	assert_true(run_state.equip_weapon(&"rampage"), "Rampage equips in PREP")
+	EventBus.reward_picked.emit(&"sharpness", &"PASSIVE", 3)
+	EventBus.reward_picked.emit(&"mastery", &"STAT", 1)
+	EventBus.state_changed.emit(&"COMBAT")
+	var health: HealthComponent = commander.health
+	for tier in [[90, 0.0], [81, 0.0], [80, 0.10], [70, 0.10], [51, 0.10], [50, 0.25], [40, 0.25], [31, 0.25], [30, 0.50]]:
+		health.hp = tier[0]
+		assert_true(is_equal_approx(commander.get_sword_dealt_mult(), 1.24 + tier[1]),
+			"at %d HP Rampage adds %.2f to Sharpness" % tier)
+	health.heal_fractional(0.5)
+	assert_true(is_equal_approx(commander.get_sword_dealt_mult(), 1.49), "fractional healing over 30% moves Rampage to the middle tier")
+
+	var target := preload("res://entities/enemy/grunt.tscn").instantiate() as Enemy
+	target.position = Vector3(1.2, 0, 0)
+	add_child(target)
+	target.set_physics_process(false)
+	target.spawn_grace = false
+	target.health.max_hp = 500
+	target.health.hp = 500
+	commander.aim_dir = Vector3.RIGHT
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var before := target.health.hp
+	health.hp = 80
+	commander._start_attack(1)
+	health.hp = 40
+	commander._execute_sword_strike(1)
+	commander._end_attack()
+	assert_true(before - target.health.hp == 30, "sword strike uses HP at impact with additive Sharpness and Rampage")
+
+	var runner: SkillRunner = commander.skill_runner
+	var whirlwind := runner.set_skill_level(&"whirlwind", 1)
+	var sword_wave := runner.set_skill_level(&"sword_wave", 1)
+	var firebomb := runner.set_skill_level(&"firebomb", 1)
+	before = target.health.hp
+	runner.activate(whirlwind)
+	assert_true(before - target.health.hp == 23, "Whirlwind gets Sharpness, Mastery and Rampage additively")
+	before = target.health.hp
+	runner.activate(sword_wave)
+	assert_true(before - target.health.hp == 28, "Sword Wave gets Sharpness, Mastery and Rampage additively")
+
+	health.hp = 90
+	commander.aim_point = target.global_position
+	runner.activate(firebomb)
+	var zone := get_node_or_null("FirebombZone") as FirebombZone
+	assert_true(zone != null, "Firebomb creates a burning zone")
+	if zone != null:
+		before = target.health.hp
+		health.hp = 30
+		zone.tick(1.0)
+		assert_true(before - target.health.hp == 10, "first Firebomb tick uses HP after casting")
+		before = target.health.hp
+		health.hp = 90
+		zone.tick(1.0)
+		assert_true(before - target.health.hp == 8, "second Firebomb tick reads the new HP and carries fractional damage")
+		zone.free()
+
+	EventBus.state_changed.emit(&"PREP")
+	health.hp = 30
+	assert_true(run_state.equip_weapon(&"sword_base"), "base sword can replace Rampage in PREP")
+	assert_true(is_equal_approx(commander.get_sword_dealt_mult(), 1.24), "unequipping Rampage clears its bonus and keeps Sharpness")
+	target.free()
 	commander.free()
 	run_state.free()

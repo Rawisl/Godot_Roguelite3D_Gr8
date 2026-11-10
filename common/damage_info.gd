@@ -51,6 +51,21 @@ static func outgoing(
 	return info
 
 
+## The skill's weapon bonus comes from the caster at impact, including each tick of a zone.
+static func skill_hit(
+	p_raw: float,
+	p_dealt_mult: float,
+	p_damage_type: Enums.DamageType,
+	p_caster: Node,
+	p_hit_direction: Vector3,
+	p_is_dot: bool = false
+) -> DamageInfo:
+	var dealt_mult := p_dealt_mult
+	if is_instance_valid(p_caster) and p_caster.has_method(&"get_weapon_dealt_bonus"):
+		dealt_mult += float(p_caster.call(&"get_weapon_dealt_bonus"))
+	return outgoing(p_raw, dealt_mult, p_damage_type, p_caster, 0.0, p_hit_direction, p_is_dot)
+
+
 func is_from_commander() -> bool:
 	if hit_by_commander:
 		return true
