@@ -28,6 +28,11 @@ void light() {
 
 	float rim = smoothstep(1.0 - rim_width, 1.0, 1.0 - dot(NORMAL, VIEW));
 	shade += vec3(rim * rim_strength * stepped);
+	// Only the sun paints shadow_tint everywhere. A lamp (omni, spot) fades out with its range,
+	// otherwise the Compatibility renderer tints the whole mesh it touches, e.g. the floor.
+	if (!LIGHT_IS_DIRECTIONAL) {
+		shade *= ATTENUATION;
+	}
 
 	DIFFUSE_LIGHT += shade * light_strength * LIGHT_COLOR / PI;
 }
