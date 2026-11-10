@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cjstl5dyhdsks"]
+
+[ext_resource type="Script" uid="uid://4dqe4ih0sxpw" path="res://tests/test_boss_intro_camera_view.gd" id="1_view"]
+
+[node name="TestBossIntroCameraView" type="Node" unique_id=1726483905]
+script = ExtResource("1_view")
