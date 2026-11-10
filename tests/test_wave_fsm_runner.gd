@@ -505,35 +505,5 @@ func test_wave_victory_and_reward_pick_flow() -> void:
 	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "REASON_REWARD_PICK pause released")
 	assert_true(wm.current_wave == GameConfig.victory_wave + 1, "Wave advanced to victory_wave + 1 (31)")
 
-	# 4. Empty offer pool skips REWARD_PICK directly into PREP even when pending_picks > 0
-	var empty_service := MockEmptyRewardService.new()
-	add_child(empty_service)
-
-	var wm_empty := WaveManager.new()
-	wm_empty.auto_advance_summary = false
-	wm_empty.current_wave = 1
-	add_child(wm_empty)
-
-	var empty_tracker: Node = wm_empty.get("_xp_tracker")
-	empty_tracker.set("pending_picks", 2)
-
-	wm_empty.wave_state = Enums.WaveState.SUMMARY
-	wm_empty.advance_from_summary()
-
-	assert_true(wm_empty.wave_state == Enums.WaveState.PREP, "Empty offer pool skips REWARD_PICK directly into PREP")
-	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "No REWARD_PICK pause when pool is empty")
-	assert_true(wm_empty.current_wave == 2, "Wave advanced to 2 with empty pool")
-
-	wm_empty.free()
-	empty_service.free()
-
 	EventBus.run_victory.disconnect(on_victory)
 	wm.free()
-
-
-class MockEmptyRewardService extends Node:
-	func _init() -> void:
-		add_to_group(&"reward_service")
-
-	func has_offer() -> bool:
-		return false

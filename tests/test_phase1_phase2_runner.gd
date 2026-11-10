@@ -91,8 +91,7 @@ func test_group_1_resource_validation() -> void:
 		assert_eq(brute_data.is_ranged, false, "Brute is_ranged == false")
 		assert_eq(brute_data.knockback_immune, true, "Brute knockback_immune == true")
 		assert_eq(brute_data.aggro_range, 4.0, "Brute aggro_range == 4.0")
-		assert_eq(brute_data.avoid_radius, 0.9, "Brute avoid_radius == 0.9")
-		assert_eq(brute_data.avoid_priority, 3, "Brute avoid_priority == 3")
+		assert_eq(brute_data.agent_radius, 0.9, "Brute agent_radius == 0.9")
 		assert_true(brute_data.target_rules.has(&"FORTRESS"), "Brute target_rules contains FORTRESS")
 		assert_true(not brute_data.target_rules.has(&"BARRICADE"), "Brute target_rules excludes BARRICADE")
 

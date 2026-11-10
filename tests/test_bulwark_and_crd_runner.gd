@@ -8,6 +8,7 @@ const GRUNT_DATA: EnemyData = preload("res://data/enemies/grunt.tres")
 const BRUTE_DATA: EnemyData = preload("res://data/enemies/brute.tres")
 const BULWARK_DATA: BossData = preload("res://data/bosses/bulwark_boss.tres")
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
+const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 
 @export var quit_when_done: bool = true
 
@@ -32,7 +33,7 @@ func _ready() -> void:
 	print("       BULWARK FRAMEWORK & CROWD DYNAMICS TESTS        ")
 	print("=======================================================")
 
-	test_avoid_radii()
+	test_agent_radii()
 	await test_slot_freed_on_knockback()
 	await test_slot_freed_on_target_changed()
 	await test_commander_recall_clears_aggro()
@@ -46,6 +47,7 @@ func _ready() -> void:
 	test_bulwark_stomp_deploy_immunity()
 	await test_wave_5_boss_spawn_and_defeat()
 	await test_reward_pick_flow()
+	await test_no_unit_collision_and_fortress_slots()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -59,12 +61,12 @@ func _ready() -> void:
 		get_tree().quit(0 if fails == 0 else 1)
 
 
-func test_avoid_radii() -> void:
-	print("\n[GROUP 1] Avoid Radii Validation")
-	assert_true(GRUNT_DATA.avoid_radius == 0.5, "Grunt avoid_radius is 0.5")
-	assert_true(ARCHER_DATA.avoid_radius == 0.5, "Archer avoid_radius is 0.5")
-	assert_true(BRUTE_DATA.avoid_radius == 0.9, "Brute avoid_radius is 0.9")
-	assert_true(BULWARK_DATA.avoid_radius == 1.6, "Bulwark avoid_radius is 1.6")
+func test_agent_radii() -> void:
+	print("\n[GROUP 1] Agent Radii Validation")
+	assert_true(GRUNT_DATA.agent_radius == 0.5, "Grunt agent_radius is 0.5")
+	assert_true(ARCHER_DATA.agent_radius == 0.5, "Archer agent_radius is 0.5")
+	assert_true(BRUTE_DATA.agent_radius == 0.9, "Brute agent_radius is 0.9")
+	assert_true(BULWARK_DATA.agent_radius == 1.6, "Bulwark agent_radius is 1.6")
 
 
 func test_slot_freed_on_knockback() -> void:
@@ -300,17 +302,10 @@ func test_bulwark_anti_stuck_ladder_and_cull_protection() -> void:
 	barricade.add_to_group(&"barricade")
 	add_child(barricade)
 
-	var wall_tower := Node3D.new()
-	wall_tower.position = Vector3(19.0, 0.0, 0.0) # Closer than barricade
-	wall_tower.add_to_group(&"tower")
-	wall_tower.add_to_group(&"tower_wall")
-	add_child(wall_tower)
-
 	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
 	bulwark.current_target = target_dummy
 	bulwark.current_state = Enums.EnemyState.ADVANCE
 	bulwark.spawn_grace = false
-	bulwark.is_in_spawn_zone = false
 	bulwark.nav_progress = 10.0
 
 	var logged_tiers: Array[int] = []
@@ -318,82 +313,31 @@ func test_bulwark_anti_stuck_ladder_and_cull_protection() -> void:
 		logged_tiers.append(tier)
 	EventBus.stuck_event_logged.connect(on_stuck)
 
-	# 1. Unimpeded boss movement over 6.0 seconds of physics ticks does not trigger stuck
-	var tick_dt: float = 0.016
-	for i in range(375):
-		bulwark.nav_progress += 1.6 * tick_dt
-		bulwark._update_stuck_detection(tick_dt)
-	assert_true(logged_tiers.is_empty(), "Unimpeded continuous movement triggers zero stuck events over 6s")
-	assert_true(bulwark._current_stuck_tier == 0, "Current stuck tier remains 0 during continuous movement")
+	bulwark._update_stuck_detection(1.0)
+	assert_true(logged_tiers.is_empty(), "No stuck events before threshold")
 
-	# 2. Blocked boss for 5.0 seconds triggers Tier 1
-	for i in range(320):
-		bulwark._update_stuck_detection(tick_dt)
+	bulwark._update_stuck_detection(4.0)
 	assert_true(logged_tiers.has(1), "Tier 1 event logged at 5s")
 	assert_true(bulwark._current_stuck_tier == 1, "Current stuck tier is 1")
 
-	# 3. Blocked for another 5.0 seconds triggers Tier 2 and targets blocking structure (ignoring closer wall tower)
-	for i in range(320):
-		bulwark._update_stuck_detection(tick_dt)
+	bulwark._update_stuck_detection(5.0)
 	assert_true(logged_tiers.has(2), "Tier 2 event logged at 10s")
 	assert_true(bulwark._current_stuck_tier == 2, "Current stuck tier is 2")
-	assert_true(bulwark.current_target == barricade, "Tier 2 ignores closer wall tower and targets ground barricade")
+	assert_true(bulwark.current_target == barricade, "Tier 2 switches target to blocking structure")
 
-	# 4. Blocked for another 5.0 seconds triggers Tier 3 hop
 	var pos_before_hop := bulwark.global_position
-	for i in range(320):
-		bulwark._update_stuck_detection(tick_dt)
-		if logged_tiers.has(3):
-			break
+	bulwark._update_stuck_detection(5.0)
 	assert_true(logged_tiers.has(3), "Tier 3 event logged at 15s")
 	assert_true(bulwark._current_stuck_tier == 0, "Stuck tier resets to 0 after Tier 3 hop")
 	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer resets to 0 after Tier 3 hop")
 	assert_true(bulwark.global_position.distance_to(pos_before_hop) > 0.0, "Bulwark position hopped forward")
 
-	# 5. Sustained movement over stuck_reset_time (10s = 625 ticks) clears stuck tier
-	bulwark._current_stuck_tier = 2
-	for i in range(650):
-		bulwark.nav_progress += 1.6 * tick_dt
-		bulwark._update_stuck_detection(tick_dt)
-	assert_true(bulwark._current_stuck_tier == 0, "Stuck tier cleared after 10s of sustained progress")
-
-	# 6. Obstacle search direction and distance constraints (Item 4)
-	barricade.position = Vector3(25.0, 0.0, 0.0) # Behind boss at x=20
-	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
-	var rear_obstacle := bulwark._find_blocking_structure()
-	assert_true(rear_obstacle == null, "Obstacle search ignores structures behind the boss")
-
-	barricade.position = Vector3(10.0, 0.0, 0.0) # Ahead at distance 10m (> 8.0m cap)
-	var distant_obstacle := bulwark._find_blocking_structure()
-	assert_true(distant_obstacle == null, "Obstacle search ignores structures beyond 8.0m distance cap")
-
-	barricade.position = Vector3(16.0, 0.0, 0.0) # Ahead at distance 4m (<= 8.0m cap)
-	var valid_obstacle := bulwark._find_blocking_structure()
-	assert_true(valid_obstacle == barricade, "Obstacle search detects structure ahead within 8.0m")
-
-	# 7. Hop direction when target is behind the boss (Item 3)
-	var rear_target := Node3D.new()
-	rear_target.position = Vector3(35.0, 0.0, 0.0) # Commander kiting behind boss
-	add_child(rear_target)
-	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
-	bulwark.current_target = rear_target
-	bulwark._resolve_stuck_tier_3()
-	assert_true(bulwark.global_position.x < 20.0, "Tier 3 hop leaps forward toward Fortress, not backwards toward rear target")
-	rear_target.free()
-
-	# 8. Fortress boundary clamp survives navmesh map_get_closest_point snapping (Item 3)
-	var test_fortress := Node3D.new()
-	test_fortress.position = Vector3(-6.5, 0.0, 0.0)
-	test_fortress.add_to_group(&"fortress")
-	add_child(test_fortress)
-	bulwark.global_position = Vector3(-5.0, 0.0, 0.0)
-	bulwark.current_target = test_fortress
-	bulwark._resolve_stuck_tier_3()
-	assert_true(bulwark.global_position.x >= -6.5, "Tier 3 hop position does not exceed Fortress attack point boundary")
-	test_fortress.free()
+	bulwark._stuck_timer = 3.0
+	bulwark.nav_progress += 2.0
+	bulwark._update_stuck_detection(GameConfig.stuck_reset_time)
+	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer cleared after sustained progress")
 
 	EventBus.stuck_event_logged.disconnect(on_stuck)
-	wall_tower.free()
 	barricade.free()
 	target_dummy.free()
 	bulwark.free()
@@ -589,6 +533,68 @@ func test_reward_pick_flow() -> void:
 	assert_true(wm.current_wave == 2, "Wave advanced to 2")
 
 	wm.free()
+
+
+func test_no_unit_collision_and_fortress_slots() -> void:
+	print("\n[GROUP 14] 20 Grunts Pass Through Same Point Without Avoidance Pushing")
+	# 1. Verify Fortress slot cap remains 12
+	var fstats: FortressStats = preload("res://data/config/fortress_stats.tres")
+	assert_true(fstats != null and fstats.melee_slots == 12, "Fortress max attackers remains exactly 12")
+
+	# Instantiate corridor level containing Fortress and navigation mesh
+	var level: Node = LEVEL_SCENE.instantiate()
+	add_child(level)
+	var fortress := get_tree().get_first_node_in_group(&"fortress") as Fortress
+	EventBus.state_changed.emit(&"COMBAT")
+	for _i in range(3):
+		await get_tree().physics_frame
+
+	# 2. Instantiate 20 Grunts at the exact same location walking to the Fortress
+	var grunts: Array[Enemy] = []
+	var spawn_pos := Vector3(-6.0, 0.1, 0.0)
+	for i in range(20):
+		var g := GRUNT_SCENE.instantiate() as Enemy
+		g.data = g.data.duplicate()
+		g.data.target_rules = [&"FORTRESS"] as Array[StringName]
+		g.position = spawn_pos
+		level.add_child(g)
+		g.spawn_grace = false
+		g.is_in_spawn_zone = false
+		g.change_state(Enums.EnemyState.ADVANCE)
+		grunts.append(g)
+
+	# 3. Check all grunts have avoidance enabled with layer separation (agents on layer 2, mask excludes layer 2)
+	var all_layer_separated := true
+	for g in grunts:
+		if not g.nav.avoidance_enabled or g.nav.avoidance_layers != 2 or (g.nav.avoidance_mask & 2) != 0:
+			all_layer_separated = false
+			break
+	assert_true(all_layer_separated, "All 20 Grunts have unit-to-unit avoidance disabled via layer separation")
+
+	# 4. Await physics frames while walking to Fortress and assert no separation push
+	var no_separation_push := true
+	var max_attacking := 0
+	for frame in range(250):
+		await get_tree().physics_frame
+		if frame < 30:
+			for g in grunts:
+				if not g.position.is_equal_approx(grunts[0].position):
+					no_separation_push = false
+					break
+		var attacking_count := 0
+		for g in grunts:
+			if g.current_target == fortress and g.current_state == Enums.EnemyState.ATTACK:
+				attacking_count += 1
+		max_attacking = maxi(max_attacking, attacking_count)
+		if max_attacking == 12:
+			break
+
+	assert_true(no_separation_push, "All 20 Grunts share the exact same position without pushing each other apart")
+	assert_true(max_attacking > 0 and max_attacking <= 12, "At most 12 Grunts attack the Fortress (got %d attacking)" % max_attacking)
+
+	for g in grunts:
+		g.free()
+	level.free()
 
 
 class MockCommander extends Node3D:

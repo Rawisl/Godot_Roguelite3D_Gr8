@@ -22,14 +22,13 @@ extends Resource
 @export var anim_attack: StringName = &"melee/Melee_1H_Attack_Slice_Diagonal"
 @export var anim_shoot: StringName = &""
 
-@export_group("Spawning & Avoidance")
+@export_group("Spawning & Navigation")
 @export var spawn_cost: int = 1
 @export var is_flying: bool = false
 @export var is_ranged: bool = false
 @export var knockback_immune: bool = false
 @export var aggro_range: float = 10.0
-@export var avoid_radius: float = 0.5
-@export var avoid_priority: int = 1
+@export var agent_radius: float = 0.5
 
 @export_group("Targeting Rules")
 ## Ordered category priority: PLAYER, BARRICADE, TOWER_GROUND, TOWER_WALL, FORTRESS

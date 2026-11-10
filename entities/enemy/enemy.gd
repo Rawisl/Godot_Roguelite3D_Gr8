@@ -3,6 +3,7 @@ extends CharacterBody3D
  
 ## Base enemy controller with state machine, navigation, spawn grace, and combat behaviors.
 ## Supports melee and ranged archetypes, prioritized targeting rules, and crowd optimizations.
+# TODO(Ender-Via): when more than one lane exists, project onto the nearest lane and use that lane's length instead of the first lane's longest length.
  
 signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
  
@@ -10,14 +11,14 @@ const PATH_UPDATE_INTERVAL: float = 0.3
 const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
 ## Speed lost per second while staggered.
 const KNOCKBACK_DECAY: float = 10.0
-## slot holder blocked by the units already at the target swings.
+## slot holder blocked by units or obstacles swings when in reach.
 const STALL_ATTACK_TIME: float = 0.5
 ## A waiting unit this close to crowd_wait_ring has reached the ring and stands still.
 const WAIT_RING_TOLERANCE: float = 0.3
 ## A knockback that carries a slot holder further than this from where it was hit frees its slot.
 const KNOCKBACK_RELEASE_DISTANCE: float = 3.0
 
-## WAIT: not moved yet, walking in to the wait ring (avoidance and walk animation apply),
+## WAIT: not moved yet, walking in to the wait ring (walk animation applies),
 ## standing for the rest of this WAIT.
 enum WaitPhase { NOT_MOVED, WALKING_IN, STANDING }
 
@@ -165,11 +166,14 @@ func _ready() -> void:
 		var cfg := _get_effective_scale_config()
 		scaled_gold = cfg.get_gold_reward(data.gold_reward, spawn_wave)
  
-	nav.radius = data.avoid_radius
+	nav.radius = data.agent_radius if (data != null and "agent_radius" in data) else 0.5
 	nav.path_desired_distance = 1.0
 	nav.target_desired_distance = data.attack_range if data else 1.0
-	# Steer around Barricades, rubble (NavigationObstacle3D) and other units; the navmesh is not re-baked.
+	# Steer around Barricades, rubble (NavigationObstacle3D) and static obstacles;
+	# layer 2 is used for units and layer 1 for obstacles, so units do not avoid each other.
 	nav.avoidance_enabled = true
+	nav.avoidance_layers = 2
+	nav.avoidance_mask = 1
 	nav.velocity_computed.connect(_on_velocity_computed)
  
 	_init_spawn_zone_bounds()
@@ -235,8 +239,7 @@ func update_nav_progress() -> void:
 	var remaining := lane.curve.get_baked_length() - lane.curve.get_closest_offset(local)
 	nav_progress = _lane_ref_length - remaining
 
-# TODO(multi-lane): projects onto the first lane but uses the longest lane length.
-# Pick the enemy's own lane when a level has more than one.
+
 func _get_lane() -> Path3D:
 	if is_instance_valid(_lane) and _lane.is_inside_tree():
 		return _lane
@@ -499,7 +502,7 @@ func _update_state(delta: float) -> void:
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
 				return
-			# Holding a slot but boxed in by the units already there; hit from here when in reach.
+			# Holding a slot but blocked by an obstacle/building; hit from here when in reach.
 			if (_stall_time >= STALL_ATTACK_TIME and dist_to_target <= _melee_reach()
 					and _uses_melee_slot(current_target) and current_target.has_melee_slot(self)):
 				change_state(Enums.EnemyState.ATTACK)
@@ -512,7 +515,6 @@ func _update_state(delta: float) -> void:
 				_stall_time = 0.0
 				_retarget_now()
 				return
- 
 			_update_target_tracking(delta)
 			_update_navigation_movement(delta)
  
@@ -1198,7 +1200,7 @@ func _apply_avoidance(delta: float) -> void:
 		_sidestep_sign = 0.0
 		_sidestep_flip_at = 1.0
 	var feed := desired
-	# RVO stops that walks straight at an obstacle or at a standing crowd, and never picks a side. Ask for a sideways move instead
+	# RVO stops when walking straight at an obstacle and never picks a side. Ask for a sideways move instead.
 	var to_dest := Vector3(nav.target_position.x - global_position.x, 0.0, nav.target_position.z - global_position.z)
 	if blocked and to_dest.length() > 1.5:
 		var left := Vector3(-desired.z, 0.0, desired.x).normalized()
@@ -1213,6 +1215,7 @@ func _apply_avoidance(delta: float) -> void:
 	if walking and _has_safe_velocity and desired.length_squared() > 0.001:
 		velocity.x = _safe_velocity.x
 		velocity.z = _safe_velocity.z
+
 
 ## +1 = step left, -1 = step right. The side the destination lies on; when it is straight ahead,
 ## the side with open navmesh (not a corridor wall).
@@ -1229,10 +1232,12 @@ func _pick_sidestep(left: Vector3, to_dest: Vector3) -> float:
 	var off_r := Vector2(NavigationServer3D.map_get_closest_point(map, r).x - r.x, NavigationServer3D.map_get_closest_point(map, r).z - r.z).length()
 	return 1.0 if off_l <= off_r else -1.0
 
+
 func _on_velocity_computed(safe_velocity: Vector3) -> void:
 	_safe_velocity = safe_velocity
 	_has_safe_velocity = true
- 
+
+
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return

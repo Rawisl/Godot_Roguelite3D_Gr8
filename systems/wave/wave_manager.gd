@@ -302,6 +302,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 	var budget: int = cfg.get_budget(wave_num)
 	var is_boss: bool = is_boss_wave(wave_num)
 	if is_boss:
+		# TODO(Ender-Via): SPN-10: escorts for waves 1-30 come from WaveScript; only from wave 31 is it 0.5x budget.
 		budget = maxi(1, int(floor(float(budget) * 0.5)))
 
 	var rng := RandomNumberGenerator.new()
@@ -740,6 +741,7 @@ func advance_from_summary() -> void:
 	if current_wave == GameConfig.victory_wave and not _victory_handled:
 		_victory_handled = true
 		EventBus.run_victory.emit(current_wave)
+		# TODO(Ender-Via): pause with REASON_VICTORY once SCR-20 victory screen lands; currently disabled by default.
 		if enable_victory_screen:
 			_waiting_victory_continue = true
 			TimeManager.request_pause(TimeManager.REASON_VICTORY)

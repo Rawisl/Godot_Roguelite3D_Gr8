@@ -391,14 +391,12 @@ func can_be_culled() -> bool:
 
 
 func _update_stuck_detection(delta: float) -> void:
-	if is_dead or spawn_grace or is_in_spawn_zone or current_phase == Enums.BossPhase.TRANSITION:
+	if is_dead or spawn_grace or current_phase == Enums.BossPhase.TRANSITION:
 		_stuck_timer = 0.0
 		_last_stuck_progress = -INF
 		return
 
 	if current_state != Enums.EnemyState.ADVANCE and current_state != Enums.EnemyState.CHASE:
-		_last_stuck_progress = nav_progress
-		_stuck_timer = 0.0
 		return
 
 	if current_target == null or not is_instance_valid(current_target):
@@ -409,17 +407,14 @@ func _update_stuck_detection(delta: float) -> void:
 
 	var progress_delta: float = nav_progress - _last_stuck_progress
 	if progress_delta >= GameConfig.stuck_progress_min:
-		_last_stuck_progress = nav_progress
-		_stuck_timer = 0.0
 		_normal_progress_timer += delta
+		_last_stuck_progress = nav_progress
 		if _normal_progress_timer >= GameConfig.stuck_reset_time:
+			_stuck_timer = 0.0
 			_current_stuck_tier = 0
 	else:
+		_normal_progress_timer = 0.0
 		_stuck_timer += delta
-		if _stuck_timer < GameConfig.stuck_detect_time:
-			_normal_progress_timer += delta
-		else:
-			_normal_progress_timer = 0.0
 
 	_evaluate_stuck_ladder()
 
@@ -463,42 +458,34 @@ func _resolve_stuck_tier_2() -> void:
 func _resolve_stuck_tier_3() -> void:
 	var hop_dist: float = GameConfig.boss_hop_radius
 	var forward_dir := Vector3.LEFT
+	if current_target != null and is_instance_valid(current_target):
+		var diff := current_target.global_position - global_position
+		diff.y = 0.0
+		if diff.length_squared() > 0.01:
+			forward_dir = diff.normalized()
+	var target_hop_pos := global_position + forward_dir * hop_dist
 	var tree := get_tree()
-	var has_fortress := false
-	var fortress_pt := Vector3.ZERO
 	if tree != null:
 		var fortress := tree.get_first_node_in_group(&"fortress") as Node3D
-		if fortress != null and is_instance_valid(fortress):
-			has_fortress = true
-			fortress_pt = _get_attack_point(fortress)
-			var to_fortress := fortress_pt - global_position
-			to_fortress.y = 0.0
-			if to_fortress.length_squared() > 0.01:
-				forward_dir = to_fortress.normalized()
-	if forward_dir.x > 0.0:
-		forward_dir = Vector3.LEFT
-
-	var target_hop_pos := global_position + forward_dir * hop_dist
-	if has_fortress and forward_dir.x < 0.0 and target_hop_pos.x < fortress_pt.x:
-		target_hop_pos.x = fortress_pt.x
-
-	var final_pos := target_hop_pos
+		if fortress != null:
+			if forward_dir.x < 0.0 and target_hop_pos.x < fortress.global_position.x:
+				target_hop_pos.x = fortress.global_position.x + 1.0
 	var map := nav.get_navigation_map()
 	if map.is_valid():
-		final_pos = NavigationServer3D.map_get_closest_point(map, target_hop_pos)
-		if has_fortress and forward_dir.x < 0.0 and final_pos.x < fortress_pt.x:
-			final_pos.x = fortress_pt.x
-	global_position = final_pos
+		var nav_pt := NavigationServer3D.map_get_closest_point(map, target_hop_pos)
+		global_position = nav_pt
+	else:
+		global_position = target_hop_pos
 	if current_target != null and is_instance_valid(current_target):
 		nav.target_position = _get_attack_point(current_target)
 
 
-func _find_blocking_structure(max_distance: float = 8.0) -> Node3D:
+func _find_blocking_structure() -> Node3D:
 	var tree := get_tree()
 	if tree == null:
 		return null
 	var best: Node3D = null
-	var min_dist: float = max_distance
+	var min_dist: float = INF
 	var candidates: Array[Node] = []
 	candidates.append_array(tree.get_nodes_in_group(&"barricade"))
 	candidates.append_array(tree.get_nodes_in_group(&"tower"))
@@ -506,16 +493,14 @@ func _find_blocking_structure(max_distance: float = 8.0) -> Node3D:
 		var n3d := cand as Node3D
 		if n3d == null or not is_instance_valid(n3d):
 			continue
-		if n3d.is_in_group(&"fortress") or n3d.is_in_group(&"tower_wall"):
+		if n3d.is_in_group(&"fortress"):
 			continue
-		if "health" in n3d and n3d.health != null and n3d.health.hp <= 0:
-			continue
-		if not _is_target_ahead(n3d.global_position):
-			continue
+		if "slot" in n3d and n3d.slot != null and "zone" in n3d.slot:
+			if n3d.slot.zone == Enums.SlotZone.WALL:
+				continue
 		var diff := n3d.global_position - global_position
-		diff.y = 0.0
 		var d := diff.length()
-		if d <= min_dist:
+		if d < min_dist:
 			min_dist = d
 			best = n3d
 	return best
