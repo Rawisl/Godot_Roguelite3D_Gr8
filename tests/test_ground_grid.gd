@@ -3,7 +3,8 @@ extends Node
 ## Automated test runner verifying GroundGrid in the corridor level:
 ## - one GROUND slot per valid GridData cell, named and slot_id'd G_c_r, at the cell centre
 ## - spawned before SlotManager collects, so SlotManager lists every cell and finds no problem
-## - the 4 reference cells exist; the pick collider is 1.9 m for a 2 m cell
+## - all 9 rows have slots, none in the clear zone around boss_melee_point (or its fallback)
+## - the pick collider is 1.9 m for a 2 m cell
 ## - grid slots sit outside the navmesh source group, so the baked navmesh is unchanged
 ## - slots stay the same nodes across a run reset
 
@@ -23,7 +24,7 @@ func _ready() -> void:
 	add_child(level)
 	var grid: GroundGrid = level.get_node("Slots/GroundGrid")
 	var mgr: SlotManager = level.get_node("Slots")
-	var valid := grid.grid_data.get_valid_cells(grid.lane, grid.spawn_zone, grid.return_zone, grid.command_post)
+	var valid := grid.get_valid_cells()
 
 	assert_true(grid.cells.size() == valid.size() and valid.size() > 0, "one slot per valid cell (%d)" % valid.size())
 	var ground := mgr.get_slots_in_zone(Enums.SlotZone.GROUND)
@@ -38,8 +39,28 @@ func _ready() -> void:
 				and slot.global_position.is_equal_approx(grid.grid_data.cell_position(cell)) \
 				and slot.facing.is_equal_approx(grid.grid_data.column_dir.normalized())
 	assert_true(placed_ok, "every slot is G_c_r, GROUND, at its cell centre, facing along the columns")
-	for ref in [&"G_0_1", &"G_0_2", &"G_1_1", &"G_1_2"]:
-		assert_true(mgr.get_slot(ref) != null, "reference cell %s exists" % ref)
+	var marker := level.get_node("Markers/BossMeleePoint") as Node3D
+	assert_true(grid.get_boss_point().is_equal_approx(marker.global_position), "the clear zone is centred on boss_melee_point")
+	var near_boss := 0
+	var half := GameConfig.grid_cell_size * 0.5
+	for slot in mgr.get_slots_in_zone(Enums.SlotZone.GROUND):
+		var d := slot.global_position - marker.global_position
+		var gap := Vector2(maxf(absf(d.x) - half, 0.0), maxf(absf(d.z) - half, 0.0)).length()
+		if gap < GameConfig.boss_point_clear_radius - 0.001:
+			near_boss += 1
+	assert_true(near_boss == 0, "no grid slot within %.1f m of boss_melee_point" % GameConfig.boss_point_clear_radius)
+	var rows := {}
+	for cell in valid:
+		rows[cell.y] = true
+	assert_true(rows.size() == 9, "grid slots cover all 9 rows")
+
+	# Without the marker the clear zone moves to the fallback on the lane, 1.8 m from its gate end.
+	var bare := GroundGrid.new()
+	bare.grid_data = grid.grid_data
+	bare.lane = grid.lane
+	var fallback := bare.get_boss_point()
+	assert_true(fallback.distance_to(Vector3(-13.2, 0, 0)) < 0.01, "fallback point is 1.8 m in front of the lane's gate end (%s)" % fallback)
+	bare.free()
 
 	var pick := ground[0].get_node("ClickArea/CollisionShape3D") as CollisionShape3D
 	var box := pick.shape as BoxShape3D
