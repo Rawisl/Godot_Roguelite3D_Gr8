@@ -1,16 +1,22 @@
 class_name TestPlaytestPathBlocking
 extends Node3D
-## Scene playtest for ground buildings that narrow the lane. Finds the legal ground layout with the
-## narrowest bottleneck on the real corridor, builds it through BuildService, then releases each
-## enemy group from the spawn zone and checks that every unit still walks to the Fortress. The
-## towers are made silent and unbreakable, so only the path is measured. Archers arrive once the
-## Fortress is in bow range, which can be before the layout, so they only show the spawn side is clear.
-## Headless (or auto_run): runs every group, prints one line per group and quits.
+## Scene playtest for ground buildings that narrow the lane. Two layouts are found on the real
+## corridor and built through BuildService: the bottleneck (the legal layout with the narrowest
+## lane for the boss) and the tight cluster (two towers in adjacent rows of one column, so the gap
+## between them is narrower than a unit but open for the navigation mesh, plus a third tower to
+## make an L). Each enemy group is released from the spawn zone and must still walk to the
+## Fortress. The towers are made silent and unbreakable, so only the path is measured. Archers
+## arrive once the Fortress is in bow range, which can be before the layout, so the cluster is
+## placed beyond that reach.
+## Headless (or auto_run): runs both layouts at every speed in time_scales, prints one line per
+## group (scenario and speed first) and quits. With scan_all_adjacent_pairs it also runs every
+## adjacent same-column pair, which takes minutes and has no real-time budget.
 ## F6 starts with an empty ground, so towers are placed by hand through BuildService (its cap and
 ## path check apply). Each free cell is tinted: buildable, ground cap reached, or would seal the lane.
 ## F6 mouse: left click a cell builds an Arrow, right click removes the tower on it.
-## F6 keys: L build the worst layout found, C clear the ground, 1-5 run one group, R repeat it,
-## A run all, +/- speed, T enemies attack towers on/off.
+## F6 keys: L build the bottleneck layout, K build the tight cluster layout, C clear the ground,
+## 1-5 run one group, R repeat it, A run all, P scan every adjacent pair, +/- speed, T enemies
+## attack towers on/off.
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const ARCHER_SCENE: PackedScene = preload("res://entities/enemy/archer.tscn")
@@ -33,8 +39,18 @@ signal group_finished
 
 ## Runs every group and quits even with a window. Headless always does.
 @export var auto_run := false
-## Engine.time_scale while a group runs.
+## Engine.time_scale while a group runs in F6.
 @export var time_scale := 4.0
+## Engine.time_scale of each automatic pass; every layout runs once per entry.
+@export var time_scales: Array[float] = [1.0, 4.0]
+## Passes slower than this run only slow_pass_groups (indices into the group list), to keep the
+## automatic run short: a stalled unit takes its whole time limit in real time at 1x.
+@export var slow_pass_below := 2.0
+@export var slow_pass_groups: Array[int] = [0, 1]
+## Also run every adjacent same-column pair of cells, for manual use (several minutes).
+@export var scan_all_adjacent_pairs := false
+## Groups run for each pair of the scan.
+@export var scan_groups: Array[int] = [0, 1]
 ## Off: enemies only aim at the Fortress (the Bulwark at its standing point), so the result is the
 ## path alone. On: the data's own target rules apply, to watch the real behaviour.
 @export var enemies_attack_towers := false
@@ -58,6 +74,14 @@ signal group_finished
 @export var middle_row_extra_columns := 2
 ## Cell ids to build instead of searching, for example [&"G_2_1", &"G_2_7", &"G_1_0"].
 @export var layout_override: Array[StringName] = []
+## Cell ids to build as the tight cluster instead of searching, for example
+## [&"G_4_1", &"G_4_2", &"G_5_2"].
+@export var cluster_layout_override: Array[StringName] = []
+## Tight cluster rule: every group has a unit whose straight line to the Fortress passes the gap
+## centre at least this far away (not dead on)...
+@export var cluster_min_offset := 2.0
+## ...and at most this far away.
+@export var cluster_line_tolerance := 3.0
 ## HP given to each tower so nothing can destroy it.
 @export var tower_hp := 1000000
 
@@ -78,6 +102,9 @@ signal group_finished
 ## A window with less movement than this share of the walking speed counts as stalled.
 @export var stall_speed_fraction := 0.25
 @export var stall_window := 0.5
+## A unit stalled this long (game seconds) is given up on as wedged, instead of waiting for its
+## whole time limit.
+@export var stall_give_up := 10.0
 ## A jump longer than this in one physics frame counts as a hop.
 @export var hop_distance := 2.0
 ## Gap between spawned units, along the rows and columns of the spawn zone.
@@ -125,6 +152,10 @@ var _results: Array[String] = []
 var _last_denied: StringName = &""
 var _notice := ""
 var _worst_ids: Array[StringName] = []
+var _cluster_ids: Array[StringName] = []
+var _cluster_text := "searching..."
+var _scenario_label := ""
+var _auto_scale := 1.0
 var _hints: Dictionary[StringName, MeshInstance3D] = {}
 var _hint_root: Node3D
 var _current_group := -1
@@ -171,8 +202,7 @@ func _start() -> void:
 	if not _is_auto():
 		_start_manual()
 		return
-	_prepare_layout()
-	await _run_all()
+	await _run_auto()
 	_finish()
 
 
@@ -186,9 +216,51 @@ func _finish() -> void:
 
 
 #region Layout
-func _prepare_layout() -> void:
+## Every layout at every speed, then the optional pair scan.
+func _run_auto() -> void:
 	_return_to_prep()
-	var ids := _choose_layout()
+	var scenarios: Array[Dictionary] = []
+	var bottleneck := _choose_layout()
+	scenarios.append({"name": "bottleneck", "ids": bottleneck, "text": _layout_text})
+	var cluster := _choose_cluster_layout()
+	scenarios.append({"name": "cluster", "ids": cluster, "text": _cluster_text})
+	for scenario in scenarios:
+		for scale in time_scales:
+			await _run_scenario(scenario, scale)
+	if scan_all_adjacent_pairs:
+		await _run_pair_scan()
+
+
+func _run_scenario(scenario: Dictionary, scale: float) -> void:
+	_scenario_label = "%s x%.0f" % [scenario["name"], scale]
+	_auto_scale = scale
+	_layout_text = scenario["text"]
+	var ids: Array[StringName] = scenario["ids"]
+	if ids.is_empty():
+		_record(false, "%s: %s" % [_scenario_label, _layout_text])
+		return
+	await _prepare_layout(ids)
+	await _run_groups(_groups_for_scale(scale))
+
+
+## The slow passes run a subset of the groups.
+func _groups_for_scale(scale: float) -> Array[int]:
+	if scale >= slow_pass_below:
+		return _all_groups()
+	return slow_pass_groups
+
+
+func _all_groups() -> Array[int]:
+	var out: Array[int] = []
+	for i in GROUP_NAMES.size():
+		out.append(i)
+	return out
+
+
+## Clears the ground, builds the layout through the service and checks the cap refuses one more.
+func _prepare_layout(ids: Array[StringName]) -> void:
+	await _clear_all_ground()
+	_layout_ids.clear()
 	_check(ids.size() == GameConfig.max_ground_buildings, "layout has %d cells" % GameConfig.max_ground_buildings)
 	for id in ids:
 		var ok := _build_inert(id)
@@ -196,6 +268,8 @@ func _prepare_layout() -> void:
 		if ok:
 			_layout_ids.append(id)
 	_try_extra_build()
+	for i in 3:
+		await get_tree().physics_frame
 
 
 ## The override when set, else the narrowest legal layout; sets _layout_text.
@@ -212,6 +286,20 @@ func _choose_layout() -> Array[StringName]:
 	return ids
 
 
+## The override when set, else the tight cluster; sets _cluster_text.
+func _choose_cluster_layout() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	if cluster_layout_override.is_empty():
+		var found := _find_cluster_layout()
+		ids = found.get("ids", [] as Array[StringName])
+		_cluster_text = found.get("text", "no cluster layout")
+	else:
+		ids = cluster_layout_override.duplicate()
+		_cluster_text = "override %s" % [ids]
+	_log("Cluster layout: %s" % _cluster_text)
+	return ids
+
+
 ## Arrow through the real service, then silent and unbreakable. False when the service refuses.
 func _build_inert(id: StringName) -> bool:
 	var ok := _service.build(id, &"arrow", 1)
@@ -225,6 +313,16 @@ func _build_inert(id: StringName) -> bool:
 func _return_to_prep() -> void:
 	_gold.gold = 1000000
 	EventBus.state_changed.emit(&"PREP")
+
+
+## Every ground tower sold and every rubble cleared, through the service.
+func _clear_all_ground() -> void:
+	_return_to_prep()
+	for node in _grid.cells.values():
+		var slot := node as Slot
+		if slot != null and slot.uses_ground_space():
+			_clear_slot(slot)
+	await get_tree().physics_frame
 
 
 ## Silent (no shots) and unbreakable, so towers neither kill enemies nor die to them.
@@ -293,6 +391,142 @@ func _find_layout() -> Dictionary:
 		"text": "%s, bottleneck %.3f m (agent minimum %.2f m), %d combinations, %d ms" % [ids, width, min_w, combos.size(), ms]}
 
 
+## The tight cluster: two cells in adjacent rows of one column leave a gap of cell gap plus the
+## unused cell width, which the navigation mesh counts as open while avoidance counts it as closed.
+## Selection rule: a pair qualifies when
+##  - its gap centre is farther from the Fortress than the largest arrival reach (attack range +
+##    arrival_margin of Grunt, Archer and Brute), so even the Archers must walk through it, and
+##  - for every group, the closest straight line from a unit's spawn position to the Fortress passes
+##    the gap centre between cluster_min_offset and cluster_line_tolerance: close enough that the
+##    group is bent into the gap by crowding and avoidance, but not dead on, where units enter the
+##    gap in single file.
+## The qualifying pair nearest to the Fortress wins (the crowd is densest there), the lower row on
+## a tie, if it and its L are legal for BuildService. The third cell is the legal sideways neighbour
+## of the pair nearest to a spawn line.
+func _find_cluster_layout() -> Dictionary:
+	var t0 := Time.get_ticks_msec()
+	var data := _grid.grid_data
+	var min_w := GameConfig.path_check_min_width
+	var gate := _lane_end()
+	var goals: Array[Vector3] = [data.gate_goal(gate, min_w), _grid.get_boss_point()]
+	var spawn := _grid.spawn_zone.global_position
+	# The gate centre: a node that holds no melee slot gets it.
+	var goal := _fortress.get_melee_slot_position(_fortress)
+	var reach := _largest_arrival_reach()
+	var group_starts := _group_spawn_positions()
+	var starts: Array[Vector3] = []
+	for group in group_starts:
+		starts.append_array(group)
+	var pairs := _gap_candidates(goal, reach, group_starts)
+	for pair in pairs:
+		var cells: Array[Vector2i] = [pair["a"], pair["b"]]
+		if not _is_open(cells, spawn, gate, goals, min_w):
+			continue
+		if GameConfig.max_ground_buildings > 2:
+			var third := _third_cell(cells, spawn, gate, goals, min_w, goal, starts)
+			if third.x < 0:
+				continue
+			cells.append(third)
+		var ids: Array[StringName] = []
+		for cell in cells:
+			ids.append(GridData.cell_id(cell.x, cell.y))
+		var ms := Time.get_ticks_msec() - t0
+		return {"ids": ids, "text": "%s, gap %s/%s at %.1f m from the goal (reach %.1f m), closest spawn line %.2f m, %d qualifying pairs, %d ms" % [
+			ids, ids[0], ids[1], pair["goal_distance"], reach, pair["nearest"], pairs.size(), ms]}
+	return {"text": "no legal cluster beyond reach %.1f m (%d qualifying pairs)" % [reach, pairs.size()]}
+
+
+## Same-column adjacent pairs that meet the selection rule, nearest to the goal first.
+func _gap_candidates(goal: Vector3, reach: float, group_starts: Array[Array]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for id in _grid.cells.keys():
+		var a := GridData.cell_of(id)
+		var b := Vector2i(a.x, a.y + 1)
+		if a.x < 0 or not _grid.cells.has(GridData.cell_id(b.x, b.y)):
+			continue
+		var centre := (_cell_position(a) + _cell_position(b)) * 0.5
+		var goal_distance := _flat_distance(centre, goal)
+		if goal_distance <= reach:
+			continue
+		var nearest := _closest_group_line(centre, goal, group_starts)
+		if nearest.is_empty():
+			continue
+		out.append({"a": a, "b": b, "nearest": nearest["distance"], "goal_distance": goal_distance})
+	out.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
+		if not is_equal_approx(x["goal_distance"], y["goal_distance"]):
+			return x["goal_distance"] < y["goal_distance"]
+		return x["a"].y < y["a"].y)
+	return out
+
+
+## The smallest distance, over all groups, from the point to a unit's line to the goal, as
+## {"distance"}; empty unless every group has a line in the cluster band.
+func _closest_group_line(point: Vector3, goal: Vector3, group_starts: Array[Array]) -> Dictionary:
+	var overall := INF
+	for group in group_starts:
+		var group_nearest := INF
+		for start in group:
+			group_nearest = minf(group_nearest, _distance_to_segment(point, start, goal))
+		if group_nearest < cluster_min_offset or group_nearest > cluster_line_tolerance:
+			return {}
+		overall = minf(overall, group_nearest)
+	return {"distance": overall}
+
+
+## The free cell beside the pair, in the same row as one of its cells, nearest to a spawn line
+## among those that keep the lane open. (-1, -1) when none does.
+func _third_cell(pair: Array[Vector2i], spawn: Vector3, gate: Vector3, goals: Array[Vector3],
+		width: float, goal: Vector3, starts: Array[Vector3]) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_distance := INF
+	for cell in pair:
+		for dx in [-1, 1]:
+			var candidate := Vector2i(cell.x + dx, cell.y)
+			var slot := _grid.cells.get(GridData.cell_id(candidate.x, candidate.y)) as Slot
+			if candidate.x < 0 or slot == null or not slot.is_free():
+				continue
+			var cells: Array[Vector2i] = [pair[0], pair[1], candidate]
+			if not _is_open(cells, spawn, gate, goals, width):
+				continue
+			var line_distance := INF
+			for start in starts:
+				line_distance = minf(line_distance, _distance_to_segment(slot.global_position, start, goal))
+			if line_distance < best_distance:
+				best = candidate
+				best_distance = line_distance
+	return best
+
+
+func _largest_arrival_reach() -> float:
+	var reach := 0.0
+	for scene in [GRUNT_SCENE, ARCHER_SCENE, BRUTE_SCENE]:
+		var enemy := scene.instantiate() as Enemy
+		reach = maxf(reach, enemy.data.attack_range + arrival_margin)
+		enemy.free()
+	return reach
+
+
+## Where the units of the Grunt, Archer and Brute groups start, one array per group.
+func _group_spawn_positions() -> Array[Array]:
+	var out: Array[Array] = []
+	for count in [grunt_count, archer_count, brute_count]:
+		out.append(_spawn_positions(count))
+	return out
+
+
+func _cell_position(cell: Vector2i) -> Vector3:
+	return (_grid.cells[GridData.cell_id(cell.x, cell.y)] as Slot).global_position
+
+
+func _flat_distance(a: Vector3, b: Vector3) -> float:
+	return Vector2(a.x, a.z).distance_to(Vector2(b.x, b.z))
+
+
+func _distance_to_segment(point: Vector3, from: Vector3, to: Vector3) -> float:
+	var p := Vector2(point.x, point.z)
+	return Geometry2D.get_closest_point_to_segment(p, Vector2(from.x, from.z), Vector2(to.x, to.z)).distance_to(p)
+
+
 func _is_open(obstacles: Array[Vector2i], spawn: Vector3, gate: Vector3, goals: Array[Vector3], width: float) -> bool:
 	return _grid.grid_data.unreachable_goals(obstacles, spawn, gate, goals, width).is_empty()
 
@@ -335,8 +569,36 @@ func _collect_combinations(items: Array[Vector2i], size: int, start: int, curren
 
 #region Groups
 func _run_all() -> void:
-	for i in GROUP_NAMES.size():
+	await _run_groups(_all_groups())
+
+
+func _run_groups(indices: Array[int]) -> void:
+	for i in indices:
 		await _run_group(i)
+
+
+## Engine.time_scale for the running group: the automatic pass speed, or the F6 setting.
+func _scale_for_run() -> float:
+	return _auto_scale if _is_auto() else time_scale
+
+
+## Pair scan: every same-column adjacent pair on its own, at the fastest speed.
+func _run_pair_scan() -> void:
+	var scale: float = time_scales.max() if not time_scales.is_empty() else time_scale
+	_auto_scale = scale
+	for id in _grid.cells.keys():
+		var a := GridData.cell_of(id)
+		var b := GridData.cell_id(a.x, a.y + 1)
+		if a.x < 0 or not _grid.cells.has(b):
+			continue
+		_scenario_label = "pair %s/%s x%.0f" % [id, b, scale]
+		await _clear_all_ground()
+		if not _build_inert(id) or not _build_inert(b):
+			_log("%s: layout refused, skipped" % _scenario_label)
+			continue
+		await get_tree().physics_frame
+		await _run_groups(scan_groups)
+	await _clear_all_ground()
 
 
 func _run_group(index: int) -> void:
@@ -351,7 +613,7 @@ func _run_group(index: int) -> void:
 		_report_skipped(index)
 		_running = false
 		return
-	Engine.time_scale = time_scale
+	Engine.time_scale = _scale_for_run()
 	_spawn_group(index)
 	_elapsed = 0.0
 	if _tracks.is_empty():
@@ -481,7 +743,7 @@ func _physics_process(delta: float) -> void:
 	if not _watching:
 		return
 	_elapsed += delta
-	if _is_auto() and (Time.get_ticks_msec() - _start_msec) / 1000.0 > real_time_budget:
+	if _is_auto() and not scan_all_adjacent_pairs and (Time.get_ticks_msec() - _start_msec) / 1000.0 > real_time_budget:
 		_budget_blown = true
 	for track in _tracks:
 		_update_track(track)
@@ -514,7 +776,7 @@ func _update_track(track: Track) -> void:
 		enemy.queue_free()
 		return
 	_update_stall(track, pos)
-	if _elapsed > track.limit or _budget_blown:
+	if _elapsed > track.limit or _budget_blown or track.stall_run >= stall_give_up:
 		track.timed_out = true
 
 
@@ -581,22 +843,64 @@ func _report_group(index: int) -> void:
 		if track.lost:
 			lost += 1
 		elif not track.arrived:
-			_log("  not arrived: %s at (%.1f, %.1f), stalled %.1f s, state %s" % [
+			_log("  not arrived: %s at (%.1f, %.1f), stalled %.1f s, state %s, %s" % [
 				track.enemy.data.id, track.last_pos.x, track.last_pos.z, track.stall_run,
-				Enums.EnemyState.keys()[track.enemy.current_state]])
+				Enums.EnemyState.keys()[track.enemy.current_state], _where_text(track.last_pos)])
 		hops += track.hops
 		retargets += track.retargets
 		stall = maxf(stall, track.stall_max)
 	var ok := reached == _tracks.size() and hops == 0
-	var line := "%s: reached %d/%d, max time %.1f s, longest stall %.1f s, hops %d, retargets %d" % [
-		GROUP_NAMES[index], reached, _tracks.size(), max_time, stall, hops, retargets]
+	var line := "%s%s: reached %d/%d, max time %.1f s, longest stall %.1f s, hops %d, retargets %d" % [
+		_prefix(), GROUP_NAMES[index], reached, _tracks.size(), max_time, stall, hops, retargets]
 	if lost > 0:
 		line += ", lost %d" % lost
 	_record(ok, line)
 
 
+## Scenario and speed in front of a report line; empty in F6.
+func _prefix() -> String:
+	return "" if _scenario_label.is_empty() else _scenario_label + " "
+
+
+## Where a unit stopped: the two nearest towers and, when it sits between two towers of one
+## column in adjacent rows, that gap.
+func _where_text(pos: Vector3) -> String:
+	var towers: Array[Dictionary] = []
+	for id in _grid.cells.keys():
+		var slot := _grid.cells[id] as Slot
+		if slot == null or not is_instance_valid(slot) or not slot.uses_ground_space():
+			continue
+		towers.append({"id": id, "cell": GridData.cell_of(id), "pos": slot.global_position,
+			"distance": _flat_distance(pos, slot.global_position)})
+	if towers.is_empty():
+		return "no tower built"
+	towers.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return x["distance"] < y["distance"])
+	var text := "nearest towers"
+	for i in mini(2, towers.size()):
+		text += " %s (%.1f m)" % [towers[i]["id"], towers[i]["distance"]]
+	return text + _gap_text(pos, towers)
+
+
+func _gap_text(pos: Vector3, towers: Array[Dictionary]) -> String:
+	var pitch := GameConfig.grid_cell_size + GameConfig.grid_cell_gap
+	var best := ""
+	var best_distance := pitch
+	for first in towers:
+		for second in towers:
+			var a: Vector2i = first["cell"]
+			var b: Vector2i = second["cell"]
+			if a.x != b.x or b.y != a.y + 1:
+				continue
+			var centre: Vector3 = (first["pos"] + second["pos"]) * 0.5
+			var distance := _flat_distance(pos, centre)
+			if distance < best_distance:
+				best_distance = distance
+				best = ", in the gap %s/%s (%.1f m from its centre)" % [first["id"], second["id"], distance]
+	return best
+
+
 func _report_skipped(index: int) -> void:
-	_record(false, "%s: skipped, real-time budget of %.0f s used up" % [GROUP_NAMES[index], real_time_budget])
+	_record(false, "%s%s: skipped, real-time budget of %.0f s used up" % [_prefix(), GROUP_NAMES[index], real_time_budget])
 #endregion
 
 
@@ -604,12 +908,14 @@ func _report_skipped(index: int) -> void:
 func _start_manual() -> void:
 	_return_to_prep()
 	_worst_ids = _choose_layout()
-	_layout_text = "worst layout (key L): %s" % _layout_text
+	_layout_text = "bottleneck layout (key L): %s" % _layout_text
+	_cluster_ids = _choose_cluster_layout()
+	_layout_text += "\ncluster layout (key K): %s" % _cluster_text
 	_hint_root = Node3D.new()
 	_hint_root.name = "CellHints"
 	add_child(_hint_root)
 	_refresh_hints()
-	_log("Ground is empty. Left click builds, right click removes, L worst layout, C clear, 1-5 group, R repeat, A all, +/- speed, T enemies attack towers.")
+	_log("Ground is empty. Left click builds, right click removes, L bottleneck layout, K cluster layout, C clear, 1-5 group, R repeat, A all, P pair scan, +/- speed, T enemies attack towers.")
 
 
 func _handle_click(click: InputEventMouseButton) -> void:
@@ -696,18 +1002,18 @@ func _clear_ground() -> void:
 	_refresh_hints()
 
 
-func _load_worst_layout() -> void:
+func _load_layout(ids: Array[StringName], layout_name: String) -> void:
 	if _running or _is_auto() or _hint_root == null:
 		return
 	_clear_ground()
 	var built := 0
-	for id in _worst_ids:
+	for id in ids:
 		_last_denied = &""
 		if _build_inert(id):
 			built += 1
 		else:
-			_log("Worst layout: %s refused (%s)" % [id, _last_denied])
-	_notice = "Worst layout built: %d/%d cells" % [built, _worst_ids.size()]
+			_log("%s: %s refused (%s)" % [layout_name, id, _last_denied])
+	_notice = "%s built: %d/%d cells" % [layout_name, built, ids.size()]
 	_log(_notice)
 	_refresh_hints()
 
@@ -771,7 +1077,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			enemies_attack_towers = not enemies_attack_towers
 			_log("Enemies attack towers: %s" % enemies_attack_towers)
 		KEY_L:
-			_load_worst_layout()
+			_load_layout(_worst_ids, "Bottleneck layout")
+		KEY_K:
+			_load_layout(_cluster_ids, "Cluster layout")
+		KEY_P:
+			_start_manual_scan()
 		KEY_C:
 			_clear_ground()
 		KEY_A:
@@ -786,6 +1096,17 @@ func _start_manual_all() -> void:
 	if _running:
 		return
 	await _run_all()
+
+
+func _start_manual_scan() -> void:
+	if _running or _hint_root == null:
+		return
+	_running = true
+	await _run_pair_scan()
+	_running = false
+	_scenario_label = ""
+	_return_to_prep()
+	_refresh_hints()
 
 
 func _start_manual_group(index: int) -> void:
@@ -824,7 +1145,7 @@ func _on_stuck_event(tier: int, kind: StringName, pos: Vector3, _wave: int) -> v
 
 
 func _check(cond: bool, test_name: String) -> void:
-	_record(cond, test_name)
+	_record(cond, _prefix() + test_name)
 
 
 func _record(ok: bool, text: String) -> void:
