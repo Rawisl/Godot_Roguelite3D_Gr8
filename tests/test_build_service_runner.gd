@@ -17,6 +17,8 @@ const BARRICADE: TowerData = preload("res://data/towers/barricade.tres")
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
 const CANNON_SCENE: PackedScene = preload("res://entities/tower/cannon.tscn")
 const BARRICADE_SCENE: PackedScene = preload("res://entities/tower/barricade.tscn")
+## Same ids as the default of SlotManager.required_wall_ids (an instance export, not readable without a node).
+const WALL_IDS: Array[StringName] = [&"W1", &"W2", &"W3"]
 const HEAL_STATION_SCENE: PackedScene = preload("res://entities/tower/heal_station.tscn")
 const LONG_ID := &"arrow_long"
 const OVER_ID := &"arrow_over"
@@ -109,7 +111,7 @@ func _setup() -> void:
 		OVER_ID: _scene_with(_over),
 	}
 	add_child(_service)
-	for id in [&"W1", &"W2", &"W3", &"W4"]:
+	for id in WALL_IDS:
 		_make_slot(id, Enums.SlotZone.WALL)
 	# One more GROUND slot than the cap allows.
 	for i in GameConfig.max_ground_buildings + 1:
@@ -477,6 +479,29 @@ func test_transaction_lock() -> void:
 	assert_true(_nested_results == [false], "nested build during sell refused")
 	assert_true(_slot(&"W1").state == Enums.SlotState.EMPTY, "slot is EMPTY after the sell")
 	assert_true(_gold.gold == before + refund, "gold rose by the refund only")
+
+	# sell -> nested sell on the same slot and on another slot. The same slot is already EMPTY when
+	# tower_sold fires, so that refusal does not depend on the lock; the other slot checks that the
+	# lock is per slot and that no tower is refunded twice.
+	_reset()
+	_service.build(&"W1", &"arrow")
+	_service.build(&"W2", &"arrow")
+	before = _gold.gold
+	refund = floori(float(_slot(&"W1").tower.invested_gold) * GameConfig.sell_refund_pct)
+	var refund_other := floori(float(_slot(&"W2").tower.invested_gold) * GameConfig.sell_refund_pct)
+	_nested_results.clear()
+	handler = _connect_nested(EventBus.tower_sold, func(id): return _service.sell(id) if id == &"W1" else false)
+	var handler_other := _connect_nested(EventBus.tower_sold, func(id): return _service.sell(&"W2") if id == &"W1" else false)
+	ok = _service.sell(&"W1")
+	EventBus.tower_sold.disconnect(handler)
+	EventBus.tower_sold.disconnect(handler_other)
+	assert_true(ok, "outer sell works with the nested sell handlers")
+	# The sell of W2 emits tower_sold too, so the handlers run again for it; only that one call succeeds.
+	assert_true(_nested_results[0] == false, "nested sell of the same slot during sell refused")
+	assert_true(_slot(&"W1").state == Enums.SlotState.EMPTY, "slot is EMPTY after the sell")
+	assert_true(_nested_results.count(true) == 1 and _slot(&"W2").state == Enums.SlotState.EMPTY, "nested sell of another slot has its own lock and goes through")
+	assert_true(_gold.gold == before + refund + refund_other, "each tower refunded exactly once")
+	assert_true(_service.build(&"W1", &"arrow"), "build on the slot works after the transaction")
 
 func test_heal_on_prep() -> void:
 	print("\n[GROUP 11] HP refill at the start of PREP")
