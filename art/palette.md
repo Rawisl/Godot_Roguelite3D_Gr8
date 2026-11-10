@@ -186,6 +186,19 @@ Biến thể (Theme Type Variation) cho TV4 dùng khi cần:
 | Keycap | PanelContainer | nền `ui_bg_alt`, viền 2 px `ui_text`, bo 6 px (ô phím như [E]) |
 | KeycapLabel | Label | `ui_text`, cỡ 20 (chữ trong Keycap) |
 | SpeedToggle | Button | khi bật (`toggle_mode` pressed): nền `ui_accent`, viền 3 px `ui_text`, chữ `ui_bg` |
+| RewardCard | Button | thẻ REWARD_PICK, bo 12 px, có bóng. Thường `#F1DEC3`, rê chuột `struct_stone_light` (bóng lớn hơn), nhấn `#E2C9A6`, xám `#B4ADA3`, đã chọn (`picked`) `struct_stone_light` với quầng `ui_accent` |
+| RewardCardTitle, RewardCardLevel, RewardCardText | Label | `ui_bg`, cỡ 32 / 24 / 22 (tên, cấp, mô tả trên thẻ) |
+| RewardFrameActive, RewardFramePassive, RewardFrameStat | Panel | chỉ viền 4 px theo loại thẻ: `ui_card_active`, `ui_card_passive`, `ui_card_stat` |
+| RewardKindActive, RewardKindPassive, RewardKindStat | PanelContainer | dải nhãn loại thẻ, nền theo loại, bo 8 px |
+| RewardKindLabel, RewardKindLabelLight | Label | chữ trên dải: `ui_bg` (dải vàng), `ui_text` (dải tím, xanh), cỡ 20 |
+
+Màu loại thẻ (khung, dải nhãn; chủ động và bị động trùng màu nhóm ô slot trên cùng màn):
+
+| Tên | Hex | Dùng cho |
+|---|---|---|
+| ui_card_active | `#FFC83D` | Kỹ năng chủ động |
+| ui_card_passive | `#7A4FA0` | Kỹ năng bị động |
+| ui_card_stat | `#2F6FA8` | Chỉ số |
 
 Ô nhập (LineEdit) dùng chung trong theme, không cần biến thể: nền `ui_bg_alt`, viền 2 px `ui_text_dim`, focus viền `ui_accent`, chữ `ui_text` cỡ 26, gợi ý (placeholder) `ui_text_dim` 60%.
 
