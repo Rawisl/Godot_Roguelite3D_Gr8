@@ -5,6 +5,7 @@ extends Node
 @export_group("Run and Wave")
 @export var starting_gold: int = 0
 @export var victory_wave: int = 30
+# TODO(Ender-Via): update starter_arrow_slot to &"G_3_4" to match 9-row grid from PR #156 (scheduled for weekend fix PR).
 @export var starter_arrow_slot: StringName = &"G_0_4"
 @export var starter_cannon_slot: StringName = &"W2"
 @export var starter_sell_unlock_wave: int = 3
