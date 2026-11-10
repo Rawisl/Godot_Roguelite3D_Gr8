@@ -3,6 +3,7 @@ extends CharacterBody3D
  
 ## Base enemy controller with state machine, navigation, spawn grace, and combat behaviors.
 ## Supports melee and ranged archetypes, prioritized targeting rules, and crowd optimizations.
+# TODO(Ender-Via): when more than one lane exists, project onto the nearest lane and use that lane's length instead of the first lane's longest length.
  
 signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
  
@@ -10,14 +11,14 @@ const PATH_UPDATE_INTERVAL: float = 0.3
 const KNOCKBACK_IMPULSE_SCALE: float = 10.0  # Scales knockback force into instantaneous velocity
 ## Speed lost per second while staggered.
 const KNOCKBACK_DECAY: float = 10.0
-## slot holder blocked by the units already at the target swings.
+## slot holder blocked by units or obstacles swings when in reach.
 const STALL_ATTACK_TIME: float = 0.5
 ## A waiting unit this close to crowd_wait_ring has reached the ring and stands still.
 const WAIT_RING_TOLERANCE: float = 0.3
 ## A knockback that carries a slot holder further than this from where it was hit frees its slot.
 const KNOCKBACK_RELEASE_DISTANCE: float = 3.0
 
-## WAIT: not moved yet, walking in to the wait ring (avoidance and walk animation apply),
+## WAIT: not moved yet, walking in to the wait ring (walk animation applies),
 ## standing for the rest of this WAIT.
 enum WaitPhase { NOT_MOVED, WALKING_IN, STANDING }
 
@@ -30,6 +31,18 @@ var has_target_position: bool = false
 ## Updated every path_update_interval by the unit itself; towers only read it.
 var nav_progress: float = 0.0
 var speed_multiplier: float = 1.0
+## Slow from weapon effects: share of speed lost and game seconds left. Kept apart from
+## speed_multiplier, which is overwritten when the unit enrages or changes phase.
+var slow_pct: float = 0.0
+var slow_timer: float = 0.0
+## Burn: damage per tick, game seconds left, progress to the next tick and who set it.
+var burn_per_tick: float = 0.0
+var burn_timer: float = 0.0
+var burn_dealt_mult: float = 1.0
+var burn_damage_type: Enums.DamageType = Enums.DamageType.SLASH
+var burn_source: Node = null
+var _burn_clock: float = 0.0
+var _burn_from_commander: bool = false
 var is_dead: bool = false
 
 var spawn_wave: int = 1
@@ -40,6 +53,7 @@ var scaled_damage: int = 0
 var scaled_gold: int = 0
 var scale_config: ScaleConfig = null
 
+const BURN_EPSILON := 0.0001
 const DEFAULT_SCALE_CONFIG: ScaleConfig = preload("res://data/config/scale_config.tres")
 
 func _get_effective_scale_config() -> ScaleConfig:
@@ -152,11 +166,14 @@ func _ready() -> void:
 		var cfg := _get_effective_scale_config()
 		scaled_gold = cfg.get_gold_reward(data.gold_reward, spawn_wave)
  
-	nav.radius = data.avoid_radius
+	nav.radius = data.agent_radius if (data != null and "agent_radius" in data) else 0.5
 	nav.path_desired_distance = 1.0
 	nav.target_desired_distance = data.attack_range if data else 1.0
-	# Steer around Barricades, rubble (NavigationObstacle3D) and other units; the navmesh is not re-baked.
+	# Steer around Barricades, rubble (NavigationObstacle3D) and static obstacles;
+	# layer 2 is used for units and layer 1 for obstacles, so units do not avoid each other.
 	nav.avoidance_enabled = true
+	nav.avoidance_layers = 2
+	nav.avoidance_mask = 1
 	nav.velocity_computed.connect(_on_velocity_computed)
  
 	_init_spawn_zone_bounds()
@@ -222,8 +239,7 @@ func update_nav_progress() -> void:
 	var remaining := lane.curve.get_baked_length() - lane.curve.get_closest_offset(local)
 	nav_progress = _lane_ref_length - remaining
 
-# TODO(multi-lane): projects onto the first lane but uses the longest lane length.
-# Pick the enemy's own lane when a level has more than one.
+
 func _get_lane() -> Path3D:
 	if is_instance_valid(_lane) and _lane.is_inside_tree():
 		return _lane
@@ -241,6 +257,14 @@ func _get_lane() -> Path3D:
 func can_be_targeted() -> bool:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return false
+	return true
+
+
+func can_be_recycled() -> bool:
+	return true
+
+
+func can_be_culled() -> bool:
 	return true
  
 ## Apply wave scale factors at spawn time. Immutable while alive.
@@ -325,8 +349,74 @@ func _physics_process(delta: float) -> void:
 	_apply_avoidance(delta)
 	move_and_slide()
  
+## Slows the unit by pct (0.2 = 20% slower) for duration game seconds. A new hit only refreshes
+## the slow, it never adds up. Refused for dead or spawning units and when the hit's damage type
+## cannot hurt the unit (resist 0). damage_type -1 means no type to check.
+func apply_slow(pct: float, duration: float, damage_type: int = -1) -> bool:
+	if is_dead or spawn_grace or duration <= 0.0 or pct <= 0.0:
+		return false
+	if damage_type >= 0 and has_method(&"get_resist") and float(call(&"get_resist", damage_type)) <= 0.0:
+		return false
+	slow_pct = clampf(pct, 0.0, 1.0)
+	slow_timer = duration
+	return true
+
+
+## 1.0 while not slowed, otherwise the share of speed that is left.
+func get_slow_factor() -> float:
+	return 1.0 - slow_pct if slow_timer > 0.0 else 1.0
+
+
+## Sets the unit on fire: raw_total damage spread evenly over duration game seconds, one tick per
+## second through take_damage as a DoT hit. A new hit only resets the time left, it does not add
+## damage. Refused under the same rules as apply_slow.
+func apply_burn(raw_total: float, duration: float, damage_type: Enums.DamageType, source: Node = null, dealt_mult: float = 1.0) -> bool:
+	if is_dead or spawn_grace or duration <= 0.0 or raw_total <= 0.0:
+		return false
+	if has_method(&"get_resist") and float(call(&"get_resist", damage_type)) <= 0.0:
+		return false
+	if burn_timer <= 0.0:
+		_burn_clock = 0.0
+	burn_per_tick = raw_total / duration
+	burn_timer = duration
+	burn_damage_type = damage_type
+	burn_dealt_mult = dealt_mult
+	burn_source = source if is_instance_valid(source) else null
+	_burn_from_commander = burn_source != null and burn_source.is_in_group(&"commander")
+	return true
+
+
+## Runs the slow and burn clocks. Called from _update_timers and from states that skip it.
+func _tick_status(delta: float) -> void:
+	if is_dead:
+		return
+	if slow_timer > 0.0:
+		slow_timer = maxf(0.0, slow_timer - delta)
+		if slow_timer == 0.0:
+			slow_pct = 0.0
+	if burn_timer > 0.0:
+		var step := minf(delta, burn_timer)
+		burn_timer -= step
+		_burn_clock += step
+		while _burn_clock >= 1.0 - BURN_EPSILON and not is_dead:
+			_burn_clock -= 1.0
+			_burn_tick()
+		if burn_timer <= BURN_EPSILON:
+			burn_timer = 0.0
+			_burn_clock = 0.0
+
+
+func _burn_tick() -> void:
+	var source: Node = burn_source if is_instance_valid(burn_source) else null
+	var info := DamageInfo.outgoing(burn_per_tick, burn_dealt_mult, burn_damage_type, source, 0.0, Vector3.ZERO, true)
+	info.hit_by_commander = info.hit_by_commander or _burn_from_commander
+	take_damage(info)
+
+
 func _update_timers(delta: float) -> void:
 	life_timer += delta
+
+	_tick_status(delta)
 
 	_progress_timer -= delta
 	if _progress_timer <= 0.0:
@@ -412,7 +502,7 @@ func _update_state(delta: float) -> void:
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
 				return
-			# Holding a slot but boxed in by the units already there; hit from here when in reach.
+			# Holding a slot but blocked by an obstacle/building; hit from here when in reach.
 			if (_stall_time >= STALL_ATTACK_TIME and dist_to_target <= _melee_reach()
 					and _uses_melee_slot(current_target) and current_target.has_melee_slot(self)):
 				change_state(Enums.EnemyState.ATTACK)
@@ -425,7 +515,6 @@ func _update_state(delta: float) -> void:
 				_stall_time = 0.0
 				_retarget_now()
 				return
- 
 			_update_target_tracking(delta)
 			_update_navigation_movement(delta)
  
@@ -556,7 +645,7 @@ func _move_towards_direction(dir: Vector3) -> void:
 	move_dir.y = 0.0
 	if move_dir.length_squared() > 0.001:
 		move_dir = move_dir.normalized()
-		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier
+		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier * get_slow_factor()
 		velocity.x = move_dir.x * move_speed
 		velocity.z = move_dir.z * move_speed
 		var target_yaw := atan2(move_dir.x, move_dir.z)
@@ -603,7 +692,7 @@ func _update_navigation_movement(_delta: float) -> void:
  
 	if move_dir.length_squared() > 0.001:
 		move_dir = move_dir.normalized()
-		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier
+		var move_speed: float = (data.move_speed if data else 3.5) * speed_multiplier * get_slow_factor()
 		velocity.x = move_dir.x * move_speed
 		velocity.z = move_dir.z * move_speed
  
@@ -1111,7 +1200,7 @@ func _apply_avoidance(delta: float) -> void:
 		_sidestep_sign = 0.0
 		_sidestep_flip_at = 1.0
 	var feed := desired
-	# RVO stops that walks straight at an obstacle or at a standing crowd, and never picks a side. Ask for a sideways move instead
+	# RVO stops when walking straight at an obstacle and never picks a side. Ask for a sideways move instead.
 	var to_dest := Vector3(nav.target_position.x - global_position.x, 0.0, nav.target_position.z - global_position.z)
 	if blocked and to_dest.length() > 1.5:
 		var left := Vector3(-desired.z, 0.0, desired.x).normalized()
@@ -1126,6 +1215,7 @@ func _apply_avoidance(delta: float) -> void:
 	if walking and _has_safe_velocity and desired.length_squared() > 0.001:
 		velocity.x = _safe_velocity.x
 		velocity.z = _safe_velocity.z
+
 
 ## +1 = step left, -1 = step right. The side the destination lies on; when it is straight ahead,
 ## the side with open navmesh (not a corridor wall).
@@ -1142,10 +1232,12 @@ func _pick_sidestep(left: Vector3, to_dest: Vector3) -> float:
 	var off_r := Vector2(NavigationServer3D.map_get_closest_point(map, r).x - r.x, NavigationServer3D.map_get_closest_point(map, r).z - r.z).length()
 	return 1.0 if off_l <= off_r else -1.0
 
+
 func _on_velocity_computed(safe_velocity: Vector3) -> void:
 	_safe_velocity = safe_velocity
 	_has_safe_velocity = true
- 
+
+
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if is_dead or spawn_grace or is_in_spawn_zone:
 		return
@@ -1194,6 +1286,8 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		provoked_timer = GameConfig.aggro_duration
 
 	if DamageCalc.resolve(info, self) <= 0:
+		if info.immune and info.is_from_commander():
+			EventBus.damage_immune.emit(self, info)
 		return 0
  
 	if info.knockback_force > 0.0:

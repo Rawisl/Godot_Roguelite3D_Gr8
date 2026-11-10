@@ -13,6 +13,6 @@ move_speed = 1.6
 anim_walk = &"move/Walking_A"
 knockback_immune = true
 aggro_range = 4.0
-avoid_radius = 1.6
+agent_radius = 1.6
 target_rules = Array[StringName]([&"PLAYER", &"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
 metadata/_custom_type_script = "uid://bhfhlrn5orfb"

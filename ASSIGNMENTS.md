@@ -356,7 +356,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG1
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Skill Sword Wave (SKL-11)
 - Nghiệm thu: 18 SLASH, rộng 3 m, trúng mọi quân; đi qua pipeline sát thương DMG-06
 - Cần xong trước: W8-NG1, W8B-NG1
@@ -364,7 +364,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG2
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Skill Firebomb (SKL-12), vùng cháy tick BLAST
 - Nghiệm thu: 6/s, 2.5 m, 4 s; tick bật cờ hit_by_commander; tick đi qua pipeline DMG-06 (sau này kích hoạt hiệu ứng vũ khí và chịu trần Hazard)
 - Cần xong trước: W8-KT2, W8B-NG1
@@ -372,7 +372,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG3
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hệ kháng boss DMG-01..05, miễn taunt/knockback (AI-06, BOSS-01), hiển thị IMMUNE và RESIST
 - Nghiệm thu: Bulwark pha 1: Arrow không bắn, Cannon 100%, kiếm 60%
 - Cần xong trước: W8-NG2, W8B-NG1
@@ -380,7 +380,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG4
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Khóa input BOSS_INTRO (BOSS-18), test đơn vị skill
 - Nghiệm thu: Test GUT cho Whirlwind, Sword Wave, Firebomb
 - Cần xong trước: W9-NG1, W9-NG2
@@ -388,7 +388,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG5
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Trạng thái Slow và DoT trên Enemy và Bulwark (Frost áp được lên boss, ngoại lệ BOSS-01; Burn tick qua dot_remainder)
 - Nghiệm thu: Slow 20% 3 s làm mới không cộng dồn; DoT 5 tick đúng tổng; Bulwark nhận Slow nhưng vẫn miễn taunt/knockback
 - Tệp liên quan: entities/enemy/enemy.gd, entities/enemy/bulwark.gd, common/health_component.gd
@@ -398,7 +398,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG6
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: WeaponData và trạng thái vũ khí: Resource WeaponData (range_mult, effect_id, tham số), owned_weapons và equipped_weapon trong RunState (kiếm gốc mặc định), tín hiệu weapon_equipped, đổi vũ khí chỉ ở PREP
 - Nghiệm thu: Đầu run chỉ có kiếm gốc; trao thử vũ khí bằng debug thì equip được ở PREP, bị từ chối ở COMBAT và HAZARD_TRIAL
 - Tệp liên quan: mới: common/weapon_data.gd, data/weapons/; entities/commander/commander.gd; common/run_skill_state.gd (nơi lưu trạng thái run)
@@ -408,7 +408,8 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-NG7
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 7 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
+- Ghi chú: sau khi W9-NG1/NG2 (sword_wave, firebomb) và W9-NG6 (data/weapons) vào main, chạy lại `python tools/balance/generate.py` để sinh các .tres đó từ bảng
 - Việc: Công cụ dịch bảng cân bằng, phần lõi: script Python (openpyxl) đọc balance.xlsx, sinh CharacterStats, SkillData, TowerData và TowerLevelData x36, EnemyData; dòng chú thích 'sinh tự động', thứ tự khóa ổn định
 - Nghiệm thu: Chạy hai lần cho bộ .tres giống hệt; game nạp được các .tres sinh ra; diff git gọn; XpTracker đọc xp_base và xp_step từ CharacterStats (hiện nằm ở GameConfig)
 - Tệp liên quan: mới: tools/balance/*.py; common/csv_loader.gd (không dùng, có thể xóa); data/enemies/enemies.csv; autoload/game_config.gd (xp_base, xp_step)
@@ -418,7 +419,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH4a
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: apply_pick: ghi vào RunSkillState, gọi StatBlock, phát skill_slots_changed
 - Nghiệm thu: Chọn thẻ vào đúng ô, level tăng đúng
 - Cần xong trước: W9-KT3
@@ -428,7 +429,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT1
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Pha giáp Bulwark (BOSS-09..14)
 - Nghiệm thu: Chuyển pha đúng một lần, sát thương dư bị bỏ
 - Cần xong trước: W9-NG3, W8-KT2
@@ -436,7 +437,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT2
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: BOSS_INTRO và BOSS_COMBAT, spawn boss và hộ tống (SPN-09..12, BOSS-02, 05, 17..21)
 - Nghiệm thu: Boss spawn ở giây 0 BOSS_COMBAT; hộ tống 0.5 x budget; mỗi wave boss có ít nhất 1 hộ tống
 - Cần xong trước: W8-KT3
@@ -444,7 +445,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT3
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thêm state REWARD_PICK vào Wave FSM (RWP-01, 06)
 - Nghiệm thu: Vào REWARD_PICK khi pending_picks > 0, bỏ qua khi 0; chừa chỗ cho bước màn thắng (WAVE-13)
 - Cần xong trước: W9-NG3, W8-KT3
@@ -452,7 +453,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT4
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thang kẹt boss BOSS-04 rút gọn theo v2.0 (bậc 1 tính lại đường, bậc 2 phá Barricade hoặc tower trên grid, bậc 3 hop; bỏ bậc xuyên hộ tống)
 - Nghiệm thu: Boss không bao giờ bị recycle hoặc cull
 - ID SRS: BOSS-04
@@ -461,7 +462,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT5
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 8 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tắt va chạm giữa quân (kể cả boss và Brute): bỏ avoidance và _apply_avoidance, đổi collision layer/mask giữa quân, tách bán kính agent khỏi avoid_radius, xóa avoid_radius/avoid_priority khỏi EnemyData, BossData và bảng; bỏ ally_phase ở NAV-06
 - Nghiệm thu: 20 Grunt đi qua cùng một điểm không đẩy nhau; vẫn chỉ 12 con đánh Fortress (slot đánh giữ nguyên); không lỗi console
 - Tệp liên quan: entities/enemy/enemy.gd (nav.avoidance_enabled, _apply_avoidance, nav.radius = avoid_radius), enemy.tscn, common/enemy_data.gd, common/boss_data.gd, data/enemies/*, data/bosses/bulwark_boss.tres, autoload/game_config.gd (ally_phase_time)
@@ -471,7 +472,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT6
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Gom thay đổi dùng chung vào một PR: GameConfig (victory_wave, starter_*_slot, starter_sell_unlock_wave, wave_max_enemy_types, weapon_drop_waves, hazard_*, path_check_min_width, boss_point_clear_radius, lbd_elapsed_tolerance), EventBus (EVB-35, EVB-38..46; bỏ tín hiệu cũ), InputMap (thêm hazard_enter, bỏ call_wave)
 - Nghiệm thu: Mọi tham số và tín hiệu v2.0 có sẵn để các task sau cắm vào; không còn tham chiếu tới tín hiệu đã bỏ
 - Tệp liên quan: autoload/game_config.gd, autoload/event_bus.gd, project.godot (InputMap), data/locale/strings.csv
@@ -481,7 +482,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT7
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 5 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa các test hỏng do bỏ đếm ngược PREP, gọi sớm và va chạm giữa quân: test_wave_fsm_runner, test_wave_rewards_runner, test_combat_runner, test_summary_panel, test_hud, test_playtest_arrow/barricade/bulwark_and_crowd/cannon/wave, test_attack_slot_runner, test_barricade_runner, test_bulwark_and_crd_runner, test_phase1_phase2_runner
 - Nghiệm thu: Toàn bộ runner liệt kê chạy lại đạt trên hành vi mới; không còn test nào chờ prep_timer hay early_call
 - Tệp liên quan: tests/ (liệt kê trong mô tả task)
@@ -501,7 +502,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH2
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 7 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa Fortress bằng Mithril thay cho sửa bằng gold (MTH-01, 03..06, REP-07): bỏ Fortress.quote_repair/repair, BuildService.repair, repair_gold_per_pct và repair_step_*; thêm mithril_repair_pct 0.20; nguồn fortress_repaired đổi sang MITHRIL; uy tín PRS-01..04
 - Nghiệm thu: Mỗi viên Mithril hồi 20% max hiệu dụng, kẹp max, từ chối khi đầy máu; mithril = 0 thì từ chối; giao dịch nguyên tử; Emergency repair không đổi; cấp Mithril bằng debug để thử
 - Tệp liên quan: entities/fortress/fortress.gd (quote_repair, repair), systems/build/build_service.gd (repair, _min_repair_cost), common/fortress_stats.gd, data/config/fortress_stats.tres

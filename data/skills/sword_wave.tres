@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 uid="uid://d2qllu2ivcvxr"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" uid="uid://bpmylfxrdyoyc" path="res://common/skill_data.gd" id="1_skill"]
+[ext_resource type="Texture2D" uid="uid://bto2t6kusnm4m" path="res://art/icons/skills/sword_wave_icon.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_skill")
+id = &"sword_wave"
+name_key = &"skill.sword_wave.name"
+description_key = &"skill.sword_wave.desc"
+icon = ExtResource("2_icon")
+values = Dictionary[StringName, PackedFloat32Array]({
+&"cooldown": PackedFloat32Array(5, 5, 5),
+&"damage": PackedFloat32Array(18, 21, 24),
+&"range": PackedFloat32Array(4, 4, 4),
+&"width": PackedFloat32Array(3, 3.5, 4)
+})

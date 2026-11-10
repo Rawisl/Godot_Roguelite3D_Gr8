@@ -38,12 +38,10 @@ func _ready() -> void:
 		card.chosen.connect(_on_card_chosen)
 	_show_slots([], [])
 	EventBus.run_started.connect(func() -> void: _show_slots([], []))
-	# TODO(Ender-Via): turn enable_reward_pick on in the wave manager so a real run reaches this state.
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.reward_offered.connect(_on_reward_offered)
 	EventBus.reward_picked.connect(_on_reward_picked)
 	EventBus.xp_changed.connect(_on_xp_changed)
-	# TODO(Rawisl): emit skill_slots_changed after each pick so the slot rows follow the run.
 	EventBus.skill_slots_changed.connect(_show_slots)
 
 func _on_state_changed(new_state: StringName) -> void:

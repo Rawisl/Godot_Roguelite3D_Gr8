@@ -12,17 +12,20 @@ signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: boo
 signal wave_start_requested  # UI -> Wave: the Start wave button ends PREP
 signal wave_summary_ready(summary: Dictionary)  # emitted AFTER save completes
 signal summary_continue_requested  # UI -> Wave: press Continue or after 10s countdown in SUMMARY
+signal run_victory(wave_index: int)  # RunState -> UI, Audio, Save: opened the victory screen after victory_wave
+signal victory_continue_requested  # UI -> Wave: the player clicked Continue on the victory screen
 signal fortress_destroyed
 signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 on HP loss
 signal fortress_damaged(amount: int, damage_type: StringName, source: StringName)
 signal fortress_low_hp(ratio: float)  #once per wave
-signal fortress_repaired(amount: int, source: StringName)  # source: GOLD | EMERGENCY
+signal fortress_repaired(amount: int, source: StringName)  # source: MITHRIL | EMERGENCY
 #------------------------------------------------------#
 
 #-----------------------Enemy-----------------------#
 
 signal enemy_spawned(enemy: Node)
 signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool)  # is_cull: no reward, no kill credit, hit_by_commander 
+signal commander_enemy_killed(commander: Node)  # Enemy / Bulwark -> Commander: credited for the killing sword or skill hit.
 signal enemy_count_changed(alive: int, queued: int, total: int)  # reminder thresholds 20 and 45
 signal straggler_marker_shown(enemy: Node)  # after 60s
 signal frenzy_started(enemy: Node)  # after 240s
@@ -36,6 +39,7 @@ signal commander_hp_changed(hp: int, max_hp: int)
 signal heal_state_changed(state: StringName, source_slot: StringName, hold_progress: float)  # IDLE | HOLD | HEALING | CANCELLED | DEPLETED, progress 0..1 and sent at most 10 times a second while holding
 signal commander_low_hp_changed(is_low: bool)  # HP below commander_low_hp_warning_pct, emitted only when it flips
 signal mode_changed(mode: StringName)  # FRONTLINE | COMMANDER
+signal weapon_equipped(weapon_id: StringName)  # RunState -> HUD, weapon panel, Commander, Art
 signal mode_switch_denied(reason: StringName, remaining: float)
 signal mode_switch_cooldown_started(duration: float)  # ModeSwitch -> HUD, only when the switch costs a cooldown
 signal recall_started(duration: float)
@@ -69,6 +73,7 @@ signal tower_immunity_changed(slot_id: StringName, is_immune: bool)
 signal heal_tower_hp_changed(slot_id: StringName, new_hp: int, max_hp: int)  # Heal station store, at most 10 times a second
 signal build_denied(reason: StringName, shortfall: int)
 signal projectile_hit(target: Node, amount: int, damage_type: StringName, resist: float)
+signal damage_immune(target: Node3D, info: DamageInfo)  # Enemy / Bulwark -> damage numbers: a commander hit on a target whose resist is 0, once per hit
 #------------------------------------------------------#
 
 #-----------------------Boss-----------------------#
@@ -80,7 +85,6 @@ signal boss_hp_changed(armor_hp: int, core_hp: int, phase: StringName)
 signal boss_phase_changed(phase: StringName)  # ARMORED | TRANSITION | EXPOSED
 signal boss_enraged  # once per boss wave, when boss_timer reaches 0 with the boss still alive
 signal telegraph_started(kind: StringName, position: Vector3, radius: float, duration: float) 
-signal overload_resolved(fortress_damage: int, commander_exposed: bool)  # emitted once per boss wave
 signal boss_defeated
 #------------------------------------------------------#
 
@@ -108,11 +112,19 @@ signal skill_cast(skill_id: StringName, slot_index: int, level: int, origin: Vec
 
 
 #------------------Warning, sfx, audio, tutorial,...------------------#
+signal camera_frame_changed(frame: StringName)  # FRONTLINE | OVERVIEW | BOSS_INTRO | HAZARD_TRIAL
 signal alert_requested(tier: int, key: StringName, params: Dictionary)  # tier 1 | 2 | 3; key = locale key
 signal screen_shake_requested(intensity: float, source: StringName)
 signal sfx_requested(sound_id: StringName, position: Vector3, priority: int)
 signal duck_requested(amount_db: float, duration: float)
 signal tutorial_step_completed(step_id: StringName)
+signal tutorial_completed  # emitted when tutorial_done flag is saved
+#------------------------------------------------------#
+
+#-----------------------Weapons and Hazard Trial-----------------------#
+signal weapon_gained(weapon_id: StringName)  # RunState -> UI, SummaryPanel, HUD
+signal hazard_trial_entered(wave_index: int, enemy_types: Array)  # Wave -> UI, Camera, Combat
+signal hazard_trial_exited(result: StringName, kills: int, gold: int, xp: float, mithril: int)  # result: WON | LEFT | DIED
 #------------------------------------------------------#
 
 #-----------------------Progression-----------------------#

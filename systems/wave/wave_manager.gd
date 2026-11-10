@@ -6,6 +6,8 @@ extends Node
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
 # TODO(Ender-Via): when meta progression lands, add the meta gold bonus (gold_pct_meta + gold_pct_buff) to the wave gold computed in the summary step.
 # TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
+# TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
+# TODO(Ender-Via): pause with REASON_VICTORY once the victory screen lands; currently disabled by default.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -14,13 +16,20 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
 @export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
 @export var bulwark_scene: PackedScene = preload("res://entities/enemy/bulwark.tscn")
+@export var boss_data: BossData = preload("res://data/bosses/bulwark_boss.tres")
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
 @export var wave_table: WaveTable = preload("res://data/waves/wave_table.tres")
 
 @export var spawn_interval: float = 0.6
 @export var default_wave_1_count: int = 8
 @export var auto_advance_summary: bool = true
-@export var enable_reward_pick: bool = false
+@export var enable_reward_pick: bool = true
+@export var enable_victory_screen: bool = false
+
+var _intro_timer: float = 0.0
+var _intro_elapsed: float = 0.0
+var _victory_handled: bool = false
+var _waiting_victory_continue: bool = false
 
 var _fallback_current_wave: int = 1
 var current_wave: int:
@@ -112,6 +121,7 @@ func _ready() -> void:
 	_setup_xp_tracker()
 	_setup_boss_timer()
 	EventBus.reward_picked.connect(_on_reward_picked)
+	EventBus.victory_continue_requested.connect(_on_victory_continue_requested)
 	_setup_container.call_deferred()
 	start_prep()
 
@@ -131,6 +141,8 @@ func _exit_tree() -> void:
 		EventBus.boss_defeated.disconnect(_on_boss_defeated)
 	if EventBus.reward_picked.is_connected(_on_reward_picked):
 		EventBus.reward_picked.disconnect(_on_reward_picked)
+	if EventBus.victory_continue_requested.is_connected(_on_victory_continue_requested):
+		EventBus.victory_continue_requested.disconnect(_on_victory_continue_requested)
 
 
 func _on_boss_defeated() -> void:
@@ -213,14 +225,51 @@ func start_prep() -> void:
 	EventBus.state_changed.emit(&"PREP")
 
 
+func is_boss_wave(w: int = -1) -> bool:
+	var wave_num := current_wave if w < 0 else w
+	return (wave_num > 0 and wave_num % GameConfig.boss_wave_interval == 0)
+
+
 func _on_wave_start_requested() -> void:
 	if wave_state == Enums.WaveState.PREP:
-		start_combat()
+		if is_boss_wave(current_wave):
+			start_boss_intro()
+		else:
+			start_combat()
+
+
+func start_boss_intro() -> void:
+	var old_state := wave_state
+	wave_state = Enums.WaveState.BOSS_INTRO
+	_intro_timer = GameConfig.boss_intro_duration
+	_intro_elapsed = 0.0
+	TimeManager.set_time_scale(1)
+	wave_fsm_state_changed.emit(wave_state, old_state)
+	EventBus.state_changed.emit(&"BOSS_INTRO")
+	var b_id: StringName = boss_data.id if boss_data != null else &"bulwark"
+	EventBus.boss_intro_started.emit(b_id)
+
+
+func skip_boss_intro() -> void:
+	if wave_state != Enums.WaveState.BOSS_INTRO:
+		return
+	if _intro_elapsed < GameConfig.boss_intro_skip_delay:
+		return
+	start_combat()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if wave_state == Enums.WaveState.BOSS_INTRO:
+		if event.is_action_pressed(&"pause"):
+			return
+		if event.is_action_pressed(&"select") or event.is_action_pressed(&"ui_accept"):
+			if _intro_elapsed >= GameConfig.boss_intro_skip_delay:
+				skip_boss_intro()
 
 
 func start_combat() -> void:
 	var old_state := wave_state
-	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
+	var is_boss: bool = is_boss_wave(current_wave)
 	wave_state = Enums.WaveState.BOSS_COMBAT if is_boss else Enums.WaveState.COMBAT
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"BOSS_COMBAT" if is_boss else &"COMBAT")
@@ -251,6 +300,10 @@ func start_combat() -> void:
 func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dictionary]:
 	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
 	var budget: int = cfg.get_budget(wave_num)
+	var is_boss: bool = is_boss_wave(wave_num)
+	if is_boss:
+		# TODO(Ender-Via): SPN-10: escorts for waves 1-30 come from WaveScript; only from wave 31 is it 0.5x budget.
+		budget = maxi(1, int(floor(float(budget) * 0.5)))
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([p_run_seed, wave_num])
@@ -432,6 +485,12 @@ func _physics_process(delta: float) -> void:
 	match wave_state:
 		Enums.WaveState.PREP:
 			pass
+
+		Enums.WaveState.BOSS_INTRO:
+			_intro_elapsed += delta
+			_intro_timer -= delta
+			if _intro_timer <= 0.0:
+				start_combat()
 
 		Enums.WaveState.COMBAT, Enums.WaveState.BOSS_COMBAT:
 			if _first_enemy_spawned:
@@ -679,11 +738,41 @@ func advance_from_summary() -> void:
 
 	_cleanup_projectiles()
 
+	if current_wave == GameConfig.victory_wave and not _victory_handled:
+		_victory_handled = true
+		EventBus.run_victory.emit(current_wave)
+		# TODO(Ender-Via): pause with REASON_VICTORY once SCR-20 victory screen lands; currently disabled by default.
+		if enable_victory_screen:
+			_waiting_victory_continue = true
+			TimeManager.request_pause(TimeManager.REASON_VICTORY)
+			return
+
+	_advance_past_summary_and_rewards()
+
+
+func _on_victory_continue_requested() -> void:
+	if not _waiting_victory_continue:
+		return
+	_waiting_victory_continue = false
+	TimeManager.release_pause(TimeManager.REASON_VICTORY)
+	_advance_past_summary_and_rewards()
+
+
+func _advance_past_summary_and_rewards() -> void:
 	var pending: int = _xp_tracker.pending_picks if _xp_tracker != null else 0
-	if enable_reward_pick and pending > 0:
+	if enable_reward_pick and pending > 0 and _has_reward_offer():
 		start_reward_pick()
 	else:
 		advance_to_next_wave()
+
+
+func _has_reward_offer() -> bool:
+	var service := get_tree().get_first_node_in_group(&"reward_service")
+	if service == null:
+		return true
+	if service.has_method(&"has_offer"):
+		return service.has_offer()
+	return true
 
 
 func start_reward_pick() -> void:
@@ -725,7 +814,16 @@ func _spawn_boss() -> void:
 	var boss_inst := bulwark_scene.instantiate() as Enemy
 	if boss_inst == null:
 		return
-	boss_inst.position = spawn_point
+
+	var boss_sp := get_tree().get_first_node_in_group(&"boss_spawn_point") as Node3D
+	if boss_sp == null:
+		var root := get_tree().current_scene
+		if root != null:
+			boss_sp = root.find_child("BossSpawnPoint", true, false) as Node3D
+	var boss_pos: Vector3 = boss_sp.global_position if boss_sp != null else spawn_point
+	boss_pos.y = 0.0
+
+	boss_inst.position = boss_pos
 	boss_inst.spawn_grace = true
 	boss_inst.is_in_spawn_zone = true
 

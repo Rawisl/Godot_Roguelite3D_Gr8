@@ -92,12 +92,12 @@ func _clear(nodes: Array) -> void:
 
 func test_data() -> void:
 	print("\n[GROUP 1] Cannon data")
-	assert_true(CANNON.levels.size() == 3, "3 levels")
+	assert_true(CANNON.levels.size() == GameConfig.tower_max_level, "one data file per level up to tower_max_level")
 	var radii: Array[float] = []
-	for lv in CANNON.levels:
+	for lv in CANNON.levels.slice(0, 3):
 		radii.append(lv.splash_radius)
 	var expected: Array[float] = [2.5, 3.0, 3.5]
-	assert_true(radii == expected, "blast radius 2.5 / 3.0 / 3.5 m (got %s)" % [radii])
+	assert_true(radii == expected, "first 3 levels: blast radius 2.5 / 3.0 / 3.5 m (got %s)" % [radii])
 	assert_true(is_equal_approx(CANNON.min_range, 4.0), "min_range 4 m")
 	assert_true(CANNON.targets_ground and not CANNON.targets_air, "targets ground only")
 	assert_true(CANNON.damage_type == Enums.DamageType.BLAST, "damage type BLAST")

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://del5wv2jn63xl"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" uid="uid://x7apaf51e872" path="res://common/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"rampage"
+name_key = &"weapon.rampage.name"
+range_mult = 1
+effect_id = &"rampage"
+params = Dictionary[StringName, float]({
+&"rampage_hp_hi": 0.8,
+&"rampage_hp_mid": 0.5,
+&"rampage_hp_lo": 0.3,
+&"rampage_bonus_hi": 0.1,
+&"rampage_bonus_mid": 0.25,
+&"rampage_bonus_lo": 0.5
+})

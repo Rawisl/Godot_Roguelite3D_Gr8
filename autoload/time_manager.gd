@@ -17,7 +17,8 @@ const SCALE_MAX := 3
 
 const REASON_USER := &"USER"
 const REASON_REWARD_PICK := &"REWARD_PICK"
-const REASONS: Array[StringName] = [REASON_USER, REASON_REWARD_PICK]
+const REASON_VICTORY := &"VICTORY"
+const REASONS: Array[StringName] = [REASON_USER, REASON_REWARD_PICK, REASON_VICTORY]
 
 var game_time: float = 0.0
 var pausable_real_time: float = 0.0

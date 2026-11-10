@@ -8,6 +8,7 @@ const GRUNT_DATA: EnemyData = preload("res://data/enemies/grunt.tres")
 const BRUTE_DATA: EnemyData = preload("res://data/enemies/brute.tres")
 const BULWARK_DATA: BossData = preload("res://data/bosses/bulwark_boss.tres")
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
+const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 
 @export var quit_when_done: bool = true
 
@@ -32,12 +33,13 @@ func _ready() -> void:
 	print("       BULWARK FRAMEWORK & CROWD DYNAMICS TESTS        ")
 	print("=======================================================")
 
-	test_avoid_radii()
+	test_agent_radii()
 	await test_slot_freed_on_knockback()
 	await test_slot_freed_on_target_changed()
 	await test_commander_recall_clears_aggro()
 	test_bulwark_attributes_and_resistances()
 	test_bulwark_fortress_targeting_point()
+	test_bulwark_anti_stuck_ladder_and_cull_protection()
 	await test_bulwark_stomp_telegraph_and_shake()
 	test_bulwark_stomp_no_friendly_fire()
 	test_bulwark_stomp_commander_interaction()
@@ -45,6 +47,7 @@ func _ready() -> void:
 	test_bulwark_stomp_deploy_immunity()
 	await test_wave_5_boss_spawn_and_defeat()
 	await test_reward_pick_flow()
+	await test_no_unit_collision_and_fortress_slots()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -58,12 +61,12 @@ func _ready() -> void:
 		get_tree().quit(0 if fails == 0 else 1)
 
 
-func test_avoid_radii() -> void:
-	print("\n[GROUP 1] Avoid Radii Validation")
-	assert_true(GRUNT_DATA.avoid_radius == 0.5, "Grunt avoid_radius is 0.5")
-	assert_true(ARCHER_DATA.avoid_radius == 0.5, "Archer avoid_radius is 0.5")
-	assert_true(BRUTE_DATA.avoid_radius == 0.9, "Brute avoid_radius is 0.9")
-	assert_true(BULWARK_DATA.avoid_radius == 1.6, "Bulwark avoid_radius is 1.6")
+func test_agent_radii() -> void:
+	print("\n[GROUP 1] Agent Radii Validation")
+	assert_true(GRUNT_DATA.agent_radius == 0.5, "Grunt agent_radius is 0.5")
+	assert_true(ARCHER_DATA.agent_radius == 0.5, "Archer agent_radius is 0.5")
+	assert_true(BRUTE_DATA.agent_radius == 0.9, "Brute agent_radius is 0.9")
+	assert_true(BULWARK_DATA.agent_radius == 1.6, "Bulwark agent_radius is 1.6")
 
 
 func test_slot_freed_on_knockback() -> void:
@@ -167,31 +170,88 @@ func test_bulwark_attributes_and_resistances() -> void:
 	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander initially false")
 
 	var hp_before := bulwark.health.hp
-	bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.PIERCE))
+	var dealt_zero := bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.PIERCE))
+	assert_true(dealt_zero == 0, "take_damage returns 0 on immune hit")
 	assert_true(bulwark.health.hp == hp_before, "Pierce deals zero damage in phase 1")
 	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander remains false on zero damage")
 
-	bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.BLAST))
+	var dealt_normal := bulwark.take_damage(DamageInfo.new(100, Enums.DamageType.BLAST))
+	assert_true(dealt_normal == 100, "take_damage returns actual HP deducted (100)")
 	assert_true(bulwark.current_armor_hp == 1100, "Armor absorbs 100 BLAST damage")
 	assert_true(bulwark.health.hit_by_commander == false, "Bulwark hit_by_commander false for non-commander damage")
 
 	var cmd_damage := DamageInfo.new(100, Enums.DamageType.BLAST)
 	cmd_damage.hit_by_commander = true
-	bulwark.take_damage(cmd_damage)
+	var dealt_cmd := bulwark.take_damage(cmd_damage)
+	assert_true(dealt_cmd == 100, "take_damage returns actual HP deducted (100)")
 	assert_true(bulwark.current_armor_hp == 1000, "Armor absorbs commander BLAST damage")
 	assert_true(bulwark.health.hit_by_commander == true, "Bulwark hit_by_commander true after commander damage")
+
+	# Set up active attack state to verify interruption upon TRANSITION (Item 2)
+	bulwark.current_state = Enums.EnemyState.ATTACK
+	bulwark.attack_windup_timer = 0.8
+	bulwark.attack_recovery_timer = 0.5
+	bulwark.is_attacking_active = true
 
 	var phase_data := {}
 	var on_phase_changed := func(phase: StringName) -> void:
 		phase_data["phase"] = phase
 	EventBus.boss_phase_changed.connect(on_phase_changed)
 
-	bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.BLAST))
+	# Break armor: current_armor_hp is 1000, hit is 2000.
+	# Overkill discarded, actual damage returned should be 1000 (Item 1).
+	var dealt_break := bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.BLAST))
+	assert_true(dealt_break == 1000, "take_damage returns actual damage deducted (1000) instead of incoming 2000 (no phantom damage)")
 	assert_true(bulwark.current_armor_hp == 0, "Armor depleted to 0")
 	assert_true(bulwark.health.hp == 900, "Overkill discarded; core HP intact at 900")
 	assert_true(bulwark.current_phase == Enums.BossPhase.TRANSITION, "Enters TRANSITION phase upon armor break")
 	assert_true(phase_data.get("phase") == &"TRANSITION", "boss_phase_changed emitted TRANSITION")
+
+	# Verify attack state was cancelled upon TRANSITION (Item 2)
+	assert_true(bulwark.attack_windup_timer == 0.0, "attack_windup_timer reset to 0.0 on TRANSITION")
+	assert_true(bulwark.attack_recovery_timer == 0.0, "attack_recovery_timer reset to 0.0 on TRANSITION")
+	assert_true(bulwark.is_attacking_active == false, "is_attacking_active cancelled on TRANSITION")
+	assert_true(bulwark.current_state != Enums.EnemyState.ATTACK, "current_state reset from ATTACK on TRANSITION")
+
+	# Phase TRANSITION resistances (Item 6: 1.5x for all types, no immunities)
+	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) == 1.5, "TRANSITION takes 1.5x PIERCE")
+	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) == 1.5, "TRANSITION takes 1.5x MAGIC")
+	assert_true(bulwark.get_resist(Enums.DamageType.BLAST) == 1.5, "TRANSITION takes 1.5x BLAST")
+	assert_true(bulwark.get_resist(Enums.DamageType.SLASH) == 1.5, "TRANSITION takes 1.5x SLASH")
+
+	# Simulate 2.5s transition elapsed via _physics_process (Item 6)
+	var dt: float = 0.1
+	for i in range(25):
+		bulwark._physics_process(dt)
+
+	assert_true(bulwark.current_phase == Enums.BossPhase.EXPOSED, "Transitions from TRANSITION to EXPOSED after 2.5s")
+	assert_true(phase_data.get("phase") == &"EXPOSED", "boss_phase_changed emitted EXPOSED")
 	EventBus.boss_phase_changed.disconnect(on_phase_changed)
+
+	# Phase 2 speed multiplier application (Item 6: 1.2x)
+	assert_true(is_equal_approx(bulwark.speed_multiplier, 1.2), "Phase 2 speed multiplier 1.2 applied in EXPOSED")
+
+	# Phase EXPOSED resistances (Item 6: 1.25x for all types, no immunities)
+	assert_true(bulwark.get_resist(Enums.DamageType.PIERCE) == 1.25, "EXPOSED takes 1.25x PIERCE")
+	assert_true(bulwark.get_resist(Enums.DamageType.MAGIC) == 1.25, "EXPOSED takes 1.25x MAGIC")
+	assert_true(bulwark.get_resist(Enums.DamageType.BLAST) == 1.25, "EXPOSED takes 1.25x BLAST")
+	assert_true(bulwark.get_resist(Enums.DamageType.SLASH) == 1.25, "EXPOSED takes 1.25x SLASH")
+
+	# Boss death and boss_defeated signal emission upon core HP depletion (Item 6)
+	var death_event := {"defeated": false}
+	var on_boss_defeated := func() -> void:
+		death_event["defeated"] = true
+	EventBus.boss_defeated.connect(on_boss_defeated)
+
+	# Fatal core hit: current_core_hp is 900. Hit with 2000 TRUE damage.
+	# Actual damage deducted should be 900, not 2000 (Item 1).
+	var fatal_dealt := bulwark.take_damage(DamageInfo.new(2000, Enums.DamageType.TRUE))
+	assert_true(fatal_dealt == 900, "take_damage returns remaining core HP (900) instead of incoming 2000 on fatal hit")
+	assert_true(bulwark.current_core_hp == 0, "Core HP reduced to 0")
+	assert_true(bulwark.health.hp == 0, "Total health reduced to 0")
+	assert_true(bulwark.is_dead == true, "Boss marked as dead")
+	assert_true(death_event["defeated"] == true, "EventBus.boss_defeated signal emitted upon core HP depletion")
+	EventBus.boss_defeated.disconnect(on_boss_defeated)
 
 	bulwark.free()
 
@@ -217,6 +277,70 @@ func test_bulwark_fortress_targeting_point() -> void:
 	bulwark.free()
 	boss_point.free()
 	fortress.free()
+
+
+func test_bulwark_anti_stuck_ladder_and_cull_protection() -> void:
+	print("\n[GROUP 6B] Bulwark Anti-Stuck Ladder & Protection")
+	var grunt := GRUNT_SCENE.instantiate() as Enemy
+	var bulwark := BULWARK_SCENE.instantiate() as Bulwark
+	add_child(grunt)
+	add_child(bulwark)
+
+	assert_true(grunt.can_be_recycled() == true, "Normal enemy can be recycled")
+	assert_true(grunt.can_be_culled() == true, "Normal enemy can be culled")
+	assert_true(bulwark.can_be_recycled() == false, "Boss cannot be recycled")
+	assert_true(bulwark.can_be_culled() == false, "Boss cannot be culled")
+
+	grunt.free()
+
+	var target_dummy := Node3D.new()
+	target_dummy.position = Vector3(0.0, 0.0, 0.0)
+	add_child(target_dummy)
+
+	var barricade := Node3D.new()
+	barricade.position = Vector3(18.0, 0.0, 0.0)
+	barricade.add_to_group(&"barricade")
+	add_child(barricade)
+
+	bulwark.global_position = Vector3(20.0, 0.0, 0.0)
+	bulwark.current_target = target_dummy
+	bulwark.current_state = Enums.EnemyState.ADVANCE
+	bulwark.spawn_grace = false
+	bulwark.nav_progress = 10.0
+
+	var logged_tiers: Array[int] = []
+	var on_stuck := func(tier: int, _enemy_type: StringName, _pos: Vector3, _wave_idx: int):
+		logged_tiers.append(tier)
+	EventBus.stuck_event_logged.connect(on_stuck)
+
+	bulwark._update_stuck_detection(1.0)
+	assert_true(logged_tiers.is_empty(), "No stuck events before threshold")
+
+	bulwark._update_stuck_detection(4.0)
+	assert_true(logged_tiers.has(1), "Tier 1 event logged at 5s")
+	assert_true(bulwark._current_stuck_tier == 1, "Current stuck tier is 1")
+
+	bulwark._update_stuck_detection(5.0)
+	assert_true(logged_tiers.has(2), "Tier 2 event logged at 10s")
+	assert_true(bulwark._current_stuck_tier == 2, "Current stuck tier is 2")
+	assert_true(bulwark.current_target == barricade, "Tier 2 switches target to blocking structure")
+
+	var pos_before_hop := bulwark.global_position
+	bulwark._update_stuck_detection(5.0)
+	assert_true(logged_tiers.has(3), "Tier 3 event logged at 15s")
+	assert_true(bulwark._current_stuck_tier == 0, "Stuck tier resets to 0 after Tier 3 hop")
+	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer resets to 0 after Tier 3 hop")
+	assert_true(bulwark.global_position.distance_to(pos_before_hop) > 0.0, "Bulwark position hopped forward")
+
+	bulwark._stuck_timer = 3.0
+	bulwark.nav_progress += 2.0
+	bulwark._update_stuck_detection(GameConfig.stuck_reset_time)
+	assert_true(bulwark._stuck_timer == 0.0, "Stuck timer cleared after sustained progress")
+
+	EventBus.stuck_event_logged.disconnect(on_stuck)
+	barricade.free()
+	target_dummy.free()
+	bulwark.free()
 
 
 func test_bulwark_stomp_telegraph_and_shake() -> void:
@@ -409,6 +533,68 @@ func test_reward_pick_flow() -> void:
 	assert_true(wm.current_wave == 2, "Wave advanced to 2")
 
 	wm.free()
+
+
+func test_no_unit_collision_and_fortress_slots() -> void:
+	print("\n[GROUP 14] 20 Grunts Pass Through Same Point Without Avoidance Pushing")
+	# 1. Verify Fortress slot cap remains 12
+	var fstats: FortressStats = preload("res://data/config/fortress_stats.tres")
+	assert_true(fstats != null and fstats.melee_slots == 12, "Fortress max attackers remains exactly 12")
+
+	# Instantiate corridor level containing Fortress and navigation mesh
+	var level: Node = LEVEL_SCENE.instantiate()
+	add_child(level)
+	var fortress := get_tree().get_first_node_in_group(&"fortress") as Fortress
+	EventBus.state_changed.emit(&"COMBAT")
+	for _i in range(3):
+		await get_tree().physics_frame
+
+	# 2. Instantiate 20 Grunts at the exact same location walking to the Fortress
+	var grunts: Array[Enemy] = []
+	var spawn_pos := Vector3(-6.0, 0.1, 0.0)
+	for i in range(20):
+		var g := GRUNT_SCENE.instantiate() as Enemy
+		g.data = g.data.duplicate()
+		g.data.target_rules = [&"FORTRESS"] as Array[StringName]
+		g.position = spawn_pos
+		level.add_child(g)
+		g.spawn_grace = false
+		g.is_in_spawn_zone = false
+		g.change_state(Enums.EnemyState.ADVANCE)
+		grunts.append(g)
+
+	# 3. Check all grunts have avoidance enabled with layer separation (agents on layer 2, mask excludes layer 2)
+	var all_layer_separated := true
+	for g in grunts:
+		if not g.nav.avoidance_enabled or g.nav.avoidance_layers != 2 or (g.nav.avoidance_mask & 2) != 0:
+			all_layer_separated = false
+			break
+	assert_true(all_layer_separated, "All 20 Grunts have unit-to-unit avoidance disabled via layer separation")
+
+	# 4. Await physics frames while walking to Fortress and assert no separation push
+	var no_separation_push := true
+	var max_attacking := 0
+	for frame in range(250):
+		await get_tree().physics_frame
+		if frame < 30:
+			for g in grunts:
+				if not g.position.is_equal_approx(grunts[0].position):
+					no_separation_push = false
+					break
+		var attacking_count := 0
+		for g in grunts:
+			if g.current_target == fortress and g.current_state == Enums.EnemyState.ATTACK:
+				attacking_count += 1
+		max_attacking = maxi(max_attacking, attacking_count)
+		if max_attacking == 12:
+			break
+
+	assert_true(no_separation_push, "All 20 Grunts share the exact same position without pushing each other apart")
+	assert_true(max_attacking > 0 and max_attacking <= 12, "At most 12 Grunts attack the Fortress (got %d attacking)" % max_attacking)
+
+	for g in grunts:
+		g.free()
+	level.free()
 
 
 class MockCommander extends Node3D:

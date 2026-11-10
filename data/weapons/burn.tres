@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://dpwu7wxbt0bn4"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" uid="uid://x7apaf51e872" path="res://common/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+id = &"burn"
+name_key = &"weapon.burn.name"
+range_mult = 1
+effect_id = &"burn"
+params = Dictionary[StringName, float]({
+&"burn_total_pct": 0.5,
+&"burn_duration": 5
+})

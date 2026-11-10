@@ -35,12 +35,10 @@ var _tier := -1
 func _ready() -> void:
 	visible = false
 	# TODO(kimvux): give warn_icon and enrage_icon their own art; both use the boss icon for now.
-	# TODO(Ender-Via): emit boss_intro_started(boss_id) when BOSS_INTRO starts, so the bar knows which boss it shows.
 	EventBus.boss_intro_started.connect(_on_boss_intro_started)
 	EventBus.boss_spawned.connect(_on_boss_spawned)
 	EventBus.boss_hp_changed.connect(_on_boss_hp_changed)
 	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
-	# TODO(kiezroth): emit boss_timer_changed with the full time in BOSS_INTRO and while it runs in BOSS_COMBAT, then boss_enraged at 0.
 	EventBus.boss_timer_changed.connect(_on_boss_timer_changed)
 	EventBus.boss_enraged.connect(_on_boss_enraged)
 	EventBus.boss_defeated.connect(_hide)

@@ -295,9 +295,8 @@ func test_no_attack() -> void:
 	assert_true(not s.aura_active, "aura off")
 	assert_true(s.get_dealt_mult() == 1.0, "dealt multiplier is 1")
 	assert_true(not s.range_area.monitoring, "range area not monitoring")
-	assert_true(_service.get_tower_info(&"G1").is_max, "is_max")
-	assert_true(not _service.upgrade(&"G1"), "upgrade refused")
-	assert_true(_service.get_upgrade_block_reason(&"G1") == &"MAX_LEVEL", "block reason MAX_LEVEL")
+	assert_true(not _service.get_tower_info(&"G1").is_max, "level 1 of 36 is not the top level")
+	assert_true(_service.get_upgrade_block_reason(&"G1") != &"MAX_LEVEL", "the block reason is not MAX_LEVEL")
 
 func test_store_signal() -> void:
 	print("\n[GROUP 12] Store signal")

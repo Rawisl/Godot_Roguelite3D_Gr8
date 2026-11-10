@@ -23,3 +23,7 @@ mono_crash.*.json
 # Documentation
 *.doc
 *.docx
+# Python (tools/)
+__pycache__/
+*.pyc
+balance/~$*.xlsx

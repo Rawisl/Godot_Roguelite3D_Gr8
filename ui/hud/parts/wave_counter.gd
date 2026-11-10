@@ -47,9 +47,7 @@ func _on_wave_started(wave_index: int) -> void:
 
 ## 0 while GameConfig has no victory_wave: the counter then shows the wave number alone.
 func _victory_wave() -> int:
-	# TODO(Ender-Via): add victory_wave to GameConfig; the counter reads it from there.
-	var value: Variant = GameConfig.get(&"victory_wave")
-	return int(value) if value != null else 0
+	return GameConfig.victory_wave
 
 func _on_enemy_count_changed(alive: int, queued: int, total: int) -> void:
 	_enemies.text = UiFormat.tr_fmt(&"hud.ratio", {"value": alive + queued, "max": total})

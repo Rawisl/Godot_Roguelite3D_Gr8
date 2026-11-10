@@ -1,4 +1,5 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ca08sj3da7flm"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
 [ext_resource type="Script" uid="uid://b5nxx0eyswlc0" path="res://common/enemy_data.gd" id="1_jggar"]
 
@@ -9,14 +10,18 @@ display_name_key = "enemy.archer"
 base_hp = 30
 base_damage = 8
 attack_interval = 1.5
-attack_range = 11.0
-move_speed = 3.0
+attack_range = 11
+move_speed = 3
 damage_type = 0
+knockback_force = 0
+projectile_speed = 20
 anim_attack = &"ranged/Ranged_2H_Aiming"
 anim_shoot = &"ranged/Ranged_2H_Shoot"
 spawn_cost = 2
+is_flying = false
 is_ranged = true
-aggro_range = 11.0
+knockback_immune = false
+aggro_range = 11
 target_rules = Array[StringName]([&"TOWER", &"PLAYER", &"BARRICADE", &"FORTRESS"])
 gold_reward = 7
 prestige_reward = 2
