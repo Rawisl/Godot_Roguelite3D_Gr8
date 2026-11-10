@@ -6,7 +6,11 @@ extends Node3D
 ## towers are made silent and unbreakable, so only the path is measured. Archers arrive once the
 ## Fortress is in bow range, which can be before the layout, so they only show the spawn side is clear.
 ## Headless (or auto_run): runs every group, prints one line per group and quits.
-## F6 keys: 1-5 run one group, R repeat it, A run all, +/- speed, T enemies attack towers on/off.
+## F6 starts with an empty ground, so towers are placed by hand through BuildService (its cap and
+## path check apply). Each free cell is tinted: buildable, ground cap reached, or would seal the lane.
+## F6 mouse: left click a cell builds an Arrow, right click removes the tower on it.
+## F6 keys: L build the worst layout found, C clear the ground, 1-5 run one group, R repeat it,
+## A run all, +/- speed, T enemies attack towers on/off.
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const ARCHER_SCENE: PackedScene = preload("res://entities/enemy/archer.tscn")
@@ -34,6 +38,18 @@ signal group_finished
 ## Off: enemies only aim at the Fortress (the Bulwark at its standing point), so the result is the
 ## path alone. On: the data's own target rules apply, to watch the real behaviour.
 @export var enemies_attack_towers := false
+
+@export_group("Cell hints")
+## Free cell where a build would be allowed.
+@export var hint_color_ok := Color(0.2, 0.9, 0.3, 0.4)
+## Free cell refused because the ground cap is reached.
+@export var hint_color_full := Color(0.6, 0.6, 0.6, 0.35)
+## Free cell refused because it would seal the lane.
+@export var hint_color_blocks := Color(0.95, 0.2, 0.2, 0.45)
+## Hint quad edge as a share of GameConfig.grid_pick_size.
+@export var hint_size_fraction := 0.85
+## Height of the hint quads above the cell.
+@export var hint_height := 0.05
 
 @export_group("Layout search")
 ## Ground cells up to this column are candidates.
@@ -107,6 +123,10 @@ var _layout_ids: Array[StringName] = []
 var _layout_text := "searching..."
 var _results: Array[String] = []
 var _last_denied: StringName = &""
+var _notice := ""
+var _worst_ids: Array[StringName] = []
+var _hints: Dictionary[StringName, MeshInstance3D] = {}
+var _hint_root: Node3D
 var _current_group := -1
 var _elapsed := 0.0
 var _watching := false
@@ -148,10 +168,10 @@ func _start() -> void:
 	# Let the navigation map sync and the economy nodes finish their deferred setup.
 	for i in 5:
 		await get_tree().physics_frame
-	_prepare_layout()
 	if not _is_auto():
-		_log("Keys: 1-5 group, R repeat, A all, +/- speed, T enemies attack towers.")
+		_start_manual()
 		return
+	_prepare_layout()
 	await _run_all()
 	_finish()
 
@@ -167,8 +187,19 @@ func _finish() -> void:
 
 #region Layout
 func _prepare_layout() -> void:
-	_gold.gold = 1000000
-	EventBus.state_changed.emit(&"PREP")
+	_return_to_prep()
+	var ids := _choose_layout()
+	_check(ids.size() == GameConfig.max_ground_buildings, "layout has %d cells" % GameConfig.max_ground_buildings)
+	for id in ids:
+		var ok := _build_inert(id)
+		_check(ok, "BuildService builds Arrow on %s" % id)
+		if ok:
+			_layout_ids.append(id)
+	_try_extra_build()
+
+
+## The override when set, else the narrowest legal layout; sets _layout_text.
+func _choose_layout() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	if layout_override.is_empty():
 		var found := _find_layout()
@@ -178,15 +209,22 @@ func _prepare_layout() -> void:
 		ids = layout_override.duplicate()
 		_layout_text = "override %s" % [ids]
 	_log("Layout: %s" % _layout_text)
-	_check(ids.size() == GameConfig.max_ground_buildings, "layout has %d cells" % GameConfig.max_ground_buildings)
-	for id in ids:
-		var ok := _service.build(id, &"arrow", 1)
-		_check(ok, "BuildService builds Arrow on %s" % id)
-		var slot := _service.find_slot(id)
-		if ok and slot != null and slot.tower != null:
-			_make_tower_inert(slot.tower)
-			_layout_ids.append(id)
-	_try_extra_build()
+	return ids
+
+
+## Arrow through the real service, then silent and unbreakable. False when the service refuses.
+func _build_inert(id: StringName) -> bool:
+	var ok := _service.build(id, &"arrow", 1)
+	var slot := _service.find_slot(id)
+	if ok and slot != null and slot.tower != null:
+		_make_tower_inert(slot.tower)
+	return ok
+
+
+## Plenty of gold and the PREP state, which BuildService needs to build or sell.
+func _return_to_prep() -> void:
+	_gold.gold = 1000000
+	EventBus.state_changed.emit(&"PREP")
 
 
 ## Silent (no shots) and unbreakable, so towers neither kill enemies nor die to them.
@@ -325,6 +363,9 @@ func _run_group(index: int) -> void:
 	_report_group(index)
 	_clear_enemies()
 	_running = false
+	if not _is_auto():
+		_return_to_prep()
+		_refresh_hints()
 
 
 func _clear_enemies() -> void:
@@ -559,8 +600,165 @@ func _report_skipped(index: int) -> void:
 #endregion
 
 
+#region Manual placement
+func _start_manual() -> void:
+	_return_to_prep()
+	_worst_ids = _choose_layout()
+	_layout_text = "worst layout (key L): %s" % _layout_text
+	_hint_root = Node3D.new()
+	_hint_root.name = "CellHints"
+	add_child(_hint_root)
+	_refresh_hints()
+	_log("Ground is empty. Left click builds, right click removes, L worst layout, C clear, 1-5 group, R repeat, A all, +/- speed, T enemies attack towers.")
+
+
+func _handle_click(click: InputEventMouseButton) -> void:
+	if not click.pressed or _running or _is_auto() or _hint_root == null:
+		return
+	if click.button_index != MOUSE_BUTTON_LEFT and click.button_index != MOUSE_BUTTON_RIGHT:
+		return
+	var slot := _pick_cell(click.position)
+	if slot == null:
+		return
+	if click.button_index == MOUSE_BUTTON_LEFT:
+		_place_at(slot)
+	else:
+		_remove_at(slot)
+
+
+## The ground cell under the screen point: the ray meets the ground plane, the nearest cell centre
+## within half the pick size wins.
+func _pick_cell(screen_pos: Vector2) -> Slot:
+	var origin := camera.project_ray_origin(screen_pos)
+	var dir := camera.project_ray_normal(screen_pos)
+	var hit: Variant = Plane(Vector3.UP, _grid.global_position.y).intersects_ray(origin, dir)
+	if hit == null:
+		return null
+	var point := hit as Vector3
+	var best: Slot = null
+	var best_dist := GameConfig.grid_pick_size * 0.5
+	for node in _grid.cells.values():
+		var slot := node as Slot
+		if slot == null or not is_instance_valid(slot):
+			continue
+		var diff := slot.global_position - point
+		diff.y = 0.0
+		var dist := maxf(absf(diff.x), absf(diff.z))
+		if dist <= best_dist:
+			best = slot
+			best_dist = dist
+	return best
+
+
+func _place_at(slot: Slot) -> void:
+	if not slot.is_free():
+		_notice = "%s is occupied" % slot.slot_id
+		return
+	_last_denied = &""
+	if _build_inert(slot.slot_id):
+		_notice = "Built Arrow on %s" % slot.slot_id
+	elif _last_denied != &"":
+		_notice = "%s: %s" % [slot.slot_id, _last_denied]
+	else:
+		_notice = "%s: refused" % slot.slot_id
+	_log(_notice)
+	_refresh_hints()
+
+
+func _remove_at(slot: Slot) -> void:
+	if not slot.uses_ground_space():
+		_notice = "%s is empty" % slot.slot_id
+		return
+	_clear_slot(slot)
+	_notice = "Removed %s" % slot.slot_id
+	_log(_notice)
+	_refresh_hints()
+
+
+## Back to EMPTY through the service: sell a tower, then clear any rubble.
+func _clear_slot(slot: Slot) -> void:
+	if slot.state == Enums.SlotState.OCCUPIED:
+		_service.sell(slot.slot_id)
+	if slot.state == Enums.SlotState.RUINED:
+		_service.clear_rubble(slot.slot_id)
+
+
+func _clear_ground() -> void:
+	if _running or _is_auto() or _hint_root == null:
+		return
+	_return_to_prep()
+	for node in _grid.cells.values():
+		var slot := node as Slot
+		if slot != null and slot.uses_ground_space():
+			_clear_slot(slot)
+	_notice = "Ground cleared"
+	_log(_notice)
+	_refresh_hints()
+
+
+func _load_worst_layout() -> void:
+	if _running or _is_auto() or _hint_root == null:
+		return
+	_clear_ground()
+	var built := 0
+	for id in _worst_ids:
+		_last_denied = &""
+		if _build_inert(id):
+			built += 1
+		else:
+			_log("Worst layout: %s refused (%s)" % [id, _last_denied])
+	_notice = "Worst layout built: %d/%d cells" % [built, _worst_ids.size()]
+	_log(_notice)
+	_refresh_hints()
+
+
+## One tinted quad per free ground cell; occupied cells have none.
+func _refresh_hints() -> void:
+	if _hint_root == null:
+		return
+	var full := _service.is_ground_full()
+	for id in _grid.cells.keys():
+		var slot := _grid.cells[id] as Slot
+		if slot == null or not is_instance_valid(slot):
+			continue
+		var quad := _hint_for(id, slot)
+		quad.visible = not slot.uses_ground_space()
+		if not quad.visible:
+			continue
+		var material := quad.material_override as StandardMaterial3D
+		if full:
+			material.albedo_color = hint_color_full
+		elif _service.would_block_path(slot, ARROW):
+			material.albedo_color = hint_color_blocks
+		else:
+			material.albedo_color = hint_color_ok
+
+
+func _hint_for(id: StringName, slot: Slot) -> MeshInstance3D:
+	if _hints.has(id):
+		return _hints[id]
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2.ONE * GameConfig.grid_pick_size * hint_size_fraction
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var quad := MeshInstance3D.new()
+	quad.mesh = mesh
+	quad.material_override = material
+	_hint_root.add_child(quad)
+	quad.global_transform = Transform3D(Basis(Vector3.RIGHT, -PI / 2.0), slot.global_position + Vector3.UP * hint_height)
+	_hints[id] = quad
+	return quad
+#endregion
+
+
 #region Input and display
 func _unhandled_input(event: InputEvent) -> void:
+	var click := event as InputEventMouseButton
+	if click != null:
+		_handle_click(click)
+		return
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return
@@ -572,6 +770,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_T:
 			enemies_attack_towers = not enemies_attack_towers
 			_log("Enemies attack towers: %s" % enemies_attack_towers)
+		KEY_L:
+			_load_worst_layout()
+		KEY_C:
+			_clear_ground()
 		KEY_A:
 			_start_manual_all()
 		KEY_R:
@@ -612,9 +814,9 @@ func _process(_delta: float) -> void:
 	for track in _tracks:
 		if track.arrived:
 			arrived += 1
-	status_label.text = "Group: %s | %.1f s | arrived %d/%d | speed %.0fx | enemies attack towers: %s\nLayout: %s\n%s" % [
+	status_label.text = "Group: %s | %.1f s | arrived %d/%d | speed %.0fx | enemies attack towers: %s\nLayout: %s\n%s%s" % [
 		group_name, _elapsed, arrived, _tracks.size(), time_scale, enemies_attack_towers, _layout_text,
-		"\n".join(_results)]
+		_notice + "\n" if not _notice.is_empty() else "", "\n".join(_results)]
 
 
 func _on_stuck_event(tier: int, kind: StringName, pos: Vector3, _wave: int) -> void:
