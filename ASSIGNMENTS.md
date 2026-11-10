@@ -663,7 +663,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG1
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Bị động và thẻ stat qua StatBlock: Sharpness, Armored, Lifesteal, Trạm hồi lực (SKL-26); thẻ stat Thể lực, Tinh thông (SKL-13..15); cắt Lightstep, Focus, Bền thành
 - Nghiệm thu: Sharpness L3 +24%; Armored L3 15%; Lifesteal L3 1.5%; SKL-26 hồi 15, 20, 25 HP/s ở level 1, 2, 3 qua StatBlock
 - Cần xong trước: W9-MH4b, W9-NG3

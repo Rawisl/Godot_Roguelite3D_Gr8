@@ -120,6 +120,7 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
+	EventBus.commander_enemy_killed.connect(_on_enemy_killed)
 	_sync_wave_state()
 	_apply_equipped_weapon()
 	_refresh_aura.call_deferred()
@@ -970,12 +971,17 @@ func can_retreat() -> bool:
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	EventBus.commander_hp_changed.emit(current_hp, max_hp)
-	_update_low_hp(current_hp, max_hp)
+	_update_low_hp(health.get_precise_hp(), max_hp)
 
 
-func _update_low_hp(current_hp: int, max_hp: int) -> void:
+func _on_enemy_killed(killer: Node) -> void:
+	if killer == self and not is_commander_mode and not is_dead:
+		health.heal_fractional(health.max_hp * stat_block.get_value(&"lifesteal_pct"))
+
+
+func _update_low_hp(current_hp: float, max_hp: int) -> void:
 	var threshold: float = stats.commander_low_hp_warning_pct if stats else 0.25
-	var is_low := current_hp > 0 and float(current_hp) < float(max_hp) * threshold
+	var is_low := current_hp > 0.0 and current_hp < max_hp * threshold
 	if is_low != _is_low_hp:
 		_is_low_hp = is_low
 		EventBus.commander_low_hp_changed.emit(is_low)

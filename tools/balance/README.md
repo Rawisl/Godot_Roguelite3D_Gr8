@@ -22,7 +22,7 @@ Toàn bộ bảng được kiểm tra trước. Gặp ô trống hoặc số âm
 | Sheet | File | Ghi chú |
 | --- | --- | --- |
 | `character` | `data/config/commander_stats.tres` | Mỗi dòng là một field của `CharacterStats`. Chuỗi enum như `SLASH` đổi sang số theo `common/enums.gd`. |
-| `skills` | `data/skills/<id>.tres` | Chỉ skill `ACTIVE`. Giữ nguyên key trong bảng, gồm `dps` của `firebomb`. Mỗi key thành một `PackedFloat32Array` theo cấp, xếp theo tên key. |
+| `skills` | `data/skills/<id>.tres` | Skill chủ động, bị động và thẻ stat. Mỗi key thành một `PackedFloat32Array` theo cấp, xếp theo tên key. Giá trị `heal_rate_base` của thẻ `heal_station` trong bảng là lượng cộng thêm, được sinh vào `heal_rate_add`. |
 | `towers` | `data/towers/<id>.tres` và `<id>_l1..l36.tres` | Mỗi dòng bảng là một file cấp. File cấp mới không có `uid` và được tham chiếu bằng path. |
 | `enemies` | `data/enemies/<id>.tres` | Chỉ các cột là field của `EnemyData`. Các cột trait chưa có field (stealth, explode, charger, revive...) bị bỏ qua kèm cảnh báo. |
 | `weapons` | `data/weapons/<id>.tres` | Chỉ sinh khi đã có `common/weapon_data.gd`. `sword` trong bảng thành `sword_base`. Cột `range_mult` và `effect_id` là field, các cột còn lại vào `params`. |
