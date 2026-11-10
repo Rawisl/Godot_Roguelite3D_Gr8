@@ -25,7 +25,7 @@ const SHOULDER_BONES: Array[StringName] = [&"upperarm.l", &"upperarm.r"]
 ## Light the core throws on the boss and the ground around it, kept low so it stays local.
 @export var exposed_light: float = 0.8
 @export var enraged_light: float = 1.4
-## Pulses per second of the core glow. ACC-06 caps any blinking at 3 per second.
+## Pulses per second of the core glow. Caps any blinking at 3 per second.
 @export_range(0.0, 3.0) var pulse_rate: float = 1.0
 @export_range(0.0, 3.0) var enraged_pulse_rate: float = 1.6
 ## Share of the glow the pulse takes away at its low point.
