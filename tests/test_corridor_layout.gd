@@ -12,6 +12,7 @@ extends Node
 ## - only W1-W3 are left, on top of the Fortress wall, and the command post keeps 3 m from every slot
 ## - boss_melee_point is 1.6-2.0 m from the Fortress face, on the large-agent navmesh, and the
 ##   Bulwark walks up to it and starts attacking within its attack_range
+## - BossSpawnPoint sits inside the spawn zone, on the large-agent navmesh, in its group
 ## Headless it runs the checks and quits.
 
 # TODO(Ender-Via): the Bulwark should stand on boss_melee_point so its 3 m Stomp reaches the wall
@@ -54,6 +55,7 @@ func _ready() -> void:
 	test_markers()
 	test_wall_slots()
 	test_boss_melee_point()
+	test_boss_spawn_point()
 	await test_grunts_reach_gate()
 	await test_bulwark_reaches_point()
 
@@ -181,6 +183,19 @@ func test_boss_melee_point() -> void:
 	assert_true(not large.is_empty() and _flat(large[-1]).distance_to(_flat(point.global_position)) < 0.3,
 		"boss_melee_point lies on the large-agent navmesh")
 	assert_true(point.is_in_group(&"boss_melee_point"), "boss_melee_point is in its group, so the Bulwark finds it")
+
+
+func test_boss_spawn_point() -> void:
+	var point: Marker3D = _level.get_node("Markers/BossSpawnPoint")
+	var spawn: Area3D = _level.get_node("SpawnZone")
+	var box := (spawn.get_child(0) as CollisionShape3D).shape as BoxShape3D
+	var local := spawn.global_transform.affine_inverse() * point.global_position
+	assert_true(absf(local.x) < box.size.x * 0.5 and absf(local.z) < box.size.z * 0.5,
+		"BossSpawnPoint is inside the spawn zone (x %.1f)" % point.global_position.x)
+	assert_true(point.is_in_group(&"boss_spawn_point"), "BossSpawnPoint is in its group, so the wave manager and the camera find it")
+	var large := _path(point.global_position, (_level.get_node("Markers/BossMeleePoint") as Node3D).global_position, NAV_LAYER_LARGE)
+	assert_true(not large.is_empty() and _flat(large[0]).distance_to(_flat(point.global_position)) < 0.3,
+		"BossSpawnPoint lies on the large-agent navmesh and leads to boss_melee_point")
 
 
 func test_grunts_reach_gate() -> void:
