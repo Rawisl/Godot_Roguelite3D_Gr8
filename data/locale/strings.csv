@@ -46,6 +46,7 @@ hud.state.boss_intro,Boss xuất hiện
 hud.state.boss_combat,Đánh boss
 hud.state.summary,Tổng kết
 alert.fortress_low,Thành sắp thất thủ
+alert.boss_core_exposed,Lộ lõi
 panel.close,Đóng
 panel.build.title,Xây dựng
 panel.build.item,{name} - {gold} vàng

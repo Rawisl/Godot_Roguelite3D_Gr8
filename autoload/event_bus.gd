@@ -25,6 +25,7 @@ signal fortress_repaired(amount: int, source: StringName)  # source: MITHRIL | E
 
 signal enemy_spawned(enemy: Node)
 signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool)  # is_cull: no reward, no kill credit, hit_by_commander 
+signal commander_enemy_killed(commander: Node)  # Enemy / Bulwark -> Commander: credited for the killing sword or skill hit.
 signal enemy_count_changed(alive: int, queued: int, total: int)  # reminder thresholds 20 and 45
 signal straggler_marker_shown(enemy: Node)  # after 60s
 signal frenzy_started(enemy: Node)  # after 240s
