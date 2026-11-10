@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://b1g5qc0fjeal3" path="res://art/vfx/telegraph_fx_manager.gd" id="18_telegraphfx"]
 [ext_resource type="Script" uid="uid://bd6nitpisuc5m" path="res://art/vfx/heal_fx_manager.gd" id="19_healfx"]
 [ext_resource type="Script" uid="uid://s8tk5ayl5tn6" path="res://art/vfx/skill_fx_manager.gd" id="19_skillfx"]
+[ext_resource type="Script" uid="uid://bek0xfq4dxoae" path="res://art/vfx/boss_fx_manager.gd" id="20_bossfx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -254,6 +255,9 @@ script = ExtResource("18_telegraphfx")
 
 [node name="SkillFxManager" type="Node" parent="." unique_id=1952406317]
 script = ExtResource("19_skillfx")
+
+[node name="BossFxManager" type="Node" parent="." unique_id=583914276]
+script = ExtResource("20_bossfx")
 
 [node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
 
