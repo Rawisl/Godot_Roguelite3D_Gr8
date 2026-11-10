@@ -193,12 +193,13 @@ curve = SubResource("Curve3D_lane")
 [node name="Slots" parent="." unique_id=1229477472 instance=ExtResource("12_slots")]
 unique_name_in_owner = true
 
-[node name="GroundGrid" type="Node3D" parent="Slots" unique_id=1748256093 node_paths=PackedStringArray("lane", "spawn_zone", "return_zone", "command_post")]
+[node name="GroundGrid" type="Node3D" parent="Slots" unique_id=1748256093 node_paths=PackedStringArray("spawn_zone", "return_zone", "command_post", "boss_melee_point", "lane")]
 script = ExtResource("15_ggrid")
-lane = NodePath("../../LaneCurve")
 spawn_zone = NodePath("../../SpawnZone")
 return_zone = NodePath("../../Markers/ReturnZone")
 command_post = NodePath("../../Markers/CommandPost")
+boss_melee_point = NodePath("../../Markers/BossMeleePoint")
+lane = NodePath("../../LaneCurve")
 
 [node name="Markers" type="Node3D" parent="." unique_id=969002018]
 

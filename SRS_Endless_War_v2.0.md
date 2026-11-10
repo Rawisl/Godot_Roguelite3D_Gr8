@@ -2062,7 +2062,7 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | FBK-03 | Rung màn hình cho: chỉ huy trúng đòn nặng, Stomp, Fortress nhận sát thương lớn, Cuồng nộ boss. Biên độ có trần. Giảm hoặc tắt được (ACC-05) |
 | FBK-04 | Flash trắng 0.1 s khi chỉ huy trúng đòn, bỏ nếu "Giảm nhấp nháy" |
 | FBK-05 | **Không dùng hit stop toàn cục**. Cảm giác va chạm bằng đóng băng animation riêng thực thể 0.05 s, chớp trắng shader và âm thanh |
-| FBK-06 | Telegraph Stomp, Shell \[Should]: vòng đỏ viền đậm có họa tiết (không chỉ màu), vẽ trên cùng, không bị vật che làm mờ |
+| FBK-06 | Telegraph Stomp, Shell \[Should]: vòng đỏ viền đậm có họa tiết (không chỉ màu), chiếu sát mặt đất (quân và công trình đứng trên vòng), không che đè lên tường hay chỉ huy |
 | FBK-07 | Boss chuyển pha: hơi nước, giáp bay, lõi sáng, banner "Lộ lõi" 1.5 s, giảm nhạc 0.5 s |
 | FBK-08 | Tower bị phá: khói, mảnh vỡ, đống đổ nát. Xây xong: hiệu ứng dựng 0.5 s |
 | FBK-09 | Giới hạn hạt theo preset (Thấp 500, Trung bình 1500, Cao 3000). Vượt thì bỏ hiệu ứng thứ yếu trước, không bỏ telegraph |

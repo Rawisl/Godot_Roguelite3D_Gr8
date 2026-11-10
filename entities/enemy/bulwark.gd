@@ -136,35 +136,38 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		if info != null and (info.hit_by_commander or info.is_from_commander()):
 			health.hit_by_commander = true
 
+	var actual_damage := 0
 	match current_phase:
 		Enums.BossPhase.ARMORED:
 			if effective_damage >= current_armor_hp:
-				var absorbed := current_armor_hp
+				actual_damage = current_armor_hp
 				current_armor_hp = 0
 				if health != null:
 					health.hp = current_core_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
-					health.damaged.emit(absorbed, info)
+					health.damaged.emit(actual_damage, info)
 				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 				_start_armor_break_transition()
 			else:
-				current_armor_hp -= effective_damage
+				actual_damage = effective_damage
+				current_armor_hp -= actual_damage
 				if health != null:
 					health.hp = current_core_hp + current_armor_hp
 					health.hp_changed.emit(health.hp, health.max_hp)
-					health.damaged.emit(effective_damage, info)
+					health.damaged.emit(actual_damage, info)
 				EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
 
 		Enums.BossPhase.TRANSITION, Enums.BossPhase.EXPOSED:
-			current_core_hp = maxi(0, current_core_hp - effective_damage)
+			actual_damage = mini(current_core_hp, effective_damage)
+			current_core_hp = maxi(0, current_core_hp - actual_damage)
 			if health != null:
 				health.hp = current_core_hp
 				health.hp_changed.emit(health.hp, health.max_hp)
-				health.damaged.emit(effective_damage, info)
+				health.damaged.emit(actual_damage, info)
 				if current_core_hp == 0:
 					health.died.emit()
 			EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
-	return effective_damage
+	return actual_damage
 
 
 func _start_armor_break_transition() -> void:
@@ -172,6 +175,14 @@ func _start_armor_break_transition() -> void:
 		return
 	phase_broken = true
 	current_phase = Enums.BossPhase.TRANSITION
+
+	attack_windup_timer = 0.0
+	attack_recovery_timer = 0.0
+	is_attacking_active = false
+	if anim_player != null and is_instance_valid(anim_player):
+		anim_player.stop()
+	if current_state == Enums.EnemyState.ATTACK:
+		current_state = Enums.EnemyState.ADVANCE
 
 	var boss_data := data as BossData
 	_transition_timer = boss_data.transition_duration if boss_data != null else 2.5
@@ -188,6 +199,7 @@ func _on_transition_finished() -> void:
 		speed_multiplier = wave_speed_mult * boss_data.phase2_speed_mult
 		if is_enraged:
 			speed_multiplier *= GameConfig.enrage_speed_mult
+	_play_locomotion_anim()
 	EventBus.boss_phase_changed.emit(&"EXPOSED")
 	EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, &"EXPOSED")
 
