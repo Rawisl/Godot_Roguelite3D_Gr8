@@ -9,6 +9,7 @@ extends Node
 ## - rubble clearing and the ground building cap
 ## - upgrade gates only at the first level of tiers 2 and 3, and the level cap
 ## - commander level from the real XpTracker (level_up and xp_changed)
+## - ground builds that would seal the path are refused before any gold is spent
 
 const SLOT_SCENE: PackedScene = preload("res://systems/build/slot.tscn")
 const ARROW: TowerData = preload("res://data/towers/arrow.tres")
@@ -75,6 +76,7 @@ func _ready() -> void:
 	test_missing_gold_manager()
 	test_wallet()
 	test_scene_data()
+	test_blocks_path()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -763,3 +765,131 @@ func test_wallet() -> void:
 	var g := _gold.gold
 	assert_true(not _gold.try_spend(g + 1), "cannot spend more than the wallet holds")
 	assert_true(_gold.gold == g, "gold unchanged after the refused spend")
+
+## A 16 m corridor with rows at -5, 0 and +5 m: one column of three cells seals it, two do not.
+func _make_path_grid() -> Node3D:
+	var holder := Node3D.new()
+	_root.add_child(holder)
+	var spawn := Area3D.new()
+	var box := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(4, 4, 16)
+	box.shape = shape
+	spawn.add_child(box)
+	holder.add_child(spawn)
+	spawn.global_position = Vector3(30, 0, 0)
+	var lane := Path3D.new()
+	lane.curve = Curve3D.new()
+	lane.curve.add_point(Vector3(30, 0, 0))
+	lane.curve.add_point(Vector3(-4, 0, 0))
+	holder.add_child(lane)
+	var boss := Marker3D.new()
+	holder.add_child(boss)
+	boss.global_position = Vector3(-2, 0, 0)
+	var data := GridData.new()
+	data.origin = Vector3(5, 0, 0)
+	data.column_dir = Vector3.RIGHT
+	data.columns = 3
+	data.row_offsets = PackedFloat32Array([-5, 0, 5])
+	data.corridor_width = 16.0
+	var grid := GroundGrid.new()
+	grid.name = "PathGrid"
+	grid.grid_data = data
+	grid.spawn_zone = spawn
+	grid.lane = lane
+	grid.boss_melee_point = boss
+	# The cells are checked and spawned in GroundGrid._ready, so its markers must be in the tree first.
+	holder.add_child(grid)
+	return holder
+
+## Puts a tower on slot_id and ruins it at level 2, as a tower placed outside BuildService would be.
+func _seal_with_rubble(slot_id: StringName) -> void:
+	var s := _slot(slot_id)
+	s.place_tower(ARROW_SCENE.instantiate())
+	s.tower.apply_level(2)
+	s.ruin()
+
+func test_blocks_path() -> void:
+	print("
+[GROUP 23] Ground builds that seal the path")
+	_reset()
+	var holder := _make_path_grid()
+	var w := GameConfig.path_check_min_width
+	var grid := holder.get_node("PathGrid") as GroundGrid
+	var data := grid.grid_data
+	var premise := grid.cells.size() == 9 and GameConfig.max_ground_buildings >= 3
+	premise = premise and _cell_gap(data, Vector2i(0, 0), Vector2i(0, 1)) < w
+	premise = premise and _cell_gap(data, Vector2i(0, 1), Vector2i(0, 2)) < w
+	premise = premise and data.corridor_width * 0.5 - (data.row_offsets[2] + GameConfig.grid_cell_size * 0.5) < w
+	premise = premise and _cell_gap(data, Vector2i(0, 0), Vector2i(0, 2)) >= w
+	assert_true(premise, "premise: 9 cells, cap >= 3, gaps in the 16 m corridor fit the test")
+	if not premise:
+		holder.free()
+		return
+
+	# 1-3: two cells leave the lane, the third of the column is refused.
+	assert_true(_service.build(&"G_0_0", &"arrow") and _service.build(&"G_0_1", &"arrow"), "two cells of a column are built")
+	assert_true(_denied.is_empty(), "no denial for the first two")
+	var opts := _service.get_build_options(&"G_0_2")
+	var all_locked := not opts.is_empty()
+	for o in opts:
+		all_locked = all_locked and o["locked_reason"] == BuildService.BLOCKS_PATH
+	assert_true(all_locked, "every menu entry of the sealing cell is locked with BLOCKS_PATH")
+	var g := _gold.gold
+	_denied.clear()
+	assert_true(not _service.build(&"G_0_2", &"arrow"), "the sealing build is refused")
+	assert_true(_denied == [[&"BLOCKS_PATH", 0]], "build_denied carries BLOCKS_PATH and no shortfall")
+	assert_true(_gold.gold == g, "gold unchanged after the refusal")
+	assert_true(_slot(&"G_0_2").state == Enums.SlotState.EMPTY and _slot(&"G_0_2").tower == null, "the sealing cell stays empty")
+	assert_true(not _built.has(&"G_0_2"), "no tower_built for the refused cell")
+
+	# 4-5: a diagonal neighbour seals too, a far cell does not.
+	assert_true(_service.would_block_path(_slot(&"G_1_2"), ARROW), "the diagonal cell (gap under min_width) is blocked")
+	var far_ok := true
+	for o in _service.get_build_options(&"G_2_2"):
+		far_ok = far_ok and o["locked_reason"] == &""
+	assert_true(far_ok, "no entry of the far cell is locked")
+	assert_true(_service.build(&"G_2_2", &"arrow"), "the far cell is built")
+
+	# 6: with the cap reached the ground reason wins.
+	var full_opts := _service.get_build_options(&"G_0_2")
+	assert_true(not full_opts.is_empty() and full_opts[0]["locked_reason"] == &"GROUND_FULL", "GROUND_FULL takes priority over BLOCKS_PATH")
+
+	# 7-8: walls and slots outside the grid are not checked.
+	assert_true(not _service.would_block_path(_slot(&"W1"), ARROW), "wall slots never block")
+	_denied.clear()
+	assert_true(_service.build(&"W1", &"arrow") and _denied.is_empty(), "a wall build goes ahead")
+	assert_true(not _service.would_block_path(_slot(&"G1"), ARROW), "a ground slot outside the grid is not checked")
+
+	# 9-12: rubble closing the layout.
+	_reset()
+	assert_true(_service.build(&"G_0_0", &"arrow") and _service.build(&"G_0_1", &"arrow"), "two cells built again")
+	_seal_with_rubble(&"G_0_2")
+	var ruin := _slot(&"G_0_2")
+	assert_true(ruin.state == Enums.SlotState.RUINED and ruin.last_level == 2, "the third cell is rubble at level 2")
+	var rubble_ok := true
+	for o in _service.get_build_options(&"G_0_2"):
+		var data_id: StringName = o["data"].id
+		var expected: StringName = &"" if data_id == &"arrow" else BuildService.BLOCKS_PATH
+		rubble_ok = rubble_ok and o["locked_reason"] == expected
+	assert_true(rubble_ok, "rebuild and arrow stay open, every other type is BLOCKS_PATH")
+	g = _gold.gold
+	_denied.clear()
+	assert_true(not _service.build(&"G_0_2", &"cannon"), "another type on the sealed rubble is refused")
+	assert_true(_denied == [[&"BLOCKS_PATH", 0]], "the refusal is BLOCKS_PATH")
+	assert_true(_gold.gold == g and ruin.state == Enums.SlotState.RUINED and ruin.last_data == ARROW, "gold and rubble unchanged")
+	assert_true(_service.build(&"G_0_2", &"arrow", 2), "rebuilding the same type is not checked")
+	assert_true(g - _gold.gold == ARROW.get_total_cost(2), "the rebuild costs the summed price")
+	assert_true(_denied == [[&"BLOCKS_PATH", 0]], "the rebuild adds no denial")
+
+	# 13: clean up so later groups see no grid slots.
+	_reset()
+	_root.remove_child(holder)
+	holder.free()
+	assert_true(_service.find_slot(&"G_0_0") == null, "grid slots are gone after cleanup")
+
+## Edge-to-edge distance between two cell squares of data.
+func _cell_gap(data: GridData, a: Vector2i, b: Vector2i) -> float:
+	var h: float = GameConfig.grid_cell_size * 0.5
+	var d := data.cell_position(a) - data.cell_position(b)
+	return Vector2(maxf(absf(d.x) - 2.0 * h, 0.0), maxf(absf(d.z) - 2.0 * h, 0.0)).length()
