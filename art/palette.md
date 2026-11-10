@@ -188,7 +188,7 @@ Biến thể (Theme Type Variation) cho TV4 dùng khi cần:
 | SpeedToggle | Button | khi bật (`toggle_mode` pressed): nền `ui_accent`, viền 3 px `ui_text`, chữ `ui_bg` |
 | RewardCard | Button | thẻ REWARD_PICK, bo 12 px, có bóng. Thường `#F1DEC3`, rê chuột `struct_stone_light` (bóng lớn hơn), nhấn `#E2C9A6`, xám `#B4ADA3`, đã chọn (`picked`) `struct_stone_light` với quầng `ui_accent` |
 | RewardCardTitle, RewardCardLevel, RewardCardText | Label | `ui_bg`, cỡ 32 / 24 / 22 (tên, cấp, mô tả trên thẻ) |
-| RewardFrameActive, RewardFramePassive, RewardFrameStat | Panel | chỉ viền 4 px theo loại thẻ: `ui_card_active`, `ui_card_passive`, `ui_card_stat` |
+| RewardFrameActive, RewardFramePassive, RewardFrameStat | Panel | chỉ viền 8 px theo loại thẻ: `ui_card_active`, `ui_card_passive`, `ui_card_stat` |
 | RewardKindActive, RewardKindPassive, RewardKindStat | PanelContainer | dải nhãn loại thẻ, nền theo loại, bo 8 px |
 | RewardKindLabel, RewardKindLabelLight | Label | chữ trên dải: `ui_bg` (dải vàng), `ui_text` (dải tím, xanh), cỡ 20 |
 
