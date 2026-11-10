@@ -437,7 +437,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT2
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: BOSS_INTRO và BOSS_COMBAT, spawn boss và hộ tống (SPN-09..12, BOSS-02, 05, 17..21)
 - Nghiệm thu: Boss spawn ở giây 0 BOSS_COMBAT; hộ tống 0.5 x budget; mỗi wave boss có ít nhất 1 hộ tống
 - Cần xong trước: W8-KT3
@@ -445,7 +445,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT3
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thêm state REWARD_PICK vào Wave FSM (RWP-01, 06)
 - Nghiệm thu: Vào REWARD_PICK khi pending_picks > 0, bỏ qua khi 0; chừa chỗ cho bước màn thắng (WAVE-13)
 - Cần xong trước: W9-NG3, W8-KT3

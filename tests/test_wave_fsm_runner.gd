@@ -47,6 +47,8 @@ func _ready() -> void:
 	test_targeting_rules_and_wall_filtering()
 	test_archer_projectile_and_dodge_iframes()
 	test_wave_fsm_and_8_grunts_flow()
+	test_boss_intro_and_boss_combat_flow()
+	test_wave_victory_and_reward_pick_flow()
 
 	SaveManager.set_repository(real_repo)
 	SaveManager.load_save()
@@ -412,4 +414,126 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 	EventBus.wave_started.disconnect(on_wave_started)
 	EventBus.wave_cleared.disconnect(on_wave_cleared)
 	EventBus.enemy_spawned.disconnect(on_enemy_spawned)
-	wave_manager.queue_free()
+	wave_manager.free()
+
+
+func test_boss_intro_and_boss_combat_flow() -> void:
+	print("\n[GROUP 10] Testing Boss Intro, Skip and Boss Combat Spawn")
+	var wm := WaveManager.new()
+	wm.current_wave = 5
+	add_child(wm)
+
+	var recorded_states: Array[StringName] = []
+	var on_state := func(s: StringName): recorded_states.append(s)
+	EventBus.state_changed.connect(on_state)
+
+	var record := {"boss_intro_id": &""}
+	var on_boss_intro := func(id: StringName): record["boss_intro_id"] = id
+	EventBus.boss_intro_started.connect(on_boss_intro)
+
+	# 1. Starting boss wave enters BOSS_INTRO
+	EventBus.wave_start_requested.emit()
+	assert_true(wm.wave_state == Enums.WaveState.BOSS_INTRO, "Wave 5 enters BOSS_INTRO on wave_start_requested")
+	assert_true(recorded_states.has(&"BOSS_INTRO"), "EventBus emitted state_changed(&'BOSS_INTRO')")
+	assert_true(record["boss_intro_id"] == &"bulwark", "EventBus emitted boss_intro_started(&'bulwark')")
+
+	# 2. Skip before skip_delay (1s) does nothing
+	wm.skip_boss_intro()
+	assert_true(wm.wave_state == Enums.WaveState.BOSS_INTRO, "Cannot skip before boss_intro_skip_delay")
+
+	# 2b. Pause input does not skip intro even after delay
+	wm._physics_process(1.1)
+	var pause_event := InputEventAction.new()
+	pause_event.action = &"pause"
+	pause_event.pressed = true
+	wm._unhandled_input(pause_event)
+	assert_true(wm.wave_state == Enums.WaveState.BOSS_INTRO, "Pause input does not skip boss intro")
+
+	# 3. Dedicated skip input or skip_boss_intro() enters BOSS_COMBAT
+	wm.skip_boss_intro()
+	assert_true(wm.wave_state == Enums.WaveState.BOSS_COMBAT, "Enters BOSS_COMBAT after skipping intro")
+	assert_true(recorded_states.has(&"BOSS_COMBAT"), "EventBus emitted state_changed(&'BOSS_COMBAT')")
+
+	# 4. Boss spawned at second 0 of BOSS_COMBAT
+	var boss_in_tree := get_tree().get_first_node_in_group(&"boss") as Bulwark
+	assert_true(boss_in_tree != null, "Bulwark boss spawned at second 0 into tree")
+	assert_true(boss_in_tree.can_be_culled() == false, "Boss is immune to culling")
+	assert_true(boss_in_tree.can_be_recycled() == false, "Boss is immune to recycling")
+
+	# 5. Escorts generated: 0.5x budget and at least 1 escort
+	var comp := wm.generate_wave_composition(5)
+	assert_true(not comp.is_empty(), "Boss wave 5 has at least 1 escort unit")
+
+	EventBus.state_changed.disconnect(on_state)
+	EventBus.boss_intro_started.disconnect(on_boss_intro)
+	wm.free()
+
+
+func test_wave_victory_and_reward_pick_flow() -> void:
+	print("\n[GROUP 11] Testing Wave Victory Hook and Reward Pick Skip")
+	var wm := WaveManager.new()
+	wm.auto_advance_summary = false
+	wm.enable_victory_screen = true
+	wm.current_wave = GameConfig.victory_wave
+	add_child(wm)
+
+	var victory_record := {"wave": -1}
+	var on_victory := func(w: int): victory_record["wave"] = w
+	EventBus.run_victory.connect(on_victory)
+
+	var tracker: Node = wm.get("_xp_tracker")
+	tracker.set("pending_picks", 1)
+
+	wm.wave_state = Enums.WaveState.SUMMARY
+	wm.advance_from_summary()
+
+	# 1. Victory screen triggered, game paused with REASON_VICTORY
+	assert_true(victory_record["wave"] == GameConfig.victory_wave, "run_victory emitted with victory_wave (30)")
+	assert_true(TimeManager.has_pause_reason(TimeManager.REASON_VICTORY), "Simulation paused under REASON_VICTORY")
+	assert_true(wm.wave_state == Enums.WaveState.SUMMARY, "FSM remains in SUMMARY awaiting victory continue")
+
+	# 2. Player clicks Continue from victory screen
+	EventBus.victory_continue_requested.emit()
+	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_VICTORY), "REASON_VICTORY pause released")
+	assert_true(wm.wave_state == Enums.WaveState.REWARD_PICK, "Transitions to REWARD_PICK because pending_picks > 0")
+	assert_true(TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "Simulation paused under REASON_REWARD_PICK")
+
+	# 3. Player skips reward pick (RewardService sends reward_picked with SKIP kind)
+	EventBus.reward_picked.emit(&"", &"SKIP", 0)
+	assert_true(tracker.get("pending_picks") == 0, "pending_picks decremented to 0 on skip")
+	assert_true(wm.wave_state == Enums.WaveState.PREP, "Transitions to PREP once all picks consumed")
+	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "REASON_REWARD_PICK pause released")
+	assert_true(wm.current_wave == GameConfig.victory_wave + 1, "Wave advanced to victory_wave + 1 (31)")
+
+	# 4. Empty offer pool skips REWARD_PICK directly into PREP even when pending_picks > 0
+	var empty_service := MockEmptyRewardService.new()
+	add_child(empty_service)
+
+	var wm_empty := WaveManager.new()
+	wm_empty.auto_advance_summary = false
+	wm_empty.current_wave = 1
+	add_child(wm_empty)
+
+	var empty_tracker: Node = wm_empty.get("_xp_tracker")
+	empty_tracker.set("pending_picks", 2)
+
+	wm_empty.wave_state = Enums.WaveState.SUMMARY
+	wm_empty.advance_from_summary()
+
+	assert_true(wm_empty.wave_state == Enums.WaveState.PREP, "Empty offer pool skips REWARD_PICK directly into PREP")
+	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "No REWARD_PICK pause when pool is empty")
+	assert_true(wm_empty.current_wave == 2, "Wave advanced to 2 with empty pool")
+
+	wm_empty.free()
+	empty_service.free()
+
+	EventBus.run_victory.disconnect(on_victory)
+	wm.free()
+
+
+class MockEmptyRewardService extends Node:
+	func _init() -> void:
+		add_to_group(&"reward_service")
+
+	func has_offer() -> bool:
+		return false
