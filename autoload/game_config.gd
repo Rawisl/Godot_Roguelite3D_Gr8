@@ -96,7 +96,6 @@ extends Node
 @export var stuck_escalate_time: float = 3.0
 @export var stuck_reset_time: float = 10.0
 @export var queue_block_distance: float = 1.5
-@export var ally_phase_time: float = 1.5
 @export var commander_block_wait: float = 2.0
 @export var recycle_max: int = 2
 @export var wave_hard_cap: float = 300.0

@@ -462,7 +462,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT5
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 8 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tắt va chạm giữa quân (kể cả boss và Brute): bỏ avoidance và _apply_avoidance, đổi collision layer/mask giữa quân, tách bán kính agent khỏi avoid_radius, xóa avoid_radius/avoid_priority khỏi EnemyData, BossData và bảng; bỏ ally_phase ở NAV-06
 - Nghiệm thu: 20 Grunt đi qua cùng một điểm không đẩy nhau; vẫn chỉ 12 con đánh Fortress (slot đánh giữ nguyên); không lỗi console
 - Tệp liên quan: entities/enemy/enemy.gd (nav.avoidance_enabled, _apply_avoidance, nav.radius = avoid_radius), enemy.tscn, common/enemy_data.gd, common/boss_data.gd, data/enemies/*, data/bosses/bulwark_boss.tres, autoload/game_config.gd (ally_phase_time)
@@ -482,7 +482,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KT7
 - Người: Kiệt
 - Tuần: 9 | Giờ ước tính: 5 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa các test hỏng do bỏ đếm ngược PREP, gọi sớm và va chạm giữa quân: test_wave_fsm_runner, test_wave_rewards_runner, test_combat_runner, test_summary_panel, test_hud, test_playtest_arrow/barricade/bulwark_and_crowd/cannon/wave, test_attack_slot_runner, test_barricade_runner, test_bulwark_and_crd_runner, test_phase1_phase2_runner
 - Nghiệm thu: Toàn bộ runner liệt kê chạy lại đạt trên hành vi mới; không còn test nào chờ prep_timer hay early_call
 - Tệp liên quan: tests/ (liệt kê trong mô tả task)
