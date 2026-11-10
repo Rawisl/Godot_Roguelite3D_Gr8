@@ -24,8 +24,6 @@ SHEETS = ["character", "skills", "towers", "weapons", "enemies", "waves", "wave_
 
 # Sheet id -> id used by the game.
 WEAPON_IDS = {"sword": "sword_base"}
-# Sheet key -> key the code reads, per skill.
-SKILL_KEYS = {"firebomb": {"dps": "damage"}}
 # Weapon columns that are fields of WeaponData and not effect parameters.
 WEAPON_FIELDS = {"range_mult", "effect_id"}
 
@@ -296,18 +294,19 @@ def gen_character(table: Table, plan: Plan) -> None:
 
 def gen_skills(table: Table, plan: Plan) -> None:
     script = ROOT / "common" / "skill_data.gd"
-    grouped: dict[str, dict[str, dict[int, float]]] = {}
+    grouped: dict[str, dict[str, dict[int, str]]] = {}
     skipped = 0
     for row, coords in zip(table.rows, table.cells):
         if str(row["kind"]).upper() != "ACTIVE":
             skipped += 1
             continue
         skill = str(row["skill_id"])
-        key = SKILL_KEYS.get(skill, {}).get(str(row["key"]), str(row["key"]))
+        key = str(row["key"])
         level = row["level"]
         if isinstance(level, bool) or not isinstance(level, (int, float)) or not float(level).is_integer() or level < 1:
             raise BalanceError(f"skills!{coords['level']}: level must be a whole number from 1")
-        grouped.setdefault(skill, {}).setdefault(key, {})[int(level)] = row["value"]
+        value = format_value(row["value"], "float", f"skills!{coords['value']}")
+        grouped.setdefault(skill, {}).setdefault(key, {})[int(level)] = value
     plan.warnings.append(f"skills: {skipped} passive and stat rows are not generated (only ACTIVE skills are)")
     for skill, keys in grouped.items():
         path = ROOT / "data" / "skills" / f"{skill}.tres"
@@ -320,7 +319,8 @@ def gen_skills(table: Table, plan: Plan) -> None:
             levels = keys[key]
             if sorted(levels) != list(range(1, len(levels) + 1)):
                 raise BalanceError(f"skills: {skill}.{key} has gaps in its levels {sorted(levels)}")
-            lines.append(f'&"{key}": PackedFloat32Array({", ".join(format_number(levels[n]) for n in sorted(levels))})')
+            ordered_values = ", ".join(levels[n] for n in sorted(levels))
+            lines.append(f'&"{key}": PackedFloat32Array({ordered_values})')
         counts = {len(v) for v in keys.values()}
         if len(counts) != 1:
             raise BalanceError(f"skills: {skill} has a different number of levels per key")
