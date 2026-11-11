@@ -5,6 +5,7 @@ extends Node
 ## - save() writes endlesswar_save.json with save_version and data, load_save() reads it back as int
 ## - missing fields fall back to defaults, extra fields are kept when written back
 ## - a newer save_version or an unreadable file is refused and never overwritten
+##   (no .corrupt file is made until the player starts a new save)
 ## - swapping the repository (in-memory double) needs no change at the call site
 ## Writes only under user://test_save/, the real save is put back afterwards.
 
@@ -131,7 +132,7 @@ func test_missing_fields_use_defaults() -> void:
 
 func test_extra_fields_are_kept() -> void:
 	print("\n--- Extra fields ---")
-	_write_raw('{"save_version": 1, "revision": 7, "device_id": "abc", "checksum": "sha256:old", "data": {"profile": {"prestige_balance": 1, "future_field": "keep"}, "future_section": {"x": 1}}}')
+	_write_raw('{"save_version": 1, "revision": 7, "device_id": "abc", "data": {"profile": {"prestige_balance": 1, "future_field": "keep"}, "future_section": {"x": 1}}}')
 	_use_local()
 	SaveManager.load_save()
 	var profile := SaveManager.get_section(SaveManager.PROFILE)
@@ -143,7 +144,8 @@ func test_extra_fields_are_kept() -> void:
 	assert_true(data.has("future_section"), "unknown section written back")
 	assert_true(raw.get("revision") == 7.0 and raw.get("device_id") == "abc",
 			"fields outside data written back")
-	assert_true(not raw.has("checksum"), "stale checksum not copied")
+	assert_true(SaveChecksum.matches(raw) and String(raw.get("checksum", "")).begins_with(SaveChecksum.PREFIX),
+			"fresh checksum written")
 	assert_true(data.get("profile", {}).get("prestige_balance") == 2.0, "changed value written")
 
 func test_newer_version_is_not_overwritten() -> void:
@@ -175,6 +177,8 @@ func test_corrupt_file_is_not_overwritten() -> void:
 	assert_true(SaveManager.data == SaveManager.DEFAULT_DATA, "runs on defaults")
 	assert_true(SaveManager.save() != OK, "save() refuses")
 	assert_true(FileAccess.get_file_as_string(TEST_PATH) == text, "file left untouched")
+	var local := LocalSaveRepository.new(TEST_PATH)
+	assert_true(not FileAccess.file_exists(local.corrupt_path()), "no .corrupt file made on load")
 
 	_write_raw('{"data": {}}')
 	_use_local()
@@ -222,6 +226,7 @@ func _reset_counters() -> void:
 	_failed_reasons.clear()
 
 func _write_raw(text: String) -> void:
+	_clear_test_dir()
 	DirAccess.make_dir_recursive_absolute(TEST_DIR)
 	var file := FileAccess.open(TEST_PATH, FileAccess.WRITE)
 	file.store_string(text)
@@ -232,8 +237,11 @@ func _read_raw() -> Dictionary:
 	return parsed if parsed is Dictionary else {}
 
 func _clear_test_dir() -> void:
-	if FileAccess.file_exists(TEST_PATH):
-		DirAccess.remove_absolute(TEST_PATH)
+	var local := LocalSaveRepository.new(TEST_PATH)
+	for file_path in [TEST_PATH, local.path_of(SaveRepository.Source.TEMP),
+			local.path_of(SaveRepository.Source.BACKUP), local.corrupt_path()]:
+		if FileAccess.file_exists(file_path):
+			DirAccess.remove_absolute(file_path)
 	if DirAccess.dir_exists_absolute(TEST_DIR):
 		DirAccess.remove_absolute(TEST_DIR)
 
