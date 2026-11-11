@@ -2,6 +2,7 @@ extends CanvasLayer
 ## Switches screens with a fade and owns the system dialog layer.
 ## Screens that support Back implement go_back(); Esc calls the same function
 ## Dialogs that support Esc implement cancel(); otherwise they are freed.
+# TODO(WhoKeng): on save_failed(CORRUPT) show the notice with a "New save" button that calls SaveManager.start_new_save(); on save_failed(WRITE_ERROR) add a Retry button that calls SaveManager.save() again.
 
 signal screen_changed(scene_path: String)
 
@@ -115,7 +116,6 @@ func _open_next_notice() -> void:
 		return
 	_dialog_holder.add_child(_pending_notices.pop_front())
 
-# TODO: add a Retry button once SaveManager can retry a failed write.
 func _on_save_failed(reason: StringName) -> void:
 	push_warning("ScreenManager: save failed (%s)" % reason)
 	show_notice(&"dialog.save_failed.title", &"dialog.save_failed.body")
