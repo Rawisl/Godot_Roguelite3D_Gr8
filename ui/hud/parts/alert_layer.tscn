@@ -13,19 +13,122 @@ mouse_filter = 2
 script = ExtResource("1_e8v0x")
 
 [node name="Banner" type="PanelContainer" parent="." unique_id=1615290743]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.42
+anchor_right = 0.5
+anchor_bottom = 0.42
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
+theme_type_variation = &"AlertT1"
+
+[node name="Text" type="Label" parent="Banner" unique_id=1739206001]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
 
 [node name="ToastTop" type="VBoxContainer" parent="." unique_id=514554512]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 190.0
+offset_bottom = 190.0
+grow_horizontal = 2
 mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Toast1" type="PanelContainer" parent="ToastTop" unique_id=1739206010]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"AlertT2"
+
+[node name="Text" type="Label" parent="ToastTop/Toast1" unique_id=1739206060]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+
+[node name="Toast2" type="PanelContainer" parent="ToastTop" unique_id=1739206011]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"AlertT2"
+
+[node name="Text" type="Label" parent="ToastTop/Toast2" unique_id=1739206061]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+
+[node name="Toast3" type="PanelContainer" parent="ToastTop" unique_id=1739206012]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"AlertT2"
+
+[node name="Text" type="Label" parent="ToastTop/Toast3" unique_id=1739206062]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
 
 [node name="ToastBottom" type="VBoxContainer" parent="." unique_id=1252747203]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -150.0
+offset_right = -40.0
+offset_bottom = -150.0
+grow_horizontal = 0
+grow_vertical = 0
 mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Toast1" type="PanelContainer" parent="ToastBottom" unique_id=1739206020]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_type_variation = &"AlertT3"
+
+[node name="Text" type="Label" parent="ToastBottom/Toast1" unique_id=1739206070]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="Toast2" type="PanelContainer" parent="ToastBottom" unique_id=1739206021]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_type_variation = &"AlertT3"
+
+[node name="Text" type="Label" parent="ToastBottom/Toast2" unique_id=1739206071]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="Toast3" type="PanelContainer" parent="ToastBottom" unique_id=1739206022]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_type_variation = &"AlertT3"
+
+[node name="Text" type="Label" parent="ToastBottom/Toast3" unique_id=1739206072]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
