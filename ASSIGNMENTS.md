@@ -712,6 +712,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: tools/balance/*.py; data/weapons/, data/waves/wave_script.tres, data/waves/wave_rewards.tres
 - ID SRS: BAL-02, BAL-04, BAL-06, BL2
 - Cần xong trước: W9-NG7, W10-KT7, W10-MH9
+- Ghi chú: data/waves/wave_rewards.tres đang viết tay theo sheet wave_rewards (W10-MH7). Khi sinh, giữ tên và kiểu field của common/wave_reward_table.gd: gold_mult, xp_mult (PackedFloat32Array), mithril_reward (PackedInt32Array), phần tử thứ w − 1 là wave w, đủ victory_wave phần tử
 
 ##### W10-NG9
 - Người: Ngọc
@@ -873,6 +874,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Nghiệm thu: Diệt sau Cuồng nộ: boss_gold và prestige x 0.5; +1 lượt tối đa 3
 - ID SRS: BRW-01
 - Cần xong trước: W9-MH1, W10-MH7
+- Ghi chú: từ W10-MH7 boss phát 0 gold qua enemy_died; uy tín boss vẫn đi qua enemy_died (TODO(kiezroth) ở entities/enemy/enemy.gd) tới khi MH3 chuyển sang SUMMARY
 
 ##### W10-MH4
 - Người: Mạnh
@@ -885,7 +887,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH7
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Resource WaveRewardTable và sheet wave_rewards: gold_mult(w), xp_mult(w), mithril_reward(w); nối công thức gold/XP/boss gold theo bảng (kill_gold = gold_reward x gold_mult x hệ số chỉ huy một lần; XP-01)
 - Nghiệm thu: Gold wave 3 trùng ví dụ HZ12; wave 31 trở đi dùng 1 + 0.04(w-1); mithril_reward wave 31+ lấy giá trị wave 30; enemy.gd phát kill_gold đã gồm hệ số chỉ huy (EVB-05) và WaveManager._on_enemy_died bỏ nhân frontline_gold_mult lần nữa, tránh nhân đôi
 - Tệp liên quan: mới: common/wave_reward_table.gd; systems/wave/wave_manager.gd (_on_enemy_died ~502, _end_combat_to_summary ~518), entities/enemy/enemy.gd:1277 (enemy_died.emit), systems/xp/xp_tracker.gd
