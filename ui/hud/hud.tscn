@@ -33,6 +33,8 @@
 [ext_resource type="PackedScene" uid="uid://uncn858pu5rm" path="res://ui/panels/weapon_panel.tscn" id="24_wpanel"]
 [ext_resource type="Script" uid="uid://dalxj2llscqp" path="res://ui/hud/parts/skill_dock.gd" id="25_dock"]
 [ext_resource type="Script" uid="uid://cbk5vw2hro2sa" path="res://ui/hud/parts/arrow_glyph.gd" id="26_arrow"]
+[ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="27_hgate"]
+[ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -341,6 +343,9 @@ grow_vertical = 0
 [node name="StartWaveButton" parent="Root/SafeArea/Frame/BottomCenter" unique_id=1260135002 instance=ExtResource("12_uyo40")]
 layout_mode = 2
 
+[node name="HazardHud" parent="Root/SafeArea/Frame/BottomCenter" unique_id=1739207201 instance=ExtResource("28_hhud")]
+layout_mode = 2
+
 [node name="BottomRight" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=1544337224]
 layout_mode = 1
 anchors_preset = 3
@@ -357,6 +362,9 @@ mouse_filter = 2
 [node name="ModeIndicator" parent="Root/SafeArea/Frame/BottomRight" unique_id=56844471 instance=ExtResource("14_sm7np")]
 layout_mode = 2
 size_flags_horizontal = 8
+
+[node name="HazardGate" parent="Root" unique_id=1739207202 instance=ExtResource("27_hgate")]
+layout_mode = 0
 
 [node name="BossIntro" parent="Root" unique_id=297996740 instance=ExtResource("20_bintro")]
 layout_mode = 1

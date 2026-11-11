@@ -19,6 +19,7 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.aura_changed.connect(_on_aura_changed)
+	EventBus.state_changed.connect(_on_state_changed)
 
 func _on_hp_changed(hp: int, max_hp: int) -> void:
 	_bar.max_value = max_hp
@@ -34,3 +35,7 @@ func _on_run_started() -> void:
 
 func _on_aura_changed(active: bool) -> void:
 	_aura.visible = active
+
+## In the Hazard Trial room the bar shows the room copy's HP, so the title says so.
+func _on_state_changed(new_state: StringName) -> void:
+	_title.text = tr(&"hud.commander_room") if new_state == &"HAZARD_TRIAL" else tr(&"hud.commander")
