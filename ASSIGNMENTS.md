@@ -399,8 +399,8 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: MỚI
 - Trạng thái: Xong
-- Việc: WeaponData và trạng thái vũ khí: Resource WeaponData (range_mult, effect_id, tham số), owned_weapons và equipped_weapon trong RunState (kiếm gốc mặc định), tín hiệu weapon_equipped, đổi vũ khí chỉ ở PREP
-- Nghiệm thu: Đầu run chỉ có kiếm gốc; trao thử vũ khí bằng debug thì equip được ở PREP, bị từ chối ở COMBAT và HAZARD_TRIAL
+- Việc: WeaponData và trạng thái vũ khí: Resource WeaponData (range_mult, effect_id, tham số), owned_weapons và equipped_weapon trong RunState (kiếm thường mặc định), tín hiệu weapon_equipped, đổi vũ khí chỉ ở PREP
+- Nghiệm thu: Đầu run chỉ có kiếm thường; trao thử vũ khí bằng debug thì equip được ở PREP, bị từ chối ở COMBAT và HAZARD_TRIAL
 - Tệp liên quan: mới: common/weapon_data.gd, data/weapons/; entities/commander/commander.gd; common/run_skill_state.gd (nơi lưu trạng thái run)
 - ID SRS: WPN-01, WPN-02, WPN-03, EVB-43
 - Cần xong trước: W8B-KT1
