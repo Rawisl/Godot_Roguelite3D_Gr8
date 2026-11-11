@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://uncn858pu5rm"]
+
+[ext_resource type="PackedScene" uid="uid://bgpfww5ejjq45" path="res://ui/panels/panel_base.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://ch0qhvtgdqsrk" path="res://ui/panels/weapon_panel.gd" id="2_panel"]
+[ext_resource type="PackedScene" uid="uid://cck044238mx3x" path="res://ui/panels/weapon_row.tscn" id="3_row"]
+[ext_resource type="Resource" uid="uid://0of5ymd8bg30" path="res://data/weapons/sword_base.tres" id="4_w0"]
+[ext_resource type="Resource" uid="uid://6a14w2y61wji" path="res://data/weapons/frost.tres" id="5_w1"]
+[ext_resource type="Resource" uid="uid://cl7fghhytp172" path="res://data/weapons/chain_lightning.tres" id="6_w2"]
+[ext_resource type="Resource" uid="uid://dpwu7wxbt0bn4" path="res://data/weapons/burn.tres" id="7_w3"]
+[ext_resource type="Resource" uid="uid://del5wv2jn63xl" path="res://data/weapons/rampage.tres" id="8_w4"]
+[ext_resource type="Resource" uid="uid://brd5ep2wjb484" path="res://data/weapons/swift.tres" id="9_w5"]
+[ext_resource type="Resource" uid="uid://dsl0yhckk2q4f" path="res://data/config/commander_stats.tres" id="10_stats"]
+
+[node name="WeaponPanel" unique_id=1739205001 instance=ExtResource("1_base")]
+script = ExtResource("2_panel")
+weapons = Array[Resource]([ExtResource("4_w0"), ExtResource("5_w1"), ExtResource("6_w2"), ExtResource("7_w3"), ExtResource("8_w4"), ExtResource("9_w5")])
+stats = ExtResource("10_stats")
+
+[node name="Hint" type="Label" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="1" unique_id=1739205002]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudHint"
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="Rows" type="GridContainer" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="2" unique_id=1739205003]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="Row1" parent="VBoxContainer/Rows" unique_id=1739205004 instance=ExtResource("3_row")]
+layout_mode = 2
+
+[node name="Row2" parent="VBoxContainer/Rows" unique_id=1739205005 instance=ExtResource("3_row")]
+layout_mode = 2
+
+[node name="Row3" parent="VBoxContainer/Rows" unique_id=1739205006 instance=ExtResource("3_row")]
+layout_mode = 2
+
+[node name="Row4" parent="VBoxContainer/Rows" unique_id=1739205007 instance=ExtResource("3_row")]
+layout_mode = 2
+
+[node name="Row5" parent="VBoxContainer/Rows" unique_id=1739205008 instance=ExtResource("3_row")]
+layout_mode = 2
+
+[node name="Row6" parent="VBoxContainer/Rows" unique_id=1739205009 instance=ExtResource("3_row")]
+layout_mode = 2
