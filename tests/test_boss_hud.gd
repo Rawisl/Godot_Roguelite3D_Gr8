@@ -104,16 +104,12 @@ func _run_checks() -> void:
 	var header_height := header.get_combined_minimum_size().y
 	EventBus.boss_timer_changed.emit(45.0)
 	_check(not icon.visible and not timer.has_theme_color_override(&"font_color"), "45 s: plain timer, no icon")
-	# TODO(WhoKeng): drop this skip once enrage_warn_time and enrage_countdown_time are in GameConfig on main.
-	if GameConfig.get(&"enrage_warn_time") == null:
-		print("  [SKIP] timer colours: GameConfig has no enrage_warn_time yet")
-	else:
-		EventBus.boss_timer_changed.emit(25.0)
-		_check(icon.visible and timer.get_theme_color(&"font_color") == bar.get(&"warn_color"), "25 s: warning colour and icon")
-		EventBus.boss_timer_changed.emit(8.0)
-		_check(timer.get_theme_color(&"font_color") == bar.get(&"danger_color")
-			and timer.get_theme_font_size(&"font_size") == bar.get(&"danger_font_size"), "8 s: red and larger")
-		_check(is_equal_approx(header.get_combined_minimum_size().y, header_height), "the larger timer does not grow the box")
+	EventBus.boss_timer_changed.emit(25.0)
+	_check(icon.visible and timer.get_theme_color(&"font_color") == bar.get(&"warn_color"), "25 s: warning colour and icon")
+	EventBus.boss_timer_changed.emit(8.0)
+	_check(timer.get_theme_color(&"font_color") == bar.get(&"danger_color")
+		and timer.get_theme_font_size(&"font_size") == bar.get(&"danger_font_size"), "8 s: red and larger")
+	_check(is_equal_approx(header.get_combined_minimum_size().y, header_height), "the larger timer does not grow the box")
 
 	EventBus.boss_phase_changed.emit(&"EXPOSED")
 	EventBus.boss_hp_changed.emit(0, 900, &"EXPOSED")
