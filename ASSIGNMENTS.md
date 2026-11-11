@@ -954,7 +954,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH4
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Toast cảnh báo tối thiểu ALR-13..15, ALR-17, ALR-18; thêm ALR-19 (nhận vũ khí) và ALR-20 (kết thúc Hazard Trial)
 - Nghiệm thu: Tối đa 1 banner và 3 toast
 - Cần xong trước: W9-MH4b
@@ -978,7 +978,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH7
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial: input hazard_enter (phím E, khác ngữ cảnh với heal_channel) và bấm chuột vào Tháp; HUD-22 (Rời phòng, số quái còn, gold/XP tạm tính, HP bản sao), HUD-23 (chỉ báo Tháp và tooltip loại quái), đóng panel và hộp thoại khi vào, toast kết quả
 - Nghiệm thu: HZ1, HZ7 đạt: Tháp xám kèm lý do ở Commander, Pause, đã dùng; bấm Rời phòng một lần không cần xác nhận; nút tua x1/x2/x3 hoạt động trong phòng; Pause trong phòng thì panel chỉ đọc (PNL-12); phím E không xung đột với hồi máu (E chỉ vào Tháp ở PREP)
 - Tệp liên quan: project.godot (InputMap hazard_enter), ui/hud/*, ui/panels/panel_host.gd, ui/hud/parts/speed_buttons.gd
