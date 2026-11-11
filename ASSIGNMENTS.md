@@ -927,7 +927,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH1
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: HUD skill bar 3+3 ô (HUD-16), thanh XP và lượt chờ (HUD-15), biểu tượng Aura (HUD-17), XP-05; thêm ô vũ khí (HUD-21) cạnh thanh kỹ năng
 - Nghiệm thu: Quạt cooldown có số; ô khóa ở Commander; ô vũ khí chỉ đọc ngoài PREP
 - ID SRS: HUD-15..17, HUD-21
@@ -998,7 +998,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH9
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Panel vũ khí PNL-15 và ô vũ khí HUD-21 hoàn chỉnh: danh sách owned_weapons, vũ khí chưa có hiện khóa 'Rơi từ boss', chọn là trang bị ngay (chỉ PREP)
 - Nghiệm thu: WP2 đạt: đổi tức thì ở PREP, chỉ đọc ở state khác
 - Tệp liên quan: mới: ui/panels/weapon_panel.*; ui/hud/parts/ (ô vũ khí)

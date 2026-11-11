@@ -1857,13 +1857,12 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 
 | **Vùng** | **Thành phần** |
 | --- | --- |
-| Trên trái | Thanh HP Fortress (lớn, có số), HP chỉ huy (nhỏ hơn) |
+| Trên trái | Thanh HP Fortress (lớn, có số), HP chỉ huy (nhỏ hơn), biểu tượng Aura cạnh HP chỉ huy (HUD-17), thanh XP ngay dưới HP chỉ huy (HUD-15) |
 | Trên giữa | Số wave (kèm "/ 30" trước khi thắng, nhãn "Endless" sau khi thắng), trạng thái, đồng hồ boss, bộ đếm quân |
 | Trên phải | Gold (kèm "+xx"), ô Mithril (HUD-20), cụm nút tua nhanh x1/x2/x3 (HUD-14), nút Pause |
-| Dưới trái | Thanh kỹ năng theo chế độ, biểu tượng chế độ kèm cooldown chuyển |
+| Dưới trái | Thanh kỹ năng theo chế độ: hai hàng ô skill (HUD-16) với ô vũ khí bên phải (HUD-21), dưới đó là ô Emergency repair (HUD-13); biểu tượng chế độ kèm cooldown chuyển |
 | Dưới giữa | Panel ngữ cảnh, nút Bắt đầu wave (HUD-19). Trong Hazard Trial: nút Rời phòng (HUD-22) |
 | Dưới phải | \[Should] Buff đang hoạt động và nút kích hoạt buff |
-| Dưới trái, trên thanh HP chỉ huy | Thanh XP và hai hàng ô skill (HUD-15, HUD-16), ô vũ khí (HUD-21), biểu tượng Aura (HUD-17) |
 | Giữa (tạm thời) | Banner cảnh báo và thông báo wave |
 
 Không có minimap.
@@ -1912,6 +1911,7 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 | HUD-21 \[MVP] | **Ô vũ khí** cạnh thanh kỹ năng: biểu tượng vũ khí đang trang bị và tên hiệu ứng, số vũ khí đã có trên 6 (kiếm gốc và 5 cây). Chuột trái vào ô ở PREP mở panel vũ khí (PNL-15). Ngoài PREP chỉ đọc kèm tooltip "Đổi vũ khí ở giai đoạn chuẩn bị". Chain Lightning hiện vòng cooldown kèm số giây (ACC-07) |
 | HUD-22 \[MVP] | **HUD trong Hazard Trial:** nút "Rời phòng" ở dưới giữa (bấm một lần, không cần xác nhận, HZT-07), số quái còn trên 5 (con chưa xử lý xong theo HZT-16, Captain chờ nổ và Undead chờ hồi sinh vẫn tính là còn), gold và XP tạm tính, phần thưởng Mithril nếu thắng, nhãn "Chỉ số trong phòng không mang ra ngoài". Thanh HP chỉ huy hiển thị HP của bản sao. Khi kết thúc: toast kết quả (Thắng, Đã rời, Gục ngã) kèm phần thưởng |
 | HUD-23 \[MVP] | **Tháp Hazard Trial** trên bản đồ ở PREP: biểu tượng trên cùng (như MSE-04), trạng thái "Sẵn sàng (E)", "Cần Frontline", "Đã dùng ở wave này" kèm biểu tượng; rê chuột hiện danh sách loại quái của nhóm (HZT-02) và phần thưởng Mithril. Ẩn ngoài PREP |
+| HUD-24 \[MVP] | **Nút mũi tên ẩn/hiện kỹ năng** ngay trên hai hàng ô skill, chỉ có mũi tên, không có chữ: mũi tên xuống khi đang hiện (bấm để ẩn), mũi tên lên khi đã ẩn (bấm để hiện); tooltip ghi "Ẩn kỹ năng" hoặc "Hiện kỹ năng" (UI-05). Nút ẩn hoặc hiện cả hai hàng ô skill (HUD-16) và ô vũ khí (HUD-21), ô Emergency repair vẫn hiện. Chỉ ẩn phần hiển thị: phím 1-3 vẫn dùng skill, cooldown vẫn chạy, hiện lại thì đúng số giây còn lại. Ẩn ô vũ khí thì panel vũ khí đang mở cũng đóng. Nút không nhận focus bàn phím (INP-04), không có phím tắt. Run mới luôn hiện lại. Cooldown vẫn luôn có số khi đang hiện (ACC-07); ẩn là lựa chọn của người chơi như F1 (HUD-12) |
 
 ### 4.1.4 Panel tương tác
 
@@ -2553,6 +2553,7 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-44 | run_victory(wave_index: int) | RunState. Phát một lần mỗi run, ở bước mở màn thắng của WAVE-13 (sau khi SummaryPanel đóng, END-07). Nghe: UI (mở SCR-20), Audio, Save |
 | EVB-45 | tutorial_completed() | UI/UX & Meta (tutorial). Phát khi ghi tutorial_done = true (TUT-08, TUT-15). Nghe: Save, SyncService |
 | EVB-46 | victory_continue_requested() | UI/UX & Meta (màn thắng SCR-20). Phát khi bấm "Chơi tiếp", một lần. Nghe: Enemy & Wave (bỏ lý do Pause VICTORY, đi tiếp WAVE-13: REWARD_PICK nếu pending_picks > 0, ngược lại PREP của wave victory_wave + 1) |
+| EVB-47 | xp_gained(amount: float, from_commander: bool) | XpTracker. Phát mỗi lần quân chết cho XP, ngay trước xp_changed; from_commander theo cờ hit_by_commander (XP-01). Nghe: UI (HUD-15, tách phần XP từ chỉ huy và từ tower) |
 
 ## 6.10 Bảng cân bằng Excel và công cụ dịch sang config \[MVP]
 
@@ -3118,6 +3119,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 83 | **v2.0, bảng cân bằng** (mục 1.4, 5.5, 6.1, 6.2, 6.6, 6.10, DAT-06, DAT-07, BAL-01 đến BAL-07, test BL1 đến BL4): số liệu cân bằng sinh từ `balance/balance.xlsx` bằng script Python và `openpyxl`, có runner kiểm config. Phụ lục E thêm danh sách mã bỏ; Phụ lục C thêm mục 38 đến 60 (quyết định tự đặt, sau đó đã duyệt 05/11) |
 | 84 | **05/11: sửa theo review nhất quán (7 mục)** (HZT-07, HZT-16, MTH-02, HUD-22, RWD-01, RWD-02, FRT-02, GLD-02, GLD-10, BRW-01, EVB-05, GRID-07, GRID-08, SLOT-05, BOSS-03, BOSS-40, END-07, WAVE-13, mục 3.3.1, 3.3.4, EVB-37, EVB-44, EVB-46, SCR-20, RUN-02, SPN-15, LBD-04, LBD-06, BAL-05, mục 6.3, Phụ lục B, trang đầu, mục 2.5, 7.3, test HZ9 đến HZ12, Fortress và tower 4 và 21, VC5, AC9, BL3): (1) kết thúc Hazard Trial khi quân tự nổ và cùng frame; (2) một công thức gold cho phòng, hệ số chỉ huy áp một lần; (3) giữ đường và vùng cấm xây quanh boss_melee_point; (4) thứ tự rời SUMMARY ở wave thắng; (5) định nghĩa run_elapsed và lịch sinh trải đủ spawn_duration để sàn máy chủ không từ chối điểm thật; (6) Phụ lục B và nhật ký dòng 80 đổi bố cục 6 hàng thành 9 hàng, hành lang 23.5 m; (7) trang đầu tách thiết kế đã duyệt với lịch và phân vai chờ chốt, 13 tuần khớp mục 7.3. Quyết định tự đặt ghi ở Phụ lục C mục 62 đến 66 |
 | 85 | **07/11: đồng bộ theo code UI tuần 9** (HUD-20, EVB-30): ô Mithril có nút "Sửa thành" mở panel Fortress (trước đây chỉ là dấu gợi ý); skill_slots_changed thêm tham số levels để thanh slot của màn REWARD_PICK đọc cấp skill thay vì tự nhớ |
+| 86 | **11/11: đồng bộ theo code UI tuần 10** (mục 4.1.3, HUD-15, HUD-16, HUD-17, HUD-21, HUD-24, EVB-47): thêm nút mũi tên ẩn/hiện kỹ năng (HUD-24) chỉ ẩn phần hiển thị, phím 1-3 vẫn dùng được; bỏ dòng vùng "Dưới trái, trên thanh HP chỉ huy" vì mâu thuẫn với HUD-15 (thanh HP chỉ huy nằm ở trên trái); thanh XP và biểu tượng Aura đặt ở trên trái cạnh HP chỉ huy, hai hàng ô skill và ô vũ khí ở dưới trái trên ô Emergency repair; thêm xp_gained để thanh XP tô riêng phần XP từ chỉ huy và từ tower |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 
