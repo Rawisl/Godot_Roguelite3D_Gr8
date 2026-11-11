@@ -81,7 +81,6 @@ func _show() -> void:
 
 func _on_level_up(new_level: int, _pending_picks: int) -> void:
 	_flash_glow()
-	# TODO(WhoKeng): the toast shows once AlertLayer handles alert_requested.
 	EventBus.alert_requested.emit(int(Enums.AlertTier.T3), &"alert.level_up", {"level": new_level})
 
 func _flash_glow() -> void:
