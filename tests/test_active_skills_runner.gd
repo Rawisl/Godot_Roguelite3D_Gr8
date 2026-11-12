@@ -120,13 +120,19 @@ func test_whirlwind() -> void:
 	var commander := _new_commander()
 	var inside := _new_enemy(GRUNT, Vector3(2.5, 0, 0))
 	var outside := _new_enemy(GRUNT, Vector3(3.5, 0, 0))
+	var boss := _new_enemy(BULWARK, Vector3(0, 0, 2.5)) as Bulwark
 	EventBus.reward_picked.emit(&"whirlwind", &"ACTIVE", 1)
 	var before := inside.health.hp
+	var armor_before := boss.current_armor_hp
+	assert_true(not boss.hit_by_commander, "Bulwark has no commander hit before Whirlwind")
 	commander.skill_runner.activate(0)
 	assert_true(before - inside.health.hp == 15, "enemy at 2.5 m takes 15")
 	assert_true(outside.health.hp == outside.health.max_hp, "enemy at 3.5 m is untouched")
+	assert_true(armor_before - boss.current_armor_hp == 9, "armored Bulwark takes 60% from Whirlwind")
+	assert_true(boss.hit_by_commander, "Whirlwind counts as a commander hit on Bulwark")
 	inside.free()
 	outside.free()
+	boss.free()
 	commander.free()
 	await get_tree().process_frame
 
@@ -237,13 +243,17 @@ func test_sword_wave_levels_and_bulwark() -> void:
 		assert_true(hit_19 == (level == 3), "level %d: enemy 1.9 m aside is %s" % [level, "hit" if level == 3 else "outside"])
 	edge_15.free()
 	edge_19.free()
-	var boss := _new_enemy(BULWARK, Vector3(2.0, 0, 0))
+	var boss := _new_enemy(BULWARK, Vector3(2.0, 0, 0)) as Bulwark
 	boss.current_phase = Enums.BossPhase.ARMORED
 	EventBus.reward_picked.emit(&"sword_wave", &"ACTIVE", 1)
 	runner.tick(10.0)
-	var boss_start := boss.health.hp
+	var armor_before := boss.current_armor_hp
+	var core_before := boss.current_core_hp
+	assert_true(not boss.hit_by_commander, "Bulwark has no commander hit before Sword Wave")
 	runner.activate(0)
-	assert_true(boss_start - boss.health.hp == 11, "18 x 0.6 = 10.8 rounds to 11 on the armored Bulwark")
+	assert_true(armor_before - boss.current_armor_hp == 11, "18 x 0.6 = 10.8 rounds to 11 armor damage on Bulwark")
+	assert_true(boss.current_core_hp == core_before, "Sword Wave leaves the core intact while armor remains")
+	assert_true(boss.hit_by_commander, "Sword Wave counts as a commander hit on Bulwark")
 	boss.free()
 	commander.free()
 	await get_tree().process_frame
@@ -324,15 +334,31 @@ func test_firebomb() -> void:
 
 	print("[GROUP 5c] Bulwark phase 1 takes 100%")
 	await get_tree().process_frame
-	var boss := _new_enemy(BULWARK, Vector3(5, 0, 1))
-	boss.current_phase = Enums.BossPhase.ARMORED
+	var boss := _new_enemy(BULWARK, Vector3(5, 0, 1)) as Bulwark
+	var immune_boss := _new_enemy(BULWARK, Vector3(5, 0, -1)) as Bulwark
+	var immune_data := immune_boss.data.duplicate(true) as BossData
+	immune_data.resist_table_phase1[Enums.DamageType.BLAST] = 0.0
+	immune_boss.data = immune_data
+	var immune_events: Array[Node3D] = []
+	var on_immune := func(target: Node3D, _info: DamageInfo) -> void: immune_events.append(target)
+	EventBus.damage_immune.connect(on_immune)
 	runner.tick(10.0)
-	var boss_start := boss.health.hp
+	var armor_before := boss.current_armor_hp
+	var core_before := boss.current_core_hp
+	var immune_hp_before := immune_boss.health.hp
+	assert_true(not boss.hit_by_commander, "Bulwark has no commander hit before Firebomb")
 	runner.activate(0)
 	zone = _zones()[0]
 	zone.tick(1.0)
-	assert_true(boss_start - boss.health.hp == 6, "armored Bulwark takes the full 6 per tick")
-	for node in [grunt, outside, boss, commander]:
+	EventBus.damage_immune.disconnect(on_immune)
+	assert_true(armor_before - boss.current_armor_hp == 6, "armored Bulwark takes the full 6 per tick")
+	assert_true(boss.current_core_hp == core_before, "Firebomb leaves the core intact while armor remains")
+	assert_true(boss.hit_by_commander, "Firebomb tick counts as a commander hit on Bulwark")
+	assert_true(immune_boss.health.hp == immune_hp_before, "a BLAST-immune boss takes no Firebomb damage")
+	assert_true(not immune_boss.hit_by_commander, "an immune Firebomb tick gives no commander credit")
+	assert_true(immune_events == [immune_boss], "only the immune boss emits damage_immune")
+	zone.free()
+	for node in [grunt, outside, boss, immune_boss, commander]:
 		node.free()
 	await get_tree().process_frame
 

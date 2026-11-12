@@ -241,6 +241,123 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="card_disabled"]
+bg_color = Color(0.7059, 0.6784, 0.6392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxEmpty" id="card_focus"]
+
+[sub_resource type="StyleBoxFlat" id="card_hover"]
+bg_color = Color(1, 0.9176, 0.8353, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="card_normal"]
+bg_color = Color(0.9451, 0.8706, 0.7647, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 6
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="card_picked"]
+bg_color = Color(1, 0.9176, 0.8353, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.9098, 0.7608, 0.3529, 0.85)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="card_pressed"]
+bg_color = Color(0.8863, 0.7882, 0.651, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 3
+shadow_offset = Vector2(0, 1)
+
+[sub_resource type="StyleBoxFlat" id="card_frame_active"]
+draw_center = false
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(1, 0.78431374, 0.23921569, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="card_frame_passive"]
+draw_center = false
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.47843137, 0.30980393, 0.627451, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="card_frame_stat"]
+draw_center = false
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.1843, 0.4353, 0.6588, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="card_band_active"]
+content_margin_left = 14.0
+content_margin_top = 4.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(1, 0.78431374, 0.23921569, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="card_band_passive"]
+content_margin_left = 14.0
+content_margin_top = 4.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(0.47843137, 0.30980393, 0.627451, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="card_band_stat"]
+content_margin_left = 14.0
+content_margin_top = 4.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1843, 0.4353, 0.6588, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="StyleBoxFlat" id="speed_on"]
 content_margin_left = 16.0
 content_margin_top = 8.0
@@ -386,6 +503,40 @@ PanelContainer/styles/panel = SubResource("panel_container")
 ProgressBar/colors/font_color = Color(0.949, 0.9373, 0.902, 1)
 ProgressBar/styles/background = SubResource("bar_bg")
 ProgressBar/styles/fill = SubResource("bar_fill_ally")
+RewardCard/base_type = &"Button"
+RewardCard/styles/disabled = SubResource("card_disabled")
+RewardCard/styles/focus = SubResource("card_focus")
+RewardCard/styles/hover = SubResource("card_hover")
+RewardCard/styles/normal = SubResource("card_normal")
+RewardCard/styles/picked = SubResource("card_picked")
+RewardCard/styles/pressed = SubResource("card_pressed")
+RewardCardLevel/base_type = &"Label"
+RewardCardLevel/colors/font_color = Color(0.1098, 0.1216, 0.149, 1)
+RewardCardLevel/font_sizes/font_size = 24
+RewardCardText/base_type = &"Label"
+RewardCardText/colors/font_color = Color(0.1098, 0.1216, 0.149, 1)
+RewardCardText/font_sizes/font_size = 22
+RewardCardTitle/base_type = &"Label"
+RewardCardTitle/colors/font_color = Color(0.1098, 0.1216, 0.149, 1)
+RewardCardTitle/font_sizes/font_size = 32
+RewardFrameActive/base_type = &"Panel"
+RewardFrameActive/styles/panel = SubResource("card_frame_active")
+RewardFramePassive/base_type = &"Panel"
+RewardFramePassive/styles/panel = SubResource("card_frame_passive")
+RewardFrameStat/base_type = &"Panel"
+RewardFrameStat/styles/panel = SubResource("card_frame_stat")
+RewardKindActive/base_type = &"PanelContainer"
+RewardKindActive/styles/panel = SubResource("card_band_active")
+RewardKindLabel/base_type = &"Label"
+RewardKindLabel/colors/font_color = Color(0.1098, 0.1216, 0.149, 1)
+RewardKindLabel/font_sizes/font_size = 20
+RewardKindLabelLight/base_type = &"Label"
+RewardKindLabelLight/colors/font_color = Color(0.949, 0.9373, 0.902, 1)
+RewardKindLabelLight/font_sizes/font_size = 20
+RewardKindPassive/base_type = &"PanelContainer"
+RewardKindPassive/styles/panel = SubResource("card_band_passive")
+RewardKindStat/base_type = &"PanelContainer"
+RewardKindStat/styles/panel = SubResource("card_band_stat")
 SafeArea/base_type = &"MarginContainer"
 SafeArea/constants/margin_bottom = 32
 SafeArea/constants/margin_left = 58
