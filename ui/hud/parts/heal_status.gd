@@ -32,7 +32,6 @@ func _ready() -> void:
 	# Sent by the heal channel; connected by name until that signal is on main.
 	if EventBus.has_signal(&"heal_state_changed"):
 		EventBus.connect(&"heal_state_changed", show_heal_state)
-	# TODO: call set_stations from heal_tower_hp_changed once the heal tower sends it.
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.commander_hp_changed.connect(_on_commander_hp_changed)
@@ -90,7 +89,7 @@ func _flash(key: StringName) -> void:
 func _is_flashing(key: StringName) -> bool:
 	return _flash_key == key and TimeManager.real_time < _flash_until
 
-# TODO: show seconds left and the heal rate once the heal channel sends them.
+# TODO(Rawisl): show the seconds left and the heal rate once heal_state_changed sends them.
 func _refresh() -> void:
 	_hold_bar.visible = _state == HOLD
 	_hold_bar.value = _progress

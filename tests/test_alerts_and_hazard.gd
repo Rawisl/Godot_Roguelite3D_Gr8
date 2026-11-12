@@ -171,6 +171,7 @@ func _run_checks() -> void:
 	EventBus.mode_changed.emit(&"FRONTLINE")
 	EventBus.pause_changed.emit(true)
 	_check(gate.lock_reason() == &"hud.hazard.paused", "Pause: grey with the reason")
+	_check(not gate.try_enter(), "Pause: a locked marker sends nothing, so E is not used up")
 	EventBus.pause_changed.emit(false)
 
 	# Entering and the room HUD.
