@@ -15,12 +15,14 @@ var _locked := false
 @onready var _title: Label = %Title
 @onready var _options: VBoxContainer = %Options
 @onready var _close: Button = %CloseButton
+@onready var _clear: PanelButton = %ClearRubble
 
 func _ready() -> void:
 	_title.text = tr(&"panel.build.title")
 	_close.text = tr(&"panel.close")
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
+	_clear.pressed.connect(_on_clear_pressed)
 	EventBus.gold_changed.connect(_on_gold_changed)
 	_options.add_theme_constant_override(&"separation", 10)
 
@@ -33,6 +35,7 @@ func refresh() -> void:
 	preview_cleared.emit()
 	for child in _options.get_children():
 		child.queue_free()
+	_clear.visible = false
 	var service := _service()
 	if service == null or slot_id == &"":
 		return
@@ -45,6 +48,23 @@ func refresh() -> void:
 			fresh.append(opt)
 	_add_section(&"panel.build.section_new", fresh)
 	_add_section(&"panel.build.section_rebuild", rebuild)
+	# Clearing the rubble of a destroyed tower is free and sits at the end of the menu.
+	_clear.visible = _is_ruined(service)
+	if _clear.visible:
+		_clear.set_lines(tr(&"panel.build.clear_rubble"))
+
+func _is_ruined(service: BuildService) -> bool:
+	var slot := service.find_slot(slot_id)
+	return slot != null and slot.state == Enums.SlotState.RUINED
+
+func _on_clear_pressed() -> void:
+	if _locked:
+		return
+	_lock()
+	var service := _service()
+	if service != null:
+		service.clear_rubble(slot_id)
+	refresh()
 
 func _add_section(heading_key: StringName, options: Array[Dictionary]) -> void:
 	if options.is_empty():
