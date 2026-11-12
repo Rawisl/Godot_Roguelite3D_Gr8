@@ -8,6 +8,6 @@ extends Resource
 func entries_for(card_id: StringName) -> Array[StatCardEntry]:
 	var result: Array[StatCardEntry] = []
 	for entry in entries:
-		if entry != null and entry.card_id == card_id:
+		if entry != null and entry.card != null and entry.card.id == card_id:
 			result.append(entry)
 	return result

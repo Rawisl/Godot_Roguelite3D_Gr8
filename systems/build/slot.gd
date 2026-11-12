@@ -1,6 +1,7 @@
 class_name Slot
 extends Node3D
 ## A fixed build position on the map
+# TODO(kiezroth): when RunState fills ruined_type and ruined_level per slot, erase this slot's entries in clear_rubble
 
 signal state_changed(slot: Slot, new_state: Enums.SlotState)
 
@@ -63,6 +64,9 @@ func place_tower(t: Tower) -> void:
 	# Melee units skip WALL towers and the tower refuses melee slots.
 	if zone == Enums.SlotZone.WALL:
 		t.add_to_group(&"tower_wall")
+	else:
+		# The body of a ground tower is a navigation bake source so units walk around it.
+		t.add_to_group(NavRebaker.SOURCE_GROUP)
 	anchor.add_child(t)
 	t.transform = Transform3D.IDENTITY
 	tower = t
@@ -74,7 +78,6 @@ func clear_tower() -> void:
 	set_state(Enums.SlotState.EMPTY)
 
 ## Removes the rubble and forgets the lost tower; only from RUINED. Free of charge.
-# TODO(week 10): mirror the cleared slot in RunState (RunState).
 func clear_rubble() -> bool:
 	if state != Enums.SlotState.RUINED:
 		return false
@@ -168,3 +171,14 @@ func _apply_state_visuals() -> void:
 	# Deferred: the state can change inside a physics callback (tower killed by a hit)
 	rubble_shape.set_deferred(&"disabled", not ruined)
 	rubble_obstacle.avoidance_enabled = ruined
+	_update_rubble_nav_source(ruined)
+
+
+## Rubble on a ground slot is a navigation bake source like the tower it replaced; the slot
+## ring and the click collider never are.
+func _update_rubble_nav_source(ruined: bool) -> void:
+	if ruined and is_ground():
+		rubble.add_to_group(NavRebaker.SOURCE_GROUP)
+		return
+	if rubble.is_in_group(NavRebaker.SOURCE_GROUP):
+		rubble.remove_from_group(NavRebaker.SOURCE_GROUP)

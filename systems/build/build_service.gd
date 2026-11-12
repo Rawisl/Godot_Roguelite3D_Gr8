@@ -2,12 +2,14 @@ class_name BuildService
 extends Node
 ## Build, upgrade, sell, rubble clearing and Fortress repair (paid in Mithril) for the panels. Each call checks the wave state, the slot and
 ## the gold or Mithril in the same frame and either finishes or changes nothing. Calls are
-## synchronous, so one press can never spend gold twice.
+## synchronous, so one press can never spend gold twice. A ground build that would seal the
+## lane is refused before any gold is spent.
 # TODO(kiezroth): when tower data for levels 1 to 36 lands, give all four tower types those levels
 
 ## Lock key for Fortress repairs in _busy; slot ids never take this value.
 const FORTRESS_LOCK := &"FORTRESS"
 const HEAL_LIMIT := &"HEAL_LIMIT"
+const BLOCKS_PATH := &"BLOCKS_PATH"
 
 @export var towers: Array[TowerData] = []
 @export var tower_scenes: Dictionary[StringName, PackedScene] = {}
@@ -66,6 +68,7 @@ func get_build_options(slot_id: StringName) -> Array[Dictionary]:
 	if slot == null or gold == null or not slot.is_free():
 		return result
 	var locked_reason: StringName = &"GROUND_FULL" if _ground_blocks(slot) else &""
+	var path_sealed := locked_reason == &"" and _seals_path(slot)
 	if slot.state == Enums.SlotState.RUINED and slot.last_data != null:
 		var rebuild_cost := slot.get_rebuild_cost()
 		result.append({"data": slot.last_data, "level": slot.last_level,
@@ -74,9 +77,7 @@ func get_build_options(slot_id: StringName) -> Array[Dictionary]:
 	for data in towers:
 		if not slot.allows(data):
 			continue
-		var reason := locked_reason
-		if reason == &"" and _heal_limit_blocks(slot, data):
-			reason = HEAL_LIMIT
+		var reason := _option_lock_reason(slot, data, locked_reason, path_sealed)
 		var cost := data.get_total_cost(1)
 		result.append({"data": data, "level": 1,
 			"cost": cost, "shortfall": gold.shortfall(cost), "rebuild": false,
@@ -109,6 +110,9 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	# A level above 1 is only a rebuild of the tower that stood here, at the level it had.
 	var is_rebuild := level > 1
 	if is_rebuild and not (slot.can_rebuild(data) and level == slot.last_level):
+		return false
+	if would_block_path(slot, data):
+		EventBus.build_denied.emit(BLOCKS_PATH, 0)
 		return false
 	var cost := slot.get_rebuild_cost() if is_rebuild else data.get_total_cost(1)
 	if not gold.try_spend(cost):
@@ -174,6 +178,73 @@ func get_heal_station_count(except_slot: StringName = &"") -> int:
 ## never adds one; building another type on a station's rubble frees that place.
 func _heal_limit_blocks(slot: Slot, data: TowerData) -> bool:
 	return is_heal_station(data) and get_heal_station_count(slot.slot_id) >= GameConfig.heal_tower_max_count
+
+## Why the menu greys out data on slot, or &"". ground_reason and path_sealed are worked out
+## once per slot by get_build_options.
+func _option_lock_reason(slot: Slot, data: TowerData, ground_reason: StringName, path_sealed: bool) -> StringName:
+	if ground_reason != &"":
+		return ground_reason
+	if _heal_limit_blocks(slot, data):
+		return HEAL_LIMIT
+	if path_sealed and not slot.can_rebuild(data):
+		return BLOCKS_PATH
+	return &""
+
+## True when building data on slot would leave the boss-sized lane no way from spawn to the
+## Fortress gate or to the Bulwark's standing point. Wall slots never block. Building the same
+## type on its own rubble leaves the obstacles unchanged, so it is not checked.
+func would_block_path(slot: Slot, data: TowerData) -> bool:
+	if slot == null or not slot.is_ground():
+		return false
+	if slot.can_rebuild(data):
+		return false
+	return _seals_path(slot)
+
+## The path check for any new building on slot. False (no check) when the slot is not a cell
+## of a GroundGrid or the level lacks spawn_zone or lane.
+func _seals_path(slot: Slot) -> bool:
+	if not slot.is_ground():
+		return false
+	var grid := slot.get_parent() as GroundGrid
+	if grid == null or grid.grid_data == null:
+		return false
+	var cell := GridData.cell_of(slot.slot_id)
+	if cell.x < 0:
+		return false
+	if grid.spawn_zone == null:
+		push_warning("BuildService: %s has no spawn_zone, the path check is skipped" % grid.name)
+		return false
+	if not _has_lane_end(grid):
+		push_warning("BuildService: %s has no lane, the path check is skipped" % grid.name)
+		return false
+	var min_width := GameConfig.path_check_min_width
+	var gate := _lane_end(grid)
+	var goals: Array[Vector3] = [grid.grid_data.gate_goal(gate, min_width), grid.get_boss_point()]
+	var obstacles := _ground_obstacles(grid)
+	obstacles.append(cell)
+	return not grid.grid_data.is_path_open(obstacles, grid.spawn_zone.global_position, gate, goals, min_width)
+
+## Cells of grid holding a tower or rubble.
+func _ground_obstacles(grid: GroundGrid) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for node in grid.cells.values():
+		var s := node as Slot
+		if s == null or not is_instance_valid(s):
+			continue
+		if not s.uses_ground_space():
+			continue
+		var cell := GridData.cell_of(s.slot_id)
+		if cell.x < 0:
+			continue
+		out.append(cell)
+	return out
+
+func _has_lane_end(grid: GroundGrid) -> bool:
+	return grid.lane != null and grid.lane.curve != null and grid.lane.curve.point_count > 0
+
+## The gate end of the lane, as GroundGrid uses for the boss point fallback.
+func _lane_end(grid: GroundGrid) -> Vector3:
+	return grid.lane.global_transform * grid.lane.curve.get_point_position(grid.lane.curve.point_count - 1)
 
 ## Everything the Tower panel shows. Empty when the slot holds no tower.
 func get_tower_info(slot_id: StringName) -> Dictionary:
