@@ -137,12 +137,13 @@ func _on_mode_changed(mode: StringName) -> void:
 	if service != null and not service.is_prep() and mode != &"COMMANDER" and _any_open():
 		close_all()
 
-func _on_preview_requested(slot_id: StringName, radius: float) -> void:
+func _on_preview_requested(slot_id: StringName, type: StringName, radius: float, blocked: bool) -> void:
 	var service := _service()
 	if service == null or radius <= 0.0:
 		_ring.hide_ring()
 		return
-	_ring.show_at(service.get_slot_position(slot_id), radius)
+	var tower_scene := service.tower_scenes.get(type) as PackedScene
+	_ring.show_at(service.get_slot_position(slot_id), radius, blocked, tower_scene)
 
 func _service() -> BuildService:
 	return get_tree().get_first_node_in_group(&"build_service") as BuildService

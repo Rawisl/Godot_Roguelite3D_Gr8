@@ -2,11 +2,12 @@ class_name BuildPanel
 extends PanelContainer
 
 signal closed
-signal preview_requested(slot_id: StringName, radius: float)
+signal preview_requested(slot_id: StringName, type: StringName, radius: float, blocked: bool)
 signal preview_cleared
 
 const BUTTON_LOCK_TIME := 0.15
 const SECTION_FONT_SIZE := 24
+const BLOCKS_PATH := &"BLOCKS_PATH"
 
 var slot_id: StringName = &""
 var _locked := false
@@ -58,23 +59,43 @@ func _add_section(heading_key: StringName, options: Array[Dictionary]) -> void:
 	for opt in options:
 		_options.add_child(_make_button(opt))
 
+## A greyed entry shows why it cannot be built in its second line, in place of the missing gold.
 func _make_button(opt: Dictionary) -> Button:
 	var data: TowerData = opt.data
 	var lv: TowerLevelData = data.levels[opt.level - 1]
 	var key := &"panel.build.rebuild" if opt.rebuild else &"panel.build.item"
+	var reason: StringName = opt.locked_reason
 	var short: bool = opt.shortfall > 0
 	var b := PanelButton.new()
-	b.disabled = short
+	b.disabled = short or reason != &""
+	var warning := ""
+	if reason != &"":
+		warning = _reason_text(reason)
+	elif short:
+		warning = UiFormat.tr_fmt(&"panel.need_gold", {"gold": opt.shortfall})
 	b.set_lines(
 		UiFormat.tr_fmt(key, {"name": tr(data.display_name), "level": opt.level, "gold": opt.cost}),
-		UiFormat.tr_fmt(&"panel.need_gold", {"gold": opt.shortfall}) if short else "")
-	b.tooltip_text = UiFormat.tr_fmt(&"panel.stats", {
+		warning)
+	b.tooltip_text = _reason_text(reason) if reason == BLOCKS_PATH else UiFormat.tr_fmt(&"panel.stats", {
 		"damage": lv.damage, "range": UiFormat.decimal(lv.attack_range),
 		"rate": UiFormat.decimal(lv.fire_rate), "hp": lv.max_hp})
 	b.pressed.connect(_on_build_pressed.bind(data.id, opt.level))
-	b.mouse_entered.connect(func(): preview_requested.emit(slot_id, lv.attack_range))
+	b.mouse_entered.connect(func(): preview_requested.emit(slot_id, data.id, lv.attack_range, reason == BLOCKS_PATH))
 	b.mouse_exited.connect(preview_cleared.emit)
 	return b
+
+## Text for each reason from BuildService.get_build_options(). Unknown reasons give no text.
+func _reason_text(reason: StringName) -> String:
+	match reason:
+		&"GROUND_FULL":
+			return UiFormat.tr_fmt(&"panel.build.ground_full", {"max": GameConfig.max_ground_buildings})
+		&"HEAL_LIMIT":
+			return UiFormat.tr_fmt(&"panel.build.heal_limit", {"max": GameConfig.heal_tower_max_count})
+		# TODO(kiezroth): BuildService does not return BLOCKS_PATH in locked_reason yet (path-blocking PR #169).
+		# The checks in tests/test_build_and_tower_panels.tscn feed it in until that lands.
+		&"BLOCKS_PATH":
+			return tr(&"panel.build.blocks_path")
+	return ""
 
 func _on_build_pressed(type: StringName, level: int) -> void:
 	if _locked:
