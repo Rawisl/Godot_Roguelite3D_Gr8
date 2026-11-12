@@ -93,18 +93,28 @@ func _show_table(entries: Array, own: Dictionary) -> void:
 	_status.text = tr(&"lbd.empty")
 	_retry.visible = false
 	_table.visible = not entries.is_empty()
-	var own_rank := int(own.get("rank", 0))
+	var own_shown := false
 	var rows := _rows.get_children()
 	for i in rows.size():
 		var row := rows[i] as LeaderboardRow
 		row.visible = i < entries.size()
 		if row.visible:
 			var entry: Dictionary = entries[i]
-			row.show_entry(entry, own_rank > 0 and int(entry.get("rank", 0)) == own_rank)
-	# Inside the top the player's line is highlighted in the table; outside it gets its own line.
-	_own_box.visible = own_rank > entries.size()
+			var is_own := not own_shown and _is_own(entry, own)
+			own_shown = own_shown or is_own
+			row.show_entry(entry, is_own)
+	# The player's line is highlighted once if it is one of the rows shown, otherwise it gets its own line.
+	_own_box.visible = int(own.get("rank", 0)) > 0 and not own_shown
 	if _own_box.visible:
 		_own_row.show_entry(own, true)
+
+## Same rank and, when both have one, the same name, so a tie on rank does not mark another player.
+func _is_own(entry: Dictionary, own: Dictionary) -> bool:
+	var rank := int(own.get("rank", 0))
+	if rank <= 0 or int(entry.get("rank", 0)) != rank:
+		return false
+	var own_name := str(own.get("display_name", ""))
+	return own_name == "" or str(entry.get("display_name", "")) == own_name
 
 func _open_login() -> void:
 	var login := LOGIN_SCENE.instantiate()

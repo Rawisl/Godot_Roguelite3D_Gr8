@@ -38,7 +38,8 @@ func fetch_leaderboard(top_n: int) -> Dictionary:
 		rows.append({"rank": i + 1, "display_name": "Player%02d" % (i + 1), "waves_cleared": 40 - i / 2, "run_elapsed": 900.0 + i * 37.0})
 	var own_rank := 72 if board_mode == "outside" else 3
 	var own := {"rank": own_rank, "display_name": "TestPlayer", "waves_cleared": 12, "run_elapsed": 431.0}
-	if own_rank <= rows.size():
+	# "tie": the player shares rank 3 with another player who is the one in the rows.
+	if own_rank <= rows.size() and board_mode != "tie":
 		rows[own_rank - 1] = own
 	return {"ok": true, "rows": rows, "own": own}
 

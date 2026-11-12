@@ -69,6 +69,10 @@ func _run_checks() -> void:
 	await _wait_board()
 	_check(not (_board.get_node("%OwnBox") as Control).visible, "inside the top: no extra line")
 	_check(((board_rows[2] as Control).get_node("%YouTag") as Control).visible, "inside the top: the player's line is tagged")
+	_fake.board_mode = "tie"
+	await _wait_board()
+	_check((_board.get_node("%OwnBox") as Control).visible, "same rank as another player: the own line still shows below")
+	_check(not ((board_rows[2] as Control).get_node("%YouTag") as Control).visible, "same rank as another player: that row is not tagged")
 	_fake.board_mode = "error"
 	await _wait_board()
 	_check((_board.get_node("%Retry") as Control).visible and (_board.get_node("%Status") as Label).text == tr(&"lbd.error"), "a network error shows the message and Retry")
