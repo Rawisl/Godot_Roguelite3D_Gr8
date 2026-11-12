@@ -5,10 +5,11 @@ extends Control
 ## 3: the ground-full and heal-limit entries. 4: Tower panel at level 13 with the tier 2 gate closed.
 ## 5: Tower panel at level 13 with the gate open. 6: starter tower that cannot be sold yet.
 ## 7: Heal station at level 5. 8: Heal station at MAX. 9: hover the first entry (ghost and ring show).
-## 0: move off it (both go away).
+## 0: move off it (both go away). R: a ruined slot, with "Dọn đổ nát" at the end of the menu.
 
 const ARROW := preload("res://data/towers/arrow.tres")
 const HEAL := preload("res://data/towers/heal_station.tres")
+const BARRICADE := preload("res://data/towers/barricade.tres")
 const GHOST_POS := Vector3(4, 0, -2)
 
 var _passed := 0
@@ -23,6 +24,7 @@ var _failed := 0
 func _ready() -> void:
 	# Stands in for PanelHost: the build preview draws the ring and the ghost of the tower type.
 	_fake.tower_scenes[&"arrow"] = preload("res://entities/tower/arrow.tscn")
+	_fake.tower_scenes[&"barricade"] = preload("res://entities/tower/barricade.tscn")
 	_build.preview_requested.connect(_on_preview)
 	_build.preview_cleared.connect(_ring.hide_ring)
 	%Camera.look_at(GHOST_POS)
@@ -56,6 +58,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_buttons(_build)[0].mouse_entered.emit()
 		KEY_0:
 			_buttons(_build)[0].mouse_exited.emit()
+		KEY_R:
+			_show_ruined()
 
 func _on_preview(_slot_id: StringName, type: StringName, radius: float, blocked: bool) -> void:
 	_ring.show_at(GHOST_POS, radius, blocked, _fake.tower_scenes.get(type) as PackedScene)
@@ -63,9 +67,11 @@ func _on_preview(_slot_id: StringName, type: StringName, radius: float, blocked:
 func _run_checks() -> void:
 	await _check_build_entries()
 	await _check_blocked_preview()
+	await _check_ghost_without_range()
+	await _check_clear_rubble()
 	_check_tower_locked_upgrade()
 	_check_tower_tier_and_sell_lock()
-	_check_heal_upgrade()
+	await _check_heal_upgrade()
 
 ## Build panel: a locked entry is greyed and says why, a free one stays live.
 const GHOST_BLOCKED := Color("#FF2D2D", 0.45)
@@ -111,6 +117,26 @@ func _check_blocked_preview() -> void:
 	_expect(_ring.visible and _ghost_color() == GHOST_FREE, "preview: allowed build shows a white ghost")
 	_buttons(_build)[0].mouse_exited.emit()
 
+## Barricade has no attack range: the ring stays hidden, the ghost still shows and turns red when blocked.
+func _check_ghost_without_range() -> void:
+	await _show_build([_option(&"BLOCKS_PATH", 0, 0, BARRICADE)])
+	var b := _buttons(_build)[0]
+	b.mouse_entered.emit()
+	_expect(not _ring.visible and _ghost_color() == GHOST_BLOCKED, "preview: a tower with no range still shows its red ghost")
+	b.mouse_exited.emit()
+	_expect(_ring._ghost == null, "preview: leaving removes the ghost of a tower with no range")
+
+## A ruined slot offers "Dọn đổ nát" at the end; pressing it clears the slot and the button goes away.
+func _check_clear_rubble() -> void:
+	await _show_build(_normal_options())
+	_expect(not _build._clear.visible, "rubble: no clear button on an empty slot")
+	await _show_ruined()
+	_expect(_build._clear.visible and _texts(_build._clear).has(tr(&"panel.build.clear_rubble")), "rubble: ruined slot shows the clear button")
+	_build._clear.pressed.emit()
+	await get_tree().process_frame
+	_expect(_fake.cleared == 1 and not _build._clear.visible, "rubble: pressing clears the slot once and hides the button")
+	await get_tree().create_timer(BuildPanel.BUTTON_LOCK_TIME + 0.05).timeout
+
 ## Tower panel: upgrade to tier 2 is grey until the Commander reaches the gate level.
 func _check_tower_locked_upgrade() -> void:
 	_show_tower(13, true, false)
@@ -135,6 +161,18 @@ func _check_tower_tier_and_sell_lock() -> void:
 func _check_heal_upgrade() -> void:
 	_show_heal(5, false)
 	_expect(not _heal._upgrade.disabled and _heal._upgrade.visible, "heal: upgrade live in PREP")
+	_expect(_heal._upgrade.tooltip_text == tr(&"panel.heal.upgrade_tip"), "heal: upgrade tooltip says only the gained store is added")
+	await get_tree().process_frame
+	var one_line := _heal._upgrade.custom_minimum_size.y
+	_show_heal(5, false, true, true)
+	await get_tree().process_frame
+	_expect(is_equal_approx(_heal._upgrade.custom_minimum_size.y, one_line), "heal: the missing gold line does not change the button height")
+	_show_tower(5, false, false)
+	await get_tree().process_frame
+	var tower_one := _tower._upgrade.custom_minimum_size.y
+	_show_tower(5, false, true)
+	await get_tree().process_frame
+	_expect(is_equal_approx(_tower._upgrade.custom_minimum_size.y, tower_one), "tower: the missing gold line does not change the button height")
 	_expect(_heal._level_row._value.text == UiFormat.tr_fmt(&"panel.heal.level_value",
 		{"level": 5, "max": GameConfig.tower_max_level, "tier": 1}), "heal: level row shows level, max and tier")
 	_show_heal(36, true)
@@ -158,10 +196,23 @@ func _show_tower(level: int, locked: bool, short: bool, sell_wave := 0) -> void:
 	}
 	_tower.open(&"W1")
 
-func _show_heal(level: int, is_max: bool, in_prep := true) -> void:
+func _show_heal(level: int, is_max: bool, in_prep := true, short := false) -> void:
 	var info := {"data": HEAL, "level": level, "hp": 150, "max_hp": 300, "sell_value": 30, "is_max": is_max,
-		"upgrade_cost": 40, "upgrade_shortfall": 0, "upgrade_locked": false, "upgrade_required_level": 0}
+		"upgrade_cost": 40, "upgrade_shortfall": 5 if short else 0, "upgrade_locked": false, "upgrade_required_level": 0}
 	_heal.show_info(info, in_prep)
+
+## A destroyed Arrow tower left its rubble on the slot.
+func _show_ruined() -> void:
+	if _fake.ruined_slot == null:
+		_fake.ruined_slot = Slot.new()
+	_fake.ruined_slot.state = Enums.SlotState.RUINED
+	var rebuild := _option(&"", 0, 0)
+	rebuild.rebuild = true
+	await _show_build([rebuild])
+
+func _exit_tree() -> void:
+	if _fake.ruined_slot != null:
+		_fake.ruined_slot.free()
 
 func _normal_options() -> Array[Dictionary]:
 	return [_option(&"", 0, 0), _option(&"", 0, 0, HEAL, 1)]
@@ -173,7 +224,7 @@ func _option(reason: StringName, shortfall: int, gold: int, data: TowerData = AR
 func _buttons(panel: Node) -> Array[PanelButton]:
 	var found: Array[PanelButton] = []
 	for node in panel.find_children("*", "Button", true, false):
-		if node is PanelButton:
+		if node is PanelButton and node != _build._clear:
 			found.append(node)
 	return found
 

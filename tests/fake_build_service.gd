@@ -20,3 +20,15 @@ func is_prep() -> bool:
 
 func get_sell_locked_until_wave(_slot_id: StringName) -> int:
 	return sell_locked_until
+
+## A ruined slot for the clear rubble button; null means the slot is not ruined.
+var ruined_slot: Slot = null
+var cleared := 0
+
+func find_slot(_slot_id: StringName) -> Slot:
+	return ruined_slot
+
+func clear_rubble(_slot_id: StringName) -> bool:
+	cleared += 1
+	ruined_slot.state = Enums.SlotState.EMPTY
+	return true
