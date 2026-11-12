@@ -539,7 +539,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH6
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa các test hỏng do bỏ sửa Fortress bằng gold, còn 3 slot WALL, trần 3 công trình grid: test_build_flow, test_fortress_repair_runner, test_fortress_runner, test_fortress_panel, test_build_service_runner, test_perf_slice, test_slot_zone_runner, test_targeting_runner
 - Nghiệm thu: Các runner liệt kê chạy lại đạt; test sửa Fortress đổi sang Mithril; test slot dùng W1-W3
 - Tệp liên quan: tests/ (liệt kê trong mô tả task)
