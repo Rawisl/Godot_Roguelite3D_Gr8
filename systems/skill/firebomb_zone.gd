@@ -57,4 +57,4 @@ func _burn() -> void:
 		if offset.length_squared() > radius_sq:
 			continue
 		var direction := offset.normalized() if not offset.is_zero_approx() else Vector3.FORWARD
-		enemy.call(&"take_damage", DamageInfo.outgoing(damage_per_tick, damage_mult, damage_type, source, 0.0, direction, true))
+		enemy.call(&"take_damage", DamageInfo.skill_hit(damage_per_tick, damage_mult, damage_type, source, direction, true))

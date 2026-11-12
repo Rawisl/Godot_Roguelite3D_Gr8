@@ -7,7 +7,7 @@ extends Node3D
 ## - dead, spawn_grace and spawn-zone enemies are never targeted
 ## - an enemy immune to the tower's damage type (resist 0) is skipped
 ## - a priority change applies after retarget_delay in real time, at x1 and x3
-## - 14 towers scanning 70 enemies stay under 1 ms per frame
+## - the wall slots plus the ground building cap, scanning a proportional crowd, stay under 1 ms per frame
 ## - The Bulwark in its armored phase is skipped by the Arrow, hit by the Cannon, and the Arrow picks it again when exposed
 ## - The tower picks again on every scan, so a unit that overtakes
 ##   becomes the First target (and a unit that comes closer the Nearest target) within one scan
@@ -23,6 +23,7 @@ const IMMUNE_STUB: Script = preload("res://tests/resist_enemy_stub.gd")
 ## Same shape as the corridor level: spawn at x = 20, Fortress gate at x = -15 (35 m).
 const LANE_FROM := Vector3(20, 0, 0)
 const LANE_TO := Vector3(-15, 0, 0)
+const GRID: GridData = preload("res://levels/corridor/grid_data.tres")
 const SCAN_BUDGET_USEC := 1000
 
 ## Off when driven from the editor or godot-mcp, so results can still be read.
@@ -324,25 +325,32 @@ func test_retarget_delay() -> void:
 
 
 ## Towers get their scan phase from the slot_id, so in a real frame only the towers
-## whose phase falls in that frame pick a target. The 14 slot ids of the corridor are used here,
-## and the worst frame of one scan_interval at 60 FPS is measured.
+## whose phase falls in that frame pick a target. The full tower set of the corridor is used here
+## (the wall slots plus max_ground_buildings ground cells, taken in get_cells() order, which
+## skips the grid holes), and the worst frame of one scan_interval at 60 FPS is measured.
+## The crowd keeps the ratio of the original 70 enemies for 14 towers.
 func test_scan_cost() -> void:
-	print("\n[GROUP 6] Scan cost: 14 towers, 70 enemies")
-	var slot_ids := ["W1", "W2", "W3", "W4", "W5", "W6",
-		"G_0_0", "G_0_1", "G_0_2", "G_0_3", "G_1_0", "G_1_1", "G_1_2", "G_1_3"]
+	var slot_ids: Array[StringName] = [&"W1", &"W2", &"W3"]
+	var cells := GRID.get_cells()
+	for i in GameConfig.max_ground_buildings:
+		slot_ids.append(GridData.cell_id(cells[i].x, cells[i].y))
+	var tower_count := slot_ids.size()
+	var enemy_count := roundi(70 * tower_count / 14.0)
+	print("\n[GROUP 6] Scan cost: %d towers, %d enemies" % [tower_count, enemy_count])
 	var towers: Array = []
-	for i in 14:
-		var t := _arrow(Vector3(-12 + (i % 7) * 4.0, 0, -4 if i < 7 else 4))
-		t.scan_phase = _slot_phase(StringName(slot_ids[i]))
+	var per_row := ceili(tower_count / 2.0)
+	for i in tower_count:
+		var t := _arrow(Vector3(-12 + (i % per_row) * 4.0, 0, -4 if i < per_row else 4))
+		t.scan_phase = _slot_phase(slot_ids[i])
 		towers.append(t)
 	var enemies: Array = []
-	for i in 70:
+	for i in enemy_count:
 		enemies.append(_grunt(Vector3(-14 + (i % 14) * 2.0, 0, -6 + (i / 14) * 3.0)))
 	await _physics_frames(3)
 	var overlap := 0
 	for t in towers:
 		overlap += (t as Tower).range_area.get_overlapping_bodies().size()
-	print("    average enemies in range per tower: %.1f" % (overlap / 14.0))
+	print("    average enemies in range per tower: %.1f" % (overlap / float(tower_count)))
 
 	# Cost of one pick per tower, averaged over many rounds.
 	var rounds := 50
@@ -364,8 +372,8 @@ func test_scan_cost() -> void:
 		per_frame[slot] += pick_usec[i]
 		all_in_one += pick_usec[i]
 	var worst: float = per_frame.max()
-	print("    one pick: %.0f us on average; worst frame with slot phases: %.0f us; all 14 in one frame: %.0f us"
-		% [all_in_one / towers.size(), worst, all_in_one])
+	print("    one pick: %.0f us on average; worst frame with slot phases: %.0f us; all %d in one frame: %.0f us"
+		% [all_in_one / towers.size(), worst, tower_count, all_in_one])
 	assert_true(worst < SCAN_BUDGET_USEC, "worst frame of scans under 1 ms (%.0f us)" % worst)
 	_clear(towers + enemies)
 

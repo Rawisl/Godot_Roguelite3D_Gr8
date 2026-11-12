@@ -4,7 +4,7 @@ extends Node
 ## The REWARD_PICK screen talks to it through EventBus only: reward_offer_requested asks for the next
 ## offer, reward_pick_requested and reward_skip_requested answer it. The public functions below are for
 ## tests and internal use; the UI does not call them.
-# TODO(week 10): take the run seed and the pick state from RunState (RunState)
+# TODO(kiezroth): when RunState holds the skill state, read picks_used and the slots from it instead of the local RunSkillState
 
 const HEAL_STATION_FLAG := &"heal_station_built"
 ## Reroll is not in this version, so every offer carries 0 rerolls.
@@ -131,8 +131,11 @@ func _emit_slots() -> void:
 			levels[id] = state.get_level(id)
 	EventBus.skill_slots_changed.emit(state.active.duplicate(), state.passive.duplicate(), levels)
 
-## Reads run_seed from the wave manager; 0 when there is none.
+## Reads run_seed from RunState first, then from the wave manager; 0 when neither is in the tree.
 func _run_seed() -> int:
+	var run_state := get_tree().get_first_node_in_group(&"run_state")
+	if run_state != null:
+		return int(run_state.get(&"run_seed"))
 	var node := get_tree().get_first_node_in_group(&"wave_manager")
 	if node == null:
 		return 0

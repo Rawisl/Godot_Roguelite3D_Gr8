@@ -295,19 +295,16 @@ def gen_character(table: Table, plan: Plan) -> None:
 def gen_skills(table: Table, plan: Plan) -> None:
     script = ROOT / "common" / "skill_data.gd"
     grouped: dict[str, dict[str, dict[int, str]]] = {}
-    skipped = 0
     for row, coords in zip(table.rows, table.cells):
-        if str(row["kind"]).upper() != "ACTIVE":
-            skipped += 1
-            continue
         skill = str(row["skill_id"])
         key = str(row["key"])
+        if skill == "heal_station" and key == "heal_rate_base":
+            key = "heal_rate_add"
         level = row["level"]
         if isinstance(level, bool) or not isinstance(level, (int, float)) or not float(level).is_integer() or level < 1:
             raise BalanceError(f"skills!{coords['level']}: level must be a whole number from 1")
         value = format_value(row["value"], "float", f"skills!{coords['value']}")
         grouped.setdefault(skill, {}).setdefault(key, {})[int(level)] = value
-    plan.warnings.append(f"skills: {skipped} passive and stat rows are not generated (only ACTIVE skills are)")
     for skill, keys in grouped.items():
         path = ROOT / "data" / "skills" / f"{skill}.tres"
         old = parse_tres(path)
