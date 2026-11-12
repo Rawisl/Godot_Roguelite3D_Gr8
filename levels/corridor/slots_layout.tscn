@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://btoa1luqsnhh5" path="res://systems/build/slot.tscn" id="1_4mr3i"]
 [ext_resource type="Script" uid="uid://b12kc1jqe8n0n" path="res://systems/build/slot_manager.gd" id="2_slotmgr"]
+[ext_resource type="Script" uid="uid://d067pmd5itg5c" path="res://systems/build/nav_rebaker.gd" id="3_navrebaker"]
 
 [node name="Slots" type="Node3D" unique_id=1341269884]
 script = ExtResource("2_slotmgr")
@@ -20,3 +21,6 @@ zone = 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4, 6)
 slot_id = &"W3"
 zone = 0
+
+[node name="NavRebaker" type="Node" parent="." unique_id=2084909525]
+script = ExtResource("3_navrebaker")

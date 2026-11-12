@@ -17,16 +17,16 @@ const ENEMIES := [
 	{"scene": "archer_model.tscn", "count": 4, "speed": 3.0, "clip": "move/Running_A"},
 	{"scene": "brute_model.tscn", "count": 2, "speed": 2.0, "clip": "move/Walking_B"},
 ]
-# Tower theo slot trong level.tscn: loại, cấp, vị trí
+# Tower theo slot: loại, cấp, vị trí. W1-W3 lấy từ levels/corridor/slots_layout.tscn;
+# 3 ô đất đầu của levels/corridor/grid_data.tres (thứ tự get_cells, bỏ ô trống) tính bằng
+# GridData.cell_position: G_0_0, G_0_1, G_0_7 (số ô = GameConfig.max_ground_buildings).
 const TOWERS := [
-	{"scene": "arrow_tower_model.tscn", "level": 3, "pos": Vector3(-16, 4, -3.6)}, # W2
-	{"scene": "cannon_tower_model.tscn", "level": 2, "pos": Vector3(-16, 4, 3.6)}, # W5
-	{"scene": "arrow_tower_model.tscn", "level": 1, "pos": Vector3(-11, 0, -6.5)}, # N1
-	{"scene": "arrow_tower_model.tscn", "level": 2, "pos": Vector3(-11, 0, -3.5)}, # N2
-	{"scene": "cannon_tower_model.tscn", "level": 1, "pos": Vector3(-11, 0, 3.5)}, # N3
-	{"scene": "barricade_tower_model.tscn", "level": 2, "pos": Vector3(-11, 0, 6.5)}, # N4
-	{"scene": "barricade_tower_model.tscn", "level": 1, "pos": Vector3(2, 0, -3.5)}, # F2
-	{"scene": "cannon_tower_model.tscn", "level": 3, "pos": Vector3(2, 0, 3.5)}, # F3
+	{"scene": "arrow_tower_model.tscn", "level": 3, "pos": Vector3(-16, 4, -6)}, # W1
+	{"scene": "cannon_tower_model.tscn", "level": 2, "pos": Vector3(-16, 4, 0)}, # W2
+	{"scene": "barricade_tower_model.tscn", "level": 2, "pos": Vector3(-16, 4, 6)}, # W3
+	{"scene": "arrow_tower_model.tscn", "level": 1, "pos": Vector3(-13, 0, -10)}, # G_0_0
+	{"scene": "cannon_tower_model.tscn", "level": 3, "pos": Vector3(-13, 0, -7.5)}, # G_0_1
+	{"scene": "arrow_tower_model.tscn", "level": 2, "pos": Vector3(-13, 0, 7.5)}, # G_0_7
 ]
 const LANE_START_X := 18.0
 const LANE_END_X := -13.0
