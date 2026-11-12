@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dafc2fst4506o"]
+
+[ext_resource type="Script" uid="uid://b6wwq7lahpl7j" path="res://tests/test_boss_fx.gd" id="1_bossfx"]
+
+[node name="TestBossFx" type="Node3D" unique_id=1349027588]
+script = ExtResource("1_bossfx")
