@@ -263,7 +263,9 @@ func _on_fortress_hp_changed(new_hp: int, max_hp: int, _delta: int) -> void:
 
 
 func _on_commander_hp_changed(hp: int, max_hp: int) -> void:
-	commander_hp = float(hp)
+	var commander := get_tree().get_first_node_in_group(&"commander")
+	var health := commander.get(&"health") as HealthComponent if commander != null else null
+	commander_hp = health.get_precise_hp() if health != null else float(hp)
 	commander_max_hp = float(max_hp)
 
 

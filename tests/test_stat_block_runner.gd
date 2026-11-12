@@ -25,6 +25,7 @@ func _ready() -> void:
 	await test_reward_picked_signal()
 	test_resource_untouched()
 	await test_commander_integration()
+	await test_lifesteal_kill_credit()
 
 	print("=======================================================")
 	print("STAT BLOCK TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -137,10 +138,11 @@ func test_card_table_levels() -> void:
 	assert_near(block.get_value(&"lifesteal_pct"), 0.015, "lifesteal L3 is 1.5%")
 
 	applier.apply_pick(&"heal_station", 0)
-	assert_near(block.get_value(&"heal_rate_base"), _stats.heal_rate_base, "heal station L0 keeps base")
+	assert_near(block.get_value(&"heal_rate_add"), 0.0, "heal station L0 adds nothing")
 	for level in [1, 2, 3]:
 		applier.apply_pick(&"heal_station", level)
-		assert_near(block.get_value(&"heal_rate_base"), _stats.heal_rate_base + 5.0 * level, "heal rate L%d" % level)
+		assert_near(block.get_value(&"heal_rate_add"), 5.0 * level, "heal bonus L%d" % level)
+	assert_near(block.get_value(&"heal_rate_base"), _stats.heal_rate_base, "heal station leaves the base rate intact")
 
 	applier.apply_pick(&"sharpness", 3)
 	assert_near(block.get_mul_total(&"sword_damage"), 0.24, "picking the same level again does not stack")
@@ -220,3 +222,81 @@ func test_commander_integration() -> void:
 	assert_near(channel.get_heal_rate(), _stats.heal_rate_base + 10.0, "heal channel reads rate from stat block")
 
 	commander.queue_free()
+	await get_tree().process_frame
+
+
+func test_lifesteal_kill_credit() -> void:
+	print("\n[GROUP 9] Lifesteal kill credit")
+	var run_state := RunState.new()
+	add_child(run_state)
+	var commander: Node = preload("res://entities/commander/commander.tscn").instantiate()
+	add_child(commander)
+	commander.set_physics_process(false)
+	await get_tree().process_frame
+	commander.health.hp = 50
+	var shown_hp := [50]
+	var track_hp := func(hp: int, _max_hp: int) -> void: shown_hp[0] = hp
+	EventBus.commander_hp_changed.connect(track_hp)
+	var rewards := RewardService.new()
+	rewards.pool = preload("res://data/config/reward_pool.tres")
+	add_child(rewards)
+	for _attempt in 30:
+		rewards.offer_next()
+		if rewards.pick(&"lifesteal", &"PASSIVE", 1):
+			break
+		rewards.skip()
+	assert_true(rewards.state.get_level(&"lifesteal") == 1, "lifesteal is picked from the run reward pool")
+
+	var marked := _new_kill_target()
+	marked.take_damage(DamageInfo.new(1, Enums.DamageType.SLASH, commander))
+	marked.take_damage(100)
+	assert_near(commander.health.get_precise_hp(), 50.0, "prior commander hit gives no lifesteal on a different killing blow")
+	marked.free()
+
+	var sword_target := _new_kill_target()
+	sword_target.take_damage(DamageInfo.new(100, Enums.DamageType.SLASH, commander))
+	sword_target.take_damage(DamageInfo.new(100, Enums.DamageType.SLASH, commander))
+	assert_near(commander.health.get_precise_hp(), 50.5, "one sword kill heals exactly half an HP")
+	assert_near(run_state.commander_hp, 50.5, "run state keeps fractional HP")
+	assert_true(shown_hp[0] == 50, "HUD gets floored HP")
+	sword_target.free()
+
+	var burn_target := _new_kill_target()
+	burn_target.health.hp = 6
+	var zone := FirebombZone.new()
+	zone.setup(commander, preload("res://data/skills/firebomb.tres"), 1, 1.0)
+	add_child(zone)
+	zone.tick(1.0)
+	assert_true(burn_target.is_dead, "firebomb tick kills its target")
+	assert_near(commander.health.get_precise_hp(), 51.0, "a second kill from a Firebomb tick completes one HP")
+	assert_true(shown_hp[0] == 51, "HUD shows the completed HP")
+	zone.free()
+	burn_target.free()
+
+	var boss := preload("res://entities/enemy/bulwark.tscn").instantiate() as Bulwark
+	add_child(boss)
+	boss.set_physics_process(false)
+	boss.spawn_grace = false
+	boss.current_armor_hp = 1
+	var blast := DamageInfo.new(10, Enums.DamageType.BLAST, commander)
+	boss.take_damage(blast)
+	assert_true(not boss.is_dead, "breaking Bulwark's armor leaves its core alive")
+	assert_near(commander.health.get_precise_hp(), 51.0, "breaking armor grants no lifesteal")
+	boss.current_core_hp = 1
+	boss.take_damage(blast)
+	assert_true(boss.is_dead, "the lethal hit destroys Bulwark's core")
+	assert_near(commander.health.get_precise_hp(), 51.5, "the final core hit grants lifesteal once")
+	boss.free()
+
+	EventBus.commander_hp_changed.disconnect(track_hp)
+	rewards.free()
+	commander.free()
+	run_state.free()
+
+
+func _new_kill_target() -> Enemy:
+	var enemy := preload("res://entities/enemy/grunt.tscn").instantiate() as Enemy
+	add_child(enemy)
+	enemy.set_physics_process(false)
+	enemy.spawn_grace = false
+	return enemy

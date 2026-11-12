@@ -187,11 +187,17 @@ skill.sword_wave.desc,Chém ra một luồng kiếm khí gây sát thương lên
 skill.firebomb.name,Bom lửa
 skill.firebomb.desc,Ném bom lửa tạo vùng cháy gây sát thương mỗi giây lên kẻ địch trong vùng.
 skill.sharpness.name,Sắc bén
-skill.sharpness.desc,Tăng sát thương gây ra.
-skill.vitality.name,Sinh lực
+skill.sharpness.desc,Tăng sát thương kiếm và kỹ năng chủ động.
+skill.armored.name,Giáp cứng
+skill.armored.desc,Tăng giáp của chỉ huy.
+skill.lifesteal.name,Hút máu
+skill.lifesteal.desc,Hồi máu khi hạ địch bằng kiếm hoặc kỹ năng.
+skill.vitality.name,Thể lực
 skill.vitality.desc,Tăng máu tối đa.
-skill.heal_station.name,Trạm hồi phục
-skill.heal_station.desc,Tăng tốc độ hồi máu của trạm hồi phục.
+skill.heal_station.name,Trạm hồi lực
+skill.heal_station.desc,Tăng tốc độ hồi máu của chỉ huy tại Trạm hồi lực.
+skill.mastery.name,Tinh thông
+skill.mastery.desc,Tăng sát thương kỹ năng chủ động.
 hud.fortress_low,NGUY CẤP
 hud.mode.key,Tab
 hud.mode.frontline,Tiền tuyến
