@@ -24,14 +24,16 @@ func _ready() -> void:
 	mat.albedo_color = color
 	material_override = mat
 
+## A radius of 0 or less hides the ring itself and still shows the ghost.
 func show_at(pos: Vector3, radius: float, blocked: bool = false, tower_scene: PackedScene = null) -> void:
-	var torus := mesh as TorusMesh
-	torus.outer_radius = radius
-	torus.inner_radius = maxf(radius - width, 0.01)
-	(material_override as StandardMaterial3D).albedo_color = blocked_color if blocked else color
-	global_position = pos + Vector3.UP * 0.05
-	scale = Vector3(1.0, 0.05, 1.0)
-	visible = true
+	visible = radius > 0.0
+	if visible:
+		var torus := mesh as TorusMesh
+		torus.outer_radius = radius
+		torus.inner_radius = clampf(radius - width, 0.01, radius)
+		(material_override as StandardMaterial3D).albedo_color = blocked_color if blocked else color
+		global_position = pos + Vector3.UP * 0.05
+		scale = Vector3(1.0, 0.05, 1.0)
 	_show_ghost(pos, blocked, tower_scene)
 
 func hide_ring() -> void:

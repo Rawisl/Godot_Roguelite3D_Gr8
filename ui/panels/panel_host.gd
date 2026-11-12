@@ -139,9 +139,10 @@ func _on_mode_changed(mode: StringName) -> void:
 
 func _on_preview_requested(slot_id: StringName, type: StringName, radius: float, blocked: bool) -> void:
 	var service := _service()
-	if service == null or radius <= 0.0:
+	if service == null:
 		_ring.hide_ring()
 		return
+	# Barricade and heal station have no attack range: the ring stays hidden but the ghost still shows.
 	var tower_scene := service.tower_scenes.get(type) as PackedScene
 	_ring.show_at(service.get_slot_position(slot_id), radius, blocked, tower_scene)
 
