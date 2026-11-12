@@ -111,7 +111,11 @@ func _is_mouse_over_ui() -> bool:
 	return get_viewport().gui_get_hovered_control() != null
 
 func _select(node: Node) -> void:
-	if node is Tower:
+	if node != null and node.is_in_group(&"hazard_portal"):
+		var gate := get_tree().get_first_node_in_group(&"hazard_gate") as HazardGate
+		if gate != null:
+			gate.try_enter()
+	elif node is Tower:
 		_select_tower(_slot_of(node))
 	elif node is Slot:
 		var slot := node as Slot
@@ -168,6 +172,9 @@ func _update_slot_hover() -> void:
 func _rank(node: Node) -> int:
 	if node is Tower:
 		return 0
+	# The Hazard Trial tower: its marker decides whether entering is allowed.
+	if node.is_in_group(&"hazard_portal"):
+		return 1
 	# An empty slot only counts while the rings show, so the Fortress roof under it stays clickable.
 	if node is Slot:
 		return 2 if _rings_visible or not (node as Slot).is_free() else 99

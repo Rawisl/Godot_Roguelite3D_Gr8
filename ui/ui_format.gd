@@ -9,6 +9,12 @@ static func time_mmss(seconds: float) -> String:
 static func decimal(value: float, digits: int = 1) -> String:
 	return "%.*f" % [digits, value]
 
+## Whole numbers without ".0" (3, not 3.0), others with up to `digits` decimals.
+static func num(value: float, digits: int = 1) -> String:
+	if is_equal_approx(value, roundf(value)):
+		return str(roundi(value))
+	return String.num(value, digits)
+
 ## Fills named placeholders such as {gold} instead of concatenating strings.
 static func tr_fmt(key: StringName, params: Dictionary) -> String:
 	return TranslationServer.translate(key).format(params)

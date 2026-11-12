@@ -971,6 +971,7 @@ Trạm hồi lực là tower thứ tư, không tấn công. Chỉ huy ở Frontl
 | heal_drain_rate | 20 HP/s | Tốc độ trạm mất HP khi hồi ở mức đầy, cố định |
 | heal_rate_base | 10 HP/s | Tốc độ hồi cho chỉ huy khi chưa có skill SKL-26 |
 | k (suy ra) | heal_rate / heal_drain_rate | 0.5 khi chưa có skill. Không phải tham số riêng |
+| heal_store_low_pct | 0.20 | Dưới tỷ lệ kho này trạm cảnh báo một lần mỗi lần xây (HLT-11, ALR-18) |
 | heal_hold_time | 1.0 s | Game time, thuộc CharacterStats (mục 6.4) |
 | heal_tower_max_count | 2 | GameConfig. Đếm cả ô OCCUPIED và RUINED |
 | heal_tower_dmg_norm_exp | 0.5 | Hệ số e của HLT-09 |
@@ -1542,7 +1543,7 @@ Mithril là tài nguyên trong run, kiếm duy nhất bằng cách thắng Hazar
 | **ID** | **Đặc tả** |
 | --- | --- |
 | MTH-01 | Mithril là số nguyên không âm trong RunState, khởi đầu 0 mỗi run (kể cả \[Should] start_wave > 1), mất khi hết run, không quy đổi danh vọng, không ghi save (RUN-01), không mua bằng gold hay danh vọng |
-| MTH-02 | **Nguồn.** Thắng Hazard Trial (kết quả WON: mọi con trong nhóm đã bị diệt hoặc tự nổ và chỉ huy còn sống, HZT-07, HZT-16) cộng mithril_reward(w) Mithril, w là wave_index của PREP. Wave 1-30 lấy từ bảng thưởng theo wave (WaveRewardTable, khởi điểm 1 mỗi wave); từ wave 31 dùng giá trị của wave victory_wave. Rời phòng hoặc chết trong phòng không có Mithril. Phát mithril_changed (EVB-39) và toast ALR-20 |
+| MTH-02 | **Nguồn.** Thắng Hazard Trial (kết quả WON: mọi con trong nhóm đã bị diệt hoặc tự nổ và chỉ huy còn sống, HZT-07, HZT-16) cộng mithril_reward(w) Mithril, w là wave_index của PREP. Wave 1-30 lấy từ bảng thưởng theo wave (WaveRewardTable, khởi điểm 1 mỗi wave); từ wave 31 dùng giá trị của wave victory_wave. Rời tháp hoặc chết trong phòng không có Mithril. Phát mithril_changed (EVB-39) và toast ALR-20 |
 | MTH-03 | **Sửa Fortress.** Chỉ ở PREP (kể cả PREP boss và lúc Pause trong PREP như BLD-04), ở cả hai chế độ (CMD-05), qua panel Fortress (PNL-04). Mỗi lần bấm tốn đúng 1 Mithril và hồi floor(mithril_repair_pct × fortress_max_hp) HP (mithril_repair_pct = 0.20, FortressStats), kẹp ở fortress_max_hp (FORT-03). fortress_max_hp là giá trị hiệu dụng ở RunState nên một viên luôn hồi 20% dù cấp FORT_HP khác nhau |
 | MTH-04 | Fortress đầy HP: từ chối, không trừ Mithril. Fortress thiếu ít hơn 20%: vẫn cho sửa, tốn 1 Mithril, HP kẹp ở max; nút hiện tooltip "Hồi thừa" (như CMD-08). mithril = 0: nút xám kèm "Cần Mithril, thắng Hazard Trial để nhận" (HUD-05) |
 | MTH-05 | Không sửa bằng Mithril ở HAZARD_TRIAL, COMBAT, BOSS_INTRO, BOSS_COMBAT, SUMMARY, REWARD_PICK. Giao dịch nguyên tử như BLD-02: bấm đúng frame PREP kết thúc thì hoàn tất trước hoặc bị từ chối, kiểm tra lại state và số Mithril lúc xác nhận |
@@ -1796,8 +1797,8 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 | HZT-03 | **Chỉ số quái** y như quân của wave đó ngoài wave thật: cùng EnemyData, BossData, cùng hệ số hp_mult, dmg_mult, speed_mult của wave (mục 3.7.6), cùng trait (mục 3.7.8). Boss trong phòng có pha giáp như thường (mục 3.8.4) nhưng không có BOSS_INTRO, không có boss_timer và không Cuồng nộ | MVP |
 | HZT-04 | **Không đụng wave thật.** Giết quái trong phòng không làm wave thật ít quân đi (spawn_queue của COMBAT không đổi), không cộng uy tín, không tính vào run_kills, run_bosses_defeated hay profile.stats. Boss trong phòng cho boss_gold và XP boss như ngoài (GLD-10, XP-06) nhưng không có boss_prestige, không +1 Emergency repair (BRW-07) và không rơi vũ khí (WPN-11) | MVP |
 | HZT-05 | **Giới hạn sát thương 10%.** Mỗi lần hero gây sát thương lên một quái trong phòng (mỗi đòn trên mỗi mục tiêu, mỗi tick vùng cháy, mỗi tia Chain Lightning, mỗi tick Burn) bị kẹp tối đa floor(hazard_damage_cap_pct × hp_cap_ref). hp_cap_ref là máu tối đa của con nhiều máu nhất trong nhóm, chốt lúc tạo nhóm; với boss chỉ tính core_hp (không cộng armor_hp). Kẹp áp sau mọi hệ số (DMG-06, DMG-01). Áp cho mọi nguồn sát thương của hero trong phòng (đòn thường, skill, hiệu ứng vũ khí). Ngoài phòng không áp | MVP |
-| HZT-06 | **Chỉ số độc lập, một chiều.** Lúc vào, phòng chép chỉ số hiện tại của chỉ huy: commander_hp, commander_max_hp, commander_level, ô skill và level, StatBlock, vũ khí đang trang bị, cooldown hiện tại. Trong phòng chỉ bản sao này thay đổi (máu mất, cooldown, hiệu ứng, Lifesteal). Trạng thái bên ngoài đóng băng trong lúc ở phòng. Rời phòng thì bỏ bản sao, chỉ huy về PREP với đúng trạng thái lúc vào. Chỉ phần thưởng (gold, XP, Mithril) mang ra (HZT-08) | MVP |
-| HZT-07 | **Kết thúc phòng.** Ba kết quả: WON khi mọi con trong nhóm đã **xử lý xong** (bị diệt hẳn hoặc tự nổ, HZT-16) và HP bản sao còn trên 0; LEFT khi bấm nút Rời phòng (HUD-22); DIED khi HP bản sao về 0 (DEAD-11). Kết quả chốt **một lần ở cuối frame** (như END-01): trong cùng frame có nhiều điều kiện thì ưu tiên DIED, rồi WON, rồi LEFT; sau khi đã chốt, điều kiện đến sau bị bỏ qua. Với mọi kết quả, hero bị đưa ra ngoài, không mất gì, wave FSM về PREP, hazard_used = true, phát hazard_trial_exited (EVB-41). WON hiện toast kết quả rồi tự đưa ra. Esc trong phòng mở Pause, không rời phòng (INP-03) | MVP |
+| HZT-06 | **Chỉ số độc lập, một chiều.** Lúc vào, phòng chép chỉ số hiện tại của chỉ huy: commander_hp, commander_max_hp, commander_level, ô skill và level, StatBlock, vũ khí đang trang bị, cooldown hiện tại. Trong phòng chỉ bản sao này thay đổi (máu mất, cooldown, hiệu ứng, Lifesteal). Trạng thái bên ngoài đóng băng trong lúc ở phòng. Rời tháp thì bỏ bản sao, chỉ huy về PREP với đúng trạng thái lúc vào. Chỉ phần thưởng (gold, XP, Mithril) mang ra (HZT-08) | MVP |
+| HZT-07 | **Kết thúc phòng.** Ba kết quả: WON khi mọi con trong nhóm đã **xử lý xong** (bị diệt hẳn hoặc tự nổ, HZT-16) và HP bản sao còn trên 0; LEFT khi bấm nút Rời tháp (HUD-22); DIED khi HP bản sao về 0 (DEAD-11). Kết quả chốt **một lần ở cuối frame** (như END-01): trong cùng frame có nhiều điều kiện thì ưu tiên DIED, rồi WON, rồi LEFT; sau khi đã chốt, điều kiện đến sau bị bỏ qua. Với mọi kết quả, hero bị đưa ra ngoài, không mất gì, wave FSM về PREP, hazard_used = true, phát hazard_trial_exited (EVB-41). WON hiện toast kết quả rồi tự đưa ra. Esc trong phòng mở Pause, không rời phòng (INP-03) | MVP |
 | HZT-08 | **Phần thưởng.** Gold (GLD-10) và XP (XP-06) tính theo số con đã giết (quân tự nổ không tính, HZT-16), cộng khi rời phòng với mọi kết quả. WON cộng thêm mithril_reward(w) Mithril (MTH-02). Gold và XP tạm tính hiện trên HUD trong phòng (HUD-22) | MVP |
 | HZT-09 | **Không vào lại.** Sau khi rời phòng với bất kỳ kết quả nào, Tháp khóa đến PREP của wave sau. Tháp hiện trạng thái "Đã dùng ở wave này" | MVP |
 | HZT-10 | **Hành động trong phòng.** Như Frontline ở COMBAT: di chuyển, đánh, Dodge, Battle Cry, skill chủ động. Không xây, nâng, bán, sửa, đổi vũ khí, đổi priority; Tab bị khóa (mục 3.5.5); không có Emergency repair; không có Trạm hồi lực (HLT-13). Tua x1/x2/x3 dùng như COMBAT; vào và ra phòng không đổi mức tua | MVP |
@@ -1862,7 +1863,7 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 | Trên giữa | Số wave (kèm "/ 30" trước khi thắng, nhãn "Endless" sau khi thắng), trạng thái, đồng hồ boss, bộ đếm quân |
 | Trên phải | Gold (kèm "+xx"), ô Mithril (HUD-20), cụm nút tua nhanh x1/x2/x3 (HUD-14), nút Pause |
 | Dưới trái | Thanh kỹ năng theo chế độ: hai hàng ô skill (HUD-16) với ô vũ khí bên phải (HUD-21), dưới đó là ô Emergency repair (HUD-13); biểu tượng chế độ kèm cooldown chuyển |
-| Dưới giữa | Panel ngữ cảnh, nút Bắt đầu wave (HUD-19). Trong Hazard Trial: nút Rời phòng (HUD-22) |
+| Dưới giữa | Panel ngữ cảnh, nút Bắt đầu wave (HUD-19). Trong Hazard Trial: nút Rời tháp (HUD-22) |
 | Dưới phải | \[Should] Buff đang hoạt động và nút kích hoạt buff |
 | Giữa (tạm thời) | Banner cảnh báo và thông báo wave |
 
@@ -1876,7 +1877,7 @@ Không có minimap.
 | Đồng hồ | Không (PREP không giới hạn) | Không | Clear time tạm tính (mờ) | Boss timer đầy, đứng yên | Boss timer chạy, về 0 thì nhãn CUỒNG NỘ | Không | Không |
 | Nút Bắt đầu wave | Có | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn |
 | Tháp Hazard Trial (chỉ báo) | Có | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn |
-| Nút Rời phòng, số quái còn, gold và XP tạm tính | Ẩn | Có | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn |
+| Nút Rời tháp, số quái còn, gold và XP tạm tính | Ẩn | Có | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn |
 | Gold, Mithril | Có | Có | Có | Có | Có | Có | Tối thiểu |
 | Ô vũ khí | Có (đổi được) | Chỉ đọc | Chỉ đọc | Chỉ đọc | Chỉ đọc | Chỉ đọc | Ẩn |
 | Tua tốc độ | Có | Có | Có | Khóa | Có | Khóa (về x1) | Khóa (về x1) |
@@ -1910,7 +1911,7 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 | HUD-19 \[MVP] | **Nút Bắt đầu wave** ở dưới giữa, chỉ hiện ở PREP. Bấm thì phát wave_start_requested (EVB-38) và PREP kết thúc (WAVE-11). Ở wave boss nút ghi "Bắt đầu wave boss". Xám kèm lý do khi Pause, khi có hộp thoại giao dịch, khi tutorial chưa xây xong hai trụ (TUT-15) (HUD-05). Nút không nhận focus bàn phím (INP-04). Nếu chưa dùng Hazard Trial ở wave này, nút có dòng nhắc nhỏ "Chưa vào Hazard Trial", không chặn |
 | HUD-20 \[MVP] | **Ô Mithril** cạnh gold: biểu tượng kèm số. Nhận Mithril: viền sáng 0.3 s. Ở PREP khi Fortress thiếu máu và mithril > 0, ô hiện nút nhỏ "Sửa thành" bên trái số Mithril. Bấm nút thì mở panel Fortress (PNL-04) giống như bấm vào Fortress trên bản đồ; việc sửa vẫn bấm trong panel, nút không tự trừ Mithril. Nút không nhận focus bàn phím (INP-04). Không phụ thuộc màu (UI-05) |
 | HUD-21 \[MVP] | **Ô vũ khí** cạnh thanh kỹ năng: biểu tượng vũ khí đang trang bị và tên hiệu ứng, số vũ khí đã có trên 6 (kiếm thường và 5 cây). Chuột trái vào ô ở PREP mở panel vũ khí (PNL-15). Ngoài PREP chỉ đọc kèm tooltip "Đổi vũ khí ở giai đoạn chuẩn bị". Chain Lightning hiện vòng cooldown kèm số giây (ACC-07) |
-| HUD-22 \[MVP] | **HUD trong Hazard Trial:** nút "Rời phòng" ở dưới giữa (bấm một lần, không cần xác nhận, HZT-07), số quái còn trên 5 (con chưa xử lý xong theo HZT-16, Captain chờ nổ và Undead chờ hồi sinh vẫn tính là còn), gold và XP tạm tính, phần thưởng Mithril nếu thắng, nhãn "Chỉ số trong phòng không mang ra ngoài". Thanh HP chỉ huy hiển thị HP của bản sao. Khi kết thúc: toast kết quả (Thắng, Đã rời, Gục ngã) kèm phần thưởng |
+| HUD-22 \[MVP] | **HUD trong Hazard Trial:** nút "Rời tháp" ở dưới giữa (bấm một lần, không cần xác nhận, HZT-07), số quái còn trên 5 (con chưa xử lý xong theo HZT-16, Captain chờ nổ và Undead chờ hồi sinh vẫn tính là còn), gold và XP tạm tính, phần thưởng Mithril nếu thắng, nhãn "Chỉ số trong tháp không mang ra ngoài". Thanh HP chỉ huy hiển thị HP của bản sao. Khi kết thúc: toast kết quả (Thắng, Đã rời, Thất bại) kèm phần thưởng |
 | HUD-23 \[MVP] | **Tháp Hazard Trial** trên bản đồ ở PREP: biểu tượng trên cùng (như MSE-04), trạng thái "Sẵn sàng (E)", "Cần Frontline", "Đã dùng ở wave này" kèm biểu tượng; rê chuột hiện danh sách loại quái của nhóm (HZT-02) và phần thưởng Mithril. Ẩn ngoài PREP |
 | HUD-24 \[Should] | **Nút mũi tên ẩn/hiện kỹ năng** ngay trên hai hàng ô skill, chỉ có mũi tên, không có chữ: mũi tên xuống khi đang hiện (bấm để ẩn), mũi tên lên khi đã ẩn (bấm để hiện); tooltip ghi "Ẩn kỹ năng" hoặc "Hiện kỹ năng" (UI-05). Nút ẩn hoặc hiện cả hai hàng ô skill (HUD-16) và ô vũ khí (HUD-21), ô Emergency repair vẫn hiện. Chỉ ẩn phần hiển thị: phím 1-3 vẫn dùng skill, cooldown vẫn chạy, hiện lại thì đúng số giây còn lại. Ẩn ô vũ khí thì panel vũ khí đang mở cũng đóng. Nút không nhận focus bàn phím (INP-04), không có phím tắt. Run mới luôn hiện lại. Cooldown vẫn luôn có số khi đang hiện (ACC-07); ẩn là lựa chọn của người chơi như F1 (HUD-12) |
 
@@ -1962,14 +1963,14 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 | Bán tower đang chọn | Delete | PREP |
 | Hiện tầm bắn mọi tower | Giữ Shift | Mọi lúc |
 | Chọn, đặt | Chuột trái | PREP, Commander |
-| Bắt đầu wave, Rời phòng, đổi vũ khí | Chuột trái vào nút HUD (HUD-19, HUD-22, HUD-21) | PREP, HAZARD_TRIAL. Không có phím tắt |
+| Bắt đầu wave, Rời tháp, đổi vũ khí | Chuột trái vào nút HUD (HUD-19, HUD-22, HUD-21) | PREP, HAZARD_TRIAL. Không có phím tắt |
 | Hủy, bỏ chọn | Chuột phải | Mọi lúc |
 | Đóng panel, Pause | Esc | Mọi lúc |
 | Ẩn HUD | F1 | Mọi lúc |
 
 | **ID** | **Luật input** |
 | --- | --- |
-| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời phòng không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). call_wave và relocate đã bỏ ở v2.0 |
+| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời tháp không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). call_wave và relocate đã bỏ ở v2.0 |
 | INP-02 | Ưu tiên khi nhiều phím cùng frame: **Dodge > Skill > Attack > Mode switch > Hồi máu (E)**; nhiều skill cùng frame thì ô số nhỏ trước. Pause và HUD xử lý độc lập |
 | INP-03 | **Esc theo chuỗi:** (1) đóng hộp thoại, (2) đóng panel, (3) hủy chế độ đặt hoặc bỏ chọn, (4) mở Pause. Mỗi lần bấm một bước |
 | INP-04 | Vô hiệu ui_focus_next, ui_focus_prev trong Run. Space trong gameplay không kích hoạt nút UI còn focus: **giải phóng focus** sau mỗi lần bấm nút UI |
@@ -2017,7 +2018,7 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | CAM-12 | **Picking và aim theo camera hiện tại.** Raycast chuột (MSE-01, MSE-02) luôn dùng camera đang hoạt động ở frame đó, nên dịch camera không làm sai chọn slot hay hướng đánh. Xuyên thấu (MSE-05) áp theo chỉ huy, không theo focus camera | MVP |
 | CAM-13 | **Rung màn hình** (FBK-03) cộng vào vị trí camera sau khi kẹp, biên độ có trần, không đưa camera ra ngoài camera_bounds quá 0.3 m | MVP |
 | CAM-14 | **Chiếu sáng và bóng.** Camera Frontline thấy ít vùng hơn nên tắt render, animation và âm thanh vị trí của quân ngoài khung theo LOD (\\[Should], mục 3.7) nhưng **không** giảm logic AI hay tấn công | SHOULD |
-| CAM-16 \[MVP] | **Hazard Trial.** Vào phòng: camera cắt (hoặc chuyển 0.5 s theo CAM-05) sang khung cố định của hazard_room do Level đặt, size đủ thấy cả phòng; không bám nhân vật, không dịch bằng phím, C không làm gì. WASD di chuyển nhân vật. Rời phòng: về khung PREP mặc định (CAM-07). Phát camera_frame_changed với frame HAZARD_TRIAL (EVB-35) | MVP |
+| CAM-16 \[MVP] | **Hazard Trial.** Vào phòng: camera cắt (hoặc chuyển 0.5 s theo CAM-05) sang khung cố định của hazard_room do Level đặt, size đủ thấy cả phòng; không bám nhân vật, không dịch bằng phím, C không làm gì. WASD di chuyển nhân vật. Rời tháp: về khung PREP mặc định (CAM-07). Phát camera_frame_changed với frame HAZARD_TRIAL (EVB-35) | MVP |
 | CAM-15 | **Settings.** \\[Should] Tốc độ dịch camera (0.5x đến 2x), bật tắt edge-pan, bật tắt look-ahead. MVP dùng giá trị mặc định | SHOULD |
 
 
@@ -2045,7 +2046,7 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | ALR-17 | Trạm hồi lực bị hút cạn (HLT-07) | T2 | "Trạm hồi lực ở ô G3 đã cạn (xây lại 80 gold)". Trạm bị quân phá thì gộp vào ALR-07 |
 | ALR-18 | Kho Trạm hồi lực dưới 20% (một lần mỗi trạm mỗi lần xây) | T3 | "Trạm hồi lực sắp cạn" (HLT-11) |
 | ALR-19 | Nhận vũ khí từ boss (WPN-11) | T2 | "Nhận vũ khí Frost. Đổi ở giai đoạn chuẩn bị" |
-| ALR-20 | Kết thúc Hazard Trial (HZT-07) | T3 | "Thắng Hazard Trial: +1 Mithril, +34 gold, +12 XP" hoặc "Đã rời phòng: +20 gold, +6 XP" |
+| ALR-20 | Kết thúc Hazard Trial (HZT-07) | T3 | "Thắng Hazard Trial: +1 Mithril, +34 gold, +12 XP" hoặc "Đã rời tháp: +20 gold, +6 XP" |
 
 | **ID** | **Luật** |
 | --- | --- |
@@ -2555,6 +2556,10 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-45 | tutorial_completed() | UI/UX & Meta (tutorial). Phát khi ghi tutorial_done = true (TUT-08, TUT-15). Nghe: Save, SyncService |
 | EVB-46 | victory_continue_requested() | UI/UX & Meta (màn thắng SCR-20). Phát khi bấm "Chơi tiếp", một lần. Nghe: Enemy & Wave (bỏ lý do Pause VICTORY, đi tiếp WAVE-13: REWARD_PICK nếu pending_picks > 0, ngược lại PREP của wave victory_wave + 1) |
 | EVB-47 | xp_gained(amount: float, from_commander: bool) | XpTracker. Phát mỗi lần quân chết cho XP, ngay trước xp_changed; from_commander theo cờ hit_by_commander (XP-01). Nghe: UI (HUD-15, tách phần XP từ chỉ huy và từ tower) |
+| EVB-48 | hazard_trial_offered(wave_index: int, enemy_types: Array, mithril: int) | Enemy & Wave (HazardTrial). Phát ở đầu PREP khi đã chốt nhóm quái (HZT-02), mithril là thưởng nếu thắng (MTH-02). Nghe: UI (HUD-23 tooltip, HUD-22) |
+| EVB-49 | hazard_trial_progress(remaining: int, total: int, gold: int, xp: float) | Enemy & Wave (HazardTrial). Phát mỗi khi một con trong nhóm xử lý xong (HZT-16) hoặc phần tạm tính đổi (HZT-08). Nghe: UI (HUD-22) |
+| EVB-50 | hazard_enter_requested() | UI/UX & Meta (phím E hoặc bấm Tháp, HUD-23). Nghe: Enemy & Wave (kiểm lại điều kiện HZT-01 rồi vào tháp) |
+| EVB-51 | hazard_leave_requested() | UI/UX & Meta (nút Rời tháp, HUD-22). Nghe: Enemy & Wave (kết quả LEFT theo HZT-07) |
 
 ## 6.10 Bảng cân bằng Excel và công cụ dịch sang config \[MVP]
 
@@ -2806,12 +2811,12 @@ Pause, sửa bằng Mithril, trần armor, tải quét (v1.3, cập nhật v2.0)
 | HZ2 | Nhóm quái: wave có 3 loại thì nhóm 5 con có đủ cả 3 loại; cùng run_seed và wave_index cho cùng nhóm. Wave boss: boss cộng 4 quân của wave đó. Chỉ số quái khớp quân của wave thật (hp_mult, dmg_mult) | HZT-02, HZT-03 |
 | HZ3 | Giới hạn 10%: nhóm có con máu tối đa 500, đòn kiếm 80 sát thương chỉ gây 50; tick Firebomb, tia Chain Lightning, tick Burn cũng bị kẹp. Ngoài phòng đòn đó gây đủ 80 | HZT-05 |
 | HZ4 | Chỉ số một chiều: vào phòng với 70/100 HP, mất 50 HP trong phòng, rời phòng thì HP ngoài vẫn 70; cooldown và hiệu ứng trong phòng không mang ra. Lên skill hay đổi vũ khí ở PREP rồi mới vào thì phòng dùng bản mới | HZT-06, WPN-03 |
-| HZ5 | Thắng phòng: giết đủ 5 con thì +mithril_reward(w) Mithril (mặc định 1), gold và XP của 5 con cộng khi ra; toast ALR-20. Rời phòng sau khi giết 2 con: gold và XP của 2 con, 0 Mithril. Chết trong phòng: không phát commander_died, run không kết thúc, giữ gold và XP của số đã giết, 0 Mithril | HZT-07, HZT-08, DEAD-11, MTH-02, GLD-10, XP-06 |
+| HZ5 | Thắng phòng: giết đủ 5 con thì +mithril_reward(w) Mithril (mặc định 1), gold và XP của 5 con cộng khi ra; toast ALR-20. Rời tháp sau khi giết 2 con: gold và XP của 2 con, 0 Mithril. Chết trong phòng: không phát commander_died, run không kết thúc, giữ gold và XP của số đã giết, 0 Mithril | HZT-07, HZT-08, DEAD-11, MTH-02, GLD-10, XP-06 |
 | HZ6 | Không đụng wave thật: giết 5 con trong phòng, wave thật vẫn có đủ số quân của WaveScript; prestige_pending không đổi; run_kills không đổi. Boss trong phòng chết: có boss_gold, không +1 Emergency repair, không rơi vũ khí | HZT-04, BRW-09 |
 | HZ7 | Trong phòng: Tab không làm gì, không xây hay đổi vũ khí, camera cố định khung phòng, WASD di chuyển nhân vật; Esc mở Pause không rời phòng. Ra phòng không hồi 35% lần nữa, tower không hồi đầy lần nữa | HZT-10, HZT-11, CAM-16, mục 3.3.1 |
 | HZ8 | XP trong phòng đủ lên cấp: thanh XP chỉ tăng khi rời phòng; lượt chọn mới chờ tới REWARD_PICK sau SUMMARY của wave đó | XP-06, RWP-01 |
 | HZ9 | Quân tự nổ: con cuối là Suicide Squad tự nổ vào chỉ huy, bản sao còn HP: kết quả WON, +mithril_reward(w), gold và XP chỉ của 4 con đã giết, kills = 4 ở hazard_trial_exited. Nhóm 5 Suicide Squad đều tự nổ, chỉ huy còn sống: WON, 0 gold, 0 XP, vẫn +Mithril | HZT-07, HZT-16, EN-22, MTH-02 |
-| HZ10 | Cùng frame: con cuối bị diệt (hoặc tự nổ) đúng frame HP bản sao về 0: kết quả DIED, 0 Mithril, giữ gold và XP của số con đã giết, hazard_trial_exited phát đúng một lần với result DIED. Bấm Rời phòng đúng frame con cuối bị diệt: kết quả WON | HZT-07, HZT-16, DEAD-11 |
+| HZ10 | Cùng frame: con cuối bị diệt (hoặc tự nổ) đúng frame HP bản sao về 0: kết quả DIED, 0 Mithril, giữ gold và XP của số con đã giết, hazard_trial_exited phát đúng một lần với result DIED. Bấm Rời tháp đúng frame con cuối bị diệt: kết quả WON | HZT-07, HZT-16, DEAD-11 |
 | HZ11 | Captain chờ nổ: Captain là con cuối, HP về 0 thì gold và XP của nó vào phần tạm tính ngay, nhưng trong explode_windup phòng chưa WON và HUD còn 1 con. Vụ nổ không giết bản sao (Dodge hoặc đứng ngoài explode_radius): WON sau khi nổ xong. Vụ nổ đưa HP bản sao về 0: DIED, giữ gold và XP của Captain, 0 Mithril. Undead là con cuối đang nằm chờ hồi sinh: chưa WON cho tới lần chết thứ hai | HZT-07, HZT-16, EN-23, EN-26, HUD-22 |
 | HZ12 | Gold phòng có số cụ thể, nhóm dựng sẵn bằng công cụ test, WaveRewardTable khởi điểm (gold_mult(w) = 1 + 0.04(w−1)), frontline_gold_mult 1.25. (a) PREP wave 3, gold_pct_total = 0, nhóm 3 Grunt (gốc 4) và 2 Archer (gốc 7), giết cả 5: kill_gold Grunt = 4 × 1.08 × 1.25 = 5.4, Archer = 7 × 1.08 × 1.25 = 9.45, hazard_gold = floor(35.1) = **35** (nhân 1.25 hai lần sẽ ra 43, là lỗi). (b) Như (a) với gold_pct_total = 0.10: floor(38.61) = **38**. (c) PREP wave 5, gold_pct_total = 0.10, Bulwark và 4 Grunt, giết cả 5: phần quân floor(4 × 4 × 1.16 × 1.25 × 1.1) = floor(25.52) = 25, phần boss floor(100 × 1.16 × 1.1) = floor(127.6) = 127, hazard_gold = **152**. Gold tạm tính trên HUD-22 và gold trong hazard_trial_exited khớp các số này; wave_gold_base của wave thật không đổi | GLD-10, RWD-02, FRT-02, BRW-01 |
 
@@ -3023,7 +3028,7 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 
 | **#** | **Vấn đề** | **Đề xuất** |
 | --- | --- | --- |
-| 62 | Hazard Trial không có kết quả khi con cuối tự nổ; thứ tự khi nhiều điều kiện cùng frame | WON khi mọi con đã xử lý xong (bị diệt hẳn hoặc tự nổ) và chỉ huy còn sống; quân tự nổ vẫn 0 gold, 0 XP. Chốt cuối frame, ưu tiên DIED, rồi WON, rồi LEFT (tự chọn: bấm Rời phòng đúng frame thắng vẫn tính WON vì nhóm đã xong). Captain chờ nổ và Undead chờ hồi sinh chưa tính là xong (HZT-07, HZT-16, MTH-02, HUD-22, test HZ9 đến HZ11) |
+| 62 | Hazard Trial không có kết quả khi con cuối tự nổ; thứ tự khi nhiều điều kiện cùng frame | WON khi mọi con đã xử lý xong (bị diệt hẳn hoặc tự nổ) và chỉ huy còn sống; quân tự nổ vẫn 0 gold, 0 XP. Chốt cuối frame, ưu tiên DIED, rồi WON, rồi LEFT (tự chọn: bấm Rời tháp đúng frame thắng vẫn tính WON vì nhóm đã xong). Captain chờ nổ và Undead chờ hồi sinh chưa tính là xong (HZT-07, HZT-16, MTH-02, HUD-22, test HZ9 đến HZ11) |
 | 63 | Gold Hazard Trial có thể nhân frontline_gold_mult hai lần | Một công thức chung: kill_gold = gold_reward(w) × cmd_mult định nghĩa một lần ở RWD-02, áp cho quân thường ở cả wave thật và phòng; boss dùng boss_gold(w) = boss_gold_base × gold_mult(w), không nhân hệ số chỉ huy. GLD-10 dùng cùng dạng hai floor như gold_gain, bỏ clear_mult (RWD-01, RWD-02, FRT-02, GLD-02, GLD-10, BRW-01, EVB-05, test HZ12) |
 | 64 | GRID-07 chỉ giữ đường tới cổng, Bulwark có thể không tới được boss_melee_point | GRID-07 kiểm thêm đường tới boss_melee_point với path_check_min_width. Thêm GRID-08: vùng cấm boss_point_clear_radius 3.2 m (hai lần bán kính Bulwark 1.6 m). Tự chọn cách bỏ ô trong vùng ngay lúc nạp như GRID-03 thay vì khóa xây lúc chạy: hàm kiểm đơn giản hơn và người chơi không thấy ô không bao giờ dùng được. starter_arrow_slot phải ngoài vùng (SLOT-05, BOSS-03, BOSS-40, mục 6.3, test Fortress, tower 4 và 21). Level kiểm lại vị trí Arrow có sẵn sau khi đặt boss_melee_point theo hành lang 23.5 m |
 | 65 | Thứ tự rời SUMMARY ở wave thắng không khớp giữa END-07 và EVB-37 | WAVE-13 là nguồn duy nhất: SUMMARY → màn thắng → REWARD_PICK nếu có lượt chờ → PREP, cho cả bấm Tiếp tục và hết 10 s. Wave FSM vẫn ở SUMMARY trong lúc màn thắng mở (không thêm state); run_victory phát lúc mở màn thắng; thêm EVB-46 victory_continue_requested; màn thắng không đếm ngược (END-07, mục 3.3.1, 3.3.4, EVB-37, EVB-44, EVB-46, SCR-20, test VC5) |
@@ -3123,6 +3128,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 85 | **07/11: đồng bộ theo code UI tuần 9** (HUD-20, EVB-30): ô Mithril có nút "Sửa thành" mở panel Fortress (trước đây chỉ là dấu gợi ý); skill_slots_changed thêm tham số levels để thanh slot của màn REWARD_PICK đọc cấp skill thay vì tự nhớ |
 | 86 | **11/11: bake lại navmesh quanh công trình grid** (GRID-06, GRID-07, GRID-09, mục 3.7.4, Phụ lục C mục 67) |
 | 87 | **11/11: đồng bộ theo code UI tuần 10** (mục 4.1.3, HUD-15, HUD-16, HUD-17, HUD-21, HUD-24, ACC-07, WPN-02, PNL-15, EVB-47): thêm nút mũi tên ẩn/hiện kỹ năng (HUD-24, \[Should]) chỉ ẩn phần hiển thị, phím 1-3 vẫn dùng được, ACC-07 ghi ngoại lệ khi người chơi tự ẩn; đổi tên "kiếm gốc" thành "kiếm thường" ở mọi chỗ cho khớp tên trong game; bỏ dòng vùng "Dưới trái, trên thanh HP chỉ huy" vì mâu thuẫn với HUD-15 (thanh HP chỉ huy nằm ở trên trái); thanh XP và biểu tượng Aura đặt ở trên trái cạnh HP chỉ huy, hai hàng ô skill và ô vũ khí ở dưới trái trên ô Emergency repair; thêm xp_gained để thanh XP tô riêng phần XP từ chỉ huy và từ tower |
+| 88 | **12/11: đồng bộ theo code UI Hazard Trial và cảnh báo tuần 10** (HUD-22, HUD-23, HZT-01, HZT-07, ALR-18, ALR-20, mục 3.6.6, EVB-48 đến EVB-51): chữ hiển thị cho người chơi gọi Hazard Trial là "tháp" (nút "Rời tháp", nhãn "Chỉ số trong tháp không mang ra ngoài", toast "Đã rời tháp", kết quả thua ghi "Thất bại"); thêm heal_store_low_pct (0.20) cho cảnh báo kho Trạm hồi lực sắp cạn; thêm bốn tín hiệu cho Hazard Trial: nhóm quái và thưởng ở Tháp, tiến độ trong tháp, yêu cầu vào và yêu cầu rời |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 

@@ -329,3 +329,24 @@ panel.weapon.equipped,Đang dùng
 panel.weapon.pick_tip,Bấm để trang bị ngay
 panel.weapon.locked,Rơi từ boss
 panel.weapon.locked_tag,Chưa có
+hud.hazard.title,Hazard Trial
+hud.hazard.ready,Sẵn sàng
+hud.hazard.paused,Đang tạm dừng
+hud.hazard.dialog,Đóng hộp thoại trước
+hud.hazard.frontline,Cần Frontline
+hud.hazard.used,Đã dùng ở wave này
+hud.hazard.group,Nhóm quái: {types}
+hud.hazard.reward,Thắng: +{mithril} Mithril
+hud.hazard.enemies,Quái còn {value}/{max}
+hud.hazard.loot,Tạm tính: +{gold} vàng · +{xp} XP
+hud.hazard.note,Chỉ số trong tháp không mang ra ngoài
+hud.hazard.leave,Rời tháp
+hud.commander_room,Chỉ huy (trong tháp)
+hud.start_wave.hazard_hint,Chưa vào Hazard Trial
+alert.hazard.won,"Thắng Hazard Trial: +{mithril} Mithril, +{gold} vàng, +{xp} XP"
+alert.hazard.left,"Đã rời tháp: +{gold} vàng, +{xp} XP"
+alert.hazard.died,"Thất bại trong tháp: +{gold} vàng, +{xp} XP"
+alert.weapon_gained,Nhận vũ khí {name}. Đổi ở giai đoạn chuẩn bị
+alert.heal_drained,Trạm hồi lực ở ô {slot} đã cạn (xây lại {cost} vàng)
+alert.heal_drained_plain,Trạm hồi lực ở ô {slot} đã cạn
+alert.heal_low,Trạm hồi lực sắp cạn
