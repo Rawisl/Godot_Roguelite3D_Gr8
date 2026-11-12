@@ -195,6 +195,8 @@ func _set_phase(new_phase: StringName) -> void:
 ## Back to IDLE; result is what subscribers are told (IDLE, CANCELLED or DEPLETED).
 func _finish(result: StringName) -> void:
 	var source_id := _source_slot
+	if result == DEPLETED and Input.is_action_pressed(&"heal_channel"):
+		_needs_release = true
 	phase = IDLE
 	hold_time = 0.0
 	_progress_timer = 0.0

@@ -671,7 +671,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG2
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kiểm skill với boss (kháng, cờ hit_by_commander)
 - Nghiệm thu: Firebomb 100% lên Bulwark pha 1
 - Cần xong trước: W10-NG1
