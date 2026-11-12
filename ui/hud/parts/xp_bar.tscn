@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://cv3e0y5kcjs2v"]
+
+[ext_resource type="Script" uid="uid://cru4y0647l4j3" path="res://ui/hud/parts/xp_bar.gd" id="1_xpbar"]
+[ext_resource type="Script" uid="uid://v40xv8yvxgvm" path="res://ui/hud/parts/xp_fill.gd" id="2_xpfill"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.1098, 0.1216, 0.149, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glow"]
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9098, 0.7608, 0.3529, 1)
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
+
+[node name="XpBar" type="VBoxContainer" unique_id=1739204511]
+custom_minimum_size = Vector2(280, 0)
+mouse_filter = 1
+theme_override_constants/separation = 4
+script = ExtResource("1_xpbar")
+
+[node name="Header" type="HBoxContainer" parent="." unique_id=1739204512]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="LevelLabel" type="Label" parent="Header" unique_id=1739204513]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_constants/outline_size = 5
+theme_type_variation = &"HudLabel"
+
+[node name="PendingLabel" type="Label" parent="Header" unique_id=1739204514]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_outline_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_constants/outline_size = 5
+theme_type_variation = &"HudHint"
+theme_override_colors/font_color = Color(0.9098, 0.7608, 0.3529, 1)
+
+[node name="PercentLabel" type="Label" parent="Header" unique_id=1739204515]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+size_flags_horizontal = 10
+theme_override_colors/font_outline_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_constants/outline_size = 5
+theme_type_variation = &"HudHint"
+horizontal_alignment = 2
+
+[node name="Track" type="PanelContainer" parent="." unique_id=1739204516]
+custom_minimum_size = Vector2(280, 16)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_track")
+
+[node name="XpFill" type="Control" parent="Track" unique_id=1739204517]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_xpfill")
+
+[node name="Glow" type="Panel" parent="Track" unique_id=1739204518]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glow")

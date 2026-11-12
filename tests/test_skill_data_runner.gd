@@ -9,6 +9,10 @@ const FIREBOMB: SkillData = preload("res://data/skills/firebomb.tres")
 const SHARPNESS: SkillData = preload("res://data/skills/sharpness.tres")
 const VITALITY: SkillData = preload("res://data/skills/vitality.tres")
 const HEAL_STATION: SkillData = preload("res://data/skills/heal_station.tres")
+const ARMORED: SkillData = preload("res://data/skills/armored.tres")
+const LIFESTEAL: SkillData = preload("res://data/skills/lifesteal.tres")
+const MASTERY: SkillData = preload("res://data/skills/mastery.tres")
+const SKILLS: Array[SkillData] = [WHIRLWIND, SWORD_WAVE, FIREBOMB, SHARPNESS, VITALITY, HEAL_STATION, ARMORED, LIFESTEAL, MASTERY]
 
 ## Off when driven from the editor or godot-mcp, so results can still be read.
 @export var quit_when_done := true
@@ -57,7 +61,7 @@ func _make_skill(id: StringName, kind: SkillData.Kind) -> SkillData:
 	return d
 
 func test_resources_load() -> void:
-	for d: SkillData in [WHIRLWIND, SWORD_WAVE, FIREBOMB, SHARPNESS, VITALITY, HEAL_STATION]:
+	for d in SKILLS:
 		assert_true(d is SkillData, "%s loads as SkillData" % d.id)
 		assert_true(d.validate().is_empty(), "%s validate() is empty: %s" % [d.id, d.validate()])
 
@@ -81,8 +85,8 @@ func test_get_value() -> void:
 	d.values = {&"x": PackedFloat32Array([1.0])}
 	assert_true(d.validate().size() == 1, "validate flags wrong value count")
 	# Passive and stat numbers live in the stat card table, not in SkillData.
-	for p: SkillData in [SHARPNESS, VITALITY, HEAL_STATION]:
-		assert_true(p.values.is_empty(), "%s has no values (numbers come from the stat card table)" % p.id)
+	for card: SkillData in [SHARPNESS, VITALITY, HEAL_STATION, ARMORED, LIFESTEAL, MASTERY]:
+		assert_true(not card.values.is_empty() and card.validate().is_empty(), "%s has valid balance values" % card.id)
 
 func test_new_state() -> void:
 	var s := RunSkillState.new()
@@ -180,6 +184,6 @@ func test_event_bus_signals() -> void:
 
 func test_locale_keys() -> void:
 	TranslationServer.set_locale("vi")
-	for d: SkillData in [WHIRLWIND, SWORD_WAVE, FIREBOMB, SHARPNESS, VITALITY, HEAL_STATION]:
+	for d in SKILLS:
 		assert_true(tr(d.name_key) != String(d.name_key), "%s name translated" % d.id)
 		assert_true(tr(d.description_key) != String(d.description_key), "%s description translated" % d.id)

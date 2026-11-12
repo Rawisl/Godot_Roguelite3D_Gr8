@@ -23,7 +23,7 @@ func apply_pick(card_id: StringName, new_level: int) -> void:
 		return
 	# Setting a source again overwrites it, so there is no clear step that listeners could observe.
 	for entry in entries:
-		var value := entry.per_level * float(new_level)
+		var value := entry.card.get_value(entry.stat_key, new_level)
 		if entry.kind == StatCardEntry.Kind.ADD:
 			stat_block.set_add(entry.stat_key, card_id, value)
 		else:

@@ -12,6 +12,9 @@ extends Control
 @onready var _ring: RangeRing = %RangeRing
 @onready var _fortress_panel: FortressPanel = %FortressPanel
 @onready var _heal_panel: HealStationPanel = %HealStationPanel
+@onready var _weapon_panel: WeaponPanel = %WeaponPanel
+@onready var _weapon_slot: WeaponSlot = %WeaponSlot
+@onready var _skill_dock: Control = %SkillDock
 
 var _mode: StringName = &"FRONTLINE"
 
@@ -29,6 +32,10 @@ func _ready() -> void:
 	_selection.selection_cleared.connect(close_all)
 	_fortress_panel.visible = false
 	_fortress_panel.closed.connect(close_all)
+	_weapon_panel.visible = false
+	_weapon_panel.closed.connect(close_all)
+	_weapon_slot.open_requested.connect(_show_weapons)
+	_skill_dock.shown_changed.connect(_on_skill_dock_shown)
 	_selection.fortress_selected.connect(_show_fortress)
 	EventBus.slot_selected.connect(_on_slot_selected)
 	EventBus.tower_selected.connect(_on_tower_selected)
@@ -58,10 +65,11 @@ func _hide_panels() -> void:
 	_tower_panel.visible = false
 	_heal_panel.visible = false
 	_fortress_panel.visible = false
+	_weapon_panel.visible = false
 	_ring.hide_ring()
 
 func _any_open() -> bool:
-	return _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible
+	return _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible or _weapon_panel.visible
 
 func _show_build(slot_id: StringName) -> void:
 	_hide_panels()
@@ -165,3 +173,15 @@ func _show_heal_station(slot_id: StringName) -> void:
 	var service := _service()
 	if service != null:
 		_ring.show_at(service.get_slot_position(slot_id), _heal_panel.get_heal_range())
+
+## Opened from the weapon slot. Clearing the selection first closes a tower or slot panel.
+func _show_weapons() -> void:
+	_selection.clear_selection()
+	_hide_panels()
+	_weapon_panel.visible = true
+	_weapon_panel.open()
+
+## Hiding the skill slots takes the weapon panel away with the weapon slot.
+func _on_skill_dock_shown(shown: bool) -> void:
+	if not shown and _weapon_panel.visible:
+		close_all()

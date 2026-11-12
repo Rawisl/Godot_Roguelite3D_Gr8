@@ -1,0 +1,169 @@
+[gd_scene format=3 uid="uid://bvesa0b5qpxv8"]
+
+[ext_resource type="Script" uid="uid://cghxvhjfapitt" path="res://ui/hud/parts/weapon_slot.gd" id="1_slot"]
+[ext_resource type="Script" uid="uid://cnwq4xwphuih7" path="res://ui/hud/parts/cooldown_sweep.gd" id="2_sweep"]
+[ext_resource type="Resource" uid="uid://0of5ymd8bg30" path="res://data/weapons/sword_base.tres" id="3_w0"]
+[ext_resource type="Resource" uid="uid://6a14w2y61wji" path="res://data/weapons/frost.tres" id="4_w1"]
+[ext_resource type="Resource" uid="uid://cl7fghhytp172" path="res://data/weapons/chain_lightning.tres" id="5_w2"]
+[ext_resource type="Resource" uid="uid://dpwu7wxbt0bn4" path="res://data/weapons/burn.tres" id="6_w3"]
+[ext_resource type="Resource" uid="uid://del5wv2jn63xl" path="res://data/weapons/rampage.tres" id="7_w4"]
+[ext_resource type="Resource" uid="uid://brd5ep2wjb484" path="res://data/weapons/swift.tres" id="8_w5"]
+[ext_resource type="Script" uid="uid://ceq7aude86luv" path="res://ui/hud/parts/sword_glyph.gd" id="9_glyph"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
+bg_color = Color(0.1098, 0.1216, 0.149, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
+bg_color = Color(0.1098, 0.1216, 0.149, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098, 0.7608, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
+bg_color = Color(0.1647, 0.1843, 0.2275, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098, 0.7608, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
+
+[node name="WeaponSlot" type="Button" unique_id=1739204801]
+custom_minimum_size = Vector2(240, 120)
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_normal")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
+theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
+script = ExtResource("1_slot")
+weapons = Array[Resource]([ExtResource("3_w0"), ExtResource("4_w1"), ExtResource("5_w2"), ExtResource("6_w3"), ExtResource("7_w4"), ExtResource("8_w5")])
+
+[node name="Row" type="HBoxContainer" parent="." unique_id=1739204802]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="IconBox" type="Control" parent="Row" unique_id=1739204803]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Placeholder" type="Control" parent="Row/IconBox" unique_id=1739205301]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("9_glyph")
+
+[node name="Icon" type="TextureRect" parent="Row/IconBox" unique_id=1739204804]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Sweep" type="Control" parent="Row/IconBox" unique_id=1739204805]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_sweep")
+ring_color = Color(0.949, 0.9373, 0.902, 1)
+track_color = Color(0.1098, 0.1216, 0.149, 0.85)
+ring_width = 5.0
+
+[node name="CooldownLabel" type="Label" parent="Row/IconBox" unique_id=1739204806]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HudLabel"
+theme_override_colors/font_color = Color(0.949, 0.9373, 0.902, 1)
+theme_override_colors/font_outline_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="Row" unique_id=1739204807]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="NameLabel" type="Label" parent="Row/Column" unique_id=1739204808]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+
+[node name="EffectLabel" type="Label" parent="Row/Column" unique_id=1739204809]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+theme_override_colors/font_color = Color(0.9098, 0.7608, 0.3529, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="CountLabel" type="Label" parent="Row/Column" unique_id=1739204810]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudHint"
+theme_override_font_sizes/font_size = 18

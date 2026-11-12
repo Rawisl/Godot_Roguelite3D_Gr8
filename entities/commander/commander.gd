@@ -11,6 +11,7 @@ const COLLISION_LAYER_ENEMY: int = 3
 const TARGET_COLLIDER_PADDING: float = 0.4
 const WEAPON_DATA_PATH := "res://data/weapons/%s.tres"
 const WEAPON_SOURCE: StringName = &"weapon"
+const WEAPON_DEALT_BONUS: StringName = &"weapon_dealt_bonus"
 const COMBO_HIT3_ARC_DEG: float = 240.0
 const STRIKE_RATIO_MELEE: float = 0.38
 const STRIKE_RATIO_SPIN: float = 0.45
@@ -40,6 +41,7 @@ var aim_dir: Vector3 = Vector3.FORWARD
 var aim_point: Vector3 = Vector3.INF
 ## Radius the sword area has in the scene; a weapon can only make it bigger.
 var _sword_area_base_radius: float = -1.0
+var _equipped_weapon_data: WeaponData
 var is_commander_mode: bool = false
 var is_deploying: bool = false
 var is_dead: bool = false
@@ -120,6 +122,7 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
+	EventBus.commander_enemy_killed.connect(_on_enemy_killed)
 	_sync_wave_state()
 	_apply_equipped_weapon()
 	_refresh_aura.call_deferred()
@@ -728,7 +731,7 @@ func _start_attack(hit_index: int) -> void:
 	_post_action_timer = 0.0
 	_post_action_facing_dir = Vector3.ZERO
 
-	var interval := stats.attack_interval if stats else 0.45
+	var interval := get_stat(&"attack_interval", 0.45 / _weapon_attack_speed())
 	_attack_timer = interval
 
 	var hit_ratio := STRIKE_RATIO_SPIN if hit_index == 3 else STRIKE_RATIO_MELEE
@@ -782,7 +785,7 @@ func _play_attack_animation(combo_step: int) -> void:
 
 	var idx := clampi(combo_step - 1, 0, 2)
 	var anim_clip: StringName = COMBO_ANIM_CLIPS[idx]
-	var anim_speed: float = COMBO_ANIM_SPEEDS[idx]
+	var anim_speed: float = COMBO_ANIM_SPEEDS[idx] * _weapon_attack_speed()
 
 	if _anim_player.has_animation(anim_clip):
 		_anim_player.play(anim_clip, 0.05, anim_speed)
@@ -798,7 +801,6 @@ func _execute_sword_strike(combo_step: int) -> void:
 
 	var max_targets: int = stats.sword_max_targets
 	var sword_raw: float = stat_block.get_base(&"sword_damage") + stat_block.get_add_total(&"sword_damage")
-	var sword_dealt: float = get_sword_dealt_mult()
 	var knockback: float = 0.0
 
 	if combo_step == 3:
@@ -853,7 +855,7 @@ func _execute_sword_strike(combo_step: int) -> void:
 
 		var info := DamageInfo.outgoing(
 			sword_raw,
-			sword_dealt,
+			get_sword_dealt_mult(),
 			stats.sword_damage_type,
 			self,
 			knockback,
@@ -869,7 +871,32 @@ func _execute_sword_strike(combo_step: int) -> void:
 
 ## Total dealt multiplier for sword hits: 1 + sum of the percentage bonuses.
 func get_sword_dealt_mult() -> float:
-	return 1.0 + stat_block.get_mul_total(&"sword_damage")
+	return 1.0 + stat_block.get_mul_total(&"sword_damage") + get_weapon_dealt_bonus()
+
+
+func get_weapon_dealt_bonus() -> float:
+	_refresh_weapon_dealt_bonus()
+	return stat_block.get_add_total(WEAPON_DEALT_BONUS)
+
+
+func _refresh_weapon_dealt_bonus() -> void:
+	var bonus := _rampage_bonus()
+	if not is_equal_approx(stat_block.get_add_total(WEAPON_DEALT_BONUS), bonus):
+		stat_block.set_add(WEAPON_DEALT_BONUS, WEAPON_SOURCE, bonus)
+
+
+func _rampage_bonus() -> float:
+	var weapon := _equipped_weapon_data
+	if weapon == null or weapon.effect_id != &"rampage":
+		return 0.0
+	var hp_ratio := health.get_health_ratio()
+	if hp_ratio <= weapon.get_param(&"rampage_hp_lo"):
+		return weapon.get_param(&"rampage_bonus_lo")
+	if hp_ratio <= weapon.get_param(&"rampage_hp_mid"):
+		return weapon.get_param(&"rampage_bonus_mid")
+	if hp_ratio <= weapon.get_param(&"rampage_hp_hi"):
+		return weapon.get_param(&"rampage_bonus_hi")
+	return 0.0
 
 
 func take_damage(damage_input: Variant) -> void:
@@ -969,13 +996,19 @@ func can_retreat() -> bool:
 
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
+	_refresh_weapon_dealt_bonus()
 	EventBus.commander_hp_changed.emit(current_hp, max_hp)
-	_update_low_hp(current_hp, max_hp)
+	_update_low_hp(health.get_precise_hp(), max_hp)
 
 
-func _update_low_hp(current_hp: int, max_hp: int) -> void:
+func _on_enemy_killed(killer: Node) -> void:
+	if killer == self and not is_commander_mode and not is_dead:
+		health.heal_fractional(health.max_hp * stat_block.get_value(&"lifesteal_pct"))
+
+
+func _update_low_hp(current_hp: float, max_hp: int) -> void:
 	var threshold: float = stats.commander_low_hp_warning_pct if stats else 0.25
-	var is_low := current_hp > 0 and float(current_hp) < float(max_hp) * threshold
+	var is_low := current_hp > 0.0 and current_hp < max_hp * threshold
 	if is_low != _is_low_hp:
 		_is_low_hp = is_low
 		EventBus.commander_low_hp_changed.emit(is_low)
@@ -1010,12 +1043,23 @@ func _apply_equipped_weapon() -> void:
 
 func _apply_weapon(weapon_id: StringName) -> void:
 	var path := WEAPON_DATA_PATH % weapon_id
-	var weapon := load(path) as WeaponData if ResourceLoader.exists(path) else null
+	_equipped_weapon_data = load(path) as WeaponData if ResourceLoader.exists(path) else null
+	var weapon := _equipped_weapon_data
 	if weapon == null:
 		push_warning("Commander: no WeaponData at %s, the sword keeps the base range" % path)
 	var range_mult := weapon.range_mult if weapon != null else 1.0
 	stat_block.set_mul(&"sword_range", WEAPON_SOURCE, range_mult - 1.0)
+	stat_block.set_mul(&"attack_interval", WEAPON_SOURCE, 1.0 / _weapon_attack_speed() - 1.0)
+	_refresh_weapon_dealt_bonus()
 	_setup_sword_area()
+
+
+func _weapon_attack_speed() -> float:
+	var weapon := _equipped_weapon_data
+	if weapon == null or weapon.effect_id != &"swift":
+		return 1.0
+	var speed := weapon.get_param(&"swift_attack_speed_mult", 1.0)
+	return speed if is_finite(speed) and speed > 0.0 else 1.0
 
 
 func _on_wave_state_changed(new_state: StringName) -> void:

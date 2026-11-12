@@ -157,6 +157,7 @@ func _ready() -> void:
 	var target_hp: int = data.get_scaled_hp(wave_hp_mult)
 	health.max_hp = target_hp
 	health.hp = target_hp
+	health.damaged.connect(_on_health_damaged)
 	health.died.connect(_on_died)
  
 	if scaled_damage == 0 and data != null:
@@ -1348,6 +1349,13 @@ func apply_knockback(force_vector: Vector3) -> void:
 	change_state(Enums.EnemyState.STAGGER)
 	stagger_timer = GameConfig.enemy_stagger_time
  
+func _on_health_damaged(_amount: int, info: DamageInfo) -> void:
+	if health.hp > 0 or info == null or info.damage_type == Enums.DamageType.TRUE:
+		return
+	if is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
+		EventBus.commander_enemy_killed.emit(info.source)
+
+
 func _on_died() -> void:
 	if is_dead:
 		return
