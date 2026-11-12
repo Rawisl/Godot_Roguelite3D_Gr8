@@ -1,7 +1,6 @@
 extends MarginContainer
 
 const LOGIN_SCENE := preload("res://ui/screens/login.tscn")
-const CONFIRM_DIALOG := preload("res://ui/screens/confirm_dialog.tscn")
 const DRAWER_SLIDE_TIME := 0.2
 
 var _drawer_open := false
@@ -12,6 +11,8 @@ var _drawer_tween: Tween
 @onready var _meta_shop: Button = %MetaShop
 @onready var _settings: Button = %Settings
 @onready var _account: Button = %Account
+@onready var _leaderboard: Button = %Leaderboard
+@onready var _sync_status: Control = %SyncStatus
 @onready var _account_hint: Label = %AccountHint
 @onready var _quit: Button = %Quit
 @onready var _prestige: Label = %Prestige
@@ -26,11 +27,13 @@ func _ready() -> void:
 	_meta_shop.text = tr(&"menu.meta_shop")
 	_settings.text = tr(&"menu.settings")
 	_account.text = tr(&"menu.account")
+	_leaderboard.text = tr(&"menu.leaderboard")
 	_quit.text = tr(&"menu.quit")
 	_play.pressed.connect(GameState.change_state.bind(GameState.AppState.RUN_LOADING))
 	_meta_shop.pressed.connect(GameState.change_state.bind(GameState.AppState.META_SHOP))
 	_settings.pressed.connect(GameState.change_state.bind(GameState.AppState.SETTINGS))
 	_account.pressed.connect(_on_account_pressed)
+	_leaderboard.pressed.connect(GameState.change_state.bind(GameState.AppState.LEADERBOARD))
 	AuthService.session_changed.connect(_on_session_changed)
 	GameState.session_restore_failed.connect(_show_restore_problem)
 	_refresh_account()
@@ -38,7 +41,7 @@ func _ready() -> void:
 	_quit.pressed.connect(get_tree().quit)
 	_drawer_toggle.tooltip_text = tr(&"menu.stats_toggle")
 	_drawer_toggle.pressed.connect(_toggle_drawer)
-	for button: Button in [_play, _meta_shop, _settings, _account, _quit, _drawer_toggle]:
+	for button: Button in [_play, _meta_shop, _leaderboard, _settings, _account, _quit, _drawer_toggle]:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
 	# TODO: read prestige_balance and max_wave_cleared from SaveManager once it loads the save.
@@ -86,6 +89,8 @@ func _on_login_closed() -> void:
 ## Hidden when online features are off. Signed in, the button names the account.
 func _refresh_account() -> void:
 	_account.visible = AuthService.is_available()
+	_leaderboard.visible = AuthService.is_available()
+	_sync_status.visible = AuthService.is_available()
 	if AuthService.is_signed_in():
 		_account.text = UiFormat.tr_fmt(&"menu.account_signed_in", {"name": _account_name()})
 	else:
@@ -94,24 +99,13 @@ func _refresh_account() -> void:
 func _account_name() -> String:
 	return AuthService.email if AuthService.display_name.is_empty() else AuthService.display_name
 
+## Signed in, the button opens the Account tab in Settings, where sign out and sync live.
 func _on_account_pressed() -> void:
 	if AuthService.is_signed_in():
-		_confirm_sign_out()
+		GameState.settings_tab = &"account"
+		GameState.change_state(GameState.AppState.SETTINGS)
 	else:
 		_open_login()
-
-# TODO(WhoKeng): move sign out to the Account tab in Settings once it exists.
-func _confirm_sign_out() -> void:
-	var dialog := CONFIRM_DIALOG.instantiate()
-	dialog.setup(&"dialog.sign_out.title", &"dialog.sign_out.body", {"name": _account_name()})
-	dialog.set_buttons(&"dialog.sign_out.confirm")
-	dialog.confirmed.connect(_sign_out)
-	if ScreenManager.open_dialog(dialog):
-		dialog.tree_exited.connect(_on_login_closed)
-
-## The session is dropped locally first, so the menu updates without waiting for the network.
-func _sign_out() -> void:
-	AuthService.sign_out()
 
 func _on_session_changed(_signed_in: bool) -> void:
 	_account_hint.visible = false
