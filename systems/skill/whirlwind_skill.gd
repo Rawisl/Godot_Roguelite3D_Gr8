@@ -25,6 +25,6 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 		if offset.length_squared() > radius_sq:
 			continue
 		var direction := offset.normalized() if not offset.is_zero_approx() else Vector3.FORWARD
-		enemy.call(&"take_damage", DamageInfo.outgoing(base_damage, damage_mult, data.damage_type, caster, 0.0, direction))
+		enemy.call(&"take_damage", DamageInfo.skill_hit(base_damage, damage_mult, data.damage_type, caster, direction))
 		hits += 1
 	return hits

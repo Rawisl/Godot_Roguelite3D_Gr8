@@ -529,7 +529,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH5
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 10 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: GRID-07 chặn kín đường: hàm thuần trên lưới GridData (ô OCCUPIED, RUINED và ô định xây là vật cản; đường rộng >= 3.2 m; kiểm cả đường tới cổng Fortress và tới boss_melee_point), BuildService từ chối BLOCKS_PATH không trừ gold, kiểm lại lúc xác nhận
 - Nghiệm thu: Bố cục thử mất đường tới cổng hoặc tới boss_melee_point thì bị từ chối, gold không đổi; xây lại cùng chỗ không bị kiểm; ô khác vẫn xây được
 - Tệp liên quan: levels/corridor/grid_data.gd, systems/build/build_service.gd (_do_build), systems/build/slot_manager.gd
@@ -663,7 +663,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG1
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Bị động và thẻ stat qua StatBlock: Sharpness, Armored, Lifesteal, Trạm hồi lực (SKL-26); thẻ stat Thể lực, Tinh thông (SKL-13..15); cắt Lightstep, Focus, Bền thành
 - Nghiệm thu: Sharpness L3 +24%; Armored L3 15%; Lifesteal L3 1.5%; SKL-26 hồi 15, 20, 25 HP/s ở level 1, 2, 3 qua StatBlock
 - Cần xong trước: W9-MH4b, W9-NG3
@@ -671,7 +671,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG2
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kiểm skill với boss (kháng, cờ hit_by_commander)
 - Nghiệm thu: Firebomb 100% lên Bulwark pha 1
 - Cần xong trước: W10-NG1
