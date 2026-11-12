@@ -936,7 +936,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH2
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nút nâng cấp xám 'Cần Chỉ huy cấp N' (UPG-06) áp ở cấp 13 và 25; panel Tower hiển thị cấp thật và bậc model; Trạm hồi lực có nút Nâng cấp và 'MAX'
 - Nghiệm thu: Tooltip đúng cấp yêu cầu; trụ có sẵn hiện nút Bán xám 'Bán được từ wave 3'
 - Tệp liên quan: ui/panels/tower_panel.gd, ui/panels/heal_station_panel.gd
@@ -988,7 +988,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH8
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: UI chặn kín đường: ghost preview màu cấm, tooltip 'Sẽ chặn kín đường đi', mục xây xám lý do BLOCKS_PATH; chuỗi 'Đã đủ 3 công trình trên mặt đất'
 - Nghiệm thu: Mục xây xám đúng lý do ở bố cục thử
 - Tệp liên quan: ui/panels/build_panel.gd, data/locale/strings.csv
