@@ -235,7 +235,7 @@ func _on_state_changed(new_state: StringName) -> void:
 	_current_state = new_state
 
 
-func _on_enemy_died(_enemy_type: StringName, _pos: Vector3, _gold_base: int, _prestige: int, is_cull: bool, hit_by_commander: bool) -> void:
+func _on_enemy_died(_enemy_type: StringName, _pos: Vector3, _gold_base: float, _prestige: int, is_cull: bool, hit_by_commander: bool) -> void:
 	if is_cull:
 		return
 	run_kills += 1

@@ -4,6 +4,7 @@ extends CharacterBody3D
 ## Base enemy controller with state machine, navigation, spawn grace, and combat behaviors.
 ## Supports melee and ranged archetypes, prioritized targeting rules, and crowd optimizations.
 # TODO(Ender-Via): when more than one lane exists, project onto the nearest lane and use that lane's length instead of the first lane's longest length.
+# TODO(kiezroth): when boss rewards move to the summary step, emit 0 prestige for bosses in _on_died and let WaveManager add boss_prestige there.
  
 signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
  
@@ -50,7 +51,6 @@ var wave_hp_mult: float = 1.0
 var wave_dmg_mult: float = 1.0
 var wave_speed_mult: float = 1.0
 var scaled_damage: int = 0
-var scaled_gold: int = 0
 var scale_config: ScaleConfig = null
 
 const BURN_EPSILON := 0.0001
@@ -163,10 +163,6 @@ func _ready() -> void:
 	if scaled_damage == 0 and data != null:
 		scaled_damage = data.get_scaled_damage(wave_dmg_mult)
 
-	if scaled_gold == 0 and data != null:
-		var cfg := _get_effective_scale_config()
-		scaled_gold = cfg.get_gold_reward(data.gold_reward, spawn_wave)
- 
 	nav.radius = data.agent_radius if (data != null and "agent_radius" in data) else 0.5
 	nav.path_desired_distance = 1.0
 	nav.target_desired_distance = data.attack_range if data else 1.0
@@ -288,8 +284,6 @@ func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave
 			health.max_hp = s_hp
 			health.hp = s_hp
 		scaled_damage = data.get_scaled_damage(dmg_mult)
-		var cfg := _get_effective_scale_config()
-		scaled_gold = cfg.get_gold_reward(data.gold_reward, spawn_wave)
  
 func change_state(new_state: Enums.EnemyState) -> void:
 	if current_state == new_state:
@@ -1379,15 +1373,20 @@ func _on_died() -> void:
 		hurt_shape.set_deferred("disabled", true)
  
 	if data != null:
-		var cfg := _get_effective_scale_config()
-		var base_gold: int = scaled_gold if scaled_gold > 0 else cfg.get_gold_reward(data.gold_reward, spawn_wave)
-		var mult: float = GameConfig.frontline_gold_mult if hit_by_commander else 1.0
-		var display_gold: int = int(round(float(base_gold) * mult))
+		var kill_gold: float = _get_kill_gold()
+		var display_gold: int = int(round(kill_gold))
 		if display_gold > 0:
 			EventBus.gold_delta.emit(display_gold)
-		EventBus.enemy_died.emit(data.id, global_position, base_gold, data.prestige_reward, false, hit_by_commander)
+		EventBus.enemy_died.emit(data.id, global_position, kill_gold, data.prestige_reward, false, hit_by_commander)
  
 	change_state(Enums.EnemyState.DEAD)
+
+
+## Gold this unit pays on death, at the wave it spawned in. Bosses pay their gold at the summary step instead.
+func _get_kill_gold() -> float:
+	if data is BossData:
+		return 0.0
+	return GameConfig.wave_rewards.get_kill_gold(data.gold_reward, spawn_wave, hit_by_commander)
  
 func _play_death_anim() -> void:
 	var death_anim: StringName = &""

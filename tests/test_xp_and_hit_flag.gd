@@ -183,8 +183,8 @@ func test_enemy_entity_flag_and_death_event() -> void:
 	assert_true(grunt.health.hit_by_commander, "Enemy.health.hit_by_commander is true after commander sword damage")
 
 	# Listen to EventBus.enemy_died to verify hit_by_commander parameter
-	var death_record := {"emitted": false, "hit_by_cmd": false, "gold": 0}
-	var on_died := func(_type: StringName, _pos: Vector3, gold: int, _prestige: int, _cull: bool, hit_by_cmd: bool = false):
+	var death_record := {"emitted": false, "hit_by_cmd": false, "gold": 0.0}
+	var on_died := func(_type: StringName, _pos: Vector3, gold: float, _prestige: int, _cull: bool, hit_by_cmd: bool = false):
 		death_record.emitted = true
 		death_record.hit_by_cmd = hit_by_cmd
 		death_record.gold = gold
