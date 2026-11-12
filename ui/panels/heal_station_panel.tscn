@@ -42,7 +42,15 @@ mouse_filter = 2
 value_color = Color(0.9098, 0.7608, 0.3529, 1)
 value_font_size = 32
 
-[node name="Sell" type="Button" parent="VBoxContainer/Body" index="4" unique_id=731954082]
+[node name="Upgrade" type="Button" parent="VBoxContainer/Body" index="4" unique_id=1206417830]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("3_button")
+height = 110
+tall_height = 110
+metadata/_custom_type_script = "uid://bxyhqnpa4du2p"
+
+[node name="Sell" type="Button" parent="VBoxContainer/Body" index="5" unique_id=731954082]
 unique_name_in_owner = true
 layout_mode = 2
 script = ExtResource("3_button")
