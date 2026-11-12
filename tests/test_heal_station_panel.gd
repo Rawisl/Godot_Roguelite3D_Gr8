@@ -24,4 +24,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show(0, 300, 0, false)
 
 func _show(hp: int, max_hp: int, sell_value: int, in_prep: bool) -> void:
-	_panel.show_info({"data": DATA, "level": 1, "hp": hp, "max_hp": max_hp, "sell_value": sell_value}, in_prep)
+	_panel.show_info({"data": DATA, "level": 1, "hp": hp, "max_hp": max_hp, "sell_value": sell_value,
+		"is_max": false, "upgrade_cost": 40, "upgrade_shortfall": 0,
+		"upgrade_locked": false, "upgrade_required_level": 0}, in_prep)
