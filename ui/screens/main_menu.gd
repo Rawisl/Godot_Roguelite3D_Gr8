@@ -44,10 +44,15 @@ func _ready() -> void:
 	for button: Button in [_play, _meta_shop, _leaderboard, _settings, _account, _quit, _drawer_toggle]:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
-	# TODO: read prestige_balance and max_wave_cleared from SaveManager once it loads the save.
-	_show_meta(0, 0)
+	_show_saved_meta()
+	SaveManager.save_loaded.connect(_show_saved_meta)
 	_set_drawer(false, false)
 	_play.grab_focus()
+
+## Prestige and best wave come from the save; a save that loads later refreshes them.
+func _show_saved_meta() -> void:
+	var profile := SaveManager.get_section(&"profile")
+	_show_meta(int(profile.get("prestige_balance", 0)), int(profile.get("max_wave_cleared", 0)))
 
 func _show_meta(prestige: int, max_wave_cleared: int) -> void:
 	_prestige.text = UiFormat.tr_fmt(&"menu.prestige", {"value": prestige})

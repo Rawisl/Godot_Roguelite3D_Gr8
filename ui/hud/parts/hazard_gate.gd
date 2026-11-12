@@ -51,17 +51,19 @@ func _ready() -> void:
 
 ## E in PREP only; in combat E belongs to the heal channel.
 func _unhandled_input(event: InputEvent) -> void:
-	if _state == PREP and event.is_action_pressed(ACTION) and not event.is_echo():
-		try_enter()
+	# E is only used up when it really asks to enter, so a locked marker leaves it for others.
+	if _state == PREP and event.is_action_pressed(ACTION) and not event.is_echo() and try_enter():
 		get_viewport().set_input_as_handled()
 
 ## The wave side checks again; the marker only stops a request it already knows is refused.
-func try_enter() -> void:
+## Returns true when the request was sent.
+func try_enter() -> bool:
 	if _state != PREP or _sent or lock_reason() != &"":
-		return
+		return false
 	_sent = true
 	EventBus.hazard_enter_requested.emit()
 	_refresh()
+	return true
 
 ## Empty when the room can be entered. Same order as the rules: pause, dialog, mode, used.
 func lock_reason() -> StringName:
