@@ -2,7 +2,7 @@ class_name LocalSaveRepository
 extends SaveRepository
 ## Stores the envelope as JSON in a single file, user://endlesswar_save.json by default.
 ## A write goes to a .tmp file first, is read back and checked, the old file is copied to
-## .bak, then the .tmp replaces the main file.
+## .bak, then the .tmp replaces the main file. If that last step fails, the .tmp is kept.
 
 const DEFAULT_PATH := "user://endlesswar_save.json"
 const TEMP_EXTENSION := "tmp"
@@ -25,8 +25,16 @@ func path_of(source: Source) -> String:
 			return path.get_basename() + "." + BACKUP_EXTENSION
 	return path
 
-func corrupt_path() -> String:
-	return path.get_basename() + "." + CORRUPT_EXTENSION
+## Where a broken copy is kept: <base>.corrupt for the main file, <base>.corrupt.tmp and
+## <base>.corrupt.bak for the other two.
+func corrupt_path(source: Source = Source.MAIN) -> String:
+	var corrupt := path.get_basename() + "." + CORRUPT_EXTENSION
+	match source:
+		Source.TEMP:
+			return corrupt + "." + TEMP_EXTENSION
+		Source.BACKUP:
+			return corrupt + "." + BACKUP_EXTENSION
+	return corrupt
 
 func has_data() -> bool:
 	return FileAccess.file_exists(path)
@@ -43,7 +51,9 @@ func load_source(source: Source) -> Dictionary:
 	return envelope
 
 ## Writes in four steps so a crash never leaves the main file half written: write .tmp,
-## read it back and verify, copy a valid main file to .bak, replace the main file.
+## read it back and verify, copy a valid main file to .bak, replace the main file. When the
+## replace fails the .tmp stays on disk: it is the newest good copy and load_save() picks it
+## up on the next start.
 func save_data(envelope: Dictionary) -> Error:
 	var dir_error := DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 	if dir_error != OK:
@@ -75,34 +85,26 @@ func save_data(envelope: Dictionary) -> Error:
 				discard_temp()
 				return copy_error
 
-	var rename_error := DirAccess.rename_absolute(temp_path, path)
+	var rename_error := _rename(temp_path, path)
 	if rename_error != OK:
 		DirAccess.remove_absolute(path)
-		rename_error = DirAccess.rename_absolute(temp_path, path)
-	if rename_error != OK:
-		discard_temp()
+		rename_error = _rename(temp_path, path)
 	return rename_error
 
 func promote_temp() -> Error:
-	return DirAccess.rename_absolute(path_of(Source.TEMP), path)
+	return _rename(path_of(Source.TEMP), path)
 
 func discard_temp() -> void:
 	var temp_path := path_of(Source.TEMP)
 	if FileAccess.file_exists(temp_path):
 		DirAccess.remove_absolute(temp_path)
 
-## Only a broken main file is kept (as .corrupt, replacing an older one). Broken .tmp and
-## .bak files are deleted, and nothing is kept when there is no main file.
+## Keeps every broken copy aside: the main file as .corrupt, the .tmp as .corrupt.tmp and
+## the .bak as .corrupt.bak, each replacing an older one of the same name. A copy that does
+## not exist leaves nothing behind.
 func quarantine() -> void:
-	if has_data():
-		var corrupt := corrupt_path()
-		if FileAccess.file_exists(corrupt):
-			DirAccess.remove_absolute(corrupt)
-		DirAccess.rename_absolute(path, corrupt)
-	discard_temp()
-	var backup_path := path_of(Source.BACKUP)
-	if FileAccess.file_exists(backup_path):
-		DirAccess.remove_absolute(backup_path)
+	for source: Source in [Source.MAIN, Source.TEMP, Source.BACKUP]:
+		_keep_aside(path_of(source), corrupt_path(source))
 
 ## Reads and parses one file. Sets _read_error; returns {} unless it holds a JSON object.
 func _read_envelope(file_path: String) -> Dictionary:
@@ -125,3 +127,14 @@ func _read_envelope(file_path: String) -> Dictionary:
 		return {}
 	_read_error = OK
 	return json.data
+
+func _keep_aside(file_path: String, aside_path: String) -> void:
+	if not FileAccess.file_exists(file_path):
+		return
+	if FileAccess.file_exists(aside_path):
+		DirAccess.remove_absolute(aside_path)
+	DirAccess.rename_absolute(file_path, aside_path)
+
+## Single place for the final rename so a test can make it fail.
+func _rename(from_path: String, to_path: String) -> Error:
+	return DirAccess.rename_absolute(from_path, to_path)

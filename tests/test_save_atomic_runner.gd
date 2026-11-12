@@ -3,7 +3,8 @@ extends Node
 ## Automated test runner verifying:
 ## - save() goes through .tmp, a read-back check and a .bak copy, and stores a checksum
 ## - load order main -> temp -> backup, a damaged main file never replaces a good backup
-## - an unreadable save is refused until start_new_save() keeps it aside as .corrupt
+## - an unreadable save is refused until start_new_save() keeps every broken copy aside as .corrupt*
+## - a temp copy that cannot be promoted, or a failed final rename, never loses the newest copy
 ## - saves are held back during combat, coalesced by request_save(), and clamped on load
 ## Writes only under user://test_save_atomic/, the real save is put back afterwards.
 
@@ -50,6 +51,16 @@ class TamperTempRepository extends LocalSaveRepository:
 			envelope["checksum"] = SaveChecksum.PREFIX + "0"
 		return envelope
 
+## promote_temp() always fails.
+class FailPromoteRepository extends LocalSaveRepository:
+	func promote_temp() -> Error:
+		return ERR_FILE_CANT_WRITE
+
+## Every rename fails (the test seam of LocalSaveRepository).
+class FailRenameRepository extends LocalSaveRepository:
+	func _rename(_from_path: String, _to_path: String) -> Error:
+		return ERR_FILE_CANT_WRITE
+
 func _ready() -> void:
 	print("\n=======================================================")
 	print("          AUTOMATED SAVE ATOMIC RUNNER TEST            ")
@@ -75,12 +86,16 @@ func _ready() -> void:
 	test_orphan_tmp_removed()
 	test_temp_bad_keeps_old()
 	test_write_error_keeps_memory()
+	test_temp_kept_when_promote_fails()
+	test_temp_kept_when_rename_fails()
 	await test_request_save_coalesces()
 	test_save_deferred_in_combat()
 	test_save_now_in_combat()
 	test_combat_flag_cleared_on_run_end()
 	test_pending_flushed_on_run_end()
 	test_blocked_not_queued_in_combat()
+	test_pending_flushed_on_leaving_run()
+	test_pending_flushed_on_quit()
 	test_clamp_values()
 	test_defaults_without_file()
 	test_save_under_50ms()
@@ -242,8 +257,12 @@ func test_start_new_save() -> void:
 	var error := SaveManager.start_new_save()
 	assert_true(error == OK, "start_new_save() returns OK")
 	assert_true(FileAccess.get_file_as_string(_local.corrupt_path()) == broken, ".corrupt holds the broken main file")
+	assert_true(FileAccess.get_file_as_string(_local.corrupt_path(SaveRepository.Source.TEMP)) == broken + "1",
+			".corrupt.tmp holds the broken temp file")
+	assert_true(FileAccess.get_file_as_string(_local.corrupt_path(SaveRepository.Source.BACKUP)) == broken + "2",
+			".corrupt.bak holds the broken backup")
 	assert_true(not _exists(SaveRepository.Source.TEMP), "no temp file left")
-	assert_true(not _exists(SaveRepository.Source.BACKUP), "broken backup removed")
+	assert_true(not _exists(SaveRepository.Source.BACKUP), "broken backup moved away")
 	assert_true(SaveChecksum.matches(_read_file(SaveRepository.Source.MAIN)), "new main file is valid")
 	assert_true(SaveManager.can_write and SaveManager.load_failure == &"", "writing allowed again")
 	assert_true(_loaded == 1, "save_loaded emitted once")
@@ -252,13 +271,15 @@ func test_start_new_save() -> void:
 	assert_true(SaveManager.loaded_from == &"MAIN" and SaveManager.data == SaveManager.DEFAULT_DATA,
 			"new file holds the defaults")
 
-	# Only a broken backup, no main file: nothing is kept
+	# Only a broken backup, no main file: only the backup is kept aside
 	_begin()
 	_write_text(SaveRepository.Source.BACKUP, broken)
 	SaveManager.load_save()
 	assert_true(SaveManager.start_new_save() == OK, "start_new_save() with only a backup returns OK")
 	assert_true(not FileAccess.file_exists(_local.corrupt_path()), "no .corrupt without a main file")
-	assert_true(not _exists(SaveRepository.Source.BACKUP), "broken backup removed")
+	assert_true(FileAccess.get_file_as_string(_local.corrupt_path(SaveRepository.Source.BACKUP)) == broken,
+			".corrupt.bak kept without a main file")
+	assert_true(not _exists(SaveRepository.Source.BACKUP), "broken backup moved away")
 	assert_true(SaveChecksum.matches(_read_file(SaveRepository.Source.MAIN)), "new main file is valid")
 
 func test_start_new_save_refused_when_fine() -> void:
@@ -294,6 +315,41 @@ func test_temp_bad_keeps_old() -> void:
 	assert_true(_balance_of(SaveRepository.Source.MAIN) == 1, "main file keeps the old value")
 	assert_true(not _exists(SaveRepository.Source.TEMP), "no temp file left")
 	assert_true(not _exists(SaveRepository.Source.BACKUP), "no backup made")
+
+func test_temp_kept_when_promote_fails() -> void:
+	print("\n--- Temp kept when promotion fails ---")
+	_begin()
+	_write_text(SaveRepository.Source.MAIN, '{"save_version": 1, "data": {')
+	_write_envelope_file(SaveRepository.Source.TEMP, _data_with(7))
+	SaveManager.set_repository(FailPromoteRepository.new(TEST_PATH))
+	SaveManager.load_save()
+	assert_true(SaveManager.loaded_from == &"TEMP" and _balance() == 7, "temp value loaded")
+	assert_true(_exists(SaveRepository.Source.TEMP), "temp file kept when promotion fails")
+	assert_true(_balance_of(SaveRepository.Source.TEMP) == 7, "kept temp still holds the value")
+	# Promotion works: the temp becomes the main file and is gone.
+	_begin()
+	_write_text(SaveRepository.Source.MAIN, '{"save_version": 1, "data": {')
+	_write_envelope_file(SaveRepository.Source.TEMP, _data_with(7))
+	SaveManager.load_save()
+	assert_true(not _exists(SaveRepository.Source.TEMP), "temp gone after a successful promotion")
+	assert_true(_balance_of(SaveRepository.Source.MAIN) == 7, "main file holds the promoted value")
+
+func test_temp_kept_when_rename_fails() -> void:
+	print("\n--- Temp kept when the final rename fails ---")
+	_begin()
+	_set_balance(1)
+	SaveManager.save()
+	SaveManager.set_repository(FailRenameRepository.new(TEST_PATH))
+	_reset_counters()
+	_set_balance(2)
+	assert_true(SaveManager.save() == ERR_FILE_CANT_WRITE, "save() returns the rename error")
+	assert_true(_only_reason(SaveManager.REASON_WRITE_ERROR), "save_failed(WRITE_ERROR) emitted once")
+	assert_true(_exists(SaveRepository.Source.TEMP) and _balance_of(SaveRepository.Source.TEMP) == 2,
+			"temp file with the new data kept")
+	assert_true(_balance_of(SaveRepository.Source.BACKUP) == 1, "backup holds the previous save")
+	SaveManager.set_repository(LocalSaveRepository.new(TEST_PATH))
+	SaveManager.load_save()
+	assert_true(SaveManager.loaded_from == &"TEMP" and _balance() == 2, "next start loads the kept temp")
 
 func test_write_error_keeps_memory() -> void:
 	print("\n--- Write error keeps memory ---")
@@ -369,6 +425,44 @@ func test_pending_flushed_on_run_end() -> void:
 	EventBus.run_ended.emit(&"COMMANDER_DIED", {})
 	assert_true(_completed == 1, "pending write done on run end")
 	assert_true(_balance_of(SaveRepository.Source.MAIN) == 4, "disk has the value")
+
+func test_pending_flushed_on_leaving_run() -> void:
+	print("\n--- Leaving RUN flushes the pending save ---")
+	_begin()
+	EventBus.state_changed.emit(&"COMBAT")
+	_set_balance(6)
+	assert_true(SaveManager.save() == ERR_BUSY, "save() held back in combat")
+	GameState.app_state_changed.emit(GameState.AppState.RUN_END, GameState.AppState.RUN)
+	assert_true(_completed == 1 and _balance_of(SaveRepository.Source.MAIN) == 6, "pending write done")
+	assert_true(SaveManager.save() == OK, "combat flag cleared, save() writes right away")
+	# Other transitions leave combat alone.
+	_begin()
+	EventBus.state_changed.emit(&"COMBAT")
+	GameState.app_state_changed.emit(GameState.AppState.SETTINGS, GameState.AppState.MAIN_MENU)
+	assert_true(SaveManager.save() == ERR_BUSY, "leaving a non-RUN state does not clear combat")
+	EventBus.state_changed.emit(&"PREP")
+
+func test_pending_flushed_on_quit() -> void:
+	print("\n--- Pending save written on quit ---")
+	_begin()
+	EventBus.state_changed.emit(&"COMBAT")
+	_set_balance(8)
+	SaveManager.save()
+	SaveManager.notification(NOTIFICATION_WM_CLOSE_REQUEST)
+	assert_true(_completed == 1 and _balance_of(SaveRepository.Source.MAIN) == 8, "written on close request")
+	SaveManager._exit_tree()
+	assert_true(_completed == 1, "no second write on exit_tree")
+	_begin()
+	EventBus.state_changed.emit(&"COMBAT")
+	_set_balance(9)
+	SaveManager.save()
+	SaveManager._exit_tree()
+	assert_true(_completed == 1 and _balance_of(SaveRepository.Source.MAIN) == 9, "written on exit_tree")
+	_begin()
+	SaveManager.notification(NOTIFICATION_WM_CLOSE_REQUEST)
+	SaveManager._exit_tree()
+	assert_true(_completed == 0, "nothing written when nothing is pending")
+	EventBus.state_changed.emit(&"PREP")
 
 func test_blocked_not_queued_in_combat() -> void:
 	print("\n--- Blocked save not queued ---")
@@ -508,7 +602,8 @@ func _write_envelope_file(source: SaveRepository.Source, data: Dictionary, with_
 func _clear_test_dir() -> void:
 	var local := LocalSaveRepository.new(TEST_PATH)
 	for file_path in [TEST_PATH, local.path_of(SaveRepository.Source.TEMP),
-			local.path_of(SaveRepository.Source.BACKUP), local.corrupt_path()]:
+			local.path_of(SaveRepository.Source.BACKUP), local.corrupt_path(),
+			local.corrupt_path(SaveRepository.Source.TEMP), local.corrupt_path(SaveRepository.Source.BACKUP)]:
 		if FileAccess.file_exists(file_path):
 			DirAccess.remove_absolute(file_path)
 	if DirAccess.dir_exists_absolute(TEST_DIR):

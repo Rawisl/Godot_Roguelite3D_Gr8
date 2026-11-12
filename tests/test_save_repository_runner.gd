@@ -239,7 +239,8 @@ func _read_raw() -> Dictionary:
 func _clear_test_dir() -> void:
 	var local := LocalSaveRepository.new(TEST_PATH)
 	for file_path in [TEST_PATH, local.path_of(SaveRepository.Source.TEMP),
-			local.path_of(SaveRepository.Source.BACKUP), local.corrupt_path()]:
+			local.path_of(SaveRepository.Source.BACKUP), local.corrupt_path(),
+			local.corrupt_path(SaveRepository.Source.TEMP), local.corrupt_path(SaveRepository.Source.BACKUP)]:
 		if FileAccess.file_exists(file_path):
 			DirAccess.remove_absolute(file_path)
 	if DirAccess.dir_exists_absolute(TEST_DIR):

@@ -43,6 +43,6 @@ func promote_temp() -> Error:
 func discard_temp() -> void:
 	pass
 
-## Keeps a broken main copy aside as a .corrupt file and removes the other broken copies.
+## Keeps the broken copies aside (main as .corrupt, temp as .corrupt.tmp, backup as .corrupt.bak).
 func quarantine() -> void:
 	pass

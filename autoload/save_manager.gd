@@ -9,6 +9,7 @@ extends Node
 ## be replaced with start_new_save()).
 # TODO(Rawisl): when account sync lands, write revision (+1 on every successful save), updated_at (UTC) and device_id (generated once per machine) into the envelope in _write(); a missing one means revision 0 and a new device_id.
 # TODO(kiezroth): when the save loads with run_flag.run_in_progress true, settle the run as ABANDONED before MainMenu (prestige from prestige_pending), clear the flag, save and tell the player.
+# TODO(kiezroth): when meta upgrade data defines a max level per upgrade, clamp meta.levels above that max in _clamp_values() on load.
 # TODO(kiezroth): when the save hooks land, write with save_now() at wave SUMMARY (before the summary shows) and RunEnd, and with save() when the tutorial finishes; shop purchases save inside the MetaShop buy.
 
 signal save_loaded
@@ -80,7 +81,19 @@ func _ready() -> void:
 	set_repository(LocalSaveRepository.new())
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.run_ended.connect(_on_run_ended)
+	# abandon_run() can end a run without run_ended, so leaving RUN also ends combat.
+	GameState.app_state_changed.connect(_on_app_state_changed)
 	load_save()
+
+## A save held back during combat would be lost when the game closes, so write it now.
+## The window close request comes first (all listeners still alive); _exit_tree covers
+## get_tree().quit(). Clearing _save_pending makes the second call a no-op.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_flush_on_quit()
+
+func _exit_tree() -> void:
+	_flush_on_quit()
 
 ## Swaps the storage (cloud, test double). Call load_save() afterwards to read from it.
 func set_repository(new_repository: SaveRepository) -> void:
@@ -131,9 +144,11 @@ func load_save() -> Error:
 		# A copied old checksum would no longer match once data changes; _write() computes a new one.
 		_envelope_extras.erase("checksum")
 		loaded_from = source_name
+		# A temp that could not be promoted may be the only good copy: keep it.
 		if source == SaveRepository.Source.TEMP and repository.promote_temp() != OK:
 			push_warning("SaveManager: could not promote the temp copy to the main file")
-		repository.discard_temp()
+		else:
+			repository.discard_temp()
 		save_loaded.emit()
 		return OK
 	if not found_any:
@@ -169,7 +184,7 @@ func request_save() -> void:
 	_request_queued = true
 	_flush_request.call_deferred()
 
-## Replaces an unreadable save with defaults and keeps the broken main file as .corrupt.
+## Replaces an unreadable save with defaults and keeps the broken copies aside (.corrupt, .corrupt.tmp, .corrupt.bak).
 ## Refused unless the last load_save() found every copy unreadable.
 func start_new_save() -> Error:
 	if load_failure != REASON_CORRUPT:
@@ -233,6 +248,19 @@ func _on_state_changed(new_state: StringName) -> void:
 func _on_run_ended(_end_type: StringName, _summary: Dictionary) -> void:
 	_in_combat = false
 	_flush_pending()
+
+func _on_app_state_changed(_new_state: GameState.AppState, old_state: GameState.AppState) -> void:
+	if old_state != GameState.AppState.RUN:
+		return
+	_in_combat = false
+	_flush_pending()
+
+## Writes a save still held back by combat when the game closes. Skipped when nothing is pending.
+func _flush_on_quit() -> void:
+	if not _save_pending or not can_write:
+		return
+	_save_pending = false
+	_write()
 
 ## Writes a save held back during combat, once. A failed flush is not retried.
 func _flush_pending() -> void:
