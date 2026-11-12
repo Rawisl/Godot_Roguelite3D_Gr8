@@ -47,7 +47,7 @@ res://
     enemies/       Chứa dữ liệu EnemyData của 10 loại quân (Grunt, Archer, Brute và 7 loại mới) dưới dạng đuôi .tres. Sinh từ bảng cân bằng. Bulwark là BossData trong bosses/.
     bosses/        Chứa dữ liệu BossData dưới dạng đuôi .tres.
     waves/         WaveTable và ScaleConfig (từ wave 31, sửa tay); WaveScript (kịch bản wave 1-30) và WaveRewardTable (gold_mult, xp_mult, mithril_reward), hai file này sinh từ bảng cân bằng.
-    weapons/       WeaponData của kiếm gốc và 5 vũ khí. Sinh từ bảng cân bằng.
+    weapons/       WeaponData của kiếm thường và 5 vũ khí. Sinh từ bảng cân bằng.
     config/        Cấu hình chung của game như fortress_stats.tres, scale_config.tres.
     skills/        Chứa dữ liệu SkillData (Whirlwind, Sword Wave, Firebomb, 4 bị động gồm Sharpness, Armored, Lifesteal và Trạm hồi lực, 2 thẻ stat Thể lực và Tinh thông) dưới dạng đuôi .tres. Sinh từ bảng cân bằng.
     locale/        Chứa file strings.csv quản lý chuỗi tiếng Việt với khóa được phân loại theo ngữ cảnh.

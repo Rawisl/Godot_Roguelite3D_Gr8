@@ -129,6 +129,7 @@ signal hazard_trial_exited(result: StringName, kills: int, gold: int, xp: float,
 
 #-----------------------Progression-----------------------#
 signal xp_changed(xp: float, level: int, to_next: float, pending_picks: int)
+signal xp_gained(amount: float, from_commander: bool)  # XpTracker -> HUD XP bar: one kill's XP and whether the commander hit it, sent before xp_changed
 signal level_up(new_level: int, pending_picks: int)
 signal reward_offer_requested  # UI -> RewardService: ask for the next offer (re-sends the open one)
 signal reward_offered(cards: Array, rerolls_left: int)  # RewardService -> UI

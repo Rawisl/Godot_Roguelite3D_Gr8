@@ -110,7 +110,7 @@ Game PC một người chơi, thể loại Action Tower Defense, Strategy, Rogue
 | Hazard Trial (HAZARD_TRIAL) | Phòng thử thách bên trong Tháp Hazard Trial, một công trình đứng gần Fortress (không phải cổng). Vào được một lần mỗi wave, chỉ trong PREP: 5 quái lấy từ wave sắp tới. Thắng phòng được Mithril. Chỉ số chỉ huy trong phòng độc lập với bên ngoài (mục 3.15) |
 | Mithril | Tài nguyên trong run, chỉ kiếm từ Hazard Trial, dùng để sửa Fortress ở PREP. Mỗi viên sửa 20% fortress_max_hp (mục 3.9.3) |
 | Vũ khí (weapon) | Biến thể của kiếm, khác tầm đánh, VFX, model và một hiệu ứng (Frost, Chain Lightning, Burn, Rampage, Swift). Chỉ giữ trong run (mục 3.5.13) |
-| Kiếm gốc | Vũ khí mặc định đầu run, không có hiệu ứng (WPN-02) |
+| Kiếm thường | Vũ khí mặc định đầu run, không có hiệu ứng (WPN-02) |
 | victory_wave | Wave mốc thắng, mặc định 30, trong GameConfig. Hoàn thành wave này là thắng (END-07) |
 | Endless | Phần run sau khi đã thắng. Chết hay bỏ ở endless là "sống sót", tổng kết ghi số wave (END-10) |
 | Trụ có sẵn (starter tower) | Một Arrow và một Cannon cấp 1 đặt ở slot mặc định đầu mỗi run khi tutorial đã xong (mục 3.2.1, SELL-06) |
@@ -269,7 +269,7 @@ Thứ tự bắt buộc:
 | 2 | Sinh run_seed. Mỗi wave dùng luồng RNG riêng seed = hash(run_seed, wave_index) |
 | 3 | Nạp map, đặt Fortress với fortress_max_hp = 1000 × (1 + 0.05 × cấp FORT_HP), HP đầy (FORT-04). Đặt chỉ huy ở chế độ Frontline tại deploy_point |
 | 4 | **Trụ có sẵn \[MVP].** Khi start_wave = 1 và profile.flags.tutorial_done = true: đặt một Arrow cấp 1 ở slot starter_arrow_slot và một Cannon cấp 1 ở slot starter_cannon_slot (GameConfig, mục 6.3), HP đầy, priority mặc định, invested_gold = 0, cờ is_starter = true (SELL-06). Khi tutorial_done = false: không đặt, tutorial hướng dẫn người chơi xây hai trụ này miễn phí ở đúng hai slot đó (TUT-01, TUT-14). \[Should] Khi start_wave > 1: đặt công trình của StartPack thay cho trụ có sẵn |
-| 5 | Áp meta: commander_max_hp = 100 + 10 × cấp CMD_HP, lượng hồi Emergency repair emg_repair_heal_pct = 20% + 3% × cấp EMG_REPAIR, gold_pct_meta = 0.04 × cấp GOLD_PCT. Đặt Emergency repair về trạng thái khởi đầu: emg_repair_charges = 3 (tối đa emg_repair_charges_max = 3), emg_repair_cd = 0. **Khởi tạo Skill và XP \[MVP]:** xp = 0, commander_level = 0, pending_picks = 0, ô skill trống, stat_stacks rỗng, rerolls_left = rerolls_per_run, reward_rng seed = hash(run_seed, "reward", 0), heal_station_built = false (RWP-06). **Khởi tạo v2.0:** mithril = 0 (MTH-01), owned_weapons = \[kiếm gốc], equipped_weapon = kiếm gốc (WPN-02), hazard_used = false (HZT-01), victory_reached = false (END-07) |
+| 5 | Áp meta: commander_max_hp = 100 + 10 × cấp CMD_HP, lượng hồi Emergency repair emg_repair_heal_pct = 20% + 3% × cấp EMG_REPAIR, gold_pct_meta = 0.04 × cấp GOLD_PCT. Đặt Emergency repair về trạng thái khởi đầu: emg_repair_charges = 3 (tối đa emg_repair_charges_max = 3), emg_repair_cd = 0. **Khởi tạo Skill và XP \[MVP]:** xp = 0, commander_level = 0, pending_picks = 0, ô skill trống, stat_stacks rỗng, rerolls_left = rerolls_per_run, reward_rng seed = hash(run_seed, "reward", 0), heal_station_built = false (RWP-06). **Khởi tạo v2.0:** mithril = 0 (MTH-01), owned_weapons = \[kiếm thường], equipped_weapon = kiếm thường (WPN-02), hazard_used = false (HZT-01), victory_reached = false (END-07) |
 | 6 | \[Should] Nạp các lượt buff đã chọn vào run_buffs_loaded |
 | 7 | Ghi run_in_progress = true vào save |
 | 8 | Vào PREP của wave start_wave |
@@ -281,7 +281,7 @@ Thứ tự bắt buộc:
 | Tiến trình | wave_index, waves_cleared, run_elapsed (game time chỉ của COMBAT và BOSS_COMBAT, RUN-02), run_seed, victory_reached (bool, END-07) |
 | Kinh tế | gold, mithril (MTH-01), prestige_pending, wave_gold_base, wave_prestige_buffer |
 | Hazard Trial | hazard_used (bool, reset khi vào PREP của wave mới), hazard_session khi đang trong phòng: nhóm quái, max HP lớn nhất của nhóm, bản sao chỉ số chỉ huy, gold và XP tạm tính, số con đã giết (mục 3.15). Xóa khi rời phòng |
-| Vũ khí | owned_weapons (danh sách weapon_id, luôn có kiếm gốc), equipped_weapon, chain_cd (giây game time còn lại của Chain Lightning, WPN-07) |
+| Vũ khí | owned_weapons (danh sách weapon_id, luôn có kiếm thường), equipped_weapon, chain_cd (giây game time còn lại của Chain Lightning, WPN-07) |
 | Fortress | fortress_hp, fortress_max_hp (giá trị hiệu dụng, khởi tạo từ RunConfig, tăng được bởi thẻ Bền thành \[Should], SKL-15) |
 | Emergency repair | emg_repair_charges (0-3), emg_repair_cd (giây game time còn lại), emg_repair_heal_pct |
 | Chỉ huy | commander_hp (float), commander_max_hp (hiệu dụng, khởi tạo từ RunConfig, tăng được bởi thẻ Thể lực, SKL-15), mode, position, skill_cooldowns, heal_phase (IDLE, HOLD, HEALING), heal_hold (float, game time, HLT-03) |
@@ -734,11 +734,11 @@ Tương tác với boss pha 1 (Bulwark): Whirlwind và Sword Wave còn 60% (SLAS
 
 ### 3.5.13 Vũ khí \[MVP]
 
-Mọi vũ khí là biến thể của kiếm: dùng chung kiểu cầm, animation, combo và skill chủ động. Mỗi cây khác nhau ở tầm đánh, VFX, model và một hiệu ứng. Run bắt đầu với kiếm gốc; boss wave 5, 10, 15, 20, 25 mỗi lần rơi một cây chưa có, đến wave 25 là đủ 5 cây.
+Mọi vũ khí là biến thể của kiếm: dùng chung kiểu cầm, animation, combo và skill chủ động. Mỗi cây khác nhau ở tầm đánh, VFX, model và một hiệu ứng. Run bắt đầu với kiếm thường; boss wave 5, 10, 15, 20, 25 mỗi lần rơi một cây chưa có, đến wave 25 là đủ 5 cây.
 
 | **Vũ khí (hiệu ứng)** | **Đặc tả (giá trị khởi điểm, nằm trong bảng cân bằng)** |
 | --- | --- |
-| Kiếm gốc | Không hiệu ứng, range_mult 1.0 |
+| Kiếm thường | Không hiệu ứng, range_mult 1.0 |
 | Frost | Mỗi đòn trúng làm chậm mục tiêu 20% trong 3 giây. Đòn nào trúng cũng làm mới thời gian, không cooldown, không cộng dồn |
 | Chain Lightning | Đòn trúng phóng tia điện: 20% sát thương cơ bản mỗi mục tiêu, tối đa 3 con kể cả con đầu tiên. Lan trong bán kính 2 m quanh con vừa trúng, không trúng một con hai lần trong một chuỗi. Cooldown 5 giây chung cho người chơi |
 | Burn | Tổng 50% sát thương cơ bản chia đều trong 5 giây. Không cộng dồn; trúng lại chỉ làm mới thời gian |
@@ -748,7 +748,7 @@ Mọi vũ khí là biến thể của kiếm: dùng chung kiểu cầm, animatio
 | **ID** | **Đặc tả** | **Tag** |
 | --- | --- | --- |
 | WPN-01 | **Dữ liệu.** Mỗi vũ khí là một WeaponData (mục 6.6): weapon_id, khóa tên, model, VFX, range_mult, effect_id và tham số hiệu ứng. Số liệu sinh từ sheet vũ khí của bảng cân bằng (BAL-04). Sát thương đòn kiếm vẫn là SLASH (DMG-01) | MVP |
-| WPN-02 | **Đầu run.** owned_weapons = \[kiếm gốc], equipped_weapon = kiếm gốc. Kiếm gốc không mất, luôn chọn lại được | MVP |
+| WPN-02 | **Đầu run.** owned_weapons = \[kiếm thường], equipped_weapon = kiếm thường. Kiếm thường không mất, luôn chọn lại được | MVP |
 | WPN-03 | **Đổi vũ khí** bất cứ lúc nào trong PREP, ở cả hai chế độ, kể cả khi Pause trong PREP (như BLD-04), qua ô vũ khí trên HUD (HUD-21) hoặc panel vũ khí (PNL-15). Tức thì, miễn phí, phát weapon_equipped (EVB-43). Không đổi được ở HAZARD_TRIAL, COMBAT, BOSS_INTRO, BOSS_COMBAT, SUMMARY, REWARD_PICK. Hazard Trial dùng vũ khí đang trang bị lúc vào phòng (HZT-06) | MVP |
 | WPN-04 | **Phạm vi hiệu ứng.** Hiệu ứng kích hoạt ở mọi lần trúng có sát thương > 0 của đòn kiếm thường và skill chủ động (gồm tick vùng cháy Firebomb). Battle Cry và shockwave Deploy không gây sát thương nên không kích hoạt. Sát thương do chính hiệu ứng gây ra (tia Chain Lightning, tick Burn) không kích hoạt hiệu ứng lần nữa. **Sát thương hiệu ứng** = tỷ lệ của hiệu ứng × sát thương cơ bản (sword_damage qua StatBlock, không gồm hệ số đòn 3), rồi nhân dealt_mult của chỉ huy và kháng của mục tiêu theo DMG-06; tính là sát thương chỉ huy (XP-03, CMB-10) và mang damage_type của đòn kích hoạt (SLASH với kiếm, Whirlwind, Sword Wave; BLAST với Firebomb). Không áp cho quân còn spawn_grace (SPN-02) | MVP |
 | WPN-05 | **Lên boss.** Hiệu ứng có tác dụng lên boss, kể cả làm chậm của Frost (ngoại lệ của BOSS-01), trừ khi boss đang ở pha có resist(damage_type của đòn kích hoạt) = 0 (DMG-01, DMG-02). Sát thương hiệu ứng lên boss nhân resist như mọi nguồn khác. Làm chậm của Frost nhân với hệ số tốc độ Cuồng nộ (ENR-02) | MVP |
@@ -1634,7 +1634,7 @@ Từ v2.0, gold và công trình của StartPack ở mốc 5 trở lên phải s
 | STR-05 | Công trình đặt sẵn hoạt động ngay ở PREP đầu với HP đầy, priority mặc định |
 | STR-06 | Tutorial chỉ chạy khi start_wave = 1 và profile.flags.tutorial_done = false (mục 4.7). Mốc muộn không chạy tutorial và không đặt trụ có sẵn (dùng StartPack) |
 | STR-07 | Quay lại sau khi nạp buff: hủy lựa chọn nạp, không mất gì |
-| STR-08 | Fortress và chỉ huy đầy HP, cooldown các kỹ năng khởi đầu bằng 0. Emergency repair luôn khởi đầu ở **3/3 lượt** với emg_repair_cd = 0, ở mọi mốc xuất phát. Các wave boss bị bỏ qua khi xuất phát ở mốc muộn không được tính bù thêm lượt (BRW-08) hay vũ khí (WPN-11). Mithril khởi đầu 0, vũ khí chỉ có kiếm gốc |
+| STR-08 | Fortress và chỉ huy đầy HP, cooldown các kỹ năng khởi đầu bằng 0. Emergency repair luôn khởi đầu ở **3/3 lượt** với emg_repair_cd = 0, ở mọi mốc xuất phát. Các wave boss bị bỏ qua khi xuất phát ở mốc muộn không được tính bù thêm lượt (BRW-08) hay vũ khí (WPN-11). Mithril khởi đầu 0, vũ khí chỉ có kiếm thường |
 
 ### 3.11.2 Áp dụng meta \[MVP]
 
@@ -1858,13 +1858,12 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 
 | **Vùng** | **Thành phần** |
 | --- | --- |
-| Trên trái | Thanh HP Fortress (lớn, có số), HP chỉ huy (nhỏ hơn) |
+| Trên trái | Thanh HP Fortress (lớn, có số), HP chỉ huy (nhỏ hơn), biểu tượng Aura cạnh HP chỉ huy (HUD-17), thanh XP ngay dưới HP chỉ huy (HUD-15) |
 | Trên giữa | Số wave (kèm "/ 30" trước khi thắng, nhãn "Endless" sau khi thắng), trạng thái, đồng hồ boss, bộ đếm quân |
 | Trên phải | Gold (kèm "+xx"), ô Mithril (HUD-20), cụm nút tua nhanh x1/x2/x3 (HUD-14), nút Pause |
-| Dưới trái | Thanh kỹ năng theo chế độ, biểu tượng chế độ kèm cooldown chuyển |
+| Dưới trái | Thanh kỹ năng theo chế độ: hai hàng ô skill (HUD-16) với ô vũ khí bên phải (HUD-21), dưới đó là ô Emergency repair (HUD-13); biểu tượng chế độ kèm cooldown chuyển |
 | Dưới giữa | Panel ngữ cảnh, nút Bắt đầu wave (HUD-19). Trong Hazard Trial: nút Rời phòng (HUD-22) |
 | Dưới phải | \[Should] Buff đang hoạt động và nút kích hoạt buff |
-| Dưới trái, trên thanh HP chỉ huy | Thanh XP và hai hàng ô skill (HUD-15, HUD-16), ô vũ khí (HUD-21), biểu tượng Aura (HUD-17) |
 | Giữa (tạm thời) | Banner cảnh báo và thông báo wave |
 
 Không có minimap.
@@ -1910,9 +1909,10 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 | HUD-18 \[MVP] | **Trạng thái Trạm hồi lực** cạnh thanh HP chỉ huy khi có ít nhất 1 trạm: biểu tượng phím E kèm chữ trạng thái: "Sẵn sàng", "Giữ E (0.6 s)", "Đang hồi (+15 HP/s)", hoặc lý do không dùng được ("Quá xa trạm", "Đã đầy máu", "Chỉ dùng khi chiến đấu", "Trạm đã cạn", "Đang bị tấn công"), theo HUD-05. Kèm số trạm còn kho trên tổng (ví dụ 2/2). Không phụ thuộc màu (UI-05) |
 | HUD-19 \[MVP] | **Nút Bắt đầu wave** ở dưới giữa, chỉ hiện ở PREP. Bấm thì phát wave_start_requested (EVB-38) và PREP kết thúc (WAVE-11). Ở wave boss nút ghi "Bắt đầu wave boss". Xám kèm lý do khi Pause, khi có hộp thoại giao dịch, khi tutorial chưa xây xong hai trụ (TUT-15) (HUD-05). Nút không nhận focus bàn phím (INP-04). Nếu chưa dùng Hazard Trial ở wave này, nút có dòng nhắc nhỏ "Chưa vào Hazard Trial", không chặn |
 | HUD-20 \[MVP] | **Ô Mithril** cạnh gold: biểu tượng kèm số. Nhận Mithril: viền sáng 0.3 s. Ở PREP khi Fortress thiếu máu và mithril > 0, ô hiện nút nhỏ "Sửa thành" bên trái số Mithril. Bấm nút thì mở panel Fortress (PNL-04) giống như bấm vào Fortress trên bản đồ; việc sửa vẫn bấm trong panel, nút không tự trừ Mithril. Nút không nhận focus bàn phím (INP-04). Không phụ thuộc màu (UI-05) |
-| HUD-21 \[MVP] | **Ô vũ khí** cạnh thanh kỹ năng: biểu tượng vũ khí đang trang bị và tên hiệu ứng, số vũ khí đã có trên 6 (kiếm gốc và 5 cây). Chuột trái vào ô ở PREP mở panel vũ khí (PNL-15). Ngoài PREP chỉ đọc kèm tooltip "Đổi vũ khí ở giai đoạn chuẩn bị". Chain Lightning hiện vòng cooldown kèm số giây (ACC-07) |
+| HUD-21 \[MVP] | **Ô vũ khí** cạnh thanh kỹ năng: biểu tượng vũ khí đang trang bị và tên hiệu ứng, số vũ khí đã có trên 6 (kiếm thường và 5 cây). Chuột trái vào ô ở PREP mở panel vũ khí (PNL-15). Ngoài PREP chỉ đọc kèm tooltip "Đổi vũ khí ở giai đoạn chuẩn bị". Chain Lightning hiện vòng cooldown kèm số giây (ACC-07) |
 | HUD-22 \[MVP] | **HUD trong Hazard Trial:** nút "Rời phòng" ở dưới giữa (bấm một lần, không cần xác nhận, HZT-07), số quái còn trên 5 (con chưa xử lý xong theo HZT-16, Captain chờ nổ và Undead chờ hồi sinh vẫn tính là còn), gold và XP tạm tính, phần thưởng Mithril nếu thắng, nhãn "Chỉ số trong phòng không mang ra ngoài". Thanh HP chỉ huy hiển thị HP của bản sao. Khi kết thúc: toast kết quả (Thắng, Đã rời, Gục ngã) kèm phần thưởng |
 | HUD-23 \[MVP] | **Tháp Hazard Trial** trên bản đồ ở PREP: biểu tượng trên cùng (như MSE-04), trạng thái "Sẵn sàng (E)", "Cần Frontline", "Đã dùng ở wave này" kèm biểu tượng; rê chuột hiện danh sách loại quái của nhóm (HZT-02) và phần thưởng Mithril. Ẩn ngoài PREP |
+| HUD-24 \[Should] | **Nút mũi tên ẩn/hiện kỹ năng** ngay trên hai hàng ô skill, chỉ có mũi tên, không có chữ: mũi tên xuống khi đang hiện (bấm để ẩn), mũi tên lên khi đã ẩn (bấm để hiện); tooltip ghi "Ẩn kỹ năng" hoặc "Hiện kỹ năng" (UI-05). Nút ẩn hoặc hiện cả hai hàng ô skill (HUD-16) và ô vũ khí (HUD-21), ô Emergency repair vẫn hiện. Chỉ ẩn phần hiển thị: phím 1-3 vẫn dùng skill, cooldown vẫn chạy, hiện lại thì đúng số giây còn lại. Ẩn ô vũ khí thì panel vũ khí đang mở cũng đóng. Nút không nhận focus bàn phím (INP-04), không có phím tắt. Run mới luôn hiện lại. Cooldown vẫn luôn có số khi đang hiện (ACC-07); ẩn là lựa chọn của người chơi như F1 (HUD-12) |
 
 ### 4.1.4 Panel tương tác
 
@@ -1937,7 +1937,7 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 | PNL-12 | Mở panel khi Pause: ở PREP cho phép mọi thao tác. Ở COMBAT, BOSS_COMBAT và HAZARD_TRIAL panel chỉ đọc, các nút đổi priority xám kèm tooltip "Không đổi được khi tạm dừng" |
 | PNL-13 | Panel Fortress (PNL-04) chỉ **hiển thị** trạng thái Emergency repair, không có nút kích hoạt (dùng bằng phím R ở Commander mode). Vì lượt khan hiếm, tooltip ở PREP gợi ý ưu tiên sửa bằng Mithril và để dành lượt cho COMBAT |
 | PNL-14 | **Panel Trạm hồi lực:** tên, cấp, thanh kho HP kèm số, dòng "Hồi cho chỉ huy: x HP/s" (theo skill SKL-26), nút Nâng cấp (tooltip nêu chỉ cộng phần kho tăng thêm, HLT-08; "MAX" ở cấp 36), nút Bán (tooltip nêu hoàn theo HP còn, SELL-05). **Không có** nút priority hay sửa (HLT-08). Khi RUINED dùng panel đổ nát chung (xây lại, dọn) |
-| PNL-15 \[MVP] | **Panel vũ khí:** danh sách owned_weapons (kiếm gốc luôn có), mỗi dòng có biểu tượng, tên, tầm đánh, mô tả hiệu ứng với số liệu hiện tại; vũ khí chưa có hiện ô khóa kèm "Rơi từ boss". Chọn một dòng là trang bị ngay (WPN-03). Chỉ đổi được ở PREP; mở ở state khác thì chỉ đọc |
+| PNL-15 \[MVP] | **Panel vũ khí:** danh sách owned_weapons (kiếm thường luôn có), mỗi dòng có biểu tượng, tên, tầm đánh, mô tả hiệu ứng với số liệu hiện tại; vũ khí chưa có hiện ô khóa kèm "Rơi từ boss". Chọn một dòng là trang bị ngay (WPN-03). Chỉ đổi được ở PREP; mở ở state khác thì chỉ đọc |
 
 ## 4.2 Input, chuột và camera trong isometric
 
@@ -2182,7 +2182,7 @@ Từ v2.0 tutorial **chạy một lần theo tài khoản**: chạy ở run có 
 | ACC-04 | Tùy chọn giữ-hoặc-bật cho Shift và các phím giữ |
 | ACC-05 | Giảm rung màn hình: Bình thường, Giảm 50%, Tắt |
 | ACC-06 | Giảm nhấp nháy: tắt flash trắng, viền cảnh báo tĩnh, không nhấp nháy quá 3 lần/giây. Giới hạn 3 lần/giây áp dụng cho mọi hiệu ứng nhấp nháy ngay cả khi tùy chọn đang tắt |
-| ACC-07 | Đồng hồ và cooldown luôn có **số** |
+| ACC-07 | Đồng hồ và cooldown luôn có **số**, trừ khi người chơi tự ẩn phần hiển thị đó (F1 ẩn HUD theo HUD-12, nút mũi tên ẩn ô kỹ năng theo HUD-24) |
 | ACC-08 | Chơi được chỉ bằng chuột và phím bên trái bàn phím, không yêu cầu hai phím xa nhau cùng lúc |
 | ACC-09 | Không có thông tin quan trọng nào chỉ truyền bằng âm thanh. MVP: tiếng Stomp chuẩn bị nện đất có telegraph vòng đỏ kèm họa tiết và thanh đếm wind-up 1.0 s (UI-05); đồng hồ boss có số và nhãn CUỒNG NỘ, banner ở T-30 và T-0 (ALR-03, ALR-04, ACC-07, ENR-05); còi T1 luôn đi kèm banner và biểu tượng. \[Should] Tùy chọn Settings "Chỉ báo thị giác thay âm thanh" thêm biểu tượng hướng và viền màn hình theo loại sự kiện |
 
@@ -2242,7 +2242,7 @@ Từ v2.0 tutorial **chạy một lần theo tài khoản**: chạy ở run có 
 | WaveTable | Trọng số và trần sinh quân (dùng từ wave 31) | 3.7.5, 6.6 | Enemy & Wave |
 | WaveScript \[MVP] | Kịch bản wave 1-30: loại quân, số lượng, hộ tống, spawn_duration, hp_mult, dmg_mult, speed_mult mỗi wave. Sinh từ bảng cân bằng | 3.7.5, 3.7.6, 6.10 | Enemy & Wave |
 | WaveRewardTable \[MVP] | Thưởng theo wave 1-30: gold_mult, xp_mult, mithril_reward. Sinh từ bảng cân bằng | 3.9, 6.10 | Tower & Build (kinh tế) |
-| WeaponData \[MVP] | Kiếm gốc và 5 vũ khí: range_mult, model, VFX, hiệu ứng và tham số. Sinh từ bảng cân bằng | 3.5.13, 6.10 | Player & Combat |
+| WeaponData \[MVP] | Kiếm thường và 5 vũ khí: range_mult, model, VFX, hiệu ứng và tham số. Sinh từ bảng cân bằng | 3.5.13, 6.10 | Player & Combat |
 | WaveModifier \[Should] | Hệ số modifier wave | 3.7.5 | Enemy & Wave |
 | StartPack \[Should] | Gói xuất phát theo mốc | 3.11.1 | UI/UX & Meta |
 | ShopItem | Giá, số cấp, tác dụng mỗi cấp (4 mục MVP) | 3.10.1, 6.6 | UI/UX & Meta |
@@ -2554,6 +2554,7 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-44 | run_victory(wave_index: int) | RunState. Phát một lần mỗi run, ở bước mở màn thắng của WAVE-13 (sau khi SummaryPanel đóng, END-07). Nghe: UI (mở SCR-20), Audio, Save |
 | EVB-45 | tutorial_completed() | UI/UX & Meta (tutorial). Phát khi ghi tutorial_done = true (TUT-08, TUT-15). Nghe: Save, SyncService |
 | EVB-46 | victory_continue_requested() | UI/UX & Meta (màn thắng SCR-20). Phát khi bấm "Chơi tiếp", một lần. Nghe: Enemy & Wave (bỏ lý do Pause VICTORY, đi tiếp WAVE-13: REWARD_PICK nếu pending_picks > 0, ngược lại PREP của wave victory_wave + 1) |
+| EVB-47 | xp_gained(amount: float, from_commander: bool) | XpTracker. Phát mỗi lần quân chết cho XP, ngay trước xp_changed; from_commander theo cờ hit_by_commander (XP-01). Nghe: UI (HUD-15, tách phần XP từ chỉ huy và từ tower) |
 
 ## 6.10 Bảng cân bằng Excel và công cụ dịch sang config \[MVP]
 
@@ -2564,7 +2565,7 @@ Từ v2.0 mọi số liệu cân bằng lấy từ một bảng Excel và đư�
 | character | Chỉ số nhân vật (CharacterStats, mục 3.5.1 và 6.4), gồm xp_base, xp_step | `data/config/commander_stats.tres` |
 | skills | Bảng giá trị theo level của skill chủ động, bị động và thẻ stat (mục 3.5.12) | `data/skills/*.tres` (SkillData) |
 | towers | Giá và chỉ số 36 cấp của Arrow, Cannon, Barricade, Trạm hồi lực (mục 3.6.3, 3.6.6), một dòng mỗi loại mỗi cấp | `data/towers/<loại>.tres` và `data/towers/<loại>_l<n>.tres` (TowerData và dữ liệu theo cấp) |
-| weapons | Kiếm gốc và 5 vũ khí: range_mult, tham số hiệu ứng (mục 3.5.13) | `data/weapons/*.tres` (WeaponData) |
+| weapons | Kiếm thường và 5 vũ khí: range_mult, tham số hiệu ứng (mục 3.5.13) | `data/weapons/*.tres` (WeaponData) |
 | enemies | Chỉ số gốc, trait, thưởng gốc, xp_value của mọi loại quân (mục 3.7.1, 3.7.8) | `data/enemies/*.tres` (EnemyData) |
 | waves | Kịch bản wave 1-30: mỗi wave một dòng mỗi loại quân (loại, số lượng, là hộ tống hay không), spawn_duration, hp_mult, dmg_mult, speed_mult (SPN-13, mục 3.7.6) | `data/waves/wave_script.tres` (WaveScript) |
 | wave_rewards | Thưởng theo wave 1-30: gold_mult, xp_mult, mithril_reward (RWD-02, XP-01, MTH-02) | `data/waves/wave_rewards.tres` (WaveRewardTable) |
@@ -2818,7 +2819,7 @@ Pause, sửa bằng Mithril, trần armor, tải quét (v1.3, cập nhật v2.0)
 
 | # | Test | Liên quan |
 | --- | --- | --- |
-| WP1 | Đầu run chỉ có kiếm gốc. Diệt Bulwark wave 5: SUMMARY hiện "Nhận vũ khí X", owned_weapons có 2 cây, không tự trang bị. Đến wave 25 có đủ 5 cây khác nhau; boss wave 30 không rơi gì. Cùng run_seed cho cùng thứ tự rơi. Thua đúng frame wave boss kết thúc: không nhận | WPN-02, WPN-11, BRW-09 |
+| WP1 | Đầu run chỉ có kiếm thường. Diệt Bulwark wave 5: SUMMARY hiện "Nhận vũ khí X", owned_weapons có 2 cây, không tự trang bị. Đến wave 25 có đủ 5 cây khác nhau; boss wave 30 không rơi gì. Cùng run_seed cho cùng thứ tự rơi. Thua đúng frame wave boss kết thúc: không nhận | WPN-02, WPN-11, BRW-09 |
 | WP2 | Đổi vũ khí ở PREP (cả hai chế độ, cả khi Pause): tức thì; ở COMBAT, HAZARD_TRIAL ô vũ khí chỉ đọc | WPN-03, HUD-21, PNL-15 |
 | WP3 | Frost: đòn trúng làm chậm 20% trong 3 s, đánh lại làm mới thời gian, không cộng dồn. Lên Bulwark pha 1 bằng kiếm (SLASH 0.6) vẫn làm chậm | WPN-06, WPN-05, BOSS-01 |
 | WP4 | Chain Lightning: 4 Grunt đứng cách nhau 1.5 m, đòn trúng con đầu thì 3 con nhận 20% sát thương cơ bản, con thứ tư không; đòn trong 5 s kế không mở chuỗi; không con nào trúng hai lần | WPN-07 |
@@ -3005,7 +3006,7 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 | 47 | Slot mặc định của trụ có sẵn | **Chốt 05/11:** Cannon ở W2; Arrow ở ô grid hàng giữa (hàng 4), cột hợp lệ gần Fortress nhất, tính vào 3 chỗ đất (starter_arrow_slot, starter_cannon_slot trong GameConfig); trụ có sẵn bị phá rồi xây lại là tower thường, bán được ngay (TWR-13, SELL-06) |
 | 48 | Luồng tutorial | Chỉ hai slot mặc định xây được và nút Bắt đầu wave khóa tới khi xây xong; tutorial_done ghi ngay khi xây xong; Bỏ qua thì game tự xây trụ còn thiếu; thoát trước khi xong thì run sau chạy lại (BLD-11, TUT-08, TUT-10, TUT-15) |
 | 49 | STARTER_KIT, StartPack, Trượng phép mâu thuẫn với v2.0 | Bỏ STARTER_KIT (SHP-01 đến SHP-04) vì trùng trụ có sẵn và dùng bố cục cũ; bỏ Trượng phép và UNLOCK_WAND vì mọi vũ khí là biến thể kiếm; StartPack mốc 5 đến 20 soạn lại khi làm StartSelect |
-| 50 | Nhận và trang bị vũ khí | Có kiếm gốc không hiệu ứng; vũ khí rơi được cộng tự động ở SUMMARY cùng điều kiện BRW-07, không tự trang bị, RNG riêng (WPN-02, WPN-11) |
+| 50 | Nhận và trang bị vũ khí | Có kiếm thường không hiệu ứng; vũ khí rơi được cộng tự động ở SUMMARY cùng điều kiện BRW-07, không tự trang bị, RNG riêng (WPN-02, WPN-11) |
 | 51 | Chi tiết hiệu ứng vũ khí | Kích hoạt cả với tick Firebomb; "sát thương cơ bản" là sword_damage qua StatBlock, không gồm hệ số đòn 3; hiệu ứng mang damage_type của đòn kích hoạt và không tự kích hoạt lại; làm chậm của Frost áp lên boss (ngoại lệ BOSS-01); một đòn cleave chỉ mở một chuỗi Chain (WPN-04 đến WPN-07) |
 | 52 | Màn thắng và loại kết quả | Màn thắng hiện sau SUMMARY wave 30, chỉ một nút "Chơi tiếp", game dừng; run_result (DEFEAT, SURVIVED) tách khỏi end_type; bỏ ở Pause sau khi thắng cũng là SURVIVED (END-07, END-10, SCR-20) |
 | 53 | Bản xem trước ghi "8 loại quân mới" nhưng bảng có 7 loại mới cộng Brute sửa | SRS ghi 7 loại mới cộng Brute sửa (8 dòng) |
@@ -3121,6 +3122,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 84 | **05/11: sửa theo review nhất quán (7 mục)** (HZT-07, HZT-16, MTH-02, HUD-22, RWD-01, RWD-02, FRT-02, GLD-02, GLD-10, BRW-01, EVB-05, GRID-07, GRID-08, SLOT-05, BOSS-03, BOSS-40, END-07, WAVE-13, mục 3.3.1, 3.3.4, EVB-37, EVB-44, EVB-46, SCR-20, RUN-02, SPN-15, LBD-04, LBD-06, BAL-05, mục 6.3, Phụ lục B, trang đầu, mục 2.5, 7.3, test HZ9 đến HZ12, Fortress và tower 4 và 21, VC5, AC9, BL3): (1) kết thúc Hazard Trial khi quân tự nổ và cùng frame; (2) một công thức gold cho phòng, hệ số chỉ huy áp một lần; (3) giữ đường và vùng cấm xây quanh boss_melee_point; (4) thứ tự rời SUMMARY ở wave thắng; (5) định nghĩa run_elapsed và lịch sinh trải đủ spawn_duration để sàn máy chủ không từ chối điểm thật; (6) Phụ lục B và nhật ký dòng 80 đổi bố cục 6 hàng thành 9 hàng, hành lang 23.5 m; (7) trang đầu tách thiết kế đã duyệt với lịch và phân vai chờ chốt, 13 tuần khớp mục 7.3. Quyết định tự đặt ghi ở Phụ lục C mục 62 đến 66 |
 | 85 | **07/11: đồng bộ theo code UI tuần 9** (HUD-20, EVB-30): ô Mithril có nút "Sửa thành" mở panel Fortress (trước đây chỉ là dấu gợi ý); skill_slots_changed thêm tham số levels để thanh slot của màn REWARD_PICK đọc cấp skill thay vì tự nhớ |
 | 86 | **11/11: bake lại navmesh quanh công trình grid** (GRID-06, GRID-07, GRID-09, mục 3.7.4, Phụ lục C mục 67) |
+| 87 | **11/11: đồng bộ theo code UI tuần 10** (mục 4.1.3, HUD-15, HUD-16, HUD-17, HUD-21, HUD-24, ACC-07, WPN-02, PNL-15, EVB-47): thêm nút mũi tên ẩn/hiện kỹ năng (HUD-24, \[Should]) chỉ ẩn phần hiển thị, phím 1-3 vẫn dùng được, ACC-07 ghi ngoại lệ khi người chơi tự ẩn; đổi tên "kiếm gốc" thành "kiếm thường" ở mọi chỗ cho khớp tên trong game; bỏ dòng vùng "Dưới trái, trên thanh HP chỉ huy" vì mâu thuẫn với HUD-15 (thanh HP chỉ huy nằm ở trên trái); thanh XP và biểu tượng Aura đặt ở trên trái cạnh HP chỉ huy, hai hàng ô skill và ô vũ khí ở dưới trái trên ô Emergency repair; thêm xp_gained để thanh XP tô riêng phần XP từ chỉ huy và từ tower |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 
