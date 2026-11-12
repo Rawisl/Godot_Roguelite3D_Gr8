@@ -36,6 +36,8 @@ tonemap_mode = 3
 vertices = PackedVector3Array(-19.5, 4.5, -11.75, -19.5, 4.5, 11.75, -15.5, 4.5, 11.75, -15.5, 4.5, -11.75, -19.25, 0.5, -11, -19.25, 0.5, -8.5, -15.5, 0.5, -8.5, -15.5, 0.5, -11, -14.25, 0.5, -11, -14.25, 0.5, 11.25, 19.5, 0.5, 11.25, 19.5, 0.5, -11, -19.25, 0.5, -7.25, -19.25, 0.5, 7.5, -15.5, 0.5, 7.5, -15.5, 0.5, -7.25, -19.25, 0.5, 8.75, -19.25, 0.5, 11.25, -15.5, 0.5, 11.25, -15.5, 0.5, 8.75)
 polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9), PackedInt32Array(15, 14, 12), PackedInt32Array(12, 14, 13), PackedInt32Array(19, 18, 16), PackedInt32Array(16, 18, 17)]
 geometry_parsed_geometry_type = 1
+geometry_source_geometry_mode = 1
+geometry_source_group_name = &"nav_source"
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_xepy2"]
 size = Vector2(40, 28)
