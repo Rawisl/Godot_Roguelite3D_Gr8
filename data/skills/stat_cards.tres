@@ -2,51 +2,50 @@
 
 [ext_resource type="Script" uid="uid://cxa8m5bcqddw3" path="res://systems/skill/stat_card_table.gd" id="1_table"]
 [ext_resource type="Script" uid="uid://dx4y0bxtjjnts" path="res://systems/skill/stat_card_entry.gd" id="2_entry"]
+[ext_resource type="Resource" uid="uid://c5u1fvha6qwpx" path="res://data/skills/sharpness.tres" id="3_sharpness"]
+[ext_resource type="Resource" uid="uid://b5d5mqcr0wwr0" path="res://data/skills/armored.tres" id="4_armored"]
+[ext_resource type="Resource" uid="uid://doup2sjahn8hk" path="res://data/skills/lifesteal.tres" id="5_lifesteal"]
+[ext_resource type="Resource" uid="uid://h1n5dcveebt4" path="res://data/skills/heal_station.tres" id="6_heal_station"]
+[ext_resource type="Resource" uid="uid://bjn52orr8bvbh" path="res://data/skills/vitality.tres" id="7_vitality"]
+[ext_resource type="Resource" uid="uid://d205iacxdgauc" path="res://data/skills/mastery.tres" id="8_mastery"]
 
 [sub_resource type="Resource" id="Resource_0"]
 script = ExtResource("2_entry")
-card_id = &"sharpness"
+card = ExtResource("3_sharpness")
 stat_key = &"sword_damage"
 kind = 1
-per_level = 0.08
 
 [sub_resource type="Resource" id="Resource_1"]
 script = ExtResource("2_entry")
-card_id = &"armored"
+card = ExtResource("4_armored")
 stat_key = &"armor_pct"
-per_level = 0.05
 
 [sub_resource type="Resource" id="Resource_2"]
 script = ExtResource("2_entry")
-card_id = &"lifesteal"
+card = ExtResource("5_lifesteal")
 stat_key = &"lifesteal_pct"
-per_level = 0.005
 
 [sub_resource type="Resource" id="Resource_3"]
 script = ExtResource("2_entry")
-card_id = &"heal_station"
-stat_key = &"heal_rate_base"
-per_level = 5.0
+card = ExtResource("6_heal_station")
+stat_key = &"heal_rate_add"
 
 [sub_resource type="Resource" id="Resource_4"]
 script = ExtResource("2_entry")
-card_id = &"vitality"
+card = ExtResource("7_vitality")
 stat_key = &"commander_max_hp"
-per_level = 10.0
 
 [sub_resource type="Resource" id="Resource_5"]
 script = ExtResource("2_entry")
-card_id = &"sharpness"
+card = ExtResource("3_sharpness")
 stat_key = &"skill_damage"
 kind = 1
-per_level = 0.08
 
 [sub_resource type="Resource" id="Resource_6"]
 script = ExtResource("2_entry")
-card_id = &"mastery"
+card = ExtResource("8_mastery")
 stat_key = &"skill_damage"
 kind = 1
-per_level = 0.05
 
 [resource]
 script = ExtResource("1_table")

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 uid="uid://d205iacxdgauc"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" uid="uid://bpmylfxrdyoyc" path="res://common/skill_data.gd" id="1_skill"]
+[ext_resource type="Texture2D" uid="uid://cdjqkiqqjci5o" path="res://art/icons/skills/mastery_icon.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_skill")
+id = &"mastery"
+kind = 2
+name_key = &"skill.mastery.name"
+description_key = &"skill.mastery.desc"
+icon = ExtResource("2_icon")
+values = Dictionary[StringName, PackedFloat32Array]({
+&"skill_damage": PackedFloat32Array(0.05, 0.1, 0.15)
+})

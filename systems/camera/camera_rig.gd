@@ -84,6 +84,7 @@ func _ready() -> void:
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.screen_shake_requested.connect(_on_screen_shake_requested)
 	EventBus.pause_changed.connect(_on_pause_changed)
+	ScreenManager.dialog_context_changed.connect(_clear_held)
 
 
 func _notification(what: int) -> void:
@@ -91,9 +92,9 @@ func _notification(what: int) -> void:
 		_clear_held()
 
 
-## Panning is off in Frontline and while the boss intro or a reward pick owns the screen.
+## Panning is off in Frontline and while the boss intro, a reward pick or a dialog owns input.
 func is_panning_enabled() -> bool:
-	if _context() == CONTEXT_FRONTLINE:
+	if _context() == CONTEXT_FRONTLINE or ScreenManager.has_dialog():
 		return false
 	return _state != STATE_BOSS_INTRO and _state != STATE_REWARD_PICK \
 			and not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK)
@@ -137,6 +138,9 @@ func get_shake_offset() -> Vector2:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	for action in _blocked.keys():
+		if event.is_action_released(action):
+			_blocked.erase(action)
 	if is_panning_enabled() and event.is_action_pressed(&"camera_recenter", false):
 		_glide_to_focus(recenter_time)
 
@@ -168,13 +172,11 @@ func _process(_delta: float) -> void:
 		_update_glide(real_delta)
 		return
 
-	if _context() == CONTEXT_FRONTLINE:
+	if not is_panning_enabled():
 		_velocity = Vector3.ZERO
 		return
 
-	var target := Vector3.ZERO
-	if is_panning_enabled():
-		target = _screen_to_ground(_move_vector()) * camera_pan_speed
+	var target := _screen_to_ground(_move_vector()) * camera_pan_speed
 	var step := camera_pan_speed / maxf(accel_time, 0.001) * real_delta
 	_velocity = _velocity.move_toward(target, step)
 	if _velocity.is_zero_approx():
@@ -336,6 +338,7 @@ func _move_vector() -> Vector2:
 
 ## Held keys are ignored until released, so a context change never leaves the camera drifting.
 func _clear_held() -> void:
+	_velocity = Vector3.ZERO
 	for action in MOVE_ACTIONS:
 		if Input.is_action_pressed(action):
 			_blocked[action] = true

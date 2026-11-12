@@ -18,6 +18,10 @@ extends Resource
 @export var corridor_width: float = 23.5
 
 const EPS := 0.001
+## Clearance slack for the path check: a sample exactly min_width / 2 from an obstacle stays open.
+const PATH_EPS := 0.0001
+
+var _path_align_warned := false
 
 
 static func cell_id(c: int, r: int) -> StringName:
@@ -140,3 +144,177 @@ func _shape_of(area: Area3D) -> Shape3D:
 			return child.shape
 	push_error("GridData: %s has no CollisionShape3D with a shape" % area.name)
 	return null
+
+
+## Spacing of the path check samples: a quarter of the cell gap, so every cell edge and wall
+## of an aligned layout falls on a sample.
+static func path_sample_step() -> float:
+	return GameConfig.grid_cell_gap / 4.0
+
+
+## "G_c_r" -> (c, r); (-1, -1) for any other id.
+static func cell_of(slot_id: StringName) -> Vector2i:
+	var parts := String(slot_id).split("_")
+	if parts.size() != 3 or parts[0] != "G":
+		return Vector2i(-1, -1)
+	if not parts[1].is_valid_int() or not parts[2].is_valid_int():
+		return Vector2i(-1, -1)
+	var cell := Vector2i(parts[1].to_int(), parts[2].to_int())
+	if cell.x < 0 or cell.y < 0:
+		return Vector2i(-1, -1)
+	return cell
+
+
+## Where the boss-sized agent stands when it reaches the gate: min_width / 2 in front of it.
+func gate_goal(gate: Vector3, min_width: float) -> Vector3:
+	return gate + column_dir.normalized() * (min_width * 0.5)
+
+
+## True when the half cell, the column step, the half corridor and every row offset are
+## whole multiples of path_sample_step(), so the path check measures gaps exactly.
+func is_path_aligned() -> bool:
+	var step := path_sample_step()
+	var h: float = GameConfig.grid_cell_size * 0.5
+	var col_step: float = GameConfig.grid_cell_size + GameConfig.grid_cell_gap
+	if not _is_step_multiple(h, step):
+		return false
+	if not _is_step_multiple(col_step, step):
+		return false
+	if not _is_step_multiple(corridor_width * 0.5, step):
+		return false
+	for offset in row_offsets:
+		if not _is_step_multiple(offset, step):
+			return false
+	return true
+
+
+## Indices into goals that cannot be reached from spawn_point by an agent min_width wide;
+## empty means every goal is reachable. obstacles are (column, row) cells; gate is the Fortress
+## gate, whose face closes the corridor at the gate end.
+func unreachable_goals(obstacles: Array[Vector2i], spawn_point: Vector3, gate: Vector3,
+		goals: Array[Vector3], min_width: float) -> PackedInt32Array:
+	if goals.is_empty():
+		return PackedInt32Array()
+	var step := path_sample_step()
+	var r := min_width * 0.5
+	var h: float = GameConfig.grid_cell_size * 0.5
+	var col_step: float = GameConfig.grid_cell_size + GameConfig.grid_cell_gap
+	var j_max := floori((corridor_width * 0.5 - r + PATH_EPS) / step)
+	if j_max < 0:
+		return _all_goals(goals.size())
+	var i_lo := ceili((_to_uv(gate).x + r - PATH_EPS) / step)
+	var spawn_uv := _to_uv(spawn_point)
+	var i_s := roundi(spawn_uv.x / step)
+	if i_s < i_lo:
+		push_error("GridData: spawn_point is behind the gate")
+		return _all_goals(goals.size())
+	_warn_if_misaligned()
+	var i_reach := ceili(((columns - 1) * col_step + h + r) / step) + 1
+	var i_hi := maxi(i_s, i_reach)
+	var astar := _path_astar(i_lo, i_hi, j_max)
+	for cell in obstacles:
+		_mark_cell_solid(astar, cell, r)
+	var seed_sample := _spawn_sample(astar, spawn_uv, i_s)
+	if not astar.is_in_boundsv(seed_sample):
+		return _all_goals(goals.size())
+	var out := PackedInt32Array()
+	for k in goals.size():
+		var g := _goal_sample(astar, _to_uv(goals[k]))
+		if astar.is_point_solid(g):
+			out.append(k)
+			continue
+		if astar.get_id_path(seed_sample, g).is_empty():
+			out.append(k)
+	return out
+
+
+func is_path_open(obstacles: Array[Vector2i], spawn_point: Vector3, gate: Vector3,
+		goals: Array[Vector3], min_width: float) -> bool:
+	return unreachable_goals(obstacles, spawn_point, gate, goals, min_width).is_empty()
+
+
+## Position in (along the columns, along the rows) metres from origin.
+func _to_uv(p: Vector3) -> Vector2:
+	var d := p - origin
+	return Vector2(d.dot(column_dir.normalized()), d.dot(row_dir()))
+
+
+## Sample grid covering the corridor: samples outside the region are closer than min_width / 2
+## to a wall or to the Fortress face, so they are simply not walkable.
+func _path_astar(i_lo: int, i_hi: int, j_max: int) -> AStarGrid2D:
+	var astar := AStarGrid2D.new()
+	astar.region = Rect2i(i_lo, -j_max, i_hi - i_lo + 1, 2 * j_max + 1)
+	astar.cell_size = Vector2.ONE
+	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	# update() must come after region and cell_size and before any set_point_solid.
+	astar.update()
+	return astar
+
+
+## Marks every sample closer than r to the cell square as solid.
+func _mark_cell_solid(astar: AStarGrid2D, cell: Vector2i, r: float) -> void:
+	if cell.y < 0 or cell.y >= row_offsets.size():
+		push_error("GridData: row %d is out of range (0..%d)" % [cell.y, row_offsets.size() - 1])
+		return
+	var step := path_sample_step()
+	var h: float = GameConfig.grid_cell_size * 0.5
+	var col_step: float = GameConfig.grid_cell_size + GameConfig.grid_cell_gap
+	var uc := cell.x * col_step
+	var vc: float = row_offsets[cell.y]
+	var reach := h + r
+	var limit := (r - PATH_EPS) * (r - PATH_EPS)
+	var reg := astar.region
+	var i_from := maxi(reg.position.x, floori((uc - reach) / step))
+	var i_to := mini(reg.end.x - 1, ceili((uc + reach) / step))
+	var j_from := maxi(reg.position.y, floori((vc - reach) / step))
+	var j_to := mini(reg.end.y - 1, ceili((vc + reach) / step))
+	for i in range(i_from, i_to + 1):
+		var du := maxf(absf(i * step - uc) - h, 0.0)
+		for j in range(j_from, j_to + 1):
+			var dv := maxf(absf(j * step - vc) - h, 0.0)
+			if du * du + dv * dv < limit:
+				astar.set_point_solid(Vector2i(i, j))
+
+
+## Free sample in the spawn column nearest the spawn point's row; outside the region when the
+## whole column is blocked.
+func _spawn_sample(astar: AStarGrid2D, spawn_uv: Vector2, i_s: int) -> Vector2i:
+	var reg := astar.region
+	var j_min := reg.position.y
+	var j_max := reg.end.y - 1
+	var j0 := clampi(roundi(spawn_uv.y / path_sample_step()), j_min, j_max)
+	for k in range(0, j_max - j_min + 1):
+		var below := Vector2i(i_s, j0 - k)
+		if below.y >= j_min and not astar.is_point_solid(below):
+			return below
+		var above := Vector2i(i_s, j0 + k)
+		if above.y <= j_max and not astar.is_point_solid(above):
+			return above
+	return Vector2i(reg.position.x - 1, 0)
+
+
+## Sample nearest the goal, clamped into the region so the search never runs out of bounds.
+func _goal_sample(astar: AStarGrid2D, goal_uv: Vector2) -> Vector2i:
+	var step := path_sample_step()
+	var reg := astar.region
+	return Vector2i(
+		clampi(roundi(goal_uv.x / step), reg.position.x, reg.end.x - 1),
+		clampi(roundi(goal_uv.y / step), reg.position.y, reg.end.y - 1))
+
+
+func _all_goals(count: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for k in count:
+		out.append(k)
+	return out
+
+
+func _is_step_multiple(x: float, step: float) -> bool:
+	return absf(x / step - roundf(x / step)) < 0.001
+
+
+func _warn_if_misaligned() -> void:
+	if _path_align_warned or is_path_aligned():
+		return
+	_path_align_warned = true
+	push_warning("GridData: cell edges, rows or walls are not multiples of %.3f m, the path check may be off by one sample near the %.1f m limit" % [path_sample_step(), GameConfig.path_check_min_width])
