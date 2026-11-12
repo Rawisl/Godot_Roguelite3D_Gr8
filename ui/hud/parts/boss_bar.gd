@@ -97,9 +97,9 @@ func _on_boss_timer_changed(seconds_left: float) -> void:
 		return
 	_timer.visible = true
 	_timer.text = UiFormat.time_mmss(seconds_left)
-	if seconds_left <= _mark(&"enrage_countdown_time"):
+	if seconds_left <= GameConfig.enrage_countdown_time:
 		_set_tier(TimerTier.DANGER)
-	elif seconds_left <= _mark(&"enrage_warn_time"):
+	elif seconds_left <= GameConfig.enrage_warn_time:
 		_set_tier(TimerTier.WARN)
 	else:
 		_set_tier(TimerTier.NORMAL)
@@ -110,13 +110,6 @@ func _on_boss_enraged() -> void:
 	_timer.visible = true
 	_timer.text = tr(&"hud.boss.enraged")
 	_set_tier(TimerTier.ENRAGED)
-
-## Seconds left at which the timer changes tier, from GameConfig. 0 while GameConfig does not
-## have it yet, which keeps the timer plain until the boss timer values land.
-func _mark(key: StringName) -> float:
-	# TODO(WhoKeng): read GameConfig.enrage_warn_time and enrage_countdown_time directly once the boss timer values are on main.
-	var value: Variant = GameConfig.get(key)
-	return float(value) if value != null else 0.0
 
 ## The timer ticks every frame, so the colour, size and icon change only when the tier does.
 func _set_tier(tier: TimerTier) -> void:

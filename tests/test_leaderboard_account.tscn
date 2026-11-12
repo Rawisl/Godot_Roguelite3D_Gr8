@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://ce8u63f3tuxuu"]
+
+[ext_resource type="Script" uid="uid://cadqrux8kpmmj" path="res://tests/fake_meta_services.gd" id="1_fake"]
+[ext_resource type="PackedScene" uid="uid://cufhia2itiib6" path="res://ui/screens/leaderboard.tscn" id="2_board"]
+[ext_resource type="PackedScene" uid="uid://bxnr1w0e4elwl" path="res://ui/screens/tab_account.tscn" id="3_account"]
+[ext_resource type="Script" uid="uid://pjguf8rkkyho" path="res://tests/test_leaderboard_account.gd" id="4_checks"]
+[ext_resource type="Theme" uid="uid://dmftlq5fad4lk" path="res://ui/theme/light_panel_theme.tres" id="5_light"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(1, 0.9176, 0.8353, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.749, 0.6235, 0.4588, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="TestLeaderboardAccount" type="Node" unique_id=1739310101]
+
+[node name="FakeServices" type="Node" parent="." unique_id=1739310102]
+script = ExtResource("1_fake")
+
+[node name="Leaderboard" parent="." unique_id=1739310103 instance=ExtResource("2_board")]
+
+[node name="AccountPanel" type="PanelContainer" parent="." unique_id=1739310104]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 58.0
+offset_top = 58.0
+offset_right = -58.0
+offset_bottom = -58.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("5_light")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="TabAccount" parent="AccountPanel" unique_id=1739310105 instance=ExtResource("3_account")]
+layout_mode = 2
+
+[node name="Checks" type="Node" parent="." unique_id=1739310106]
+script = ExtResource("4_checks")

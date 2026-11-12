@@ -1,8 +1,7 @@
 extends Control
 ## Draws the heal station panel without a BuildService. Press F6 on this scene.
 ## 1: full store in PREP. 2: half store in PREP. 3: empty store in COMBAT (Sell greyed out as broken).
-## The sell values assume the refund follows the HP left in the store, as it will once
-## get_tower_info() does that for heal stations.
+## The sell values follow the HP left in the store, like get_tower_info() for heal stations.
 
 const DATA: TowerData = preload("res://data/towers/heal_station.tres")
 
@@ -24,4 +23,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show(0, 300, 0, false)
 
 func _show(hp: int, max_hp: int, sell_value: int, in_prep: bool) -> void:
-	_panel.show_info({"data": DATA, "level": 1, "hp": hp, "max_hp": max_hp, "sell_value": sell_value}, in_prep)
+	_panel.show_info({"data": DATA, "level": 1, "hp": hp, "max_hp": max_hp, "sell_value": sell_value,
+		"is_max": false, "upgrade_cost": 40, "upgrade_shortfall": 0,
+		"upgrade_locked": false, "upgrade_required_level": 0}, in_prep)

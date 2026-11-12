@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/test_build_and_tower_panels.gd" id="1_checks"]
+[ext_resource type="Script" path="res://tests/fake_build_service.gd" id="2_fake"]
+[ext_resource type="PackedScene" uid="uid://klqge08m43r" path="res://ui/panels/build_panel.tscn" id="3_build"]
+[ext_resource type="PackedScene" uid="uid://cmf1pspoewu74" path="res://ui/panels/tower_panel.tscn" id="4_tower"]
+[ext_resource type="PackedScene" uid="uid://c8hs4tp2nl6qa" path="res://ui/panels/heal_station_panel.tscn" id="5_heal"]
+[ext_resource type="Script" path="res://ui/world/range_ring.gd" id="6_ring"]
+
+[node name="TestBuildAndTowerPanels" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_checks")
+
+[node name="FakeService" type="Node" parent="."]
+script = ExtResource("2_fake")
+
+[node name="BuildPanel" parent="." instance=ExtResource("3_build")]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 360.0
+offset_bottom = 640.0
+
+[node name="TowerPanel" parent="." instance=ExtResource("4_tower")]
+layout_mode = 0
+offset_left = 400.0
+offset_top = 40.0
+offset_right = 720.0
+offset_bottom = 640.0
+
+[node name="HealPanel" parent="." instance=ExtResource("5_heal")]
+layout_mode = 0
+offset_left = 900.0
+offset_top = 40.0
+offset_right = 1320.0
+offset_bottom = 640.0
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="Camera" type="Camera3D" parent="World"]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 0.8, -0.6, 0, 0.6, 0.8, 0, 9, 5)
+current = true
+
+[node name="Ring" type="MeshInstance3D" parent="World"]
+unique_name_in_owner = true
+script = ExtResource("6_ring")

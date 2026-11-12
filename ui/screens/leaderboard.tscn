@@ -1,0 +1,356 @@
+[gd_scene format=3 uid="uid://cufhia2itiib6"]
+
+[ext_resource type="Script" uid="uid://bfh7r6iy6fawc" path="res://ui/screens/leaderboard.gd" id="1_lbd"]
+[ext_resource type="PackedScene" uid="uid://5nwf0881hn64" path="res://ui/screens/leaderboard_row.tscn" id="2_row"]
+[ext_resource type="Theme" uid="uid://dmftlq5fad4lk" path="res://ui/theme/light_panel_theme.tres" id="9_light"]
+[ext_resource type="FontFile" uid="uid://c5eh65su1iw4t" path="res://ui/theme/fonts/BeVietnamPro-Bold.ttf" id="10_bold"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(1, 0.9176, 0.8353, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.749, 0.6235, 0.4588, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="Leaderboard" type="MarginContainer" unique_id=1739300027]
+texture_filter = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"SafeArea"
+script = ExtResource("1_lbd")
+
+[node name="Content" type="VBoxContainer" parent="." unique_id=1739300028]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Content" unique_id=1739300029]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+
+[node name="Actions" type="HBoxContainer" parent="Content" unique_id=1739300030]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Back" type="Button" parent="Content/Actions" unique_id=1739300031]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+
+[node name="Refresh" type="Button" parent="Content/Actions" unique_id=1739300032]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+
+[node name="SignIn" type="Button" parent="Content/Actions" unique_id=1739300033]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(340, 56)
+layout_mode = 2
+
+[node name="Panel" type="PanelContainer" parent="Content" unique_id=1739320003]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("9_light")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Inner" type="VBoxContainer" parent="Content/Panel" unique_id=1739320004]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Status" type="Label" parent="Content/Panel/Inner" unique_id=1739300034]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+
+[node name="Retry" type="Button" parent="Content/Panel/Inner" unique_id=1739300035]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Table" type="VBoxContainer" parent="Content/Panel/Inner" unique_id=1739300036]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="HeaderMargin" type="MarginContainer" parent="Content/Panel/Inner/Table" unique_id=1739309901]
+layout_mode = 2
+theme_override_constants/margin_left = 21
+theme_override_constants/margin_right = 33
+
+[node name="Header" type="HBoxContainer" parent="Content/Panel/Inner/Table/HeaderMargin" unique_id=1739300037]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HeaderRank" type="Label" parent="Content/Panel/Inner/Table/HeaderMargin/Header" unique_id=1739300038]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(90, 0)
+theme_override_fonts/font = ExtResource("10_bold")
+theme_override_font_sizes/font_size = 22
+
+[node name="HeaderName" type="Label" parent="Content/Panel/Inner/Table/HeaderMargin/Header" unique_id=1739300039]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("10_bold")
+theme_override_font_sizes/font_size = 22
+
+[node name="HeaderWaves" type="Label" parent="Content/Panel/Inner/Table/HeaderMargin/Header" unique_id=1739300040]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(240, 0)
+horizontal_alignment = 1
+theme_override_fonts/font = ExtResource("10_bold")
+theme_override_font_sizes/font_size = 22
+
+[node name="HeaderTime" type="Label" parent="Content/Panel/Inner/Table/HeaderMargin/Header" unique_id=1739300041]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(150, 0)
+horizontal_alignment = 2
+theme_override_fonts/font = ExtResource("10_bold")
+theme_override_font_sizes/font_size = 22
+
+[node name="Scroll" type="ScrollContainer" parent="Content/Panel/Inner/Table" unique_id=1739300042]
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Rows" type="VBoxContainer" parent="Content/Panel/Inner/Table/Scroll" unique_id=1739300043]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Row01" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300044 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row02" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300045 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row03" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300046 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row04" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300047 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row05" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300048 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row06" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300049 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row07" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300050 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row08" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300051 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row09" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300052 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row10" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300053 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row11" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300054 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row12" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300055 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row13" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300056 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row14" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300057 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row15" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300058 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row16" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300059 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row17" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300060 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row18" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300061 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row19" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300062 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row20" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300063 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row21" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300064 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row22" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300065 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row23" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300066 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row24" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300067 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row25" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300068 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row26" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300069 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row27" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300070 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row28" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300071 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row29" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300072 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row30" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300073 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row31" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300074 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row32" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300075 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row33" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300076 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row34" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300077 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row35" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300078 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row36" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300079 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row37" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300080 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row38" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300081 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row39" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300082 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row40" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300083 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row41" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300084 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row42" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300085 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row43" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300086 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row44" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300087 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row45" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300088 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row46" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300089 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row47" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300090 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row48" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300091 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row49" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300092 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="Row50" parent="Content/Panel/Inner/Table/Scroll/Rows" unique_id=1739300093 instance=ExtResource("2_row")]
+visible = false
+layout_mode = 2
+
+[node name="OwnBox" type="VBoxContainer" parent="Content/Panel/Inner" unique_id=1739300094]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="OwnTitle" type="Label" parent="Content/Panel/Inner/OwnBox" unique_id=1739300095]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 20
+
+[node name="OwnRow" parent="Content/Panel/Inner/OwnBox" unique_id=1739300096 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2

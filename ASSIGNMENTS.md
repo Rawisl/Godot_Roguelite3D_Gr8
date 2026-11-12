@@ -938,7 +938,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH2
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nút nâng cấp xám 'Cần Chỉ huy cấp N' (UPG-06) áp ở cấp 13 và 25; panel Tower hiển thị cấp thật và bậc model; Trạm hồi lực có nút Nâng cấp và 'MAX'
 - Nghiệm thu: Tooltip đúng cấp yêu cầu; trụ có sẵn hiện nút Bán xám 'Bán được từ wave 3'
 - Tệp liên quan: ui/panels/tower_panel.gd, ui/panels/heal_station_panel.gd
@@ -948,7 +948,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH3
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: MetaShop SCR-04 (4 mục, SHP-05..09 UI)
 - Nghiệm thu: Shop chỉ hiện 4 mục MVP
 - Cần xong trước: W10-MH4
@@ -956,7 +956,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH4
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Toast cảnh báo tối thiểu ALR-13..15, ALR-17, ALR-18; thêm ALR-19 (nhận vũ khí) và ALR-20 (kết thúc Hazard Trial)
 - Nghiệm thu: Tối đa 1 banner và 3 toast
 - Cần xong trước: W9-MH4b
@@ -964,7 +964,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH5
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Màn Leaderboard SCR-19: top 50, dòng hạng của tôi, Làm mới, Thử lại khi lỗi, nút Đăng nhập cho khách (LBD-08), dùng dữ liệu giả trước
 - Nghiệm thu: Hiện đủ top 50 và dòng hạng riêng khi ngoài top; lỗi mạng có Thử lại
 - Cần xong trước: W7-KM5
@@ -972,7 +972,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH6
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Mục Tài khoản trong Settings và biểu tượng trạng thái đồng bộ ở MainMenu (GUEST, SYNCED, SYNCING, OFFLINE, ERROR)
 - Nghiệm thu: Có chữ kèm biểu tượng, đúng 5 trạng thái
 - Cần xong trước: W8-MH2
@@ -980,7 +980,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH7
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial: input hazard_enter (phím E, khác ngữ cảnh với heal_channel) và bấm chuột vào Tháp; HUD-22 (Rời phòng, số quái còn, gold/XP tạm tính, HP bản sao), HUD-23 (chỉ báo Tháp và tooltip loại quái), đóng panel và hộp thoại khi vào, toast kết quả
 - Nghiệm thu: HZ1, HZ7 đạt: Tháp xám kèm lý do ở Commander, Pause, đã dùng; bấm Rời phòng một lần không cần xác nhận; nút tua x1/x2/x3 hoạt động trong phòng; Pause trong phòng thì panel chỉ đọc (PNL-12); phím E không xung đột với hồi máu (E chỉ vào Tháp ở PREP)
 - Tệp liên quan: project.godot (InputMap hazard_enter), ui/hud/*, ui/panels/panel_host.gd, ui/hud/parts/speed_buttons.gd
@@ -990,7 +990,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH8
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: UI chặn kín đường: ghost preview màu cấm, tooltip 'Sẽ chặn kín đường đi', mục xây xám lý do BLOCKS_PATH; chuỗi 'Đã đủ 3 công trình trên mặt đất'
 - Nghiệm thu: Mục xây xám đúng lý do ở bố cục thử
 - Tệp liên quan: ui/panels/build_panel.gd, data/locale/strings.csv

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://bbfh8yior7bsd"]
+
+[ext_resource type="PackedScene" uid="uid://b0ncj75b0jni1" path="res://ui/hud/hud.tscn" id="1_hud"]
+[ext_resource type="Script" uid="uid://banqev1rqsfq0" path="res://systems/run/run_state.gd" id="2_run"]
+[ext_resource type="Script" uid="uid://drod37gr0ioj0" path="res://tests/test_alerts_and_hazard.gd" id="3_fake"]
+
+[node name="TestAlertsAndHazard" type="Node" unique_id=1739207401]
+
+[node name="Hud" parent="." unique_id=1623823647 instance=ExtResource("1_hud")]
+
+[node name="RunState" type="Node" parent="." unique_id=1739207402]
+script = ExtResource("2_run")
+
+[node name="FakeSignals" type="Node" parent="." unique_id=1739207403]
+script = ExtResource("3_fake")

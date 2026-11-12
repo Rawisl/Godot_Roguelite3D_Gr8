@@ -97,6 +97,7 @@ signal performance_degraded(fps: float)
 
 #-----------------------Meta, save, setting-----------------------#
 signal meta_item_purchased(item_id: StringName, new_level: int)
+signal sync_state_changed(state: StringName, detail: String)  # SyncService -> UI (MainMenu, Settings): GUEST | SYNCED | SYNCING | OFFLINE | ERROR
 signal save_completed
 signal save_failed(reason: StringName)
 signal settings_changed(key: StringName, value: Variant)
@@ -125,6 +126,10 @@ signal tutorial_completed  # emitted when tutorial_done flag is saved
 signal weapon_gained(weapon_id: StringName)  # RunState -> UI, SummaryPanel, HUD
 signal hazard_trial_entered(wave_index: int, enemy_types: Array)  # Wave -> UI, Camera, Combat
 signal hazard_trial_exited(result: StringName, kills: int, gold: int, xp: float, mithril: int)  # result: WON | LEFT | DIED
+signal hazard_trial_offered(wave_index: int, enemy_types: Array, mithril: int)  # Wave -> UI: the group and the Mithril for a win, sent in PREP before entering
+signal hazard_trial_progress(remaining: int, total: int, gold: int, xp: float)  # Wave -> UI: enemies not done yet and the gold and XP earned so far in the room
+signal hazard_enter_requested  # UI (E key or the tower) -> Wave: enter the room, checked again there
+signal hazard_leave_requested  # UI (Leave button) -> Wave: leave the room now
 #------------------------------------------------------#
 
 #-----------------------Progression-----------------------#

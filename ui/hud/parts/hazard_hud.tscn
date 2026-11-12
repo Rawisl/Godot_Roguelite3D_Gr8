@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://ddxvk6mn5gqjs"]
+
+[ext_resource type="Script" uid="uid://dxqbralf8eab5" path="res://ui/hud/parts/hazard_hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1098, 0.1216, 0.149, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="HazardHud" type="VBoxContainer" unique_id=1739207101]
+visible = false
+mouse_filter = 2
+theme_override_constants/separation = 10
+script = ExtResource("1_hud")
+
+[node name="InfoBox" type="PanelContainer" parent="." unique_id=1739207102]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
+
+[node name="Lines" type="VBoxContainer" parent="InfoBox" unique_id=1739207103]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Enemies" type="Label" parent="InfoBox/Lines" unique_id=1739207104]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+
+[node name="Loot" type="Label" parent="InfoBox/Lines" unique_id=1739207105]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="Reward" type="Label" parent="InfoBox/Lines" unique_id=1739207106]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+theme_override_colors/font_color = Color(0.9098, 0.7608, 0.3529, 1)
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="Note" type="Label" parent="InfoBox/Lines" unique_id=1739207107]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+theme_override_font_sizes/font_size = 19
+horizontal_alignment = 1
+
+[node name="LeaveButton" type="Button" parent="." unique_id=1739207108]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0

@@ -63,6 +63,8 @@ extends Node
 @export var heal_tower_max_count: int = 2
 @export var heal_tower_limit_lv: int = 6
 @export var heal_tower_dmg_norm_exp: float = 0.5
+## Store share under which the station warns once that it is running low.
+@export var heal_store_low_pct: float = 0.20
 
 @export_group("Ground Grid")
 @export var grid_cell_size: float = 2.0

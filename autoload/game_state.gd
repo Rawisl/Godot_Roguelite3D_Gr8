@@ -3,7 +3,7 @@ extends Node
 signal app_state_changed(new_state: AppState, old_state: AppState)
 signal session_restore_failed(error: StringName)
 
-enum AppState { BOOT, MAIN_MENU, RUN_LOADING, RUN, RUN_END, META_SHOP, SETTINGS }
+enum AppState { BOOT, MAIN_MENU, RUN_LOADING, RUN, RUN_END, META_SHOP, SETTINGS, LEADERBOARD }
 
 const SCENES := {
 	AppState.MAIN_MENU: "res://ui/screens/main_menu.tscn",
@@ -12,17 +12,19 @@ const SCENES := {
 	AppState.RUN_END: "res://ui/screens/run_end.tscn",
 	AppState.META_SHOP: "res://ui/screens/meta_shop.tscn",
 	AppState.SETTINGS: "res://ui/screens/settings.tscn",
+	AppState.LEADERBOARD: "res://ui/screens/leaderboard.tscn",
 }
 
 ## Allowed transitions. Play goes straight to RunLoading (no StartSelect yet).
 const TRANSITIONS := {
 	AppState.BOOT: [AppState.MAIN_MENU],
-	AppState.MAIN_MENU: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.SETTINGS],
+	AppState.MAIN_MENU: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.SETTINGS, AppState.LEADERBOARD],
 	AppState.RUN_LOADING: [AppState.RUN],
 	AppState.RUN: [AppState.RUN_END],
 	AppState.RUN_END: [AppState.RUN_LOADING, AppState.META_SHOP, AppState.MAIN_MENU],
 	AppState.META_SHOP: [AppState.MAIN_MENU],
 	AppState.SETTINGS: [AppState.MAIN_MENU],
+	AppState.LEADERBOARD: [AppState.MAIN_MENU],
 }
 
 const PAUSE_MENU_SCENE := preload("res://ui/screens/pause_menu.tscn")
@@ -39,6 +41,11 @@ var _settings: Dictionary = {}
 var wave_state: StringName = &""
 ## Why the saved sign-in could not be restored at start, empty when it was fine.
 var session_restore_error: StringName = &""
+## Tab the Settings screen opens on next time, then cleared. Empty opens the first tab.
+var settings_tab: StringName = &""
+## Last state sent on EventBus.sync_state_changed: GUEST, SYNCED, SYNCING, OFFLINE or ERROR.
+var sync_state: StringName = &"GUEST"
+var sync_detail: String = ""
 
 var _pause_layer: CanvasLayer
 var _pause_menu: Control
@@ -52,6 +59,7 @@ func _ready() -> void:
 	EventBus.run_ended.connect(_on_run_ended)
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
+	EventBus.sync_state_changed.connect(_on_sync_state_changed)
 	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_sync_with_current_scene.call_deferred()
 	_restore_session.call_deferred()
@@ -174,8 +182,14 @@ func _restore_session() -> void:
 		session_restore_failed.emit(session_restore_error)
 
 ## A sign in or a sign out replaces whatever went wrong while restoring.
-func _on_session_changed(_signed_in: bool) -> void:
+func _on_session_changed(signed_in: bool) -> void:
 	session_restore_error = &""
+	# TODO(WhoKeng): SyncService sends the real state once it syncs after a sign in.
+	EventBus.sync_state_changed.emit(&"OFFLINE" if signed_in else &"GUEST", "")
 
 func _on_wave_state_changed(new_state: StringName) -> void:
 	wave_state = new_state
+
+func _on_sync_state_changed(state: StringName, detail: String) -> void:
+	sync_state = state
+	sync_detail = detail
