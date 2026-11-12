@@ -24,13 +24,15 @@ var _sell_dialog: Control = null
 @onready var _store_bar: ProgressBar = %StoreBar
 @onready var _rate_row: SummaryRow = %RateRow
 @onready var _level_row: SummaryRow = %LevelRow
+@onready var _upgrade: PanelButton = %Upgrade
 @onready var _sell: PanelButton = %Sell
 
 func _ready() -> void:
 	_close.text = tr(&"panel.close")
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
-	_level_row.set_row(tr(&"panel.heal.level"), tr(&"panel.heal.max"))
+	_upgrade.focus_mode = Control.FOCUS_NONE
+	_upgrade.pressed.connect(_on_upgrade_pressed)
 	_sell.tooltip_text = tr(&"panel.heal.sell_tip")
 	_sell.pressed.connect(_on_sell_pressed)
 	EventBus.state_changed.connect(_on_any_change)
@@ -74,6 +76,10 @@ func show_info(info: Dictionary, in_prep: bool) -> void:
 	# TODO(Rawisl): send the commander heal rate with the heal station skill level, the base rate shows until then.
 	_rate_row.set_row(tr(&"panel.heal.rate"),
 		UiFormat.tr_fmt(&"panel.heal.rate_value", {"rate": UiFormat.decimal(commander_stats.heal_rate_base, 0)}))
+	_level_row.set_row(tr(&"panel.heal.level"), UiFormat.tr_fmt(&"panel.heal.level_value",
+		{"level": info.level, "max": GameConfig.tower_max_level, "tier": UiFormat.model_tier(info.level)}))
+	_upgrade.visible = in_prep
+	_show_upgrade(info)
 	# An empty store keeps the button in place, greyed out, so the panel never jumps.
 	var broken: bool = info.hp <= 0
 	_sell.visible = in_prep or broken
@@ -83,6 +89,35 @@ func show_info(info: Dictionary, in_prep: bool) -> void:
 	else:
 		# TODO(kiezroth): base sell_value on the HP left in the store for heal stations.
 		_sell.set_lines(UiFormat.tr_fmt(&"panel.tower.sell", {"gold": info.sell_value}))
+
+## Same rules as the Tower panel: MAX at the top level, grey while the Commander level is too low.
+## TODO(kiezroth): a heal station upgrade should add only the store it gains and keep what is left.
+## Until then the press goes through BuildService.upgrade() like any tower.
+func _show_upgrade(info: Dictionary) -> void:
+	if info.is_max:
+		_upgrade.disabled = true
+		_upgrade.tooltip_text = ""
+		_upgrade.set_lines(tr(&"panel.max"))
+	elif info.upgrade_locked:
+		var need := UiFormat.tr_fmt(&"panel.need_commander_level", {"level": info.upgrade_required_level})
+		_upgrade.disabled = true
+		_upgrade.tooltip_text = need
+		_upgrade.set_lines(need)
+	else:
+		var short: bool = info.upgrade_shortfall > 0
+		_upgrade.disabled = short
+		_upgrade.tooltip_text = ""
+		_upgrade.set_lines(
+			UiFormat.tr_fmt(&"panel.tower.upgrade", {"gold": info.upgrade_cost}),
+			UiFormat.tr_fmt(&"panel.need_gold", {"gold": info.upgrade_shortfall}) if short else "")
+
+func _on_upgrade_pressed() -> void:
+	if not _try_lock():
+		return
+	var service := _service()
+	if service != null:
+		service.upgrade(slot_id)
+	refresh()
 
 ## Selling always asks first. The dialog re-checks PREP and the station when confirmed,
 ## and closes by itself as a cancel when PREP ends.

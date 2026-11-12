@@ -67,7 +67,7 @@ func refresh() -> void:
 	var lv: TowerLevelData = data.levels[info.level - 1]
 	var next: TowerLevelData = null if info.is_max else data.levels[info.level]
 	_title.text = tr(data.display_name)
-	_level.text = UiFormat.tr_fmt(&"panel.tower.level", {"level": info.level})
+	_level.text = UiFormat.tr_fmt(&"panel.tower.level_tier", {"level": info.level, "tier": UiFormat.model_tier(info.level)})
 	_hp.text = UiFormat.tr_fmt(&"panel.tower.hp", {"value": info.hp, "max": info.max_hp})
 	_stats.text = _stats_text(lv, next)
 
@@ -75,18 +75,37 @@ func refresh() -> void:
 	var in_prep := service.is_prep()
 	_upgrade.visible = in_prep
 	_sell.visible = in_prep
+	_upgrade.tooltip_text = ""
 	if info.is_max:
 		_upgrade.disabled = true
 		_upgrade.set_lines(tr(&"panel.max"))
+	elif info.upgrade_locked:
+		# Grey until the Commander reaches the level the next model tier asks for.
+		var need := UiFormat.tr_fmt(&"panel.need_commander_level", {"level": info.upgrade_required_level})
+		_upgrade.disabled = true
+		_upgrade.tooltip_text = need
+		_upgrade.set_lines(need)
 	else:
 		var short: bool = info.upgrade_shortfall > 0
 		_upgrade.disabled = short
 		_upgrade.set_lines(
 			UiFormat.tr_fmt(&"panel.tower.upgrade", {"gold": info.upgrade_cost}),
 			UiFormat.tr_fmt(&"panel.need_gold", {"gold": info.upgrade_shortfall}) if short else "")
-	_sell.disabled = false
-	_sell.set_lines(UiFormat.tr_fmt(&"panel.tower.sell", {"gold": info.sell_value}))
+	var sell_locked := _sell_locked_until(service, slot_id)
+	_sell.disabled = sell_locked > 0
+	if sell_locked > 0:
+		_sell.set_lines(UiFormat.tr_fmt(&"panel.tower.sell_locked", {"wave": sell_locked}))
+	else:
+		_sell.set_lines(UiFormat.tr_fmt(&"panel.tower.sell", {"gold": info.sell_value}))
 	_priority.refresh(slot_id, info, service)
+
+## Wave until which the starter tower on this slot cannot be sold, 0 when it can.
+## TODO(kiezroth): BuildService.get_sell_locked_until_wave() comes with the starter towers.
+## Until it exists this returns 0 and no tower is locked.
+func _sell_locked_until(service: BuildService, id: StringName) -> int:
+	if not service.has_method(&"get_sell_locked_until_wave"):
+		return 0
+	return int(service.call(&"get_sell_locked_until_wave", id))
 
 ## The "next level" line is kept at MAX so the buttons below never move up.
 func _stats_text(cur: TowerLevelData, next: TowerLevelData) -> String:
