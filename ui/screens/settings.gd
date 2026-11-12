@@ -27,7 +27,7 @@ func _ready() -> void:
 	GameState.settings_tab = &""
 	_back.grab_focus()
 
-## TODO: save settings.cfg when leaving the screen.
+## TODO(WhoKeng): save settings.cfg when leaving the screen, with the Settings tabs.
 func go_back() -> void:
 	if is_overlay:
 		closed.emit()
