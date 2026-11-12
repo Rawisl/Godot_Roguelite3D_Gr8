@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://vpp3bfkttu4q"]
+
+[ext_resource type="Script" uid="uid://bha7k1hye4jpg" path="res://ui/screens/shop_row.gd" id="1_row"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_row"]
+content_margin_left = 24.0
+content_margin_top = 16.0
+content_margin_right = 24.0
+content_margin_bottom = 16.0
+bg_color = Color(0.749, 0.6235, 0.4588, 0.22)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.749, 0.6235, 0.4588, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="ShopRow" type="PanelContainer" unique_id=1739300000]
+custom_minimum_size = Vector2(980, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_row")
+script = ExtResource("1_row")
+
+[node name="Body" type="HBoxContainer" parent="." unique_id=1739300001]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Info" type="VBoxContainer" parent="Body" unique_id=1739300002]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="Body/Info" unique_id=1739300003]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="NameLabel" type="Label" parent="Body/Info/Header" unique_id=1739300004]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+
+[node name="LevelLabel" type="Label" parent="Body/Info/Header" unique_id=1739300005]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 22
+
+[node name="EffectLabel" type="Label" parent="Body/Info" unique_id=1739300006]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+
+[node name="NextLabel" type="Label" parent="Body/Info" unique_id=1739300007]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2471, 0.498, 0.8157, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="NoteLabel" type="Label" parent="Body/Info" unique_id=1739300008]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 18
+
+[node name="Buy" type="VBoxContainer" parent="Body" unique_id=1739300009]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 8
+
+[node name="CostLabel" type="Label" parent="Body/Buy" unique_id=1739300010]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(300, 0)
+horizontal_alignment = 1
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 18
+
+[node name="BuyButton" type="Button" parent="Body/Buy" unique_id=1739300011]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 56)
+layout_mode = 2

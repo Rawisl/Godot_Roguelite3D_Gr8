@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://ce1ndafvk0cow" path="res://ui/screens/tab_gameplay.tscn" id="5_wpins"]
 [ext_resource type="PackedScene" uid="uid://bbg0ghrmn2br1" path="res://ui/screens/tab_graphics.tscn" id="6_204y2"]
 [ext_resource type="Theme" path="res://ui/theme/light_panel_theme.tres" id="7_light"]
+[ext_resource type="PackedScene" uid="uid://bxnr1w0e4elwl" path="res://ui/screens/tab_account.tscn" id="8_account"]
 
 [node name="Settings" type="PanelContainer" unique_id=43494788]
 texture_filter = 2
@@ -72,3 +73,8 @@ metadata/_tab_index = 4
 visible = false
 layout_mode = 2
 metadata/_tab_index = 5
+
+[node name="TabAccount" parent="Margin/Content/Tabs" unique_id=1739300116 instance=ExtResource("8_account")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 6

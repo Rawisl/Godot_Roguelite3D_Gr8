@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://c7h2ln0trfhuh"]
+
+[ext_resource type="Script" uid="uid://cadqrux8kpmmj" path="res://tests/fake_meta_services.gd" id="1_fake"]
+[ext_resource type="PackedScene" uid="uid://b1tsbvbhrmocw" path="res://ui/screens/meta_shop.tscn" id="2_shop"]
+[ext_resource type="Script" uid="uid://clwy60vhujdor" path="res://tests/test_meta_shop.gd" id="3_checks"]
+
+[node name="TestMetaShop" type="Node" unique_id=1739310001]
+
+[node name="FakeServices" type="Node" parent="." unique_id=1739310002]
+script = ExtResource("1_fake")
+
+[node name="MetaShop" parent="." unique_id=1739310003 instance=ExtResource("2_shop")]
+
+[node name="Checks" type="Node" parent="." unique_id=1739310006]
+script = ExtResource("3_checks")

@@ -1,6 +1,28 @@
 [gd_scene format=3 uid="uid://b1tsbvbhrmocw"]
 
 [ext_resource type="Script" uid="uid://bu0axc17awppn" path="res://ui/screens/meta_shop.gd" id="1_8sgkt"]
+[ext_resource type="PackedScene" uid="uid://vpp3bfkttu4q" path="res://ui/screens/shop_row.tscn" id="2_row"]
+[ext_resource type="Resource" uid="uid://h6058fpsvcbb" path="res://data/config/meta_shop/fort_hp.tres" id="3_i0"]
+[ext_resource type="Resource" uid="uid://c4lbh3uruew2s" path="res://data/config/meta_shop/gold_pct.tres" id="4_i1"]
+[ext_resource type="Resource" uid="uid://b8dumkpfhlslg" path="res://data/config/meta_shop/cmd_hp.tres" id="5_i2"]
+[ext_resource type="Resource" uid="uid://b46fvo66xdil2" path="res://data/config/meta_shop/emg_repair.tres" id="6_i3"]
+[ext_resource type="Theme" uid="uid://dmftlq5fad4lk" path="res://ui/theme/light_panel_theme.tres" id="9_light"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(1, 0.9176, 0.8353, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.749, 0.6235, 0.4588, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="MarginContainer" type="MarginContainer" unique_id=297996740]
 texture_filter = 2
@@ -11,11 +33,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_type_variation = &"SafeArea"
 script = ExtResource("1_8sgkt")
+items = Array[Resource]([ExtResource("3_i0"), ExtResource("4_i1"), ExtResource("5_i2"), ExtResource("6_i3")])
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=163728926]
 layout_mode = 2
-size_flags_horizontal = 0
-theme_override_constants/separation = 24
+theme_override_constants/separation = 20
 
 [node name="Title" type="Label" parent="VBoxContainer" unique_id=822675748]
 unique_name_in_owner = true
@@ -26,3 +48,44 @@ theme_type_variation = &"TitleLabel"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Balance" type="Label" parent="VBoxContainer" unique_id=1739300012]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098, 0.7608, 0.3529, 1)
+theme_override_font_sizes/font_size = 30
+
+[node name="Panel" type="PanelContainer" parent="VBoxContainer" unique_id=1739320001]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("9_light")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Inner" type="VBoxContainer" parent="VBoxContainer/Panel" unique_id=1739320002]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Rows" type="VBoxContainer" parent="VBoxContainer/Panel/Inner" unique_id=1739300013]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Row1" parent="VBoxContainer/Panel/Inner/Rows" unique_id=1739300014 instance=ExtResource("2_row")]
+layout_mode = 2
+
+[node name="Row2" parent="VBoxContainer/Panel/Inner/Rows" unique_id=1739300015 instance=ExtResource("2_row")]
+layout_mode = 2
+
+[node name="Row3" parent="VBoxContainer/Panel/Inner/Rows" unique_id=1739300016 instance=ExtResource("2_row")]
+layout_mode = 2
+
+[node name="Row4" parent="VBoxContainer/Panel/Inner/Rows" unique_id=1739300017 instance=ExtResource("2_row")]
+layout_mode = 2
+
+[node name="ErrorLabel" type="Label" parent="VBoxContainer/Panel/Inner" unique_id=1739300018]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false
+theme_override_colors/font_color = Color(0.6902, 0.251, 0.1804, 1)
+theme_override_font_sizes/font_size = 22

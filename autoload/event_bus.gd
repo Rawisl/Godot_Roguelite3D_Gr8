@@ -97,6 +97,7 @@ signal performance_degraded(fps: float)
 
 #-----------------------Meta, save, setting-----------------------#
 signal meta_item_purchased(item_id: StringName, new_level: int)
+signal sync_state_changed(state: StringName, detail: String)  # SyncService -> UI (MainMenu, Settings): GUEST | SYNCED | SYNCING | OFFLINE | ERROR
 signal save_completed
 signal save_failed(reason: StringName)
 signal settings_changed(key: StringName, value: Variant)

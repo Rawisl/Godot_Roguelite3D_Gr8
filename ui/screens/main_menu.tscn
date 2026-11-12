@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://csat6u6lpoh24"]
 
 [ext_resource type="Script" uid="uid://co7lhvwbt2cjv" path="res://ui/screens/main_menu.gd" id="1_iacjs"]
+[ext_resource type="PackedScene" uid="uid://csfm2eayy8mcu" path="res://ui/screens/sync_status.tscn" id="9_sync"]
 
 [node name="MarginContainer" type="MarginContainer" unique_id=1116123521]
 texture_filter = 2
@@ -83,6 +84,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
 
+[node name="Leaderboard" type="Button" parent="VBoxContainer" unique_id=1739300117]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 56)
+layout_mode = 2
+
 [node name="Settings" type="Button" parent="VBoxContainer" unique_id=294000506]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
@@ -92,6 +98,11 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
+
+[node name="SyncStatus" parent="VBoxContainer" unique_id=1739300118 instance=ExtResource("9_sync")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="AccountHint" type="Label" parent="VBoxContainer" unique_id=55864920]
 unique_name_in_owner = true
