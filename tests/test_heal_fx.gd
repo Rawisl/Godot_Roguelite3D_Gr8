@@ -128,7 +128,15 @@ func test_freed_station() -> void:
 	await _settle()
 	var ring := _fx.get_ring(extra)
 	assert_true(ring != null and ring.visible, "a second station gets its own ring")
+	EventBus.heal_state_changed.emit(&"HEALING", &"slot_b", 1.0)
+	await _settle()
+	var beam := _fx.get_node("HealBeam") as MeshInstance3D
+	assert_true(beam.visible, "the second station supplies an active beam")
 	extra.queue_free()
+	EventBus.heal_state_changed.emit(&"DEPLETED", &"slot_b", 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_true(not beam.visible, "a freed beam source hides safely during its fade")
 	await _settle()
 	assert_true(not is_instance_valid(ring) and _fx.get_ring_count() == 1, "a freed station leaves no ring behind")
 	Input.action_release(&"show_ranges")
