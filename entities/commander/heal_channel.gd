@@ -23,8 +23,6 @@ var hold_time: float = 0.0
 var _commander: Node
 var _source: Node3D
 var _source_slot: StringName = &""
-# Healing is fractional, HP is an int: the remainder carries over between ticks.
-var _carry: float = 0.0
 var _needs_release: bool = false
 var _progress_timer: float = 0.0
 
@@ -43,7 +41,7 @@ func get_source() -> Node3D:
 
 
 func get_heal_rate() -> float:
-	return _stat(&"heal_rate_base", 10.0)
+	return _stat(&"heal_rate_base", 10.0) + _stat(&"heal_rate_add", 0.0)
 
 
 ## Stops the channel. If E is still down it must be released before a new hold can start.
@@ -111,7 +109,7 @@ func _tick_healing(delta: float) -> void:
 		return
 
 	var health: HealthComponent = _commander.health
-	var missing := float(health.max_hp - health.hp) - _carry
+	var missing := health.max_hp - health.get_precise_hp()
 	if missing <= EPSILON:
 		_finish(IDLE)
 		return
@@ -121,16 +119,11 @@ func _tick_healing(delta: float) -> void:
 	# Only the part the commander can actually use is taken from the station.
 	var amount := minf(minf(rate * delta, missing), _source.hp * k)
 	_source.drain(amount / k)
-
-	var total := _carry + amount
-	var whole := floori(total + EPSILON)
-	if whole > 0:
-		health.heal(whole)
-	_carry = maxf(total - float(whole), 0.0)
+	health.heal_fractional(amount)
 
 	if not _source_alive():
 		_finish(DEPLETED)
-	elif float(health.max_hp - health.hp) - _carry <= EPSILON:
+	elif health.max_hp - health.get_precise_hp() <= EPSILON:
 		_finish(IDLE)
 
 
@@ -155,7 +148,7 @@ func get_block_reason() -> StringName:
 	if get_tree().paused:
 		return &"PAUSED"
 	var health: HealthComponent = _commander.health
-	if health.hp >= health.max_hp:
+	if health.get_precise_hp() >= health.max_hp:
 		return &"FULL_HP"
 	if _find_source() == null:
 		return &"NO_STATION_IN_RANGE"
@@ -196,7 +189,6 @@ func _set_phase(new_phase: StringName) -> void:
 	_progress_timer = 0.0
 	if new_phase == HOLD:
 		hold_time = 0.0
-		_carry = 0.0
 	_emit_state(new_phase)
 
 

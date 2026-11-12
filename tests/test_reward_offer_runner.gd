@@ -307,9 +307,9 @@ func test_tc9_pool_and_main_scene() -> void:
 			no_null = false
 		else:
 			ids.append(d.id)
-	assert_true(no_null and pool.skills.size() >= 4, "TC9: pool has at least 4 non-null skills (%d)" % pool.skills.size())
+	assert_true(no_null and pool.skills.size() == 9, "TC9: pool has 9 non-null skills (%d)" % pool.skills.size())
 	assert_true(_all_distinct(ids), "TC9: pool ids are distinct")
-	for id: StringName in [&"whirlwind", &"sharpness", &"heal_station", &"vitality"]:
+	for id: StringName in [&"whirlwind", &"sword_wave", &"firebomb", &"sharpness", &"armored", &"lifesteal", &"heal_station", &"vitality", &"mastery"]:
 		assert_true(ids.has(id), "TC9: pool contains %s" % id)
 	assert_true(pool.cards_per_pick == 3, "TC9: cards_per_pick is 3")
 

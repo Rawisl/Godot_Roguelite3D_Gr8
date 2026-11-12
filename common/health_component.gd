@@ -6,10 +6,16 @@ signal damaged(amount: int, info: DamageInfo)
 signal died
 
 @export var max_hp: int = 100
-var hp: int
+## Integer combat view. A living target with less than one HP still takes a hit.
+var hp: int:
+	get:
+		return ceili(_precise_hp)
+	set(value):
+		_precise_hp = float(value)
 var hit_by_commander: bool = false
 ## Fractional DoT damage carried between ticks.
 var dot_remainder: float = 0.0
+var _precise_hp: float = 0.0
 
 
 func _ready() -> void:
@@ -34,7 +40,7 @@ func take_damage(damage_input: Variant, damage_type: Enums.DamageType = Enums.Da
 	if amount <= 0:
 		return 0
 	var previous_hp := hp
-	hp = maxi(0, hp - amount)
+	_precise_hp = maxf(0.0, _precise_hp - amount)
 	var damage_taken := previous_hp - hp
 
 	# Flag flips on first damage >= 1 from commander
@@ -42,7 +48,7 @@ func take_damage(damage_input: Variant, damage_type: Enums.DamageType = Enums.Da
 		if info != null and (info.hit_by_commander or info.is_from_commander()):
 			hit_by_commander = true
 
-	hp_changed.emit(hp, max_hp)
+	hp_changed.emit(floori(_precise_hp), max_hp)
 	damaged.emit(damage_taken, info)
 	if hp == 0:
 		died.emit()
@@ -51,16 +57,19 @@ func take_damage(damage_input: Variant, damage_type: Enums.DamageType = Enums.Da
 
 ## Restores health, capped at max_hp.
 func heal(amount: int) -> int:
-	if hp <= 0 or amount <= 0:
-		return 0
+	return floori(heal_fractional(float(amount)))
 
-	var previous_hp := hp
-	hp = mini(max_hp, hp + amount)
-	var healed_amount := hp - previous_hp
 
+func heal_fractional(amount: float) -> float:
+	if _precise_hp <= 0.0 or amount <= 0.0:
+		return 0.0
+	var previous_hp := _precise_hp
+	var next_hp := minf(max_hp, _precise_hp + amount)
+	var whole_hp := ceilf(next_hp)
+	_precise_hp = whole_hp if whole_hp - next_hp <= 0.000001 else next_hp
+	var healed_amount := _precise_hp - previous_hp
 	if healed_amount > 0:
-		hp_changed.emit(hp, max_hp)
-
+		hp_changed.emit(floori(_precise_hp), max_hp)
 	return healed_amount
 
 
@@ -68,10 +77,10 @@ func heal(amount: int) -> int:
 func set_max_hp(value: int, heal_gain: bool = false) -> void:
 	var gained := value - max_hp
 	max_hp = value
-	if heal_gain and gained > 0 and hp > 0:
-		hp += gained
-	hp = mini(hp, max_hp)
-	hp_changed.emit(hp, max_hp)
+	if heal_gain and gained > 0 and _precise_hp > 0.0:
+		_precise_hp += gained
+	_precise_hp = minf(_precise_hp, max_hp)
+	hp_changed.emit(floori(_precise_hp), max_hp)
 
 
 func is_alive() -> bool:
@@ -79,4 +88,8 @@ func is_alive() -> bool:
 
 
 func get_health_ratio() -> float:
-	return float(hp) / float(max_hp) if max_hp > 0 else 0.0
+	return _precise_hp / max_hp if max_hp > 0 else 0.0
+
+
+func get_precise_hp() -> float:
+	return _precise_hp
