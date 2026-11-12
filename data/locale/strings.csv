@@ -225,18 +225,19 @@ panel.heal.store,Kho máu
 panel.heal.rate,Hồi chỉ huy
 panel.heal.rate_value,+{rate} HP/s
 panel.heal.level,Cấp
-panel.heal.max,Tối đa
+panel.build.blocks_path,Đường đi sẽ bị chặn
+panel.tower.level_tier,Cấp {level} · Bậc {tier}
+panel.tower.sell_locked,Bán được từ wave {wave}
+panel.heal.level_value,{level}/{max} · Bậc {tier}
 panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
 panel.build.heal_limit,Tối đa {max} trạm hồi phục
 panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
-panel.need_commander_level,Cần Chỉ huy cấp {level}
+panel.need_commander_level,Yêu cầu chỉ huy: cấp {level}
 hud.start_wave,Bắt đầu wave
 hud.start_wave.boss,Bắt đầu wave boss
 hud.start_wave.paused,Không bắt đầu được khi tạm dừng
 hud.start_wave.dialog,Hãy đóng hộp thoại đang mở trước
-panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
-panel.need_commander_level,Cần Chỉ huy cấp {level}
 reward.title,Chọn phần thưởng
 reward.hint,Chọn 1 trong 3 thẻ. Thẻ không chọn sẽ mất.
 reward.pending,Lượt chọn còn lại: {value}
