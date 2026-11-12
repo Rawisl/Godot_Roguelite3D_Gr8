@@ -1596,7 +1596,7 @@ Toàn bộ mục 3.10.2 là \[Should] từ v1.4, gồm cả mục shop BUFF_CHAR
 | **ID** | **Luật** |
 | --- | --- |
 | SHP-05 | Mua là giao dịch nguyên tử: kiểm tra số dư, trừ, tăng cấp, ghi save. Ghi save lỗi thì hoàn tác và báo lỗi |
-| SHP-06 | Không đủ danh vọng: nút xám kèm số thiếu. Tối đa cấp: "MAX" |
+| SHP-06 | Không đủ danh vọng: nút Mua xám, dòng giá ngay trên nút ghi số danh vọng còn thiếu bằng màu cảnh báo (kèm tooltip trên nút). Tối đa cấp: "MAX" |
 | SHP-07 | Khóa nút khi đang xử lý, chỉ nhận một lần bấm |
 | SHP-08 | Mua tuần tự, không nhảy cấp |
 | SHP-09 | Hiển thị tác dụng hiện tại, cấp kế, chi phí, số dư sau khi mua |
@@ -1772,7 +1772,7 @@ Làm sau ACCT-03 đến ACCT-05 (cần đăng nhập và đồng bộ chạy). M
 | LBD-05 | **Dữ liệu gửi:** waves_cleared, run_elapsed, run_seed, game_version, tên hiển thị. Điểm lấy từ RunState của lượt vừa chơi, **không lấy từ max_wave_cleared trong save** (save chỉ có checksum chống hỏng tệp, sửa tay được) | MVP |
 | LBD-06 | **Kiểm tra ở máy chủ (mức rẻ):** run_elapsed + lbd_elapsed_tolerance (1 s) ≥ lbd_min_seconds_per_wave (15 s) × waves_cleared, và waves_cleared không vượt trần hợp lý do máy chủ cấu hình. Không mô phỏng lại game. Sàn này không bao giờ từ chối một lượt chơi thật: mỗi wave đã hoàn thành có COMBAT hoặc BOSS_COMBAT kéo dài ít nhất spawn_duration(w) game time (SPN-15), spawn_duration của mọi wave không nhỏ hơn lbd_min_seconds_per_wave (BAL-05 kiểm wave 1-30; công thức từ wave 31 luôn ≥ 15 s), và run_elapsed đếm đúng phần thời gian đó (RUN-02). Đổi lbd_min_seconds_per_wave thì phải giữ nó ≤ spawn_duration nhỏ nhất. Gian lận tinh vi hơn được chấp nhận ở phạm vi đồ án (Phụ lục C) | MVP |
 | LBD-07 | **Phiên bản.** Mỗi dòng ghi game_version. Bảng chỉ hiển thị bản đang chạy, và phát hành bản đổi cân bằng thì bảng mới bắt đầu lại, để điểm không so sánh sai giữa hai bản cân bằng | MVP |
-| LBD-08 | **Hiển thị.** Top lbd_top_n (50) và hạng của chính người chơi (hiện thêm một dòng riêng nếu ngoài top 50): hạng, tên hiển thị, waves_cleared, run_elapsed dạng mm:ss. Làm mới khi mở màn. Lỗi mạng: "Không tải được bảng xếp hạng" kèm nút Thử lại. Khách: nút "Đăng nhập để có hạng" | MVP |
+| LBD-08 | **Hiển thị.** Top lbd_top_n (50) và hạng của chính người chơi (hiện thêm một dòng riêng nếu ngoài top 50): hạng, tên hiển thị, waves_cleared, run_elapsed dạng mm:ss. Làm mới khi mở màn. Lỗi mạng: "Không tải được bảng xếp hạng" kèm nút Thử lại. Khách: nút "Đăng nhập để có hạng". Client lấy dữ liệu qua fetch_leaderboard(top_n), trả về {ok, rows, own}: rows là các dòng top theo thứ tự hạng của game_version đang chạy, own là dòng của người chơi đã đăng nhập hoặc rỗng; mỗi dòng có rank, display_name, waves_cleared, run_elapsed | MVP |
 | LBD-09 | **Tên hiển thị** dài từ display_name_min_len (3) đến display_name_max_len (16) ký tự, đặt khi đăng ký. Bộ lọc tên phản cảm và chức năng báo cáo là \[Should] (Phụ lục C mục 34) | MVP |
 | LBD-10 | Bảng xếp hạng phản ánh cả tiến triển meta (FORT_HP, CMD_HP...), không chỉ kỹ năng. Chấp nhận ở phạm vi này, không làm bảng riêng không tính meta | MVP |
 
@@ -2245,7 +2245,7 @@ Từ v2.0 tutorial **chạy một lần theo tài khoản**: chạy ở run có 
 | WeaponData \[MVP] | Kiếm thường và 5 vũ khí: range_mult, model, VFX, hiệu ứng và tham số. Sinh từ bảng cân bằng | 3.5.13, 6.10 | Player & Combat |
 | WaveModifier \[Should] | Hệ số modifier wave | 3.7.5 | Enemy & Wave |
 | StartPack \[Should] | Gói xuất phát theo mốc | 3.11.1 | UI/UX & Meta |
-| ShopItem | Giá, số cấp, tác dụng mỗi cấp (4 mục MVP) | 3.10.1, 6.6 | UI/UX & Meta |
+| ShopItem | Giá, số cấp, tác dụng mỗi cấp (4 mục MVP), một tệp mỗi mục trong data/config/meta_shop/. Sửa tay | 3.10.1, 6.6 | UI/UX & Meta |
 | SkillData \[MVP] | Skill và thẻ stat: id, loại ACTIVE / PASSIVE / STAT, max_level, bảng giá trị theo level, icon, damage_type, tag, trọng số. Bảng giá trị sinh từ bảng cân bằng | 3.5.12, 6.6 | Player & Combat (nội dung), Tower & Build (RewardOfferGenerator) |
 
 ## 6.3 GameConfig
@@ -2485,7 +2485,7 @@ Bảng giá trị đầy đủ nằm ở mục đã trỏ. Bảng này chỉ ghi
 | BossData | 3.8.2 | xp_value = 30 (XP-01). nav_radius* = 1.6 m (BOSS-03). resist_table pha TRANSITION = ×1.5 và EXPOSED = ×1.25 cho mọi loại, không miễn nhiễm (3.8.4) |
 | ScaleConfig | 3.7.6 | scale_soft_cap_wave = 40. budget_soft_cap_factor* = 0.5 (SCL-02) |
 | WaveTable | 3.7.5 | archer_max_ratio* = 0.40 (SPN-05). support_max_ratio* = 0.20 (SPN-06). support_min_combat* = 3 (SPN-07). group_count = clamp(2 + floor(w/5), 2, 6). Khoảng cách spawn trong nhóm 0.4 đến 0.8 s, nghỉ giữa nhóm 3 s. spawn_overlap_radius* = 1 m, spawn_retry_delay* = 0.2 s, spawn_retry_timeout* = 3 s (SPN-03). escort_budget_ratio* = 0.5 (SPN-10). intro_count*: Archer 2, Bat 2, Brute 1 (bước 2 của thuật toán mục 3.7.5) |
-| ShopItem | 3.10.1 | Tác dụng mỗi cấp nằm ở đây: FORT_HP +0.05, GOLD_PCT +0.04, CMD_HP +10, EMG_REPAIR +0.03 (cộng vào emg_repair_base_heal_pct). \[Should]: SLOT_ACTIVE, SLOT_PASSIVE, REROLL_PLUS, SKILL_UNLOCK_*, BUFF_CHARGE, UNLOCK_TRAP. STARTER_KIT và UNLOCK_WAND đã bỏ ở v2.0 |
+| ShopItem | 3.10.1 | Trường: id (trùng khóa trong meta.levels của save), name_key, effect_key, note_key (ghi chú giới hạn, có thể trống), costs (giá từng cấp, số phần tử là số cấp tối đa), effect_base (giá trị ở cấp 0), effect_step (cộng thêm mỗi cấp). Hai trường cuối tính theo đơn vị hiển thị: FORT_HP +5 (%), GOLD_PCT +4 (%), CMD_HP +10 (HP), EMG_REPAIR gốc 20 và +3 (điểm %), trong đó gốc 20 phải khớp emg_repair_base_heal_pct (0.20); hệ thống áp meta chia 100 cho các mục tính theo %. \[Should]: SLOT_ACTIVE, SLOT_PASSIVE, REROLL_PLUS, SKILL_UNLOCK_*, BUFF_CHARGE, UNLOCK_TRAP. STARTER_KIT và UNLOCK_WAND đã bỏ ở v2.0 |
 | WeaponData | 3.5.13 | frost_slow_pct* = 0.20, frost_duration* = 3 s; chain_damage_pct* = 0.20, chain_max_targets* = 3, chain_radius* = 2 m, chain_cooldown* = 5 s; burn_total_pct* = 0.50, burn_duration* = 5 s; rampage bậc (0.8, 0.5, 0.3) và bonus (0.10, 0.25, 0.50); swift_attack_speed_mult* = 1.5, swift_range_mult* = 0.7. Sinh từ sheet weapons (BAL) |
 | WaveScript | 3.7.5, SPN-13 | Mỗi wave 1-30: danh sách {enemy_type, count, is_escort}, spawn_duration, hp_mult, dmg_mult, speed_mult. Sinh từ sheet waves (BAL) |
 | WaveRewardTable | 3.9.1, MTH-02 | Mỗi wave 1-30: gold_mult, xp_mult, mithril_reward. Sinh từ sheet wave_rewards (BAL) |
@@ -3126,6 +3126,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 85 | **07/11: đồng bộ theo code UI tuần 9** (HUD-20, EVB-30): ô Mithril có nút "Sửa thành" mở panel Fortress (trước đây chỉ là dấu gợi ý); skill_slots_changed thêm tham số levels để thanh slot của màn REWARD_PICK đọc cấp skill thay vì tự nhớ |
 | 86 | **11/11: đồng bộ theo code UI tuần 10** (mục 4.1.3, HUD-15, HUD-16, HUD-17, HUD-21, HUD-24, ACC-07, WPN-02, PNL-15, EVB-47): thêm nút mũi tên ẩn/hiện kỹ năng (HUD-24, \[Should]) chỉ ẩn phần hiển thị, phím 1-3 vẫn dùng được, ACC-07 ghi ngoại lệ khi người chơi tự ẩn; đổi tên "kiếm gốc" thành "kiếm thường" ở mọi chỗ cho khớp tên trong game; bỏ dòng vùng "Dưới trái, trên thanh HP chỉ huy" vì mâu thuẫn với HUD-15 (thanh HP chỉ huy nằm ở trên trái); thanh XP và biểu tượng Aura đặt ở trên trái cạnh HP chỉ huy, hai hàng ô skill và ô vũ khí ở dưới trái trên ô Emergency repair; thêm xp_gained để thanh XP tô riêng phần XP từ chỉ huy và từ tower |
 | 87 | **12/11: đồng bộ theo code UI Hazard Trial và cảnh báo tuần 10** (HUD-22, HUD-23, HZT-01, HZT-07, ALR-18, ALR-20, mục 3.6.6, EVB-48 đến EVB-51): chữ hiển thị cho người chơi gọi Hazard Trial là "tháp" (nút "Rời tháp", nhãn "Chỉ số trong tháp không mang ra ngoài", toast "Đã rời tháp", kết quả thua ghi "Thất bại"); thêm heal_store_low_pct (0.20) cho cảnh báo kho Trạm hồi lực sắp cạn; thêm bốn tín hiệu cho Hazard Trial: nhóm quái và thưởng ở Tháp, tiến độ trong tháp, yêu cầu vào và yêu cầu rời |
+| 88 | **12/11: đồng bộ theo code UI cửa hàng và bảng xếp hạng tuần 10** (SHP-06, LBD-08, mục 6.2, 6.6): thiếu danh vọng thì số còn thiếu nằm ở dòng giá trên nút Mua (nút xám), vì chữ trên nút xám khó đọc; ghi rõ các trường của ShopItem, đơn vị hiển thị của effect_base và effect_step, nơi đặt tệp; ghi API fetch_leaderboard và dạng dữ liệu trả về |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 

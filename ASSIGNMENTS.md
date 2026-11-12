@@ -946,7 +946,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH3
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: MetaShop SCR-04 (4 mục, SHP-05..09 UI)
 - Nghiệm thu: Shop chỉ hiện 4 mục MVP
 - Cần xong trước: W10-MH4
@@ -962,7 +962,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH5
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Màn Leaderboard SCR-19: top 50, dòng hạng của tôi, Làm mới, Thử lại khi lỗi, nút Đăng nhập cho khách (LBD-08), dùng dữ liệu giả trước
 - Nghiệm thu: Hiện đủ top 50 và dòng hạng riêng khi ngoài top; lỗi mạng có Thử lại
 - Cần xong trước: W7-KM5
@@ -970,7 +970,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH6
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Mục Tài khoản trong Settings và biểu tượng trạng thái đồng bộ ở MainMenu (GUEST, SYNCED, SYNCING, OFFLINE, ERROR)
 - Nghiệm thu: Có chữ kèm biểu tượng, đúng 5 trạng thái
 - Cần xong trước: W8-MH2
