@@ -343,3 +343,54 @@ alert.weapon_gained,Nhận vũ khí {name}. Đổi ở giai đoạn chuẩn bị
 alert.heal_drained,Trạm hồi lực ở ô {slot} đã cạn (xây lại {cost} vàng)
 alert.heal_drained_plain,Trạm hồi lực ở ô {slot} đã cạn
 alert.heal_low,Trạm hồi lực sắp cạn
+menu.leaderboard,Bảng xếp hạng
+settings.tab.account,Tài khoản
+shop.balance,Danh vọng: {value}
+shop.level,Cấp {level}/{max}
+shop.now,Hiện tại: {effect}
+shop.next,Cấp kế: {effect}
+shop.cost_short,"Giá {cost} danh vọng, thiếu {value}"
+shop.cost_after,"Giá {cost} danh vọng, còn {after} sau khi mua"
+shop.need,Thiếu {value} danh vọng
+shop.buy,Mua
+shop.max,MAX
+shop.error,"Không mua được, danh vọng chưa bị trừ. Hãy thử lại."
+shop.fort_hp.name,Thành kiên cố
+shop.fort_hp.effect,+{value}% máu tối đa của Thành
+shop.gold_pct.name,Tay buôn giỏi
+shop.gold_pct.effect,+{value}% vàng từ quân và boss
+shop.cmd_hp.name,Thể chất chỉ huy
+shop.cmd_hp.effect,+{value} máu tối đa của chỉ huy
+shop.emg_repair.name,Sửa chữa hiệu quả
+shop.emg_repair.effect,Mỗi lượt sửa khẩn cấp hồi {value}% máu Thành
+shop.emg_repair.note,"Chỉ tăng lượng hồi. Vẫn tối đa 3 lượt mỗi run, hồi chiêu không đổi."
+lbd.title,Bảng xếp hạng
+lbd.refresh,Làm mới
+lbd.retry,Thử lại
+lbd.sign_in,Đăng nhập để có hạng
+lbd.loading,Đang tải bảng xếp hạng...
+lbd.error,Không tải được bảng xếp hạng
+lbd.offline,Không kết nối được
+lbd.empty,Chưa có lượt chơi nào trên bảng
+lbd.own_rank,Hạng của bạn
+lbd.you,Bạn
+lbd.col.rank,Hạng
+lbd.col.name,Tên
+lbd.col.waves,Số đợt hoàn thành
+lbd.col.time,Thời gian
+sync.state.guest,Khách
+sync.state.synced,Đã đồng bộ
+sync.state.syncing,Đang đồng bộ
+sync.state.offline,Ngoại tuyến
+sync.state.error,Lỗi đồng bộ
+sync.tip.guest,"Chưa đăng nhập, tiến trình chỉ lưu trên máy này"
+sync.tip.synced,Tiến trình đã lưu lên tài khoản
+sync.tip.syncing,Đang gửi tiến trình lên tài khoản
+sync.tip.offline,"Không kết nối được, tiến trình vẫn lưu trên máy này"
+sync.tip.error,"Đồng bộ lỗi, sẽ thử lại ở lần kết thúc run hoặc mua kế tiếp"
+account.title,Tài khoản
+account.guest,Khách
+account.sync,Đồng bộ
+account.sync_now,Đồng bộ ngay
+account.sync_unavailable,Chưa có đồng bộ tự động
+account.offline,"Tính năng trực tuyến đang tắt, game vẫn chơi bình thường."
