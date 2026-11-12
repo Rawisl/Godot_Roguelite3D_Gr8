@@ -3,11 +3,11 @@ extends Node3D
 ## Scene playtest for ground buildings that narrow the lane. Two layouts are found on the real
 ## corridor and built through BuildService: the bottleneck (the legal layout with the narrowest
 ## lane for the boss) and the tight cluster (two towers in adjacent rows of one column, so the gap
-## between them is narrower than a unit but open for the navigation mesh, plus a third tower to
-## make an L). Each enemy group is released from the spawn zone and must still walk to the
-## Fortress. The towers are made silent and unbreakable, so only the path is measured. Archers
-## arrive once the Fortress is in bow range, which can be before the layout, so the cluster is
-## placed beyond that reach.
+## between them is narrower than a unit, so the rebaked navigation mesh closes it and units must go
+## around the whole cluster, plus a third tower to make an L). Each enemy group is released from the
+## spawn zone and must still walk to the Fortress. The towers are made silent and unbreakable, so
+## only the path is measured. Archers arrive once the Fortress is in bow range, which can be
+## before the layout, so the cluster is placed beyond that reach.
 ## Headless (or auto_run): runs both layouts at every speed in time_scales, prints one line per
 ## group (scenario and speed first) and quits. With scan_all_adjacent_pairs it also runs every
 ## adjacent same-column pair, which takes minutes and has no real-time budget.
@@ -34,6 +34,10 @@ const GROUP_MIXED := 4
 const DEFAULT_ZONE_SIZE := Vector3(12.0, 4.0, 23.5)
 const CAMERA_HEIGHT := 40.0
 const CAMERA_SIZE := 28.0
+## Physics frames to wait for a navigation mesh rebake before giving up.
+const REBAKE_WAIT_FRAMES := 600
+## Physics frames after a finished bake until the navigation map answers with the new mesh.
+const MAP_SYNC_FRAMES := 10
 
 signal group_finished
 
@@ -143,6 +147,7 @@ var fails := 0
 
 var _grid: GroundGrid
 var _fortress: Fortress
+var _rebaker: NavRebaker
 var _gold: GoldManager
 var _service: BuildService
 var _tracks: Array[Track] = []
@@ -169,6 +174,7 @@ var _start_msec := 0
 func _ready() -> void:
 	_start_msec = Time.get_ticks_msec()
 	_grid = level.get_node("Slots/GroundGrid") as GroundGrid
+	_rebaker = level.get_node("Slots/NavRebaker") as NavRebaker
 	_fortress = get_tree().get_first_node_in_group(&"fortress") as Fortress
 	wave_manager.set_physics_process(false)
 	wave_manager.auto_advance_summary = false
@@ -270,6 +276,22 @@ func _prepare_layout(ids: Array[StringName]) -> void:
 	_try_extra_build()
 	for i in 3:
 		await get_tree().physics_frame
+	if not await _wait_for_rebake():
+		_record(false, "%s navmesh rebake finished" % _scenario_label)
+
+
+## Waits until the navigation mesh rebake is done and the navigation map has the new mesh; false
+## when the rebake is not done after the limit.
+func _wait_for_rebake() -> bool:
+	var waited := 0
+	while not _rebaker.is_idle():
+		if waited >= REBAKE_WAIT_FRAMES:
+			return false
+		await get_tree().physics_frame
+		waited += 1
+	for i in MAP_SYNC_FRAMES:
+		await get_tree().physics_frame
+	return true
 
 
 ## The override when set, else the narrowest legal layout; sets _layout_text.
@@ -607,6 +629,7 @@ func _run_group(index: int) -> void:
 	_clear_enemies()
 	await get_tree().physics_frame
 	await get_tree().physics_frame
+	await _wait_for_rebake()
 	if _fortress != null:
 		_fortress.health.heal(_fortress.health.max_hp)
 	if _budget_blown:
