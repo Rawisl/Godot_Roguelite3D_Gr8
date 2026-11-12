@@ -520,7 +520,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH4b
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nối REWARD_PICK end-to-end với màn của Khang (lượt chọn sinh tuần tự: lượt sau chỉ sinh sau khi lượt trước đã phát reward_picked)
 - Nghiệm thu: Nhặt được 3 skill chủ động từ XP thật
 - ID SRS: RWP-01
