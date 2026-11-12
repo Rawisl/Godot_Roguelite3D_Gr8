@@ -43,8 +43,10 @@ offset_bottom = 640.0
 [node name="World" type="Node3D" parent="."]
 
 [node name="Camera" type="Camera3D" parent="World"]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 0.8, -0.6, 0, 0.6, 0.8, 0, 9, 5)
 current = true
 
 [node name="Ring" type="MeshInstance3D" parent="World"]
+unique_name_in_owner = true
 script = ExtResource("6_ring")

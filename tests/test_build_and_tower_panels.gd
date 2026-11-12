@@ -18,14 +18,14 @@ var _failed := 0
 @onready var _build: BuildPanel = $BuildPanel
 @onready var _tower: TowerPanel = $TowerPanel
 @onready var _heal: HealStationPanel = $HealPanel
-@onready var _ring: RangeRing = $World/Ring
+@onready var _ring: RangeRing = %Ring
 
 func _ready() -> void:
 	# Stands in for PanelHost: the build preview draws the ring and the ghost of the tower type.
 	_fake.tower_scenes[&"arrow"] = preload("res://entities/tower/arrow.tscn")
 	_build.preview_requested.connect(_on_preview)
 	_build.preview_cleared.connect(_ring.hide_ring)
-	$World/Camera.look_at(GHOST_POS)
+	%Camera.look_at(GHOST_POS)
 	await get_tree().process_frame
 	await _run_checks()
 	print("test_build_and_tower_panels: %d passed, %d failed" % [_passed, _failed])
