@@ -529,7 +529,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH5
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 10 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: GRID-07 chặn kín đường: hàm thuần trên lưới GridData (ô OCCUPIED, RUINED và ô định xây là vật cản; đường rộng >= 3.2 m; kiểm cả đường tới cổng Fortress và tới boss_melee_point), BuildService từ chối BLOCKS_PATH không trừ gold, kiểm lại lúc xác nhận
 - Nghiệm thu: Bố cục thử mất đường tới cổng hoặc tới boss_melee_point thì bị từ chối, gold không đổi; xây lại cùng chỗ không bị kiểm; ô khác vẫn xây được
 - Tệp liên quan: levels/corridor/grid_data.gd, systems/build/build_service.gd (_do_build), systems/build/slot_manager.gd

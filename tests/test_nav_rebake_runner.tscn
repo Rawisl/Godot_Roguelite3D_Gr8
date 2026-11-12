@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://boan1idscy8v"]
+
+[ext_resource type="Script" uid="uid://b6kjmrsi10aef" path="res://tests/test_nav_rebake_runner.gd" id="1_nav"]
+
+[node name="TestNavRebakeRunner" type="Node3D" unique_id=2069578991]
+script = ExtResource("1_nav")
