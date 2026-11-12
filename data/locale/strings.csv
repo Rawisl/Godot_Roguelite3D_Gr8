@@ -56,7 +56,7 @@ panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {h
 tower.arrow,Tháp cung
 tower.cannon,Tháp pháo
 tower.barricade,Rào chắn
-tower.heal_station,Trạm hồi phục
+tower.heal_station,Trạm hồi lực
 panel.tower.level,Cấp {level}
 panel.tower.hp,Máu {value}/{max}
 panel.tower.upgrade,Nâng cấp - {gold} vàng
@@ -190,8 +190,8 @@ skill.sharpness.name,Sắc bén
 skill.sharpness.desc,Tăng sát thương gây ra.
 skill.vitality.name,Sinh lực
 skill.vitality.desc,Tăng máu tối đa.
-skill.heal_station.name,Trạm hồi phục
-skill.heal_station.desc,Tăng tốc độ hồi máu của trạm hồi phục.
+skill.heal_station.name,Trạm hồi lực
+skill.heal_station.desc,Tăng tốc độ hồi máu của Trạm hồi lực.
 hud.fortress_low,NGUY CẤP
 hud.mode.key,Tab
 hud.mode.frontline,Tiền tuyến
@@ -226,12 +226,14 @@ panel.heal.rate,Hồi chỉ huy
 panel.heal.rate_value,+{rate} HP/s
 panel.heal.level,Cấp
 panel.build.blocks_path,Đường đi sẽ bị chặn
+panel.build.clear_rubble,Dọn đổ nát
 panel.tower.level_tier,Cấp {level} · Bậc {tier}
 panel.tower.sell_locked,Bán được từ wave {wave}
 panel.heal.level_value,{level}/{max} · Bậc {tier}
+panel.heal.upgrade_tip,Nâng cấp chỉ cộng thêm phần kho tăng thêm
 panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
-panel.build.heal_limit,Tối đa {max} trạm hồi phục
+panel.build.heal_limit,Tối đa {max} Trạm hồi lực
 panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
 panel.need_commander_level,Yêu cầu chỉ huy: cấp {level}
 hud.start_wave,Bắt đầu wave
@@ -258,7 +260,7 @@ reward.skip.body,"Bỏ qua sẽ mất lượt chọn này, không được bù v
 reward.slot.tip,"{name}
 Cấp {level}/{max}"
 hud.state.reward_pick,Chọn thưởng
-hud.state.hazard_trial,Thử thách Hazard
+hud.state.hazard_trial,Hazard Trial
 hud.wave_of,Đợt {wave} / {max}
 hud.endless,Endless
 hud.mithril,Mithril
