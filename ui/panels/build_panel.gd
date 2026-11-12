@@ -111,8 +111,6 @@ func _reason_text(reason: StringName) -> String:
 			return UiFormat.tr_fmt(&"panel.build.ground_full", {"max": GameConfig.max_ground_buildings})
 		&"HEAL_LIMIT":
 			return UiFormat.tr_fmt(&"panel.build.heal_limit", {"max": GameConfig.heal_tower_max_count})
-		# TODO(kiezroth): BuildService does not return BLOCKS_PATH in locked_reason yet (path-blocking PR #169).
-		# The checks in tests/test_build_and_tower_panels.tscn feed it in until that lands.
 		&"BLOCKS_PATH":
 			return tr(&"panel.build.blocks_path")
 	return ""
