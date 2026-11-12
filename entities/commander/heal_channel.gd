@@ -34,6 +34,9 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(func(_mode: StringName) -> void: cancel())
 	EventBus.state_changed.connect(func(_state: StringName) -> void: cancel())
 	EventBus.pause_changed.connect(func(_paused: bool) -> void: cancel())
+	var reporter := HealStatusReporter.new()
+	reporter.name = "HealStatusReporter"
+	add_child(reporter)
 
 
 func get_source() -> Node3D:
@@ -140,8 +143,6 @@ func _can_start_hold() -> bool:
 func get_block_reason() -> StringName:
 	if _commander.is_commander_mode:
 		return &"COMMANDER_MODE"
-	if not _commander.is_idle() or _commander.is_trying_to_move():
-		return &"NOT_IDLE"
 	var wave_state: StringName = _commander.get_wave_state()
 	if wave_state != &"COMBAT" and wave_state != &"BOSS_COMBAT":
 		return &"WAVE_STATE"
@@ -150,6 +151,8 @@ func get_block_reason() -> StringName:
 	var health: HealthComponent = _commander.health
 	if health.get_precise_hp() >= health.max_hp:
 		return &"FULL_HP"
+	if not _commander.is_idle() or _commander.is_trying_to_move():
+		return &"NOT_IDLE"
 	if _find_source() == null:
 		return &"NO_STATION_IN_RANGE"
 	if _needs_release:
