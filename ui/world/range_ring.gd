@@ -61,7 +61,7 @@ func _clear_ghost() -> void:
 		_ghost.queue_free()
 	_ghost = null
 
-## Removes everything that would act on its own: scripts, collisions and autoplay.
+## Removes everything that would act on its own: scripts, collisions, avoidance obstacles and autoplay.
 func _strip_logic(root: Node3D) -> void:
 	var nodes: Array[Node] = [root]
 	nodes.append_array(root.find_children("*", "", true, false))
@@ -70,6 +70,8 @@ func _strip_logic(root: Node3D) -> void:
 		if node is CollisionObject3D:
 			(node as CollisionObject3D).collision_layer = 0
 			(node as CollisionObject3D).collision_mask = 0
+		if node is NavigationObstacle3D:
+			(node as NavigationObstacle3D).avoidance_enabled = false
 		if node is AnimationPlayer:
 			(node as AnimationPlayer).autoplay = ""
 	root.process_mode = Node.PROCESS_MODE_DISABLED
