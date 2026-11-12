@@ -11,7 +11,7 @@ const REFRESH_INTERVAL := 0.2
 const FONT_SIZE := 30
 const SMALL_FONT_SIZE := 24
 ## Fixed so the panel never changes height between "enough gold", "missing gold" and MAX.
-const UPGRADE_HEIGHT := 96
+const UPGRADE_HEIGHT := 110
 
 var slot_id: StringName = &""
 var _locked := false
@@ -143,9 +143,12 @@ func _add_label(font_size: int) -> Label:
 	return label
 
 func _on_upgrade_pressed() -> void:
-	if _try_lock():
-		_service().upgrade(slot_id)
-		refresh()
+	if not _try_lock():
+		return
+	var service := _service()
+	if service != null:
+		service.upgrade(slot_id)
+	refresh()
 
 ## Selling always asks first. The dialog re-checks PREP and the tower when confirmed,
 ## and closes by itself as a cancel when PREP ends.

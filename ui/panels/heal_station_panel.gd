@@ -1,7 +1,7 @@
 class_name HealStationPanel
 extends PanelContainer
-## Heal station: short name and value rows for the HP store, the heal rate and MAX, then Sell.
-## It has no upgrade, priority or repair. Tower HP has no EventBus signal, so the panel polls
+## Heal station: rows for the HP store, the heal rate and the level, then Upgrade and Sell.
+## It has no priority or repair. Tower HP has no EventBus signal, so the panel polls
 ## the service on real time while it is open, like the Tower panel.
 
 signal closed
@@ -36,7 +36,9 @@ func _ready() -> void:
 	_sell.tooltip_text = tr(&"panel.heal.sell_tip")
 	_sell.pressed.connect(_on_sell_pressed)
 	EventBus.state_changed.connect(_on_any_change)
+	EventBus.gold_changed.connect(_on_any_change)
 	EventBus.pause_changed.connect(_on_any_change)
+	EventBus.mode_changed.connect(_on_any_change)
 
 ## A sell dialog never outlives the panel or the station it was opened for.
 func _notification(what: int) -> void:
@@ -87,7 +89,6 @@ func show_info(info: Dictionary, in_prep: bool) -> void:
 	if broken:
 		_sell.set_lines(tr(&"panel.heal.broken"))
 	else:
-		# TODO(kiezroth): base sell_value on the HP left in the store for heal stations.
 		_sell.set_lines(UiFormat.tr_fmt(&"panel.tower.sell", {"gold": info.sell_value}))
 
 ## Same rules as the Tower panel: MAX at the top level, grey while the Commander level is too low.
@@ -106,7 +107,7 @@ func _show_upgrade(info: Dictionary) -> void:
 	else:
 		var short: bool = info.upgrade_shortfall > 0
 		_upgrade.disabled = short
-		_upgrade.tooltip_text = ""
+		_upgrade.tooltip_text = tr(&"panel.heal.upgrade_tip")
 		_upgrade.set_lines(
 			UiFormat.tr_fmt(&"panel.tower.upgrade", {"gold": info.upgrade_cost}),
 			UiFormat.tr_fmt(&"panel.need_gold", {"gold": info.upgrade_shortfall}) if short else "")
