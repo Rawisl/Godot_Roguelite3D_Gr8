@@ -869,12 +869,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH3
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thưởng boss BRW-01, 02, 04, 06, 07 theo WaveRewardTable (boss_gold = 100 x gold_mult(w), không clear_mult, không hệ số chỉ huy)
 - Nghiệm thu: Diệt sau Cuồng nộ: boss_gold và prestige x 0.5; +1 lượt tối đa 3
 - ID SRS: BRW-01
 - Cần xong trước: W9-MH1, W10-MH7
-- Ghi chú: từ W10-MH7 boss phát 0 gold qua enemy_died; uy tín boss vẫn đi qua enemy_died (TODO(kiezroth) ở entities/enemy/enemy.gd) tới khi MH3 chuyển sang SUMMARY
+- Ghi chú: boss phát 0 gold và 0 uy tín qua enemy_died; gold boss (đã nhân Cuồng nộ) hiện số nổi lúc boss chết và cộng vào ví ở SUMMARY cùng uy tín boss; gold_pct_total vẫn 0 tới khi meta nối (TODO(Ender-Via) ở systems/wave/wave_manager.gd)
 
 ##### W10-MH4
 - Người: Mạnh
