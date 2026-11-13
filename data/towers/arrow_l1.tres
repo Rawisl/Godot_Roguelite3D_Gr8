@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_pi2lp")
-build_cost = 50
+build_cost = 20
 max_hp = 120
 damage = 10
 attack_range = 14

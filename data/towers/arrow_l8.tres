@@ -5,9 +5,9 @@
 
 [resource]
 script = ExtResource("1_script")
-build_cost = 310
-max_hp = 520
-damage = 64
+build_cost = 70
+max_hp = 380
+damage = 20
 attack_range = 16
 fire_rate = 1.4
 splash_radius = 0
