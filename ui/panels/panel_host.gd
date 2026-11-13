@@ -12,6 +12,9 @@ extends Control
 @onready var _ring: RangeRing = %RangeRing
 @onready var _fortress_panel: FortressPanel = %FortressPanel
 @onready var _heal_panel: HealStationPanel = %HealStationPanel
+@onready var _weapon_panel: WeaponPanel = %WeaponPanel
+@onready var _weapon_slot: WeaponSlot = %WeaponSlot
+@onready var _skill_dock: Control = %SkillDock
 
 var _mode: StringName = &"FRONTLINE"
 
@@ -29,6 +32,10 @@ func _ready() -> void:
 	_selection.selection_cleared.connect(close_all)
 	_fortress_panel.visible = false
 	_fortress_panel.closed.connect(close_all)
+	_weapon_panel.visible = false
+	_weapon_panel.closed.connect(close_all)
+	_weapon_slot.open_requested.connect(_show_weapons)
+	_skill_dock.shown_changed.connect(_on_skill_dock_shown)
 	_selection.fortress_selected.connect(_show_fortress)
 	EventBus.slot_selected.connect(_on_slot_selected)
 	EventBus.tower_selected.connect(_on_tower_selected)
@@ -58,10 +65,11 @@ func _hide_panels() -> void:
 	_tower_panel.visible = false
 	_heal_panel.visible = false
 	_fortress_panel.visible = false
+	_weapon_panel.visible = false
 	_ring.hide_ring()
 
 func _any_open() -> bool:
-	return _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible
+	return _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible or _weapon_panel.visible
 
 func _show_build(slot_id: StringName) -> void:
 	_hide_panels()
@@ -129,12 +137,14 @@ func _on_mode_changed(mode: StringName) -> void:
 	if service != null and not service.is_prep() and mode != &"COMMANDER" and _any_open():
 		close_all()
 
-func _on_preview_requested(slot_id: StringName, radius: float) -> void:
+func _on_preview_requested(slot_id: StringName, type: StringName, radius: float, blocked: bool) -> void:
 	var service := _service()
-	if service == null or radius <= 0.0:
+	if service == null:
 		_ring.hide_ring()
 		return
-	_ring.show_at(service.get_slot_position(slot_id), radius)
+	# Barricade and heal station have no attack range: the ring stays hidden but the ghost still shows.
+	var tower_scene := service.tower_scenes.get(type) as PackedScene
+	_ring.show_at(service.get_slot_position(slot_id), radius, blocked, tower_scene)
 
 func _service() -> BuildService:
 	return get_tree().get_first_node_in_group(&"build_service") as BuildService
@@ -165,3 +175,15 @@ func _show_heal_station(slot_id: StringName) -> void:
 	var service := _service()
 	if service != null:
 		_ring.show_at(service.get_slot_position(slot_id), _heal_panel.get_heal_range())
+
+## Opened from the weapon slot. Clearing the selection first closes a tower or slot panel.
+func _show_weapons() -> void:
+	_selection.clear_selection()
+	_hide_panels()
+	_weapon_panel.visible = true
+	_weapon_panel.open()
+
+## Hiding the skill slots takes the weapon panel away with the weapon slot.
+func _on_skill_dock_shown(shown: bool) -> void:
+	if not shown and _weapon_panel.visible:
+		close_all()

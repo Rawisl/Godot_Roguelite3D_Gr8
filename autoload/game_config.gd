@@ -31,6 +31,8 @@ extends Node
 @export var gold_reward_growth_per_wave: float = 0.04
 @export var boss_gold_base: int = 100
 @export var boss_prestige: int = 15
+## Per-wave gold, XP and Mithril multipliers for waves 1..victory_wave.
+@export var wave_rewards: WaveRewardTable = preload("res://data/waves/wave_rewards.tres")
 @export var wave_prestige_base: int = 2
 @export var wave_prestige_step: int = 5
 @export var prestige_buffer_ratio: float = 0.5
@@ -61,6 +63,8 @@ extends Node
 @export var heal_tower_max_count: int = 2
 @export var heal_tower_limit_lv: int = 6
 @export var heal_tower_dmg_norm_exp: float = 0.5
+## Store share under which the station warns once that it is running low.
+@export var heal_store_low_pct: float = 0.20
 
 @export_group("Ground Grid")
 @export var grid_cell_size: float = 2.0

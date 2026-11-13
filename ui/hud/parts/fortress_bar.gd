@@ -6,6 +6,8 @@ extends MarginContainer
 @export var stats: FortressStats = preload("res://data/config/fortress_stats.tres")
 ## One full blink (fade out and back), in real seconds.
 @export var blink_period := 0.6
+## In the Hazard Trial room the Fortress does not change, so its bar fades back.
+@export var room_modulate := Color(1, 1, 1, 0.45)
 
 var _low := false
 var _reduce_flash := false
@@ -24,6 +26,7 @@ func _ready() -> void:
 	_refresh_low()
 	EventBus.fortress_hp_changed.connect(_on_hp_changed)
 	EventBus.settings_changed.connect(_on_settings_changed)
+	EventBus.state_changed.connect(_on_state_changed)
 
 func _on_hp_changed(hp: int, max_hp: int, _delta: int) -> void:
 	_bar.max_value = max_hp
@@ -51,3 +54,6 @@ func _on_settings_changed(key: StringName, value: Variant) -> void:
 	if key == &"reduce_flash":
 		_reduce_flash = bool(value)
 		_refresh_low()
+
+func _on_state_changed(new_state: StringName) -> void:
+	modulate = room_modulate if new_state == &"HAZARD_TRIAL" else Color.WHITE

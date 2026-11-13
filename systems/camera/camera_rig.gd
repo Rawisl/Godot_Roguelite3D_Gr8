@@ -2,7 +2,8 @@ class_name CameraRig
 extends Node3D
 ## Camera focus on the ground plane. Frontline follows the commander, Commander mode and PREP
 ## let the move keys pan it. Runs on TimeManager's real-time clock, so it ignores the game
-## speed and keeps working while paused.
+## speed and keeps working while paused. The boss intro pan is the exception: it runs on game
+## time, so it holds still while paused and lasts as long as the intro itself.
 
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_down", &"move_left", &"move_right"]
 const CONTEXT_FRONTLINE := &"FRONTLINE"
@@ -35,6 +36,10 @@ const STATE_REWARD_PICK := &"REWARD_PICK"
 ## 1 normal, 0.5 reduced, 0 off, from the Accessibility tab. Also set through the "screen_shake" setting.
 @export_range(0.0, 1.0) var shake_scale: float = 1.0
 
+@export_group("Boss intro")
+## Where the boss appears. Empty = the node in group "boss_spawn_point", then the spawn zone.
+@export var boss_spawn_point: Node3D
+
 var _home: Vector3
 var _velocity: Vector3 = Vector3.ZERO
 var _commander_mode: bool = false
@@ -53,6 +58,12 @@ var _last_real_time: float = 0.0
 var _camera: Camera3D
 var _trauma: float = 0.0
 var _shake_time: float = 0.0
+var _intro: bool = false
+var _intro_from: Vector3
+var _intro_to: Vector3
+var _intro_total: float = 0.0
+var _intro_left: float = 0.0
+var _last_game_time: float = 0.0
 
 
 func _ready() -> void:
@@ -62,6 +73,10 @@ func _ready() -> void:
 	_home = position
 	_camera = find_child("*", true, false) as Camera3D
 	_last_real_time = TimeManager.real_time
+	_last_game_time = TimeManager.game_time
+	# Settings changed in the menus before this run started.
+	reduced_motion = bool(GameState.get_setting(&"reduced_motion", reduced_motion))
+	shake_scale = clampf(float(GameState.get_setting(&"screen_shake", shake_scale)), 0.0, 1.0)
 	if _camera != null and bounds != null:
 		_camera.size = _target_size()
 	EventBus.mode_changed.connect(_on_mode_changed)
@@ -69,6 +84,7 @@ func _ready() -> void:
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.screen_shake_requested.connect(_on_screen_shake_requested)
 	EventBus.pause_changed.connect(_on_pause_changed)
+	ScreenManager.dialog_context_changed.connect(_clear_held)
 
 
 func _notification(what: int) -> void:
@@ -76,9 +92,9 @@ func _notification(what: int) -> void:
 		_clear_held()
 
 
-## Panning is off in Frontline and while the boss intro or a reward pick owns the screen.
+## Panning is off in Frontline and while the boss intro, a reward pick or a dialog owns input.
 func is_panning_enabled() -> bool:
-	if _context() == CONTEXT_FRONTLINE:
+	if _context() == CONTEXT_FRONTLINE or ScreenManager.has_dialog():
 		return false
 	return _state != STATE_BOSS_INTRO and _state != STATE_REWARD_PICK \
 			and not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK)
@@ -86,6 +102,26 @@ func is_panning_enabled() -> bool:
 
 func is_gliding() -> bool:
 	return _glide_left > 0.0 or _size_left > 0.0
+
+
+## True from the start of BOSS_INTRO until the state after it begins.
+func is_in_boss_intro() -> bool:
+	return _intro
+
+
+## Where the boss appears, on the camera's ground plane: the boss_spawn_point marker, else the
+## spawn zone, else the camera's home.
+func get_boss_focus() -> Vector3:
+	var marker := boss_spawn_point
+	if marker == null and is_inside_tree():
+		marker = get_tree().get_first_node_in_group(&"boss_spawn_point") as Node3D
+		if marker == null:
+			marker = get_tree().get_first_node_in_group(&"spawn_zone") as Node3D
+	if marker == null:
+		return _home
+	var p := marker.global_position
+	var focus := Vector3(p.x, _home.y, p.z)
+	return bounds.clamp_focus(focus, false) if bounds != null else focus
 
 
 ## Adds trauma in 0..1; hits close together stack up to the cap instead of adding up.
@@ -102,6 +138,9 @@ func get_shake_offset() -> Vector2:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	for action in _blocked.keys():
+		if event.is_action_released(action):
+			_blocked.erase(action)
 	if is_panning_enabled() and event.is_action_pressed(&"camera_recenter", false):
 		_glide_to_focus(recenter_time)
 
@@ -123,19 +162,21 @@ func get_default_focus() -> Vector3:
 
 func _process(_delta: float) -> void:
 	var real_delta := _real_delta()
+	var game_delta := _game_delta()
 	_update_shake(real_delta)
 	_update_size(real_delta)
+	if _intro:
+		_update_intro(game_delta)
+		return
 	if _glide_left > 0.0:
 		_update_glide(real_delta)
 		return
 
-	if _context() == CONTEXT_FRONTLINE:
+	if not is_panning_enabled():
 		_velocity = Vector3.ZERO
 		return
 
-	var target := Vector3.ZERO
-	if is_panning_enabled():
-		target = _screen_to_ground(_move_vector()) * camera_pan_speed
+	var target := _screen_to_ground(_move_vector()) * camera_pan_speed
 	var step := camera_pan_speed / maxf(accel_time, 0.001) * real_delta
 	_velocity = _velocity.move_toward(target, step)
 	if _velocity.is_zero_approx():
@@ -151,7 +192,7 @@ func _physics_process(_delta: float) -> void:
 ## Frontline follow. It must step with the commander's physics ticks: sampling the
 ## commander once per rendered frame mixes two clocks and makes it shake on screen.
 func _follow(real_delta: float) -> void:
-	if _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
+	if _intro or _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
 		return
 	var weight := 1.0 - exp(-real_delta / maxf(follow_smoothing, 0.001))
 	position = _clamped(position.lerp(get_default_focus(), weight))
@@ -162,6 +203,40 @@ func _real_delta() -> float:
 	var real_delta := maxf(now - _last_real_time, 0.0)
 	_last_real_time = now
 	return real_delta
+
+
+## Game seconds since the last frame: stops while paused and follows x2 / x3.
+func _game_delta() -> float:
+	var now := TimeManager.game_time
+	var game_delta := maxf(now - _last_game_time, 0.0)
+	_last_game_time = now
+	return game_delta
+
+
+## Pans from where the camera was to the boss over the whole intro, easing out, so the boss is
+## framed early and the camera settles while the intro card is up.
+func _start_intro() -> void:
+	_intro = true
+	_velocity = Vector3.ZERO
+	_glide_left = 0.0
+	_intro_from = position
+	_intro_to = get_boss_focus()
+	_intro_total = maxf(GameConfig.boss_intro_duration, 0.001)
+	_intro_left = _intro_total
+	_last_game_time = TimeManager.game_time
+	if reduced_motion:
+		position = _intro_to
+		_intro_left = 0.0
+	_glide_size()
+
+
+func _update_intro(game_delta: float) -> void:
+	if _intro_left <= 0.0:
+		position = _intro_to
+		return
+	_intro_left = maxf(_intro_left - game_delta, 0.0)
+	var progress := 1.0 - _intro_left / _intro_total
+	position = _intro_from.lerp(_intro_to, _ease_out(progress))
 
 
 func _update_glide(real_delta: float) -> void:
@@ -234,7 +309,8 @@ func _glide_size() -> void:
 
 
 func _target_size() -> float:
-	if _context() == CONTEXT_FRONTLINE:
+	# The intro frames the boss up close in either mode.
+	if _intro or _context() == CONTEXT_FRONTLINE:
 		return bounds.camera_size_frontline
 	return bounds.camera_size_overview
 
@@ -262,6 +338,7 @@ func _move_vector() -> Vector2:
 
 ## Held keys are ignored until released, so a context change never leaves the camera drifting.
 func _clear_held() -> void:
+	_velocity = Vector3.ZERO
 	for action in MOVE_ACTIONS:
 		if Input.is_action_pressed(action):
 			_blocked[action] = true
@@ -285,6 +362,9 @@ func _on_mode_changed(mode: StringName) -> void:
 	var before := _context()
 	_commander_mode = (mode == &"COMMANDER")
 	_clear_held()
+	# The intro keeps the camera on the boss whatever the mode; the frame follows after it.
+	if _intro:
+		return
 	if _context() != before:
 		_glide_to_focus(transition_time)
 		_glide_size()
@@ -295,8 +375,14 @@ func _on_state_changed(new_state: StringName) -> void:
 	_state = new_state
 	_in_prep = (new_state == &"PREP")
 	_clear_held()
+	if new_state == STATE_BOSS_INTRO:
+		_start_intro()
+		return
+	var was_intro := _intro
+	_intro = false
 	# Every PREP starts from the default focus, even when Commander mode carried over.
-	if _context() != before or new_state == &"PREP":
+	# After the intro the camera glides to the next state's frame.
+	if was_intro or _context() != before or new_state == &"PREP":
 		_glide_to_focus(transition_time)
 		_glide_size()
 

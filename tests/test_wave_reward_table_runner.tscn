@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b2umrak0su8ix"]
+
+[ext_resource type="Script" uid="uid://dh2l2d7rnipat" path="res://tests/test_wave_reward_table_runner.gd" id="1_test"]
+
+[node name="TestWaveRewardTableRunner" type="Node" unique_id=568430463]
+script = ExtResource("1_test")

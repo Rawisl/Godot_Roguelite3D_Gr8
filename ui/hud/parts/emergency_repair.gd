@@ -125,7 +125,6 @@ func _on_charge_granted(charges: int) -> void:
 	_charges = charges
 	_show_charges()
 	_flash_glow()
-	# TODO(WhoKeng): the toast shows once AlertLayer handles alert_requested.
 	EventBus.alert_requested.emit(int(Enums.AlertTier.T3), &"alert.emg_charge",
 		{"value": charges, "max": GameConfig.emg_repair_charges_max})
 

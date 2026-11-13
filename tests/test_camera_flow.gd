@@ -4,8 +4,10 @@ extends Node
 ## Run with F6, prints OK/FAIL per case then quits.
 
 const MAIN_SCENE := "res://main.tscn"
+const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
 ## The rig moves the focus on the ground, so it is compared on X and Z only.
 const NEAR := 0.15
+const LOCK_TOLERANCE := 0.02
 
 var _pass := 0
 var _fail := 0
@@ -79,18 +81,18 @@ func _run() -> void:
 
 	# Tab in PREP: free switch to Commander mode, focus on the commander at the command post.
 	# A key held when the context changes stays ignored until it is released, even after the glide.
-	Input.action_press(&"move_up")
-	_switch.request()
-	await _frames(1)
+	_key(KEY_W, true)
+	_tab()
+	await _frames(2)
 	_check("Tab in PREP enters Commander mode", _commander.is_commander_mode)
 	_check("Tab starts a 0.5 s glide", _rig.is_gliding())
 	await _wait(0.8)
 	var post := _flat(bounds.clamp_focus(_commander.global_position))
 	_check("Commander mode focuses the commander, kept in the bounds", _near(_focus(), post))
 	_check("a key held through the change does not drift the camera after the glide", not _rig.is_gliding() and _near(_focus(), post))
-	Input.action_release(&"move_up")
+	_key(KEY_W, false)
 	await _frames(1)
-	await _hold(&"move_up", 0.3)
+	await _hold_w()
 	_check("pressing the key again pans", _focus().distance_to(post) > 0.5)
 	_press(&"camera_recenter")
 	await _wait(0.4)
@@ -140,13 +142,23 @@ func _run() -> void:
 
 	# Deploy in COMBAT: back to Frontline on the landing point.
 	await _wait(maxf(_switch.cooldown_left, 0.0) / maxf(Engine.time_scale, 0.001) + 0.1)
-	_switch.request()
-	await _frames(1)
+	_key(KEY_W, true)
+	_tab()
+	await _frames(2)
 	_check("Deploy leaves Commander mode", not _commander.is_commander_mode)
 	_check("Deploy starts a glide", _rig.is_gliding())
 	await _wait(0.6)
 	_check("after Deploy the camera is on the commander", _near(_focus(), _flat(bounds.clamp_focus(_commander.global_position)), 0.5))
 	_check("after Deploy the size is Frontline", is_equal_approx(_camera.size, bounds.camera_size_frontline))
+	var landing := _flat(_commander.global_position)
+	var deploy_focus := _focus()
+	await _wait(0.25)
+	_check("holding W through Deploy does not move the commander or camera",
+		_movement_unchanged(landing, deploy_focus))
+	_key(KEY_W, false)
+	await _frames(1)
+	await _hold_w()
+	_check("pressing W again after Deploy moves the commander", not _near(_flat(_commander.global_position), landing))
 
 	# Reduced motion turns the glides into cuts.
 	EventBus.settings_changed.emit(&"reduced_motion", true)
@@ -154,6 +166,105 @@ func _run() -> void:
 	await _frames(1)
 	_check("reduced motion: PREP is an instant cut", not _rig.is_gliding() and _near(_focus(), centre))
 	EventBus.settings_changed.emit(&"reduced_motion", false)
+	await _test_reward_pick_lock()
+	await _test_dialog_lock()
+
+
+func _test_reward_pick_lock() -> void:
+	_tab()
+	await _wait(0.6)
+	_key(KEY_D, true)
+	await _wait(0.2)
+	var focus_before := _focus()
+	_waves.start_reward_pick()
+	await _wait(0.2)
+	_check("reward pick stops a pan already in progress", _near(_focus(), focus_before, LOCK_TOLERANCE))
+	_key(KEY_D, false)
+	await _check_wasd_locked("reward pick")
+	_waves.finish_reward_pick()
+	await _wait(0.6)
+	_tab()
+	await _wait(0.6)
+
+
+func _test_dialog_lock() -> void:
+	_key(KEY_D, true)
+	await _wait(0.2)
+	var focus_before := _focus()
+	_open_test_dialog()
+	await _wait(0.2)
+	_check("opening a dialog stops a pan already in progress", _near(_focus(), focus_before, LOCK_TOLERANCE))
+	_key(KEY_D, false)
+	await _check_wasd_locked("PREP dialog")
+	_key(KEY_W, true)
+	await _frames(1)
+	focus_before = _focus()
+	ScreenManager.close_top_dialog()
+	await _wait(0.3)
+	_check("holding W while closing a dialog does not pan", _near(_focus(), focus_before, LOCK_TOLERANCE))
+	_key(KEY_W, false)
+	await _frames(1)
+	await _hold_w()
+	_check("pressing W again after a dialog pans", not _near(_focus(), focus_before))
+
+	_waves.start_combat()
+	await _wait(0.6)
+	_open_test_dialog()
+	await _check_wasd_locked("Frontline dialog")
+	_key(KEY_W, true)
+	await _frames(1)
+	var position_before := _flat(_commander.global_position)
+	focus_before = _focus()
+	ScreenManager.close_top_dialog()
+	await _wait(0.25)
+	_check("holding W while closing a dialog does not move the commander or camera",
+		_movement_unchanged(position_before, focus_before))
+	_key(KEY_W, false)
+	await _frames(1)
+	await _hold_w()
+	_check("pressing W again after a dialog moves the commander", not _near(_flat(_commander.global_position), position_before))
+
+
+func _open_test_dialog() -> void:
+	var dialog := DIALOG_SCENE.instantiate() as Control
+	dialog.setup(&"reward.skip.title", &"reward.skip.body")
+	_check("the real dialog opens", ScreenManager.open_dialog(dialog))
+
+
+func _check_wasd_locked(context: String) -> void:
+	for key: Key in [KEY_W, KEY_A, KEY_S, KEY_D]:
+		var position_before := _flat(_commander.global_position)
+		var focus_before := _focus()
+		_key(key, true)
+		await _wait(0.15)
+		_check("%s ignores %s" % [context, char(key)], _movement_unchanged(position_before, focus_before))
+		_key(key, false)
+		await _frames(1)
+
+
+func _movement_unchanged(commander_position: Vector3, focus: Vector3) -> bool:
+	return _near(_flat(_commander.global_position), commander_position, LOCK_TOLERANCE) \
+		and _near(_focus(), focus, LOCK_TOLERANCE)
+
+
+func _tab() -> void:
+	_key(KEY_TAB, true)
+	_key(KEY_TAB, false)
+
+
+func _hold_w() -> void:
+	_key(KEY_W, true)
+	await _wait(0.3)
+	_key(KEY_W, false)
+	await _frames(1)
+
+
+func _key(key: Key, pressed: bool) -> void:
+	var event := InputEventKey.new()
+	event.keycode = key
+	event.physical_keycode = key
+	event.pressed = pressed
+	Input.parse_input_event(event)
 
 
 ## main.tscn has no commander until the run spawns one; place it at the Fortress spawn marker.

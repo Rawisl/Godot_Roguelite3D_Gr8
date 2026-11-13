@@ -596,12 +596,11 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 
 
-func _on_enemy_died(enemy_type: StringName, _pos: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool = false) -> void:
+func _on_enemy_died(enemy_type: StringName, _pos: Vector3, gold_base: float, prestige: int, is_cull: bool, _hit_by_commander: bool = false) -> void:
 	if not is_cull:
 		var type_key := String(enemy_type)
 		_kills_by_type[type_key] = _kills_by_type.get(type_key, 0) + 1
-		var mult: float = GameConfig.frontline_gold_mult if hit_by_commander else 1.0
-		_wave_gold_base += float(gold_base) * mult
+		_wave_gold_base += gold_base
 		_wave_prestige += prestige
 
 	if wave_state == Enums.WaveState.COMBAT or wave_state == Enums.WaveState.BOSS_COMBAT:
@@ -650,12 +649,12 @@ func _end_combat_to_summary() -> void:
 	# Boss gold - only granted if boss was defeated this wave
 	var boss_gold: float = 0.0
 	if _boss_defeated_this_wave:
-		boss_gold = float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * float(current_wave - 1))
+		boss_gold = GameConfig.wave_rewards.get_boss_gold(current_wave)
 
 	# Total gold gain
 	var gold_pct_total: float = 0.0
-	var wave_gold_scaled: int = int(floor(_wave_gold_base * (1.0 + gold_pct_total) * clear_mult))
-	var boss_gold_scaled: int = int(floor(boss_gold * (1.0 + gold_pct_total)))
+	var wave_gold_scaled: int = WaveRewardTable.floor_gold(_wave_gold_base * (1.0 + gold_pct_total) * clear_mult)
+	var boss_gold_scaled: int = WaveRewardTable.floor_gold(boss_gold * (1.0 + gold_pct_total))
 	var total_gold_gain: int = wave_gold_scaled + boss_gold_scaled
 
 	# Credit gold to GoldManager, false avoids double "+xx" popup on SUMMARY
@@ -864,4 +863,3 @@ func _get_run_state() -> RunState:
 	if not is_inside_tree():
 		return null
 	return get_tree().get_first_node_in_group(&"run_state") as RunState
-

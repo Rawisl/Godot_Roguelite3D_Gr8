@@ -24,7 +24,8 @@ signal fortress_repaired(amount: int, source: StringName)  # source: MITHRIL | E
 #-----------------------Enemy-----------------------#
 
 signal enemy_spawned(enemy: Node)
-signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: int, prestige: int, is_cull: bool, hit_by_commander: bool)  # is_cull: no reward, no kill credit, hit_by_commander 
+signal enemy_died(enemy_type: StringName, position: Vector3, gold_base: float, prestige: int, is_cull: bool, hit_by_commander: bool)  # gold_base: kill gold with the wave multiplier and the commander bonus already applied, not rounded; listeners add it as is. is_cull: no reward, no kill credit, hit_by_commander 
+signal commander_enemy_killed(commander: Node)  # Enemy / Bulwark -> Commander: credited for the killing sword or skill hit.
 signal enemy_count_changed(alive: int, queued: int, total: int)  # reminder thresholds 20 and 45
 signal straggler_marker_shown(enemy: Node)  # after 60s
 signal frenzy_started(enemy: Node)  # after 240s
@@ -96,6 +97,7 @@ signal performance_degraded(fps: float)
 
 #-----------------------Meta, save, setting-----------------------#
 signal meta_item_purchased(item_id: StringName, new_level: int)
+signal sync_state_changed(state: StringName, detail: String)  # SyncService -> UI (MainMenu, Settings): GUEST | SYNCED | SYNCING | OFFLINE | ERROR
 signal save_completed
 signal save_failed(reason: StringName)
 signal settings_changed(key: StringName, value: Variant)
@@ -124,10 +126,15 @@ signal tutorial_completed  # emitted when tutorial_done flag is saved
 signal weapon_gained(weapon_id: StringName)  # RunState -> UI, SummaryPanel, HUD
 signal hazard_trial_entered(wave_index: int, enemy_types: Array)  # Wave -> UI, Camera, Combat
 signal hazard_trial_exited(result: StringName, kills: int, gold: int, xp: float, mithril: int)  # result: WON | LEFT | DIED
+signal hazard_trial_offered(wave_index: int, enemy_types: Array, mithril: int)  # Wave -> UI: the group and the Mithril for a win, sent in PREP before entering
+signal hazard_trial_progress(remaining: int, total: int, gold: int, xp: float)  # Wave -> UI: enemies not done yet and the gold and XP earned so far in the room
+signal hazard_enter_requested  # UI (E key or the tower) -> Wave: enter the room, checked again there
+signal hazard_leave_requested  # UI (Leave button) -> Wave: leave the room now
 #------------------------------------------------------#
 
 #-----------------------Progression-----------------------#
 signal xp_changed(xp: float, level: int, to_next: float, pending_picks: int)
+signal xp_gained(amount: float, from_commander: bool)  # XpTracker -> HUD XP bar: one kill's XP and whether the commander hit it, sent before xp_changed
 signal level_up(new_level: int, pending_picks: int)
 signal reward_offer_requested  # UI -> RewardService: ask for the next offer (re-sends the open one)
 signal reward_offered(cards: Array, rerolls_left: int)  # RewardService -> UI

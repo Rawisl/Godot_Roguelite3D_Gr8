@@ -6,6 +6,7 @@ extends Node
 ## - Commander kill gold bonus (frontline_gold_mult = 1.25)
 ## - Commander kill gold in the wave total: wave_gold_base, cull, summary gold_base (group 3B)
 ## - Boss gold in gold_total is not multiplied by frontline_gold_mult (group 3C)
+## - Kill gold comes from WaveRewardTable with the commander bonus applied once (enemy.gd)
 
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const ARCHER_SCENE: PackedScene = preload("res://entities/enemy/archer.tscn")
@@ -173,15 +174,16 @@ func test_commander_kill_gold_multiplier() -> void:
 	var on_gold_delta := func(d: int): deltas.append(d)
 	EventBus.gold_delta.connect(on_gold_delta)
 
-	# 1. Kill without hit_by_commander -> Base gold 4 -> floating delta 4
+	# 1. Kill without hit_by_commander -> rounded table kill gold
 	grunt.spawn_grace = false
 	grunt.hit_by_commander = false
 	grunt._on_died()
-	assert_true(deltas.size() == 1 and deltas[0] == 4, "Regular enemy death emits gold_delta = 4 (base)")
+	var plain_gold: int = int(round(GameConfig.wave_rewards.get_kill_gold(grunt.data.gold_reward, 1, false)))
+	assert_true(deltas.size() == 1 and deltas[0] == plain_gold, "Regular enemy death emits the rounded kill gold")
 
 	grunt.free()
 
-	# 2. Kill with hit_by_commander -> 4 * 1.25 = 5.0 -> floating delta 5
+	# 2. Kill with hit_by_commander -> table kill gold with frontline_gold_mult
 	deltas.clear()
 	var grunt_comm: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt_comm.position = Vector3(0.0, 0.0, 0.0)
@@ -190,7 +192,8 @@ func test_commander_kill_gold_multiplier() -> void:
 	grunt_comm.spawn_grace = false
 	grunt_comm.hit_by_commander = true
 	grunt_comm._on_died()
-	assert_true(deltas.size() == 1 and deltas[0] == 5, "Commander hit enemy death emits gold_delta = 5 (4 * 1.25)")
+	var commander_gold: int = int(round(GameConfig.wave_rewards.get_kill_gold(grunt_comm.data.gold_reward, 1, true)))
+	assert_true(deltas.size() == 1 and deltas[0] == commander_gold, "Commander hit enemy death emits the rounded kill gold with frontline_gold_mult")
 
 	grunt_comm.free()
 	EventBus.gold_delta.disconnect(on_gold_delta)
@@ -217,7 +220,6 @@ func _free_after_nav_setup(nodes: Array) -> void:
 
 func test_commander_kill_gold_in_wave_total() -> void:
 	print("\n[GROUP 3B] Commander kill gold in the wave total (WaveManager wave 1)")
-	var mult: float = GameConfig.frontline_gold_mult
 	var wave_manager := WaveManager.new()
 	wave_manager.auto_advance_summary = false
 	add_child(wave_manager)
@@ -225,20 +227,18 @@ func test_commander_kill_gold_in_wave_total() -> void:
 	assert_true(wave_manager.current_wave == 1, "WaveManager is on wave 1")
 	assert_true(wave_manager._wave_gold_base == 0.0, "wave_gold_base starts at 0 in COMBAT")
 
-	# Without the flag: base gold (4 for a wave 1 Grunt).
+	# Without the flag: the table kill gold.
 	var plain := _kill_grunt(false)
-	var base: int = plain.scaled_gold
-	var cfg: ScaleConfig = plain._get_effective_scale_config()
-	assert_true(base == cfg.get_gold_reward(plain.data.gold_reward, 1), "Grunt scaled_gold on wave 1 comes from ScaleConfig.get_gold_reward")
-	assert_true(base > 0, "Grunt scaled_gold is positive")
-	assert_true(is_equal_approx(wave_manager._wave_gold_base, float(base)), "Kill without the commander flag adds base gold to wave_gold_base")
+	var base: float = GameConfig.wave_rewards.get_kill_gold(plain.data.gold_reward, 1, false)
+	assert_true(base > 0.0, "Grunt kill gold is positive")
+	assert_true(is_equal_approx(wave_manager._wave_gold_base, base), "Grunt kill gold on wave 1 comes from WaveRewardTable")
 
-	# With the flag: base x frontline_gold_mult (4 x 1.25 = 5.0).
+	# With the flag: the same kill gold with frontline_gold_mult applied once.
 	var before: float = wave_manager._wave_gold_base
 	var flagged := _kill_grunt(true)
-	assert_true(flagged.scaled_gold == base, "Second Grunt has the same scaled_gold")
-	assert_true(is_equal_approx(wave_manager._wave_gold_base - before, float(base) * mult), "Kill with the commander flag adds base x frontline_gold_mult to wave_gold_base")
-	assert_true(wave_manager._wave_gold_base > before + float(base), "Flagged kill adds more than an unflagged one")
+	var flagged_gold: float = GameConfig.wave_rewards.get_kill_gold(flagged.data.gold_reward, 1, true)
+	assert_true(is_equal_approx(wave_manager._wave_gold_base - before, flagged_gold), "Kill with the commander flag adds the commander kill gold to wave_gold_base")
+	assert_true(wave_manager._wave_gold_base > before + base, "Flagged kill adds more than an unflagged one")
 
 	# A culled enemy adds nothing, flag or not.
 	var culled_before: float = wave_manager._wave_gold_base
@@ -260,9 +260,9 @@ func test_commander_kill_gold_in_wave_total() -> void:
 	summary_manager.set("enemies_alive", 0)
 	summary_manager._end_combat_to_summary()
 	assert_true(summaries.size() == 1, "Summary emitted for the single-Grunt wave")
-	var expected_base: int = int(round(float(base) * mult))
-	assert_true(summaries.size() == 1 and summaries[0].get("gold_base") == expected_base, "Summary gold_base is base x frontline_gold_mult rounded (5 for a wave 1 Grunt)")
-	assert_true(is_equal_approx(summary_manager._wave_gold_base, float(base) * mult), "wave_gold_base holds base x frontline_gold_mult at SUMMARY")
+	var expected_base: int = int(round(flagged_gold))
+	assert_true(summaries.size() == 1 and summaries[0].get("gold_base") == expected_base, "Summary gold_base is the rounded commander kill gold")
+	assert_true(is_equal_approx(summary_manager._wave_gold_base, flagged_gold), "wave_gold_base holds the commander kill gold at SUMMARY")
 	EventBus.wave_summary_ready.disconnect(on_summary)
 	summary_manager.free()
 	await _free_after_nav_setup([single])
@@ -288,6 +288,7 @@ func test_boss_gold_ignores_commander_multiplier() -> void:
 	# Emits boss_defeated and enemy_died with the commander flag.
 	bulwark._on_died()
 	assert_true(wave_manager._boss_defeated_this_wave, "Boss death marks the boss as defeated this wave")
+	assert_true(wave_manager._wave_gold_base == 0.0, "Boss death adds no kill gold")
 
 	wave_manager.set("spawn_queue", [])
 	wave_manager.set("enemies_alive", 0)
@@ -295,8 +296,8 @@ func test_boss_gold_ignores_commander_multiplier() -> void:
 	assert_true(summaries.size() == 1, "Summary emitted for the boss wave")
 	if summaries.size() == 1:
 		var s: Dictionary = summaries[0]
-		var expected_boss := int(floor(float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * float(wave - 1))))
-		var wave_part := int(floor(wave_manager._wave_gold_base * float(s.get("gold_mult"))))
+		var expected_boss := WaveRewardTable.floor_gold(GameConfig.wave_rewards.get_boss_gold(wave))
+		var wave_part := WaveRewardTable.floor_gold(wave_manager._wave_gold_base * float(s.get("gold_mult")))
 		assert_true(int(s.get("gold_total")) - wave_part == expected_boss, "Boss part of gold_total is boss_gold_base scaled by wave only, no frontline_gold_mult")
 		assert_true(int(s.get("gold_total")) - wave_part != int(floor(float(expected_boss) * GameConfig.frontline_gold_mult)), "Boss part differs from the boss gold with frontline_gold_mult applied")
 
@@ -339,12 +340,14 @@ func test_wave_summary_and_wallet_crediting() -> void:
 	EventBus.wave_start_requested.emit()
 	assert_true(gold_mgr.gold == starting_gold, "Wallet does NOT change when combat starts")
 
-	# 2. Simulate 4 Grunts dying: 2 with hit_by_commander (4 * 1.25 = 5.0), 2 tower-only (4 * 1.0 = 4.0)
-	# Total wave_gold_base = 5.0 + 5.0 + 4.0 + 4.0 = 18.0
-	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4, 1, false, true)
-	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4, 1, false, true)
-	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4, 1, false, false)
-	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4, 1, false, false)
+	# 2. Simulate 4 Grunts dying: 2 with hit_by_commander, 2 tower-only; the kill gold already carries the commander bonus
+	var grunt_gold: int = preload("res://data/enemies/grunt.tres").gold_reward
+	var kg_cmd: float = GameConfig.wave_rewards.get_kill_gold(grunt_gold, 1, true)
+	var kg_plain: float = GameConfig.wave_rewards.get_kill_gold(grunt_gold, 1, false)
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, kg_cmd, 1, false, true)
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, kg_cmd, 1, false, true)
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, kg_plain, 1, false, false)
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, kg_plain, 1, false, false)
 
 	assert_true(gold_mgr.gold == starting_gold, "Wallet does NOT change when enemies die in COMBAT")
 
@@ -357,10 +360,9 @@ func test_wave_summary_and_wallet_crediting() -> void:
 	wave_manager._end_combat_to_summary()
 
 	# Verify wallet crediting:
-	# wave_gold_base = 18.0 * 1.25 (Fast) = 22.5 -> floor = 22
-	# Expected gain = 22 gold
-	var expected_gain := 22
-	assert_true(gold_mgr.gold == starting_gold + expected_gain, "Wallet credited exactly 22 gold at SUMMARY")
+	# wave_gold_base * clear_mult_fast, floored
+	var expected_gain := WaveRewardTable.floor_gold((2.0 * kg_cmd + 2.0 * kg_plain) * GameConfig.clear_mult_fast)
+	assert_true(gold_mgr.gold == starting_gold + expected_gain, "Wallet credited the floored fast-clear gold at SUMMARY")
 
 	# Verify Summary dictionary
 	assert_true(summaries.size() == 1, "EventBus.wave_summary_ready emitted exactly once")
@@ -369,7 +371,7 @@ func test_wave_summary_and_wallet_crediting() -> void:
 	assert_true(s.get("clear_tier") == "FAST", "Summary clear_tier is FAST")
 	assert_true(s.get("gold_mult") == 1.25, "Summary gold_mult is 1.25")
 	assert_true(not s.has("early_call_bonus"), "Summary excludes early_call_bonus")
-	assert_true(s.get("gold_total") == expected_gain, "Summary gold_total is 22")
+	assert_true(s.get("gold_total") == expected_gain, "Summary gold_total matches the wallet gain")
 	assert_true(s.get("kills_by_type", {}).get("grunt") == 4, "Summary records 4 Grunt kills")
 
 	# Verify Time scale auto resets to x1
@@ -439,7 +441,7 @@ func test_boss_gold_only_on_boss_defeated() -> void:
 	EventBus.boss_defeated.emit()
 	wave_manager_boss._end_combat_to_summary()
 
-	var expected_boss_gold := int(floor(float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * 4.0)))
+	var expected_boss_gold := WaveRewardTable.floor_gold(GameConfig.wave_rewards.get_boss_gold(5))
 	assert_true(gold_mgr.gold == starting_gold + expected_boss_gold, "Wave 5 with boss_defeated gives scaled boss gold")
 
 	wave_manager_boss.free()

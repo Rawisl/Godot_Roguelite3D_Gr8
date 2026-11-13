@@ -1,0 +1,154 @@
+[gd_scene format=3 uid="uid://bxnr1w0e4elwl"]
+
+[ext_resource type="Script" uid="uid://gxc0h0ibf1b2" path="res://ui/screens/tab_account.gd" id="1_tab"]
+[ext_resource type="PackedScene" uid="uid://csfm2eayy8mcu" path="res://ui/screens/sync_status.tscn" id="2_sync"]
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_divider"]
+color = Color(0.749, 0.6235, 0.4588, 1)
+thickness = 4
+vertical = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 24.0
+content_margin_top = 16.0
+content_margin_right = 24.0
+content_margin_bottom = 16.0
+bg_color = Color(0.749, 0.6235, 0.4588, 0.22)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.749, 0.6235, 0.4588, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 16.0
+content_margin_bottom = 6.0
+bg_color = Color(0.1098, 0.1216, 0.149, 1)
+border_width_left = 0
+border_width_top = 0
+border_width_right = 0
+border_width_bottom = 0
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="TabAccount" type="Control" unique_id=1739300100]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_tab")
+
+[node name="Rows" type="VBoxContainer" parent="." unique_id=1739300101]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="AccountRowCard" type="PanelContainer" parent="Rows" unique_id=1739330001]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="AccountRow" type="HBoxContainer" parent="Rows/AccountRowCard" unique_id=1739300102]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="AccountTitle" type="Label" parent="Rows/AccountRowCard/AccountRow" unique_id=1739300103]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_override_font_sizes/font_size = 24
+
+[node name="AccountRowDivider" type="VSeparator" parent="Rows/AccountRowCard/AccountRow" unique_id=1739330011]
+custom_minimum_size = Vector2(4, 40)
+layout_mode = 2
+theme_override_constants/separation = 4
+theme_override_styles/separator = SubResource("StyleBoxLine_divider")
+
+[node name="AccountInfo" type="VBoxContainer" parent="Rows/AccountRowCard/AccountRow" unique_id=1739300104]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="AccountValue" type="Label" parent="Rows/AccountRowCard/AccountRow/AccountInfo" unique_id=1739300105]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+
+[node name="EmailValue" type="Label" parent="Rows/AccountRowCard/AccountRow/AccountInfo" unique_id=1739300106]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 20
+
+[node name="SyncRowCard" type="PanelContainer" parent="Rows" unique_id=1739330002]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SyncRow" type="HBoxContainer" parent="Rows/SyncRowCard" unique_id=1739300107]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="SyncTitle" type="Label" parent="Rows/SyncRowCard/SyncRow" unique_id=1739300108]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 24
+
+[node name="SyncRowDivider" type="VSeparator" parent="Rows/SyncRowCard/SyncRow" unique_id=1739330012]
+custom_minimum_size = Vector2(4, 40)
+layout_mode = 2
+theme_override_constants/separation = 4
+theme_override_styles/separator = SubResource("StyleBoxLine_divider")
+
+[node name="SyncBadge" type="PanelContainer" parent="Rows/SyncRowCard/SyncRow" unique_id=1739300109]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="SyncStatus" parent="Rows/SyncRowCard/SyncRow/SyncBadge" unique_id=1739300110 instance=ExtResource("2_sync")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="Rows" unique_id=1739300111]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SignIn" type="Button" parent="Rows/Buttons" unique_id=1739300112]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+
+[node name="SignOut" type="Button" parent="Rows/Buttons" unique_id=1739300113]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+
+[node name="SyncNow" type="Button" parent="Rows/Buttons" unique_id=1739300114]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+
+[node name="OfflineNote" type="Label" parent="Rows" unique_id=1739300115]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false
+autowrap_mode = 3
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 20

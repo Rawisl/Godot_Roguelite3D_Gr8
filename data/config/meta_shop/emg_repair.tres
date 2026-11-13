@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItem" format=3 uid="uid://b46fvo66xdil2"]
+
+[ext_resource type="Script" uid="uid://dcnqvv477i1m0" path="res://common/shop_item.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"EMG_REPAIR"
+name_key = &"shop.emg_repair.name"
+effect_key = &"shop.emg_repair.effect"
+note_key = &"shop.emg_repair.note"
+costs = PackedInt32Array(50, 90, 150)
+effect_base = 20.0
+effect_step = 3.0

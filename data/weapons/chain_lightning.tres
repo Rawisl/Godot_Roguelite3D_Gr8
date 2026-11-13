@@ -1,4 +1,5 @@
 [gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://cl7fghhytp172"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
 [ext_resource type="Script" uid="uid://x7apaf51e872" path="res://common/weapon_data.gd" id="1_weapon"]
 
@@ -6,6 +7,7 @@
 script = ExtResource("1_weapon")
 id = &"chain_lightning"
 name_key = &"weapon.chain_lightning.name"
+range_mult = 1
 effect_id = &"chain"
 params = Dictionary[StringName, float]({
 &"chain_damage_pct": 0.2,
