@@ -4,7 +4,7 @@ extends Node
 ## Wave FSM (PREP - COMBAT - SUMMARY) and Spawner.
 ## Supports queue-based spawning, spawn_zone placement, spawn_grace,
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
-# TODO(Ender-Via): when meta progression lands, add the meta gold bonus (gold_pct_meta + gold_pct_buff) to the wave gold computed in the summary step.
+# TODO(Ender-Via): when meta progression lands, return gold_pct_meta + gold_pct_buff from _gold_pct_total(); it feeds both the wave gold and the boss gold.
 # TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
 # TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
 # TODO(Ender-Via): pause with REASON_VICTORY once the victory screen lands; currently disabled by default.
@@ -104,6 +104,7 @@ var _clear_time: float = 0.0
 var _first_enemy_spawned: bool = false
 var _is_run_lost: bool = false
 var _boss_defeated_this_wave: bool = false
+var _boss_enraged_this_wave: bool = false
 var _boss_instance: Enemy = null
 
 var _xp_tracker: Node = null
@@ -118,6 +119,7 @@ func _ready() -> void:
 	EventBus.fortress_destroyed.connect(_on_run_lost)
 	EventBus.commander_died.connect(_on_run_lost)
 	EventBus.boss_defeated.connect(_on_boss_defeated)
+	EventBus.boss_enraged.connect(_on_boss_enraged)
 	_setup_xp_tracker()
 	_setup_boss_timer()
 	EventBus.reward_picked.connect(_on_reward_picked)
@@ -139,6 +141,8 @@ func _exit_tree() -> void:
 		EventBus.commander_died.disconnect(_on_run_lost)
 	if EventBus.boss_defeated.is_connected(_on_boss_defeated):
 		EventBus.boss_defeated.disconnect(_on_boss_defeated)
+	if EventBus.boss_enraged.is_connected(_on_boss_enraged):
+		EventBus.boss_enraged.disconnect(_on_boss_enraged)
 	if EventBus.reward_picked.is_connected(_on_reward_picked):
 		EventBus.reward_picked.disconnect(_on_reward_picked)
 	if EventBus.victory_continue_requested.is_connected(_on_victory_continue_requested):
@@ -146,8 +150,42 @@ func _exit_tree() -> void:
 
 
 func _on_boss_defeated() -> void:
+	if _boss_defeated_this_wave:
+		return
 	_boss_defeated_this_wave = true
 	_boss_instance = null
+	# Floating "+xx" only; the wallet gets the same amount at the summary step.
+	var shown: int = _boss_gold_amount()
+	if shown > 0:
+		EventBus.gold_delta.emit(shown)
+
+
+func _on_boss_enraged() -> void:
+	# An Enrage that arrives after the boss died does not cut the reward.
+	if _boss_defeated_this_wave:
+		return
+	_boss_enraged_this_wave = true
+
+
+## 1.0, or enrage_reward_mult when the boss enraged this wave.
+func _boss_reward_mult() -> float:
+	return GameConfig.enrage_reward_mult if _boss_enraged_this_wave else 1.0
+
+
+## Gold bonus percent applied to wave gold and boss gold.
+func _gold_pct_total() -> float:
+	return 0.0
+
+
+## Boss gold paid at the summary step and shown when the boss dies: table gold, Enrage cut, gold bonus, rounded down once.
+func _boss_gold_amount() -> int:
+	var boss_gold: float = GameConfig.wave_rewards.get_boss_gold(current_wave)
+	return WaveRewardTable.floor_gold(boss_gold * _boss_reward_mult() * (1.0 + _gold_pct_total()))
+
+
+## Boss prestige added at the summary step, rounded down after the Enrage cut.
+func _boss_prestige_amount() -> int:
+	return WaveRewardTable.floor_gold(float(GameConfig.boss_prestige) * _boss_reward_mult())
 
 
 func _setup_xp_tracker() -> void:
@@ -215,6 +253,7 @@ func start_prep() -> void:
 	_clear_time = 0.0
 	_first_enemy_spawned = false
 	_boss_defeated_this_wave = false
+	_boss_enraged_this_wave = false
 	_boss_instance = null
 
 	var rs := _get_run_state()
@@ -646,21 +685,21 @@ func _end_combat_to_summary() -> void:
 		elif _clear_time > GameConfig.clear_slow_threshold * par_time:
 			clear_tier = "SLOW"
 
-	# Boss gold - only granted if boss was defeated this wave
-	var boss_gold: float = 0.0
-	if _boss_defeated_this_wave:
-		boss_gold = GameConfig.wave_rewards.get_boss_gold(current_wave)
-
 	# Total gold gain
-	var gold_pct_total: float = 0.0
+	var gold_pct_total: float = _gold_pct_total()
 	var wave_gold_scaled: int = WaveRewardTable.floor_gold(_wave_gold_base * (1.0 + gold_pct_total) * clear_mult)
-	var boss_gold_scaled: int = WaveRewardTable.floor_gold(boss_gold * (1.0 + gold_pct_total))
+	# Boss gold - only granted if boss was defeated this wave
+	var boss_gold_scaled: int = _boss_gold_amount() if _boss_defeated_this_wave else 0
 	var total_gold_gain: int = wave_gold_scaled + boss_gold_scaled
 
 	# Credit gold to GoldManager, false avoids double "+xx" popup on SUMMARY
 	var gold_mgr := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
 	if gold_mgr != null:
 		gold_mgr.add(total_gold_gain, false)
+
+	# Boss prestige is paid here, after the run-lost check above
+	if _boss_defeated_this_wave:
+		_wave_prestige += _boss_prestige_amount()
 
 	# Pending prestige
 	if _wave_prestige > 0:

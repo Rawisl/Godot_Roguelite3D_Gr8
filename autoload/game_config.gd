@@ -128,6 +128,8 @@ extends Node
 @export var enrage_speed_mult: float = 1.3
 @export var enrage_attack_rate_mult: float = 1.3
 @export var enrage_damage_mult: float = 1.5
+## Boss gold and boss prestige multiplier when the boss dies after Enrage.
+@export var enrage_reward_mult: float = 0.5
 
 @export_group("Online")
 @export var online_enabled: bool = true
