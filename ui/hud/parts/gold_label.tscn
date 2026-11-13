@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c7ac3jyr50isa"]
 
 [ext_resource type="Script" uid="uid://bp08aedqc8ytc" path="res://ui/hud/parts/gold_label.gd" id="1_l8fob"]
+[ext_resource type="Texture2D" uid="uid://4anc1eftvy7u" path="res://art/icons/gold_icon.png" id="2_gicon"]
 
 [node name="GoldLabel" type="HBoxContainer" unique_id=947301039]
 anchors_preset = 1
@@ -14,8 +15,13 @@ theme_override_constants/separation = 8
 script = ExtResource("1_l8fob")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=1649748621]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 mouse_filter = 2
+texture = ExtResource("2_gicon")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Title" type="Label" parent="." unique_id=791004369]
 unique_name_in_owner = true
