@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tower price simulator</title>
+<style>
+/* Colours of this tool only (not game colours). Dark values are repeated for the auto and the forced dark theme. */
+:root{color-scheme:light;--bg:#fff;--text:#222;--muted:#666;--grid:#e2e2e2;--axis:#444;--panel:#f6f6f6;--line:#ccc;
+--ok:#cfeccf;--bad:#f3cccc;--c-arrow:#d9534f;--c-cannon:#2b7bb9;--c-barricade:#2e9c5a;--c-heal:#b8862b;--c-extra:#8e5bb5;
+--c-raw:#777;--c-average:#2b7bb9;--c-strong:#d9534f;--c-target:#8e44ad;--c-ref:#444;--c-tier:#888}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#1e1f22;--text:#e6e6e6;
+--muted:#a0a0a0;--grid:#3a3c40;--axis:#b0b0b0;--panel:#2a2c30;--line:#555;--ok:#264d2e;--bad:#5a2828;--c-arrow:#ff7b72;
+--c-cannon:#6cb6ff;--c-barricade:#56d364;--c-heal:#e3b341;--c-extra:#d2a8ff;--c-raw:#a0a0a0;--c-average:#6cb6ff;
+--c-strong:#ff7b72;--c-target:#d2a8ff;--c-ref:#c0c0c0;--c-tier:#8a8a8a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#1e1f22;--text:#e6e6e6;--muted:#a0a0a0;--grid:#3a3c40;--axis:#b0b0b0;
+--panel:#2a2c30;--line:#555;--ok:#264d2e;--bad:#5a2828;--c-arrow:#ff7b72;--c-cannon:#6cb6ff;--c-barricade:#56d364;
+--c-heal:#e3b341;--c-extra:#d2a8ff;--c-raw:#a0a0a0;--c-average:#6cb6ff;--c-strong:#ff7b72;--c-target:#d2a8ff;
+--c-ref:#c0c0c0;--c-tier:#8a8a8a}
+body{font-family:sans-serif;margin:0 auto;padding:12px 24px;max-width:1200px;background:var(--bg);color:var(--text)}
+h1{margin:6px 0}h2{margin:22px 0 6px;border-bottom:1px solid var(--line)}h3{margin:12px 0 4px}
+table{border-collapse:collapse;margin:6px 0}td,th{border:1px solid var(--line);padding:2px 8px;text-align:right}
+th{background:var(--panel)}td:first-child,td.l{text-align:left}td.ok{background:var(--ok);text-align:center}
+td.bad{background:var(--bad);text-align:center}pre,textarea{background:var(--panel);color:var(--text);padding:6px}
+textarea{width:100%;box-sizing:border-box;height:90px;font-family:monospace}
+input,select,button{font:inherit;background:var(--panel);color:var(--text);border:1px solid var(--line);padding:2px 4px}
+input[type=text]{width:6em;text-align:right}input.bad{border:2px solid #d33}input:disabled,select:disabled{opacity:.45}
+button{cursor:pointer}svg{display:block;max-width:100%;height:auto;border:1px solid var(--line);margin:6px 0}
+svg text{fill:var(--text);font-family:sans-serif;font-size:11px}svg .grid{stroke:var(--grid)}svg .axis{stroke:var(--axis)}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px}.badge.pass{background:var(--ok)}.badge.fail{background:var(--bad)}
+#bar{position:sticky;top:0;background:var(--bg);border-bottom:2px solid var(--line);padding:4px 0;z-index:5;font-size:13px}
+#bar table{margin:2px 0}body.stale #bar table{opacity:.35}#banner{background:var(--bad);padding:6px;margin:6px 0}
+#banner:empty{display:none}.muted{color:var(--muted)}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+details{margin:4px 0}summary{cursor:pointer}.lg{cursor:pointer}
+</style>
+</head>
+<body>
+<h1>Tower price simulator</h1>
+<div class="muted" id="meta"></div>
+<div class="row" id="tools">
+  <span id="badge" class="badge">Engine check: running</span>
+  <button data-act="reset-cli">Reset to command line</button><button data-act="reset-sheet">Reset to sheet</button>
+  <button data-act="copy-cli">Copy CLI command</button><button data-act="copy-link">Copy link</button>
+  <button data-act="theme">Theme: auto</button><span id="status" class="muted"></span>
+</div>
+<div id="banner"></div>
+<!--__NOSCRIPT__-->
+<div id="bar"></div>
+<h2>Price knobs</h2><div id="k-price"></div>
+<h2>Income</h2><div id="k-income"></div>
+<h2>Targets thresholds</h2><div id="k-thr"></div>
+<h2>Charts</h2>
+<svg id="chart1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430"></svg>
+<svg id="chart2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430"></svg>
+<svg id="chart3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430"></svg>
+<svg id="chart4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430"></svg>
+<svg id="chart5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430"></svg>
+<div id="dps-note" class="muted"></div>
+<div id="stats-section"><h2>Tower stats</h2><div id="k-stats"></div><div id="t-stats"></div></div>
+<h2>Price tables</h2><div id="t-price"></div>
+<h2>Export</h2><div id="export"></div>
+<script id="payload" type="application/json">/*__PAYLOAD__*/</script>
+<script>
+"use strict";
+// ---------------------------------------------------------------- engine (mirrors simulate.py; no powers, same order of operations)
+const SCENARIOS = ["raw", "average", "strong"];
+const STAT_KEYS = ["max_hp", "damage", "attack_range", "fire_rate"];
+const INT_STATS = { max_hp: 5, damage: 2 }; // step a scaled int stat is rounded to
+
+function roundHalfUp(x, step) { // mirrors simulate.py round_half_up
+  return Math.floor(x / step + 0.5) * step;
+}
+
+function proposedCosts(base, growth, roundTo, maxLevel, growthFrom) { // mirrors simulate.py proposed_costs
+  const costs = [base];
+  const segments = growthFrom.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  let chained = base;
+  for (let n = 2; n <= maxLevel; n++) {
+    let factor = growth;
+    for (const seg of segments) {
+      if (seg[0] <= n) factor = seg[1];
+    }
+    chained *= factor;
+    costs.push(Math.max(roundHalfUp(chained, roundTo), roundTo));
+  }
+  return costs;
+}
+
+function cumulative(costs) { // mirrors simulate.py cumulative
+  const cum = [0];
+  for (const c of costs) cum.push(cum[cum.length - 1] + c);
+  return cum;
+}
+
+function waveIncome(entry, gc, p) { // mirrors simulate.py wave_income
+  const gm = entry.gm, f = gc.frontline_gold_mult;
+  const base = entry.normal_gold * gm * (1 + p.cmd_ratio * (f - 1));
+  let total = Math.floor(base * (1 + p.gold_pct) * p.clear_mult);
+  if (entry.boss_count > 0) total += Math.floor(gc.boss_gold_base * gm * entry.boss_count * (1 + p.gold_pct));
+  if (p.hazard) {
+    const avg = entry.normal_gold / entry.normal_count;
+    let units, boss;
+    if (entry.boss_count > 0) {
+      units = gc.hazard_boss_escorts * avg * gm * f;
+      boss = gc.boss_gold_base * gm;
+    } else {
+      units = gc.hazard_enemy_count * avg * gm * f;
+      boss = 0;
+    }
+    total += Math.floor(units * (1 + p.gold_pct)) + Math.floor(boss * (1 + p.gold_pct));
+  }
+  return total;
+}
+
+function scenarioParams(name, scenarios, gc) { // mirrors simulate.py scenario_params
+  const sc = scenarios[name];
+  return { clear_mult: sc.clear === "normal" ? gc.clear_mult_normal : gc.clear_mult_fast, cmd_ratio: sc.cmd_ratio,
+           hazard: sc.hazard, gold_pct: sc.gold_pct };
+}
+
+function incomeCurve(waveData, gc, params) { // mirrors simulate.py income_curve
+  const curve = [gc.starting_gold];
+  for (let w = 1; w <= gc.victory_wave; w++) {
+    curve.push(curve[curve.length - 1] + waveIncome(waveData[w - 1], gc, params));
+  }
+  return curve;
+}
+
+function layoutCost(level, cum, layout, starters) { // mirrors simulate.py layout_cost
+  let total = 0;
+  for (const t of Object.keys(layout)) total += layout[t] * cum[t][level];
+  for (const t of Object.keys(starters)) total -= starters[t] * cum[t][1];
+  return total;
+}
+
+function uniformLevel(gold, cum, layout, starters, maxLevel) { // mirrors simulate.py uniform_level
+  let best = 0;
+  for (let level = 1; level <= maxLevel; level++) {
+    if (layoutCost(level, cum, layout, starters) <= gold) best = level;
+  }
+  return best;
+}
+
+function firstWave(cost, income) { // mirrors simulate.py first_wave
+  for (let w = 0; w < income.length; w++) {
+    if (income[w] >= cost) return w;
+  }
+  return null;
+}
+
+function evaluateTargets(cum, gc, layout, starters, avgIncome, strongIncome, thr) { // mirrors simulate.py evaluate_targets
+  const n = gc.tower_max_level, t3 = gc.tower_tier3_level, v = gc.victory_wave;
+  const out = [];
+  thr.afford.forEach((spec, i) => {
+    const cost = spec.count * cum[spec.type][Math.min(spec.level, n)];
+    out.push(["M" + (i + 1), firstWave(cost, avgIncome), avgIncome[Math.min(spec.wave, v)] >= cost]);
+  });
+  const ratio = strongIncome[v] > 0 ? layoutCost(t3, cum, layout, starters) / strongIncome[v] : Infinity;
+  out.push(["M5", Number.isFinite(ratio) ? ratio : null, ratio >= thr.tier3_ratio]);
+  const late = thr.late;
+  const lateRatio = avgIncome[Math.min(late.wave, v)] / (late.count * cum[late.type][Math.min(late.level, n)]);
+  out.push(["M6", lateRatio, lateRatio >= late.min_ratio]);
+  return out;
+}
+
+function scaledStats(sheetStats, order, statsKnobs) { // mirrors simulate.py scaled_stats
+  const out = {};
+  for (const t of order) {
+    out[t] = {};
+    for (const stat of STAT_KEYS) {
+      const segs = statsKnobs[t][stat].slice().sort((a, b) => a[0] - b[0]);
+      const sheet = sheetStats[t][stat];
+      if (!segs.length) { out[t][stat] = sheet.slice(); continue; }
+      let chained = sheet[0];
+      out[t][stat] = sheet.map((x, i) => { // level 1 keeps the sheet value, level n = level n-1 x mult
+        if (i === 0) return x;
+        let mult = 1;
+        for (const s of segs) if (s[0] <= i + 1) mult = s[1];
+        chained *= mult;
+        if (stat in INT_STATS) return Math.max(roundHalfUp(chained, INT_STATS[stat]), INT_STATS[stat]);
+        return Math.floor(chained * 100 + 0.5) / 100;
+      });
+    }
+  }
+  return out;
+}
+
+function dpsCurves(d, stats, layout, uniform, dk) { // mirrors simulate.py dps_curves
+  const demand = d.wave_hp.map((e) => { // a window of 0 s plus a travel time of 0 s would divide by zero
+    const span = e.spawn_window + dk.travel_time;
+    return span > 0 ? e.hp * dk.tower_share / span : 0;
+  });
+  const supply = {};
+  for (const s of Object.keys(uniform)) {
+    supply[s] = [];
+    for (let w = 1; w <= d.gc.victory_wave; w++) {
+      const level = uniform[s][w - 1];
+      let total = 0;
+      for (const t of d.order) {
+        if (!(t in layout) || level < 1) continue;
+        const i = level - 1;
+        const mult = d.sheet_stats[t].splash_radius[i] > 0 ? dk.splash_targets : 1;
+        total += layout[t] * stats[t].damage[i] * stats[t].fire_rate[i] * mult;
+      }
+      supply[s].push(total);
+    }
+  }
+  return { demand: demand, supply: supply };
+}
+
+function compute(d, k) { // mirrors simulate.py compute
+  const gc = d.gc, order = d.order, n = gc.tower_max_level, v = gc.victory_wave;
+  const costs = {}, cum = {}, income = {}, uniform = {}, layout = {}, starters = {};
+  for (const t of order) {
+    const p = k.price[t];
+    costs[t] = p.mode === "sheet" ? d.sheet_costs[t].slice() : proposedCosts(p.base, p.growth, k.round_to, n, p.growth_from);
+    cum[t] = cumulative(costs[t]);
+    if ((k.layout[t] || 0) > 0) layout[t] = k.layout[t];
+    if ((k.starters[t] || 0) > 0) starters[t] = k.starters[t];
+  }
+  for (const s of SCENARIOS) income[s] = incomeCurve(d.wave_data, gc, scenarioParams(s, k.scenarios, gc));
+  for (const s of SCENARIOS) {
+    uniform[s] = [];
+    for (let w = 0; w <= v; w++) uniform[s].push(uniformLevel(income[s][w], cum, layout, starters, n));
+  }
+  const targets = evaluateTargets(cum, gc, layout, starters, income.average, income.strong, k.thresholds);
+  let gap = null;
+  if (k.target_gold) {
+    const gold = income[k.target_scenario][v];
+    gap = { gold: gold, ratio: gold / k.target_gold };
+  }
+  let stats = null, dps = null;
+  if (d.sheet_stats !== null) {
+    stats = scaledStats(d.sheet_stats, order, k.stats);
+    if (d.wave_hp !== null) dps = dpsCurves(d, stats, layout, uniform, k.dps);
+  }
+  return { costs: costs, cum: cum, income: income, uniform: uniform, targets: targets, target_gap: gap, stats: stats, dps: dps };
+}
+
+function firstDiff(a, b, path) { // exact comparison; returns the path of the first difference or null
+  if (a === b) return null;
+  const objects = a !== null && b !== null && typeof a === "object" && typeof b === "object";
+  if (!objects || Array.isArray(a) !== Array.isArray(b)) return path + " js=" + JSON.stringify(a) + " py=" + JSON.stringify(b);
+  if (Object.keys(a).length !== Object.keys(b).length) return path + " has different keys";
+  for (const key of Object.keys(b)) {
+    if (!(key in a)) return path + "." + key + " missing in js";
+    const diff = firstDiff(a[key], b[key], path + "." + key);
+    if (diff !== null) return diff;
+  }
+  return null;
+}
+
+function tsvRanges(towerRows, c1, c2) { // mirrors simulate.py tsv_ranges (c2 for a block of several columns)
+  const runs = [];
+  for (const r of towerRows) {
+    const last = runs[runs.length - 1];
+    if (last && r[2] === last[1] + 1) last[1] = r[2];
+    else runs.push([r[2], r[2]]);
+  }
+  return runs.map((run) => "towers!" + c1 + run[0] + ":" + (c2 || c1) + run[1]).join(", ");
+}
+
+function niceStep(top) { // mirrors the old simulate.py nice_step
+  if (top <= 0) return 1;
+  const raw = top / 6, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const mult of [1, 2, 5, 10]) {
+    if (raw <= mult * mag) return mult * mag;
+  }
+  return 10 * mag;
+}
+
+// ---------------------------------------------------------------- state
+const data = JSON.parse(document.getElementById("payload").textContent);
+const GC = data.gc, N = GC.tower_max_level, V = GC.victory_wave, T2 = GC.tower_tier2_level, T3 = GC.tower_tier3_level;
+const ORDER = data.order, HAS_STATS = data.sheet_stats !== null, HAS_DPS = HAS_STATS && data.wave_hp !== null;
+const STORE = "endless_war_balance_sim_v1";
+const $ = (sel) => document.querySelector(sel);
+const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const clone = (x) => JSON.parse(JSON.stringify(x));
+let knobs = clone(data.defaults), last = null, queued = false, pendingOld = null, statusTimer = 0;
+const ui = { hidden: {}, open: {}, theme: "auto" };
+const pops = {}; // chart id -> pop-out window; the legend state stays in ui.hidden of this page
+let lastCharts = [];
+
+function sheetKnobs(k) {
+  const out = clone(k);
+  for (const t of ORDER) out.price[t].mode = "sheet";
+  return out;
+}
+
+function engineDiff() { // first mismatch between this engine and simulate.py on the reference knob sets, "" when none
+  for (const ref of data.reference) {
+    const diff = firstDiff(compute(data, ref.knobs), ref.result, "result");
+    if (diff !== null) return ref.name + ": " + diff;
+  }
+  return "";
+}
+
+function publishCheck(detail) { // called once the whole page has been built and rendered
+  const pass = detail === "";
+  document.body.dataset.engineCheck = pass ? "pass" : "fail";
+  document.body.dataset.engineDetail = detail;
+  document.body.classList.toggle("stale", !pass);
+  const badge = $("#badge");
+  badge.className = "badge " + (pass ? "pass" : "fail");
+  badge.textContent = pass ? "Engine check: " + data.reference.length + "/" + data.reference.length + " match simulate.py"
+                           : "Engine check: FAILED (" + detail + ")";
+}
+
+// ---------------------------------------------------------------- formatting
+function fmtNum(x) {
+  if (Number.isInteger(x)) return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return String(parseFloat(x.toPrecision(6)));
+}
+
+function fmtTarget(code, value) {
+  if (code === "M5" || code === "M6") return value === null ? "inf" : value.toFixed(2);
+  return value !== null ? "w" + value : "never (> w" + V + ")";
+}
+
+function targetLabels(thr) { // mirrors simulate.py target_labels
+  const labels = {};
+  thr.afford.forEach((a, i) => {
+    labels["M" + (i + 1)] = a.count + " x " + a.type + " at level " + a.level + " affordable by wave " + a.wave + " (average)";
+  });
+  labels.M5 = "layout cost at level " + T3 + " / gold of a strong run at wave " + V + " (target >= " + thr.tier3_ratio + ")";
+  const l = thr.late;
+  labels.M6 = "average gold at wave " + l.wave + " / cost of " + l.count + " x " + l.type + " to level " + l.level + " (target >= " + l.min_ratio + ")";
+  return labels;
+}
+
+const pf = (ok) => '<td class="' + (ok ? "ok" : "bad") + '">' + (ok ? "PASS" : "FAIL") + "</td>";
+const typeColor = (t) => ({ arrow: "--c-arrow", cannon: "--c-cannon", barricade: "--c-barricade", heal_station: "--c-heal" }[t] || "--c-extra");
+
+// ---------------------------------------------------------------- knob controls
+const RULES = [
+  [/^price\.[^.]+\.(base|growth)$/, { gt: 0 }], [/^price\.[^.]+\.growth_from\.\d+\.0$/, { int: 1, min: 2, maxN: 1 }],
+  [/^price\.[^.]+\.growth_from\.\d+\.1$/, { gt: 0 }], [/^round_to$/, { int: 1, min: 1 }],
+  [/^scenarios\.\w+\.cmd_ratio$/, { min: 0, max: 1 }], [/^scenarios\.\w+\.gold_pct$/, { min: 0 }],
+  [/^(layout|starters)\./, { int: 1, min: 0 }], [/^target_gold$/, { int: 1, gt: 0, blank: 1 }],
+  [/^thresholds\.tier3_ratio$/, { gt: 0 }], [/^thresholds\.late\.min_ratio$/, { gt: 0 }],
+  [/^thresholds\.(afford\.\d+|late)\.count$/, { int: 1, min: 1 }], [/^thresholds\.(afford\.\d+|late)\.level$/, { int: 1, min: 1, maxN: 1 }],
+  [/^thresholds\.(afford\.\d+|late)\.wave$/, { int: 1, min: 1, maxV: 1 }],
+  [/^stats\.[^.]+\.\w+\.\d+\.1$/, { gt: 0 }], [/^stats\.[^.]+\.\w+\.\d+\.0$/, { int: 1, min: 1, maxN: 1 }],
+  [/^dps\.travel_time$/, { gt: 0 }], [/^dps\.splash_targets$/, { min: 0 }], [/^dps\.tower_share$/, { gt: 0 }],
+];
+
+function getPath(obj, parts) { return parts.reduce((o, p) => o[p], obj); }
+function setPath(obj, parts, value) { getPath(obj, parts.slice(0, -1))[parts[parts.length - 1]] = value; }
+
+function crossCheck(path, x) {
+  let m = path.match(/^price\.([^.]+)\.growth_from\.(\d+)\.0$/);
+  if (m && knobs.price[m[1]].growth_from.some((s, i) => i !== Number(m[2]) && s[0] === x)) return "that level already has a segment";
+  m = path.match(/^stats\.([^.]+)\.(\w+)\.(\d+)\.0$/);
+  if (m && knobs.stats[m[1]][m[2]].some((s, i) => i !== Number(m[3]) && s[0] === x)) return "that level already has a segment";
+  m = path.match(/^layout\.(.+)$/);
+  if (m && x < knobs.starters[m[1]]) return "fewer than the starters of this type";
+  m = path.match(/^starters\.(.+)$/);
+  if (m && x > knobs.layout[m[1]]) return "more than the layout holds";
+  return "";
+}
+
+function validateField(path, el) {
+  if (el.type === "checkbox") return { ok: true, value: el.checked };
+  if (el.tagName === "SELECT") return { ok: true, value: el.value };
+  return validateRaw(path, el.value, true);
+}
+
+function validateRaw(path, text, withCross) { // withCross is false for loaded knobs, which are not yet the current knobs
+  const rule = (RULES.find((r) => r[0].test(path)) || [0, {}])[1];
+  const raw = text.trim();
+  const fail = (msg) => ({ ok: false, msg: msg });
+  if (raw === "") return rule.blank ? { ok: true, value: null } : fail("a number is required");
+  const x = Number(raw);
+  if (!Number.isFinite(x)) return fail("not a number");
+  if (rule.int && !Number.isInteger(x)) return fail("whole number required");
+  if (rule.gt !== undefined && !(x > rule.gt)) return fail("must be above " + rule.gt);
+  if (rule.min !== undefined && x < rule.min) return fail("must be " + rule.min + " or more");
+  if (rule.max !== undefined && x > rule.max) return fail("must be " + rule.max + " or less");
+  if (rule.maxN && x > N) return fail("must be at most " + N);
+  if (rule.maxV && x > V) return fail("must be at most " + V);
+  const cross = withCross ? crossCheck(path, x) : "";
+  return cross ? fail(cross) : { ok: true, value: x };
+}
+
+function inp(path, size) {
+  const v = getPath(knobs, path.split("."));
+  return '<input type="text" data-path="' + path + '" value="' + esc(v === null ? "" : v) + '"' + (size ? ' size="' + size + '"' : "") + ">";
+}
+
+function sel(path, options) {
+  const v = getPath(knobs, path.split("."));
+  return '<select data-path="' + path + '">' + options.map((o) => "<option" + (o === v ? " selected" : "") + ">" + o + "</option>").join("") + "</select>";
+}
+
+function renderControls() {
+  let h = '<table><tr><th>Type</th><th>mode</th><th>base</th><th>growth</th><th>growth_from (level, factor)</th></tr>';
+  for (const t of ORDER) {
+    const p = knobs.price[t];
+    const segs = p.growth_from.map((s, i) => inp("price." + t + ".growth_from." + i + ".0", 3) + " " + inp("price." + t + ".growth_from." + i + ".1", 5) +
+      ' <button data-act="del-seg" data-t="' + t + '" data-i="' + i + '">&times;</button>').join(" | ");
+    h += '<tr data-type="' + t + '"><td>' + esc(t) + "</td><td>" + sel("price." + t + ".mode", ["curve", "sheet"]) + "</td><td>" +
+      inp("price." + t + ".base") + "</td><td>" + inp("price." + t + ".growth") + '</td><td class="l">' + segs +
+      ' <button data-act="add-seg" data-t="' + t + '">+ segment</button></td></tr>';
+  }
+  $("#k-price").innerHTML = h + "</table><p>round_to " + inp("round_to") + ' <button data-act="apply-growth">Apply growth to all types</button></p>';
+  for (const t of ORDER) {
+    if (knobs.price[t].mode === "sheet") $('#k-price tr[data-type="' + t + '"]').querySelectorAll("input,button").forEach((e) => { e.disabled = true; });
+  }
+  h = "<table><tr><th>Scenario</th><th>clear</th><th>cmd_ratio</th><th>hazard</th><th>gold_pct</th></tr>";
+  for (const s of SCENARIOS) {
+    h += "<tr><td>" + s + "</td><td>" + sel("scenarios." + s + ".clear", ["normal", "fast"]) + "</td><td>" + inp("scenarios." + s + ".cmd_ratio") +
+      '</td><td><input type="checkbox" data-path="scenarios.' + s + '.hazard"' + (knobs.scenarios[s].hazard ? " checked" : "") + "></td><td>" +
+      inp("scenarios." + s + ".gold_pct") + "</td></tr>";
+  }
+  h += "</table><table><tr><th>Type</th><th>layout</th><th>starters</th></tr>";
+  for (const t of ORDER) h += "<tr><td>" + esc(t) + "</td><td>" + inp("layout." + t, 3) + "</td><td>" + inp("starters." + t, 3) + "</td></tr>";
+  $("#k-income").innerHTML = h + "</table><p>target_gold at wave " + V + " (empty = off) " + inp("target_gold") + " compared with the " +
+    sel("target_scenario", SCENARIOS) + " run</p>";
+  h = "<table><tr><th></th><th>type</th><th>count</th><th>level</th><th>by wave</th></tr>";
+  knobs.thresholds.afford.forEach((a, i) => {
+    const base = "thresholds.afford." + i;
+    h += "<tr><td>M" + (i + 1) + "</td><td>" + sel(base + ".type", ORDER) + "</td><td>" + inp(base + ".count", 3) + "</td><td>" + inp(base + ".level", 3) +
+      "</td><td>" + inp(base + ".wave", 3) + "</td></tr>";
+  });
+  h += '</table><p class="muted">M1 to M4 pass when the average run cumulative gold (starting gold included) up to that wave pays count towers bought from level 1 to the level.</p>' +
+    "<p>M5 min ratio " + inp("thresholds.tier3_ratio", 4) + " (layout at level " + T3 + " / strong gold at wave " + V + ")</p>" +
+    "<p>M6 average gold at wave " + inp("thresholds.late.wave", 3) + " / cost of " + inp("thresholds.late.count", 3) + " x " + sel("thresholds.late.type", ORDER) +
+    " to level " + inp("thresholds.late.level", 3) + ", min ratio " + inp("thresholds.late.min_ratio", 4) + "</p>";
+  $("#k-thr").innerHTML = h;
+  $("#stats-section").style.display = HAS_STATS ? "" : "none";
+  if (!HAS_STATS) return;
+  h = "<table><tr><th>Type</th><th>stat</th><th>segments (from level, mult per level)</th></tr>";
+  for (const t of ORDER) {
+    for (const stat of STAT_KEYS) {
+      const name = stat === "max_hp" && t === "heal_station" ? "max_hp (store)" : stat;
+      const base = "stats." + t + "." + stat;
+      const segs = knobs.stats[t][stat].map((s, i) => inp(base + "." + i + ".0", 3) + " " + inp(base + "." + i + ".1", 5) +
+        ' <button data-act="del-stat" data-path="' + base + '" data-i="' + i + '">&times;</button>').join(" | ");
+      h += "<tr><td>" + esc(t) + "</td><td>" + name + '</td><td class="l">' + segs + ' <button data-act="add-stat" data-path="' + base + '">+ segment</button></td></tr>';
+    }
+  }
+  h += "</table>";
+  if (HAS_DPS) h += "<p>dps model: travel_time " + inp("dps.travel_time", 3) + " s, splash_targets " + inp("dps.splash_targets", 3) + ", tower_share " + inp("dps.tower_share", 3) + "</p>";
+  $("#k-stats").innerHTML = h;
+}
+
+// ---------------------------------------------------------------- results
+function renderTargets(res, sres) {
+  const layout = {};
+  for (const t of ORDER) if (knobs.layout[t] > 0) layout[t] = knobs.layout[t];
+  const labels = targetLabels(knobs.thresholds);
+  let h = '<table><tr><th></th><th>Measure</th><th>Sheet</th><th></th><th>Proposed</th><th></th></tr>';
+  res.targets.forEach((r, i) => {
+    const s = sres.targets[i];
+    h += "<tr><td>" + r[0] + '</td><td class="l">' + esc(labels[r[0]]) + "</td><td>" + esc(fmtTarget(s[0], s[1])) + "</td>" + pf(s[2]) +
+      "<td>" + esc(fmtTarget(r[0], r[1])) + "</td>" + pf(r[2]) + "</tr>";
+  });
+  h += "</table>";
+  const g = res.target_gap;
+  if (g) {
+    h += "Target at wave " + V + ": " + fmtNum(knobs.target_gold) + " &middot; " + knobs.target_scenario + ": " + fmtNum(g.gold) + " (" + (g.ratio * 100).toFixed(1) + " %)";
+    if (g.gold > 0) h += ". To hit the target, income must scale by &times;" + (knobs.target_gold / g.gold).toFixed(3) + " (e.g. every wave_rewards gold_mult &times;" + (knobs.target_gold / g.gold).toFixed(3) + ")";
+  }
+  $("#bar").innerHTML = h;
+}
+
+function lineSeries(id, name, color, dashed, pts) { return { id: id, name: name, color: color, dashed: dashed, pts: pts }; }
+
+function buildCharts(res, sres) {
+  const lv = Array.from({ length: N }, (_, i) => i + 1), waves = Array.from({ length: V + 1 }, (_, i) => i);
+  const price = [], cumul = [], uni = [];
+  for (const t of ORDER) {
+    const c = "var(" + typeColor(t) + ")";
+    price.push(lineSeries("c1", t + " (sheet)", c, false, lv.map((l) => [l, data.sheet_costs[t][l - 1]])));
+    price.push(lineSeries("c1", t + " (proposed)", c, true, lv.map((l) => [l, res.costs[t][l - 1]])));
+    cumul.push(lineSeries("c2", t + " (sheet)", c, false, lv.map((l) => [l, sres.cum[t][l]])));
+    cumul.push(lineSeries("c2", t + " (proposed)", c, true, lv.map((l) => [l, res.cum[t][l]])));
+  }
+  const layout = {}, starters = {};
+  for (const t of ORDER) {
+    if (knobs.layout[t] > 0) layout[t] = knobs.layout[t];
+    if (knobs.starters[t] > 0) starters[t] = knobs.starters[t];
+  }
+  const inc = [], hInc = [];
+  for (const s of SCENARIOS) {
+    const c = "var(--c-" + s + ")";
+    inc.push(lineSeries("c3", s, c, false, waves.map((w) => [w, res.income[s][w]])));
+    uni.push(lineSeries("c4", s + " (sheet)", c, false, waves.map((w) => [w, sres.uniform[s][w]])));
+    uni.push(lineSeries("c4", s + " (proposed)", c, true, waves.map((w) => [w, res.uniform[s][w]])));
+    hInc.push({ y: res.income[s][V], label: s + " income at wave " + V + ": " + fmtNum(res.income[s][V]), color: c });
+  }
+  const tierLines = [T2, T3].map((l) => ({ y: layoutCost(l, res.cum, layout, starters), label: "layout at level " + l + " (proposed)", color: "var(--c-ref)" }));
+  const tg = knobs.target_gold ? { y: knobs.target_gold, label: "target " + fmtNum(knobs.target_gold), color: "var(--c-target)" } : null;
+  const charts = [
+    { id: "c1", svg: "#chart1", title: "Price per level", xlabel: "tower level", ylabel: "gold per level", xmin: 1, xmax: N, series: price, hlines: [], vlines: [T2, T3] },
+    { id: "c2", svg: "#chart2", title: "Cumulative cost by level", xlabel: "tower level", ylabel: "gold", xmin: 1, xmax: N, series: cumul, hlines: hInc.concat(tg ? [tg] : []), vlines: [T2, T3] },
+    { id: "c3", svg: "#chart3", title: "Total gold by wave", xlabel: "wave", ylabel: "gold", xmin: 0, xmax: V, series: inc, hlines: tierLines.concat(tg ? [Object.assign({ dotted: 1 }, tg)] : []),
+      vlines: [], points: tg ? [{ x: V, y: tg.y, label: tg.label, color: tg.color }] : [] },
+    { id: "c4", svg: "#chart4", title: "Uniform level of the layout by wave", xlabel: "wave", ylabel: "level", xmin: 0, xmax: V, series: uni,
+      hlines: [{ y: T2, label: "tier 2 (level " + T2 + ")", color: "var(--c-tier)" }, { y: T3, label: "tier 3 (level " + T3 + ")", color: "var(--c-tier)" }], vlines: [], fixedTop: N },
+  ];
+  if (HAS_DPS) {
+    const ws = Array.from({ length: V }, (_, i) => i + 1);
+    const sup = SCENARIOS.map((s) => lineSeries("c5", s + " supply", "var(--c-" + s + ")", false, ws.map((w) => [w, res.dps.supply[s][w - 1]])));
+    charts.push({ id: "c5", svg: "#chart5", title: "DPS supply vs demand", xlabel: "wave", ylabel: "damage per second", xmin: 1, xmax: V,
+      series: [lineSeries("c5", "demand", "var(--text)", false, ws.map((w) => [w, res.dps.demand[w - 1]]))].concat(sup), hlines: [], vlines: [] });
+    $("#dps-note").innerHTML = "Supply / demand at w10, w20, w30: " + SCENARIOS.map((s) => s + " " + [10, 20, 30].map((w) => {
+      const i = Math.min(w, V) - 1;
+      return res.dps.demand[i] > 0 ? (res.dps.supply[s][i] / res.dps.demand[i]).toFixed(2) : "-";
+    }).join(" / ")).join(", ");
+  }
+  return charts;
+}
+
+function drawChart(svg, spec) {
+  const W = 940, H = 430, L = 70, R = 250, T = 34, B = 50, pw = W - L - R, ph = H - T - B;
+  const hiddenKey = (s) => spec.id + "|" + s.name;
+  const shown = spec.series.filter((s) => !ui.hidden[hiddenKey(s)]);
+  let top = 0;
+  for (const s of shown) for (const p of s.pts) top = Math.max(top, p[1]);
+  for (const h of spec.hlines) top = Math.max(top, h.y);
+  for (const p of spec.points || []) top = Math.max(top, p.y);
+  top = spec.fixedTop || top * 1.05;
+  const step = niceStep(top), yTop = Math.max(Math.ceil(top / step) * step, step);
+  const sx = (x) => L + (x - spec.xmin) / (spec.xmax - spec.xmin) * pw, sy = (y) => T + ph - y / yTop * ph;
+  const dash = (s) => (s.dashed ? ' stroke-dasharray="6 4"' : "");
+  let o = '<text x="' + L + '" y="20" style="font-size:14px;font-weight:bold">' + esc(spec.title) + "</text>";
+  for (let y = 0; y <= yTop + 1e-9; y += step) {
+    o += '<line class="grid" x1="' + L + '" x2="' + (L + pw) + '" y1="' + sy(y).toFixed(1) + '" y2="' + sy(y).toFixed(1) + '"/>' +
+      '<text x="' + (L - 6) + '" y="' + (sy(y) + 4).toFixed(1) + '" text-anchor="end">' + fmtNum(y) + "</text>";
+  }
+  const xstep = Math.max(1, Math.round((spec.xmax - spec.xmin) / 12));
+  for (let x = spec.xmin; x <= spec.xmax; x += xstep) {
+    o += '<line class="axis" x1="' + sx(x).toFixed(1) + '" x2="' + sx(x).toFixed(1) + '" y1="' + (T + ph) + '" y2="' + (T + ph + 4) + '"/>' +
+      '<text x="' + sx(x).toFixed(1) + '" y="' + (T + ph + 17) + '" text-anchor="middle">' + x + "</text>";
+  }
+  for (const vx of spec.vlines) o += '<line class="grid" x1="' + sx(vx).toFixed(1) + '" x2="' + sx(vx).toFixed(1) + '" y1="' + T + '" y2="' + (T + ph) + '" stroke-dasharray="3 3"/>';
+  o += '<line class="axis" x1="' + L + '" x2="' + (L + pw) + '" y1="' + (T + ph) + '" y2="' + (T + ph) + '"/><line class="axis" x1="' + L + '" x2="' + L + '" y1="' + T + '" y2="' + (T + ph) + '"/>' +
+    '<text x="' + (L + pw / 2) + '" y="' + (H - 10) + '" text-anchor="middle">' + esc(spec.xlabel) + "</text>" +
+    '<text x="14" y="' + (T + ph / 2) + '" text-anchor="middle" transform="rotate(-90 14 ' + (T + ph / 2) + ')">' + esc(spec.ylabel) + "</text>";
+  for (const h of spec.hlines) {
+    o += '<line x1="' + (h.dotted ? sx(spec.xmin) : L) + '" x2="' + (L + pw) + '" y1="' + sy(h.y).toFixed(1) + '" y2="' + sy(h.y).toFixed(1) + '" style="stroke:' + h.color +
+      '" stroke-dasharray="' + (h.dotted ? "1 4" : "2 3") + '"/><text x="' + (L + pw - 4) + '" y="' + (sy(h.y) - 3).toFixed(1) + '" text-anchor="end" style="fill:' + h.color + '">' + esc(h.label) + "</text>";
+  }
+  for (const s of shown) o += '<polyline fill="none" stroke-width="2" style="stroke:' + s.color + '"' + dash(s) + ' points="' + s.pts.map((p) => sx(p[0]).toFixed(1) + "," + sy(p[1]).toFixed(1)).join(" ") + '"/>';
+  for (const p of spec.points || []) {
+    o += '<circle r="5" cx="' + sx(p.x).toFixed(1) + '" cy="' + sy(p.y).toFixed(1) + '" style="fill:' + p.color + '"/><text x="' + (sx(p.x) - 8).toFixed(1) + '" y="' + (sy(p.y) + 14).toFixed(1) + '" text-anchor="end" style="fill:' + p.color + '">' + esc(p.label) + "</text>";
+  }
+  let ly = T + 6;
+  for (const s of spec.series) {
+    o += '<g class="lg" data-key="' + esc(hiddenKey(s)) + '" opacity="' + (ui.hidden[hiddenKey(s)] ? 0.35 : 1) + '"><line x1="' + (L + pw + 16) + '" x2="' + (L + pw + 42) + '" y1="' + ly + '" y2="' + ly +
+      '" stroke-width="2" style="stroke:' + s.color + '"' + dash(s) + '/><text x="' + (L + pw + 48) + '" y="' + (ly + 4) + '">' + esc(s.name) + "</text></g>";
+    ly += 16;
+  }
+  svg.innerHTML = o + '<g class="hov"></g><rect class="hit" x="' + L + '" y="' + T + '" width="' + pw + '" height="' + ph + '" fill="transparent"/>';
+  svg.dataset.geo = [L, T, pw, ph, W].join(",");
+  svg.spec = spec;
+}
+
+function hover(svg, e) {
+  const spec = svg.spec, g = svg.querySelector(".hov");
+  if (!spec || !g) return;
+  const [L, T, pw, ph, W] = svg.dataset.geo.split(",").map(Number);
+  const rect = svg.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * W / rect.width;
+  if (px < L || px > L + pw) { g.innerHTML = ""; return; }
+  const x = Math.min(spec.xmax, Math.max(spec.xmin, Math.round(spec.xmin + (px - L) / pw * (spec.xmax - spec.xmin))));
+  const sx = L + (x - spec.xmin) / (spec.xmax - spec.xmin) * pw;
+  const rows = spec.series.filter((s) => !ui.hidden[spec.id + "|" + s.name]).map((s) => [s, s.pts[x - s.pts[0][0]]]).filter((r) => r[1]);
+  const lines = [(spec.xlabel === "wave" ? "wave " : "level ") + x].concat(rows.map((r) => r[0].name + ": " + fmtNum(Number(r[1][1].toFixed(2)))));
+  const bw = 8 + 6.4 * Math.max(...lines.map((s) => s.length)), bx = sx + 10 + bw > L + pw ? sx - 10 - bw : sx + 10;
+  g.innerHTML = '<line class="axis" x1="' + sx + '" x2="' + sx + '" y1="' + T + '" y2="' + (T + ph) + '"/><rect x="' + bx + '" y="' + (T + 4) + '" width="' + bw + '" height="' + (lines.length * 14 + 6) +
+    '" style="fill:var(--panel);stroke:var(--line)"/>' + lines.map((s, i) => '<text x="' + (bx + 4) + '" y="' + (T + 17 + i * 14) + '">' + esc(s) + "</text>").join("");
+}
+
+function detailsTable(id, title, head, rowsFn) {
+  const open = ui.open[id];
+  let h = '<details data-id="' + id + '"' + (open ? " open" : "") + "><summary>" + esc(title) + "</summary>";
+  if (open) h += "<table><tr><th>" + head.join("</th><th>") + "</th></tr>" + Array.from({ length: N }, (_, i) => "<tr><td>" + rowsFn(i + 1).join("</td><td>") + "</td></tr>").join("") + "</table>";
+  return h + "</details>";
+}
+
+function renderTables(res, sres) {
+  let h = "";
+  for (const t of ORDER) {
+    h += detailsTable("p-" + t, t, ["Level", "build_cost (sheet)", "build_cost (proposed)", "cumulative (sheet)", "cumulative (proposed)", "difference"], (L) => {
+      const s = sres.cum[t][L], p = res.cum[t][L];
+      return [L, fmtNum(data.sheet_costs[t][L - 1]), fmtNum(res.costs[t][L - 1]), fmtNum(s), fmtNum(p), (s > 0 ? ((p / s - 1) * 100).toFixed(1) : "0.0") + " %"];
+    });
+  }
+  $("#t-price").innerHTML = h;
+  if (!HAS_STATS) return;
+  h = "";
+  for (const t of ORDER) {
+    const name = t === "heal_station" ? "max_hp (store)" : "max_hp";
+    h += detailsTable("s-" + t, t, ["Level", name + " sheet", "new", "damage sheet", "new", "attack_range sheet", "new", "fire_rate sheet", "new", "dps of one tower", "dps per 100 gold"], (L) => {
+      const i = L - 1, row = [L];
+      for (const stat of STAT_KEYS) row.push(fmtNum(data.sheet_stats[t][stat][i]), fmtNum(res.stats[t][stat][i]));
+      const dps = res.stats[t].damage[i] * res.stats[t].fire_rate[i];
+      return row.concat([dps.toFixed(2), (dps / res.cum[t][L] * 100).toFixed(2)]);
+    });
+  }
+  $("#t-stats").innerHTML = h;
+}
+
+function tsvBlocks(res) {
+  const rows = data.tower_rows, col = data.columns;
+  const cell = (stat, r) => stat === "build_cost" ? res.costs[r[0]][r[1] - 1] : res.stats[r[0]][stat][r[1] - 1];
+  const text = (stats) => rows.map((r) => stats.map((s) => String(cell(s, r))).join("\t")).join("\n") + "\n";
+  const blocks = [{ title: "build_cost", range: tsvRanges(rows, col.build_cost), text: text(["build_cost"]) }];
+  if (!HAS_STATS) return blocks;
+  const cols = ["build_cost"].concat(STAT_KEYS);
+  for (const stat of STAT_KEYS) blocks.push({ title: stat, range: tsvRanges(rows, col[stat]), text: text([stat]) });
+  const codes = cols.map((c) => col[c].charCodeAt(0));
+  const adjacent = cols.every((c) => col[c].length === 1) && codes.every((c, i) => i === 0 || c === codes[i - 1] + 1);
+  if (adjacent) blocks.push({ title: "build_cost, max_hp, damage, attack_range, fire_rate", range: tsvRanges(rows, col.build_cost, col.fire_rate), text: text(cols) });
+  else blocks.push({ title: "all five columns", range: "", text: "", note: "hidden: the columns of the sheet are not next to each other in this order" });
+  return blocks;
+}
+
+function renderExport(res) {
+  $("#export").innerHTML = tsvBlocks(res).map((b, i) => "<h3>" + esc(b.title) + "</h3>" + (b.note ? "<p class='muted'>" + esc(b.note) + "</p>" :
+    "<p>Paste into " + esc(b.range) + '</p><textarea readonly id="tsv' + i + '">' + esc(b.text) + '</textarea><button data-act="copy-tsv" data-i="' + i + '">Copy</button> ' +
+    '<button data-act="dl-tsv" data-i="' + i + '">Download .tsv</button>')).join("");
+}
+
+function update() {
+  const res = compute(data, knobs), sres = compute(data, sheetKnobs(knobs));
+  last = { res: res, sres: sres, blocks: tsvBlocks(res) };
+  renderTargets(res, sres);
+  lastCharts = buildCharts(res, sres);
+  lastCharts.forEach((c) => drawChart($(c.svg), c));
+  syncPops();
+  renderTables(res, sres);
+  renderExport(res);
+}
+
+function popTheme(w) { // the pop-out copies the theme of this page
+  if (ui.theme === "auto") w.document.documentElement.removeAttribute("data-theme");
+  else w.document.documentElement.dataset.theme = ui.theme;
+}
+
+function toggleLegend(lg) { ui.hidden[lg.dataset.key] = !ui.hidden[lg.dataset.key]; schedule(); }
+
+function syncPops() { // redraws every open pop-out; a closed one is forgotten
+  for (const id of Object.keys(pops)) {
+    try {
+      const w = pops[id], svg = w.closed ? null : w.document.getElementById("pop"), c = lastCharts.find((x) => x.id === id);
+      if (!svg) delete pops[id];
+      else if (c) drawChart(svg, c);
+    } catch (e) { delete pops[id]; }
+  }
+}
+
+function openPop(i) { // runs inside the click handler so that pop-up blockers allow it
+  const id = "c" + i, msg = $("#popmsg" + i), c = lastCharts.find((x) => x.id === id);
+  msg.textContent = "";
+  if (!c) return;
+  if (pops[id] && !pops[id].closed) { pops[id].focus(); return; }
+  const w = window.open("", "ew_balance_" + id, "width=1000,height=480");
+  if (!w) { msg.textContent = "Pop-up blocked: allow pop-ups for this page and click again."; return; }
+  const doc = w.document;
+  doc.head.innerHTML = '<meta charset="utf-8"><title>' + esc(c.title) + "</title><style>" + document.querySelector("style").textContent +
+    "body{max-width:none;padding:0}svg{width:100%;max-height:100vh;border:0;margin:0}</style>";
+  doc.body.innerHTML = '<svg id="pop" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430"></svg>';
+  const svg = doc.getElementById("pop");
+  svg.addEventListener("mousemove", (e) => hover(svg, e));
+  svg.addEventListener("mouseleave", () => { const g = svg.querySelector(".hov"); if (g) g.innerHTML = ""; });
+  svg.addEventListener("click", (e) => { const lg = e.target.closest(".lg"); if (lg) toggleLegend(lg); });
+  pops[id] = w;
+  popTheme(w);
+  drawChart(svg, c);
+  w.focus();
+}
+
+function schedule() { // one redraw per frame; the timer covers a tab whose frames are paused
+  if (queued) return;
+  queued = true;
+  const run = () => { if (!queued) return; queued = false; update(); saveKnobs(); };
+  requestAnimationFrame(run);
+  setTimeout(run, 120);
+}
+
+// ---------------------------------------------------------------- storage, link, command, copy
+function saveKnobs() {
+  try { localStorage.setItem(STORE, JSON.stringify({ fingerprint: data.fingerprint, knobs: knobs })); } catch (e) { console.warn("knobs not saved", e); }
+}
+
+function readStore() {
+  try { return JSON.parse(localStorage.getItem(STORE)); } catch (e) { console.warn("saved knobs not read", e); return null; }
+}
+
+function merge(base, extra) { // keeps the shape of base, takes the values of extra where the types agree
+  if (base === null) return extra === undefined ? null : extra;
+  if (Array.isArray(base)) return Array.isArray(extra) ? clone(extra) : clone(base);
+  if (typeof base === "object") {
+    const out = {};
+    for (const key of Object.keys(base)) out[key] = merge(base[key], extra && typeof extra === "object" ? extra[key] : undefined);
+    return out;
+  }
+  return typeof extra === typeof base ? extra : base;
+}
+
+function cleanKnobs(value, defs, parts) { // same rules as typed input; a bad field falls back to its default
+  const path = parts.join(".");
+  if (typeof defs === "number" || defs === null) {
+    if (value === null) return validateRaw(path, "", false).ok ? null : defs;
+    return typeof value === "number" && validateRaw(path, String(value), false).ok ? value : defs;
+  }
+  if (typeof defs === "string") {
+    if (path.endsWith(".mode")) return value === "curve" || value === "sheet" ? value : defs;
+    if (path.endsWith(".type")) return ORDER.includes(value) ? value : defs; // a tower type that is not in the sheet
+    return value;
+  }
+  if (Array.isArray(defs)) {
+    if (!Array.isArray(value)) return clone(defs);
+    if (path.endsWith("growth_from") || path.startsWith("stats.")) { // list of [level, factor or scale]; a bad or repeated segment is dropped
+      const seen = new Set();
+      return value.filter((seg, i) => {
+        const ok = Array.isArray(seg) && seg.length === 2 && [0, 1].every((j) => typeof seg[j] === "number" && validateRaw(path + "." + i + "." + j, String(seg[j]), false).ok);
+        if (!ok || seen.has(seg[0])) return false;
+        seen.add(seg[0]);
+        return true;
+      }).map((seg) => seg.slice());
+    }
+    return value.length === defs.length ? defs.map((d, i) => cleanKnobs(value[i], d, parts.concat(String(i)))) : clone(defs);
+  }
+  if (defs && typeof defs === "object") {
+    const out = {};
+    for (const key of Object.keys(defs)) out[key] = cleanKnobs(value && typeof value === "object" ? value[key] : undefined, defs[key], parts.concat(key));
+    return out;
+  }
+  return typeof value === typeof defs ? value : defs;
+}
+
+function upgradeStats(loaded) { // an old {scale, from} pair becomes one segment (nothing when the scale is 1)
+  const st = loaded && typeof loaded === "object" ? loaded.stats : null;
+  if (!st || typeof st !== "object") return loaded;
+  const out = clone(st);
+  for (const t of Object.keys(out)) {
+    for (const stat of Object.keys(out[t] || {})) {
+      const v = out[t][stat];
+      if (v && typeof v === "object" && !Array.isArray(v)) out[t][stat] = v.scale === 1 ? [] : [[v.from, v.scale]];
+    }
+  }
+  return Object.assign({}, loaded, { stats: out });
+}
+
+function adopt(loaded) {
+  loaded = upgradeStats(loaded);
+  try {
+    const merged = cleanKnobs(merge(data.defaults, loaded), data.defaults, []);
+    for (const t of Object.keys(merged.layout)) {
+      if (merged.layout[t] < merged.starters[t]) { merged.layout[t] = data.defaults.layout[t]; merged.starters[t] = data.defaults.starters[t]; }
+    }
+    compute(data, merged);
+    knobs = merged;
+    return true;
+  } catch (e) { console.warn("knobs rejected", e); return false; }
+}
+
+function initKnobs() {
+  const m = location.hash.match(/^#k=([\w-]+)/);
+  if (m) {
+    try { adopt(JSON.parse(atob(m[1].replace(/-/g, "+").replace(/_/g, "/")))); } catch (e) { console.warn("bad link", e); }
+    return;
+  }
+  const stored = readStore();
+  if (!stored || !stored.knobs) return;
+  if (stored.fingerprint === data.fingerprint) adopt(stored.knobs);
+  else {
+    pendingOld = stored;
+    $("#banner").innerHTML = 'Saved knobs come from a different table. <button data-act="load-old">Load anyway</button> <button data-act="discard-old">Discard</button>';
+  }
+}
+
+function cliCommand() {
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const curve = ORDER.filter((t) => knobs.price[t].mode === "curve"), parts = [], notes = [];
+  const sheetTypes = ORDER.filter((t) => knobs.price[t].mode === "sheet");
+  if (sheetTypes.length) notes.push("types priced as in the sheet: " + sheetTypes.join(", "));
+  const commonest = (values) => { // the value shared by most curve types
+    const counts = {};
+    for (const x of values) counts[x] = (counts[x] || 0) + 1;
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+  };
+  const growth = Number(commonest(curve.map((t) => knobs.price[t].growth)) || 1);
+  const globalList = commonest(curve.map((t) => JSON.stringify(knobs.price[t].growth_from))) || "[]";
+  parts.push("--growth " + growth, "--round-to " + knobs.round_to);
+  for (const s of JSON.parse(globalList)) parts.push("--growth-from " + s[0] + ":" + s[1]);
+  for (const t of curve) {
+    const p = knobs.price[t];
+    if (p.base !== data.sheet_costs[t][0]) parts.push("--set " + t + ".base=" + p.base);
+    if (p.growth !== growth) parts.push("--set " + t + ".growth=" + p.growth);
+    if (JSON.stringify(p.growth_from) === globalList) continue;
+    if (p.growth_from.length === 0) notes.push(t + " has no growth_from while other types do");
+    for (const s of p.growth_from) parts.push("--set " + t + ".growth_from=" + s[0] + ":" + s[1]);
+  }
+  const pairs = (m) => ORDER.map((t) => t + "=" + m[t]).join(",");
+  parts.push("--layout " + pairs(knobs.layout), "--starters " + pairs(knobs.starters), "--avg-cmd-ratio " + knobs.scenarios.average.cmd_ratio,
+    "--strong-cmd-ratio " + knobs.scenarios.strong.cmd_ratio, "--strong-gold-pct " + knobs.scenarios.strong.gold_pct);
+  if (knobs.target_gold) parts.push("--target-gold " + knobs.target_gold);
+  const rest = { scenarios: clone(knobs.scenarios), thresholds: knobs.thresholds, stats: knobs.stats, dps: knobs.dps, target_scenario: knobs.target_scenario };
+  const base = { scenarios: clone(data.defaults.scenarios), thresholds: data.defaults.thresholds, stats: data.defaults.stats, dps: data.defaults.dps, target_scenario: data.defaults.target_scenario };
+  for (const x of [rest, base]) { delete x.scenarios.average.cmd_ratio; delete x.scenarios.strong.cmd_ratio; delete x.scenarios.strong.gold_pct; }
+  for (const key of Object.keys(rest)) if (!same(rest[key], base[key])) notes.push(key + " (only on the page)");
+  return "python -I tools/balance_simulator/simulate.py " + parts.join(" ") + (notes.length ? "\n# not covered by flags: " + notes.join("; ") : "");
+}
+
+function flash(msg) {
+  $("#status").textContent = msg;
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => { $("#status").textContent = ""; }, 2500);
+}
+
+async function copyText(text, ta) {
+  try { await navigator.clipboard.writeText(text); flash("Copied"); return; } catch (e) { /* fall back below */ }
+  let box = ta;
+  if (!box) { box = document.createElement("textarea"); box.value = text; document.body.appendChild(box); }
+  box.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  if (!ta) box.remove();
+  flash(ok ? "Copied" : "Press Ctrl+C");
+}
+
+function setTheme(theme) {
+  ui.theme = theme;
+  if (theme === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.dataset.theme = theme;
+  $('[data-act="theme"]').textContent = "Theme: " + theme;
+  for (const id of Object.keys(pops)) { try { popTheme(pops[id]); } catch (e) { delete pops[id]; } }
+  try { localStorage.setItem(STORE + "_theme", theme); } catch (e) { console.warn("theme not saved", e); }
+}
+
+const ACTIONS = {
+  "reset-cli": () => { knobs = clone(data.defaults); renderControls(); schedule(); },
+  "reset-sheet": () => { knobs = sheetKnobs(data.defaults); renderControls(); schedule(); },
+  "copy-cli": () => copyText(cliCommand()),
+  "copy-link": () => copyText(location.href.split("#")[0] + "#k=" + btoa(JSON.stringify(knobs)).replace(/\+/g, "-").replace(/\//g, "_")),
+  "pop": (b) => openPop(Number(b.dataset.i)),
+  "theme": () => setTheme({ auto: "light", light: "dark", dark: "auto" }[ui.theme]),
+  "apply-growth": () => {
+    const first = ORDER.find((t) => knobs.price[t].mode === "curve");
+    if (first) for (const t of ORDER) knobs.price[t].growth = knobs.price[first].growth;
+    renderControls(); schedule();
+  },
+  "add-seg": (b) => {
+    const p = knobs.price[b.dataset.t];
+    let level = 25;
+    while (level <= N && p.growth_from.some((s) => s[0] === level)) level++;
+    if (level > N) return;
+    p.growth_from.push([level, p.growth]);
+    renderControls(); schedule();
+  },
+  "del-seg": (b) => { knobs.price[b.dataset.t].growth_from.splice(Number(b.dataset.i), 1); renderControls(); schedule(); },
+  "add-stat": (b) => {
+    const segs = getPath(knobs, b.dataset.path.split("."));
+    let level = 10;
+    while (level <= N && segs.some((s) => s[0] === level)) level++;
+    if (level > N) return;
+    segs.push([level, 1]);
+    renderControls(); schedule();
+  },
+  "del-stat": (b) => { getPath(knobs, b.dataset.path.split(".")).splice(Number(b.dataset.i), 1); renderControls(); schedule(); },
+  "copy-tsv": (b) => copyText(last.blocks[b.dataset.i].text, $("#tsv" + b.dataset.i)),
+  "dl-tsv": (b) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([last.blocks[b.dataset.i].text], { type: "text/tab-separated-values" }));
+    a.download = last.blocks[b.dataset.i].title.split(",")[0].replace(/\W/g, "_") + ".tsv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  },
+  "load-old": () => { if (adopt(pendingOld.knobs)) { $("#banner").innerHTML = ""; renderControls(); schedule(); } },
+  "discard-old": () => { try { localStorage.removeItem(STORE); } catch (e) { console.warn(e); } $("#banner").innerHTML = ""; },
+};
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]");
+  if (b && ACTIONS[b.dataset.act]) { ACTIONS[b.dataset.act](b); return; }
+  const lg = e.target.closest(".lg");
+  if (lg) toggleLegend(lg);
+});
+
+document.addEventListener("input", (e) => {
+  const el = e.target, path = el.dataset ? el.dataset.path : null;
+  if (!path) return;
+  const r = validateField(path, el);
+  el.classList.toggle("bad", !r.ok);
+  el.title = r.ok ? "" : r.msg;
+  if (!r.ok) return;
+  setPath(knobs, path.split("."), r.value);
+  if (path.endsWith(".mode")) renderControls();
+  schedule();
+});
+
+document.addEventListener("change", (e) => { // a field left in error goes back to the value that is in use
+  const el = e.target, path = el.dataset ? el.dataset.path : null;
+  if (!path || !el.classList.contains("bad")) return;
+  const v = getPath(knobs, path.split("."));
+  el.value = v === null ? "" : v;
+  el.classList.remove("bad");
+  el.title = "";
+});
+
+document.addEventListener("toggle", (e) => { // a details created open fires this too: only a real change redraws
+  const id = e.target.dataset ? e.target.dataset.id : null;
+  if (!id || Boolean(ui.open[id]) === e.target.open) return;
+  ui.open[id] = e.target.open;
+  schedule();
+}, true);
+
+for (let i = 1; i <= 5; i++) {
+  const svg = $("#chart" + i);
+  svg.insertAdjacentHTML("beforebegin", '<div class="row" id="poprow' + i + '"><button data-act="pop" data-i="' + i + '">Pop out &#8599;</button><span class="muted" id="popmsg' + i + '"></span></div>');
+  svg.addEventListener("mousemove", (e) => hover(svg, e));
+  svg.addEventListener("mouseleave", () => { const g = svg.querySelector(".hov"); if (g) g.innerHTML = ""; });
+}
+$("#chart5").style.display = HAS_DPS ? "" : "none";
+$("#poprow5").style.display = HAS_DPS ? "" : "none";
+$("#meta").innerHTML = "Generated " + esc(data.generated) + "<br>Table: " + esc(data.xlsx) + "<br>Game config: " + esc(data.game_config) + "<br>Fingerprint: " + esc(data.fingerprint);
+try {
+  const diff = engineDiff();
+  initKnobs();
+  renderControls();
+  try { setTheme(localStorage.getItem(STORE + "_theme") || "auto"); } catch (e) { setTheme("auto"); }
+  update();
+  publishCheck(diff);
+} catch (e) {
+  console.error(e);
+  publishCheck("page error: " + (e && e.message ? e.message : e));
+}
+</script>
+</body>
+</html>
