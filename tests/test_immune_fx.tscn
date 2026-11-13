@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c8644nxyof15j"]
+
+[ext_resource type="Script" uid="uid://ddcywkfy66dqn" path="res://tests/test_immune_fx.gd" id="1_immunefx"]
+
+[node name="TestImmuneFx" type="Node3D" unique_id=1580264937]
+script = ExtResource("1_immunefx")
