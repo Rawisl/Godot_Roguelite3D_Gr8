@@ -903,7 +903,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: balance/balance.xlsx (sheet towers)
 - ID SRS: 3.6.3, 3.9
 - Cần xong trước: W8B-MH1
-- Ghi chú: giá, max_hp và damage 36 cấp đã cân bằng bằng công cụ tools/balance_simulator (đọc balance.xlsx, xuất trang HTML để chỉnh và khối TSV để dán vào sheet towers). Nghiệm thu: nâng bố cục 6 công trình lên cấp 25 tốn 1.38 lần gold kịch bản mạnh tới wave 30. Kho Trạm hồi lực giữ nguyên số cũ
+- Ghi chú: giá, max_hp (với Trạm hồi lực max_hp là kho) và damage 36 cấp đã cân bằng bằng công cụ tools/balance_simulator (đọc balance.xlsx, xuất trang HTML để chỉnh và khối TSV để dán vào sheet towers). Nghiệm thu: nâng bố cục 6 công trình lên cấp 25 tốn 1.38 lần gold kịch bản mạnh tới wave 30
 
 ##### W10-MH9
 - Người: Mạnh
