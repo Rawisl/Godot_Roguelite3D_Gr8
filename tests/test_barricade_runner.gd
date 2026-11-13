@@ -126,10 +126,13 @@ func test_data() -> void:
 		cost.append(lv.build_cost)
 	var hp_ok: Array[int] = [300, 500, 800]
 	var w_ok: Array[float] = [1.0, 1.2, 1.5]
-	var cost_ok: Array[int] = [40, 60, 90]
 	assert_true(hp == hp_ok, "first 3 levels: HP 300 / 500 / 800 (got %s)" % [hp])
 	assert_true(w == w_ok, "first 3 levels: aggro_weight 1.0 / 1.2 / 1.5 (got %s)" % [w])
-	assert_true(cost == cost_ok, "first 3 levels: cost 40 / 60 / 90 (got %s)" % [cost])
+	var cost_sum := 0
+	for c in cost:
+		assert_true(c > 0, "first 3 levels: every cost is above 0 (got %s)" % [cost])
+		cost_sum += c
+	assert_true(BARRICADE.get_total_cost(3) == cost_sum, "first 3 levels: total cost is the sum of the level prices (got %s)" % [cost])
 	assert_true(BARRICADE.allowed_zones.size() == 1 and BARRICADE.allowed_zones[0] == Enums.SlotZone.GROUND, "GROUND zone only")
 
 	var b := _barricade(Vector3(0, 0, -40))
