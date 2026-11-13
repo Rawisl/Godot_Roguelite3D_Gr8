@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://csfm2eayy8mcu"]
+
+[ext_resource type="Script" uid="uid://uk1c675ytucn" path="res://ui/screens/sync_status.gd" id="1_status"]
+[ext_resource type="Script" uid="uid://v2okx2416sjb" path="res://ui/screens/sync_glyph.gd" id="2_glyph"]
+
+[node name="SyncStatus" type="HBoxContainer" unique_id=1739300097]
+mouse_filter = 1
+theme_override_constants/separation = 10
+script = ExtResource("1_status")
+
+[node name="Glyph" type="Control" parent="." unique_id=1739300098]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("2_glyph")
+
+[node name="StateLabel" type="Label" parent="." unique_id=1739300099]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.949, 0.9373, 0.902, 1)
+theme_override_font_sizes/font_size = 22

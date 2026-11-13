@@ -399,8 +399,8 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: MỚI
 - Trạng thái: Xong
-- Việc: WeaponData và trạng thái vũ khí: Resource WeaponData (range_mult, effect_id, tham số), owned_weapons và equipped_weapon trong RunState (kiếm gốc mặc định), tín hiệu weapon_equipped, đổi vũ khí chỉ ở PREP
-- Nghiệm thu: Đầu run chỉ có kiếm gốc; trao thử vũ khí bằng debug thì equip được ở PREP, bị từ chối ở COMBAT và HAZARD_TRIAL
+- Việc: WeaponData và trạng thái vũ khí: Resource WeaponData (range_mult, effect_id, tham số), owned_weapons và equipped_weapon trong RunState (kiếm thường mặc định), tín hiệu weapon_equipped, đổi vũ khí chỉ ở PREP
+- Nghiệm thu: Đầu run chỉ có kiếm thường; trao thử vũ khí bằng debug thì equip được ở PREP, bị từ chối ở COMBAT và HAZARD_TRIAL
 - Tệp liên quan: mới: common/weapon_data.gd, data/weapons/; entities/commander/commander.gd; common/run_skill_state.gd (nơi lưu trạng thái run)
 - ID SRS: WPN-01, WPN-02, WPN-03, EVB-43
 - Cần xong trước: W8B-KT1
@@ -520,7 +520,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH4b
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nối REWARD_PICK end-to-end với màn của Khang (lượt chọn sinh tuần tự: lượt sau chỉ sinh sau khi lượt trước đã phát reward_picked)
 - Nghiệm thu: Nhặt được 3 skill chủ động từ XP thật
 - ID SRS: RWP-01
@@ -529,7 +529,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH5
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 10 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: GRID-07 chặn kín đường: hàm thuần trên lưới GridData (ô OCCUPIED, RUINED và ô định xây là vật cản; đường rộng >= 3.2 m; kiểm cả đường tới cổng Fortress và tới boss_melee_point), BuildService từ chối BLOCKS_PATH không trừ gold, kiểm lại lúc xác nhận
 - Nghiệm thu: Bố cục thử mất đường tới cổng hoặc tới boss_melee_point thì bị từ chối, gold không đổi; xây lại cùng chỗ không bị kiểm; ô khác vẫn xây được
 - Tệp liên quan: levels/corridor/grid_data.gd, systems/build/build_service.gd (_do_build), systems/build/slot_manager.gd
@@ -539,7 +539,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-MH6
 - Người: Mạnh
 - Tuần: 9 | Giờ ước tính: 4 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sửa các test hỏng do bỏ sửa Fortress bằng gold, còn 3 slot WALL, trần 3 công trình grid: test_build_flow, test_fortress_repair_runner, test_fortress_runner, test_fortress_panel, test_build_service_runner, test_perf_slice, test_slot_zone_runner, test_targeting_runner
 - Nghiệm thu: Các runner liệt kê chạy lại đạt; test sửa Fortress đổi sang Mithril; test slot dùng W1-W3
 - Tệp liên quan: tests/ (liệt kê trong mô tả task)
@@ -663,7 +663,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG1
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Bị động và thẻ stat qua StatBlock: Sharpness, Armored, Lifesteal, Trạm hồi lực (SKL-26); thẻ stat Thể lực, Tinh thông (SKL-13..15); cắt Lightstep, Focus, Bền thành
 - Nghiệm thu: Sharpness L3 +24%; Armored L3 15%; Lifesteal L3 1.5%; SKL-26 hồi 15, 20, 25 HP/s ở level 1, 2, 3 qua StatBlock
 - Cần xong trước: W9-MH4b, W9-NG3
@@ -671,7 +671,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG2
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kiểm skill với boss (kháng, cờ hit_by_commander)
 - Nghiệm thu: Firebomb 100% lên Bulwark pha 1
 - Cần xong trước: W10-NG1
@@ -712,6 +712,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: tools/balance/*.py; data/weapons/, data/waves/wave_script.tres, data/waves/wave_rewards.tres
 - ID SRS: BAL-02, BAL-04, BAL-06, BL2
 - Cần xong trước: W9-NG7, W10-KT7, W10-MH9
+- Ghi chú: data/waves/wave_rewards.tres đang viết tay theo sheet wave_rewards (W10-MH7). Khi sinh, giữ tên và kiểu field của common/wave_reward_table.gd: gold_mult, xp_mult (PackedFloat32Array), mithril_reward (PackedInt32Array), phần tử thứ w − 1 là wave w, đủ victory_wave phần tử
 
 ##### W10-NG9
 - Người: Ngọc
@@ -873,6 +874,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Nghiệm thu: Diệt sau Cuồng nộ: boss_gold và prestige x 0.5; +1 lượt tối đa 3
 - ID SRS: BRW-01
 - Cần xong trước: W9-MH1, W10-MH7
+- Ghi chú: từ W10-MH7 boss phát 0 gold qua enemy_died; uy tín boss vẫn đi qua enemy_died (TODO(kiezroth) ở entities/enemy/enemy.gd) tới khi MH3 chuyển sang SUMMARY
 
 ##### W10-MH4
 - Người: Mạnh
@@ -885,7 +887,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH7
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Resource WaveRewardTable và sheet wave_rewards: gold_mult(w), xp_mult(w), mithril_reward(w); nối công thức gold/XP/boss gold theo bảng (kill_gold = gold_reward x gold_mult x hệ số chỉ huy một lần; XP-01)
 - Nghiệm thu: Gold wave 3 trùng ví dụ HZ12; wave 31 trở đi dùng 1 + 0.04(w-1); mithril_reward wave 31+ lấy giá trị wave 30; enemy.gd phát kill_gold đã gồm hệ số chỉ huy (EVB-05) và WaveManager._on_enemy_died bỏ nhân frontline_gold_mult lần nữa, tránh nhân đôi
 - Tệp liên quan: mới: common/wave_reward_table.gd; systems/wave/wave_manager.gd (_on_enemy_died ~502, _end_combat_to_summary ~518), entities/enemy/enemy.gd:1277 (enemy_died.emit), systems/xp/xp_tracker.gd
@@ -927,7 +929,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH1
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: HUD skill bar 3+3 ô (HUD-16), thanh XP và lượt chờ (HUD-15), biểu tượng Aura (HUD-17), XP-05; thêm ô vũ khí (HUD-21) cạnh thanh kỹ năng
 - Nghiệm thu: Quạt cooldown có số; ô khóa ở Commander; ô vũ khí chỉ đọc ngoài PREP
 - ID SRS: HUD-15..17, HUD-21
@@ -936,7 +938,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH2
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nút nâng cấp xám 'Cần Chỉ huy cấp N' (UPG-06) áp ở cấp 13 và 25; panel Tower hiển thị cấp thật và bậc model; Trạm hồi lực có nút Nâng cấp và 'MAX'
 - Nghiệm thu: Tooltip đúng cấp yêu cầu; trụ có sẵn hiện nút Bán xám 'Bán được từ wave 3'
 - Tệp liên quan: ui/panels/tower_panel.gd, ui/panels/heal_station_panel.gd
@@ -946,7 +948,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH3
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: MetaShop SCR-04 (4 mục, SHP-05..09 UI)
 - Nghiệm thu: Shop chỉ hiện 4 mục MVP
 - Cần xong trước: W10-MH4
@@ -954,7 +956,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH4
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Toast cảnh báo tối thiểu ALR-13..15, ALR-17, ALR-18; thêm ALR-19 (nhận vũ khí) và ALR-20 (kết thúc Hazard Trial)
 - Nghiệm thu: Tối đa 1 banner và 3 toast
 - Cần xong trước: W9-MH4b
@@ -962,7 +964,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH5
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Màn Leaderboard SCR-19: top 50, dòng hạng của tôi, Làm mới, Thử lại khi lỗi, nút Đăng nhập cho khách (LBD-08), dùng dữ liệu giả trước
 - Nghiệm thu: Hiện đủ top 50 và dòng hạng riêng khi ngoài top; lỗi mạng có Thử lại
 - Cần xong trước: W7-KM5
@@ -970,7 +972,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH6
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Mục Tài khoản trong Settings và biểu tượng trạng thái đồng bộ ở MainMenu (GUEST, SYNCED, SYNCING, OFFLINE, ERROR)
 - Nghiệm thu: Có chữ kèm biểu tượng, đúng 5 trạng thái
 - Cần xong trước: W8-MH2
@@ -978,7 +980,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH7
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial: input hazard_enter (phím E, khác ngữ cảnh với heal_channel) và bấm chuột vào Tháp; HUD-22 (Rời phòng, số quái còn, gold/XP tạm tính, HP bản sao), HUD-23 (chỉ báo Tháp và tooltip loại quái), đóng panel và hộp thoại khi vào, toast kết quả
 - Nghiệm thu: HZ1, HZ7 đạt: Tháp xám kèm lý do ở Commander, Pause, đã dùng; bấm Rời phòng một lần không cần xác nhận; nút tua x1/x2/x3 hoạt động trong phòng; Pause trong phòng thì panel chỉ đọc (PNL-12); phím E không xung đột với hồi máu (E chỉ vào Tháp ở PREP)
 - Tệp liên quan: project.godot (InputMap hazard_enter), ui/hud/*, ui/panels/panel_host.gd, ui/hud/parts/speed_buttons.gd
@@ -988,7 +990,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH8
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: UI chặn kín đường: ghost preview màu cấm, tooltip 'Sẽ chặn kín đường đi', mục xây xám lý do BLOCKS_PATH; chuỗi 'Đã đủ 3 công trình trên mặt đất'
 - Nghiệm thu: Mục xây xám đúng lý do ở bố cục thử
 - Tệp liên quan: ui/panels/build_panel.gd, data/locale/strings.csv
@@ -998,7 +1000,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KH9
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Panel vũ khí PNL-15 và ô vũ khí HUD-21 hoàn chỉnh: danh sách owned_weapons, vũ khí chưa có hiện khóa 'Rơi từ boss', chọn là trang bị ngay (chỉ PREP)
 - Nghiệm thu: WP2 đạt: đổi tức thì ở PREP, chỉ đọc ở state khác
 - Tệp liên quan: mới: ui/panels/weapon_panel.*; ui/hud/parts/ (ô vũ khí)

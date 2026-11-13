@@ -5,6 +5,7 @@ extends CanvasLayer
 # TODO(WhoKeng): on save_failed(CORRUPT) show the notice with a "New save" button that calls SaveManager.start_new_save(); on save_failed(WRITE_ERROR) add a Retry button that calls SaveManager.save() again.
 
 signal screen_changed(scene_path: String)
+signal dialog_context_changed
 
 const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
 
@@ -19,8 +20,11 @@ var _pending_notices: Array[Control] = []
 @onready var _dialog_holder: Control = %DialogHolder
 
 func _ready() -> void:
+	_dialog_holder.child_entered_tree.connect(func(_node: Node) -> void:
+		dialog_context_changed.emit())
 	# Deferred: the closing dialog is still a child while it exits the tree.
 	_dialog_holder.child_exiting_tree.connect(func(_node: Node) -> void:
+		dialog_context_changed.emit()
 		_open_next_notice.call_deferred())
 	EventBus.save_failed.connect(_on_save_failed)
 	EventBus.run_recovered.connect(_on_run_recovered)

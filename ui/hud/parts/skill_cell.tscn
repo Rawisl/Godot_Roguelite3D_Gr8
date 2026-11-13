@@ -1,0 +1,206 @@
+[gd_scene format=3 uid="uid://oyeg156sm0rf"]
+
+[ext_resource type="Script" uid="uid://c52vv1tt6w24v" path="res://ui/hud/parts/skill_cell.gd" id="1_cell"]
+[ext_resource type="Script" uid="uid://cnwq4xwphuih7" path="res://ui/hud/parts/cooldown_sweep.gd" id="2_sweep"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dotfull"]
+bg_color = Color(0.949, 0.9373, 0.902, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dotempty"]
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.949, 0.9373, 0.902, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frame"]
+bg_color = Color(0.1098, 0.1216, 0.149, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lock"]
+content_margin_left = 4.0
+content_margin_top = 1.0
+content_margin_right = 4.0
+content_margin_bottom = 1.0
+bg_color = Color(0.1098, 0.1216, 0.149, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.6627, 0.6549, 0.6235, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="SkillCell" type="Control" unique_id=1739204601]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 1
+script = ExtResource("1_cell")
+dot_full = SubResource("StyleBoxFlat_dotfull")
+dot_empty = SubResource("StyleBoxFlat_dotempty")
+
+[node name="Frame" type="Panel" parent="." unique_id=1739204602]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_frame")
+
+[node name="Body" type="Control" parent="." unique_id=1739204603]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Body" unique_id=1739204604]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 9.0
+offset_top = 7.0
+offset_right = -9.0
+offset_bottom = -11.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Sweep" type="Control" parent="Body" unique_id=1739204605]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_sweep")
+ring_color = Color(0.949, 0.9373, 0.902, 1)
+track_color = Color(0.1098, 0.1216, 0.149, 0.85)
+ring_width = 5.0
+
+[node name="CooldownLabel" type="Label" parent="Body" unique_id=1739204606]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HudLabel"
+theme_override_colors/font_color = Color(0.949, 0.9373, 0.902, 1)
+theme_override_colors/font_outline_color = Color(0.1098, 0.1216, 0.149, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Dots" type="HBoxContainer" parent="Body" unique_id=1739204607]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -18.0
+offset_top = -12.0
+offset_right = 18.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Dot1" type="Panel" parent="Body/Dots" unique_id=1739204608]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Dot2" type="Panel" parent="Body/Dots" unique_id=1739204609]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Dot3" type="Panel" parent="Body/Dots" unique_id=1739204610]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="KeyCap" type="PanelContainer" parent="." unique_id=1739204611]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 16.0
+offset_bottom = 16.0
+mouse_filter = 2
+theme_type_variation = &"Keycap"
+
+[node name="KeyLabel" type="Label" parent="KeyCap" unique_id=1739204612]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"KeycapLabel"
+theme_override_font_sizes/font_size = 15
+
+[node name="LockTag" type="PanelContainer" parent="." unique_id=1739204613]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -22.0
+offset_top = -11.0
+offset_right = 22.0
+offset_bottom = 11.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_lock")
+
+[node name="LockLabel" type="Label" parent="LockTag" unique_id=1739204614]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1

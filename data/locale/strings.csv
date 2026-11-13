@@ -56,7 +56,7 @@ panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {h
 tower.arrow,Tháp cung
 tower.cannon,Tháp pháo
 tower.barricade,Rào chắn
-tower.heal_station,Trạm hồi phục
+tower.heal_station,Trạm hồi lực
 panel.tower.level,Cấp {level}
 panel.tower.hp,Máu {value}/{max}
 panel.tower.upgrade,Nâng cấp - {gold} vàng
@@ -187,11 +187,17 @@ skill.sword_wave.desc,Chém ra một luồng kiếm khí gây sát thương lên
 skill.firebomb.name,Bom lửa
 skill.firebomb.desc,Ném bom lửa tạo vùng cháy gây sát thương mỗi giây lên kẻ địch trong vùng.
 skill.sharpness.name,Sắc bén
-skill.sharpness.desc,Tăng sát thương gây ra.
-skill.vitality.name,Sinh lực
+skill.sharpness.desc,Tăng sát thương kiếm và kỹ năng chủ động.
+skill.armored.name,Giáp cứng
+skill.armored.desc,Tăng giáp của chỉ huy.
+skill.lifesteal.name,Hút máu
+skill.lifesteal.desc,Hồi máu khi hạ địch bằng kiếm hoặc kỹ năng.
+skill.vitality.name,Thể lực
 skill.vitality.desc,Tăng máu tối đa.
-skill.heal_station.name,Trạm hồi phục
-skill.heal_station.desc,Tăng tốc độ hồi máu của trạm hồi phục.
+skill.heal_station.name,Trạm hồi lực
+skill.heal_station.desc,Tăng tốc độ hồi máu của chỉ huy tại Trạm hồi lực.
+skill.mastery.name,Tinh thông
+skill.mastery.desc,Tăng sát thương kỹ năng chủ động.
 hud.fortress_low,NGUY CẤP
 hud.mode.key,Tab
 hud.mode.frontline,Tiền tuyến
@@ -225,18 +231,21 @@ panel.heal.store,Kho máu
 panel.heal.rate,Hồi chỉ huy
 panel.heal.rate_value,+{rate} HP/s
 panel.heal.level,Cấp
-panel.heal.max,Tối đa
+panel.build.blocks_path,Đường đi sẽ bị chặn
+panel.build.clear_rubble,Dọn đổ nát
+panel.tower.level_tier,Cấp {level} · Bậc {tier}
+panel.tower.sell_locked,Bán được từ wave {wave}
+panel.heal.level_value,{level}/{max} · Bậc {tier}
+panel.heal.upgrade_tip,Nâng cấp chỉ cộng thêm phần kho tăng thêm
 panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
-panel.build.heal_limit,Tối đa {max} trạm hồi phục
+panel.build.heal_limit,Tối đa {max} Trạm hồi lực
 panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
-panel.need_commander_level,Cần Chỉ huy cấp {level}
+panel.need_commander_level,Yêu cầu chỉ huy: cấp {level}
 hud.start_wave,Bắt đầu wave
 hud.start_wave.boss,Bắt đầu wave boss
 hud.start_wave.paused,Không bắt đầu được khi tạm dừng
 hud.start_wave.dialog,Hãy đóng hộp thoại đang mở trước
-panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
-panel.need_commander_level,Cần Chỉ huy cấp {level}
 reward.title,Chọn phần thưởng
 reward.hint,Chọn 1 trong 3 thẻ. Thẻ không chọn sẽ mất.
 reward.pending,Lượt chọn còn lại: {value}
@@ -257,7 +266,7 @@ reward.skip.body,"Bỏ qua sẽ mất lượt chọn này, không được bù v
 reward.slot.tip,"{name}
 Cấp {level}/{max}"
 hud.state.reward_pick,Chọn thưởng
-hud.state.hazard_trial,Thử thách Hazard
+hud.state.hazard_trial,Hazard Trial
 hud.wave_of,Đợt {wave} / {max}
 hud.endless,Endless
 hud.mithril,Mithril
@@ -280,9 +289,117 @@ damage.slash,Chém
 damage.magic,Phép
 damage.trap,Bẫy
 damage.true,Chuẩn
-weapon.sword_base.name,Kiếm gốc
-weapon.frost.name,Kiếm Băng
-weapon.chain_lightning.name,Kiếm Sét
-weapon.burn.name,Kiếm Lửa
-weapon.rampage.name,Kiếm Cuồng Nộ
-weapon.swift.name,Kiếm Tốc Độ
+weapon.sword_base.name,Kiếm thường
+weapon.frost.name,Hàn Sương Kiếm
+weapon.chain_lightning.name,Lôi Kiếm
+weapon.burn.name,Xích Tiêu Kiếm
+weapon.rampage.name,Nộ Kiếm
+weapon.swift.name,Truy Phong Kiếm
+weapon.sword_base.desc,"Kiếm cơ bản, không có hiệu ứng."
+weapon.frost.desc,Đòn trúng làm chậm kẻ địch {frost_slow_pct_x100}% trong {frost_duration} s.
+weapon.chain_lightning.desc,"Đòn trúng phóng sét lan qua tối đa {chain_max_targets} kẻ địch đứng cách nhau trong {chain_radius} m, mỗi con nhận {chain_damage_pct_x100}% sát thương cơ bản. Hồi {chain_cooldown} s."
+weapon.burn.desc,Đòn trúng thiêu đốt tổng {burn_total_pct_x100}% sát thương cơ bản trong {burn_duration} s.
+weapon.rampage.desc,"Máu càng thấp đánh càng mạnh: +{rampage_bonus_hi_x100}% sát thương khi máu từ {rampage_hp_hi_x100}% trở xuống, +{rampage_bonus_mid_x100}% từ {rampage_hp_mid_x100}%, +{rampage_bonus_lo_x100}% từ {rampage_hp_lo_x100}%."
+weapon.swift.desc,"Tốc độ đánh x{swift_attack_speed_mult}, đổi lại tầm đánh ngắn hơn."
+weapon.effect.none,Không hiệu ứng
+weapon.effect.slow,Làm chậm
+weapon.effect.chain,Giật sét
+weapon.effect.burn,Thiêu đốt
+weapon.effect.rampage,Cuồng hóa
+weapon.effect.swift,Thần tốc
+hud.xp.level,Cấp {level}
+hud.xp.percent,{value}%
+hud.xp.pending,+{count} lượt chọn
+hud.xp.tip,"XP {xp}/{max}
+Từ chỉ huy (đặc): {commander}
+Từ tower (sọc): {tower}"
+alert.level_up,Lên cấp {level} (+1 lượt chọn)
+hud.aura.tip,+{pct}% sát thương tower trong {radius} m
+hud.skill.locked,Khóa
+hud.skill.locked_tip,Chỉ dùng ở Frontline
+hud.skill.empty,Ô trống
+hud.skill.tip,{name} · Cấp {level}/{max}
+hud.skill.hide,Ẩn kỹ năng
+hud.skill.show,Hiện kỹ năng
+hud.skill.toggle_tip,Ô kỹ năng và vũ khí. Phím 1-3 vẫn dùng được khi ẩn.
+hud.weapon.count,Đã có {value}/{max}
+hud.weapon.change_tip,Bấm để đổi vũ khí
+hud.weapon.prep_only,Đổi vũ khí ở giai đoạn chuẩn bị
+panel.weapon.title,Vũ khí
+panel.weapon.range,Tầm đánh {range} m
+panel.weapon.equipped,Đang dùng
+panel.weapon.pick_tip,Bấm để trang bị ngay
+panel.weapon.locked,Rơi từ boss
+panel.weapon.locked_tag,Chưa có
+hud.hazard.title,Hazard Trial
+hud.hazard.ready,Sẵn sàng
+hud.hazard.paused,Đang tạm dừng
+hud.hazard.dialog,Đóng hộp thoại trước
+hud.hazard.frontline,Cần Frontline
+hud.hazard.used,Đã dùng ở wave này
+hud.hazard.group,Nhóm quái: {types}
+hud.hazard.reward,Thắng: +{mithril} Mithril
+hud.hazard.enemies,Quái còn {value}/{max}
+hud.hazard.loot,Tạm tính: +{gold} vàng · +{xp} XP
+hud.hazard.note,Chỉ số trong tháp không mang ra ngoài
+hud.hazard.leave,Rời tháp
+hud.commander_room,Chỉ huy (trong tháp)
+hud.start_wave.hazard_hint,Chưa vào Hazard Trial
+alert.hazard.won,"Thắng Hazard Trial: +{mithril} Mithril, +{gold} vàng, +{xp} XP"
+alert.hazard.left,"Đã rời tháp: +{gold} vàng, +{xp} XP"
+alert.hazard.died,"Thất bại trong tháp: +{gold} vàng, +{xp} XP"
+alert.weapon_gained,Nhận vũ khí {name}. Đổi ở giai đoạn chuẩn bị
+alert.heal_drained,Trạm hồi lực ở ô {slot} đã cạn (xây lại {cost} vàng)
+alert.heal_drained_plain,Trạm hồi lực ở ô {slot} đã cạn
+alert.heal_low,Trạm hồi lực sắp cạn
+menu.leaderboard,Bảng xếp hạng
+settings.tab.account,Tài khoản
+shop.balance,Danh vọng: {value}
+shop.level,Cấp {level}/{max}
+shop.now,Hiện tại: {effect}
+shop.next,Cấp kế: {effect}
+shop.cost_short,"Giá {cost} danh vọng, thiếu {value}"
+shop.cost_after,"Giá {cost} danh vọng, còn {after} sau khi mua"
+shop.need,Thiếu {value} danh vọng
+shop.buy,Mua
+shop.max,MAX
+shop.error,"Không mua được, danh vọng chưa bị trừ. Hãy thử lại."
+shop.fort_hp.name,Thành kiên cố
+shop.fort_hp.effect,+{value}% máu tối đa của Thành
+shop.gold_pct.name,Tay buôn giỏi
+shop.gold_pct.effect,+{value}% vàng từ quân và boss
+shop.cmd_hp.name,Thể chất chỉ huy
+shop.cmd_hp.effect,+{value} máu tối đa của chỉ huy
+shop.emg_repair.name,Sửa chữa hiệu quả
+shop.emg_repair.effect,Mỗi lượt sửa khẩn cấp hồi {value}% máu Thành
+shop.emg_repair.note,"Chỉ tăng lượng hồi. Vẫn tối đa 3 lượt mỗi run, hồi chiêu không đổi."
+lbd.title,Bảng xếp hạng
+lbd.refresh,Làm mới
+lbd.retry,Thử lại
+lbd.sign_in,Đăng nhập để có hạng
+lbd.loading,Đang tải bảng xếp hạng...
+lbd.error,Không tải được bảng xếp hạng
+lbd.offline,Không kết nối được
+lbd.empty,Chưa có lượt chơi nào trên bảng
+lbd.own_rank,Hạng của bạn
+lbd.you,Bạn
+lbd.col.rank,Hạng
+lbd.col.name,Tên
+lbd.col.waves,Số đợt hoàn thành
+lbd.col.time,Thời gian
+sync.state.guest,Khách
+sync.state.synced,Đã đồng bộ
+sync.state.syncing,Đang đồng bộ
+sync.state.offline,Ngoại tuyến
+sync.state.error,Lỗi đồng bộ
+sync.tip.guest,"Chưa đăng nhập, tiến trình chỉ lưu trên máy này"
+sync.tip.synced,Tiến trình đã lưu lên tài khoản
+sync.tip.syncing,Đang gửi tiến trình lên tài khoản
+sync.tip.offline,"Không kết nối được, tiến trình vẫn lưu trên máy này"
+sync.tip.error,"Đồng bộ lỗi, sẽ thử lại ở lần kết thúc run hoặc mua kế tiếp"
+account.title,Tài khoản
+account.guest,Khách
+account.sync,Đồng bộ
+account.sync_now,Đồng bộ ngay
+account.sync_unavailable,Chưa có đồng bộ tự động
+account.offline,"Tính năng trực tuyến đang tắt, game vẫn chơi bình thường."

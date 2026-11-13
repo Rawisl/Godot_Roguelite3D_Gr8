@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://bu7riqj51mrjy"]
+
+[ext_resource type="Script" uid="uid://dcj23th2ipu2y" path="res://ui/hud/parts/skill_bar.gd" id="1_bar"]
+[ext_resource type="Resource" uid="uid://c5sjr4mtdttky" path="res://data/config/reward_pool.tres" id="2_pool"]
+[ext_resource type="PackedScene" uid="uid://oyeg156sm0rf" path="res://ui/hud/parts/skill_cell.tscn" id="3_cell"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.1098, 0.1216, 0.149, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="SkillBar" type="PanelContainer" unique_id=1739204701]
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
+script = ExtResource("1_bar")
+pool = ExtResource("2_pool")
+
+[node name="Rows" type="VBoxContainer" parent="." unique_id=1739204702]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="ActiveRow" type="HBoxContainer" parent="Rows" unique_id=1739204703]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="ActiveCell1" parent="Rows/ActiveRow" unique_id=1739204704 instance=ExtResource("3_cell")]
+layout_mode = 2
+
+[node name="ActiveCell2" parent="Rows/ActiveRow" unique_id=1739204705 instance=ExtResource("3_cell")]
+layout_mode = 2
+
+[node name="ActiveCell3" parent="Rows/ActiveRow" unique_id=1739204706 instance=ExtResource("3_cell")]
+layout_mode = 2
+
+[node name="PassiveRow" type="HBoxContainer" parent="Rows" unique_id=1739204707]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="PassiveCell1" parent="Rows/PassiveRow" unique_id=1739204708 instance=ExtResource("3_cell")]
+custom_minimum_size = Vector2(64, 52)
+layout_mode = 2
+show_cooldown = false
+
+[node name="PassiveCell2" parent="Rows/PassiveRow" unique_id=1739204709 instance=ExtResource("3_cell")]
+custom_minimum_size = Vector2(64, 52)
+layout_mode = 2
+show_cooldown = false
+
+[node name="PassiveCell3" parent="Rows/PassiveRow" unique_id=1739204710 instance=ExtResource("3_cell")]
+custom_minimum_size = Vector2(64, 52)
+layout_mode = 2
+show_cooldown = false

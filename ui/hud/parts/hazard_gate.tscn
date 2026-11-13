@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://c554a7i0s23p5"]
+
+[ext_resource type="Script" uid="uid://c83k3n22ykx8m" path="res://ui/hud/parts/hazard_gate.gd" id="1_gate"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
+bg_color = Color(0.1098, 0.1216, 0.149, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2784, 0.302, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
+bg_color = Color(0.1098, 0.1216, 0.149, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098, 0.7608, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
+bg_color = Color(0.1647, 0.1843, 0.2275, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098, 0.7608, 0.3529, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
+
+[node name="HazardGate" type="Button" unique_id=1739207001]
+custom_minimum_size = Vector2(230, 78)
+offset_right = 230.0
+offset_bottom = 78.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_normal")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
+theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
+script = ExtResource("1_gate")
+
+[node name="Body" type="VBoxContainer" parent="." unique_id=1739207002]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 8.0
+offset_right = -14.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Title" type="Label" parent="Body" unique_id=1739207003]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+
+[node name="Row" type="HBoxContainer" parent="Body" unique_id=1739207004]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="KeyCap" type="PanelContainer" parent="Body/Row" unique_id=1739207005]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Keycap"
+
+[node name="KeyLabel" type="Label" parent="Body/Row/KeyCap" unique_id=1739207006]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"KeycapLabel"
+theme_override_font_sizes/font_size = 16
+
+[node name="Status" type="Label" parent="Body/Row" unique_id=1739207007]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"HudLabel"
+theme_override_font_sizes/font_size = 17

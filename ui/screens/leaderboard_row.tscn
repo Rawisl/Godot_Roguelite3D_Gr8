@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://5nwf0881hn64"]
+
+[ext_resource type="Script" uid="uid://2q64odorfqmh" path="res://ui/screens/leaderboard_row.gd" id="1_row"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
+content_margin_left = 20.0
+content_margin_top = 8.0
+content_margin_right = 20.0
+content_margin_bottom = 8.0
+bg_color = Color(0.749, 0.6235, 0.4588, 0.22)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.749, 0.6235, 0.4588, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_own"]
+content_margin_left = 20.0
+content_margin_top = 8.0
+content_margin_right = 20.0
+content_margin_bottom = 8.0
+bg_color = Color(0.749, 0.6235, 0.4588, 0.22)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2471, 0.498, 0.8157, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="LeaderboardRow" type="PanelContainer" unique_id=1739300019]
+custom_minimum_size = Vector2(900, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_normal")
+script = ExtResource("1_row")
+normal_style = SubResource("StyleBoxFlat_normal")
+own_style = SubResource("StyleBoxFlat_own")
+
+[node name="Cols" type="HBoxContainer" parent="." unique_id=1739300020]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Rank" type="Label" parent="Cols" unique_id=1739300021]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(90, 0)
+theme_override_font_sizes/font_size = 24
+
+[node name="NameBox" type="HBoxContainer" parent="Cols" unique_id=1739300022]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="PlayerName" type="Label" parent="Cols/NameBox" unique_id=1739300023]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+
+[node name="YouTag" type="Label" parent="Cols/NameBox" unique_id=1739300024]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.2471, 0.498, 0.8157, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="Waves" type="Label" parent="Cols" unique_id=1739300025]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(240, 0)
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="Time" type="Label" parent="Cols" unique_id=1739300026]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(150, 0)
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 24

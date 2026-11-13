@@ -20,6 +20,8 @@ var total_xp_from_towers: float = 0.0
 ## Per-wave XP tracking for wave summary
 var wave_xp_commander: float = 0.0
 var wave_xp_towers: float = 0.0
+## Wave of the latest wave_started; picks the XP multiplier row.
+var _reward_wave: int = 1
 
 
 func _init() -> void:
@@ -82,6 +84,7 @@ func reset() -> void:
 	commander_level = 0
 	xp = 0.0
 	pending_picks = 0
+	_reward_wave = 1
 	total_xp_from_commander = 0.0
 	total_xp_from_towers = 0.0
 	wave_xp_commander = 0.0
@@ -89,7 +92,8 @@ func reset() -> void:
 	_emit_xp_changed()
 
 
-func _on_wave_started(_wave_index: int) -> void:
+func _on_wave_started(wave_index: int) -> void:
+	_reward_wave = wave_index
 	wave_xp_commander = 0.0
 	wave_xp_towers = 0.0
 
@@ -112,14 +116,14 @@ func get_xp_value_for_enemy(enemy_type: StringName) -> int:
 	return 1
 
 
-func _on_enemy_died(enemy_type: StringName, _pos: Vector3, _gold_base: int, _prestige: int, is_cull: bool, hit_by_commander: bool) -> void:
+func _on_enemy_died(enemy_type: StringName, _pos: Vector3, _gold_base: float, _prestige: int, is_cull: bool, hit_by_commander: bool) -> void:
 	# Cull kills grant no XP
 	if is_cull:
 		return
 
 	var base_xp: int = get_xp_value_for_enemy(enemy_type)
 	var mult: float = GameConfig.xp_commander_pct if hit_by_commander else GameConfig.xp_tower_only_pct
-	var gained: float = float(base_xp) * mult
+	var gained: float = float(base_xp) * mult * GameConfig.wave_rewards.get_xp_mult(_reward_wave)
 
 	if hit_by_commander:
 		total_xp_from_commander += gained

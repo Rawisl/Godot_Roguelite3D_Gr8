@@ -286,32 +286,32 @@ func test_scl05_gold_reward_scaling_rwd02() -> void:
 	add_child(wm)
 	var cfg := SCALE_CONFIG_RES
 
-	var res := {"gold": -1}
-	var on_died := func(_type: StringName, _pos: Vector3, gold: int, _prestige: int, _cull: bool, _hit_by_cmd: bool = false):
+	var res := {"gold": -1.0}
+	var on_died := func(_type: StringName, _pos: Vector3, gold: float, _prestige: int, _cull: bool, _hit_by_cmd: bool = false):
 		res.gold = gold
 	EventBus.enemy_died.connect(on_died)
 
-	# Wave 10 Grunt: base_gold 4 * (1 + 0.04 * 9) = 4 * 1.36 = 5.44 -> round 5
+	# Wave 10 Grunt: kill gold is base gold times the table multiplier, not rounded
 	var grunt_w10: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt_w10.position = Vector3(14.0, 0.0, 0.0)
 	grunt_w10.apply_wave_scale(cfg.get_hp_mult(10), cfg.get_dmg_mult(10), cfg.get_speed_mult(10), 10, cfg)
 	wm.add_child(grunt_w10)
 
 	grunt_w10._on_died()
-	assert_true(res.gold == 5, "Wave 10 Grunt death emitted scaled gold (5 gold per ScaleConfig formula, not base 4)")
+	assert_true(is_equal_approx(res.gold, grunt_w10.data.gold_reward * GameConfig.wave_rewards.get_gold_mult(10)), "Wave 10 Grunt death emits kill gold from WaveRewardTable, not rounded")
 	grunt_w10.queue_free()
 
 	# Test with custom ScaleConfig having modified gold_growth_per_wave (e.g. 0.10)
 	var custom_cfg := ScaleConfig.new()
 	custom_cfg.gold_growth_per_wave = 0.10
-	# Wave 10 with 0.10: 4 * (1 + 0.10 * 9) = 4 * 1.9 = 7.6 -> round 8
+	# The custom growth must not change the kill gold any more
 	var grunt_custom: Enemy = GRUNT_SCENE.instantiate() as Enemy
 	grunt_custom.position = Vector3(14.0, 0.0, 0.0)
 	grunt_custom.apply_wave_scale(custom_cfg.get_hp_mult(10), custom_cfg.get_dmg_mult(10), custom_cfg.get_speed_mult(10), 10, custom_cfg)
 	wm.add_child(grunt_custom)
 
 	grunt_custom._on_died()
-	assert_true(res.gold == 8, "Modifying ScaleConfig.gold_growth_per_wave to 0.10 dynamically changes reward to 8 (ScaleConfig controls value)")
+	assert_true(is_equal_approx(res.gold, grunt_custom.data.gold_reward * GameConfig.wave_rewards.get_gold_mult(10)), "ScaleConfig no longer drives kill gold for waves in the table")
 
 	EventBus.enemy_died.disconnect(on_died)
 	grunt_custom.queue_free()

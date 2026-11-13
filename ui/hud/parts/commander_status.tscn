@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://d1c7ggtr5uq17" path="res://ui/hud/parts/commander_status.gd" id="1_ykgfw"]
 [ext_resource type="Texture2D" uid="uid://bs1qm0yx4mf1r" path="res://art/icons/shield_icon.png" id="2_f78r6"]
+[ext_resource type="Texture2D" uid="uid://bqf3fkb7vl7rp" path="res://art/icons/aura_icon.png" id="3_aura"]
 
 [node name="CommanderStatus" type="VBoxContainer" unique_id=602541407]
 anchors_preset = 2
@@ -39,6 +40,16 @@ stretch_mode = 5
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HudHint"
+
+[node name="AuraIcon" type="TextureRect" parent="HBoxContainer" unique_id=1739205106]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 1
+texture = ExtResource("3_aura")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Bar" type="ProgressBar" parent="." unique_id=471868200]
 unique_name_in_owner = true

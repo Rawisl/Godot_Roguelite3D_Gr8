@@ -29,9 +29,12 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_context_changed)
 	EventBus.pause_changed.connect(_on_context_changed)
 	EventBus.state_changed.connect(_on_context_changed)
+	ScreenManager.dialog_context_changed.connect(clear_held)
 
 # Using unhandled input means clicks swallowed by UI never reach the commander.
 func _unhandled_input(event: InputEvent) -> void:
+	if ScreenManager.has_dialog():
+		return
 	for action in _actions:
 		if event.is_action_released(action):
 			_blocked.erase(action)
@@ -49,6 +52,8 @@ func register_press(action: StringName) -> void:
 
 ## Movement vector from WASD with the same diagonal normalisation as Input.get_vector.
 func get_move_vector() -> Vector2:
+	if ScreenManager.has_dialog():
+		return Vector2.ZERO
 	var strength := func(action: StringName) -> float:
 		return 0.0 if _blocked.has(action) else Input.get_action_strength(action)
 	var vector := Vector2(

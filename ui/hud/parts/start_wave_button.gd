@@ -2,19 +2,24 @@ class_name StartWaveButton
 extends Button
 ## Ends PREP: PREP has no countdown, the player starts the next wave here. Shown only in PREP,
 ## mouse only (no shortcut, no keyboard focus). Grey with the reason while paused or while a
-## transaction dialog is open.
+## transaction dialog is open. Until the Hazard Trial of this wave is used, a small line above it
+## reminds the player; it never blocks the button.
 
 var _in_prep := false
 var _paused := false
 var _sent := false
 var _next_wave := 1
 var _next_is_boss := false
+var _state: StringName = &""
+var _hazard_used := false
 
 ## True while the tutorial waits for the first two towers.
 var tutorial_lock := false:
 	set(value):
 		tutorial_lock = value
 		_refresh()
+
+@onready var _hazard_hint: Label = %HazardHint
 
 func _ready() -> void:
 	focus_mode = Control.FOCUS_NONE
@@ -25,6 +30,8 @@ func _ready() -> void:
 	# TODO(Ender-Via): send wave_preview_ready in PREP, so the boss label follows the wave script.
 	EventBus.wave_preview_ready.connect(_on_wave_preview_ready)
 	EventBus.pause_changed.connect(_on_pause_changed)
+	EventBus.hazard_trial_exited.connect(_on_hazard_exited)
+	_hazard_hint.text = tr(&"hud.start_wave.hazard_hint")
 	_in_prep = GameState.wave_state == &"PREP"
 	_set_next_wave(1)
 	_refresh()
@@ -60,18 +67,23 @@ func _set_next_wave(wave: int) -> void:
 func _refresh_text() -> void:
 	text = tr(&"hud.start_wave.boss" if _next_is_boss else &"hud.start_wave")
 
-# TODO(WhoKeng): add the small "not in Hazard Trial yet" line once the run tracks it.
 func _refresh() -> void:
 	visible = _in_prep
+	_hazard_hint.visible = _in_prep and not _hazard_used
 	var reason := _lock_reason()
 	disabled = _sent or reason != &""
 	tooltip_text = tr(reason) if reason != &"" else ""
 
 func _on_run_started() -> void:
 	_sent = false
+	_hazard_used = false
 	_set_next_wave(1)
 
+## Back in PREP from the room keeps the wave's Hazard Trial used; a new wave's PREP clears it.
 func _on_state_changed(new_state: StringName) -> void:
+	if new_state == &"PREP" and _state != &"HAZARD_TRIAL":
+		_hazard_used = false
+	_state = new_state
 	_in_prep = new_state == &"PREP"
 	_sent = false
 	_refresh()
@@ -87,4 +99,8 @@ func _on_wave_preview_ready(wave_index: int, _composition: Dictionary, is_boss: 
 
 func _on_pause_changed(is_paused: bool) -> void:
 	_paused = is_paused
+	_refresh()
+
+func _on_hazard_exited(_result: StringName, _kills: int, _gold: int, _xp: float, _mithril: int) -> void:
+	_hazard_used = true
 	_refresh()

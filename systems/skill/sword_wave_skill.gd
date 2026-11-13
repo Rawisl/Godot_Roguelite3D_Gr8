@@ -36,7 +36,7 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 		var across := offset.dot(Vector3.UP.cross(dir))
 		if along < 0.0 or along > reach or absf(across) > half_width:
 			continue
-		enemy.call(&"take_damage", DamageInfo.outgoing(base_damage, damage_mult, data.damage_type, caster, 0.0, dir))
+		enemy.call(&"take_damage", DamageInfo.skill_hit(base_damage, damage_mult, data.damage_type, caster, dir))
 		hits += 1
 	return hits
 
