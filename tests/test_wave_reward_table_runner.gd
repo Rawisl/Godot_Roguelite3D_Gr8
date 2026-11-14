@@ -363,7 +363,7 @@ func test_boss_kill_adds_no_kill_gold() -> void:
 	EventBus.gold_delta.disconnect(on_delta)
 	assert_true(boss_gold.gold == 0.0, "Boss enemy_died carries 0 gold")
 	assert_true(wm._wave_gold_base == 0.0, "Boss death leaves wave_gold_base unchanged")
-	assert_true(deltas.is_empty(), "Boss death shows no gold number")
+	assert_true(deltas.size() == 1 and deltas[0] == wm._boss_gold_amount(), "Boss death shows the boss gold as a floating number")
 	assert_true(wm._boss_defeated_this_wave, "Boss death still marks the boss as defeated")
 	wm.free()
 	await _free_after_nav_setup([bulwark])
