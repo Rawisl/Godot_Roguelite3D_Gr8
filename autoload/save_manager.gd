@@ -9,7 +9,6 @@ extends Node
 ## be replaced with start_new_save()).
 # TODO(Rawisl): when account sync lands, write revision (+1 on every successful save), updated_at (UTC) and device_id (generated once per machine) into the envelope in _write(); a missing one means revision 0 and a new device_id.
 # TODO(kiezroth): when the save loads with run_flag.run_in_progress true, settle the run as ABANDONED before MainMenu (prestige from prestige_pending), clear the flag, save and tell the player.
-# TODO(kiezroth): when meta upgrade data defines a max level per upgrade, clamp meta.levels above that max in _clamp_values() on load.
 # TODO(kiezroth): when the save hooks land, write with save_now() at wave SUMMARY (before the summary shows) and RunEnd, and with save() when the tutorial finishes; shop purchases save inside the MetaShop buy.
 
 signal save_loaded
@@ -288,6 +287,7 @@ func _clamp_values(d: Dictionary) -> PackedStringArray:
 	var meta: Variant = d.get("meta")
 	if meta is Dictionary:
 		_clamp_negative_numbers(meta.get("levels"), "meta.levels", changed)
+		_clamp_meta_max(meta.get("levels"), changed)
 	return changed
 
 func _clamp_negative_ints(values: Dictionary, defaults: Dictionary, prefix: String, changed: PackedStringArray) -> void:
@@ -311,6 +311,20 @@ func _clamp_negative_numbers(values: Variant, field_path: String, changed: Packe
 		if (value is int or value is float) and value < 0:
 			_log_clamp(changed, "%s.%s" % [field_path, key], value, 0)
 			values[key] = 0
+
+## Levels above an upgrade's max level are set to that max. Unknown upgrades are left alone.
+func _clamp_meta_max(levels: Variant, changed: PackedStringArray) -> void:
+	if not levels is Dictionary:
+		return
+	var max_levels := MetaUpgrades.get_max_levels()
+	for key in max_levels:
+		if not levels.has(key):
+			continue
+		var value: Variant = levels[key]
+		if not (value is int or value is float) or value <= max_levels[key]:
+			continue
+		_log_clamp(changed, "meta.levels.%s" % key, value, max_levels[key])
+		levels[key] = max_levels[key]
 
 func _log_clamp(changed: PackedStringArray, field_path: String, from: Variant, to: Variant) -> void:
 	changed.append(field_path)
