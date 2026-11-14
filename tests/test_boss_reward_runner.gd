@@ -278,7 +278,7 @@ func test_enraged_boss_halves_gold_and_prestige() -> void:
 	var summary := _last_summary()
 	assert_true(_deltas.size() == 1 and _deltas[0] == _enraged_boss_gold(BOSS_WAVE), "Shown boss gold is cut by the Enrage multiplier")
 	assert_true(gold_mgr.gold - start == _enraged_boss_gold(BOSS_WAVE) + _escort_gold(wm, summary), "Wallet gains the cut boss gold")
-	assert_true(summary.prestige_gain_wave == _enraged_boss_prestige(), "Boss prestige is cut by the Enrage multiplier and rounded down")
+	assert_true(summary.prestige_gain_wave == _enraged_boss_prestige() + PrestigeCalc.wave_clear_prestige(BOSS_WAVE), "Boss prestige is cut by the Enrage multiplier and rounded down")
 	print("  [INFO] enraged boss gold %d, prestige %d" % [_enraged_boss_gold(BOSS_WAVE), _enraged_boss_prestige()])
 	wm.free()
 	gold_mgr.free()
@@ -293,8 +293,8 @@ func test_boss_prestige_at_summary() -> void:
 	assert_true(wm._wave_prestige == 0, "Wave prestige is unchanged before the summary")
 	wm._end_combat_to_summary()
 	var summary := _last_summary()
-	assert_true(summary.prestige_gain_wave == GameConfig.boss_prestige, "Summary adds the full boss prestige")
-	assert_true(not _pending.is_empty() and _pending.back() == GameConfig.boss_prestige, "Pending prestige includes the boss prestige")
+	assert_true(summary.prestige_gain_wave == GameConfig.boss_prestige + PrestigeCalc.wave_clear_prestige(BOSS_WAVE), "Summary adds the full boss prestige")
+	assert_true(not _pending.is_empty() and _pending.back() == GameConfig.boss_prestige + PrestigeCalc.wave_clear_prestige(BOSS_WAVE), "Pending prestige includes the boss prestige")
 	wm.free()
 
 
@@ -340,7 +340,7 @@ func test_enrage_flag_resets_next_boss_wave() -> void:
 	wm._end_combat_to_summary()
 	var summary := _last_summary()
 	assert_true(summary.gold_total - _escort_gold(wm, summary) == _boss_gold(BOSS_WAVE * 2), "Next boss wave pays the full boss gold")
-	assert_true(summary.prestige_gain_wave == GameConfig.boss_prestige, "Next boss wave pays the full boss prestige")
+	assert_true(summary.prestige_gain_wave == GameConfig.boss_prestige + PrestigeCalc.wave_clear_prestige(BOSS_WAVE * 2), "Next boss wave pays the full boss prestige")
 	wm.free()
 
 
@@ -353,7 +353,7 @@ func test_enrage_after_boss_death_ignored() -> void:
 	wm._end_combat_to_summary()
 	var summary := _last_summary()
 	assert_true(summary.gold_total - _escort_gold(wm, summary) == _boss_gold(BOSS_WAVE), "Enrage after the boss died leaves the boss gold whole")
-	assert_true(summary.prestige_gain_wave == GameConfig.boss_prestige, "Enrage after the boss died leaves the boss prestige whole")
+	assert_true(summary.prestige_gain_wave == GameConfig.boss_prestige + PrestigeCalc.wave_clear_prestige(BOSS_WAVE), "Enrage after the boss died leaves the boss prestige whole")
 	wm.free()
 
 
@@ -486,7 +486,7 @@ func test_boss_reward_past_table() -> void:
 	var formula: float = float(GameConfig.boss_gold_base) * (1.0 + GameConfig.gold_reward_growth_per_wave * float(wave - 1))
 	assert_true(is_equal_approx(GameConfig.wave_rewards.get_boss_gold(wave), formula), "Table gives the formula boss gold past the last row")
 	assert_true(not summary.is_empty() and summary.gold_total - _escort_gold(wm, summary) == _enraged_boss_gold(wave), "Boss gold past the table is cut by Enrage")
-	assert_true(not summary.is_empty() and summary.prestige_gain_wave == _enraged_boss_prestige(), "Boss prestige past the table is the same cut value")
+	assert_true(not summary.is_empty() and summary.prestige_gain_wave == _enraged_boss_prestige() + PrestigeCalc.wave_clear_prestige(wave), "Boss prestige past the table is the same cut value")
 	wm.free()
 
 
@@ -498,5 +498,5 @@ func test_no_popup_without_boss() -> void:
 	var summary := _last_summary()
 	assert_true(_deltas.is_empty(), "No boss number without a boss death")
 	assert_true(not summary.is_empty() and summary.gold_total == _escort_gold(wm, summary), "No boss gold without a boss death")
-	assert_true(not summary.is_empty() and summary.prestige_gain_wave == 0, "No boss prestige without a boss death")
+	assert_true(not summary.is_empty() and summary.prestige_gain_wave == PrestigeCalc.wave_clear_prestige(BOSS_WAVE), "No boss prestige without a boss death")
 	wm.free()

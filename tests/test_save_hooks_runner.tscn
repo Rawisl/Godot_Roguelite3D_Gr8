@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://2uskg7it4oec"]
+
+[ext_resource type="Script" uid="uid://5gebse8qpjlg" path="res://tests/test_save_hooks_runner.gd" id="1_test"]
+
+[node name="TestSaveHooksRunner" type="Node" unique_id=1448764944]
+script = ExtResource("1_test")

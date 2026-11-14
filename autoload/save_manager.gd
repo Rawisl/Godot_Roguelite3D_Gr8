@@ -1,6 +1,7 @@
 extends Node
 ## The only entry point for player progress. Other systems read and change
 ## get_section() dictionaries, then call save(); nobody else touches save files.
+## Wave SUMMARY, run start, run end and the tutorial go through record_* / mark_tutorial_done().
 ##
 ## Missing fields fall back to DEFAULT_DATA, unknown fields are kept and written back.
 ## The main file, then a leftover .tmp, then the .bak are tried in turn. A save from a newer
@@ -10,7 +11,7 @@ extends Node
 # TODO(Rawisl): when account sync lands, write revision (+1 on every successful save), updated_at (UTC) and device_id (generated once per machine) into the envelope in _write(); a missing one means revision 0 and a new device_id.
 # TODO(kiezroth): when the save loads with run_flag.run_in_progress true, settle the run as ABANDONED before MainMenu (prestige from prestige_pending), clear the flag, save and tell the player.
 # TODO(kiezroth): when meta upgrade data defines a max level per upgrade, clamp meta.levels above that max in _clamp_values() on load.
-# TODO(kiezroth): when the save hooks land, write with save_now() at wave SUMMARY (before the summary shows) and RunEnd, and with save() when the tutorial finishes; shop purchases save inside the MetaShop buy.
+# TODO(WhoKeng): when the tutorial lands, call SaveManager.mark_tutorial_done() as soon as both starter towers are built or Skip is pressed; it saves the flag and emits tutorial_completed.
 
 signal save_loaded
 
@@ -76,6 +77,8 @@ var _in_combat: bool = false
 ## A save() was held back during combat and still has to be written.
 var _save_pending: bool = false
 var _request_queued: bool = false
+## True after this run's run end was written; cleared when a new run starts, so a repeated run_ended counts once.
+var _run_recorded: bool = false
 
 func _ready() -> void:
 	set_repository(LocalSaveRepository.new())
@@ -177,6 +180,54 @@ func save_now() -> Error:
 		_save_pending = false
 	return error
 
+## Run flag at the start of a run. Called by RunLoading.
+func record_run_start(start_wave: int, start_mult: float) -> Error:
+	_mark_run_in_progress(start_wave, start_mult, start_wave - 1, 0)
+	_run_recorded = false
+	return save()
+
+## Wave SUMMARY: writes the run flag right away, before the summary is shown, even though combat has not ended yet.
+func record_wave_summary(waves_cleared: int, prestige_pending: int, start_wave: int, start_mult: float) -> Error:
+	_mark_run_in_progress(start_wave, start_mult, waves_cleared, prestige_pending)
+	if not can_write:
+		# The data stays in memory; a blocked save is not reported again on every wave.
+		return ERR_UNAVAILABLE
+	return save_now()
+
+## Run end: adds the run to the profile once and writes right away, also during combat.
+func record_run_end(summary: Dictionary) -> Error:
+	if summary.is_empty():
+		push_warning("SaveManager: run end without a summary, profile unchanged")
+		return ERR_INVALID_PARAMETER
+	if _run_recorded:
+		return ERR_ALREADY_EXISTS
+	var waves_cleared := int(summary.get("waves_cleared", 0))
+	var start_key := str(int(summary.get("start_wave", 1)))
+	var profile := get_section(PROFILE)
+	var stats: Dictionary = profile["stats"]
+	var best_by_start: Dictionary = profile["best_by_start"]
+	profile["prestige_balance"] = int(profile["prestige_balance"]) + maxi(0, int(summary.get("prestige_gain", 0)))
+	stats["total_runs"] = int(stats["total_runs"]) + 1
+	stats["total_kills"] = int(stats["total_kills"]) + int(summary.get("run_kills", 0))
+	stats["bosses_defeated"] = int(stats["bosses_defeated"]) + int(summary.get("run_bosses_defeated", 0))
+	profile["max_wave_cleared"] = maxi(int(profile["max_wave_cleared"]), waves_cleared)
+	best_by_start[start_key] = maxi(int(best_by_start.get(start_key, 0)), waves_cleared)
+	get_section(RUN_FLAG)["run_in_progress"] = false
+	_run_recorded = true
+	var error := save_now()
+	EventBus.prestige_balance_changed.emit(int(profile["prestige_balance"]))
+	return error
+
+## Tutorial finished or skipped. Emits tutorial_completed only when the flag changes.
+func mark_tutorial_done() -> Error:
+	var flags := get_section(FLAGS)
+	if flags["tutorial_done"]:
+		return OK
+	flags["tutorial_done"] = true
+	var error := save()
+	EventBus.tutorial_completed.emit()
+	return error
+
 ## Asks for a save without blocking: requests made in the same frame become one write of the latest data.
 func request_save() -> void:
 	if _request_queued:
@@ -221,6 +272,14 @@ func _refuse_save(reason: StringName, message: String) -> Error:
 	save_loaded.emit()
 	return ERR_INVALID_DATA
 
+func _mark_run_in_progress(start_wave: int, start_mult: float, waves_cleared: int, prestige_pending: int) -> void:
+	var run_flag := get_section(RUN_FLAG)
+	run_flag["run_in_progress"] = true
+	run_flag["start_wave"] = start_wave
+	run_flag["start_mult"] = start_mult
+	run_flag["waves_cleared"] = waves_cleared
+	run_flag["prestige_pending"] = prestige_pending
+
 func _flush_request() -> void:
 	_request_queued = false
 	save()
@@ -245,11 +304,15 @@ func _on_state_changed(new_state: StringName) -> void:
 	_in_combat = false
 	_flush_pending()
 
-func _on_run_ended(_end_type: StringName, _summary: Dictionary) -> void:
+func _on_run_ended(_end_type: StringName, summary: Dictionary) -> void:
 	_in_combat = false
+	record_run_end(summary)
+	# A duplicate or empty run_ended still writes a save held back in combat.
 	_flush_pending()
 
-func _on_app_state_changed(_new_state: GameState.AppState, old_state: GameState.AppState) -> void:
+func _on_app_state_changed(new_state: GameState.AppState, old_state: GameState.AppState) -> void:
+	if new_state == GameState.AppState.RUN:
+		_run_recorded = false
 	if old_state != GameState.AppState.RUN:
 		return
 	_in_combat = false
