@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bxl5an0l481jj"]
+
+[ext_resource type="Script" uid="uid://dbpwvyg120ou7" path="res://tests/test_save_atomic_runner.gd" id="1_saveatomic"]
+
+[node name="TestSaveAtomicRunner" type="Node" unique_id=2000053413]
+script = ExtResource("1_saveatomic")
