@@ -37,6 +37,19 @@ signal stuck_event_logged(tier: int, enemy_type: StringName, position: Vector3, 
 signal commander_died
 signal commander_hp_changed(hp: int, max_hp: int)
 signal heal_state_changed(state: StringName, source_slot: StringName, hold_progress: float)  # IDLE | HOLD | HEALING | CANCELLED | DEPLETED, progress 0..1 and sent at most 10 times a second while holding
+## HealStatusReporter -> heal HUD: state and first block reason (empty when ready),
+## hold_progress 0..1, hold_remaining in game seconds (full duration while idle, zero while healing),
+## heal_rate in HP/game second, alive_stations with stock and total_stations including rubble.
+## Heartbeat at most 10 times per real second, including pause; teardown sends an empty snapshot.
+signal heal_status_updated(
+	state: StringName,
+	block_reason: StringName,
+	hold_progress: float,
+	hold_remaining: float,
+	heal_rate: float,
+	alive_stations: int,
+	total_stations: int
+)
 signal commander_low_hp_changed(is_low: bool)  # HP below commander_low_hp_warning_pct, emitted only when it flips
 signal mode_changed(mode: StringName)  # FRONTLINE | COMMANDER
 signal weapon_equipped(weapon_id: StringName)  # RunState -> HUD, weapon panel, Commander, Art

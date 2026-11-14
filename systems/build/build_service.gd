@@ -163,16 +163,23 @@ func is_heal_station(data: TowerData) -> bool:
 ## Heal stations standing or left as rubble, except on except_slot. Counted from the slots
 ## on every call, like get_ground_used().
 func get_heal_station_count(except_slot: StringName = &"") -> int:
-	var count := 0
+	return get_heal_station_status(except_slot)["total"]
+
+func get_heal_station_status(except_slot: StringName = &"") -> Dictionary:
+	var alive := 0
+	var total := 0
 	for node in get_tree().get_nodes_in_group(&"slot"):
 		var slot := node as Slot
-		if slot == null or slot.slot_id == except_slot:
+		if slot == null or slot.is_queued_for_deletion() or slot.slot_id == except_slot:
 			continue
 		if slot.state == Enums.SlotState.OCCUPIED and slot.tower != null and is_heal_station(slot.tower.data):
-			count += 1
+			total += 1
+			var station := slot.tower as HealStation
+			if station != null and station.is_alive() and station.hp > 0.0:
+				alive += 1
 		elif slot.state == Enums.SlotState.RUINED and is_heal_station(slot.last_data):
-			count += 1
-	return count
+			total += 1
+	return {"alive": alive, "total": total}
 
 ## A new station may not pass the cap. Its own rubble on this slot does not count, so a rebuild
 ## never adds one; building another type on a station's rubble frees that place.

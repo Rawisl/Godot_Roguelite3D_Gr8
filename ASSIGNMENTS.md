@@ -698,10 +698,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG7
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nối lõi hồi máu với Trạm hồi lực thật (thay trạm giả), test HT1..HT5 và test input camera (CM4)
 - Nghiệm thu: HT1..HT5 đạt với trạm thật; CM4 đạt
 - Cần xong trước: W8-MH5
+- Ghi chú bàn giao: HUD nhận trạng thái, lý do khóa, countdown, tốc độ hồi và số trạm thật qua EventBus. Playtest F6: `tests/test_playtest_heal_channel.tscn`; có preset, cấp bị động 0..3, pause và hộp thoại; dùng save trong bộ nhớ và tắt backend. Runner `test_heal_status_runner`, `test_heal_channel` và `test_camera_flow` đạt; walkthrough có render đã kiểm tra HUD và chuyển ngữ cảnh.
 
 ##### W10-NG8
 - Người: Ngọc
@@ -853,7 +854,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH1
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Save atomic + checksum + .bak (SAV-01..06, 10..14, 19; FLOW-01, 02, 07)
 - Nghiệm thu: Xóa save.json thì nạp từ .bak; ghi dưới 50 ms; flags.tutorial_done có mặc định false
 - Cần xong trước: W9-MH2, W7-KH2

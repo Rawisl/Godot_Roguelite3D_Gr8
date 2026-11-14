@@ -12,13 +12,15 @@ const FLASH_TIME := 1.5
 
 var _state: StringName = IDLE
 var _progress := 0.0
-var _wave_state: StringName = &""
-var _commander_mode := false
-var _full_hp := false
+var _block_reason: StringName = &""
+var _hold_remaining := 0.0
+var _heal_rate := 0.0
 var _last_hp := -1
 var _flash_key: StringName = &""
 var _flash_until := 0.0
-var _alive := 0
+var _station_counts := Vector2i(-1, -1)
+var _rendered_key: StringName = &""
+var _rendered_value := -INF
 ## Stations that already warned about a low store since they were built, by slot.
 var _low_warned: Dictionary = {}
 
@@ -28,16 +30,14 @@ var _low_warned: Dictionary = {}
 @onready var _stations: Label = %Stations
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_key_label.text = tr(&"hud.heal.key")
-	# Sent by the heal channel; connected by name until that signal is on main.
-	if EventBus.has_signal(&"heal_state_changed"):
-		EventBus.connect(&"heal_state_changed", show_heal_state)
-	EventBus.state_changed.connect(_on_wave_state_changed)
-	EventBus.mode_changed.connect(_on_mode_changed)
+	EventBus.heal_state_changed.connect(show_heal_state)
+	EventBus.heal_status_updated.connect(_on_status_updated)
 	EventBus.commander_hp_changed.connect(_on_commander_hp_changed)
 	EventBus.heal_tower_hp_changed.connect(_on_station_store_changed)
 	EventBus.tower_built.connect(_on_tower_built)
-	EventBus.run_started.connect(func() -> void: _low_warned.clear())
+	EventBus.run_started.connect(_reset)
 	set_stations(0, 0)
 
 func _process(_delta: float) -> void:
@@ -47,10 +47,20 @@ func _process(_delta: float) -> void:
 
 ## Shown only while at least one station exists.
 func set_stations(alive: int, total: int) -> void:
-	_alive = alive
-	visible = total > 0
-	_stations.text = UiFormat.tr_fmt(&"hud.heal.stations", {"alive": alive, "total": total})
+	var counts := Vector2i(alive, total)
+	if counts != _station_counts:
+		_station_counts = counts
+		visible = total > 0
+		_stations.text = UiFormat.tr_fmt(&"hud.heal.stations", {"alive": alive, "total": total})
 	_refresh()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
+		_rendered_key = &""
+		var counts := _station_counts
+		_station_counts = Vector2i(-1, -1)
+		_key_label.text = tr(&"hud.heal.key")
+		set_stations(counts.x, counts.y)
 
 func show_heal_state(state: StringName, source_slot: StringName, hold_progress: float) -> void:
 	_state = state
@@ -63,23 +73,38 @@ func show_heal_state(state: StringName, source_slot: StringName, hold_progress: 
 			_alert_drained.call_deferred(source_slot)
 		CANCELLED:
 			# A hit explains the cancel better than "release E", so it is kept.
-			if not _is_flashing(&"hud.heal.under_attack"):
+			if not _is_flashing(&"hud.heal.under_attack") and not _is_flashing(&"hud.heal.depleted"):
 				_flash(&"hud.heal.release")
 	_refresh()
 
-func _on_wave_state_changed(new_state: StringName) -> void:
-	_wave_state = new_state
-	_refresh()
+func _on_status_updated(state: StringName, reason: StringName, progress: float,
+		remaining: float, rate: float, alive: int, total: int) -> void:
+	_state = state
+	_block_reason = reason
+	_progress = progress
+	_hold_remaining = remaining
+	_heal_rate = rate
+	if total == 0 or state == HOLD or state == HEALING:
+		_flash_until = 0.0
+	if reason in [&"COMMANDER_MODE", &"WAVE_STATE", &"PAUSED", &"FULL_HP",
+			&"NO_STATION_IN_RANGE", &"DEPLETED", &"DEAD"]:
+		_flash_until = 0.0
+	if total == 0:
+		_last_hp = -1
+	set_stations(alive, total)
 
-func _on_mode_changed(mode: StringName) -> void:
-	_commander_mode = mode == &"COMMANDER"
-	_refresh()
+func _reset() -> void:
+	_low_warned.clear()
+	_last_hp = -1
+	_flash_until = 0.0
+	_state = IDLE
+	_block_reason = &""
+	set_stations(0, 0)
 
-func _on_commander_hp_changed(hp: int, max_hp: int) -> void:
+func _on_commander_hp_changed(hp: int, _max_hp: int) -> void:
 	if _last_hp >= 0 and hp < _last_hp:
 		_flash(&"hud.heal.under_attack")
 	_last_hp = hp
-	_full_hp = hp >= max_hp
 	_refresh()
 
 func _flash(key: StringName) -> void:
@@ -89,28 +114,47 @@ func _flash(key: StringName) -> void:
 func _is_flashing(key: StringName) -> bool:
 	return _flash_key == key and TimeManager.real_time < _flash_until
 
-# TODO(Rawisl): show the seconds left and the heal rate once heal_state_changed sends them.
 func _refresh() -> void:
-	_hold_bar.visible = _state == HOLD
-	_hold_bar.value = _progress
-	_status.text = tr(_status_key())
+	if _hold_bar.visible != (_state == HOLD):
+		_hold_bar.visible = _state == HOLD
+	var progress := snappedf(_progress, _hold_bar.step) if _hold_bar.step > 0.0 else _progress
+	if not is_equal_approx(_hold_bar.value, progress):
+		_hold_bar.value = progress
+	var key := _status_key()
+	var value := _hold_remaining if key == &"hud.heal.hold" else _heal_rate if key == &"hud.heal.healing" else 0.0
+	if key == _rendered_key and value == _rendered_value:
+		return
+	_rendered_key = key
+	_rendered_value = value
+	if key == &"hud.heal.hold":
+		_status.text = UiFormat.tr_fmt(key, {"seconds": UiFormat.decimal(_hold_remaining)})
+	elif key == &"hud.heal.healing":
+		_status.text = UiFormat.tr_fmt(key, {"rate": UiFormat.num(_heal_rate)})
+	else:
+		_status.text = tr(key)
 
-## Active phase first, then a one-off message, then why E would do nothing right now.
+## Hard gates win; recent damage or depletion explains a busy state more precisely.
 func _status_key() -> StringName:
 	if _state == HOLD:
 		return &"hud.heal.hold"
 	if _state == HEALING:
 		return &"hud.heal.healing"
+	match _block_reason:
+		&"COMMANDER_MODE": return &"hud.heal.frontline_only"
+		&"WAVE_STATE": return &"hud.heal.combat_only"
+		&"PAUSED": return &"hud.heal.paused"
+		&"FULL_HP": return &"hud.heal.full_hp"
+		&"NO_STATION_IN_RANGE": return &"hud.heal.too_far"
+		&"DEPLETED": return &"hud.heal.depleted"
+		&"DEAD": return &"hud.heal.dead"
+	if _is_flashing(&"hud.heal.under_attack") or _is_flashing(&"hud.heal.depleted"):
+		return _flash_key
+	if _block_reason == &"NOT_IDLE":
+		return &"hud.heal.busy"
+	if _block_reason == &"RELEASE_AND_PRESS_E":
+		return &"hud.heal.release"
 	if TimeManager.real_time < _flash_until:
 		return _flash_key
-	if _commander_mode:
-		return &"hud.heal.frontline_only"
-	if _wave_state != &"COMBAT" and _wave_state != &"BOSS_COMBAT":
-		return &"hud.heal.combat_only"
-	if _full_hp:
-		return &"hud.heal.full_hp"
-	if _alive == 0:
-		return &"hud.heal.depleted"
 	return &"hud.heal.ready"
 
 ## Drained by healing: the station is rubble now. Deferred so the slot already shows the rebuild cost.
