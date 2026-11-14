@@ -53,7 +53,6 @@ func get_level(id: StringName) -> int:
 	var levels: Dictionary = SaveManager.get_section(META).get("levels", {})
 	return int(levels.get(String(id), 0))
 
-# TODO(kiezroth): add the meta shop service (group meta_shop_service) with purchase(item_id) -> bool: check the balance, take the cost, raise the level by one, save, and undo both if the save fails; then emit meta_item_purchased and prestige_balance_changed.
 func _service() -> Node:
 	return get_tree().get_first_node_in_group(&"meta_shop_service")
 

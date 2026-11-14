@@ -879,10 +879,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH4
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: MetaShop backend (SHP-05..09, 4 mục: FORT_HP, GOLD_PCT, CMD_HP, EMG_REPAIR; không STARTER_KIT hay UNLOCK_WAND)
 - Nghiệm thu: Mua nguyên tử, không nhảy cấp
 - Cần xong trước: W9-MH2, W10-MH1
+- Ghi chú: service sống trong màn MetaShop; modifier cho RunLoading ở MetaUpgrades.get_run_modifiers (W10-KT1 gọi)
 
 ##### W10-MH7
 - Người: Mạnh
