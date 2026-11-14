@@ -759,6 +759,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: RunLoading 8 bước (RUN-01, APL-01..04) trên RunState có sẵn; áp meta; gọi bước đặt trụ có sẵn hoặc tutorial (A: W10-MH10)
 - Nghiệm thu: RunLoading < 5 s, start_wave = 1, gold 0
 - Tệp liên quan: ui/screens/run_loading.gd, systems/run/
+- Ghi chú: sau init_from_config gọi SaveManager.record_run_start(start_wave, start_mult)
 - ID SRS: 3.2.1
 - Cần xong trước: W8B-KT1, W8-KT1
 
@@ -861,10 +862,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH2
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SAV-04 nối SUMMARY, RunEnd, shop (và nối khi tutorial_done bật)
 - Nghiệm thu: Ghi save xong mới hiển thị SUMMARY
 - Cần xong trước: W10-MH1
+- Ghi chú: phần shop ghi save trong W10-MH4 (mua ở MetaShop gọi save); ghi run_flag lúc bắt đầu run chờ W10-KT1 gọi SaveManager.record_run_start (TODO(Ender-Via) ở systems/run/run_state.gd); tutorial gọi SaveManager.mark_tutorial_done() ở W11-NG1
 
 ##### W10-MH3
 - Người: Mạnh
@@ -1404,6 +1406,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: mới: systems/tutorial/; ui/; autoload/save_manager.gd (flags.tutorial_done); tín hiệu tutorial_step_completed đã có trong event_bus.gd
 - ID SRS: TUT-01, 03, 08..11, 14, 15, 17; BLD-11; EVB-45
 - Cần xong trước: W10-MH10, W8B-KH1, W11-KH4
+- Ghi chú: ghi tutorial_done qua SaveManager.mark_tutorial_done() (tự phát tutorial_completed)
 
 ##### W11-KH6
 - Người: Khang
