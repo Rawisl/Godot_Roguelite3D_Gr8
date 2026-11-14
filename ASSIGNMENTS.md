@@ -854,7 +854,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH1
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Save atomic + checksum + .bak (SAV-01..06, 10..14, 19; FLOW-01, 02, 07)
 - Nghiệm thu: Xóa save.json thì nạp từ .bak; ghi dưới 50 ms; flags.tutorial_done có mặc định false
 - Cần xong trước: W9-MH2, W7-KH2
