@@ -2,6 +2,7 @@ class_name RunConfig
 extends RefCounted
 
 ## Immutable configuration container initialized during run setup.
+# TODO(Ender-Via): when RunLoading builds the run config, pass MetaUpgrades.get_run_modifiers(SaveManager.get_section(&"meta")["levels"]) as p_meta to create_default so the four permanent upgrades apply once per run.
 
 var start_wave: int = 1
 var starting_gold: int = 0
