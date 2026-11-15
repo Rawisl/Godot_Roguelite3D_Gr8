@@ -11,6 +11,7 @@ var hit_by_commander: bool = false
 var raw: float = 0.0
 var dealt_mult: float = 1.0
 var is_dot: bool = false
+var is_weapon_effect: bool = false
 ## Written by DamageCalc.resolve.
 var resist: float = 1.0
 var immune: bool = false

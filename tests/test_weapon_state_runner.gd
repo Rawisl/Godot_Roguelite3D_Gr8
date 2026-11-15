@@ -22,6 +22,8 @@ func _ready() -> void:
 	test_equip_refused()
 	await test_late_commander()
 	await test_rampage_damage()
+	test_weapon_lookup_outside_tree()
+	test_weapon_model_swap()
 
 	print("=======================================================")
 	print("WEAPON STATE TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -97,6 +99,46 @@ func test_start_of_run() -> void:
 	run_state.init_from_config(config)
 	assert_true(run_state.owned_weapons == [&"sword_base"] and run_state.equipped_weapon == &"sword_base", "init_from_config puts the run back to the base sword only")
 	run_state.free()
+
+
+func test_weapon_lookup_outside_tree() -> void:
+	var commander: CharacterBody3D = (load("res://entities/commander/commander.tscn") as PackedScene).instantiate()
+	assert_true(commander._weapon_group_node(&"weapon_mount") == null, "weapon mount lookup outside SceneTree returns null")
+	commander._swap_weapon_model(null)
+	assert_true(commander._weapon_model == null, "model fallback outside SceneTree completes without a model")
+	commander.free()
+
+
+func test_weapon_model_swap() -> void:
+	var commander := _new_commander()
+	var mount: Node3D = commander._weapon_group_node(&"weapon_mount")
+	var default_model: Node3D = commander._weapon_group_node(&"weapon_default_model")
+	if mount == null or default_model == null:
+		print("  [SKIP] Art model has no weapon mount groups; using an isolated mount fixture")
+		mount = Node3D.new()
+		mount.add_to_group(&"weapon_mount")
+		commander.add_child(mount)
+		default_model = Node3D.new()
+		default_model.add_to_group(&"weapon_default_model")
+		mount.add_child(default_model)
+	var model := Node3D.new()
+	model.name = "TestWeaponModel"
+	var packed := PackedScene.new()
+	assert_true(packed.pack(model) == OK, "test weapon model packs")
+	model.free()
+	var swift := _weapon(&"swift")
+	var saved_model := swift.model
+	swift.model = packed
+	commander._apply_weapon(&"swift")
+	var first: Node = commander._weapon_model
+	assert_true(first != null and first.get_parent() == mount and not default_model.visible, "equipping a model mounts it and hides the default sword")
+	commander._apply_weapon(&"swift")
+	assert_true(not is_instance_valid(first) and commander._weapon_model != null, "equipping again frees the old instance")
+	var second: Node = commander._weapon_model
+	commander._apply_weapon(&"sword_base")
+	assert_true(not is_instance_valid(second) and commander._weapon_model == null and default_model.visible, "an empty model restores the default sword")
+	swift.model = saved_model
+	commander.free()
 
 
 func test_equip_in_prep() -> void:

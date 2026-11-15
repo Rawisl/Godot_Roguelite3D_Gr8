@@ -57,8 +57,10 @@ static func has_cap_hook() -> bool:
 ## sent to several targets and each target gets its own resist, taken_mult and boss rules.
 static func resolve(info: DamageInfo, target: Node) -> int:
 	if info.damage_type == Enums.DamageType.TRUE:
+		info.resist = 1.0
+		info.immune = false
 		info.amount = maxi(0, roundi(info.raw))
-		return info.amount
+		return _apply_cap(info, target)
 
 	var resist := 1.0
 	if target != null and target.has_method(&"get_resist"):
@@ -84,6 +86,10 @@ static func resolve(info: DamageInfo, target: Node) -> int:
 	else:
 		info.amount = hit(info.raw, info.dealt_mult, taken, resist, is_boss)
 
+	return _apply_cap(info, target)
+
+
+static func _apply_cap(info: DamageInfo, target: Node) -> int:
 	if _cap_hook.is_valid():
 		var cap := int(_cap_hook.call(info, target))
 		if cap >= 0:

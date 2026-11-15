@@ -42,6 +42,8 @@ var aim_point: Vector3 = Vector3.INF
 ## Radius the sword area has in the scene; a weapon can only make it bigger.
 var _sword_area_base_radius: float = -1.0
 var _equipped_weapon_data: WeaponData
+var _weapon_model: Node
+var _warned_weapon_mount := false
 var is_commander_mode: bool = false
 var is_deploying: bool = false
 var is_dead: bool = false
@@ -92,6 +94,7 @@ var _debug_timer: float = 0.0
 var _cmd_input: CommanderInput
 var _spawn_position: Vector3
 var _wave_state: StringName = &""
+var _prev_wave_state: StringName = &""
 var _is_low_hp: bool = false
 
 ## Every gameplay read of a commander stat goes through this block.
@@ -100,6 +103,7 @@ var _stat_applier: StatCardApplier
 var _mode_switch: ModeSwitch
 ## Keys 1-3: active skill slots, cooldowns and levels.
 var skill_runner: SkillRunner
+var hazard_trial_state: HazardTrialState
 
 @onready var _aim_pivot: Node3D = %AimPivot
 @onready var _sword_area: Area3D = %SwordArea
@@ -119,6 +123,7 @@ func _ready() -> void:
 	_setup_heal_channel()
 	_setup_mode_switch()
 	_setup_skill_runner()
+	_setup_hazard_trial_state()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
@@ -198,6 +203,12 @@ func _setup_skill_runner() -> void:
 	skill_runner.caster = self
 	skill_runner.stat_block = stat_block
 	add_child(skill_runner)
+
+
+func _setup_hazard_trial_state() -> void:
+	hazard_trial_state = HazardTrialState.new()
+	hazard_trial_state.name = "HazardTrialState"
+	add_child(hazard_trial_state)
 
 
 func _setup_input() -> void:
@@ -300,6 +311,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_cooldowns_and_timers(delta: float) -> void:
+	var run_state := get_tree().get_first_node_in_group(&"run_state") as RunState
+	if run_state != null and run_state.chain_cd > 0.0:
+		run_state.chain_cd = maxf(0.0, run_state.chain_cd - delta)
 	if _hit_reaction_timer > 0.0:
 		_hit_reaction_timer = maxf(0.0, _hit_reaction_timer - delta)
 
@@ -379,7 +393,7 @@ func get_wave_state() -> StringName:
 ## Movement and combat commands only run while a wave is being fought. An empty state
 ## means no wave system is running (isolated test scenes), so nothing is locked.
 func _ground_actions_allowed() -> bool:
-	return _wave_state == &"" or _wave_state == &"COMBAT" or _wave_state == &"BOSS_COMBAT"
+	return _wave_state in [&"", &"COMBAT", &"BOSS_COMBAT", &"HAZARD_TRIAL"]
 
 
 func _move_input() -> Vector2:
@@ -874,6 +888,45 @@ func get_sword_dealt_mult() -> float:
 	return 1.0 + stat_block.get_mul_total(&"sword_damage") + get_weapon_dealt_bonus()
 
 
+func on_weapon_hit(target: Enemy, info: DamageInfo) -> void:
+	var weapon := _equipped_weapon_data
+	if weapon == null or weapon.effect_id != &"chain":
+		return
+	var run_state := get_tree().get_first_node_in_group(&"run_state") as RunState
+	if run_state == null or run_state.chain_cd > 0.0:
+		return
+	run_state.chain_cd = weapon.get_param(&"chain_cooldown")
+	EventBus.skill_cooldown_changed.emit(&"chain_lightning", run_state.chain_cd, run_state.chain_cd)
+	var raw := (stat_block.get_base(&"sword_damage") + stat_block.get_add_total(&"sword_damage")) * weapon.get_param(&"chain_damage_pct")
+	var visited: Array[Enemy] = []
+	var current := target
+	for index in int(weapon.get_param(&"chain_max_targets")):
+		if current == null:
+			break
+		visited.append(current)
+		var bolt := DamageInfo.outgoing(raw, get_sword_dealt_mult(), info.damage_type, self)
+		bolt.is_weapon_effect = true
+		current.take_damage(bolt)
+		var next: Enemy = null
+		var nearest := weapon.get_param(&"chain_radius")
+		for node in get_tree().get_nodes_in_group(&"enemy"):
+			var candidate := node as Enemy
+			if candidate == null or candidate in visited or candidate.is_dead or candidate.spawn_grace or candidate.is_queued_for_deletion():
+				continue
+			var offset := candidate.global_position - current.global_position
+			var distance := Vector2(offset.x, offset.z).length()
+			if distance > weapon.get_param(&"chain_radius"):
+				continue
+			if next == null or distance < nearest or (is_equal_approx(distance, nearest) and _weapon_target_id(candidate) < _weapon_target_id(next)):
+				next = candidate
+				nearest = distance
+		current = next
+
+
+func _weapon_target_id(target: Node) -> int:
+	return int(target.get("entity_id")) if "entity_id" in target else target.get_instance_id()
+
+
 func get_weapon_dealt_bonus() -> float:
 	_refresh_weapon_dealt_bonus()
 	return stat_block.get_add_total(WEAPON_DEALT_BONUS)
@@ -1045,6 +1098,7 @@ func _apply_weapon(weapon_id: StringName) -> void:
 	var path := WEAPON_DATA_PATH % weapon_id
 	_equipped_weapon_data = load(path) as WeaponData if ResourceLoader.exists(path) else null
 	var weapon := _equipped_weapon_data
+	_swap_weapon_model(weapon)
 	if weapon == null:
 		push_warning("Commander: no WeaponData at %s, the sword keeps the base range" % path)
 	var range_mult := weapon.range_mult if weapon != null else 1.0
@@ -1052,6 +1106,35 @@ func _apply_weapon(weapon_id: StringName) -> void:
 	stat_block.set_mul(&"attack_interval", WEAPON_SOURCE, 1.0 / _weapon_attack_speed() - 1.0)
 	_refresh_weapon_dealt_bonus()
 	_setup_sword_area()
+
+
+func _weapon_group_node(group: StringName) -> Node3D:
+	if not is_inside_tree():
+		return null
+	for node in get_tree().get_nodes_in_group(group):
+		if node is Node3D and is_ancestor_of(node):
+			return node as Node3D
+	return null
+
+
+func _swap_weapon_model(weapon: WeaponData) -> void:
+	if is_instance_valid(_weapon_model):
+		_weapon_model.free()
+	_weapon_model = null
+	var default_model := _weapon_group_node(&"weapon_default_model")
+	if default_model != null:
+		default_model.show()
+	if weapon == null or weapon.model == null:
+		return
+	var mount := _weapon_group_node(&"weapon_mount")
+	if mount == null or default_model == null:
+		if not _warned_weapon_mount:
+			_warned_weapon_mount = true
+			push_warning("Commander: weapon_mount and weapon_default_model groups are required for weapon models")
+		return
+	_weapon_model = weapon.model.instantiate()
+	mount.add_child(_weapon_model)
+	default_model.hide()
 
 
 func _weapon_attack_speed() -> float:
@@ -1063,8 +1146,9 @@ func _weapon_attack_speed() -> float:
 
 
 func _on_wave_state_changed(new_state: StringName) -> void:
+	_prev_wave_state = _wave_state
 	_wave_state = new_state
-	if new_state == &"PREP" and not is_dead:
+	if new_state == &"PREP" and _prev_wave_state != &"HAZARD_TRIAL" and not is_dead:
 		var heal_pct: float = stats.prep_heal_pct if stats else 0.35
 		health.heal(floori(float(health.max_hp) * heal_pct))
 
@@ -1096,6 +1180,8 @@ func _find_deploy_position() -> Vector3:
 
 
 func _on_died() -> void:
+	if hazard_trial_state != null and hazard_trial_state.is_in_room():
+		return
 	if is_dead:
 		return
 	is_dead = true

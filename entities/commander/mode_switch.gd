@@ -8,6 +8,7 @@ enum Phase { NONE, RECALLING, ARRIVING, DEPLOYING }
 
 const DENIED_COOLDOWN := &"COOLDOWN"
 const DENIED_BOSS_INTRO := &"BOSS_INTRO"
+const DENIED_HAZARD := &"HAZARD"
 
 const LAYER_WORLD := 1
 const LAYER_STRUCTURE := 4
@@ -70,6 +71,9 @@ func request() -> void:
 	var state: StringName = _commander.get_wave_state()
 	if state == &"BOSS_INTRO":
 		EventBus.mode_switch_denied.emit(DENIED_BOSS_INTRO, 0.0)
+		return
+	if state == &"HAZARD_TRIAL":
+		EventBus.mode_switch_denied.emit(DENIED_HAZARD, 0.0)
 		return
 	var free_switch := state == &"PREP"
 	if not free_switch and cooldown_left > 0.0:

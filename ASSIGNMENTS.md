@@ -274,12 +274,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-NG1
 - Người: Ngọc
 - Tuần: 8 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Công thức sát thương chung DMG-06: dealt_mult cộng dồn, taken_mult nhân, làm tròn gần nhất, dot_remainder, resist; gom mọi nguồn sát thương của chỉ huy và tower vào một hàm; chừa hook trần sát thương theo nguồn (cho Hazard Trial)
 - Nghiệm thu: Test GUT: dealt +20% và +10% ra x1.3; taken nhân; tick DoT 5 lần cộng đúng tổng nhờ dot_remainder; kháng 0 ra IMMUNE; hook trần có thể bật/tắt
 - Tệp liên quan: common/damage_info.gd, common/health_component.gd, entities/commander/commander.gd (_execute_sword_strike), entities/enemy/enemy.gd, entities/tower/tower.gd
 - ID SRS: DMG-06, HZT-05 (hook)
 - Cần xong trước: không
+- Ghi chú bàn giao: DamageCalc resolves additive dealt modifiers, multiplicative taken modifiers, resistance, rounding and DoT remainder. Its final cap hook also applies to TRUE damage while preserving TRUE damage's raw-only formula. Verified by the damage formula and Hazard commander runners.
 
 #### Kiệt (Enemy & Wave), tuần 8, 10h
 
@@ -720,22 +721,27 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG9
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Vũ khí qua StatBlock: range_mult nhân sword_range, Swift (tốc độ đánh x1.5, tầm x0.7, combo_window giữ nguyên), Rampage (+10%/+25%/+50% dealt_mult theo tỷ lệ máu); đổi vũ khí đổi model trên tay
 - Nghiệm thu: WP6, WP7 đạt; đổi vũ khí ở PREP có hiệu lực ngay
 - Tệp liên quan: entities/commander/commander.gd, common/stat_block.gd, common/character_stats.gd
 - ID SRS: WPN-09, WPN-10
 - Cần xong trước: W9-NG6, W8B-NG1
+- Ghi chú bàn giao: Swift and Rampage retain their existing behavior. Weapon changes now replace the mounted model and restore the default sword for empty model fields. @kimvux: add weapon_mount to the right forearm attachment and weapon_default_model to FoxSword in contents/assets/characters/fox_commander/fox_commander_model.tscn; populate WeaponData.model later. Missing groups warn once when a custom model is requested and retain the default sword. Generated weapon resources remain unchanged. The weapon runner verifies model replacement using an isolated fixture while the art groups are unavailable.
 
 ##### W10-NG10
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial phía chỉ huy: bản sao chỉ số (HP, level, skill, StatBlock, vũ khí, cooldown) và bỏ khi ra; chết trong phòng không phải chết thật (không commander_died); khóa Tab/Recall; trần sát thương 10% theo con nhiều máu nhất (boss chỉ tính core_hp) áp cho mọi nguồn; không Emergency repair, không Trạm hồi lực
 - Nghiệm thu: Vào phòng 70/100 HP, mất 50, ra ngoài vẫn 70; đòn 80 vào con 500 HP chỉ gây 50; chết trong phòng không kết thúc run
 - Tệp liên quan: entities/commander/commander.gd, mode_switch.gd, heal_channel.gd, common/damage_info.gd (hook trần từ W8B-NG1)
 - ID SRS: HZT-05, HZT-06, HZT-10, DEAD-05, DEAD-11
 - Cần xong trước: W10-KT4, W8B-NG1, W9-NG6
+- Ghi chú bàn giao: HazardTrialState stores precise HP, max HP, DoT remainder, deep StatBlock modifiers, skill slots/levels/cooldowns, commander cooldowns/status, equipped weapon and chain cooldown in RunState.hazard_session. Emit hazard_trial_entered before room combat; the first commander hit scans the enemy group once after room enemies spawn. Boss references use max_core_hp. Emit hazard_trial_exited to restore the snapshot and clear the session; run_ended and node removal also clear the process-wide cap hook.
+- Ghi chú bàn giao: @Ender-Via: HAZARD_TRIAL is appended to Enums.WaveState. The room system must listen to existing EventBus.commander_hp_changed(0, max_hp), determine DIED, emit hazard_trial_exited and return to PREP. Room death deliberately emits no commander_died, starts no death animation and leaves is_dead false. Returning from HAZARD_TRIAL to PREP skips the 35% heal. No EventBus signals were added; room spawning, rewards and result selection remain with the room system.
+- Ghi chú bàn giao: @WhoKeng: strings.csv adds hud.mode.denied.hazard for mode_switch_denied(HAZARD, 0). Tab/Recall are denied; Frontline Emergency Repair and station healing retain their existing guards. Commander TRUE damage now reaches the final cap, while projectile impacts already reach DamageCalc.resolve through enemy/boss receivers. The previously absent Chain Lightning producer now sends each bolt through those same receivers, uses RunState.chain_cd and excludes recursive weapon effects; remaining weapon-effect integration stays in its assigned task.
+- Ghi chú bàn giao: tests/test_hazard_commander_runner.tscn covers restoration, lazy cached caps, boss core HP, room death, action locks, PREP healing, every requested damage source and cleanup. All new scripts include generated .uid files.
 
 ##### W10-MH5
 - Người: Ngọc

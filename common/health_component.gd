@@ -93,3 +93,10 @@ func get_health_ratio() -> float:
 
 func get_precise_hp() -> float:
 	return _precise_hp
+
+
+func restore_state(precise_hp: float, saved_max_hp: int, saved_remainder: float) -> void:
+	max_hp = saved_max_hp
+	_precise_hp = clampf(precise_hp, 0.0, max_hp)
+	dot_remainder = saved_remainder
+	hp_changed.emit(floori(_precise_hp), max_hp)
