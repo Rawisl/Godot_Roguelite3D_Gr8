@@ -1,6 +1,6 @@
 class_name Barricade
 extends Tower
-# TODO(kiezroth): when TowerData holds the three tier models, drop _show_level_model and let the shared tier swap show the Barricade
+# TODO(kiezroth): when TowerData holds the three tier models, drop _show_level_model and let the shared tier swap show every tower
 
 var aggro_weight: float:
 	get:
@@ -30,10 +30,6 @@ func _show_level_model() -> void:
 			n.visible = i == tier
 
 
-## 1 below tower_tier2_level, 2 below tower_tier3_level, else 3.
+## Model tier of the current level; the rule lives in TowerData.model_tier.
 func _model_tier() -> int:
-	if level < GameConfig.tower_tier2_level:
-		return 1
-	if level < GameConfig.tower_tier3_level:
-		return 2
-	return 3
+	return TowerData.model_tier(level)
