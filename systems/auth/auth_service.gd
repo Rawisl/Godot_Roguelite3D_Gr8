@@ -44,15 +44,133 @@ var _expires_at: int = 0
 var _refreshing: bool = false
 # What the refresh in flight ended with, so callers waiting on it get the same answer.
 var _last_refresh: Dictionary = {"ok": true}
+var _pending_scores: Array[Dictionary] = []
+var _submitting := false
+var _recovered_run := true
 
 
 func _ready() -> void:
 	# Requests must keep running while the game is paused (settings menu, focus loss).
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	EventBus.run_started.connect(_on_score_run_started)
+	EventBus.run_recovered.connect(_on_score_run_recovered)
+	EventBus.run_ended.connect(_on_score_run_ended)
+	EventBus.save_completed.connect(_on_score_save_completed)
+	EventBus.meta_item_purchased.connect(_on_score_meta_purchased)
+
+
+func fetch_leaderboard(top_n: int = -1) -> Dictionary:
+	var version := GameConfig.game_version
+	var owner := user_id
+	var signed_in := is_signed_in()
+	var top := await rest(HTTPClient.METHOD_POST, "/rest/v1/rpc/leaderboard_top",
+			{"version": version, "top_n": GameConfig.lbd_top_n if top_n < 0 else clampi(top_n, 0, GameConfig.lbd_top_n)}, false)
+	if not top["ok"]:
+		return top
+	if not _valid_board_rows(top.get("data")):
+		return _fail(ERR_SERVER)
+	var own: Dictionary = {}
+	if signed_in and owner == user_id and is_signed_in():
+		var mine := await rest(HTTPClient.METHOD_POST, "/rest/v1/rpc/leaderboard_my_rank", {"version": version})
+		if not mine["ok"]:
+			return mine
+		if not _valid_board_rows(mine.get("data")):
+			return _fail(ERR_SERVER)
+		if owner == user_id and not mine["data"].is_empty():
+			own = mine["data"][0]
+	return {"ok": true, "rows": top["data"], "own": own}
+
+
+func _valid_board_rows(value: Variant) -> bool:
+	if not value is Array:
+		return false
+	for row in value:
+		if not row is Dictionary or not row.has_all(["rank", "display_name", "waves_cleared", "run_elapsed"]):
+			return false
+		if not row["display_name"] is String or not (row["rank"] is int or row["rank"] is float) \
+				or not (row["waves_cleared"] is int or row["waves_cleared"] is float) \
+				or not (row["run_elapsed"] is int or row["run_elapsed"] is float):
+			return false
+	return true
+
+
+## Flushes saved scores serially; transient failures stay queued for the next trigger.
+func submit_score() -> Dictionary:
+	if _submitting:
+		return {"ok": true, "pending": true}
+	if not is_signed_in():
+		return _fail(ERR_NOT_SIGNED_IN)
+	_submitting = true
+	var result := {"ok": true}
+	var failure: Dictionary = {}
+	for pending in _pending_scores.duplicate():
+		if not pending["saved"] or pending["user_id"] != user_id:
+			continue
+		var owner := user_id
+		var path := "/rest/v1/leaderboard?user_id=eq.%s" % owner.uri_encode()
+		result = await rest(HTTPClient.METHOD_PATCH, path, pending["row"], true, "return=representation")
+		if owner != user_id:
+			break
+		if result["ok"] and not result.get("data") is Array:
+			result = _fail(ERR_SERVER)
+		if result["ok"] and result["data"].is_empty():
+			result = await rest(HTTPClient.METHOD_POST, "/rest/v1/leaderboard", pending["row"], true, "return=representation")
+			# Another request may have inserted the account's first score in the meantime.
+			if int(result.get("status", 0)) == 409 and owner == user_id:
+				result = await rest(HTTPClient.METHOD_PATCH, path, pending["row"], true, "return=representation")
+		if result["ok"] and (not result.get("data") is Array or result["data"].is_empty() or not result["data"][0] is Dictionary):
+			result = _fail(ERR_SERVER)
+		if not result["ok"]:
+			failure = result
+			var status := int(result.get("status", 0))
+			if status == 0 or status >= 500 or status in [401, 403, 408, 429]:
+				break
+			_pending_scores.erase(pending)
+			continue
+		_pending_scores.erase(pending)
+	_submitting = false
+	return failure if not failure.is_empty() else result
+
+
+func _on_score_run_started() -> void:
+	_recovered_run = false
+
+
+func _on_score_run_recovered(_prestige_gain: int) -> void:
+	_recovered_run = true
+
+
+func _on_score_run_ended(_end_type: StringName, summary: Dictionary) -> void:
+	if is_signed_in() and int(summary.get("start_wave", 0)) == 1 \
+			and not _recovered_run and not summary.get("recovered", false) \
+			and not summary.get("interrupted", false) \
+			and summary.has_all(["waves_cleared", "run_elapsed", "run_seed"]):
+		_pending_scores.append({
+			"user_id": user_id, "saved": _is_score_saved(summary), "summary": summary.duplicate(true),
+			"row": {"waves_cleared": summary["waves_cleared"],
+				"run_elapsed": summary["run_elapsed"], "run_seed": summary["run_seed"],
+				"game_version": GameConfig.game_version},
+		})
+	submit_score.call_deferred()
+
+
+func _on_score_save_completed() -> void:
+	for pending in _pending_scores:
+		if _is_score_saved(pending["summary"]):
+			pending["saved"] = true
+	submit_score.call_deferred()
+
+
+func _is_score_saved(summary: Dictionary) -> bool:
+	return SaveManager.is_run_end_saved(summary)
+
+
+func _on_score_meta_purchased(_item_id: StringName, _new_level: int) -> void:
+	submit_score.call_deferred()
 
 
 func is_signed_in() -> bool:
-	return not _access_token.is_empty()
+	return not _access_token.is_empty() and not user_id.is_empty()
 
 
 ## False when online features are switched off or the config is unusable.
@@ -135,7 +253,7 @@ func restore_session() -> Dictionary:
 	user_id = str(file.get_value("session", "user_id", ""))
 	email = str(file.get_value("session", "email", ""))
 	display_name = str(file.get_value("session", "display_name", ""))
-	if _access_token.is_empty() or _refresh_token.is_empty():
+	if not is_signed_in() or _refresh_token.is_empty():
 		_clear_session()
 		return {"ok": true, "signed_in": false}
 	var result := await _ensure_fresh()
@@ -155,9 +273,12 @@ func rest(method: int, path: String, body: Variant = null, signed_in: bool = tru
 		return _fail(ERR_DISABLED)
 	var token := ""
 	if signed_in:
+		var owner := user_id
 		var fresh := await _ensure_fresh()
 		if not fresh["ok"]:
 			return fresh
+		if owner != user_id:
+			return _fail(ERR_NOT_SIGNED_IN)
 		token = _access_token
 		if token.is_empty():
 			return _fail(ERR_NOT_SIGNED_IN)
@@ -234,6 +355,7 @@ func _clear_session() -> void:
 
 
 func _forget_memory() -> void:
+	_pending_scores.clear()
 	_access_token = ""
 	_refresh_token = ""
 	_expires_at = 0

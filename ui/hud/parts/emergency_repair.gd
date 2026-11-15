@@ -4,7 +4,6 @@ extends PanelContainer
 ## spent charges are hollow dots, so nothing relies on colour alone.
 ## The lock reason is worked out here from mode, pause, Fortress HP, charges and cooldown,
 ## so it is right even before the commander sends a refusal.
-# TODO(kimvux): swap Sweep/Icon to an emergency repair icon once the icon set has one.
 
 const COMMANDER := &"COMMANDER"
 const SKILL_ID := &"emg_repair"

@@ -4,6 +4,7 @@ extends Node
 ## In-memory runtime state container for the active run session.
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
+# TODO(Ender-Via): when RunLoading builds the RunConfig, call init_from_config() and then start_run() before the first PREP; start_run() records the run flag and announces the new run once.
 
 ## The base sword: owned and equipped at the start of every run.
 const BASE_WEAPON := &"sword_base"
@@ -13,6 +14,8 @@ var wave_index: int = 1
 var waves_cleared: int = 0
 var run_elapsed: float = 0.0
 var run_seed: int = 0
+var start_wave: int = 1
+var start_mult: float = 1.0
 var victory_reached: bool = false
 
 # --- Economy ---
@@ -79,6 +82,7 @@ var _current_state: StringName = &""
 var _pending_fortress_destroyed: bool = false
 var _pending_commander_died: bool = false
 var _run_is_ended: bool = false
+var _run_started: bool = false
 
 
 func _ready() -> void:
@@ -93,6 +97,22 @@ func _ready() -> void:
 	EventBus.emergency_repair_state_changed.connect(_on_emergency_repair_state_changed)
 	EventBus.mode_changed.connect(_on_commander_mode_changed)
 	EventBus.run_started.connect(_on_run_started)
+	_start_main_scene_run.call_deferred()
+
+
+func _start_main_scene_run() -> void:
+	var scene := get_tree().current_scene
+	if scene != null and scene.scene_file_path == "res://main.tscn" and scene.is_ancestor_of(self):
+		start_run()
+
+
+## RunLoading may call this after initialization; direct main launches use the same path.
+func start_run() -> void:
+	if _run_started:
+		return
+	_run_started = true
+	SaveManager.record_run_start(start_wave, start_mult)
+	EventBus.run_started.emit()
 
 
 func _exit_tree() -> void:
@@ -127,6 +147,8 @@ func init_from_config(config: RunConfig) -> void:
 	if config == null:
 		return
 	wave_index = config.start_wave
+	start_wave = config.start_wave
+	start_mult = config.start_mult
 	waves_cleared = maxi(0, config.start_wave - 1)
 	gold = config.starting_gold
 	run_seed = config.run_seed
@@ -207,6 +229,10 @@ func build_summary(end_type: StringName, run_result: StringName) -> Dictionary:
 		"gold": gold,
 		"mithril": mithril,
 		"prestige_pending": prestige_pending,
+		"wave_prestige_buffer": wave_prestige_buffer,
+		"prestige_gain": PrestigeCalc.prestige_gain(prestige_pending, wave_prestige_buffer, start_mult),
+		"start_wave": start_wave,
+		"start_mult": start_mult,
 		"run_kills": run_kills,
 		"run_commander_kills": run_commander_kills,
 		"run_gold_earned": run_gold_earned,
@@ -281,6 +307,7 @@ func _on_commander_mode_changed(mode: StringName) -> void:
 
 ## Mithril does not carry over between runs.
 func _on_run_started() -> void:
+	_run_started = true
 	var previous := mithril
 	mithril = 0
 	if previous != 0:

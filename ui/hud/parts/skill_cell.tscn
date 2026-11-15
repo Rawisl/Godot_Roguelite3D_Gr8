@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c52vv1tt6w24v" path="res://ui/hud/parts/skill_cell.gd" id="1_cell"]
 [ext_resource type="Script" uid="uid://cnwq4xwphuih7" path="res://ui/hud/parts/cooldown_sweep.gd" id="2_sweep"]
+[ext_resource type="Texture2D" uid="uid://doiw16nd373tf" path="res://art/icons/lock_icon.png" id="3_lock"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dotfull"]
 bg_color = Color(0.949, 0.9373, 0.902, 1)
@@ -190,16 +191,31 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -22.0
+offset_left = -30.0
 offset_top = -11.0
-offset_right = 22.0
+offset_right = 30.0
 offset_bottom = 11.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_lock")
 
-[node name="LockLabel" type="Label" parent="LockTag" unique_id=1739204614]
+[node name="LockRow" type="HBoxContainer" parent="LockTag" unique_id=902384117]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="LockIcon" type="TextureRect" parent="LockTag/LockRow" unique_id=1311047528]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("3_lock")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LockLabel" type="Label" parent="LockTag/LockRow" unique_id=1739204614]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14

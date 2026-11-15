@@ -33,6 +33,10 @@ var _heal_states: Array = []
 var _commander: CharacterBody3D
 var _channel: HealChannel
 
+class FakeWaveManager extends Node:
+	var current_wave := 10
+	var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
+
 func _ready() -> void:
 	print("\n=======================================================")
 	print("       AUTOMATED HEAL STATION RUNNER TEST              ")
@@ -49,6 +53,7 @@ func _ready() -> void:
 	await test_killed_by_damage()
 	await test_no_refill()
 	await test_sell_value()
+	await test_damage_normalization()
 	await test_fractional_drain()
 	await test_contract()
 	await test_no_attack()
@@ -264,6 +269,51 @@ func test_sell_value() -> void:
 	var d := _station(&"G3")
 	d.drain(float(d.health.max_hp))
 	assert_true(not _service.sell(&"G3"), "a drained station cannot be sold")
+
+func test_damage_normalization() -> void:
+	print("\n[HT8] Incoming damage normalization")
+	await _reset()
+	_service.build(&"G1", &"heal_station")
+	var station := _station()
+	var manager := FakeWaveManager.new()
+	add_child(manager)
+	manager.add_to_group(&"wave_manager")
+	var hit := DamageInfo.new(17, Enums.DamageType.PIERCE, self, 2.0, Vector3.LEFT, true)
+	hit.raw = 8.5
+	hit.dealt_mult = 2.0
+	hit.is_dot = true
+	hit.resist = 0.5
+	hit.immune = true
+	var received: Array[DamageInfo] = []
+	station.health.damaged.connect(func(_amount: int, info: DamageInfo): received.append(info))
+	assert_true(station.take_damage(hit) == 14, "HT8 wave 10 raw 17 becomes 14")
+	assert_true(hit.amount == 17, "HT8 shared input remains unchanged")
+	assert_true(received[0].source == self and received[0].damage_type == hit.damage_type
+		and received[0].knockback_force == 2.0 and received[0].hit_direction == Vector3.LEFT
+		and received[0].hit_by_commander, "HT8 damage metadata is preserved")
+	assert_true(received[0].raw == hit.raw and received[0].dealt_mult == hit.dealt_mult
+		and received[0].is_dot == hit.is_dot and received[0].resist == hit.resist
+		and received[0].immune == hit.immune, "HT8 resolved damage metadata is preserved")
+	manager.current_wave = 20
+	assert_true(station.take_damage(40) == 24, "HT8 wave 20 raw 40 becomes 24")
+	assert_true(station.take_damage(DamageInfo.new(40)) == 24, "HT8 DamageInfo uses current impact wave")
+	assert_true(station.take_damage(1) == 1, "HT8 minimum damage is one")
+	assert_true(station.take_damage(0) == 0 and station.take_damage(-5) == 0, "HT8 nonpositive hits do no damage")
+	var before := station.hp
+	station.drain(17.5)
+	assert_true(is_equal_approx(before - station.hp, 17.5), "HT8 drain is not normalized")
+	manager.free()
+	assert_true(station.take_damage(17) == 17, "HT8 missing wave manager uses unscaled damage")
+	var detached := HEAL_SCENE.instantiate() as HealStation
+	assert_true(detached.take_damage(1) == 0, "HT8 uninitialized station ignores hits")
+	add_child(detached)
+	remove_child(detached)
+	var hp_before := detached.health.hp
+	assert_true(detached.take_damage(1) == 0 and detached.health.hp == hp_before,
+		"HT8 detached station ignores hits")
+	detached.free()
+	station.take_damage(station.health.hp)
+	assert_true(station.take_damage(1) == 0, "HT8 destroyed station ignores further hits")
 
 func test_fractional_drain() -> void:
 	print("\n[GROUP 9] Fractional drain")

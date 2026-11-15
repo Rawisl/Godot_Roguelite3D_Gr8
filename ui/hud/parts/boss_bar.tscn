@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bt1ys01cdjyws" path="res://ui/hud/parts/boss_bar.gd" id="1_8sfhq"]
 [ext_resource type="Resource" uid="uid://dmtjvtt64ofto" path="res://data/bosses/bulwark_boss.tres" id="2_blwk"]
-[ext_resource type="Texture2D" uid="uid://doqo8lphfl3mu" path="res://art/icons/boss_icon.png" id="3_bicon"]
+[ext_resource type="Texture2D" uid="uid://bde0bkypptbu0" path="res://art/icons/boss_warn_icon.png" id="3_warn"]
+[ext_resource type="Texture2D" uid="uid://by5ddff0ymiir" path="res://art/icons/boss_enrage_icon.png" id="6_enrage"]
 [ext_resource type="Texture2D" uid="uid://bs1qm0yx4mf1r" path="res://art/icons/shield_icon.png" id="4_shield"]
 [ext_resource type="Script" uid="uid://bhfhlrn5orfb" path="res://common/boss_data.gd" id="5_bdata"]
 
@@ -36,8 +37,8 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_box")
 script = ExtResource("1_8sfhq")
 bosses = Array[ExtResource("5_bdata")]([ExtResource("2_blwk")])
-warn_icon = ExtResource("3_bicon")
-enrage_icon = ExtResource("3_bicon")
+warn_icon = ExtResource("3_warn")
+enrage_icon = ExtResource("6_enrage")
 
 [node name="Body" type="VBoxContainer" parent="." unique_id=1580395716]
 layout_mode = 2

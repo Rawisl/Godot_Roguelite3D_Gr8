@@ -5,6 +5,7 @@ extends Tower
 ## Draining is fractional: the part below 1 HP waits in _carry, HealthComponent keeps the whole HP.
 ## An upgrade adds only the store the new level gains.
 # TODO(Rawisl): when the wave damage multiplier reaches the heal station, divide enemy and boss damage to the store by dmg_mult^heal_tower_dmg_norm_exp (rounded up, at least 1) in take_damage; drain() stays unscaled
+# TODO(kiezroth): distinguish combat destruction from a drained store before routing station alerts.
 
 ## Store updates on EventBus are merged to at most one per interval (real time).
 const STORE_SIGNAL_INTERVAL := 0.1
@@ -33,6 +34,35 @@ func _ready() -> void:
 	set_process(false)
 	# Connected after super so the apply_level call while building sends nothing.
 	health.hp_changed.connect(_on_store_changed)
+
+func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
+	if not is_inside_tree() or is_queued_for_deletion() or health == null or health.hp <= 0:
+		return 0
+	var info: DamageInfo
+	if damage_input is DamageInfo:
+		# AoE can share a hit across receivers; preserve the original hit.
+		var hit: DamageInfo = damage_input
+		info = DamageInfo.new(hit.amount, hit.damage_type, hit.source,
+			hit.knockback_force, hit.hit_direction, hit.hit_by_commander)
+		info.raw = hit.raw
+		info.dealt_mult = hit.dealt_mult
+		info.is_dot = hit.is_dot
+		info.resist = hit.resist
+		info.immune = hit.immune
+	elif damage_input is int:
+		info = DamageInfo.new(damage_input, p_damage_type)
+	else:
+		return health.take_damage(damage_input, p_damage_type)
+	if info.amount <= 0:
+		return 0
+	var multiplier := 1.0
+	var manager := get_tree().get_first_node_in_group(&"wave_manager")
+	if manager != null:
+		var config := manager.get(&"scale_config") as ScaleConfig
+		if config != null:
+			multiplier = config.get_dmg_mult(int(manager.get(&"current_wave")))
+	info.amount = maxi(1, ceili(float(info.amount) / pow(maxf(multiplier, 1.0), GameConfig.heal_tower_dmg_norm_exp)))
+	return health.take_damage(info, p_damage_type)
 
 func heals_on_prep() -> bool:
 	return false

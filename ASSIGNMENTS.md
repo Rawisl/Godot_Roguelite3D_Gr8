@@ -179,7 +179,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W13-KM1 | Kim | 10 | 2 | DỜI | FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13] |
 | W13-KM3 | Kim | 10 | 2.5 | DỜI | FBK-08 tower bị phá (khói, mảnh vỡ, đống đổ nát) [dời từ tuần 13] |
 | W11-MH5 | Ngọc | 11 | 2 | CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Chính sách xung đột đơn giản |
-| W11-MH6 | Ngọc | 11 | 2 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hook nộp điểm ở RunEnd |
+| W11-MH6 | Ngọc | 11 | 2 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Tích hợp và hồi quy hook nộp điểm với RunEnd hoàn chỉnh |
 | W11-MH7 | Ngọc | 11 | 3 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hồi quy Trạm hồi lực: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36 |
 | W11-NG10 | Ngọc | 11 | 4 | MỚI | Runner BAL tests/test_balance_config_runner.tscn (BAL-05, BL3, BL4) |
 | W11-NG2 | Ngọc | 11 | 3 | CŨ-SỬA | Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí) |
@@ -274,12 +274,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-NG1
 - Người: Ngọc
 - Tuần: 8 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Công thức sát thương chung DMG-06: dealt_mult cộng dồn, taken_mult nhân, làm tròn gần nhất, dot_remainder, resist; gom mọi nguồn sát thương của chỉ huy và tower vào một hàm; chừa hook trần sát thương theo nguồn (cho Hazard Trial)
 - Nghiệm thu: Test GUT: dealt +20% và +10% ra x1.3; taken nhân; tick DoT 5 lần cộng đúng tổng nhờ dot_remainder; kháng 0 ra IMMUNE; hook trần có thể bật/tắt
 - Tệp liên quan: common/damage_info.gd, common/health_component.gd, entities/commander/commander.gd (_execute_sword_strike), entities/enemy/enemy.gd, entities/tower/tower.gd
 - ID SRS: DMG-06, HZT-05 (hook)
 - Cần xong trước: không
+- Ghi chú bàn giao: DamageCalc resolves additive dealt modifiers, multiplicative taken modifiers, resistance, rounding and DoT remainder. Its final cap hook also applies to TRUE damage while preserving TRUE damage's raw-only formula. Verified by the damage formula and Hazard commander runners.
 
 #### Kiệt (Enemy & Wave), tuần 8, 10h
 
@@ -679,21 +680,23 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG5
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Backend 2: bảng saves có revision, API đọc/ghi profile và meta, kiểm tra revision và device_id (ACCT-04, 06)
 - Nghiệm thu: Ghi và đọc đúng, revision tăng một mỗi lần ghi, tài khoản khác không đọc được; flags (gồm tutorial_done) nằm trong dữ liệu đồng bộ
 - ID SRS: ACCT-04
 - Cần xong trước: W9-MH4b
+- Ghi chú bàn giao: Added `006_saves.sql` with own-row RLS, restricted column grants, server timestamps and stale-revision rejection. `AccountApi.pull_save() -> {ok, revision, device_id, updated_at, data}`; `push_save(revision, device_id, data) -> {ok, conflict, revision}`; `data_for_sync()` deep-copies profile/meta/flags, including flags.tutorial_done, and excludes run_flag. Khang (@WhoKeng) owns revision comparison, save.conflict.bak, retry and sync UI states in week 11; CloudSaveRepository TODO remains for that work. Uses save envelope metadata from PR #187. Migration 007 adds server validation for save objects, payload size, integer counts, meta caps and nonnegative revisions. Expanded live suite: dev 90 passed and demo 86 passed, both temporary accounts deleted on each project. Offline submit/account runner: 51 passed; save hooks: 72 passed; save repository: 68 passed without teardown leaks. Migrations 005–007 confirmed on both projects.
 
 ##### W10-NG6
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 7 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Backend 3: nộp điểm, một dòng tốt nhất mỗi tài khoản, kiểm tra hợp lý (LBD-06), lọc theo game_version, top 50 và hạng của tôi (LBD-01..08); migration 005 nới ràng buộc thành run_elapsed + 1 >= 15 x waves_cleared
 - Nghiệm thu: Từ chối điểm vô lý (40 wave trong 100 s); lượt thật chạy nhanh nhất vẫn được nhận (AC9); xếp đúng LBD-04
 - Tệp liên quan: backend/001_init.sql:76-77 (leaderboard_min_time), mới: backend/005_*.sql, backend/README.md
 - ID SRS: LBD-01..08, LBD-06, AC9
 - Cần xong trước: W6-NG8
+- Ghi chú bàn giao: Added `005_leaderboard_tolerance.sql`, bounded top/own-rank RPCs, AuthService.fetch_leaderboard()/submit_score() and a save-gated in-memory retry queue. All three ending types qualify only for signed-in wave-1 runs; interrupted/recovered runs are excluded. Kiệt (@kiezroth): GameConfig.game_version defaults to 1.0.0. Khang (@WhoKeng): existing leaderboard UI contract is implemented; only its completed TODO was removed. Other heal/weapon UI TODOs remain outside scope. Migration 007 rejects negative/nonfinite elapsed time. Expanded live suite: dev 90 passed and demo 86 passed, including direct submit_score(), invalid data and RLS. Offline submit/account runner: 51 passed without BOOT warning; leaderboard/account UI: 17 passed; headless main starts without errors. SaveManager correlates successful writes with the exact RunEnd summary, unaffected by later save failures. RunState.start_run() supplies the missing production start signal. W11-MH6 now owns full-flow integration verification rather than another hook. This branch depends on PR #187 and includes current main's save hooks without creating a commit.
 
 ##### W10-NG7
 - Người: Ngọc
@@ -718,39 +721,46 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG9
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Vũ khí qua StatBlock: range_mult nhân sword_range, Swift (tốc độ đánh x1.5, tầm x0.7, combo_window giữ nguyên), Rampage (+10%/+25%/+50% dealt_mult theo tỷ lệ máu); đổi vũ khí đổi model trên tay
 - Nghiệm thu: WP6, WP7 đạt; đổi vũ khí ở PREP có hiệu lực ngay
 - Tệp liên quan: entities/commander/commander.gd, common/stat_block.gd, common/character_stats.gd
 - ID SRS: WPN-09, WPN-10
 - Cần xong trước: W9-NG6, W8B-NG1
+- Ghi chú bàn giao: Swift and Rampage retain their existing behavior. Weapon changes now replace the mounted model and restore the default sword for empty model fields. @kimvux: add weapon_mount to the right forearm attachment and weapon_default_model to FoxSword in contents/assets/characters/fox_commander/fox_commander_model.tscn; populate WeaponData.model later. Missing groups warn once when a custom model is requested and retain the default sword. Generated weapon resources remain unchanged. The weapon runner verifies model replacement using an isolated fixture while the art groups are unavailable.
 
 ##### W10-NG10
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial phía chỉ huy: bản sao chỉ số (HP, level, skill, StatBlock, vũ khí, cooldown) và bỏ khi ra; chết trong phòng không phải chết thật (không commander_died); khóa Tab/Recall; trần sát thương 10% theo con nhiều máu nhất (boss chỉ tính core_hp) áp cho mọi nguồn; không Emergency repair, không Trạm hồi lực
 - Nghiệm thu: Vào phòng 70/100 HP, mất 50, ra ngoài vẫn 70; đòn 80 vào con 500 HP chỉ gây 50; chết trong phòng không kết thúc run
 - Tệp liên quan: entities/commander/commander.gd, mode_switch.gd, heal_channel.gd, common/damage_info.gd (hook trần từ W8B-NG1)
 - ID SRS: HZT-05, HZT-06, HZT-10, DEAD-05, DEAD-11
 - Cần xong trước: W10-KT4, W8B-NG1, W9-NG6
+- Ghi chú bàn giao: HazardTrialState stores precise HP, max HP, DoT remainder, deep StatBlock modifiers, skill slots/levels/cooldowns, commander cooldowns/status, equipped weapon and chain cooldown in RunState.hazard_session. Emit hazard_trial_entered before room combat; the first commander hit scans the enemy group once after room enemies spawn. Boss references use max_core_hp. Emit hazard_trial_exited to restore the snapshot and clear the session; run_ended and node removal also clear the process-wide cap hook.
+- Ghi chú bàn giao: @Ender-Via: HAZARD_TRIAL is appended to Enums.WaveState. The room system must listen to existing EventBus.commander_hp_changed(0, max_hp), determine DIED, emit hazard_trial_exited and return to PREP. Room death deliberately emits no commander_died, starts no death animation and leaves is_dead false. Returning from HAZARD_TRIAL to PREP skips the 35% heal. No EventBus signals were added; room spawning, rewards and result selection remain with the room system.
+- Ghi chú bàn giao: @WhoKeng: strings.csv adds hud.mode.denied.hazard for mode_switch_denied(HAZARD, 0). Tab/Recall are denied; Frontline Emergency Repair and station healing retain their existing guards. Commander TRUE damage now reaches the final cap, while projectile impacts already reach DamageCalc.resolve through enemy/boss receivers. The previously absent Chain Lightning producer now sends each bolt through those same receivers, uses RunState.chain_cd and excludes recursive weapon effects; remaining weapon-effect integration stays in its assigned task.
+- Ghi chú bàn giao: tests/test_hazard_commander_runner.tscn covers restoration, lazy cached caps, boss core HP, room death, action locks, PREP healing, every requested damage source and cleanup. All new scripts include generated .uid files.
 
 ##### W10-MH5
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Trạm hồi lực phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
 - Nghiệm thu: Đòn raw 17 ở wave 10 gây 14; hút máu không bị chuẩn hóa
 - Ghi chú: TODO(Rawisl) ở entities/tower/heal_station.gd
 - Cần xong trước: W8-MH5
+- Ghi chú bàn giao: HealStation chuẩn hóa DamageInfo/int tại lúc trúng theo wave_manager và heal_tower_dmg_norm_exp; giữ nguyên hit dùng chung và đường drain. Panel nhận EVB-34 và tốc độ thật từ HealChannel qua heal_status_updated; mỗi sự kiện kho render một lần. Đã chặn sát thương ngoài SceneTree và bỏ reflection khi sao chép hit. Runner heal station 90/90, heal status 130/130, heal channel 204/204, ETG 27/27, panel HT12 12/12. F6 panel giữ preview để bấm 1/2/3; chạy tự động thêm -- --run-tests. TODO phân biệt cạn kho với bị phá giữ lại và gán kiezroth để nối cảnh báo sau. PR thông báo Mạnh (@kiezroth) và Khang (@WhoKeng).
 
 ##### W10-MH6
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: save.json thêm revision, updated_at, device_id (ACCT-04)
 - Nghiệm thu: Revision tăng 1 mỗi lần ghi; save cũ thiếu trường vẫn đọc được
 - Cần xong trước: W10-MH1
+- Ghi chú bàn giao: Envelope ghi revision +1, updated_at UTC và UUID v4 khi thiếu device_id; chỉ cập nhật metadata bộ nhớ sau repository trả OK. Không đổi save_version/checksum của data. Runner repository 68/68, atomic 128/128 assert; có kiểm tra legacy, reload, ghi lỗi/retry và timestamp bằng đồng hồ giả, không chờ wall clock hoặc đọc metadata nội bộ. Timestamp production vẫn dùng UTC hệ thống. Giữ TODO CloudSaveRepository cho tuần 11; các TODO Rawisl ngoài phạm vi (leaderboard, icon vũ khí, cooldown chain lightning) chưa xử lý. Godot 4.7.2 chạy main.tscn có render 300 frame, exit 0, không lỗi runtime; test dùng APPDATA riêng dưới .godot/test-profile. Các ca save lỗi cố ý phát push_error và runner save còn cảnh báo resource/RID lúc thoát. PR thông báo Mạnh (@kiezroth).
 
 #### Kiệt (Enemy & Wave), tuần 10, 40h
 
@@ -761,6 +771,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: RunLoading 8 bước (RUN-01, APL-01..04) trên RunState có sẵn; áp meta; gọi bước đặt trụ có sẵn hoặc tutorial (A: W10-MH10)
 - Nghiệm thu: RunLoading < 5 s, start_wave = 1, gold 0
 - Tệp liên quan: ui/screens/run_loading.gd, systems/run/
+- Ghi chú: sau init_from_config gọi SaveManager.record_run_start(start_wave, start_mult)
 - ID SRS: 3.2.1
 - Cần xong trước: W8B-KT1, W8-KT1
 
@@ -863,10 +874,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH2
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SAV-04 nối SUMMARY, RunEnd, shop (và nối khi tutorial_done bật)
 - Nghiệm thu: Ghi save xong mới hiển thị SUMMARY
 - Cần xong trước: W10-MH1
+- Ghi chú: phần shop ghi save trong W10-MH4 (mua ở MetaShop gọi save); ghi run_flag lúc bắt đầu run chờ W10-KT1 gọi SaveManager.record_run_start (TODO(Ender-Via) ở systems/run/run_state.gd); tutorial gọi SaveManager.mark_tutorial_done() ở W11-NG1
 
 ##### W10-MH3
 - Người: Mạnh
@@ -1182,9 +1194,10 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc)
 - Trạng thái: Chưa bắt đầu
-- Việc: Hook nộp điểm ở RunEnd: chỉ gửi khi đăng nhập, start_wave = 1, không phải lượt khôi phục; lấy số liệu từ RunState (LBD-02, 03, 05)
+- Việc: Tích hợp và hồi quy hook đã có ở W10-NG6 với RunLoading/RunEnd hoàn chỉnh: xác nhận start_run(), run_elapsed, lưu cục bộ trước gửi, và loại trừ lượt khôi phục (LBD-02, 03, 05); không tạo hook nộp điểm thứ hai
 - Nghiệm thu: Khách, lượt khôi phục, start_wave > 1 không gửi điểm; run_elapsed theo RUN-02
-- Cần xong trước: W10-KT2, W10-NG6
+- Cần xong trước: W10-KT1, W10-KT2, W10-NG6
+- Ghi chú bàn giao: Submission hook and retry queue were delivered by W10-NG6. RunState.start_run() now announces direct main launches once and saves the start flag; RunLoading must call it after init_from_config(). This task remains open for end-to-end verification with completed RunEnd and interrupted-run recovery.
 
 ##### W11-MH7
 - Người: Ngọc
@@ -1409,6 +1422,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: mới: systems/tutorial/; ui/; autoload/save_manager.gd (flags.tutorial_done); tín hiệu tutorial_step_completed đã có trong event_bus.gd
 - ID SRS: TUT-01, 03, 08..11, 14, 15, 17; BLD-11; EVB-45
 - Cần xong trước: W10-MH10, W8B-KH1, W11-KH4
+- Ghi chú: ghi tutorial_done qua SaveManager.mark_tutorial_done() (tự phát tutorial_completed)
 
 ##### W11-KH6
 - Người: Khang

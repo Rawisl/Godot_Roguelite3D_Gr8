@@ -1,8 +1,7 @@
 class_name HealStationPanel
 extends PanelContainer
 ## Heal station: rows for the HP store, the heal rate and the level, then Upgrade and Sell.
-## It has no priority or repair. Tower HP has no EventBus signal, so the panel polls
-## the service on real time while it is open, like the Tower panel.
+## Store changes arrive through EventBus; polling refreshes the other tower actions.
 
 signal closed
 
@@ -17,6 +16,9 @@ var slot_id: StringName = &""
 var _locked := false
 var _next_refresh := 0.0
 var _sell_dialog: Control = null
+var _heal_rate := 0.0
+var _info: Dictionary = {}
+var _in_prep := false
 
 @onready var _title: Label = %Title
 @onready var _close: Button = %CloseButton
@@ -28,6 +30,7 @@ var _sell_dialog: Control = null
 @onready var _sell: PanelButton = %Sell
 
 func _ready() -> void:
+	_heal_rate = commander_stats.heal_rate_base
 	_close.text = tr(&"panel.close")
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
@@ -39,6 +42,8 @@ func _ready() -> void:
 	EventBus.gold_changed.connect(_on_any_change)
 	EventBus.pause_changed.connect(_on_any_change)
 	EventBus.mode_changed.connect(_on_any_change)
+	EventBus.heal_tower_hp_changed.connect(_on_store_changed)
+	EventBus.heal_status_updated.connect(_on_heal_status_updated)
 
 ## A sell dialog never outlives the panel or the station it was opened for.
 func _notification(what: int) -> void:
@@ -71,13 +76,13 @@ func refresh() -> void:
 ## Kept apart from refresh so the test scene can draw it without a BuildService.
 ## Sell exists only in PREP, like on the Tower panel, except a broken station that shows why.
 func show_info(info: Dictionary, in_prep: bool) -> void:
+	_info = info
+	_in_prep = in_prep
 	_title.text = tr((info.data as TowerData).display_name)
 	_store_row.set_row(tr(&"panel.heal.store"), UiFormat.tr_fmt(&"hud.ratio", {"value": info.hp, "max": info.max_hp}))
 	_store_bar.max_value = maxi(1, info.max_hp)
 	_store_bar.value = info.hp
-	# TODO(Rawisl): send the commander heal rate with the heal station skill level, the base rate shows until then.
-	_rate_row.set_row(tr(&"panel.heal.rate"),
-		UiFormat.tr_fmt(&"panel.heal.rate_value", {"rate": UiFormat.decimal(commander_stats.heal_rate_base, 0)}))
+	_show_heal_rate()
 	_level_row.set_row(tr(&"panel.heal.level"), UiFormat.tr_fmt(&"panel.heal.level_value",
 		{"level": info.level, "max": GameConfig.tower_max_level, "tier": UiFormat.model_tier(info.level)}))
 	_upgrade.visible = in_prep
@@ -145,6 +150,35 @@ func _cancel_sell_dialog() -> void:
 		_sell_dialog.cancel()
 	_sell_dialog = null
 
+func _show_heal_rate() -> void:
+	_rate_row.set_row(tr(&"panel.heal.rate"),
+		UiFormat.tr_fmt(&"panel.heal.rate_value", {"rate": UiFormat.decimal(_heal_rate, 0)}))
+
+func _on_heal_status_updated(_state: StringName, _reason: StringName, _progress: float,
+		_remaining: float, rate: float, _alive: int, _total: int) -> void:
+	if not is_inside_tree():
+		return
+	var next_rate := rate if rate > 0.0 else commander_stats.heal_rate_base
+	if is_equal_approx(next_rate, _heal_rate):
+		return
+	_heal_rate = next_rate
+	if visible:
+		_show_heal_rate()
+
+func _on_store_changed(id: StringName, new_hp: int, new_max_hp: int) -> void:
+	if not is_inside_tree() or not visible or id != slot_id:
+		return
+	var service := _service()
+	var info := service.get_tower_info(slot_id) if service != null else {}
+	if info.is_empty():
+		if _info.is_empty():
+			return
+		info = _info.duplicate()
+		info["hp"] = new_hp
+		info["max_hp"] = new_max_hp
+	_next_refresh = TimeManager.real_time + REFRESH_INTERVAL
+	show_info(info, service.is_prep() if service != null else _in_prep)
+
 func _on_any_change(_value: Variant) -> void:
 	if visible:
 		refresh()
@@ -161,4 +195,6 @@ func _unlock_later() -> void:
 	_locked = false
 
 func _service() -> BuildService:
+	if not is_inside_tree():
+		return null
 	return get_tree().get_first_node_in_group(&"build_service") as BuildService

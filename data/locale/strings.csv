@@ -207,6 +207,7 @@ hud.mode.key,Tab
 hud.mode.frontline,Tiền tuyến
 hud.mode.commander,Chỉ huy
 hud.mode.cooldown,Đổi chế độ sau {sec} s
+hud.mode.denied.hazard,Không thể đổi chế độ trong Thử thách Hazard
 hud.invulnerable,Bất khả xâm phạm
 hud.emg.key,R
 hud.emg.title,Sửa khẩn cấp
