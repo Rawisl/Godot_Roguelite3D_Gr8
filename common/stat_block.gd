@@ -54,6 +54,16 @@ func clear_all() -> void:
 	changed.emit()
 
 
+func export_state() -> Dictionary:
+	return {"add": _add.duplicate(true), "mul": _mul.duplicate(true)}
+
+
+func import_state(saved: Dictionary) -> void:
+	_add = (saved["add"] as Dictionary).duplicate(true)
+	_mul = (saved["mul"] as Dictionary).duplicate(true)
+	changed.emit()
+
+
 ## Base value from CharacterStats. Keys that CharacterStats does not have start from 0.
 func get_base(stat_key: StringName) -> float:
 	if base_stats == null:

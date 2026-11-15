@@ -167,6 +167,7 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 				if current_core_hp == 0:
 					health.died.emit()
 			EventBus.boss_hp_changed.emit(current_armor_hp, current_core_hp, _get_phase_name())
+	_notify_weapon_hit(info, actual_damage)
 	return actual_damage
 
 

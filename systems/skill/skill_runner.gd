@@ -70,6 +70,17 @@ func get_cooldown_left(slot: int) -> float:
 	return _cooldowns.get(skill_id, 0.0) if skill_id != &"" else 0.0
 
 
+func export_state() -> Dictionary:
+	return {"skills": state.to_dict().duplicate(true), "cooldowns": _cooldowns.duplicate(true)}
+
+
+func import_state(saved: Dictionary) -> void:
+	state.from_dict(saved["skills"])
+	_cooldowns.assign(saved["cooldowns"])
+	for slot in state.active.size():
+		_emit_cooldown(slot)
+
+
 ## False for an empty slot, a skill on cooldown, or when the commander cannot act:
 ## Commander mode, Stunned, dead.
 func can_use(slot: int) -> bool:
