@@ -1,0 +1,167 @@
+extends Node
+## Keeps profile, meta and flags (tutorial_done too) in step with the account. It pulls and
+## compares after a sign in, and pushes after a run end and after a shop purchase. The local save
+## is always written first and nothing here blocks the UI: a failure only shows OFFLINE or ERROR,
+## and the next run end or purchase tries again with the latest data. Never runs in combat.
+# TODO(Rawisl): swap the rule in _resolve() for the agreed conflict policy (now: the higher revision wins, and when the other copy came from another machine it is kept in save.conflict.bak with a notice).
+
+const GUEST := &"GUEST"
+const SYNCED := &"SYNCED"
+const SYNCING := &"SYNCING"
+const OFFLINE := &"OFFLINE"
+const ERROR := &"ERROR"
+const COMBAT_STATES: Array[StringName] = [&"COMBAT", &"BOSS_COMBAT"]
+const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
+
+var state: StringName = GUEST
+## Swapped by tests for a fake with the same pull_save() and push_save().
+var api: Variant
+## Asks "upload the local profile?" and returns true, false, or null when it could not ask.
+## Tests replace it so no dialog opens.
+var upload_prompt: Callable
+
+var _busy := false
+var _again := false
+## A sync asked for during combat, sent when combat ends.
+var _held := false
+## The account whose empty cloud save the player chose not to fill this session.
+var _declined_user := ""
+
+func _ready() -> void:
+	api = AccountApi.new()
+	upload_prompt = _ask_upload
+	AuthService.session_changed.connect(_on_session_changed)
+	# Deferred: SaveManager writes the run and the purchase in the same frame, before this reads them.
+	EventBus.run_ended.connect(func(_end_type: StringName, _summary: Dictionary) -> void: request_sync.call_deferred())
+	EventBus.meta_item_purchased.connect(func(_id: StringName, _level: int) -> void: request_sync.call_deferred())
+	EventBus.state_changed.connect(_on_wave_state_changed)
+
+## The Account tab's Sync now.
+func sync_now() -> void:
+	request_sync()
+
+func request_sync() -> void:
+	if not AuthService.is_signed_in():
+		_set_state(GUEST)
+		return
+	if _in_combat():
+		_held = true
+		return
+	if _busy:
+		_again = true
+		return
+	_busy = true
+	await _run()
+	_busy = false
+	if _again:
+		_again = false
+		request_sync()
+
+func is_busy() -> bool:
+	return _busy
+
+func _run() -> void:
+	_set_state(SYNCING)
+	var pull: Dictionary = await api.pull_save()
+	if not pull.get("ok", false):
+		_fail(pull)
+		return
+	await _resolve(pull)
+
+func _resolve(pull: Dictionary) -> void:
+	var local_revision := SaveManager.get_revision()
+	var device := SaveManager.get_device_id()
+	var cloud_revision := int(pull.get("revision", 0))
+	var cloud_device := String(pull.get("device_id", ""))
+	if cloud_revision == 0:
+		await _fill_empty_account()
+	elif cloud_revision > local_revision:
+		if local_revision > 0 and cloud_device != device:
+			SaveManager.keep_conflict_copy(SaveManager.data, local_revision, device)
+			ScreenManager.show_notice(&"dialog.sync_other_device.title", &"dialog.sync_other_device.body")
+		if SaveManager.apply_synced(pull.get("data", {}), cloud_revision) == OK:
+			_set_state(SYNCED)
+		else:
+			_set_state(ERROR, tr(&"sync.detail.local_write"))
+	elif local_revision > cloud_revision:
+		if cloud_device != "" and cloud_device != device:
+			SaveManager.keep_conflict_copy(pull.get("data", {}), cloud_revision, cloud_device)
+		await _push()
+	else:
+		_set_state(SYNCED)
+
+## An account with no save yet: a machine with progress asks before uploading it.
+func _fill_empty_account() -> void:
+	if not _has_local_progress():
+		_set_state(SYNCED)
+		return
+	if _declined_user == AuthService.user_id:
+		_set_state(OFFLINE, tr(&"sync.detail.not_uploaded"))
+		return
+	var answer: Variant = await upload_prompt.call()
+	if typeof(answer) != TYPE_BOOL:
+		_set_state(OFFLINE, tr(&"sync.detail.not_uploaded"))
+	elif not answer:
+		_declined_user = AuthService.user_id
+		_set_state(OFFLINE, tr(&"sync.detail.not_uploaded"))
+	else:
+		await _push()
+
+func _push() -> void:
+	var result: Dictionary = await api.push_save(SaveManager.get_revision(), SaveManager.get_device_id(), SaveManager.data)
+	if result.get("ok", false):
+		_set_state(SYNCED)
+	elif result.get("conflict", false):
+		# Another machine wrote in between: pull again once and compare.
+		_again = true
+	else:
+		_fail(result)
+
+func _fail(result: Dictionary) -> void:
+	match StringName(result.get("error", &"")):
+		AuthService.ERR_NOT_SIGNED_IN:
+			_set_state(GUEST)
+		AuthService.ERR_OFFLINE:
+			_set_state(OFFLINE)
+		_:
+			_set_state(ERROR)
+
+func _has_local_progress() -> bool:
+	var profile := SaveManager.get_section(SaveManager.PROFILE)
+	var levels: Dictionary = SaveManager.get_section(SaveManager.META).get("levels", {})
+	return int(profile.get("stats", {}).get("total_runs", 0)) > 0 or int(profile.get("prestige_balance", 0)) > 0 \
+			or levels.values().any(func(level: Variant) -> bool: return int(level) > 0) \
+			or bool(SaveManager.get_section(SaveManager.FLAGS).get("tutorial_done", false))
+
+func _ask_upload() -> Variant:
+	var profile := SaveManager.get_section(SaveManager.PROFILE)
+	var dialog := DIALOG_SCENE.instantiate()
+	dialog.setup(&"dialog.sync_upload.title", &"dialog.sync_upload.body", {
+		"balance": int(profile.get("prestige_balance", 0)),
+		"wave": int(profile.get("max_wave_cleared", 0)),
+		"runs": int(profile.get("stats", {}).get("total_runs", 0))})
+	dialog.set_buttons(&"dialog.sync_upload.confirm", &"dialog.sync_upload.cancel")
+	var answer := [false]
+	dialog.confirmed.connect(func() -> void: answer[0] = true)
+	if not ScreenManager.open_dialog(dialog):
+		return null
+	await dialog.tree_exited
+	return answer[0]
+
+func _in_combat() -> bool:
+	return GameState.current == GameState.AppState.RUN and GameState.wave_state in COMBAT_STATES
+
+func _set_state(new_state: StringName, detail: String = "") -> void:
+	state = new_state
+	EventBus.sync_state_changed.emit(new_state, detail)
+
+func _on_session_changed(signed_in: bool) -> void:
+	if signed_in:
+		request_sync()
+	else:
+		_set_state(GUEST)
+
+func _on_wave_state_changed(new_state: StringName) -> void:
+	if _held and new_state not in COMBAT_STATES:
+		_held = false
+		request_sync()

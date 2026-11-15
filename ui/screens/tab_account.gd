@@ -26,6 +26,7 @@ func _ready() -> void:
 	_sign_out.pressed.connect(_confirm_sign_out)
 	_sync_now.pressed.connect(_sync)
 	AuthService.session_changed.connect(_on_session_changed)
+	EventBus.sync_state_changed.connect(func(_state: StringName, _detail: String) -> void: refresh())
 	refresh()
 
 func refresh() -> void:
@@ -38,8 +39,8 @@ func refresh() -> void:
 	_sign_in.visible = available and not signed_in
 	_sign_out.visible = signed_in
 	_sync_now.visible = signed_in
-	_sync_now.disabled = _sync_service() == null
-	_sync_now.tooltip_text = tr(&"account.sync_unavailable") if _sync_now.disabled else ""
+	# One sync at a time; the state badge says when it is done.
+	_sync_now.disabled = SyncService.is_busy()
 
 func _account_name() -> String:
 	return AuthService.email if AuthService.display_name.is_empty() else AuthService.display_name
@@ -55,14 +56,8 @@ func _confirm_sign_out() -> void:
 	dialog.confirmed.connect(AuthService.sign_out)
 	ScreenManager.open_dialog(dialog)
 
-# TODO(WhoKeng): SyncService (group sync_service) syncs now with sync_now() and reports through sync_state_changed.
-func _sync_service() -> Node:
-	return get_tree().get_first_node_in_group(&"sync_service")
-
 func _sync() -> void:
-	var service := _sync_service()
-	if service != null and service.has_method(&"sync_now"):
-		service.call(&"sync_now")
+	SyncService.sync_now()
 
 func _on_session_changed(_signed_in: bool) -> void:
 	refresh()
