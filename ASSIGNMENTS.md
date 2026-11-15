@@ -741,6 +741,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Trạng thái: Chưa bắt đầu
 - Việc: Trạm hồi lực phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
 - Nghiệm thu: Đòn raw 17 ở wave 10 gây 14; hút máu không bị chuẩn hóa
+- Ghi chú: TODO(Rawisl) ở entities/tower/heal_station.gd
 - Cần xong trước: W8-MH5
 
 ##### W10-MH6
@@ -910,11 +911,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH9
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 10 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tower cấp 1-36 cho cả 4 loại: dữ liệu 36 cấp từ bảng, nâng từng cấp, 'MAX' ở 36; Trạm hồi lực cấp 1-36 (nâng chỉ cộng phần kho tăng thêm, xây lại giữ cấp, hoàn bán theo kho còn lại); xây lại giá bằng tổng cost; đo hiệu năng với 6 tower
 - Nghiệm thu: Tower cấp 14 bị phá thì 'Xây lại' đúng cấp 14 với giá tổng cost cấp 1-14; trạm nâng cấp không hồi đầy kho
 - Tệp liên quan: common/tower_data.gd, common/tower_level_data.gd, data/towers/*, entities/tower/tower.gd (apply_level), entities/tower/heal_station.gd, systems/build/slot.gd (get_rebuild_cost), ui/panels/heal_station_panel.gd
 - ID SRS: TWR, UPG-01..03, HLT-01, HLT-07, HLT-08, SELL-05, TWR-15
+- Ghi chú: dữ liệu 36 cấp, MAX, cổng 13/25 và giá xây lại đã có từ W9-NG7 và W10-MH8; nhánh này cho Trạm hồi lực nâng cấp chỉ cộng phần kho tăng thêm (xây lại vẫn đầy kho), Barricade hiện mesh theo bậc 1-12 / 13-24 / 25-36 tạm tới W11-MH8, thêm test nâng 1-36 cả 4 loại, xây lại cấp 14 và đo quét 6 tower cấp 36 (dưới 1 ms mỗi frame).
 - Cần xong trước: W9-NG7, W10-MH8
 
 ##### W10-MH10
