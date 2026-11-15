@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c3afrps05ehb5" path="res://ui/hud/parts/emergency_repair.gd" id="1_rgcab"]
 [ext_resource type="Script" uid="uid://cnwq4xwphuih7" path="res://ui/hud/parts/cooldown_sweep.gd" id="2_pi3an"]
-[ext_resource type="Texture2D" uid="uid://cpw4r7l4bn75i" path="res://art/icons/fortress_icon.png" id="3_hxokb"]
+[ext_resource type="Texture2D" uid="uid://bnltef0r6v4ij" path="res://art/icons/emergency_repair_icon.png" id="3_hxokb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pi3an"]
 bg_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
