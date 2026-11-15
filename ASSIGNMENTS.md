@@ -698,10 +698,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG7
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nối lõi hồi máu với Trạm hồi lực thật (thay trạm giả), test HT1..HT5 và test input camera (CM4)
 - Nghiệm thu: HT1..HT5 đạt với trạm thật; CM4 đạt
 - Cần xong trước: W8-MH5
+- Ghi chú bàn giao: HUD nhận trạng thái, lý do khóa, countdown, tốc độ hồi và số trạm thật qua EventBus. Playtest F6: `tests/test_playtest_heal_channel.tscn`; có preset, cấp bị động 0..3, pause và hộp thoại; dùng save trong bộ nhớ và tắt backend. Runner `test_heal_status_runner`, `test_heal_channel` và `test_camera_flow` đạt; walkthrough có render đã kiểm tra HUD và chuyển ngữ cảnh.
 
 ##### W10-NG8
 - Người: Ngọc
@@ -881,10 +882,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH4
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: MetaShop backend (SHP-05..09, 4 mục: FORT_HP, GOLD_PCT, CMD_HP, EMG_REPAIR; không STARTER_KIT hay UNLOCK_WAND)
 - Nghiệm thu: Mua nguyên tử, không nhảy cấp
 - Cần xong trước: W9-MH2, W10-MH1
+- Ghi chú: service sống trong màn MetaShop; modifier cho RunLoading ở MetaUpgrades.get_run_modifiers (W10-KT1 gọi)
 
 ##### W10-MH7
 - Người: Mạnh
@@ -899,12 +901,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH8
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Soạn số liệu 36 cấp cho 4 loại tower trong sheet towers (giá, chỉ số, HP, kho Trạm hồi lực)
 - Nghiệm thu: Gold khan hiếm: không đủ nâng cả 6 công trình lên bậc cao trước wave 30 trong tính toán thô
 - Tệp liên quan: balance/balance.xlsx (sheet towers)
 - ID SRS: 3.6.3, 3.9
 - Cần xong trước: W8B-MH1
+- Ghi chú: giá, max_hp (với Trạm hồi lực max_hp là kho) và damage 36 cấp đã cân bằng bằng công cụ tools/balance_simulator (đọc balance.xlsx, xuất trang HTML để chỉnh và khối TSV để dán vào sheet towers). Nghiệm thu: nâng bố cục 6 công trình lên cấp 25 tốn 1.38 lần gold kịch bản mạnh tới wave 30
 
 ##### W10-MH9
 - Người: Mạnh

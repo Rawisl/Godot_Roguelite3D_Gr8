@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_s78sd")
-build_cost = 90
+build_cost = 50
 max_hp = 150
 damage = 35
 attack_range = 12

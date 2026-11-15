@@ -10,11 +10,13 @@ extends Node
 ## - upgrade gates only at the first level of tiers 2 and 3, and the level cap
 ## - commander level from the real XpTracker (level_up and xp_changed)
 ## - ground builds that would seal the path are refused before any gold is spent
+## - every tower type has one level per tower_max_level and a positive price
 
 const SLOT_SCENE: PackedScene = preload("res://systems/build/slot.tscn")
 const ARROW: TowerData = preload("res://data/towers/arrow.tres")
 const CANNON: TowerData = preload("res://data/towers/cannon.tres")
 const BARRICADE: TowerData = preload("res://data/towers/barricade.tres")
+const HEAL_STATION: TowerData = preload("res://data/towers/heal_station.tres")
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
 const CANNON_SCENE: PackedScene = preload("res://entities/tower/cannon.tscn")
 const BARRICADE_SCENE: PackedScene = preload("res://entities/tower/barricade.tscn")
@@ -65,6 +67,7 @@ func _ready() -> void:
 	test_level_range()
 	test_tier_gate_table()
 	test_level_cap()
+	test_tower_data_sanity()
 	test_transaction_lock()
 	test_heal_on_prep()
 	test_clear_rubble()
@@ -193,10 +196,12 @@ func test_upgrade_to_max() -> void:
 	var t := _slot(&"W1").tower
 	assert_true(t.level == 3, "tower is level 3")
 	assert_true(t.invested_gold == ARROW.get_total_cost(3), "invested_gold equals total cost to level 3")
-	# Expected totals come from the price table, not from the data files.
-	assert_true(ARROW.get_total_cost(3) == 230, "Arrow level 3 total is 230 (price table)")
-	assert_true(CANNON.get_total_cost(3) == 390, "Cannon level 3 total is 390 (price table)")
-	assert_true(BARRICADE.get_total_cost(3) == 190, "Barricade level 3 total is 190 (price table)")
+	# Totals are summed level by level from the data files, so a rebalance needs no test edit.
+	for data in [ARROW, CANNON, BARRICADE]:
+		var summed := 0
+		for lv in data.levels.slice(0, 3):
+			summed += lv.build_cost
+		assert_true(summed > 0 and data.get_total_cost(3) == summed, "%s level 3 total is the sum of its first 3 level prices" % data.id)
 	assert_true(before - _gold.gold == ARROW.levels[1].build_cost + ARROW.levels[2].build_cost, "gold dropped by both upgrade prices")
 	_gold.gold = 100000
 	assert_true(_upgrade_to(&"W1", GameConfig.tower_max_level), "Arrow upgrades up to tower_max_level")
@@ -386,6 +391,12 @@ func test_tier_gate_table() -> void:
 		if _service.get_upgrade_required_level(n) > 0:
 			gated += 1
 	assert_true(gated == 2, "exactly two levels have a gate")
+
+func test_tower_data_sanity() -> void:
+	print("\n[GROUP 9c] Tower data covers every level")
+	for data in [ARROW, CANNON, BARRICADE, HEAL_STATION]:
+		assert_true(data.levels.size() == GameConfig.tower_max_level, "%s: one level per tower_max_level" % data.id)
+		assert_true(data.levels.all(func(lv): return lv.build_cost > 0), "%s: every build_cost is above 0" % data.id)
 
 func test_level_cap() -> void:
 	print("\n[GROUP 9b] Level cap")

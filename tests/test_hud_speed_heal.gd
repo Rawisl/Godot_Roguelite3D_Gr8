@@ -10,20 +10,42 @@ const MAX_HP := 200
 ## About 20 HP per second of game time, like a base heal rate.
 const HEAL_PER_TICK := 2
 
-var _heal: Node
 var _stations_step := 0
 var _full := false
 var _commander := false
 var _wave_state: StringName = &"PREP"
 var _phase: StringName = &"IDLE"
 var _hp := 150
+var _counts := [2, 2]
+var _progress := 0.0
+var _next_status := 0.0
 
 func _ready() -> void:
-	_heal = $Hud.find_child("HealStatus", true, false)
 	await get_tree().process_frame
 	EventBus.commander_hp_changed.emit(_hp, MAX_HP)
 	EventBus.state_changed.emit(&"PREP")
-	_heal.set_stations(2, 2)
+	_publish_status()
+
+func _process(_delta: float) -> void:
+	if TimeManager.real_time >= _next_status:
+		_publish_status()
+
+func _publish_status() -> void:
+	_next_status = TimeManager.real_time + 0.1
+	var reason: StringName = &""
+	if _commander:
+		reason = &"COMMANDER_MODE"
+	elif _wave_state not in [&"COMBAT", &"BOSS_COMBAT"]:
+		reason = &"WAVE_STATE"
+	elif TimeManager.is_paused:
+		reason = &"PAUSED"
+	elif _full:
+		reason = &"FULL_HP"
+	elif _counts[0] == 0:
+		reason = &"DEPLETED"
+	EventBus.heal_status_updated.emit(_phase, reason, _progress,
+		1.0 - _progress if _phase == &"HOLD" else 0.0,
+		10.0 * HEAL_PER_TICK, _counts[0], _counts[1])
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
@@ -40,10 +62,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				TimeManager.release_pause(TimeManager.REASON_USER)
 			else:
 				TimeManager.request_pause(TimeManager.REASON_USER)
+				_cancel_channel()
 		KEY_0:
 			_stations_step = (_stations_step + 1) % 3
 			var counts := [[2, 2], [1, 2], [0, 0]]
-			_heal.set_stations(counts[_stations_step][0], counts[_stations_step][1])
+			_counts = counts[_stations_step]
+			_publish_status()
 		KEY_H:
 			_hold_then_heal()
 		KEY_X:
@@ -65,6 +89,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _wave(state: StringName) -> void:
 	_wave_state = state
+	if state not in [&"COMBAT", &"BOSS_COMBAT"]:
+		_cancel_channel()
 	print("[test] state -> %s" % state)
 	# Mirrors the wave FSM: these states reset the speed to x1.
 	if state == &"BOSS_INTRO" or state == &"SUMMARY":
@@ -73,7 +99,8 @@ func _wave(state: StringName) -> void:
 
 ## Same gate as the heal channel: no hold in Commander mode, outside combat or at full HP.
 func _can_hold() -> bool:
-	return not _commander and not _full and _wave_state in [&"COMBAT", &"BOSS_COMBAT"]
+	return not _commander and not _full and not TimeManager.is_paused \
+		and _counts[0] > 0 and _wave_state in [&"COMBAT", &"BOSS_COMBAT"]
 
 ## Hold progress and healing tick on game time, so both finish sooner at x2 and x3.
 func _hold_then_heal() -> void:
@@ -105,10 +132,8 @@ func _cancel_channel() -> void:
 	if _phase != &"IDLE":
 		_send_heal(&"CANCELLED", 0.0)
 
-## Fake heal_state_changed: emitted for real once the signal is on main.
 func _send_heal(state: StringName, progress: float) -> void:
 	_phase = state if state == &"HOLD" or state == &"HEALING" else &"IDLE"
-	if EventBus.has_signal(&"heal_state_changed"):
-		EventBus.emit_signal(&"heal_state_changed", state, &"G_1_1", progress)
-	else:
-		_heal.show_heal_state(state, &"G_1_1", progress)
+	_progress = progress
+	EventBus.heal_state_changed.emit(state, &"G_1_1", progress)
+	_publish_status()
