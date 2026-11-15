@@ -4,6 +4,7 @@ extends Node
 ## In-memory runtime state container for the active run session.
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
+# TODO(Ender-Via): when RunLoading builds the RunConfig, call init_from_config() with it and then SaveManager.record_run_start(config.start_wave, config.start_mult) before the first PREP, so an interrupted run can be settled on the next launch.
 
 ## The base sword: owned and equipped at the start of every run.
 const BASE_WEAPON := &"sword_base"
@@ -13,6 +14,8 @@ var wave_index: int = 1
 var waves_cleared: int = 0
 var run_elapsed: float = 0.0
 var run_seed: int = 0
+var start_wave: int = 1
+var start_mult: float = 1.0
 var victory_reached: bool = false
 
 # --- Economy ---
@@ -127,6 +130,8 @@ func init_from_config(config: RunConfig) -> void:
 	if config == null:
 		return
 	wave_index = config.start_wave
+	start_wave = config.start_wave
+	start_mult = config.start_mult
 	waves_cleared = maxi(0, config.start_wave - 1)
 	gold = config.starting_gold
 	run_seed = config.run_seed
@@ -207,6 +212,10 @@ func build_summary(end_type: StringName, run_result: StringName) -> Dictionary:
 		"gold": gold,
 		"mithril": mithril,
 		"prestige_pending": prestige_pending,
+		"wave_prestige_buffer": wave_prestige_buffer,
+		"prestige_gain": PrestigeCalc.prestige_gain(prestige_pending, wave_prestige_buffer, start_mult),
+		"start_wave": start_wave,
+		"start_mult": start_mult,
 		"run_kills": run_kills,
 		"run_commander_kills": run_commander_kills,
 		"run_gold_earned": run_gold_earned,

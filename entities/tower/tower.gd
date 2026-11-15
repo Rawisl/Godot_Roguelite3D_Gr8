@@ -1,6 +1,5 @@
 class_name Tower
 extends StaticBody3D
-# TODO(kiezroth): when an immune icon asset exists, show it above the tower while is_immune_blocked (tower_immunity_changed already fires)
 
 signal destroyed(tower: Tower)
 signal shot_started(target: Node3D)

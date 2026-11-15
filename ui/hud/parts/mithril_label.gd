@@ -23,7 +23,6 @@ func _ready() -> void:
 	_hint.tooltip_text = tr(&"hud.mithril.hint_tip")
 	_hint.pressed.connect(_on_hint_pressed)
 	_glow.modulate.a = 0.0
-	# TODO(kimvux): add the Mithril icon to %Icon.
 	EventBus.mithril_changed.connect(_on_mithril_changed)
 	EventBus.fortress_hp_changed.connect(_on_fortress_hp_changed)
 	EventBus.state_changed.connect(_on_state_changed)
