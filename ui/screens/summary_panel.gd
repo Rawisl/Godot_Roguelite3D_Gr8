@@ -2,6 +2,11 @@ class_name SummaryPanel
 extends Control
 ## End-of-wave summary. Shown in SUMMARY, continues after 10 s of pausable real time or on Continue.
 
+## Same low HP threshold as the HUD Fortress warning, so the hint and the warning agree.
+@export var fortress_stats: FortressStats = preload("res://data/config/fortress_stats.tres")
+## The Fortress value under that threshold, the same orange as the hint under it.
+@export var fortress_low_color := Color(1, 0.6039216, 0.18039216, 1)
+
 ## Each row hides until the summary data carries its key.
 var _summary: Dictionary = {}
 var _wave := 0
@@ -134,10 +139,12 @@ func _refresh() -> void:
 		return UiFormat.tr_fmt(&"summary.value.picks", {"value": v}))
 
 ## Low Fortress HP: repair with Mithril in the next PREP, or win a Hazard Trial first when there is none.
+## The Fortress value turns the hint colour too, so the number and the hint say the same thing.
 func _show_fortress_hint() -> void:
 	var max_hp := int(_summary.get("fortress_max_hp", 0))
 	var hp := int(_summary.get("fortress_hp", max_hp))
-	_fortress_hint.visible = max_hp > 0 and float(hp) < float(max_hp) * GameConfig.fortress_repair_hint_pct
+	_fortress_hint.visible = max_hp > 0 and float(hp) / max_hp <= fortress_stats.low_hp_warning_pct
+	_fortress.set_value_color(fortress_low_color if _fortress_hint.visible else _fortress.value_color)
 	if _fortress_hint.visible:
 		_fortress_hint.text = tr(&"summary.fortress_hint" if _mithril > 0 else &"summary.fortress_hint_hazard")
 

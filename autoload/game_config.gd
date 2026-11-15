@@ -65,8 +65,6 @@ extends Node
 @export var heal_tower_dmg_norm_exp: float = 0.5
 ## Store share under which the station warns once that it is running low.
 @export var heal_store_low_pct: float = 0.20
-## Fortress HP share under which the wave summary suggests repairing it with Mithril.
-@export var fortress_repair_hint_pct: float = 0.30
 
 @export_group("Ground Grid")
 @export var grid_cell_size: float = 2.0
