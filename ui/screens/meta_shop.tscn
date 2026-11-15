@@ -1,12 +1,14 @@
 [gd_scene format=3 uid="uid://b1tsbvbhrmocw"]
 
 [ext_resource type="Script" uid="uid://bu0axc17awppn" path="res://ui/screens/meta_shop.gd" id="1_8sgkt"]
+[ext_resource type="Script" uid="uid://dcnqvv477i1m0" path="res://common/shop_item.gd" id="2_prtp2"]
 [ext_resource type="PackedScene" uid="uid://vpp3bfkttu4q" path="res://ui/screens/shop_row.tscn" id="2_row"]
 [ext_resource type="Resource" uid="uid://h6058fpsvcbb" path="res://data/config/meta_shop/fort_hp.tres" id="3_i0"]
 [ext_resource type="Resource" uid="uid://c4lbh3uruew2s" path="res://data/config/meta_shop/gold_pct.tres" id="4_i1"]
 [ext_resource type="Resource" uid="uid://b8dumkpfhlslg" path="res://data/config/meta_shop/cmd_hp.tres" id="5_i2"]
 [ext_resource type="Resource" uid="uid://b46fvo66xdil2" path="res://data/config/meta_shop/emg_repair.tres" id="6_i3"]
 [ext_resource type="Theme" uid="uid://dmftlq5fad4lk" path="res://ui/theme/light_panel_theme.tres" id="9_light"]
+[ext_resource type="Script" uid="uid://bn2xn25tjibhx" path="res://systems/economy/meta_shop_service.gd" id="10_service"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 24.0
@@ -33,7 +35,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_type_variation = &"SafeArea"
 script = ExtResource("1_8sgkt")
-items = Array[Resource]([ExtResource("3_i0"), ExtResource("4_i1"), ExtResource("5_i2"), ExtResource("6_i3")])
+items = Array[ExtResource("2_prtp2")]([ExtResource("3_i0"), ExtResource("4_i1"), ExtResource("5_i2"), ExtResource("6_i3")])
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=163728926]
 layout_mode = 2
@@ -85,7 +87,10 @@ layout_mode = 2
 
 [node name="ErrorLabel" type="Label" parent="VBoxContainer/Panel/Inner" unique_id=1739300018]
 unique_name_in_owner = true
-layout_mode = 2
 visible = false
+layout_mode = 2
 theme_override_colors/font_color = Color(0.6902, 0.251, 0.1804, 1)
 theme_override_font_sizes/font_size = 22
+
+[node name="MetaShopService" type="Node" parent="." unique_id=783914223]
+script = ExtResource("10_service")
