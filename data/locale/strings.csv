@@ -23,11 +23,9 @@ run_end.type.fortress_destroyed,Fortress bị phá hủy
 run_end.type.commander_died,Chỉ huy đã ngã xuống
 run_end.type.abandoned,Đã bỏ cuộc
 settings.tab.gameplay,Gameplay
-settings.tab.controls,Điều khiển
 settings.tab.audio,Âm thanh
 settings.tab.graphics,Đồ họa
 settings.tab.accessibility,Tiếp cận
-settings.tab.data,Dữ liệu
 menu.title,Chiến Tuyến Vô Tận
 menu.prestige,Danh vọng: {value}
 menu.record,Kỷ lục: đợt {wave}
@@ -406,7 +404,6 @@ account.title,Tài khoản
 account.guest,Khách
 account.sync,Đồng bộ
 account.sync_now,Đồng bộ ngay
-account.sync_unavailable,Chưa có đồng bộ tự động
 account.offline,"Tính năng trực tuyến đang tắt, game vẫn chơi bình thường."
 run_end.result.defeat,Thất bại ở đợt quái thứ {wave}
 run_end.result.survived,Sống sót đến đợt quái thứ {wave}
@@ -450,3 +447,30 @@ dialog.abandon.body_run,Lượt chơi kết thúc ở đợt quái {wave} và t�
 dialog.abandon.body_survived,Lượt chơi kết thúc và tính là sống sót đến đợt quái {wave}. Bạn nhận {gain} danh vọng.
 dialog.quit_run.body_run,"Lượt chơi kết thúc ở đợt quái {wave}, tính là thất bại, rồi thoát game. Bạn nhận {gain} danh vọng."
 dialog.quit_run.body_survived,Lượt chơi tính là sống sót đến đợt quái {wave} rồi thoát game. Bạn nhận {gain} danh vọng.
+settings.gfx.window_mode,Chế độ cửa sổ:
+settings.gfx.windowed,Cửa sổ
+settings.gfx.fullscreen,Toàn màn hình
+settings.gfx.resolution,Độ phân giải:
+settings.gfx.size,{w} × {h}
+settings.gfx.vsync,Đồng bộ dọc (VSync)
+settings.gfx.max_fps,Giới hạn FPS:
+settings.gfx.fps,{value} FPS
+settings.gfx.fps_none,Không giới hạn
+settings.gfx.keep_question,Giữ thay đổi? Tự quay lại sau {seconds} giây
+settings.gfx.keep,Giữ
+settings.gfx.revert,Quay lại
+settings.acc.hold_toggle,Phím giữ thành bấm bật/tắt
+settings.acc.hold_toggle_tip,"Bật: bấm E một lần để bắt đầu hồi lực, bấm lại để dừng, không cần giữ phím."
+sync.detail.not_uploaded,"Tài khoản chưa có dữ liệu, tiến trình trên máy này chưa được tải lên"
+sync.detail.local_write,"Không ghi được dữ liệu tải về, tiến trình trên máy này giữ nguyên"
+dialog.sync_upload.title,Tải profile lên tài khoản?
+dialog.sync_upload.body,"Tài khoản này chưa có dữ liệu. Tải tiến trình trên máy này lên: {balance} danh vọng, kỷ lục đợt quái {wave}, {runs} lượt chơi."
+dialog.sync_upload.confirm,Tải lên
+dialog.sync_upload.cancel,Để sau
+dialog.sync_other_device.title,Đã dùng dữ liệu từ máy khác
+dialog.sync_other_device.body,"Tài khoản có tiến trình mới hơn từ máy khác nên đã dùng bản đó. Bản trên máy này được giữ ở save.conflict.bak."
+dialog.close,Đóng
+dialog.save_failed.retry,Thử lại
+dialog.save_corrupt.title,Dữ liệu lưu bị hỏng
+dialog.save_corrupt.body,"Không đọc được dữ liệu lưu nên game đang chạy với tiến trình mới và chưa ghi gì. Tạo save mới sẽ cất bản hỏng thành .corrupt rồi bắt đầu lại."
+dialog.save_corrupt.new,Tạo save mới
