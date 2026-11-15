@@ -3,8 +3,8 @@ extends Tower
 ## Heal station: a ground building whose HP is the store the commander heals from (heal_channel.gd).
 ## It never attacks, never refills, and turns to rubble through the Slot when the store is empty.
 ## Draining is fractional: the part below 1 HP waits in _carry, HealthComponent keeps the whole HP.
-# TODO(week 10): scale enemy damage to the store down by the wave damage multiplier
-# TODO(week 10): tell a drained store apart from a destroyed one for the alerts
+## An upgrade adds only the store the new level gains.
+# TODO(Rawisl): when the wave damage multiplier reaches the heal station, divide enemy and boss damage to the store by dmg_mult^heal_tower_dmg_norm_exp (rounded up, at least 1) in take_damage; drain() stays unscaled
 
 ## Store updates on EventBus are merged to at most one per interval (real time).
 const STORE_SIGNAL_INTERVAL := 0.1
@@ -36,6 +36,18 @@ func _ready() -> void:
 
 func heals_on_prep() -> bool:
 	return false
+
+## The first call (while building, and every rebuild) fills the store like any tower.
+## Later calls are upgrades: the store grows by what the new level adds and is never refilled.
+func apply_level(new_level: int) -> void:
+	if _lv == null:
+		super.apply_level(new_level)
+		return
+	level = new_level
+	_lv = data.levels[level - 1]
+	(range_shape.shape as CylinderShape3D).radius = _lv.attack_range
+	# Adds max_hp(new) - max_hp(old) and sends one hp_changed; _carry is left as it is.
+	health.set_max_hp(_lv.max_hp, true)
 
 ## A station ruined while it still has HP (Overload) stops being a source in the same frame.
 func is_alive() -> bool:

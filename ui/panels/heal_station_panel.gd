@@ -92,8 +92,6 @@ func show_info(info: Dictionary, in_prep: bool) -> void:
 		_sell.set_lines(UiFormat.tr_fmt(&"panel.tower.sell", {"gold": info.sell_value}))
 
 ## Same rules as the Tower panel: MAX at the top level, grey while the Commander level is too low.
-## TODO(kiezroth): a heal station upgrade should add only the store it gains and keep what is left.
-## Until then the press goes through BuildService.upgrade() like any tower.
 func _show_upgrade(info: Dictionary) -> void:
 	if info.is_max:
 		_upgrade.disabled = true
