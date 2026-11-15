@@ -744,18 +744,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH5
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Trạm hồi lực phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
 - Nghiệm thu: Đòn raw 17 ở wave 10 gây 14; hút máu không bị chuẩn hóa
 - Cần xong trước: W8-MH5
+- Ghi chú bàn giao: HealStation chuẩn hóa DamageInfo/int tại lúc trúng theo wave_manager và heal_tower_dmg_norm_exp; giữ nguyên hit dùng chung và đường drain. Panel nhận EVB-34 và tốc độ thật từ HealChannel qua heal_status_updated; mỗi sự kiện kho render một lần. Đã chặn sát thương ngoài SceneTree và bỏ reflection khi sao chép hit. Runner heal station 90/90, heal status 130/130, heal channel 204/204, ETG 27/27, panel HT12 12/12. F6 panel giữ preview để bấm 1/2/3; chạy tự động thêm -- --run-tests. TODO phân biệt cạn kho với bị phá giữ lại và gán kiezroth để nối cảnh báo sau. PR thông báo Mạnh (@kiezroth) và Khang (@WhoKeng).
 
 ##### W10-MH6
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: save.json thêm revision, updated_at, device_id (ACCT-04)
 - Nghiệm thu: Revision tăng 1 mỗi lần ghi; save cũ thiếu trường vẫn đọc được
 - Cần xong trước: W10-MH1
+- Ghi chú bàn giao: Envelope ghi revision +1, updated_at UTC và UUID v4 khi thiếu device_id; chỉ cập nhật metadata bộ nhớ sau repository trả OK. Không đổi save_version/checksum của data. Runner repository 68/68, atomic 128/128 assert; có kiểm tra legacy, reload, ghi lỗi/retry và timestamp bằng đồng hồ giả, không chờ wall clock hoặc đọc metadata nội bộ. Timestamp production vẫn dùng UTC hệ thống. Giữ TODO CloudSaveRepository cho tuần 11; các TODO Rawisl ngoài phạm vi (leaderboard, icon vũ khí, cooldown chain lightning) chưa xử lý. Godot 4.7.2 chạy main.tscn có render 300 frame, exit 0, không lỗi runtime; test dùng APPDATA riêng dưới .godot/test-profile. Các ca save lỗi cố ý phát push_error và runner save còn cảnh báo resource/RID lúc thoát. PR thông báo Mạnh (@kiezroth).
 
 #### Kiệt (Enemy & Wave), tuần 10, 40h
 

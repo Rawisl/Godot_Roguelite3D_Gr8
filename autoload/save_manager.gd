@@ -8,7 +8,6 @@ extends Node
 ## game version, or one where every copy is unreadable, is never overwritten: the game runs
 ## on defaults in memory and save() refuses until the file is fixed (an unreadable save can
 ## be replaced with start_new_save()).
-# TODO(Rawisl): when account sync lands, write revision (+1 on every successful save), updated_at (UTC) and device_id (generated once per machine) into the envelope in _write(); a missing one means revision 0 and a new device_id.
 # TODO(kiezroth): when the save loads with run_flag.run_in_progress true, settle the run as ABANDONED before MainMenu (prestige from prestige_pending), clear the flag, save and tell the player.
 # TODO(WhoKeng): when the tutorial lands, call SaveManager.mark_tutorial_done() as soon as both starter towers are built or Skip is pressed; it saves the flag and emits tutorial_completed.
 
@@ -69,7 +68,7 @@ var data: Dictionary = {}
 ## False after a newer-version or unreadable save was found, so it is not overwritten.
 var can_write: bool = true
 
-## Fields outside "data" (revision, device_id, ...) read from the file, written back unchanged.
+## Envelope metadata and unknown fields preserved across successful writes.
 var _envelope_extras: Dictionary = {}
 ## True between state_changed(COMBAT / BOSS_COMBAT) and the next state outside combat.
 var _in_combat: bool = false
@@ -285,6 +284,10 @@ func _flush_request() -> void:
 
 func _write() -> Error:
 	var envelope := _envelope_extras.duplicate(true)
+	envelope["revision"] = int(_envelope_extras.get("revision", 0)) + 1
+	envelope["updated_at"] = _get_updated_at()
+	if not envelope.has("device_id"):
+		envelope["device_id"] = _new_device_id()
 	envelope["save_version"] = SAVE_VERSION
 	envelope["checksum"] = SaveChecksum.compute(data)
 	envelope["data"] = data
@@ -293,8 +296,20 @@ func _write() -> Error:
 		push_error("SaveManager: write failed (error %d)" % error)
 		EventBus.save_failed.emit(REASON_WRITE_ERROR)
 		return error
+	for key in ["revision", "updated_at", "device_id"]:
+		_envelope_extras[key] = envelope[key]
 	EventBus.save_completed.emit()
 	return OK
+
+func _get_updated_at() -> String:
+	return Time.get_datetime_string_from_system(true, true)
+
+func _new_device_id() -> String:
+	var bytes := Crypto.new().generate_random_bytes(16)
+	bytes[6] = (bytes[6] & 0x0f) | 0x40
+	bytes[8] = (bytes[8] & 0x3f) | 0x80
+	var hex := bytes.hex_encode()
+	return "%s-%s-%s-%s-%s" % [hex.substr(0, 8), hex.substr(8, 4), hex.substr(12, 4), hex.substr(16, 4), hex.substr(20, 12)]
 
 func _on_state_changed(new_state: StringName) -> void:
 	if new_state in COMBAT_STATES:

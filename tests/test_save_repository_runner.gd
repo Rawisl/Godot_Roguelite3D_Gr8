@@ -22,9 +22,16 @@ var failed_names: PackedStringArray = []
 var _completed: int = 0
 var _failed_reasons: Array[StringName] = []
 
+class ClockedSaveManager extends "res://autoload/save_manager.gd":
+	var timestamp := ""
+
+	func _get_updated_at() -> String:
+		return timestamp
+
 ## Keeps the envelope in memory, stands in for a cloud repository.
 class MemorySaveRepository extends SaveRepository:
 	var stored: Dictionary = {}
+	var fail_with: Error = OK
 
 	func has_data() -> bool:
 		return not stored.is_empty()
@@ -34,6 +41,8 @@ class MemorySaveRepository extends SaveRepository:
 		return stored.duplicate(true)
 
 	func save_data(envelope: Dictionary) -> Error:
+		if fail_with != OK:
+			return fail_with
 		stored = envelope.duplicate(true)
 		return OK
 
@@ -54,6 +63,7 @@ func _ready() -> void:
 	test_newer_version_is_not_overwritten()
 	test_corrupt_file_is_not_overwritten()
 	test_memory_repository_swap()
+	test_envelope_metadata()
 
 	EventBus.save_completed.disconnect(_on_save_completed)
 	EventBus.save_failed.disconnect(_on_save_failed)
@@ -98,6 +108,9 @@ func test_save_then_load_round_trip() -> void:
 
 	var raw := _read_raw()
 	assert_true(raw.get("save_version") == 1.0, "file has save_version 1")
+	assert_true(absf(Time.get_unix_time_from_system()
+		- Time.get_unix_time_from_datetime_string(String(raw.get("updated_at", "")))) < 2.0,
+		"production timestamp uses UTC system time")
 	assert_true(raw.get("data", {}).get("profile", {}).get("prestige_balance") == 120.0,
 			"file has prestige_balance 120")
 
@@ -142,7 +155,7 @@ func test_extra_fields_are_kept() -> void:
 	var data: Dictionary = raw.get("data", {})
 	assert_true(data.get("profile", {}).get("future_field") == "keep", "unknown profile field written back")
 	assert_true(data.has("future_section"), "unknown section written back")
-	assert_true(raw.get("revision") == 7.0 and raw.get("device_id") == "abc",
+	assert_true(raw.get("revision") == 8.0 and raw.get("device_id") == "abc",
 			"fields outside data written back")
 	assert_true(SaveChecksum.matches(raw) and String(raw.get("checksum", "")).begins_with(SaveChecksum.PREFIX),
 			"fresh checksum written")
@@ -204,6 +217,56 @@ func test_memory_repository_swap() -> void:
 	SaveManager.load_save()
 	assert_true(SaveManager.get_section(SaveManager.PROFILE)["max_wave_cleared"] == 11,
 			"load_save() reads back from memory repository")
+
+func test_envelope_metadata() -> void:
+	print("\n--- Envelope metadata ---")
+	_write_raw('{"save_version": 1, "data": {"profile": {"prestige_balance": 9}}}')
+	_reset_counters()
+	var manager := ClockedSaveManager.new()
+	manager.timestamp = "2026-11-15 00:00:00"
+	manager.set_repository(LocalSaveRepository.new(TEST_PATH))
+	assert_true(manager.load_save() == OK, "legacy save without metadata loads")
+	assert_true(manager.save_now() == OK, "legacy save gains metadata")
+	var first := _read_raw()
+	assert_true(first.get("revision") == 1.0, "legacy revision starts at one")
+	var uuid := RegEx.new()
+	uuid.compile("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+	assert_true(uuid.search(String(first.get("device_id", ""))) != null, "device_id is a UUID v4")
+	var timestamp := RegEx.new()
+	timestamp.compile("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$")
+	var updated := String(first.get("updated_at", ""))
+	assert_true(timestamp.search(updated) != null, "updated_at has ISO datetime format")
+	assert_true(updated == manager.timestamp, "updated_at uses the supplied clock")
+	manager.timestamp = Time.get_datetime_string_from_unix_time(
+		Time.get_unix_time_from_datetime_string(updated) + 1, true)
+	assert_true(manager.save_now() == OK, "second write succeeds")
+	var second := _read_raw()
+	assert_true(second.get("revision") == 2.0, "each successful write increments revision")
+	assert_true(second.get("device_id") == first.get("device_id"), "device_id persists across writes")
+	assert_true(second.get("updated_at") != updated, "updated_at changes on a later second")
+	assert_true(second.get("checksum") == first.get("checksum") and SaveChecksum.matches(second),
+		"metadata changes leave data checksum unchanged")
+	var payload: Dictionary = second.get("data", {})
+	assert_true(not payload.has("revision") and not payload.has("updated_at") and not payload.has("device_id"),
+		"metadata stays outside data")
+	manager.load_save()
+	manager.save_now()
+	var third := _read_raw()
+	assert_true(third.get("revision") == 3.0 and third.get("device_id") == first.get("device_id"),
+		"metadata persists across reload")
+	var memory := MemorySaveRepository.new()
+	memory.stored = third.duplicate(true)
+	manager.set_repository(memory)
+	manager.load_save()
+	var stored_before := memory.stored.duplicate(true)
+	memory.fail_with = ERR_FILE_CANT_WRITE
+	assert_true(manager.save_now() == ERR_FILE_CANT_WRITE, "failed write is reported (expected error)")
+	assert_true(memory.stored == stored_before, "failed write leaves persisted envelope unchanged")
+	memory.fail_with = OK
+	assert_true(manager.save_now() == OK and memory.stored.get("revision") == 4,
+		"retry increments revision only once")
+	assert_true(memory.stored.get("device_id") == first.get("device_id"), "retry preserves device_id")
+	manager.free()
 
 func assert_true(cond: bool, test_name: String) -> void:
 	if cond:
