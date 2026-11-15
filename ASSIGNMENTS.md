@@ -1173,12 +1173,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG10
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Runner BAL tests/test_balance_config_runner.tscn (BAL-05, BL3, BL4)
 - Nghiệm thu: Pass với bảng chuẩn; fail khi thiếu cấp 36 hoặc spawn_duration 12 s
 - Tệp liên quan: mới: tests/test_balance_config_runner.tscn
 - ID SRS: BAL-05, BL3, BL4
 - Cần xong trước: W10-NG8, W11-MH11
+- Ghi chú bàn giao: TutorialService (systems/tutorial/) lives in the new HUD part ui/hud/parts/tutorial_hint.* under the wave counter. A profile with tutorial_done false gets four hints (build the Arrow on GameConfig.starter_arrow_slot, the Cannon on starter_cannon_slot, start the wave, hit an enemy), each with "Bước n/4" and an always present Skip; a build step reminds after GameConfig.tutorial_remind_seconds (30 s). Start wave stays grey until both towers stand, and tutorial_done is saved through SaveManager.mark_tutorial_done() as soon as they do, so leaving earlier runs it again. Skip builds the missing towers on their slots and saves the flag. A run after it is done shows nothing; an account synced with tutorial_done true skips it too. @kiezroth: the free starter build is not on main yet, so the player pays the normal price and Skip falls back to BuildService.build(); add BuildService.build_starter(slot_id, type) and light and lock the starter slots while the tutorial waits (TODOs left in tutorial_service.gd). The fight step ends on the first kill credited to the commander. Runner tests/test_tutorial.tscn.
 
 ##### W11-MH5
 - Người: Ngọc
