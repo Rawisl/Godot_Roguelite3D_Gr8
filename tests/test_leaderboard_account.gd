@@ -101,7 +101,7 @@ func _run_checks() -> void:
 	GameState.settings_tab = &"account"
 	var settings := (load("res://ui/screens/settings.tscn") as PackedScene).instantiate()
 	add_child(settings)
-	_check((settings.get_node("%Tabs") as TabContainer).current_tab == 6 and GameState.settings_tab == &"", "Settings opens on the Account tab once")
+	_check((settings.get_node("%Tabs") as TabContainer).current_tab == settings.TAB_IDS.find(&"account") and GameState.settings_tab == &"", "Settings opens on the Account tab once")
 	settings.queue_free()
 	EventBus.sync_state_changed.emit(&"GUEST", "")
 	print("test_leaderboard_account: %d passed, %d failed" % [_passed, _failed])
