@@ -132,6 +132,7 @@ extends Node
 @export var enrage_reward_mult: float = 0.5
 
 @export_group("Online")
+@export var game_version: String = "1.0.0"
 @export var online_enabled: bool = true
 @export var backend_url: String = "https://mtsfrhlqoeqaeywypkyi.supabase.co"
 ## Publishable key: meant to ship with the game, row level security limits what it can do.
