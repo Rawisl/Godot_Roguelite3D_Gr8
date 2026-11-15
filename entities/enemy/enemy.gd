@@ -404,6 +404,7 @@ func _burn_tick() -> void:
 	var source: Node = burn_source if is_instance_valid(burn_source) else null
 	var info := DamageInfo.outgoing(burn_per_tick, burn_dealt_mult, burn_damage_type, source, 0.0, Vector3.ZERO, true)
 	info.hit_by_commander = info.hit_by_commander or _burn_from_commander
+	info.is_weapon_effect = true
 	take_damage(info)
 
 
@@ -1290,7 +1291,15 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 		var dir_norm := kb_dir.normalized() if kb_dir.length_squared() > 0.001 else Vector3.FORWARD
 		apply_knockback(dir_norm * info.knockback_force)
  
-	return health.take_damage(info)
+	var actual_damage := health.take_damage(info)
+	_notify_weapon_hit(info, actual_damage)
+	return actual_damage
+
+
+func _notify_weapon_hit(info: DamageInfo, actual_damage: int) -> void:
+	if actual_damage > 0 and not info.is_weapon_effect and is_instance_valid(info.source):
+		if info.source.has_method(&"on_weapon_hit"):
+			info.source.call(&"on_weapon_hit", self, info)
 
 
 ## Product of the receiver's damage reduction factors (for example Armored). 1.0 = none.
