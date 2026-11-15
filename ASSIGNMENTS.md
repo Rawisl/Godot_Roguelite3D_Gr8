@@ -698,10 +698,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG7
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nối lõi hồi máu với Trạm hồi lực thật (thay trạm giả), test HT1..HT5 và test input camera (CM4)
 - Nghiệm thu: HT1..HT5 đạt với trạm thật; CM4 đạt
 - Cần xong trước: W8-MH5
+- Ghi chú bàn giao: HUD nhận trạng thái, lý do khóa, countdown, tốc độ hồi và số trạm thật qua EventBus. Playtest F6: `tests/test_playtest_heal_channel.tscn`; có preset, cấp bị động 0..3, pause và hộp thoại; dùng save trong bộ nhớ và tắt backend. Runner `test_heal_status_runner`, `test_heal_channel` và `test_camera_flow` đạt; walkthrough có render đã kiểm tra HUD và chuyển ngữ cảnh.
 
 ##### W10-NG8
 - Người: Ngọc
@@ -759,6 +760,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: RunLoading 8 bước (RUN-01, APL-01..04) trên RunState có sẵn; áp meta; gọi bước đặt trụ có sẵn hoặc tutorial (A: W10-MH10)
 - Nghiệm thu: RunLoading < 5 s, start_wave = 1, gold 0
 - Tệp liên quan: ui/screens/run_loading.gd, systems/run/
+- Ghi chú: sau init_from_config gọi SaveManager.record_run_start(start_wave, start_mult)
 - ID SRS: 3.2.1
 - Cần xong trước: W8B-KT1, W8-KT1
 
@@ -853,7 +855,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH1
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Save atomic + checksum + .bak (SAV-01..06, 10..14, 19; FLOW-01, 02, 07)
 - Nghiệm thu: Xóa save.json thì nạp từ .bak; ghi dưới 50 ms; flags.tutorial_done có mặc định false
 - Cần xong trước: W9-MH2, W7-KH2
@@ -861,28 +863,30 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH2
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SAV-04 nối SUMMARY, RunEnd, shop (và nối khi tutorial_done bật)
 - Nghiệm thu: Ghi save xong mới hiển thị SUMMARY
 - Cần xong trước: W10-MH1
+- Ghi chú: phần shop ghi save trong W10-MH4 (mua ở MetaShop gọi save); ghi run_flag lúc bắt đầu run chờ W10-KT1 gọi SaveManager.record_run_start (TODO(Ender-Via) ở systems/run/run_state.gd); tutorial gọi SaveManager.mark_tutorial_done() ở W11-NG1
 
 ##### W10-MH3
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thưởng boss BRW-01, 02, 04, 06, 07 theo WaveRewardTable (boss_gold = 100 x gold_mult(w), không clear_mult, không hệ số chỉ huy)
 - Nghiệm thu: Diệt sau Cuồng nộ: boss_gold và prestige x 0.5; +1 lượt tối đa 3
 - ID SRS: BRW-01
 - Cần xong trước: W9-MH1, W10-MH7
-- Ghi chú: từ W10-MH7 boss phát 0 gold qua enemy_died; uy tín boss vẫn đi qua enemy_died (TODO(kiezroth) ở entities/enemy/enemy.gd) tới khi MH3 chuyển sang SUMMARY
+- Ghi chú: boss phát 0 gold và 0 uy tín qua enemy_died; gold boss (đã nhân Cuồng nộ) hiện số nổi lúc boss chết và cộng vào ví ở SUMMARY cùng uy tín boss; gold_pct_total vẫn 0 tới khi meta nối (TODO(Ender-Via) ở systems/wave/wave_manager.gd)
 
 ##### W10-MH4
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: MetaShop backend (SHP-05..09, 4 mục: FORT_HP, GOLD_PCT, CMD_HP, EMG_REPAIR; không STARTER_KIT hay UNLOCK_WAND)
 - Nghiệm thu: Mua nguyên tử, không nhảy cấp
 - Cần xong trước: W9-MH2, W10-MH1
+- Ghi chú: service sống trong màn MetaShop; modifier cho RunLoading ở MetaUpgrades.get_run_modifiers (W10-KT1 gọi)
 
 ##### W10-MH7
 - Người: Mạnh
@@ -897,12 +901,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH8
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Soạn số liệu 36 cấp cho 4 loại tower trong sheet towers (giá, chỉ số, HP, kho Trạm hồi lực)
 - Nghiệm thu: Gold khan hiếm: không đủ nâng cả 6 công trình lên bậc cao trước wave 30 trong tính toán thô
 - Tệp liên quan: balance/balance.xlsx (sheet towers)
 - ID SRS: 3.6.3, 3.9
 - Cần xong trước: W8B-MH1
+- Ghi chú: giá, max_hp (với Trạm hồi lực max_hp là kho) và damage 36 cấp đã cân bằng bằng công cụ tools/balance_simulator (đọc balance.xlsx, xuất trang HTML để chỉnh và khối TSV để dán vào sheet towers). Nghiệm thu: nâng bố cục 6 công trình lên cấp 25 tốn 1.38 lần gold kịch bản mạnh tới wave 30
 
 ##### W10-MH9
 - Người: Mạnh
@@ -1404,6 +1409,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: mới: systems/tutorial/; ui/; autoload/save_manager.gd (flags.tutorial_done); tín hiệu tutorial_step_completed đã có trong event_bus.gd
 - ID SRS: TUT-01, 03, 08..11, 14, 15, 17; BLD-11; EVB-45
 - Cần xong trước: W10-MH10, W8B-KH1, W11-KH4
+- Ghi chú: ghi tutorial_done qua SaveManager.mark_tutorial_done() (tự phát tutorial_completed)
 
 ##### W11-KH6
 - Người: Khang

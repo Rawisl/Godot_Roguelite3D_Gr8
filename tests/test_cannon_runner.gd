@@ -147,7 +147,9 @@ func test_blast_falloff() -> void:
 
 	var t3 := _cannon(Vector3(0, 0, 30), 3)
 	var lv3: TowerLevelData = t3.data.levels[t3.level - 1]
-	assert_true(is_equal_approx(lv3.splash_radius, 3.5) and lv3.damage == 80, "level 3 shell: 80 dmg, 3.5 m")
+	var lv2: TowerLevelData = t3.data.levels[1]
+	assert_true(is_equal_approx(lv3.splash_radius, 3.5) and lv3.damage > lv2.damage,
+			"level 3 shell: 3.5 m and more damage than level 2 (%d > %d)" % [lv3.damage, lv2.damage])
 	_clear([t3])
 
 

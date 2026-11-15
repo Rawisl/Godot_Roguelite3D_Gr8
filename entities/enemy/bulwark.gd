@@ -219,8 +219,9 @@ func _on_died() -> void:
 	if is_dead:
 		return
 	EventBus.boss_hp_changed.emit(0, 0, _get_phase_name())
-	super._on_died()
+	# Announce the boss death first: when the boss is the last unit, enemy_died ends the wave and the summary must already see it.
 	EventBus.boss_defeated.emit()
+	super._on_died()
 
 
 func _get_attack_windup() -> float:
