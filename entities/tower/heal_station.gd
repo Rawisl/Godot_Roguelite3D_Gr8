@@ -4,7 +4,6 @@ extends Tower
 ## It never attacks, never refills, and turns to rubble through the Slot when the store is empty.
 ## Draining is fractional: the part below 1 HP waits in _carry, HealthComponent keeps the whole HP.
 ## An upgrade adds only the store the new level gains.
-# TODO(Rawisl): when the wave damage multiplier reaches the heal station, divide enemy and boss damage to the store by dmg_mult^heal_tower_dmg_norm_exp (rounded up, at least 1) in take_damage; drain() stays unscaled
 # TODO(kiezroth): distinguish combat destruction from a drained store before routing station alerts.
 
 ## Store updates on EventBus are merged to at most one per interval (real time).
