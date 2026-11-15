@@ -408,3 +408,45 @@ account.sync,Đồng bộ
 account.sync_now,Đồng bộ ngay
 account.sync_unavailable,Chưa có đồng bộ tự động
 account.offline,"Tính năng trực tuyến đang tắt, game vẫn chơi bình thường."
+run_end.result.defeat,Thất bại ở đợt quái thứ {wave}
+run_end.result.survived,Sống sót đến đợt quái thứ {wave}
+run_end.badge.victory,Đã chiến thắng đợt quái thứ {wave}
+run_end.badge.record,(Kỷ lục mới)
+run_end.cause,Lý do thua: {cause}
+run_end.cause_survived,Lý do kết thúc: {cause}
+run_end.section.run,LƯỢT CHƠI
+run_end.section.prestige,DANH VỌNG
+run_end.row.waves,Đợt quái đã vượt qua:
+run_end.row.time,Thời gian chiến đấu:
+run_end.row.kills,Quân đã diệt:
+run_end.row.commander_kills,Chỉ huy tự hạ:
+run_end.row.gold,Vàng kiếm được:
+run_end.row.bosses,Boss đã hạ:
+run_end.row.level,Cấp Chỉ huy:
+run_end.row.top_tower,Tower mạnh nhất:
+run_end.row.collected,Uy tín (+ đợt quái hiện tại):
+run_end.row.rate,Tỷ lệ quy đổi:
+run_end.row.start_mult,Hệ số mốc bắt đầu:
+run_end.row.gain,Danh vọng nhận:
+run_end.row.balance,Số dư mới:
+run_end.row.unlocks,Mở mốc mới:
+run_end.value.gold,{value} vàng
+run_end.value.top_tower,{name} · {damage}
+run_end.value.collected,{pending} + {buffer} × {ratio}%
+run_end.value.percent,{value}%
+run_end.value.mult,x{value}
+run_end.value.unlocks,Đợt quái thứ {waves}
+victory.title,Chiến thắng!
+victory.subtitle,Bạn đã vượt qua đợt quái thứ {wave}. Chơi tiếp để lập kỷ lục mới.
+victory.continue,Chơi tiếp (endless)
+victory.row.prestige,Uy tín đang tích (chưa quy đổi):
+victory.row.weapons,Vũ khí đã có:
+summary.row.weapon,Nhận vũ khí
+summary.hazard_note,"Vàng, XP và Mithril của Hazard Trial đã cộng lúc rời tháp."
+summary.fortress_hint,Thành sắp sập: sửa Fortress bằng Mithril ở giai đoạn chuẩn bị.
+summary.fortress_hint_hazard,Thành sắp sập: vào Hazard Trial để nhận Mithril sửa Fortress.
+menu.paused_info,Đợt quái {wave} · {time}
+dialog.abandon.body_run,Lượt chơi kết thúc ở đợt quái {wave} và tính là thất bại. Bạn nhận {gain} danh vọng.
+dialog.abandon.body_survived,Lượt chơi kết thúc và tính là sống sót đến đợt quái {wave}. Bạn nhận {gain} danh vọng.
+dialog.quit_run.body_run,"Lượt chơi kết thúc ở đợt quái {wave}, tính là thất bại, rồi thoát game. Bạn nhận {gain} danh vọng."
+dialog.quit_run.body_survived,Lượt chơi tính là sống sót đến đợt quái {wave} rồi thoát game. Bạn nhận {gain} danh vọng.
