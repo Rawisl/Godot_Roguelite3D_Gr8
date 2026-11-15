@@ -6,6 +6,7 @@ extends Node3D
 ## - with the Frontline aura icon on the same tower, the immune icon sits above it
 ## - a tower already blocked before the manager starts gets its icon
 ## - a freed tower leaves no icon behind
+## - the tower height is measured when the icon shows, not every frame
 ## Run with F6.
 
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
@@ -35,6 +36,7 @@ func _ready() -> void:
 	await test_above_aura_icon()
 	await test_blocked_before_start()
 	await test_freed_tower()
+	await test_height_cached()
 
 	print("[immune fx] done: %d passed, %d failed" % [passes, fails])
 	if quit_when_done:
@@ -142,3 +144,25 @@ func test_freed_tower() -> void:
 	t.free()
 	await _frames(3)
 	assert_true(not is_instance_valid(icon), "the icon of a freed tower is removed")
+
+
+func test_height_cached() -> void:
+	print("[GROUP 6] Height measured once per show")
+	var t := _tower(&"W1", Vector3(0, 0, 0))
+	await _frames(2)
+	EventBus.tower_immunity_changed.emit(&"W1", true)
+	await _frames(20)
+	var icon := _fx.get_icon(t)
+	var y0 := icon.global_position.y
+	# Raise the model while the icon shows: no tree walk per frame, so the icon stays put.
+	var model := t.get_node(^"Model") as Node3D
+	model.position.y += 2.0
+	await _frames(10)
+	assert_true(is_equal_approx(icon.global_position.y, y0), "the icon does not re-measure the tower every frame")
+	EventBus.tower_immunity_changed.emit(&"W1", false)
+	await _frames(20)
+	EventBus.tower_immunity_changed.emit(&"W1", true)
+	await _frames(20)
+	assert_true(icon.global_position.y > y0 + 1.5, "showing it again measures the new height (+%.2f m)" % (icon.global_position.y - y0))
+	t.free()
+	await _frames(2)

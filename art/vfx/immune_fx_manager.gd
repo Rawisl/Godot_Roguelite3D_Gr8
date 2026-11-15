@@ -51,6 +51,10 @@ func _set_shown(tower: Tower, shown: bool) -> void:
 		icon = _new_icon()
 		_icons[tower] = icon
 	icon.set_meta(&"target", 1.0 if shown else 0.0)
+	if shown:
+		# The model only changes on an upgrade in PREP, when no tower is blocked, so the
+		# height measured here holds while the icon is up.
+		icon.set_meta(&"height", _tower_height(tower))
 	_place(tower, icon)
 
 
@@ -65,14 +69,17 @@ func _process(delta: float) -> void:
 		icon.modulate.a = a
 		icon.scale = Vector3.ONE * lerpf(icon_start_scale, 1.0, a)
 		icon.visible = a > 0.0
-		if icon.visible:
+		# Only the aura icon below it can change while it shows; the tower itself does not move.
+		if icon.visible and tower.aura_active != bool(icon.get_meta(&"aura", false)):
 			_place(tower, icon)
 
 
+## Uses the height cached when the icon was shown, so no node tree walk runs every frame.
 func _place(tower: Tower, icon: Sprite3D) -> void:
-	var lift := _tower_height(tower) + icon_gap + icon_size * 0.5
+	var lift := float(icon.get_meta(&"height", default_tower_height)) + icon_gap + icon_size * 0.5
 	if tower.aura_active:
 		lift += aura_icon_room
+	icon.set_meta(&"aura", tower.aura_active)
 	icon.global_position = tower.global_position + Vector3.UP * lift
 
 
