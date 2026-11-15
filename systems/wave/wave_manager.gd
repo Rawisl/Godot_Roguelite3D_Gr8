@@ -93,6 +93,16 @@ var _wave_prestige: int:
 		var rs := _get_run_state()
 		if rs != null:
 			rs.wave_prestige_buffer = value
+var _fallback_prestige_pending: int = 0
+var _prestige_pending: int:
+	get:
+		var rs := _get_run_state()
+		return rs.prestige_pending if rs != null else _fallback_prestige_pending
+	set(value):
+		_fallback_prestige_pending = value
+		var rs := _get_run_state()
+		if rs != null:
+			rs.prestige_pending = value
 var _kills_by_type: Dictionary = {}
 
 const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
@@ -701,19 +711,20 @@ func _end_combat_to_summary() -> void:
 	if _boss_defeated_this_wave:
 		_wave_prestige += _boss_prestige_amount()
 
-	# Pending prestige
-	if _wave_prestige > 0:
-		EventBus.prestige_pending_changed.emit(_wave_prestige)
-
-	# Save progress
-	if SaveManager != null and SaveManager.can_write:
-		var run_flag: Dictionary = SaveManager.get_section(SaveManager.RUN_FLAG)
-		run_flag["waves_cleared"] = current_wave
-		SaveManager.save()
+	# Clearing the wave pays prestige too; the wave's part moves into the run total
+	var wave_prestige_total: int = _wave_prestige + PrestigeCalc.wave_clear_prestige(current_wave)
+	_prestige_pending += wave_prestige_total
+	_wave_prestige = 0
+	EventBus.prestige_pending_changed.emit(_prestige_pending)
 
 	var rs := _get_run_state()
 	if rs != null:
 		rs.waves_cleared = current_wave
+
+	# Save progress before the summary shows; a failed write does not hold the summary back
+	var start_wave: int = rs.start_wave if rs != null else 1
+	var start_mult: float = rs.start_mult if rs != null else 1.0
+	SaveManager.record_wave_summary(current_wave, _prestige_pending, start_wave, start_mult)
 
 	# Fortress HP
 	var fortress_hp := 0
@@ -753,7 +764,7 @@ func _end_combat_to_summary() -> void:
 		"gold_base": int(round(_wave_gold_base)),
 		"gold_mult": clear_mult,
 		"gold_total": total_gold_gain,
-		"prestige_gain_wave": _wave_prestige,
+		"prestige_gain_wave": wave_prestige_total,
 		"fortress_hp": fortress_hp,
 		"fortress_max_hp": fortress_max_hp,
 		"ruined_towers": ruined_towers,
