@@ -2,7 +2,6 @@ extends CanvasLayer
 ## Switches screens with a fade and owns the system dialog layer.
 ## Screens that support Back implement go_back(); Esc calls the same function
 ## Dialogs that support Esc implement cancel(); otherwise they are freed.
-# TODO(WhoKeng): on save_failed(CORRUPT) show the notice with a "New save" button that calls SaveManager.start_new_save(); on save_failed(WRITE_ERROR) add a Retry button that calls SaveManager.save() again.
 
 signal screen_changed(scene_path: String)
 signal dialog_context_changed
@@ -89,6 +88,17 @@ func open_dialog(dialog: Control) -> bool:
 func show_notice(title_key: StringName, body_key: StringName, params: Dictionary = {}) -> void:
 	var dialog := DIALOG_SCENE.instantiate()
 	dialog.setup_notice(title_key, body_key, params)
+	_queue_notice(dialog)
+
+## A notice with one action next to Close, queued the same way.
+func show_notice_action(title_key: StringName, body_key: StringName, action_key: StringName, action: Callable) -> void:
+	var dialog := DIALOG_SCENE.instantiate()
+	dialog.setup(title_key, body_key)
+	dialog.set_buttons(action_key, &"dialog.close")
+	dialog.confirmed.connect(func() -> void: action.call())
+	_queue_notice(dialog)
+
+func _queue_notice(dialog: Control) -> void:
 	_pending_notices.append(dialog)
 	_open_next_notice.call_deferred()
 
@@ -122,7 +132,15 @@ func _open_next_notice() -> void:
 
 func _on_save_failed(reason: StringName) -> void:
 	push_warning("ScreenManager: save failed (%s)" % reason)
-	show_notice(&"dialog.save_failed.title", &"dialog.save_failed.body")
+	match reason:
+		SaveManager.REASON_CORRUPT:
+			show_notice_action(&"dialog.save_corrupt.title", &"dialog.save_corrupt.body", &"dialog.save_corrupt.new",
+				SaveManager.start_new_save)
+		SaveManager.REASON_WRITE_ERROR:
+			show_notice_action(&"dialog.save_failed.title", &"dialog.save_failed.body", &"dialog.save_failed.retry",
+				SaveManager.save)
+		_:
+			show_notice(&"dialog.save_failed.title", &"dialog.save_failed.body")
 
 func _on_run_recovered(prestige_gain: int) -> void:
 	show_notice(&"dialog.run_recovered.title", &"dialog.run_recovered.body", {"value": prestige_gain})
