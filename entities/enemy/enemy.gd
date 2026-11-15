@@ -4,7 +4,6 @@ extends CharacterBody3D
 ## Base enemy controller with state machine, navigation, spawn grace, and combat behaviors.
 ## Supports melee and ranged archetypes, prioritized targeting rules, and crowd optimizations.
 # TODO(Ender-Via): when more than one lane exists, project onto the nearest lane and use that lane's length instead of the first lane's longest length.
-# TODO(kiezroth): when boss rewards move to the summary step, emit 0 prestige for bosses in _on_died and let WaveManager add boss_prestige there.
  
 signal state_changed(new_state: Enums.EnemyState, old_state: Enums.EnemyState)
  
@@ -1377,7 +1376,7 @@ func _on_died() -> void:
 		var display_gold: int = int(round(kill_gold))
 		if display_gold > 0:
 			EventBus.gold_delta.emit(display_gold)
-		EventBus.enemy_died.emit(data.id, global_position, kill_gold, data.prestige_reward, false, hit_by_commander)
+		EventBus.enemy_died.emit(data.id, global_position, kill_gold, _get_kill_prestige(), false, hit_by_commander)
  
 	change_state(Enums.EnemyState.DEAD)
 
@@ -1387,6 +1386,13 @@ func _get_kill_gold() -> float:
 	if data is BossData:
 		return 0.0
 	return GameConfig.wave_rewards.get_kill_gold(data.gold_reward, spawn_wave, hit_by_commander)
+
+
+## Prestige this unit pays on death. Bosses pay theirs at the summary step instead.
+func _get_kill_prestige() -> int:
+	if data is BossData:
+		return 0
+	return data.prestige_reward
  
 func _play_death_anim() -> void:
 	var death_anim: StringName = &""
