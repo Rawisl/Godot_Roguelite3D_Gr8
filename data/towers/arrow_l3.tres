@@ -5,9 +5,9 @@
 
 [resource]
 script = ExtResource("1_obil8")
-build_cost = 110
-max_hp = 220
-damage = 24
+build_cost = 30
+max_hp = 165
+damage = 12
 attack_range = 16
 fire_rate = 1.4
 splash_radius = 0

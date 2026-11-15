@@ -137,10 +137,11 @@ func _update_beam(commander: Node3D, step: float) -> void:
 		return
 	if station != null:
 		_beam.set_meta(&"station", station)
-	var from_station := _beam.get_meta(&"station", null) as Node3D
-	if from_station == null or not is_instance_valid(from_station):
+	var stored_station: Variant = _beam.get_meta(&"station", null)
+	if not is_instance_valid(stored_station):
 		_beam.visible = false
 		return
+	var from_station := stored_station as Node3D
 	var start := _beam_origin(from_station)
 	var end := commander.global_position + Vector3.UP * beam_target_height
 	var axis := start - end
