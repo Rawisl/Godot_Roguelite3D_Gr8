@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://c3jq3i3ok6u3s"]
 
-[ext_resource type="Script" path="res://ui/screens/victory_screen.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dkdqq04cm5tfr" path="res://ui/screens/victory_screen.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://bbocqc6wpf7v1" path="res://ui/screens/summary_row.tscn" id="2_row"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]

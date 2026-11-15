@@ -5,6 +5,7 @@ extends Control
 ## 3: victory screen after wave 30. 4: wave summary with low Fortress and no Mithril, a weapon drop
 ## and a Hazard Trial done. 5: the same summary with Mithril. 6: pause menu at wave 12.
 ## 7: pause menu, Abandon pressed (the dialog names the wave and the prestige; Esc closes it).
+## 8: Fortress bar at 25% in PREP without Mithril (Hazard Trial hint). 9: the same with Mithril.
 
 var _passed := 0
 var _failed := 0
@@ -14,6 +15,7 @@ var _continue_count := 0
 @onready var _victory: VictoryScreen = $VictoryScreen
 @onready var _summary: SummaryPanel = $SummaryPanel
 @onready var _pause: Control = $PauseMenu
+@onready var _fortress_bar: Control = $FortressBar
 
 func _ready() -> void:
 	EventBus.victory_continue_requested.connect(func() -> void: _continue_count += 1)
@@ -50,11 +52,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			_only(_pause)
 			_pause.show_run_info({"wave_index": 12, "run_elapsed": 125.0, "prestige_gain": 48, "victory_reached": false})
 			_pause._abandon.pressed.emit()
+		KEY_8:
+			_only(_fortress_bar)
+			_show_low_fortress_prep(0)
+		KEY_9:
+			_only(_fortress_bar)
+			_show_low_fortress_prep(3)
 
 func _run_checks() -> void:
 	_check_run_end()
 	await _check_victory()
 	_check_summary()
+	_check_fortress_bar()
 	await _check_pause()
 
 func _check_run_end() -> void:
@@ -97,12 +106,31 @@ func _check_summary() -> void:
 		"summary: low Fortress without Mithril points to the Hazard Trial")
 	_expect(_summary._weapon.visible and _value(_summary._weapon) == tr(&"weapon.frost.name"), "summary: the dropped weapon is named")
 	_expect(_summary._hazard_note.visible, "summary: the Hazard Trial note shows after a trial")
+	_expect(_value_color(_summary._fortress) == _summary.fortress_low_color, "summary: a low Fortress value takes the hint colour")
 	_show_summary(3)
 	_expect(_summary._fortress_hint.text == tr(&"summary.fortress_hint"), "summary: with Mithril the hint says repair")
 	EventBus.wave_started.emit(9)
 	_summary._on_summary_ready({"wave_index": 9, "fortress_hp": 900, "fortress_max_hp": 1000})
 	_expect(not _summary._weapon.visible and not _summary._hazard_note.visible and not _summary._fortress_hint.visible,
 		"summary: a new wave clears the weapon, the note and the hint")
+	_expect(_value_color(_summary._fortress) == _summary._fortress.value_color, "summary: a safe Fortress value keeps its colour")
+
+func _check_fortress_bar() -> void:
+	_show_low_fortress_prep(0)
+	_expect(_fortress_bar._hint_box.visible and _fortress_bar._hint.text == tr(&"hud.fortress_hint_hazard"),
+		"fortress bar: low HP in PREP without Mithril points to the Hazard Trial")
+	EventBus.mithril_changed.emit(3, 3)
+	_expect(_fortress_bar._hint.text == tr(&"hud.fortress_hint"), "fortress bar: with Mithril the hint says repair")
+	EventBus.state_changed.emit(&"COMBAT")
+	_expect(not _fortress_bar._hint_box.visible and _fortress_bar._low_tag.visible, "fortress bar: in combat only the warning stays")
+	EventBus.state_changed.emit(&"PREP")
+	EventBus.fortress_hp_changed.emit(900, 1000, 650)
+	_expect(not _fortress_bar._hint_box.visible, "fortress bar: no hint once the Fortress is safe")
+
+func _show_low_fortress_prep(mithril: int) -> void:
+	EventBus.fortress_hp_changed.emit(250, 1000, -50)
+	EventBus.mithril_changed.emit(mithril, 0)
+	EventBus.state_changed.emit(&"PREP")
 
 func _check_pause() -> void:
 	_pause.show_run_info({})
@@ -145,11 +173,14 @@ func _victory_stats() -> Dictionary:
 		"owned_weapons": [&"sword_base", &"frost"]}
 
 func _only(screen: Control) -> void:
-	for s: Control in [_run_end, _victory, _summary, _pause]:
+	for s: Control in [_run_end, _victory, _summary, _pause, _fortress_bar]:
 		s.visible = s == screen
 
 func _value(row: Control) -> String:
 	return row._value.text
+
+func _value_color(row: Control) -> Color:
+	return (row._value as Label).get_theme_color(&"font_color")
 
 func _dialog_has(text: String) -> bool:
 	for node in ScreenManager.find_children("*", "Label", true, false):

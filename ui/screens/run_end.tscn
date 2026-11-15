@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://ne4b4ktg8jsp"]
 
 [ext_resource type="Script" uid="uid://kektgv000ide" path="res://ui/screens/run_end.gd" id="1_v82ie"]
-[ext_resource type="PackedScene" path="res://ui/screens/run_end_row.tscn" id="2_row"]
+[ext_resource type="PackedScene" uid="uid://nquuvepiqqpa" path="res://ui/screens/run_end_row.tscn" id="2_row"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
 content_margin_left = 40.0

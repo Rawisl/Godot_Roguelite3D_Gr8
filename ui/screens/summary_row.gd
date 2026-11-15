@@ -17,6 +17,10 @@ func _ready() -> void:
 	if name_color.a > 0.0:
 		_name.add_theme_color_override(&"font_color", name_color)
 
+## Colours the value for now, for a value that crossed a warning threshold; value_color stays the normal one.
+func set_value_color(color: Color) -> void:
+	_value.add_theme_color_override(&"font_color", color)
+
 func set_row(name_text: String, value_text: String) -> void:
 	_name.text = name_text
 	_value.text = value_text

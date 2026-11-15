@@ -442,6 +442,8 @@ summary.row.weapon,Nhận vũ khí
 summary.hazard_note,"Vàng, XP và Mithril của Hazard Trial đã cộng lúc rời tháp."
 summary.fortress_hint,Thành sắp sập: sửa Fortress bằng Mithril ở giai đoạn chuẩn bị.
 summary.fortress_hint_hazard,Thành sắp sập: vào Hazard Trial để nhận Mithril sửa Fortress.
+hud.fortress_hint,Sửa Fortress bằng Mithril trước khi bắt đầu đợt quái.
+hud.fortress_hint_hazard,Chưa có Mithril: vào Hazard Trial để nhận Mithril sửa Fortress.
 menu.paused_info,Đợt quái {wave} · {time}
 dialog.abandon.body_run,Lượt chơi kết thúc ở đợt quái {wave} và tính là thất bại. Bạn nhận {gain} danh vọng.
 dialog.abandon.body_survived,Lượt chơi kết thúc và tính là sống sót đến đợt quái {wave}. Bạn nhận {gain} danh vọng.

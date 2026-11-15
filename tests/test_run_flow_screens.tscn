@@ -1,10 +1,11 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://et7t7eafbydq"]
 
-[ext_resource type="Script" path="res://tests/test_run_flow_screens.gd" id="1_checks"]
+[ext_resource type="Script" uid="uid://bgcq61xsiu588" path="res://tests/test_run_flow_screens.gd" id="1_checks"]
 [ext_resource type="PackedScene" uid="uid://ne4b4ktg8jsp" path="res://ui/screens/run_end.tscn" id="2_runend"]
-[ext_resource type="PackedScene" path="res://ui/screens/victory_screen.tscn" id="3_victory"]
+[ext_resource type="PackedScene" uid="uid://c3jq3i3ok6u3s" path="res://ui/screens/victory_screen.tscn" id="3_victory"]
 [ext_resource type="PackedScene" uid="uid://xujhr260fsy1" path="res://ui/screens/summary_panel.tscn" id="4_summary"]
 [ext_resource type="PackedScene" uid="uid://id07jacgrd0x" path="res://ui/screens/pause_menu.tscn" id="5_pause"]
+[ext_resource type="PackedScene" uid="uid://ckn53m8u1tj1p" path="res://ui/hud/parts/fortress_bar.tscn" id="6_fortress"]
 
 [node name="TestRunFlowScreens" type="Control"]
 layout_mode = 3
@@ -26,3 +27,10 @@ layout_mode = 1
 
 [node name="PauseMenu" parent="." instance=ExtResource("5_pause")]
 layout_mode = 1
+
+[node name="FortressBar" parent="." instance=ExtResource("6_fortress")]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 400.0
+offset_bottom = 160.0

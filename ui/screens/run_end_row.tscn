@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://nquuvepiqqpa"]
 
-[ext_resource type="Script" path="res://ui/screens/run_end_row.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://c84kbl1lj3tsk" path="res://ui/screens/run_end_row.gd" id="1_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_line"]
 content_margin_left = 4.0
@@ -27,15 +27,15 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
-[node name="RunEndRow" type="PanelContainer" unique_id=1739209001]
+[node name="RunEndRow" type="PanelContainer" unique_id=1086867666]
 theme_override_styles/panel = SubResource("StyleBoxFlat_line")
 script = ExtResource("1_script")
 
-[node name="Line" type="HBoxContainer" parent="." unique_id=1739209002]
+[node name="Line" type="HBoxContainer" parent="." unique_id=1615588057]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="Name" type="Label" parent="Line" unique_id=1739209003]
+[node name="Name" type="Label" parent="Line" unique_id=186284138]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -43,14 +43,14 @@ size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
 theme_override_font_sizes/font_size = 26
 
-[node name="Pill" type="PanelContainer" parent="Line" unique_id=1739209005]
+[node name="Pill" type="PanelContainer" parent="Line" unique_id=1021943712]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
 
-[node name="Value" type="Label" parent="Line/Pill" unique_id=1739209004]
+[node name="Value" type="Label" parent="Line/Pill" unique_id=1746766928]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
