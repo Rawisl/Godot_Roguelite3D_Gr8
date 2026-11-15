@@ -4,6 +4,7 @@ extends Node3D
 ## - the build cap, rubble counting and the places given back
 ## - draining (whole and fractional), destruction, no refill, sell value from the store
 ## - the contract with HealChannel, the store signal and a station destroyed mid-heal
+## - an upgrade adds only the store it gains, up to the top level; a rebuild comes back with a full store
 
 const SLOT_SCENE: PackedScene = preload("res://systems/build/slot.tscn")
 const COMMANDER_SCENE: PackedScene = preload("res://entities/commander/commander.tscn")
@@ -13,6 +14,8 @@ const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
 const HEAL_SCENE: PackedScene = preload("res://entities/tower/heal_station.tscn")
 
 const TICK := 1.0 / 60.0
+## Level lost and rebuilt in the rebuild group.
+const REBUILD_LEVEL := 14
 
 ## Off when driven from the editor or godot-mcp, so results can still be read.
 @export var quit_when_done := true
@@ -52,6 +55,9 @@ func _ready() -> void:
 	await test_store_signal()
 	await test_real_channel()
 	await test_destroyed_mid_heal()
+	await test_upgrade_keeps_store()
+	await test_upgrade_to_max_station()
+	await test_rebuild_full_store()
 
 	Input.action_release(&"heal_channel")
 	print("=======================================================")
@@ -131,6 +137,15 @@ func _option(slot_id: StringName, type: StringName, rebuild: bool = false) -> Di
 		if o.data.id == type and o.rebuild == rebuild:
 			return o
 	return {}
+
+## Upgrades the tower on slot_id until it reaches level; false as soon as one upgrade fails.
+func _upgrade_to(slot_id: StringName, level: int) -> bool:
+	if _slot(slot_id) == null or _slot(slot_id).tower == null:
+		return false
+	while _slot(slot_id).tower.level < level:
+		if not _service.upgrade(slot_id):
+			return false
+	return true
 
 func _build_two() -> void:
 	_service.build(&"G1", &"heal_station")
@@ -367,3 +382,107 @@ func test_destroyed_mid_heal() -> void:
 	assert_true(_channel.phase == HealChannel.IDLE, "still IDLE")
 	assert_true(_commander.health.hp == hp, "HP still unchanged")
 	Input.action_release(&"heal_channel")
+
+func test_upgrade_keeps_store() -> void:
+	print("
+[GROUP 15] Upgrade keeps the store")
+	await _reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_tier2, 0)
+	_service.build(&"G1", &"heal_station")
+	var s := _station()
+	s.drain(float(s.health.max_hp - 120))
+	s.drain(0.5)
+	var g := _gold.gold
+	_store_signals.clear()
+	assert_true(_service.upgrade(&"G1"), "the station upgrades")
+	var gain: int = HEAL.levels[1].max_hp - HEAL.levels[0].max_hp
+	assert_true(s.level == 2, "level is 2")
+	assert_true(s.health.max_hp == HEAL.levels[1].max_hp, "capacity is the level 2 capacity")
+	assert_true(s.health.hp == 120 + gain, "store grew by the capacity gained")
+	assert_true(absf(s.hp - (float(s.health.hp) - 0.5)) < 0.001, "the drained fraction survives the upgrade")
+	assert_true(g - _gold.gold == HEAL.levels[1].build_cost, "gold spent is the level 2 cost")
+	assert_true(s.invested_gold == HEAL.get_total_cost(2), "invested gold is the total cost")
+	assert_true(s.health.hp < s.health.max_hp, "the upgrade does not refill the store")
+	var expected := floori(float(s.invested_gold) * GameConfig.sell_refund_pct * s.hp / float(s.health.max_hp) + HealStation.EPSILON)
+	assert_true(_service.get_tower_info(&"G1").sell_value == expected, "sell value follows the store left")
+	await get_tree().create_timer(0.15, true, false, true).timeout
+	assert_true(not _store_signals.is_empty() and _store_signals.back() == [&"G1", s.health.hp, s.health.max_hp], "last store signal carries the new store")
+	var flashed := false
+	for sig in _store_signals:
+		if sig[1] == sig[2]:
+			flashed = true
+	assert_true(not flashed, "no store signal shows a full store")
+	var hp := s.health.hp
+	EventBus.state_changed.emit(&"COMBAT")
+	EventBus.state_changed.emit(&"PREP")
+	assert_true(s.health.hp == hp, "the store is not refilled at PREP")
+
+func test_upgrade_to_max_station() -> void:
+	print("
+[GROUP 16] Station upgrades to the top level")
+	await _reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	_gold.gold = 1000000
+	_service.build(&"G1", &"heal_station")
+	var s := _station()
+	s.drain(float(s.health.max_hp) / 2.0)
+	var bad_level := 0
+	var bad_gain := 0
+	var bad_cost := 0
+	for n in range(2, GameConfig.tower_max_level + 1):
+		var hp0 := s.health.hp
+		var gold0 := _gold.gold
+		if not _service.upgrade(&"G1") or s.level != n:
+			bad_level = n
+			break
+		if bad_gain == 0 and s.health.hp - hp0 != HEAL.levels[n - 1].max_hp - HEAL.levels[n - 2].max_hp:
+			bad_gain = n
+		if bad_cost == 0 and gold0 - _gold.gold != HEAL.levels[n - 1].build_cost:
+			bad_cost = n
+	assert_true(bad_level == 0, "every upgrade to the top succeeds (first miss at level %d)" % bad_level)
+	assert_true(bad_gain == 0, "the store gains only the added capacity at each level (first miss at level %d)" % bad_gain)
+	assert_true(bad_cost == 0, "gold spent equals the level cost at each level (first miss at level %d)" % bad_cost)
+	assert_true(s.level == GameConfig.tower_max_level, "the station is at the top level")
+	assert_true(_service.get_upgrade_block_reason(&"G1") == &"MAX_LEVEL", "reason is MAX_LEVEL at the top")
+	assert_true(_service.get_tower_info(&"G1").is_max, "info reports the top level")
+	var g := _gold.gold
+	assert_true(not _service.upgrade(&"G1"), "upgrade past the top refused")
+	assert_true(_gold.gold == g, "gold unchanged by the refusal")
+	await _reset()
+	_service.build(&"G1", &"heal_station")
+	assert_true(_upgrade_to(&"G1", GameConfig.tower_tier2_level - 1), "upgrades run up to just below the tier 2 level")
+	assert_true(not _service.upgrade(&"G1"), "the tier 2 level is gated by the commander level")
+	assert_true(_service.get_upgrade_block_reason(&"G1") == &"COMMANDER_LEVEL", "reason is COMMANDER_LEVEL")
+
+func test_rebuild_full_store() -> void:
+	print("
+[GROUP 17] Rebuild at the lost level with a full store")
+	await _reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	_gold.gold = 1000000
+	_service.build(&"G1", &"heal_station")
+	assert_true(_upgrade_to(&"G1", REBUILD_LEVEL), "the station reaches the level to lose")
+	var s := _station()
+	s.drain(float(s.health.max_hp))
+	assert_true(_slot(&"G1").state == Enums.SlotState.RUINED, "slot is RUINED")
+	assert_true(_slot(&"G1").last_level == REBUILD_LEVEL, "last_level is the lost level")
+	EventBus.run_started.emit()
+	EventBus.state_changed.emit(&"PREP")
+	_gold.gold = 1000000
+	var o := _option(&"G1", &"heal_station", true)
+	var summed := 0
+	for lv in HEAL.levels.slice(0, REBUILD_LEVEL):
+		summed += lv.build_cost
+	assert_true(o.get("level") == REBUILD_LEVEL, "rebuild entry is at the lost level")
+	assert_true(o.get("cost") == HEAL.get_total_cost(REBUILD_LEVEL), "rebuild cost is the total cost of the levels")
+	assert_true(o.get("cost") == summed, "rebuild cost equals the summed level costs")
+	var gold := _gold.gold
+	assert_true(_service.build(&"G1", &"heal_station", REBUILD_LEVEL), "rebuild succeeds at commander level 0")
+	var fresh := _station()
+	var cap: int = HEAL.levels[REBUILD_LEVEL - 1].max_hp
+	assert_true(fresh.level == REBUILD_LEVEL, "rebuilt at the lost level")
+	assert_true(fresh.health.max_hp == cap and fresh.health.hp == cap, "the store is full at that level")
+	assert_true(is_equal_approx(fresh.hp, float(cap)), "hp float equals max")
+	assert_true(fresh.invested_gold == o.get("cost"), "invested gold equals the rebuild cost")
+	assert_true(gold - _gold.gold == o.get("cost"), "gold spent equals the rebuild cost")
+	assert_true(_service.get_heal_station_count() == 1, "one station counted")
