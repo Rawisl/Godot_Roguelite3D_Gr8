@@ -35,7 +35,7 @@
 [ext_resource type="Script" uid="uid://cbk5vw2hro2sa" path="res://ui/hud/parts/arrow_glyph.gd" id="26_arrow"]
 [ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="27_hgate"]
 [ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
-[ext_resource type="PackedScene" path="res://ui/screens/victory_screen.tscn" id="29_victory"]
+[ext_resource type="PackedScene" uid="uid://c3jq3i3ok6u3s" path="res://ui/screens/victory_screen.tscn" id="29_victory"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -377,7 +377,7 @@ layout_mode = 1
 visible = false
 layout_mode = 1
 
-[node name="VictoryScreen" parent="Root" unique_id=1739208001 instance=ExtResource("29_victory")]
+[node name="VictoryScreen" parent="Root" unique_id=749418655 instance=ExtResource("29_victory")]
 visible = false
 layout_mode = 1
 

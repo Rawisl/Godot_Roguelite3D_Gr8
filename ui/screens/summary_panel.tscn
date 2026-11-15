@@ -289,7 +289,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_rm84w")
 
-[node name="WeaponRow" parent="Frame/Box/Rows/Columns/CommandCol" unique_id=1739208101 instance=ExtResource("2_qtkdd")]
+[node name="WeaponRow" parent="Frame/Box/Rows/Columns/CommandCol" unique_id=421207476 instance=ExtResource("2_qtkdd")]
 unique_name_in_owner = true
 layout_mode = 2
 value_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
@@ -311,7 +311,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_v25ce")
 value_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
 value_font_size = 34
 
-[node name="HazardNote" type="Label" parent="Frame/Box/Rows" unique_id=1739208102]
+[node name="HazardNote" type="Label" parent="Frame/Box/Rows" unique_id=1734038418]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -319,7 +319,7 @@ theme_type_variation = &"DimLabel"
 theme_override_font_sizes/font_size = 24
 autowrap_mode = 3
 
-[node name="FortressHint" type="Label" parent="Frame/Box/Rows" unique_id=1739208103]
+[node name="FortressHint" type="Label" parent="Frame/Box/Rows" unique_id=429034779]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
