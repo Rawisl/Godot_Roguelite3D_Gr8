@@ -476,3 +476,11 @@ dialog.save_failed.retry,Thử lại
 dialog.save_corrupt.title,Dữ liệu lưu bị hỏng
 dialog.save_corrupt.body,"Không đọc được dữ liệu lưu nên game đang chạy với tiến trình mới và chưa ghi gì. Tạo save mới sẽ cất bản hỏng thành .corrupt rồi bắt đầu lại."
 dialog.save_corrupt.new,Tạo save mới
+tutorial.title,Hướng dẫn
+tutorial.step,Bước {n}/{total}
+tutorial.build_arrow,"Bấm vào ô sáng trên mặt đất để xây Arrow miễn phí. Dùng WASD để dịch camera xem toàn bản đồ."
+tutorial.build_cannon,Bấm vào slot sáng trên tường để xây Cannon miễn phí.
+tutorial.start_wave,"Chuẩn bị xong thì bấm Bắt đầu wave. Không có giới hạn thời gian."
+tutorial.fight,"WASD di chuyển, chuột trái đánh, Space né. Đánh trúng quân để nhận XP đầy đủ và mở nâng cấp tower."
+tutorial.remind,(Nhắc lại)
+tutorial.skip,Bỏ qua hướng dẫn
