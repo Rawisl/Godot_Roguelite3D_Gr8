@@ -1454,7 +1454,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: ui/screens/summary_panel.gd
 - ID SRS: 3.3.4, WPN-11
 - Cần xong trước: W11-MH9
-- Ghi chú bàn giao: SummaryPanel adds the "Nhận vũ khí" row (summary key weapon_gained, falling back to the weapon_gained signal; TODO for @kiezroth), a note that Hazard Trial rewards were added when leaving the tower, and the repair hint under GameConfig.fortress_repair_hint_pct (0.30): repair with Mithril, or win a Hazard Trial when there is none. No early-call line was left.
+- Ghi chú bàn giao: SummaryPanel adds the "Nhận vũ khí" row (summary key weapon_gained, falling back to the weapon_gained signal; TODO for @kiezroth), a note that Hazard Trial rewards were added when leaving the tower, and the repair hint at or under FortressStats.low_hp_warning_pct (the HUD warning threshold): repair with Mithril, or win a Hazard Trial when there is none; the Fortress value turns orange with it, and the same hint shows under the HUD Fortress bar in the next PREP. No early-call line was left.
 
 #### Kim (Art/Level/Audio), tuần 11, 36.5h
 
