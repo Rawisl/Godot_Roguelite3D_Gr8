@@ -52,6 +52,8 @@ func _ready() -> void:
 	print("=======================================================")
 
 	var real_repository := SaveManager.repository
+	# Failure cases test storage behavior without creating queued UI notices.
+	EventBus.save_failed.disconnect(ScreenManager._on_save_failed)
 	EventBus.save_completed.connect(_on_save_completed)
 	EventBus.save_failed.connect(_on_save_failed)
 	_clear_test_dir()
@@ -70,12 +72,14 @@ func _ready() -> void:
 	_clear_test_dir()
 	SaveManager.set_repository(real_repository)
 	SaveManager.load_save()
+	EventBus.save_failed.connect(ScreenManager._on_save_failed)
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
 	print("=======================================================\n")
 
 	if quit_when_done:
+		await get_tree().process_frame
 		get_tree().quit(0 if fails == 0 else 1)
 
 func test_no_file_gives_defaults() -> void:

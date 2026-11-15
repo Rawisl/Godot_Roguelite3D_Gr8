@@ -179,7 +179,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W13-KM1 | Kim | 10 | 2 | DỜI | FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13] |
 | W13-KM3 | Kim | 10 | 2.5 | DỜI | FBK-08 tower bị phá (khói, mảnh vỡ, đống đổ nát) [dời từ tuần 13] |
 | W11-MH5 | Ngọc | 11 | 2 | CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Chính sách xung đột đơn giản |
-| W11-MH6 | Ngọc | 11 | 2 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hook nộp điểm ở RunEnd |
+| W11-MH6 | Ngọc | 11 | 2 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Tích hợp và hồi quy hook nộp điểm với RunEnd hoàn chỉnh |
 | W11-MH7 | Ngọc | 11 | 3 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hồi quy Trạm hồi lực: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36 |
 | W11-NG10 | Ngọc | 11 | 4 | MỚI | Runner BAL tests/test_balance_config_runner.tscn (BAL-05, BL3, BL4) |
 | W11-NG2 | Ngọc | 11 | 3 | CŨ-SỬA | Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí) |
@@ -680,21 +680,23 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG5
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Backend 2: bảng saves có revision, API đọc/ghi profile và meta, kiểm tra revision và device_id (ACCT-04, 06)
 - Nghiệm thu: Ghi và đọc đúng, revision tăng một mỗi lần ghi, tài khoản khác không đọc được; flags (gồm tutorial_done) nằm trong dữ liệu đồng bộ
 - ID SRS: ACCT-04
 - Cần xong trước: W9-MH4b
+- Ghi chú bàn giao: Added `006_saves.sql` with own-row RLS, restricted column grants, server timestamps and stale-revision rejection. `AccountApi.pull_save() -> {ok, revision, device_id, updated_at, data}`; `push_save(revision, device_id, data) -> {ok, conflict, revision}`; `data_for_sync()` deep-copies profile/meta/flags, including flags.tutorial_done, and excludes run_flag. Khang (@WhoKeng) owns revision comparison, save.conflict.bak, retry and sync UI states in week 11; CloudSaveRepository TODO remains for that work. Uses save envelope metadata from PR #187. Migration 007 adds server validation for save objects, payload size, integer counts, meta caps and nonnegative revisions. Expanded live suite: dev 90 passed and demo 86 passed, both temporary accounts deleted on each project. Offline submit/account runner: 51 passed; save hooks: 72 passed; save repository: 68 passed without teardown leaks. Migrations 005–007 confirmed on both projects.
 
 ##### W10-NG6
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 7 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Backend 3: nộp điểm, một dòng tốt nhất mỗi tài khoản, kiểm tra hợp lý (LBD-06), lọc theo game_version, top 50 và hạng của tôi (LBD-01..08); migration 005 nới ràng buộc thành run_elapsed + 1 >= 15 x waves_cleared
 - Nghiệm thu: Từ chối điểm vô lý (40 wave trong 100 s); lượt thật chạy nhanh nhất vẫn được nhận (AC9); xếp đúng LBD-04
 - Tệp liên quan: backend/001_init.sql:76-77 (leaderboard_min_time), mới: backend/005_*.sql, backend/README.md
 - ID SRS: LBD-01..08, LBD-06, AC9
 - Cần xong trước: W6-NG8
+- Ghi chú bàn giao: Added `005_leaderboard_tolerance.sql`, bounded top/own-rank RPCs, AuthService.fetch_leaderboard()/submit_score() and a save-gated in-memory retry queue. All three ending types qualify only for signed-in wave-1 runs; interrupted/recovered runs are excluded. Kiệt (@kiezroth): GameConfig.game_version defaults to 1.0.0. Khang (@WhoKeng): existing leaderboard UI contract is implemented; only its completed TODO was removed. Other heal/weapon UI TODOs remain outside scope. Migration 007 rejects negative/nonfinite elapsed time. Expanded live suite: dev 90 passed and demo 86 passed, including direct submit_score(), invalid data and RLS. Offline submit/account runner: 51 passed without BOOT warning; leaderboard/account UI: 17 passed; headless main starts without errors. SaveManager correlates successful writes with the exact RunEnd summary, unaffected by later save failures. RunState.start_run() supplies the missing production start signal. W11-MH6 now owns full-flow integration verification rather than another hook. This branch depends on PR #187 and includes current main's save hooks without creating a commit.
 
 ##### W10-NG7
 - Người: Ngọc
@@ -1190,9 +1192,10 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc)
 - Trạng thái: Chưa bắt đầu
-- Việc: Hook nộp điểm ở RunEnd: chỉ gửi khi đăng nhập, start_wave = 1, không phải lượt khôi phục; lấy số liệu từ RunState (LBD-02, 03, 05)
+- Việc: Tích hợp và hồi quy hook đã có ở W10-NG6 với RunLoading/RunEnd hoàn chỉnh: xác nhận start_run(), run_elapsed, lưu cục bộ trước gửi, và loại trừ lượt khôi phục (LBD-02, 03, 05); không tạo hook nộp điểm thứ hai
 - Nghiệm thu: Khách, lượt khôi phục, start_wave > 1 không gửi điểm; run_elapsed theo RUN-02
-- Cần xong trước: W10-KT2, W10-NG6
+- Cần xong trước: W10-KT1, W10-KT2, W10-NG6
+- Ghi chú bàn giao: Submission hook and retry queue were delivered by W10-NG6. RunState.start_run() now announces direct main launches once and saves the start flag; RunLoading must call it after init_from_config(). This task remains open for end-to-end verification with completed RunEnd and interrupted-run recovery.
 
 ##### W11-MH7
 - Người: Ngọc

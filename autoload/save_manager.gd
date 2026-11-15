@@ -75,8 +75,10 @@ var _in_combat: bool = false
 ## A save() was held back during combat and still has to be written.
 var _save_pending: bool = false
 var _request_queued: bool = false
-## True after this run's run end was written; cleared when a new run starts, so a repeated run_ended counts once.
+## True after applying this run's result to the profile, even if its write needs a retry.
 var _run_recorded: bool = false
+var _run_end_summary: Dictionary = {}
+var _saved_run_end_summary: Dictionary = {}
 
 func _ready() -> void:
 	set_repository(LocalSaveRepository.new())
@@ -102,6 +104,8 @@ func set_repository(new_repository: SaveRepository) -> void:
 
 ## Reads the repository into data. Returns OK also when there is no save yet.
 func load_save() -> Error:
+	_run_end_summary = {}
+	_saved_run_end_summary = {}
 	data = DEFAULT_DATA.duplicate(true)
 	_envelope_extras = {}
 	can_write = true
@@ -180,6 +184,8 @@ func save_now() -> Error:
 
 ## Run flag at the start of a run. Called by RunLoading.
 func record_run_start(start_wave: int, start_mult: float) -> Error:
+	_run_end_summary = {}
+	_saved_run_end_summary = {}
 	_mark_run_in_progress(start_wave, start_mult, start_wave - 1, 0)
 	_run_recorded = false
 	return save()
@@ -212,9 +218,14 @@ func record_run_end(summary: Dictionary) -> Error:
 	best_by_start[start_key] = maxi(int(best_by_start.get(start_key, 0)), waves_cleared)
 	get_section(RUN_FLAG)["run_in_progress"] = false
 	_run_recorded = true
+	_run_end_summary = summary.duplicate(true)
 	var error := save_now()
 	EventBus.prestige_balance_changed.emit(int(profile["prestige_balance"]))
 	return error
+
+## Correlates a score with a successful local write, independent of later save failures.
+func is_run_end_saved(summary: Dictionary) -> bool:
+	return not summary.is_empty() and summary == _saved_run_end_summary
 
 ## Tutorial finished or skipped. Emits tutorial_completed only when the flag changes.
 func mark_tutorial_done() -> Error:
@@ -298,6 +309,7 @@ func _write() -> Error:
 		return error
 	for key in ["revision", "updated_at", "device_id"]:
 		_envelope_extras[key] = envelope[key]
+	_saved_run_end_summary = _run_end_summary.duplicate(true)
 	EventBus.save_completed.emit()
 	return OK
 

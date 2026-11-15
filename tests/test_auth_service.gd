@@ -19,6 +19,9 @@ var _saved_auth: PackedByteArray = PackedByteArray()
 var _had_auth := false
 
 func _ready() -> void:
+	if "--demo" in OS.get_cmdline_user_args():
+		GameConfig.backend_url = "https://bbftrwumsajxiwgshnje.supabase.co"
+		GameConfig.backend_public_key = "sb_publishable_OuqURJWJg373n3vjoHg7OA_rgtNo1dk"
 	_last_progress_ms = Time.get_ticks_msec()
 	_backup_auth()
 	await _run()
@@ -104,6 +107,7 @@ func _run() -> void:
 	var put_a := await _submit(4, 100.0, "test")
 	_check("A can write its leaderboard row", put_a["ok"] and put_a["data"].size() == 1 and put_a["data"][0]["user_id"] == id_a)
 	_check("server fills the display name", put_a["ok"] and put_a["data"][0]["display_name"] == name_a)
+	await _test_saves()
 
 	# Sign out and back in.
 	await AuthService.sign_out()
@@ -130,6 +134,11 @@ func _run() -> void:
 	_check("guest can read the ranking", anon_read["ok"])
 	var anon_profiles := await AuthService.rest(HTTPClient.METHOD_GET, "/rest/v1/profiles?select=user_id", null, false)
 	_check("guest cannot read profiles", not anon_profiles["ok"] or anon_profiles["data"].is_empty())
+	var anon_saves := await AuthService.rest(HTTPClient.METHOD_GET, "/rest/v1/saves?select=user_id", null, false)
+	_check("guest cannot read saves", not anon_saves["ok"])
+	var anon_save_write := await AuthService.rest(HTTPClient.METHOD_POST, "/rest/v1/saves",
+			{"user_id": id_a, "revision": 99, "data": {}}, false)
+	_check("guest cannot write saves", not anon_save_write["ok"])
 	var anon_write := await AuthService.rest(HTTPClient.METHOD_POST, "/rest/v1/leaderboard",
 			{"waves_cleared": 1, "run_elapsed": 100.0, "run_seed": 1, "game_version": "test"}, false)
 	_check("guest cannot write the ranking", not anon_write["ok"])
@@ -144,6 +153,14 @@ func _run() -> void:
 	_check("B sees only its own profile", b_profiles["ok"] and b_profiles["data"].size() == 1 and b_profiles["data"][0]["user_id"] == id_b)
 	var b_reads_a := await AuthService.rest(HTTPClient.METHOD_GET, "/rest/v1/profiles?user_id=eq.%s&select=user_id" % id_a)
 	_check("B cannot read A's profile", b_reads_a["ok"] and b_reads_a["data"].is_empty())
+	var b_reads_save := await AuthService.rest(HTTPClient.METHOD_GET, "/rest/v1/saves?user_id=eq.%s&select=user_id,data" % id_a)
+	_check("B cannot read A's save", b_reads_save["ok"] and b_reads_save["data"].is_empty())
+	var b_writes_save := await AuthService.rest(HTTPClient.METHOD_PATCH, "/rest/v1/saves?user_id=eq.%s" % id_a,
+			{"revision": 999, "data": {}}, true, "return=representation")
+	_check("B cannot update A's save", b_writes_save["ok"] and b_writes_save["data"].is_empty())
+	var b_inserts_save := await AuthService.rest(HTTPClient.METHOD_POST, "/rest/v1/saves",
+			{"user_id": id_a, "revision": 99, "data": {}}, true, "return=representation")
+	_check("B cannot insert A's save", not b_inserts_save["ok"])
 	var b_edits_a := await AuthService.rest(HTTPClient.METHOD_PATCH, "/rest/v1/profiles?user_id=eq.%s" % id_a,
 			{"display_name": "hacked_name"}, true, "return=representation")
 	_check("B cannot rename A", b_edits_a["ok"] and b_edits_a["data"].is_empty())
@@ -160,6 +177,12 @@ func _run() -> void:
 	# Score rules.
 	var too_fast := await _submit(10, 10.0, "test")
 	_check("a run faster than 15 s per wave is refused", not too_fast["ok"])
+	var impossible := await _submit(40, 100.0, "test")
+	_check("40 waves in 100 seconds is refused", not impossible["ok"])
+	var below_tolerance := await _submit(10, 148.9, "test")
+	_check("10 waves in 148.9 seconds is refused", not below_tolerance["ok"])
+	var negative_elapsed := await _submit(0, -0.5, "test")
+	_check("wave zero cannot have negative elapsed time", not negative_elapsed["ok"])
 	var too_many := await _submit(1000, 999999.0, "test")
 	_check("waves above the server ceiling are refused", not too_many["ok"])
 	var first := await _submit(5, 120.0, "test")
@@ -172,6 +195,7 @@ func _run() -> void:
 	_check("a better run replaces it", await _best_waves(id_b) == 7)
 	await _submit(2, 60.0, "test_v2")
 	_check("a new game version starts the row again", await _best_waves(id_b) == 2)
+	await _test_ranking(email_a, email_b, password, name_a, name_b, stamp)
 
 	# Session restore: from file, and with an expired access token.
 	var token_before := AuthService._access_token
@@ -218,21 +242,117 @@ func _restore_auth() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(AuthService.AUTH_FILE))
 
 func _submit(waves: int, elapsed: float, version: String) -> Dictionary:
-	var path := "/rest/v1/leaderboard"
-	var method := HTTPClient.METHOD_POST
 	var row := {"waves_cleared": waves, "run_elapsed": elapsed, "run_seed": 42, "game_version": version}
-	# A second run for the same account updates the existing row.
-	var existing := await AuthService.rest(HTTPClient.METHOD_GET, "/rest/v1/leaderboard?user_id=eq.%s&select=user_id" % AuthService.user_id)
-	if existing["ok"] and not existing["data"].is_empty():
-		method = HTTPClient.METHOD_PATCH
-		path += "?user_id=eq.%s" % AuthService.user_id
-	return await AuthService.rest(method, path, row, true, "return=representation")
+	# Eligibility and local-save ordering are covered by the offline runner.
+	AuthService._pending_scores.append({"user_id": AuthService.user_id, "saved": true, "summary": {}, "row": row})
+	return await AuthService.submit_score()
 
 func _best_waves(id: String) -> int:
 	var response := await AuthService.rest(HTTPClient.METHOD_GET, "/rest/v1/leaderboard?user_id=eq.%s&select=waves_cleared" % id)
 	if not response["ok"] or response["data"].is_empty():
 		return -1
 	return int(response["data"][0]["waves_cleared"])
+
+
+func _test_saves() -> void:
+	var api := AccountApi.new()
+	var empty := await api.pull_save()
+	_check("new account has no cloud save", empty["ok"] and empty["revision"] == 0 and empty["data"].is_empty())
+	await _test_invalid_saves()
+	var local := {"profile": {"prestige_balance": 42}, "meta": {"levels": {"FORT_HP": 1}},
+		"flags": {"tutorial_done": true}, "run_flag": {"run_in_progress": true}}
+	# JSON decodes numbers as floats, so compare both sides in the wire format.
+	var expected: Dictionary = JSON.parse_string(JSON.stringify(AccountApi.data_for_sync(local)))
+	var first := await api.push_save(1, "test-device-a", local)
+	_check("save revision 1 is written", first["ok"] and first["revision"] == 1)
+	var pulled := await api.pull_save()
+	_check("profile, meta and tutorial flag survive round trip", pulled["ok"] and pulled["data"] == expected)
+	_check("device and server timestamp survive round trip", pulled["ok"] and pulled["device_id"] == "test-device-a" and not str(pulled["updated_at"]).is_empty())
+	var second := await api.push_save(2, "test-device-b", local)
+	_check("next write increases revision by one", second["ok"] and second["revision"] == 2)
+	var stale := await api.push_save(1, "test-device-a", {})
+	var equal := await api.push_save(2, "test-device-a", {})
+	_check("older and equal revisions conflict", not stale["ok"] and stale["conflict"] and not equal["ok"] and equal["conflict"])
+	pulled = await api.pull_save()
+	_check("conflicts preserve data and revision", pulled["ok"] and pulled["revision"] == 2 and pulled["data"] == expected)
+	var nullable_device := await AuthService.rest(HTTPClient.METHOD_PATCH,
+			"/rest/v1/saves?user_id=eq.%s" % AuthService.user_id, {"revision": 3, "device_id": null})
+	pulled = await api.pull_save()
+	_check("nullable device_id is normalized to an empty string", nullable_device["ok"] and pulled["ok"] and pulled["device_id"] == "")
+	await _test_profile_rename()
+
+
+func _test_profile_rename() -> void:
+	var owner := AuthService.user_id
+	var original := AuthService.display_name
+	var renamed := original + "x"
+	var path := "/rest/v1/leaderboard?user_id=eq.%s&select=display_name,submitted_at" % owner
+	var before := await AuthService.rest(HTTPClient.METHOD_GET, path)
+	var profile := await AuthService.rest(HTTPClient.METHOD_PATCH,
+			"/rest/v1/profiles?user_id=eq.%s" % owner,
+			{"display_name": "  " + renamed + "  "}, true, "return=representation")
+	_check("profile names are trimmed on write", profile["ok"] and profile["data"][0]["display_name"] == renamed)
+	var after := await AuthService.rest(HTTPClient.METHOD_GET, path)
+	_check("profile rename updates leaderboard name", after["ok"] and after["data"][0]["display_name"] == renamed)
+	_check("profile rename preserves ranking timestamp", before["ok"] and after["ok"] and before["data"][0]["submitted_at"] == after["data"][0]["submitted_at"])
+	await AuthService.rest(HTTPClient.METHOD_PATCH,
+			"/rest/v1/profiles?user_id=eq.%s" % owner, {"display_name": original})
+
+
+func _test_invalid_saves() -> void:
+	var cases: Array[Dictionary] = [
+		{"name": "negative revision", "revision": -1, "data": {}},
+		{"name": "non-object save", "data": []},
+		{"name": "null save", "data": null},
+		{"name": "negative prestige", "data": {"profile": {"prestige_balance": -1}}},
+		{"name": "negative max wave", "data": {"profile": {"max_wave_cleared": -1}}},
+		{"name": "overflowing prestige", "data": {"profile": {"prestige_balance": 1.0e20}}},
+		{"name": "fractional count", "data": {"profile": {"max_wave_cleared": 1.5}}},
+		{"name": "wrong count type", "data": {"profile": {"prestige_balance": "100"}}},
+		{"name": "negative meta level", "data": {"meta": {"levels": {"FORT_HP": -1}}}},
+		{"name": "oversized payload", "data": {"profile": {"extra": "x".repeat(1048577)}}},
+	]
+	for id in MetaUpgrades.get_max_levels():
+		cases.append({"name": "excessive level " + id,
+			"data": {"meta": {"levels": {id: MetaUpgrades.get_max_levels()[id] + 1}}}})
+	for invalid in cases:
+		var response := await AuthService.rest(HTTPClient.METHOD_POST, "/rest/v1/saves",
+				{"user_id": AuthService.user_id, "revision": invalid.get("revision", 1), "data": invalid["data"]})
+		_check("server rejects " + invalid["name"], not response["ok"] and int(response.get("status", 0)) in [400, 413])
+
+
+func _test_ranking(email_a: String, email_b: String, password: String, name_a: String, name_b: String, stamp: String) -> void:
+	var previous_version := GameConfig.game_version
+	GameConfig.game_version = "rank_" + stamp
+	await AuthService.sign_in(email_a, password)
+	await _submit(10, 150.0, GameConfig.game_version)
+	await AuthService.sign_in(email_b, password)
+	await _submit(10, 150.0, GameConfig.game_version)
+	var board := await AuthService.fetch_leaderboard(50)
+	_check("earlier server submission wins equal waves and time", board["ok"] and board["rows"].size() == 2 and board["rows"][0]["display_name"] == name_a and board["own"].get("rank") == 2)
+	var fastest := await _submit(10, 149.0, GameConfig.game_version)
+	_check("10 waves in 149 seconds is accepted with tolerance", fastest["ok"])
+	board = await AuthService.fetch_leaderboard(1)
+	_check("faster time wins equal waves", board["ok"] and board["rows"].size() == 1 and board["rows"][0]["display_name"] == name_b and board["own"].get("rank") == 1)
+	await _submit(11, 200.0, GameConfig.game_version)
+	board = await AuthService.fetch_leaderboard(50)
+	_check("more waves beats faster time", board["ok"] and board["rows"][0]["waves_cleared"] == 11)
+	await AuthService.sign_in(email_a, password)
+	board = await AuthService.fetch_leaderboard(1)
+	_check("own rank is returned outside requested top", board["ok"] and board["rows"].size() == 1 and board["own"].get("rank") == 2)
+	GameConfig.game_version += "_other"
+	board = await AuthService.fetch_leaderboard(50)
+	_check("version filter excludes other runs", board["ok"] and board["rows"].is_empty() and board["own"].is_empty())
+	GameConfig.game_version = previous_version
+	await AuthService.sign_in(email_b, password)
+	var duplicate := await AuthService.rest(HTTPClient.METHOD_PATCH,
+			"/rest/v1/profiles?user_id=eq.%s" % AuthService.user_id,
+			{"display_name": name_a}, true, "return=representation")
+	var detail: Dictionary = duplicate["data"] if duplicate.get("data") is Dictionary else {}
+	_check("unique index rejects duplicate display names", not duplicate["ok"] and detail.get("code") == "23505")
+	if duplicate["ok"]:
+		await AuthService.rest(HTTPClient.METHOD_PATCH,
+				"/rest/v1/profiles?user_id=eq.%s" % AuthService.user_id, {"display_name": name_b})
 
 func _check(label: String, ok: bool) -> void:
 	_last_step = label
