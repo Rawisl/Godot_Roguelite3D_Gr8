@@ -1,0 +1,83 @@
+[gd_scene format=3 uid="uid://cfrxnqetkxddw"]
+
+[ext_resource type="Script" uid="uid://b151kpjlpag6v" path="res://ui/hud/parts/tutorial_hint.gd" id="1_hint"]
+[ext_resource type="Script" uid="uid://bumdio8mdm4kc" path="res://systems/tutorial/tutorial_service.gd" id="2_service"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+content_margin_left = 20.0
+content_margin_top = 14.0
+content_margin_right = 20.0
+content_margin_bottom = 14.0
+bg_color = Color(0.10980392, 0.12156863, 0.14901961, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="TutorialHint" type="PanelContainer" unique_id=602394901]
+visible = false
+custom_minimum_size = Vector2(640, 0)
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
+script = ExtResource("1_hint")
+
+[node name="Rows" type="VBoxContainer" parent="." unique_id=1610664370]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Rows" unique_id=518233606]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Rows/Header" unique_id=557800051]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="StepCount" type="Label" parent="Rows/Header" unique_id=432782117]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="RemindTag" type="Label" parent="Rows/Header" unique_id=648498148]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(1, 0.6039216, 0.18039216, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="Spacer" type="Control" parent="Rows/Header" unique_id=1678362383]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="SkipButton" type="Button" parent="Rows/Header" unique_id=957295487]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+
+[node name="HintText" type="Label" parent="Rows" unique_id=429598683]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 24
+autowrap_mode = 3
+
+[node name="TutorialService" type="Node" parent="." unique_id=1751882031]
+unique_name_in_owner = true
+script = ExtResource("2_service")

@@ -36,6 +36,7 @@
 [ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="27_hgate"]
 [ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
 [ext_resource type="PackedScene" uid="uid://c3jq3i3ok6u3s" path="res://ui/screens/victory_screen.tscn" id="29_victory"]
+[ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -169,6 +170,9 @@ mouse_filter = 2
 layout_mode = 2
 
 [node name="BossBar" parent="Root/SafeArea/Frame/TopCenter" unique_id=615647234 instance=ExtResource("1_4d6w6")]
+layout_mode = 2
+
+[node name="TutorialHint" parent="Root/SafeArea/Frame/TopCenter" unique_id=1614868657 instance=ExtResource("30_tutorial")]
 layout_mode = 2
 
 [node name="TopRight" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=215340958]
