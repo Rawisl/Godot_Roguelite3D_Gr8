@@ -9,6 +9,8 @@ extends Node
 @export var starter_arrow_slot: StringName = &"G_0_4"
 @export var starter_cannon_slot: StringName = &"W2"
 @export var starter_sell_unlock_wave: int = 3
+## Real seconds (paused time not counted) a tutorial build step waits before showing its hint again.
+@export var tutorial_remind_seconds: float = 30.0
 @export var max_alive: int = 70
 @export var wave_max_enemy_types: int = 5
 @export var summary_auto_advance: float = 10.0

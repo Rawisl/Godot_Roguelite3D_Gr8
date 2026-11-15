@@ -9,7 +9,6 @@ extends Node
 ## on defaults in memory and save() refuses until the file is fixed (an unreadable save can
 ## be replaced with start_new_save()).
 # TODO(kiezroth): when the save loads with run_flag.run_in_progress true, settle the run as ABANDONED before MainMenu (prestige from prestige_pending), clear the flag, save and tell the player.
-# TODO(WhoKeng): when the tutorial lands, call SaveManager.mark_tutorial_done() as soon as both starter towers are built or Skip is pressed; it saves the flag and emits tutorial_completed.
 
 signal save_loaded
 
