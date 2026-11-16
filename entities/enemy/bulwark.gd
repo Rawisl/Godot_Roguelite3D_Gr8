@@ -474,6 +474,11 @@ func _execute_attack_action() -> void:
 	anim_player.speed_scale = recovery_speed
 
 
+## Creates a timer on game time that pauses when the game is paused and scales with game speed.
+func _game_timer(duration: float) -> SceneTreeTimer:
+	return get_tree().create_timer(duration, false, false, false)
+
+
 ## Executes Attack 1 (Stomp): windup telegraph, slam impact, and recovery.
 func play_attack_1() -> void:
 	if is_dead or anim_player == null:
@@ -486,7 +491,7 @@ func play_attack_1() -> void:
 	attack_step_started.emit(1, &"STOMP_WINDUP", &"melee/Melee_2H_Slam", _get_attack_windup())
 	_play_stomp_anim()
 
-	await get_tree().create_timer(_get_attack_windup()).timeout
+	await _game_timer(_get_attack_windup()).timeout
 	if token != _attack_token or is_dead:
 		return
 
@@ -496,7 +501,7 @@ func play_attack_1() -> void:
 	var remaining: float = maxf(0.1, 2.83 - _get_attack_windup())
 	if anim_player != null and anim_player.speed_scale > 0.0:
 		remaining /= anim_player.speed_scale
-	await get_tree().create_timer(remaining).timeout
+	await _game_timer(remaining).timeout
 	if token != _attack_token or is_dead:
 		return
 
@@ -524,28 +529,28 @@ func play_attack_2() -> void:
 	attack_step_started.emit(2, &"BLOCK_POSE", &"melee/Melee_Block", 0.45)
 	anim_player.speed_scale = 1.0
 	anim_player.play(&"melee/Melee_Block", 0.15)
-	await get_tree().create_timer(0.45).timeout
+	await _game_timer(0.45).timeout
 	if token != _attack_token or is_dead:
 		return
 
 	# Step 2: Strike 1 - 1H Slash
 	attack_step_started.emit(2, &"SLASH", &"melee/Melee_1H_Slash", 1.57)
 	anim_player.play(&"melee/Melee_1H_Slash", 0.1)
-	await get_tree().create_timer(1.57).timeout
+	await _game_timer(1.57).timeout
 	if token != _attack_token or is_dead:
 		return
 
 	# Step 3: Strike 2 - 1H Stab
 	attack_step_started.emit(2, &"STAB", &"melee/Melee_1H_Stab", 1.40)
 	anim_player.play(&"melee/Melee_1H_Stab", 0.1)
-	await get_tree().create_timer(1.40).timeout
+	await _game_timer(1.40).timeout
 	if token != _attack_token or is_dead:
 		return
 
 	# Step 4: Strike 3 - 2H Attack
 	attack_step_started.emit(2, &"2H_ATTACK", &"melee/Melee_2H_Attack", 1.33)
 	anim_player.play(&"melee/Melee_2H_Attack", 0.12)
-	await get_tree().create_timer(1.33).timeout
+	await _game_timer(1.33).timeout
 	if token != _attack_token or is_dead:
 		return
 
@@ -571,14 +576,14 @@ func play_attack_3() -> void:
 	attack_step_started.emit(3, &"2H_SLASH_1", &"melee/Melee_2H_Attack", 1.33)
 	anim_player.speed_scale = 1.0
 	anim_player.play(&"melee/Melee_2H_Attack", 0.1)
-	await get_tree().create_timer(1.33).timeout
+	await _game_timer(1.33).timeout
 	if token != _attack_token or is_dead:
 		return
 
 	# Step 2: 2H Slash 2
 	attack_step_started.emit(3, &"2H_SLASH_2", &"melee/Melee_2H_Attack", 1.33)
 	anim_player.play(&"melee/Melee_2H_Attack", 0.1)
-	await get_tree().create_timer(1.33).timeout
+	await _game_timer(1.33).timeout
 	if token != _attack_token or is_dead:
 		return
 
@@ -604,14 +609,14 @@ func play_attack_4() -> void:
 	attack_step_started.emit(4, &"DUAL_SLASH", &"melee/Melee_Dualwield_Slash", 1.03)
 	anim_player.speed_scale = 1.0
 	anim_player.play(&"melee/Melee_Dualwield_Slash", 0.1)
-	await get_tree().create_timer(1.03).timeout
+	await _game_timer(1.03).timeout
 	if token != _attack_token or is_dead:
 		return
 
 	# Step 2: Dualwield slash combo
 	attack_step_started.emit(4, &"DUAL_COMBO", &"melee/Melee_Dualwield_SlashCombo", 1.60)
 	anim_player.play(&"melee/Melee_Dualwield_SlashCombo", 0.1)
-	await get_tree().create_timer(1.60).timeout
+	await _game_timer(1.60).timeout
 	if token != _attack_token or is_dead:
 		return
 
@@ -637,14 +642,14 @@ func play_attack_5() -> void:
 	attack_step_started.emit(5, &"SLASH_1H", &"melee/Melee_1H_Slash", 1.57)
 	anim_player.speed_scale = 1.0
 	anim_player.play(&"melee/Melee_1H_Slash", 0.1)
-	await get_tree().create_timer(1.57).timeout
+	await _game_timer(1.57).timeout
 	if token != _attack_token or is_dead:
 		return
 
 	# Step 2: Reverse / Off-hand Combo Strike
 	attack_step_started.emit(5, &"REVERSE_COMBO", &"melee/Melee_Dualwield_SlashCombo", 1.60)
 	anim_player.play(&"melee/Melee_Dualwield_SlashCombo", 0.1)
-	await get_tree().create_timer(1.60).timeout
+	await _game_timer(1.60).timeout
 	if token != _attack_token or is_dead:
 		return
 
@@ -1077,7 +1082,7 @@ func play_single_attack(clip: StringName, step_name: StringName = &"SINGLE_ATTAC
 	attack_step_started.emit(attack_id, step_name, clip, anim_dur)
 	anim_player.speed_scale = 1.0
 	anim_player.play(clip, 0.1)
-	await get_tree().create_timer(anim_dur).timeout
+	await _game_timer(anim_dur).timeout
 	if token != _attack_token or is_dead:
 		return
 
