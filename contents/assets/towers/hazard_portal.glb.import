@@ -52,7 +52,7 @@ _subresources={
 "portal_joint": {
 "use_external/enabled": true,
 "use_external/fallback_path": "res://art/materials/struct_stone_dark.tres",
-"use_external/path": "res://art/materials/struct_stone_dark.tres"
+"use_external/path": "uid://cvnvn71s6bvdg"
 },
 "portal_sandstone": {
 "use_external/enabled": true,
