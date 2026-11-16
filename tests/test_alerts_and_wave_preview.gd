@@ -94,7 +94,7 @@ func _run_checks() -> void:
 	await _check_towers()
 	_check_boss_next()
 	await _check_clear_time()
-	_check_preview()
+	await _check_preview()
 	_check_hazard_tooltip()
 	_check_hover()
 	_expect(tr(&"hud.mode.denied.hazard").contains("Hazard Trial"), "strings: the mode lock names the Hazard Trial")
@@ -223,7 +223,10 @@ func _check_preview() -> void:
 	var toggle := _preview.get_node("%Toggle") as Button
 	var arrow := _preview.get_node("%ToggleArrow") as ArrowGlyph
 	_expect(arrow.sideways and not arrow.pointing_left and toggle.get_index() == 0, "preview: the button sits left of the panel and shows >")
+	var open_right := _preview.get_global_rect().end.x
 	toggle.pressed.emit()
+	await get_tree().process_frame
+	_expect(is_equal_approx(toggle.get_global_rect().end.x, open_right), "preview: the < button moves to the right edge where the panel ended")
 	_expect(not _preview.get_node("%Panel").visible and _preview.visible and toggle.visible and arrow.pointing_left,
 		"preview: folding hides the whole panel and leaves only the < button")
 	EventBus.run_started.emit()

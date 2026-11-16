@@ -73,6 +73,7 @@ corner_radius_bottom_left = 8
 
 [node name="WavePreview" type="HBoxContainer" unique_id=1185727932]
 visible = false
+grow_horizontal = 0
 mouse_filter = 2
 theme_override_constants/separation = 6
 script = ExtResource("1_preview")

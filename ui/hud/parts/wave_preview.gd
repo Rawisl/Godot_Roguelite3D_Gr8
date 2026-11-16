@@ -3,8 +3,9 @@ extends HBoxContainer
 ## What the next wave brings, shown in PREP: up to five enemy types (the boss first), how many of
 ## each and their traits with icon and name. Before a boss wave that drops a weapon it also says
 ## a weapon not owned yet will drop. Hidden outside PREP and until a preview arrives. The button on
-## its left folds the whole panel away to the right (>) and leaves only the button (<) to bring it
-## back, like the skill slots; a new run shows it again.
+## its left folds the whole panel away to the right (>) and leaves only the button (<), against the
+## right edge under the Hazard Trial marker, to bring it back, like the skill slots; a new run shows
+## it again. The node grows to the left, so folding keeps its right edge where it was.
 # TODO(Ender-Via): send wave_preview_ready(wave_index, {enemy_id: count}, is_boss) at the start of each PREP; nothing shows before it does.
 # TODO(kiezroth): the composition sent with wave_preview_ready should come from the WaveScript of that wave.
 
@@ -42,8 +43,12 @@ func set_expanded(value: bool) -> void:
 
 func _apply_expanded() -> void:
 	_panel.visible = expanded
-	# Shrink to the button when folded; inside a container this only asks for the new size.
+	# Shrink to the button when folded and keep the right edge where it was, so the < button sits
+	# against the right side. Inside the HUD column the container already aligns it to the right.
+	var right := position.x + size.x
 	reset_size()
+	if not get_parent() is Container:
+		position.x = right - size.x
 	# > pushes the panel away to the right, < brings it back; the words are in the tooltip.
 	_arrow.pointing_left = not expanded
 	_toggle.tooltip_text = tr(&"hud.preview.hide" if expanded else &"hud.preview.show")
