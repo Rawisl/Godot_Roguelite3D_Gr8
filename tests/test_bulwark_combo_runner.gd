@@ -300,6 +300,34 @@ func test_turn_rate_limit() -> void:
 	bulwark.free()
 
 	print("
+[GROUP 6e] After a stomp the boss turns only once the mace is back up")
+	bulwark = _make_bulwark()
+	bulwark.spawn_wave = 5
+	cmd = _make_commander(Vector3(0.0, 0.0, 5.0))
+	bulwark.current_target = cmd
+	bulwark.change_state(Enums.EnemyState.ATTACK)
+	assert_true(bulwark.last_chosen_move == Bulwark.MOVE_STOMP, "Commander 5 m ahead: the stomp")
+	var steps := 0
+	while not bulwark.is_attacking_active and steps < 120:  # wind-up until the impact
+		bulwark._update_state(STEP)
+		steps += 1
+	assert_true(bulwark._stomp_recovering, "After the impact the stomp clip is still pulling the mace back")
+	cmd.global_position = Vector3(0.0, 0.0, -3.0)
+	for i in range(30):
+		bulwark._update_state(STEP)
+	turned = rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
+	assert_true(turned < 0.001, "No turning while bent over the mace (turned %.1f deg)" % turned)
+	bulwark.anim_player.seek(Bulwark.STOMP_CLIP_RECOVERED + 0.01, true)
+	bulwark._process(STEP)
+	assert_true(not bulwark._stomp_recovering, "Mace back up: the stomp is over")
+	for i in range(30):
+		bulwark._update_state(STEP)
+	turned = rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
+	assert_true(turned > 10.0, "Then the boss turns toward the commander (turned %.1f deg)" % turned)
+	cmd.free()
+	bulwark.free()
+
+	print("
 [GROUP 6d] Phase 2 and Enrage turn faster by the attack speed-up")
 	for case in [["phase 2", true, false], ["phase 2 + Enrage", true, true], ["Enrage", false, true]]:
 		bulwark = _make_bulwark()

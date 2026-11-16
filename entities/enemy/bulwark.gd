@@ -246,9 +246,11 @@ func _update_state(delta: float) -> void:
 	super._update_state(delta)
 
 
-## The pause between two moves of the ATTACK state: the last hit has landed and no sequence runs.
+## The pause between two moves of the ATTACK state: the last move is over and no sequence runs.
+## A single stomp counts as over only once the mace is back up, not at its impact: the boss stays
+## bent over the mace until then and must not turn.
 func _is_recovering_between_moves() -> bool:
-	return (current_state == Enums.EnemyState.ATTACK and is_attacking_active
+	return (current_state == Enums.EnemyState.ATTACK and is_attacking_active and not _stomp_recovering
 			and not is_in_attack_sequence and combo_step == ComboStep.NONE and _triple_index < 0)
 
 
