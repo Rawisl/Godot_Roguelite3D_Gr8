@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dx1yjttn4bkfe"]
 
 [ext_resource type="Script" uid="uid://b0m1aaxkgovw8" path="res://ui/hud/parts/alert_layer.gd" id="1_e8v0x"]
+[ext_resource type="Script" uid="uid://d2xbw1sp7svxh" path="res://ui/hud/parts/alert_sources.gd" id="9_sources"]
 
 [node name="AlertLayer" type="Control" unique_id=328027326]
 layout_mode = 3
@@ -132,3 +133,6 @@ theme_type_variation = &"AlertT3"
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
+
+[node name="AlertSources" type="Node" parent="." unique_id=116313539]
+script = ExtResource("9_sources")
