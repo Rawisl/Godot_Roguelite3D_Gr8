@@ -1411,10 +1411,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KH1
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kích hoạt cảnh báo T1/T2 (ALR-01..04, 07, 09, 11) [dời từ tuần 13; ALR-08 đã bỏ ở v2.0]
 - Nghiệm thu: Mỗi cảnh báo hiện đúng tầng, không lặp trong 5 s
 - Cần xong trước: W10-KH4
+- Ghi chú bàn giao: AlertSources (ui/hud/parts/alert_sources.gd, a node in alert_layer.tscn) adds the missing alerts: the commander at or under commander_low_hp_warning_pct (T1, once per drop), the boss T-30 warning (T2) and the enrage (T1), a destroyed tower with its type, level, slot and rebuild price (T2; several in one frame become one toast) and the PREP before a boss wave (T2, once per wave). The Fortress low HP banner and the save failure dialog were already there. The AlertLayer still blocks the same alert for 5 s. @Ender-Via: the boss wave warning reads wave_preview_ready when it comes and falls back to boss_wave_interval (TODO left). The wave counter also shows the fight time in combat, counted like the summary clear time, and the Hazard mode lock now says "Hazard Trial". Runner tests/test_alerts_and_wave_preview.tscn.
 
 ##### W11-NG1
 - Người: Khang
@@ -1441,12 +1442,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KH7
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Biểu tượng trait quân (tàng hình, tự nổ, bất tử một lần, hồi sinh, ủi thẳng) kèm chữ trong preview wave PREP, Tháp Hazard và hover quân; preview boss hiện vũ khí sẽ rơi; tối đa 5 loại kể cả boss
 - Nghiệm thu: Preview wave hiện đúng loại quân và trait của wave sắp tới
 - Tệp liên quan: ui/panels/wave_preview_panel.tscn (hiện mới có scene), ui/hud/parts/enemy_bar_layer.*
 - ID SRS: EN-18, MSE-06, 3.3.2, WPN-11
 - Cần xong trước: W10-KT7, W11-MH11
+- Ghi chú bàn giao: Trait icons with their names (stealth, explode, undying once, revive, charge) in three places: the new PREP wave preview (ui/hud/parts/wave_preview.*, up to five types with the boss first and a line when the boss will drop a weapon not owned yet), the Hazard Trial tower tooltip, and a name and traits box above a hovered enemy after GameConfig.hover_info_delay (0.3 s). EnemyTraits keeps the trait list and names in one place. @Ender-Via: add traits to EnemyData and send wave_preview_ready in PREP; until then the preview stays hidden and traits come from EnemyTraits.overrides in the test (TODOs left). @kiezroth: the preview composition should come from the WaveScript (TODO left). @kimvux: the icons are drawn shapes until trait icons exist (TODO left in trait_glyph.gd). Runner tests/test_alerts_and_wave_preview.tscn.
 
 ##### W11-KH8
 - Người: Khang
