@@ -159,6 +159,8 @@ extends Node
 @export var settings_keep_seconds: float = 10.0
 ## Real seconds the pointer rests on an enemy before its name and traits show.
 @export var hover_info_delay: float = 0.3
+## Real seconds after a tower falls during which the next loss joins the same toast.
+@export var tower_ruined_merge_seconds: float = 5.0
 
 @export_group("Skills")
 @export var skill_max_level: int = 3
