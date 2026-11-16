@@ -21,3 +21,12 @@ func get_total_cost(level: int) -> int:
 	for i in clampi(level, 0, levels.size()):
 		total += levels[i].build_cost
 	return total
+
+
+## Model tier (1..3) shown at `level`: 1 below tower_tier2_level, 2 below tower_tier3_level, else 3.
+static func model_tier(level: int) -> int:
+	if level < GameConfig.tower_tier2_level:
+		return 1
+	if level < GameConfig.tower_tier3_level:
+		return 2
+	return 3

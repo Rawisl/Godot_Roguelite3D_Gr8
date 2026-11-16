@@ -1,0 +1,10 @@
+{
+  "weapon_ids": {
+    "sword": "sword_base"
+  },
+  "skill_keys": {
+    "heal_station": {
+      "heal_rate_base": "heal_rate_add"
+    }
+  }
+}
