@@ -11,7 +11,7 @@ const SYNCING := &"SYNCING"
 const OFFLINE := &"OFFLINE"
 const ERROR := &"ERROR"
 const COMBAT_STATES: Array[StringName] = [&"COMBAT", &"BOSS_COMBAT"]
-const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
+const NOTICE_SCENE := preload("res://ui/screens/notice_dialog.tscn")
 
 var state: StringName = GUEST
 ## Swapped by tests for a fake with the same pull_save() and push_save().
@@ -78,7 +78,7 @@ func _resolve(pull: Dictionary) -> void:
 	elif cloud_revision > local_revision:
 		if local_revision > 0 and cloud_device != device:
 			SaveManager.keep_conflict_copy(SaveManager.data, local_revision, device)
-			ScreenManager.show_notice(&"dialog.sync_other_device.title", &"dialog.sync_other_device.body")
+			show_other_device_notice()
 		if SaveManager.apply_synced(pull.get("data", {}), cloud_revision) == OK:
 			_set_state(SYNCED)
 		else:
@@ -133,14 +133,28 @@ func _has_local_progress() -> bool:
 			or levels.values().any(func(level: Variant) -> bool: return int(level) > 0) \
 			or bool(SaveManager.get_section(SaveManager.FLAGS).get("tutorial_done", false))
 
-func _ask_upload() -> Variant:
+## The cloud copy replaced this machine's: says so, and where this machine's copy went.
+func show_other_device_notice() -> void:
+	var dialog := NOTICE_SCENE.instantiate() as NoticeDialog
+	dialog.setup(NoticeDialog.INFO, &"dialog.sync_other_device.title", [tr(&"dialog.sync_other_device.line")], [],
+		tr(&"dialog.sync_other_device.note"))
+	dialog.set_buttons(&"dialog.ok")
+	ScreenManager.show_notice_dialog(dialog)
+
+## The account is empty: one line says so, one asks, and each part of the progress is its own row.
+func make_upload_dialog() -> NoticeDialog:
 	var profile := SaveManager.get_section(SaveManager.PROFILE)
-	var dialog := DIALOG_SCENE.instantiate()
-	dialog.setup(&"dialog.sync_upload.title", &"dialog.sync_upload.body", {
-		"balance": int(profile.get("prestige_balance", 0)),
-		"wave": int(profile.get("max_wave_cleared", 0)),
-		"runs": int(profile.get("stats", {}).get("total_runs", 0))})
+	var dialog := NOTICE_SCENE.instantiate() as NoticeDialog
+	dialog.setup(NoticeDialog.INFO, &"dialog.sync_upload.title",
+		[tr(&"dialog.sync_upload.line_empty"), tr(&"dialog.sync_upload.line_take")], [
+		[tr(&"dialog.sync_upload.row_balance"), str(int(profile.get("prestige_balance", 0)))],
+		[tr(&"dialog.sync_upload.row_wave"), str(int(profile.get("max_wave_cleared", 0)))],
+		[tr(&"dialog.sync_upload.row_runs"), str(int(profile.get("stats", {}).get("total_runs", 0)))]])
 	dialog.set_buttons(&"dialog.sync_upload.confirm", &"dialog.sync_upload.cancel")
+	return dialog
+
+func _ask_upload() -> Variant:
+	var dialog := make_upload_dialog()
 	var answer := [false]
 	dialog.confirmed.connect(func() -> void: answer[0] = true)
 	if not ScreenManager.open_dialog(dialog):
