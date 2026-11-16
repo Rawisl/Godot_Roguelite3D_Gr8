@@ -42,10 +42,15 @@ func _ready() -> void:
 	add_child(_level)
 	# The navigation map only answers path queries once it has synced the level's regions.
 	var map := _level.get_world_3d().navigation_map
+	# The first sync can hold the regions without their polygons yet (more often on a heavier
+	# level), so also wait until a point in the spawn zone snaps onto the navmesh. An empty map
+	# answers (0, 0, 0), which is why the probe is not at the origin.
+	var probe := Vector3(15, 0, 0)
 	var start_iteration := NavigationServer3D.map_get_iteration_id(map)
 	for i in 120:
 		await get_tree().physics_frame
-		if i >= 4 and NavigationServer3D.map_get_iteration_id(map) > start_iteration:
+		if i >= 4 and NavigationServer3D.map_get_iteration_id(map) > start_iteration \
+				and NavigationServer3D.map_get_closest_point(map, probe).distance_to(probe) < 1.0:
 			break
 
 	test_walls_and_floor()
