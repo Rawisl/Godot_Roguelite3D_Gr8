@@ -8,6 +8,7 @@ const DEFAULT_PATH := "user://endlesswar_save.json"
 const TEMP_EXTENSION := "tmp"
 const BACKUP_EXTENSION := "bak"
 const CORRUPT_EXTENSION := "corrupt"
+const CONFLICT_FILE := "save.conflict.bak"
 
 var path: String
 
@@ -35,6 +36,18 @@ func corrupt_path(source: Source = Source.MAIN) -> String:
 		Source.BACKUP:
 			return corrupt + "." + BACKUP_EXTENSION
 	return corrupt
+
+## Next to the save; one file, replaced by the next conflict.
+func conflict_path() -> String:
+	return path.get_base_dir().path_join(CONFLICT_FILE)
+
+func save_conflict_copy(envelope: Dictionary) -> Error:
+	var file := FileAccess.open(conflict_path(), FileAccess.WRITE)
+	if file == null:
+		return FileAccess.get_open_error()
+	file.store_string(JSON.stringify(envelope, "	"))
+	file.close()
+	return OK
 
 func has_data() -> bool:
 	return FileAccess.file_exists(path)

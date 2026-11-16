@@ -1,8 +1,7 @@
 extends VBoxContainer
 ## The skill slots and the weapon slot, with a button that hides them. Hiding only hides the
 ## display: keys 1-3 still cast and the cooldowns keep running, so showing them again gives the
-## right seconds. A new run shows them again.
-# TODO(WhoKeng): keep the choice in settings.cfg once the Settings tabs save their values.
+## right seconds. A new run always shows them again, so the choice is not kept in settings.cfg.
 
 ## Sent when the slots are shown or hidden, so the weapon panel can close with them.
 signal shown_changed(shown: bool)

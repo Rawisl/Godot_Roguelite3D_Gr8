@@ -1397,18 +1397,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KH3
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Settings tabs: Âm thanh, Đồ họa, Tiếp cận (SET-01, 04, 06, ACC-04); cắt tab Điều khiển chỉ đọc và Dữ liệu
 - Nghiệm thu: Lưu khi thoát màn Settings
 - Cần xong trước: W10-NG5
+- Ghi chú bàn giao: Settings are kept in user://settings.cfg through GameState.load_settings() (every stored value is sent again on settings_changed at start) and save_settings(), written when the Settings screen closes; an unreadable file is renamed .corrupt and the save is untouched. The empty Controls and Data tabs are removed. New Graphics tab: window mode, resolution, VSync and FPS limit, applied by DisplaySettings, with a "keep changes" box that goes back after GameConfig.settings_keep_seconds (10 s, real time) or when leaving Settings. @kimvux: quality preset, shadows, particles and see-through rows are still to add (TODO left in tab_graphics.gd). Accessibility tab opens on the values in use and adds hold_toggle; @Rawisl: commander_input still has to read it (TODO left). The skill slot hide choice is not saved because a new run always shows the slots again. A switched-on toggle keeps the normal and hover look on light panels (two styles in light_panel_theme.tres, @kimvux). Runner tests/test_settings_and_sync.tscn.
 
 ##### W11-KH4
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SyncService thật: kéo và đẩy profile, meta, flags (gồm tutorial_done); đồng bộ khi đăng nhập, ở RunEnd và sau mua shop; nối SCR-19 dữ liệu thật; hộp thoại tải profile cục bộ lên lần đầu (ACCT-05, 07, 08)
 - Nghiệm thu: Đăng nhập máy mới kéo đúng profile và tutorial_done (TU4); mất mạng không chặn RunEnd hay shop
 - Cần xong trước: W10-NG5, W10-NG6, W11-MH5, W11-MH6
+- Ghi chú bàn giao: SyncService autoload (systems/sync/, one autoload line in project.godot) pulls and compares after a sign in and pushes after a run end and a shop purchase, never during a run, so the run keeps the profile it started with (held until the run ends). The higher revision wins; when the losing copy came from another machine it goes to save.conflict.bak, and taking the cloud copy shows "Đã dùng dữ liệu từ máy khác". An empty account with local progress asks before uploading; only "Để sau" counts as no for the session, a question closed by a screen change is asked again. Network errors show OFFLINE or ERROR and never block RunEnd or the shop; the next run end or purchase retries. SaveManager gains get_revision(), get_device_id(), apply_synced() and keep_conflict_copy(). @Rawisl: swap the rule for the agreed conflict policy (TODO left in sync_service.gd); the leaderboard already reads real data. The upload question, the other machine notice and the save notices use the new NoticeDialog (ui/screens/notice_dialog.*): a mark and title coloured by tone, short lines without full stops, value rows and a small note; an unreadable save offers "Tạo save mới" and a failed write "Thử lại". Runner tests/test_settings_and_sync.tscn.
 
 ##### W13-KH1
 - Người: Khang

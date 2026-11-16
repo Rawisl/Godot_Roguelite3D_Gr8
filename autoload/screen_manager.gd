@@ -2,12 +2,12 @@ extends CanvasLayer
 ## Switches screens with a fade and owns the system dialog layer.
 ## Screens that support Back implement go_back(); Esc calls the same function
 ## Dialogs that support Esc implement cancel(); otherwise they are freed.
-# TODO(WhoKeng): on save_failed(CORRUPT) show the notice with a "New save" button that calls SaveManager.start_new_save(); on save_failed(WRITE_ERROR) add a Retry button that calls SaveManager.save() again.
 
 signal screen_changed(scene_path: String)
 signal dialog_context_changed
 
 const DIALOG_SCENE := preload("res://ui/screens/confirm_dialog.tscn")
+const NOTICE_SCENE := preload("res://ui/screens/notice_dialog.tscn")
 
 ## Fade duration of each half (out, then in), in real time
 @export var fade_duration: float = 0.25
@@ -89,6 +89,26 @@ func open_dialog(dialog: Control) -> bool:
 func show_notice(title_key: StringName, body_key: StringName, params: Dictionary = {}) -> void:
 	var dialog := DIALOG_SCENE.instantiate()
 	dialog.setup_notice(title_key, body_key, params)
+	_queue_notice(dialog)
+
+## A NoticeDialog built by the caller (tone, short lines, value rows), queued like show_notice.
+func show_notice_dialog(dialog: NoticeDialog) -> void:
+	_queue_notice(dialog)
+
+## A save problem: the lines say what happened, the note what the action does. Without an
+## action it is a plain notice.
+func _show_save_notice(tone: StringName, prefix: String, action_key: StringName = &"", action: Callable = Callable()) -> void:
+	var dialog := NOTICE_SCENE.instantiate() as NoticeDialog
+	dialog.setup(tone, StringName(prefix + ".title"), [tr(StringName(prefix + ".line1")), tr(StringName(prefix + ".line2"))],
+		[], tr(StringName(prefix + ".note")))
+	if action.is_valid():
+		dialog.set_buttons(action_key, &"dialog.close")
+		dialog.confirmed.connect(func() -> void: action.call())
+	else:
+		dialog.set_buttons(&"dialog.ok")
+	_queue_notice(dialog)
+
+func _queue_notice(dialog: Control) -> void:
 	_pending_notices.append(dialog)
 	_open_next_notice.call_deferred()
 
@@ -122,7 +142,13 @@ func _open_next_notice() -> void:
 
 func _on_save_failed(reason: StringName) -> void:
 	push_warning("ScreenManager: save failed (%s)" % reason)
-	show_notice(&"dialog.save_failed.title", &"dialog.save_failed.body")
+	match reason:
+		SaveManager.REASON_CORRUPT:
+			_show_save_notice(NoticeDialog.DANGER, "dialog.save_corrupt", &"dialog.save_corrupt.new", SaveManager.start_new_save)
+		SaveManager.REASON_WRITE_ERROR:
+			_show_save_notice(NoticeDialog.WARNING, "dialog.save_failed", &"dialog.save_failed.retry", SaveManager.save)
+		_:
+			_show_save_notice(NoticeDialog.WARNING, "dialog.save_blocked")
 
 func _on_run_recovered(prestige_gain: int) -> void:
 	show_notice(&"dialog.run_recovered.title", &"dialog.run_recovered.body", {"value": prestige_gain})

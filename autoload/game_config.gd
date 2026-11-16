@@ -153,6 +153,8 @@ extends Node
 @export_group("Timing and Performance")
 @export var fps_downscale_floor: float = 30.0
 @export var fps_downscale_duration: float = 3.0
+## Real seconds to keep a new window mode or resolution before it goes back to the old one.
+@export var settings_keep_seconds: float = 10.0
 
 @export_group("Skills")
 @export var skill_max_level: int = 3

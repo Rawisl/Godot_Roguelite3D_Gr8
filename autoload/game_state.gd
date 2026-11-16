@@ -28,6 +28,8 @@ const TRANSITIONS := {
 }
 
 const PAUSE_MENU_SCENE := preload("res://ui/screens/pause_menu.tscn")
+const SETTINGS_PATH := "user://settings.cfg"
+const SETTINGS_SECTION := "settings"
 
 var current: AppState = AppState.BOOT
 ## Result of the last run, read by the RunEnd screen.
@@ -36,6 +38,10 @@ var last_run_summary: Dictionary = {}
 ## Last value sent for each setting on EventBus.settings_changed. Parts created later, such as
 ## the HUD of a new run, read it here instead of starting from a default.
 var _settings: Dictionary = {}
+## Where settings are kept, apart from the save. Tests point it at a scratch file.
+var settings_path: String = SETTINGS_PATH
+## A setting changed since settings.cfg was last written.
+var _settings_dirty := false
 ## Last wave state sent on EventBus.state_changed, so HUD parts created after the first PREP
 ## still know it.
 var wave_state: StringName = &""
@@ -62,6 +68,8 @@ func _ready() -> void:
 	EventBus.sync_state_changed.connect(_on_sync_state_changed)
 	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_sync_with_current_scene.call_deferred()
+	# Deferred so every autoload that applies a setting (AudioManager) is listening already.
+	load_settings.call_deferred()
 	_restore_session.call_deferred()
 
 ## Tab is mode_switch in a run and never moves focus, even in the pause menu or a dialog.
@@ -86,6 +94,10 @@ func _notification(what: int) -> void:
 	# Regaining focus does not resume: the player closes the pause menu.
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and current == AppState.RUN and _pause_menu == null:
 		open_pause()
+	elif what == NOTIFICATION_WM_CLOSE_REQUEST and _settings_dirty:
+		# A window change still waiting for Keep counts as no answer, so it is not saved.
+		get_tree().call_group(&"pending_window_change", &"revert_pending")
+		save_settings()
 
 ## Returns false if the transition is not allowed or a fade is running.
 func change_state(new_state: AppState) -> bool:
@@ -176,12 +188,43 @@ func _sync_with_current_scene() -> void:
 			current = state
 			return
 
-# TODO(WhoKeng): load and save these through settings.cfg with the Settings tabs.
 func get_setting(key: StringName, default_value: Variant = null) -> Variant:
 	return _settings.get(key, default_value)
 
+## Sends every stored setting on EventBus.settings_changed, so each part applies it the same way
+## as a change in the Settings tabs. A file that cannot be read is kept as .corrupt and the game
+## runs on defaults; the save is never touched.
+func load_settings() -> Error:
+	if not FileAccess.file_exists(settings_path):
+		return OK
+	var config := ConfigFile.new()
+	var error := config.load(settings_path)
+	if error != OK:
+		push_warning("GameState: %s cannot be read (error %d), using defaults" % [settings_path, error])
+		DirAccess.rename_absolute(settings_path, settings_path + ".corrupt")
+		return error
+	if config.has_section(SETTINGS_SECTION):
+		for key in config.get_section_keys(SETTINGS_SECTION):
+			EventBus.settings_changed.emit(StringName(key), config.get_value(SETTINGS_SECTION, key))
+	_settings_dirty = false
+	return OK
+
+## Written when the Settings screen closes, not on every change.
+func save_settings() -> Error:
+	var config := ConfigFile.new()
+	for key: StringName in _settings:
+		config.set_value(SETTINGS_SECTION, String(key), _settings[key])
+	var error := config.save(settings_path)
+	if error != OK:
+		push_warning("GameState: cannot write %s (error %d)" % [settings_path, error])
+		return error
+	_settings_dirty = false
+	return OK
+
 func _on_settings_changed(key: StringName, value: Variant) -> void:
 	_settings[key] = value
+	_settings_dirty = true
+	DisplaySettings.apply(key, value)
 
 ## Runs in the background, so a slow network never holds the boot screen. A failure only
 ## leaves a hint on the menu; the player keeps playing as before.
@@ -192,11 +235,10 @@ func _restore_session() -> void:
 		session_restore_error = result.get("error", AuthService.ERR_SERVER)
 		session_restore_failed.emit(session_restore_error)
 
-## A sign in or a sign out replaces whatever went wrong while restoring.
-func _on_session_changed(signed_in: bool) -> void:
+## A sign in or a sign out replaces whatever went wrong while restoring. SyncService reports
+## the sync state that follows.
+func _on_session_changed(_signed_in: bool) -> void:
 	session_restore_error = &""
-	# TODO(WhoKeng): SyncService sends the real state once it syncs after a sign in.
-	EventBus.sync_state_changed.emit(&"OFFLINE" if signed_in else &"GUEST", "")
 
 func _on_wave_state_changed(new_state: StringName) -> void:
 	wave_state = new_state
