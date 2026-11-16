@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://b8yyqowwampgq"]
 
 [ext_resource type="Shader" uid="uid://3wgxr370gabu" path="res://art/shaders/energy_orb_glow.gdshader" id="1_shader"]
 
