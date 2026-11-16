@@ -71,37 +71,18 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_toggle_focus"]
 
-[node name="WavePreview" type="PanelContainer" unique_id=1185727932]
+[node name="WavePreview" type="HBoxContainer" unique_id=1185727932]
 visible = false
-custom_minimum_size = Vector2(620, 0)
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_preview")
+theme_override_constants/separation = 6
 script = ExtResource("1_preview")
 weapons = Array[Resource]([ExtResource("3_w0"), ExtResource("4_w1"), ExtResource("5_w2"), ExtResource("6_w3"), ExtResource("7_w4"), ExtResource("8_w5")])
 
-[node name="Box" type="VBoxContainer" parent="." unique_id=317955620]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
-
-[node name="Header" type="HBoxContainer" parent="Box" unique_id=1826629871]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 12
-
-[node name="Title" type="Label" parent="Box/Header" unique_id=1138679574]
+[node name="Toggle" type="Button" parent="." unique_id=127042366]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 56)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 4
-theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
-theme_override_font_sizes/font_size = 28
-
-[node name="Toggle" type="Button" parent="Box/Header" unique_id=127042366]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 32)
-layout_mode = 2
-size_flags_vertical = 4
+size_flags_vertical = 0
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_toggle")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_toggle_pressed")
@@ -109,54 +90,74 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_toggle_hover")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_toggle_pressed")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_toggle_focus")
 
-[node name="ToggleArrow" type="Control" parent="Box/Header/Toggle" unique_id=1305679965]
+[node name="ToggleArrow" type="Control" parent="Toggle" unique_id=1305679965]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 6.0
-offset_right = -12.0
-offset_bottom = -6.0
+offset_left = 6.0
+offset_top = 12.0
+offset_right = -6.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("9_arrow")
+scale_share = 0.8
+sideways = true
 
-[node name="Body" type="VBoxContainer" parent="Box" unique_id=1120604502]
+[node name="Panel" type="PanelContainer" parent="." unique_id=320148517]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(620, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_preview")
+
+[node name="Box" type="VBoxContainer" parent="Panel" unique_id=317955620]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Panel/Box" unique_id=1138679574]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="Body" type="VBoxContainer" parent="Panel/Box" unique_id=1120604502]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 
-[node name="Rows" type="VBoxContainer" parent="Box/Body" unique_id=214599931]
+[node name="Rows" type="VBoxContainer" parent="Panel/Box/Body" unique_id=214599931]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="Row1" parent="Box/Body/Rows" unique_id=366009181 instance=ExtResource("2_row")]
+[node name="Row1" parent="Panel/Box/Body/Rows" unique_id=366009181 instance=ExtResource("2_row")]
 visible = false
 layout_mode = 2
 
-[node name="Row2" parent="Box/Body/Rows" unique_id=1462629532 instance=ExtResource("2_row")]
+[node name="Row2" parent="Panel/Box/Body/Rows" unique_id=1462629532 instance=ExtResource("2_row")]
 visible = false
 layout_mode = 2
 
-[node name="Row3" parent="Box/Body/Rows" unique_id=475218526 instance=ExtResource("2_row")]
+[node name="Row3" parent="Panel/Box/Body/Rows" unique_id=475218526 instance=ExtResource("2_row")]
 visible = false
 layout_mode = 2
 
-[node name="Row4" parent="Box/Body/Rows" unique_id=507589881 instance=ExtResource("2_row")]
+[node name="Row4" parent="Panel/Box/Body/Rows" unique_id=507589881 instance=ExtResource("2_row")]
 visible = false
 layout_mode = 2
 
-[node name="Row5" parent="Box/Body/Rows" unique_id=966768992 instance=ExtResource("2_row")]
+[node name="Row5" parent="Panel/Box/Body/Rows" unique_id=966768992 instance=ExtResource("2_row")]
 visible = false
 layout_mode = 2
 
-[node name="WeaponNote" type="Label" parent="Box/Body" unique_id=605203010]
+[node name="WeaponNote" type="Label" parent="Panel/Box/Body" unique_id=605203010]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(580, 0)

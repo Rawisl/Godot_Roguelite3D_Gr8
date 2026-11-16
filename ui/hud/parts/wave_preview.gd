@@ -1,9 +1,10 @@
 class_name WavePreview
-extends PanelContainer
+extends HBoxContainer
 ## What the next wave brings, shown in PREP: up to five enemy types (the boss first), how many of
 ## each and their traits with icon and name. Before a boss wave that drops a weapon it also says
-## a weapon not owned yet will drop. Hidden outside PREP and until a preview arrives. The arrow in
-## the header folds the list away and brings it back, like the skill slots; a new run shows it again.
+## a weapon not owned yet will drop. Hidden outside PREP and until a preview arrives. The button on
+## its left folds the whole panel away to the right (>) and leaves only the button (<) to bring it
+## back, like the skill slots; a new run shows it again.
 # TODO(Ender-Via): send wave_preview_ready(wave_index, {enemy_id: count}, is_boss) at the start of each PREP; nothing shows before it does.
 # TODO(kiezroth): the composition sent with wave_preview_ready should come from the WaveScript of that wave.
 
@@ -18,7 +19,7 @@ var expanded := true
 @onready var _title: Label = %Title
 @onready var _rows: VBoxContainer = %Rows
 @onready var _weapon_note: Label = %WeaponNote
-@onready var _body: VBoxContainer = %Body
+@onready var _panel: PanelContainer = %Panel
 @onready var _toggle: Button = %Toggle
 @onready var _arrow: ArrowGlyph = %ToggleArrow
 
@@ -34,17 +35,17 @@ func _ready() -> void:
 	_toggle.pressed.connect(func() -> void: set_expanded(not expanded))
 	_apply_expanded()
 
-## Folds the list under the title away (false) or brings it back.
+## Folds the panel away (false) or brings it back.
 func set_expanded(value: bool) -> void:
 	expanded = value
 	_apply_expanded()
 
 func _apply_expanded() -> void:
-	_body.visible = expanded
-	# Shrink to the title when folded; inside a container this only asks for the new size.
+	_panel.visible = expanded
+	# Shrink to the button when folded; inside a container this only asks for the new size.
 	reset_size()
-	# Down folds the list away, up brings it back; the words are in the tooltip.
-	_arrow.pointing_up = not expanded
+	# > pushes the panel away to the right, < brings it back; the words are in the tooltip.
+	_arrow.pointing_left = not expanded
 	_toggle.tooltip_text = tr(&"hud.preview.hide" if expanded else &"hud.preview.show")
 
 ## Kept apart from the signal so the test scene can draw any wave.
