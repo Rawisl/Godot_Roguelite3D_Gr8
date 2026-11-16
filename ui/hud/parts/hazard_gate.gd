@@ -101,7 +101,8 @@ func _tooltip(reason: StringName) -> String:
 	if not _enemy_types.is_empty():
 		var names := PackedStringArray()
 		for id in _enemy_types:
-			var name := tr(StringName("enemy.%s" % id))
+			# Traits ride along with the name, so the player knows what waits in the tower.
+			var name := EnemyTraits.name_with_traits(StringName(id))
 			if not names.has(name):
 				names.append(name)
 		lines.append(UiFormat.tr_fmt(&"hud.hazard.group", {"types": ", ".join(names)}))

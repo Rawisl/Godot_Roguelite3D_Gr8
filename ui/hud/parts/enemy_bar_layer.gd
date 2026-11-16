@@ -1,6 +1,7 @@
 class_name EnemyBarLayer
 extends Control
-## Enemy HP bars: shown after a hit or on hover, hidden SHOW_TIME later.
+## Enemy HP bars: shown after a hit or on hover, hidden SHOW_TIME later. Hovering an enemy for
+## GameConfig.hover_info_delay also shows its name and traits above its bar.
 ## A fixed pool; when more enemies qualify, the hovered one comes first, then the ones
 ## closest to the commander. The boss uses BossBar instead.
 
@@ -16,6 +17,12 @@ var _bars: Array[ProgressBar] = []
 var _shown_until: Dictionary = {}  # Enemy -> pausable real time when its bar hides
 var _assigned: Array[Enemy] = []
 var _next_pick := 0.0
+var _hover_since := 0.0
+var _hover_shown_for: Node = null
+
+@onready var _hover_info: PanelContainer = %HoverInfo
+@onready var _hover_name: Label = %HoverName
+@onready var _hover_badges: HBoxContainer = %HoverBadges
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -29,6 +36,8 @@ func _ready() -> void:
 		bar.visible = false
 		add_child(bar)
 		_bars.append(bar)
+	# The bars are added after it, so keep the hover box drawn on top of them.
+	move_child(_hover_info, -1)
 	EventBus.enemy_spawned.connect(_on_enemy_spawned)
 
 func _on_enemy_spawned(node: Node) -> void:
@@ -50,6 +59,7 @@ func _process(_delta: float) -> void:
 		_next_pick = TimeManager.real_time + PICK_INTERVAL
 		_pick()
 	_place()
+	_place_hover_info()
 
 func _pick() -> void:
 	var now := TimeManager.pausable_real_time
@@ -89,6 +99,39 @@ func _place() -> void:
 		bar.value = e.health.hp
 		bar.position = cam.unproject_position(world) - BAR_SIZE * 0.5
 		bar.visible = true
+
+## Name and traits of the hovered enemy, above its bar. Not for the boss, which has BossBar.
+func _place_hover_info() -> void:
+	var enemy := hovered as Enemy if is_instance_valid(hovered) else null
+	if enemy == null or enemy.is_dead or enemy.is_in_group(&"boss"):
+		_hover_shown_for = null
+		_hover_info.visible = false
+		return
+	if enemy != _hover_shown_for:
+		_hover_shown_for = enemy
+		_hover_since = TimeManager.real_time
+		_fill_hover_info(enemy)
+	var cam := get_viewport().get_camera_3d()
+	var world := enemy.global_position + HEAD_OFFSET
+	if cam == null or cam.is_position_behind(world) or TimeManager.real_time - _hover_since < GameConfig.hover_info_delay:
+		_hover_info.visible = false
+		return
+	_hover_info.reset_size()
+	var above := cam.unproject_position(world) - Vector2(_hover_info.size.x * 0.5, BAR_SIZE.y + _hover_info.size.y + 4.0)
+	_hover_info.position = above
+	_hover_info.visible = true
+
+func _fill_hover_info(enemy: Enemy) -> void:
+	var id := enemy.data.id if enemy.data != null else &""
+	_hover_name.text = EnemyTraits.display_name(id)
+	var traits := EnemyTraits.of(id)
+	var badges := _hover_badges.get_children()
+	for i in badges.size():
+		if i < traits.size():
+			(badges[i] as TraitBadge).show_trait(traits[i])
+		else:
+			(badges[i] as Control).visible = false
+	_hover_badges.visible = not traits.is_empty()
 
 func _commander_position() -> Vector3:
 	var c := get_tree().get_first_node_in_group(&"commander") as Node3D

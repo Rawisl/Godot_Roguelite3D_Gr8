@@ -37,6 +37,7 @@
 [ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
 [ext_resource type="PackedScene" uid="uid://c3jq3i3ok6u3s" path="res://ui/screens/victory_screen.tscn" id="29_victory"]
 [ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
+[ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="31_preview"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -205,6 +206,15 @@ layout_mode = 2
 
 [node name="SpeedButtons" parent="Root/SafeArea/Frame/TopRight" unique_id=1199262953 instance=ExtResource("9_aixkq")]
 layout_mode = 2
+
+[node name="HazardDockSpace" type="Control" parent="Root/SafeArea/Frame/TopRight" unique_id=199344208]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="WavePreview" parent="Root/SafeArea/Frame/TopRight" unique_id=682810540 instance=ExtResource("31_preview")]
+layout_mode = 2
+size_flags_horizontal = 8
 
 [node name="BottomLeft" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=52446867]
 custom_minimum_size = Vector2(200, 64)

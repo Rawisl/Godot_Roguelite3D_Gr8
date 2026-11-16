@@ -157,6 +157,8 @@ extends Node
 @export var fps_downscale_duration: float = 3.0
 ## Real seconds to keep a new window mode or resolution before it goes back to the old one.
 @export var settings_keep_seconds: float = 10.0
+## Real seconds the pointer rests on an enemy before its name and traits show.
+@export var hover_info_delay: float = 0.3
 
 @export_group("Skills")
 @export var skill_max_level: int = 3
