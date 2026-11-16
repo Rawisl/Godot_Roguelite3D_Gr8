@@ -33,6 +33,8 @@ Hai texture `Texture_MAp_ELfs.png` (fortress) và `Texture_MAp_fortress_elves.pn
 | struct_roof | `#607555` | Mái xanh |
 | struct_roof_dark | `#4A6040` | Mái xanh tối, sọc trang trí |
 | struct_trim | `#0B0B0B` | Ô cửa, khe tối |
+| struct_wall_tier1 | `#7C6D5F` | Thân tường tower bậc 1 (thay struct_stone_light trong `tower_tier1_wood.png`) |
+| struct_wall_tier1_light | `#8D7D6F` | Mảng sáng trên tường tower bậc 1 (thay `#FFF1CA`) |
 
 ### Đống đổ nát (tower bị phá)
 

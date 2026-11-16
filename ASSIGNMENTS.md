@@ -1090,12 +1090,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM10
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model 3 bậc cho tower, phần 1 (Arrow và Cannon, bậc 2 và 3): dùng lại model bậc 1 làm gốc, thêm chi tiết và đổi material để dựng nhanh
 - Nghiệm thu: Bậc 2 và 3 nhìn khác bậc 1 ở khoảng cách camera chuẩn
 - Tệp liên quan: entities/tower/arrow.tscn, cannon.tscn, tower_model.gd
 - ID SRS: TWR-17
 - Cần xong trước: W8-KM4
+- Ghi chú bàn giao: Tier 1 Arrow and Cannon use `tower_tier1_material.tres`, the tower toon material with `tower_tier1_wood.png` (the tower palette with the two white wall swatches turned brown, `#7C6D5F` and `#8D7D6F`, listed in `art/palette.md`). Only the `Level1` meshes in `arrow_tower_model.tscn` and `cannon_tower_model.tscn` use it; tiers 2 and 3 and the tier choice from #189 are unchanged. Verified by `test_turret_towers` and `test_build_service_runner`.
 
 ##### W10-KM11
 - Người: Kim
