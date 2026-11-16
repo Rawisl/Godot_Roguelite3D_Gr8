@@ -1037,7 +1037,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM4
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nhạc theo state (COMBAT một lớp, sting SUMMARY, RunEnd); HAZARD_TRIAL dùng nhạc COMBAT (nhạc boss nếu có boss)
 - Nghiệm thu: Crossfade 1.5 s thực
 - Cần xong trước: W8-KM4, W10-KT4
