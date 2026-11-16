@@ -1069,7 +1069,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM8
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Level: Tháp Hazard Trial (hazard_portal gần Fortress, chọn được bằng chuột) và hazard_room (điểm xuất hiện chỉ huy, các điểm sinh quân, khung camera cố định)
 - Nghiệm thu: Phòng đủ chỗ cho 5 quân và chỉ huy; có navmesh cho phòng (quân và boss đi được); Tháp bấm được
 - Tệp liên quan: levels/corridor/level.tscn (thêm hazard_portal, hazard_room)

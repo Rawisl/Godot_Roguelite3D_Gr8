@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/hazard_cloud_ring.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "hazard_cloud_ring"
+render_priority = 0
+shader = ExtResource("1_shader")
