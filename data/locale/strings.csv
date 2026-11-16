@@ -494,12 +494,18 @@ tutorial.step,Bước {n}/{total}
 tutorial.remind,(Nhắc lại)
 tutorial.skip,Bỏ qua hướng dẫn
 alert.commander_low,Chỉ huy sắp gục
-alert.boss_enrage_soon,Boss sắp cuồng nộ (còn {seconds} giây)
-alert.boss_enraged,Boss cuồng nộ
-alert.tower_ruined,{name} cấp {level} ở {slot} bị phá (xây lại {cost} vàng)
+alert.commander_low_sub,Lùi về hoặc hồi máu ở Trạm hồi lực
+alert.boss_enrage_soon,Boss sắp cuồng nộ
+alert.boss_enrage_soon_sub,Còn {seconds} giây
+alert.boss_enraged,Boss đã vào trạng thái cuồng nộ
+alert.boss_enraged_sub,Nhanh hơn và đánh mạnh hơn cho tới khi bị hạ
+alert.tower_ruined,{name} cấp {level} ở {slot} bị phá
+alert.tower_ruined_sub,Xây lại: {cost} vàng
 alert.tower_ruined_plain,Tower ở {slot} bị phá
 alert.towers_ruined,{count} tower bị phá
-alert.boss_next,Boss ở đợt quái thứ {wave}. Kiểm tra miễn nhiễm
+alert.towers_ruined_sub,Ở các ô: {slots}
+alert.boss_next,Boss ở đợt quái thứ {wave}
+alert.boss_next_sub,Kiểm tra miễn nhiễm trước khi bắt đầu
 hud.clear_time,Thời gian:
 enemy.trait.stealth,Tàng hình
 enemy.trait.explode,Tự nổ
@@ -509,7 +515,9 @@ enemy.trait.charge,Ủi thẳng
 hud.preview.title,Đợt quái thứ {wave}
 hud.preview.boss_title,Đợt quái thứ {wave} (Boss)
 hud.preview.count,×{value}
-hud.preview.weapon_drop,"Hạ boss: nhận 1 vũ khí ngẫu nhiên chưa có (còn {left} cây)"
+hud.preview.weapon_drop,"Hạ boss: nhận 1 vũ khí ngẫu nhiên (còn {left} thanh kiếm chưa sở hữu)"
+hud.preview.hide,Ẩn xem trước đợt quái
+hud.preview.show,Hiện xem trước đợt quái
 tutorial.build_arrow.action,Xây Arrow miễn phí
 tutorial.build_arrow.where,Bấm vào ô sáng trên mặt đất
 tutorial.build_cannon.action,Xây Cannon miễn phí
