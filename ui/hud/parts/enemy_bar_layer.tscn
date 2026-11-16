@@ -1,6 +1,18 @@
 [gd_scene format=3 uid="uid://b0j2regl1w6bn"]
 
 [ext_resource type="Script" uid="uid://c6svl036o0ku7" path="res://ui/hud/parts/enemy_bar_layer.gd" id="1_tvquj"]
+[ext_resource type="PackedScene" uid="uid://bh747x5g5ys1q" path="res://ui/hud/parts/trait_badge.tscn" id="2_badge"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.10980392, 0.12156863, 0.14901961, 0.92)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="EnemyBarLayer" type="Control" unique_id=1455219063]
 layout_mode = 3
@@ -11,3 +23,49 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_tvquj")
+
+[node name="HoverInfo" type="PanelContainer" parent="." unique_id=1889102475]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hover")
+
+[node name="Box" type="VBoxContainer" parent="HoverInfo" unique_id=1306670093]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="HoverName" type="Label" parent="HoverInfo/Box" unique_id=1162476553]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="HoverBadges" type="HBoxContainer" parent="HoverInfo/Box" unique_id=1952179016]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Badge1" parent="HoverInfo/Box/HoverBadges" unique_id=1997610100 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2
+
+[node name="Badge2" parent="HoverInfo/Box/HoverBadges" unique_id=1206425945 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2
+
+[node name="Badge3" parent="HoverInfo/Box/HoverBadges" unique_id=1596477235 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2
+
+[node name="Badge4" parent="HoverInfo/Box/HoverBadges" unique_id=812411514 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2
+
+[node name="Badge5" parent="HoverInfo/Box/HoverBadges" unique_id=413753532 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2

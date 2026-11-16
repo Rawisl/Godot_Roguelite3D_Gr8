@@ -7,7 +7,6 @@ extends Node
 # TODO(Ender-Via): when meta progression lands, return gold_pct_meta + gold_pct_buff from _gold_pct_total(); it feeds both the wave gold and the boss gold.
 # TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
 # TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
-# TODO(Ender-Via): pause with REASON_VICTORY once the victory screen lands; currently disabled by default.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -24,7 +23,7 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 @export var default_wave_1_count: int = 8
 @export var auto_advance_summary: bool = true
 @export var enable_reward_pick: bool = true
-@export var enable_victory_screen: bool = false
+@export var enable_victory_screen: bool = true
 
 var _intro_timer: float = 0.0
 var _intro_elapsed: float = 0.0
@@ -790,7 +789,6 @@ func advance_from_summary() -> void:
 	if current_wave == GameConfig.victory_wave and not _victory_handled:
 		_victory_handled = true
 		EventBus.run_victory.emit(current_wave)
-		# TODO(Ender-Via): pause with REASON_VICTORY once SCR-20 victory screen lands; currently disabled by default.
 		if enable_victory_screen:
 			_waiting_victory_continue = true
 			TimeManager.request_pause(TimeManager.REASON_VICTORY)

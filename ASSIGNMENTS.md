@@ -710,13 +710,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG8
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
-- Việc: Công cụ dịch phần 2: sinh WeaponData, WaveScript, WaveRewardTable; kiểm lỗi bảng (báo dòng và cột, không ghi file nào khi lỗi); chuyển các .tres cân bằng hiện có sang sinh từ bảng và xóa enemies.csv, CsvLoader không dùng
+- Trạng thái: Xong
+- Việc: Công cụ dịch phần 2: hoàn thiện sinh WaveScript, WaveRewardTable và kiểm lỗi bảng (báo dòng và cột, không ghi file nào khi lỗi); chuyển .tres wave sang sinh từ bảng. WeaponData đã sinh từ phần trước; enemies.csv và CsvLoader đã xóa ở tuần 9
 - Nghiệm thu: Xóa một ô trong sheet towers hoặc ghi số âm thì công cụ báo đúng dòng, cột và không ghi file nào (BL2); .tres cũ được thay bằng bản sinh tự động
 - Tệp liên quan: tools/balance/*.py; data/weapons/, data/waves/wave_script.tres, data/waves/wave_rewards.tres
 - ID SRS: BAL-02, BAL-04, BAL-06, BL2
 - Cần xong trước: W9-NG7, W10-KT7, W10-MH9
-- Ghi chú: data/waves/wave_rewards.tres đang viết tay theo sheet wave_rewards (W10-MH7). Khi sinh, giữ tên và kiểu field của common/wave_reward_table.gd: gold_mult, xp_mult (PackedFloat32Array), mithril_reward (PackedInt32Array), phần tử thứ w − 1 là wave w, đủ victory_wave phần tử
+- Ghi chú bàn giao: Kiệt (`endervia`): `common/wave_script.gd` dùng mảng entry phẳng vì parser không hỗ trợ `[sub_resource]`; không đổi sang `Array[WaveScriptEntry]`. `get_wave(w)` trả `{enemy_type, count, is_escort}` độc lập với mảng thời lượng; thời lượng/hệ số dùng index `w - 1`, thiếu thì dùng `GameConfig.lbd_min_seconds_per_wave`/1.0. `EnemyData` đã thêm 15 export trait và sinh lại bốn resource quân hiện có; xử lý AI còn TODO(endervia), chưa hoàn tất hành vi trait. Wave rewards chỉ thêm AUTO-GENERATED; workbook, wave_table.tres và scale_config.tres giữ nguyên. Generator --check: 0 files would change, không còn cảnh báo bỏ cột trait; 52 test Python đạt, gồm main ghi file thật trong bản sao tạm. Đã kiểm header/khóa dòng trùng cho mọi generator, miền enum số và đủ cấp tower; alias tương thích nằm ở tools/balance/aliases.json. Runner BAL đã mở rộng đủ tower/EnemyData/số âm và kiểm resource khác (771 PASS); còn BL4 về lựa chọn nguồn gameplay chờ Kiệt tích hợp spawner. Tài khoản bàn giao: Mạnh kieroth, Kim kimvux, Khang whokeng, Kiệt endervia
 
 ##### W10-NG9
 - Người: Ngọc
@@ -749,6 +749,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Trạng thái: Xong
 - Việc: Trạm hồi lực phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
 - Nghiệm thu: Đòn raw 17 ở wave 10 gây 14; hút máu không bị chuẩn hóa
+- Ghi chú: TODO(Rawisl) ở entities/tower/heal_station.gd
 - Cần xong trước: W8-MH5
 - Ghi chú bàn giao: HealStation chuẩn hóa DamageInfo/int tại lúc trúng theo wave_manager và heal_tower_dmg_norm_exp; giữ nguyên hit dùng chung và đường drain. Panel nhận EVB-34 và tốc độ thật từ HealChannel qua heal_status_updated; mỗi sự kiện kho render một lần. Đã chặn sát thương ngoài SceneTree và bỏ reflection khi sao chép hit. Runner heal station 90/90, heal status 130/130, heal channel 204/204, ETG 27/27, panel HT12 12/12. F6 panel giữ preview để bấm 1/2/3; chạy tự động thêm -- --run-tests. TODO phân biệt cạn kho với bị phá giữ lại và gán kiezroth để nối cảnh báo sau. PR thông báo Mạnh (@kiezroth) và Khang (@WhoKeng).
 
@@ -843,12 +844,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT7
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: EnemyData thêm trait (is_stealth, explode_*, invuln_*, is_charger/impact_*, revive_*) và WaveScript Resource; hàm tra kịch bản theo wave
 - Nghiệm thu: Mọi trường mặc định 'tắt'; code xử lý theo trait, không rẽ nhánh theo tên loại
 - Tệp liên quan: common/enemy_data.gd, entities/enemy/enemy.gd, mới: common/wave_script.gd
 - ID SRS: 3.7.1, EN-27, SPN-13
 - Cần xong trước: W9-KT5
+- Ghi chú bàn giao: Đã có WaveScript và 15 export trait trong EnemyData; generator đã sinh các cột trait vào bốn EnemyData hiện có. TODO(endervia): implement trait-driven enemy behavior for stealth, explosions, invulnerability, charge impacts and revival; verify the matching runtime behavior before completing this task. TODO tại common/enemy_data.gd
 
 ##### W10-KT8
 - Người: Kiệt
@@ -922,11 +924,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH9
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 10 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tower cấp 1-36 cho cả 4 loại: dữ liệu 36 cấp từ bảng, nâng từng cấp, 'MAX' ở 36; Trạm hồi lực cấp 1-36 (nâng chỉ cộng phần kho tăng thêm, xây lại giữ cấp, hoàn bán theo kho còn lại); xây lại giá bằng tổng cost; đo hiệu năng với 6 tower
 - Nghiệm thu: Tower cấp 14 bị phá thì 'Xây lại' đúng cấp 14 với giá tổng cost cấp 1-14; trạm nâng cấp không hồi đầy kho
 - Tệp liên quan: common/tower_data.gd, common/tower_level_data.gd, data/towers/*, entities/tower/tower.gd (apply_level), entities/tower/heal_station.gd, systems/build/slot.gd (get_rebuild_cost), ui/panels/heal_station_panel.gd
 - ID SRS: TWR, UPG-01..03, HLT-01, HLT-07, HLT-08, SELL-05, TWR-15
+- Ghi chú: dữ liệu 36 cấp, MAX, cổng 13/25 và giá xây lại đã có từ W9-NG7 và W10-MH8; nhánh này cho Trạm hồi lực nâng cấp chỉ cộng phần kho tăng thêm (xây lại vẫn đầy kho), Barricade hiện mesh theo bậc 1-12 / 13-24 / 25-36 tạm tới W11-MH8, thêm test nâng 1-36 cả 4 loại, xây lại cấp 14 và đo quét 6 tower cấp 36 (dưới 1 ms mỗi frame).
 - Cần xong trước: W9-NG7, W10-MH8
 
 ##### W10-MH10
@@ -1173,12 +1176,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG10
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Runner BAL tests/test_balance_config_runner.tscn (BAL-05, BL3, BL4)
 - Nghiệm thu: Pass với bảng chuẩn; fail khi thiếu cấp 36 hoặc spawn_duration 12 s
 - Tệp liên quan: mới: tests/test_balance_config_runner.tscn
 - ID SRS: BAL-05, BL3, BL4
 - Cần xong trước: W10-NG8, W11-MH11
+- Ghi chú bàn giao: Đã làm trước runner kiểm đủ 36 cấp của bốn tower, EnemyData theo ID, CharacterStats/SkillData/WeaponData, số hữu hạn/không âm, cấu trúc wave/reward và hệ số nối ScaleConfig. Đã xác minh runner phát hiện số âm wave 2, thời lượng 12 giây và thiếu cấp cuối. TODO(endervia): integrate scripted spawning and verify gameplay uses WaveScript through victory_wave and ScaleConfig afterwards; the runner currently checks boundary coefficients only. Kịch bản cuối và dữ liệu quân mới chờ kieroth; giữ task Đang làm tới khi kiểm BL4 trong gameplay và bảng cuối
 
 ##### W11-MH5
 - Người: Ngọc
@@ -1304,6 +1308,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: balance/balance.xlsx (sheet waves, enemies, weapons)
 - ID SRS: SPN-08, SCL-04, 3.7.8, 3.5.13
 - Cần xong trước: W10-KT7, W10-KT8, W8B-MH1
+- Ghi chú bàn giao: Schema trait và generator đã sẵn sàng; runner hiện không cố định tổng số entry. TODO(kieroth): populate the seven new enemy archetypes and final wave composition after enemy traits and scenes are ready; regenerate resources and run the BAL checks after updating wave composition. Workbook chưa sửa trong phần công cụ này
 
 ##### W11-MH1
 - Người: Mạnh
@@ -1372,85 +1377,94 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KH1
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: RunEnd SCR-11 (PRS-06) và RunEnd endless SCR-21 ('Sống sót đến wave N')
 - Nghiệm thu: Đủ trường mục 3.2.4; hai loại RunEnd tách theo run_result
 - Tệp liên quan: ui/screens/run_end.gd, mới: ui/screens/run_end_survived (hoặc biến thể)
 - ID SRS: SCR-11, SCR-21
 - Cần xong trước: W10-KT2, W10-KM3
+- Ghi chú bàn giao: One RunEnd scene shows both results from GameState.last_run_summary: "Thất bại ở đợt quái N" or "Sống sót đến đợt quái N" with a victory tag and "(Kỷ lục mới)", the run rows and the prestige conversion rows (collected, rate, start_mult, gain, new balance read from the save). Rows hide while the summary lacks their key. @Ender-Via: new_record, damage_by_tower_type and unlocked_starts are read from the run end summary when present (TODOs left). Runner tests/test_run_flow_screens.tscn.
 
 ##### W11-KH2
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: PauseMenu hoàn chỉnh (FLOW-04, 05)
 - Nghiệm thu: Pause mở Settings vẫn đóng băng
 - Cần xong trước: W11-KH1
+- Ghi chú bàn giao: PauseMenu shows the wave and fight time, and the Abandon and Quit dialogs name the wave, defeat or survived, and the prestige gain, from GameState.run_snapshot(). Resume, Settings while frozen, auto pause on focus loss and Quit saving before exit were already in place and are kept.
 
 ##### W11-KH3
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Settings tabs: Âm thanh, Đồ họa, Tiếp cận (SET-01, 04, 06, ACC-04); cắt tab Điều khiển chỉ đọc và Dữ liệu
 - Nghiệm thu: Lưu khi thoát màn Settings
 - Cần xong trước: W10-NG5
+- Ghi chú bàn giao: Settings are kept in user://settings.cfg through GameState.load_settings() (every stored value is sent again on settings_changed at start) and save_settings(), written when the Settings screen closes; an unreadable file is renamed .corrupt and the save is untouched. The empty Controls and Data tabs are removed. New Graphics tab: window mode, resolution, VSync and FPS limit, applied by DisplaySettings, with a "keep changes" box that goes back after GameConfig.settings_keep_seconds (10 s, real time) or when leaving Settings. @kimvux: quality preset, shadows, particles and see-through rows are still to add (TODO left in tab_graphics.gd). Accessibility tab opens on the values in use and adds hold_toggle; @Rawisl: commander_input still has to read it (TODO left). The skill slot hide choice is not saved because a new run always shows the slots again. A switched-on toggle keeps the normal and hover look on light panels (two styles in light_panel_theme.tres, @kimvux). Runner tests/test_settings_and_sync.tscn.
 
 ##### W11-KH4
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SyncService thật: kéo và đẩy profile, meta, flags (gồm tutorial_done); đồng bộ khi đăng nhập, ở RunEnd và sau mua shop; nối SCR-19 dữ liệu thật; hộp thoại tải profile cục bộ lên lần đầu (ACCT-05, 07, 08)
 - Nghiệm thu: Đăng nhập máy mới kéo đúng profile và tutorial_done (TU4); mất mạng không chặn RunEnd hay shop
 - Cần xong trước: W10-NG5, W10-NG6, W11-MH5, W11-MH6
+- Ghi chú bàn giao: SyncService autoload (systems/sync/, one autoload line in project.godot) pulls and compares after a sign in and pushes after a run end and a shop purchase, never during a run, so the run keeps the profile it started with (held until the run ends). The higher revision wins; when the losing copy came from another machine it goes to save.conflict.bak, and taking the cloud copy shows "Đã dùng dữ liệu từ máy khác". An empty account with local progress asks before uploading; only "Để sau" counts as no for the session, a question closed by a screen change is asked again. Network errors show OFFLINE or ERROR and never block RunEnd or the shop; the next run end or purchase retries. SaveManager gains get_revision(), get_device_id(), apply_synced() and keep_conflict_copy(). @Rawisl: swap the rule for the agreed conflict policy (TODO left in sync_service.gd); the leaderboard already reads real data. The upload question, the other machine notice and the save notices use the new NoticeDialog (ui/screens/notice_dialog.*): a mark and title coloured by tone, short lines without full stops, value rows and a small note; an unreadable save offers "Tạo save mới" and a failed write "Thử lại". Runner tests/test_settings_and_sync.tscn.
 
 ##### W13-KH1
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kích hoạt cảnh báo T1/T2 (ALR-01..04, 07, 09, 11) [dời từ tuần 13; ALR-08 đã bỏ ở v2.0]
 - Nghiệm thu: Mỗi cảnh báo hiện đúng tầng, không lặp trong 5 s
 - Cần xong trước: W10-KH4
+- Ghi chú bàn giao: AlertSources (ui/hud/parts/alert_sources.gd, a node in alert_layer.tscn) adds the missing alerts: the commander going low on its own commander_low_hp_changed (T1, once per drop), the boss T-30 warning (T2) and the enrage (T1), a destroyed tower with its type, level and slot, the rebuild price on a second line (T2; towers lost within GameConfig.tower_ruined_merge_seconds (2.5 s, the T2 toast life) share one toast that is updated to a count with the slots, not stacked) and the PREP before a boss wave (T2, once per wave). Every banner and toast now has a tier mark, a short main line and a second line, without sentence punctuation. @kimvux: the low HP heartbeat sound is still to add (TODO left). The Fortress low HP banner and the save failure dialog were already there. The AlertLayer still blocks the same alert for 5 s. @Ender-Via: the boss wave warning reads wave_preview_ready when it comes and falls back to boss_wave_interval (TODO left). The wave counter also shows the fight time in combat on its own row under the enemies left, counted like the summary clear time, and the Hazard mode lock now says "Hazard Trial". Runner tests/test_alerts_and_wave_preview.tscn.
 
 ##### W11-NG1
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 10 | Nguồn: CŨ-SỬA + MỚI + ĐỔI NGƯỜI (Ngọc sang Khang)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tutorial một lần theo tài khoản (đổi người: từ Ngọc sang Khang): TUT-01 xây Arrow, TUT-14 xây Cannon, TUT-15 bấm Bắt đầu wave (nút xám tới khi xây xong), Bỏ qua luôn có và tự xây trụ còn thiếu, ghi tutorial_done ngay khi xây xong, thoát giữa chừng thì chạy lại, tutorial_completed
 - Nghiệm thu: TU1, TU2, TU3 đạt; run sau có trụ có sẵn; đăng nhập máy mới không chạy lại (TU4)
 - Tệp liên quan: mới: systems/tutorial/; ui/; autoload/save_manager.gd (flags.tutorial_done); tín hiệu tutorial_step_completed đã có trong event_bus.gd
 - ID SRS: TUT-01, 03, 08..11, 14, 15, 17; BLD-11; EVB-45
 - Cần xong trước: W10-MH10, W8B-KH1, W11-KH4
 - Ghi chú: ghi tutorial_done qua SaveManager.mark_tutorial_done() (tự phát tutorial_completed)
+- Ghi chú bàn giao: TutorialService (systems/tutorial/) is a run system node in main.tscn next to BuildService; the new HUD part ui/hud/parts/tutorial_hint.* under the wave counter shows what it says. A profile with tutorial_done false gets four hints (build the Arrow on GameConfig.starter_arrow_slot, the Cannon on starter_cannon_slot, start the wave, hit an enemy), each with "Bước n/4", progress dots, one large line for what to do, a gold line for where, key caps for the keys and an always present Skip; a build step reminds after GameConfig.tutorial_remind_seconds (30 s). Start wave stays grey until both towers stand, and tutorial_done is saved through SaveManager.mark_tutorial_done() as soon as they do, so leaving earlier runs it again. Skip builds the missing towers on their slots and saves the flag once BuildService.build_starter() exists; until then it only hides the hints for that run, so a run never starts without its towers. Until the starter slots are lit and locked, an Arrow or a Cannon on any cell counts. The fight step ends on the first commander hit, and a run from a later start wave has no tutorial. A run after it is done shows nothing; an account synced with tutorial_done true skips it too. @kiezroth: the free starter build is not on main yet, so the player pays the normal price and Skip falls back to BuildService.build(); add BuildService.build_starter(slot_id, type) and light and lock the starter slots while the tutorial waits (TODOs left in tutorial_service.gd). Runner tests/test_tutorial.tscn.
 
 ##### W11-KH6
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Màn thắng SCR-20 (một nút 'Chơi tiếp', không đếm ngược, game dừng)
 - Nghiệm thu: VC1, VC5 đạt phần giao diện
 - Tệp liên quan: mới: ui/screens/victory_screen.*
 - ID SRS: SCR-20, EVB-46
 - Cần xong trước: W11-NG9
+- Ghi chú bàn giao: VictoryScreen (ui/screens/victory_screen.*) sits in the HUD with process_mode Always, opens on run_victory and sends victory_continue_requested once; no countdown. WaveManager.enable_victory_screen now defaults to true so the wave side pauses with VICTORY (@Ender-Via). @Rawisl: stats come from GameState.run_snapshot() until run_victory carries them (TODO left).
 
 ##### W11-KH7
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Biểu tượng trait quân (tàng hình, tự nổ, bất tử một lần, hồi sinh, ủi thẳng) kèm chữ trong preview wave PREP, Tháp Hazard và hover quân; preview boss hiện vũ khí sẽ rơi; tối đa 5 loại kể cả boss
 - Nghiệm thu: Preview wave hiện đúng loại quân và trait của wave sắp tới
 - Tệp liên quan: ui/panels/wave_preview_panel.tscn (hiện mới có scene), ui/hud/parts/enemy_bar_layer.*
 - ID SRS: EN-18, MSE-06, 3.3.2, WPN-11
 - Cần xong trước: W10-KT7, W11-MH11
+- Ghi chú bàn giao: Trait icons with their names (stealth, explode, undying once, revive, charge) in three places: the new PREP wave preview (ui/hud/parts/wave_preview.*, larger text at a fixed width, up to five types with the boss first, a line when the boss will drop a weapon not owned yet, and a > button on its left that folds the whole panel down to a < button, like the skill slots), the Hazard Trial tower tooltip, and a name and traits box above a hovered enemy after GameConfig.hover_info_delay (0.3 s). EnemyTraits keeps the trait list and names in one place. @Ender-Via: add traits to EnemyData, send wave_preview_ready in PREP and emit weapon_gained in RunState.grant_weapon() (the weapons left only go down then); until then the preview stays hidden and traits come from EnemyTraits.overrides in the test (TODOs left). @kiezroth: the preview composition should come from the WaveScript (TODO left). @kimvux: the icons are drawn shapes until trait icons exist (TODO left in trait_glyph.gd). Runner tests/test_alerts_and_wave_preview.tscn.
 
 ##### W11-KH8
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SummaryPanel: dòng 'Nhận vũ khí X', ghi chú gold/XP/Mithril của Hazard đã cộng lúc rời phòng, bỏ dòng gọi sớm (nếu còn)
 - Nghiệm thu: Dòng vũ khí chỉ hiện khi có rơi; SUMMARY khi Fortress dưới 30% gợi ý 'Sửa Fortress bằng Mithril' (FORT-06)
 - Tệp liên quan: ui/screens/summary_panel.gd
 - ID SRS: 3.3.4, WPN-11
 - Cần xong trước: W11-MH9
+- Ghi chú bàn giao: SummaryPanel adds the "Nhận vũ khí" row (summary key weapon_gained, falling back to the weapon_gained signal; TODO for @kiezroth), a note that Hazard Trial rewards were added when leaving the tower, and the repair hint at or under FortressStats.low_hp_warning_pct (the HUD warning threshold): repair with Mithril, or win a Hazard Trial when there is none; the Fortress value turns orange with it, and the same hint shows under the HUD Fortress bar in the next PREP. No early-call line was left.
 
 #### Kim (Art/Level/Audio), tuần 11, 36.5h
 

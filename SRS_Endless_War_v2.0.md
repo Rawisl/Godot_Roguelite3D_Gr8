@@ -336,7 +336,7 @@ Phạm vi của start_mult: chỉ nhân vào prestige_gain (bù cho việc bỏ 
 4. Cập nhật save: cộng danh vọng, cộng thống kê run (run_kills, run_bosses_defeated), tăng total_runs thêm 1 vào profile.stats, cập nhật max_wave_cleared và best_by_start, đặt run_in_progress = false, kiểm tra mốc mới mở.
 5. Vào RunEnd (SCR-11 nếu run_result = DEFEAT, SCR-21 nếu SURVIVED), chờ người chơi bấm nút, không tự chuyển màn.
 
-**RunEnd hiển thị:** loại kết thúc, run_result (thua hoặc "Sống sót đến wave N"), waves_cleared, so với kỷ lục ("Kỷ lục mới"), tổng quân diệt, gold kiếm được, uy tín thu về, conversion_rate, start_mult, prestige_gain, số dư mới, mốc mới mở, bosses_defeated, Cấp Chỉ huy đạt được, số quân chỉ huy tự hạ (run_commander_kills), loại tower gây nhiều sát thương nhất (damage_by_tower_type, không tính Barricade, ẩn dòng nếu chưa có tower nào gây sát thương). Nút: **Chơi lại** (vào RunLoading, \[Should] vào StartSelect khi đã có), **Meta Shop**, **Menu chính**.
+**RunEnd hiển thị:** loại kết thúc, run_result ("Thất bại ở đợt quái thứ N" hoặc "Sống sót đến đợt quái thứ N"), waves_cleared, so với kỷ lục ("Kỷ lục mới"), tổng quân diệt, gold kiếm được, uy tín thu về, conversion_rate, start_mult, prestige_gain, số dư mới, mốc mới mở, bosses_defeated, Cấp Chỉ huy đạt được, số quân chỉ huy tự hạ (run_commander_kills), loại tower gây nhiều sát thương nhất (damage_by_tower_type, không tính Barricade, ẩn dòng nếu chưa có tower nào gây sát thương). Nút: **Chơi lại** (vào RunLoading, \[Should] vào StartSelect khi đã có), **Meta Shop**, **Menu chính**.
 
 | **ID** | **Tình huống** | **Xử lý** |
 | --- | --- | --- |
@@ -349,7 +349,7 @@ Phạm vi của start_mult: chỉ nhân vào prestige_gain (bù cho việc bỏ 
 | END-07 | Hoàn thành wave victory_wave | Khi wave có wave_index = victory_wave vào SUMMARY và waves_cleared tăng (không thua cùng frame, WAVE-02): đặt victory_reached = true một lần mỗi run ngay khi vào SUMMARY. Rời SUMMARY theo đúng thứ tự của WAVE-13: SUMMARY (bấm Tiếp tục hoặc hết 10 s) → màn thắng SCR-20 (phát run_victory, EVB-44; game dừng, TIME-11, lý do VICTORY) → bấm "Chơi tiếp" (EVB-46) → REWARD_PICK nếu pending_picks > 0 → PREP của wave victory_wave + 1. Bấm Tiếp tục hay hết 10 s đều đi qua màn thắng trước, không bao giờ vào thẳng REWARD_PICK hay PREP. victory_wave nằm trong GameConfig, mặc định 30 |
 | END-08 | Fortress sập hoặc chỉ huy chết đúng frame hoàn thành wave victory_wave | Thua đè thắng (WAVE-02): không thắng, run_result = DEFEAT, waves_cleared = victory_wave − 1 |
 | END-09 | \[Should] start_wave > 1 | Mốc thắng vẫn theo wave tuyệt đối victory_wave, không trừ các wave đã bỏ qua |
-| END-10 | Run kết thúc khi victory_reached = true | run_result = SURVIVED với mọi end_type (kể cả ABANDONED khi bỏ ở Pause). RunEnd endless ghi "Sống sót đến wave N" (N = wave_index lúc kết thúc), waves_cleared và các chỉ số như RunEnd thường. Công thức danh vọng không đổi |
+| END-10 | Run kết thúc khi victory_reached = true | run_result = SURVIVED với mọi end_type (kể cả ABANDONED khi bỏ ở Pause). RunEnd endless ghi "Sống sót đến đợt quái thứ N" (N = wave_index lúc kết thúc), waves_cleared và các chỉ số như RunEnd thường. Công thức danh vọng không đổi |
 
 ## 3.3 Wave
 
@@ -371,7 +371,7 @@ REWARD_PICK là \[MVP]. Không có lượt chờ (pending_picks = 0) hoặc pool
 | Cho phép | Xây, nâng cấp, bán, sửa Fortress bằng Mithril (MTH-03), đổi target priority, đổi vũ khí (WPN-03), vào Hazard Trial một lần (HZT-01), dịch camera bằng WASD ở cả hai chế độ (nhân vật đứng yên, CAM-02), đổi chế độ (không cooldown, không channel). \[Should] Kích hoạt buff |
 | Không có quái | Chỉ huy và Fortress không nhận sát thương (trong Hazard Trial chỉ bản sao chỉ số của chỉ huy nhận sát thương, HZT-06). Tower hồi đầy HP ở đầu PREP (TWR-01, trừ Trạm hồi lực, HLT-08). Chỉ huy hồi prep_heal_pct (35%, cả hai chế độ, một lần khi vào PREP từ SUMMARY hoặc REWARD_PICK, không lặp lại khi ra khỏi Hazard Trial). Không dùng được Trạm hồi lực ở PREP (HLT-03) |
 | **Kết thúc** | Bấm nút **Bắt đầu wave** (HUD-19, WAVE-11) |
-| Preview | Loại quân sắp tới (tối đa 5 loại kể cả boss, SPN-14), modifier \[Should]. Wave boss: tên boss, miễn nhiễm pha 1, boss_timer, vũ khí sẽ rơi nếu còn (WPN-11); \[Should] PNL-05 đầy đủ và cảnh báo BOSS-15 |
+| Preview | Loại quân sắp tới (tối đa 5 loại kể cả boss, SPN-14), modifier \[Should]. Wave boss: tên boss kèm nhãn "(Boss)" và vũ khí sẽ rơi nếu còn (WPN-11), hiển thị theo HUD-25; \[Should] miễn nhiễm pha 1, boss_timer, PNL-05 đầy đủ và cảnh báo BOSS-15 |
 
 ### 3.3.3 COMBAT
 
@@ -1430,7 +1430,7 @@ Xảy ra khi boss_timer về 0 và boss còn sống. Không có sát thương TR
 
 | **ID** | **Đặc tả** | **Tag** |
 | --- | --- | --- |
-| ENR-01 | boss_timer <= 0 và boss còn sống: đặt boss_enraged = true (một lần mỗi wave), phát `boss_enraged`, banner T1 "Mech cuồng nộ". Xử lý ở cuối physics frame, sau xử lý sát thương và kiểm tra thua | MVP |
+| ENR-01 | boss_timer <= 0 và boss còn sống: đặt boss_enraged = true (một lần mỗi wave), phát `boss_enraged`, banner T1 "Boss đã vào trạng thái cuồng nộ" (ALR-04). Xử lý ở cuối physics frame, sau xử lý sát thương và kiểm tra thua | MVP |
 | ENR-02 | Hiệu ứng: move_speed × enrage_speed_mult (1.3), attack_interval ÷ enrage_attack_rate_mult (1.3), sát thương đòn × enrage_damage_mult (1.5). Chồng lên pha 2 / EXPOSED. Vĩnh viễn đến khi boss chết. Không đổi HP, kháng, không hồi giáp | MVP |
 | ENR-03 | Không sát thương TRUE, không phá tower, không phạt chỉ huy. Chỉ huy Commander vẫn bất khả xâm phạm (CMD-10). Fortress chỉ chịu sát thương thường từ đòn boss (đã nhân) | MVP |
 | ENR-04 | Boss chết đúng frame timer = 0: xử lý boss chết trước, không Cuồng nộ. Fortress sập cùng frame: thua đè thắng (BOSS-28) | MVP |
@@ -1772,7 +1772,7 @@ Mục đích: thêm yếu tố online cho game. Tài khoản chỉ là lớp b�
 | ACCT-02 | **Chơi khách.** Trạng thái mặc định là GUEST. Mọi chức năng chơi được như cũ, không có hạng trên bảng xếp hạng. Đăng nhập là tùy chọn, từ MainMenu hoặc Settings | MVP |
 | ACCT-03 | **Đăng ký, đăng nhập, đăng xuất** bằng email và mật khẩu qua dịch vụ xác thực có sẵn của nhà cung cấp backend. Client không tự lưu mật khẩu, không chứa khóa quản trị, chỉ dùng khóa công khai. Phiên đăng nhập (token, có hạn dùng và được làm mới) lưu ở tệp riêng user://auth.cfg, **không nằm trong endlesswar_save.json** và không nằm trong quy trình chuyển máy (SAV-17). Đăng xuất xóa auth.cfg và về GUEST. Khởi động thử khôi phục phiên, không được thì về GUEST và báo nhẹ | MVP |
 | ACCT-04 | **Dữ liệu đồng bộ:** profile, meta (levels, unlocks, buff_stock), flags (gồm tutorial_done, nên tutorial chỉ chạy một lần theo tài khoản dù đổi máy). **Không đồng bộ:** run_flag, settings.cfg, mọi trạng thái trong run, auth.cfg. endlesswar_save.json thêm ba trường ngoài `data` (mục 3.12.1): revision, updated_at, device_id | MVP |
-| ACCT-05 | **Thời điểm đồng bộ:** khi đăng nhập (kéo và so sánh), ở RunEnd, sau mỗi lần mua ở shop. Không đồng bộ trong COMBAT (SAV-04). SUMMARY mỗi wave chỉ ghi cục bộ. Ghi cloud chạy bất đồng bộ, luôn ghi cục bộ trước, không chặn UI và không làm ghi save vượt ACP-06 | MVP |
+| ACCT-05 | **Thời điểm đồng bộ:** khi đăng nhập (kéo và so sánh), ở RunEnd, sau mỗi lần mua ở shop. Không đồng bộ trong suốt run, kể cả PREP và SUMMARY, để run đang chơi giữ nguyên profile và meta lúc bắt đầu (TUT-17); yêu cầu đồng bộ trong run được gửi khi run kết thúc (SAV-04). SUMMARY mỗi wave chỉ ghi cục bộ. Ghi cloud chạy bất đồng bộ, luôn ghi cục bộ trước, không chặn UI và không làm ghi save vượt ACP-06 | MVP |
 | ACCT-06 | **Xung đột (MVP rút gọn).** Cùng device_id thì bản có revision cao hơn thắng. Khác device_id và revision lệch nhau: lấy bản có revision cao hơn, hiện thông báo "Đã dùng dữ liệu từ máy khác" và giữ bản kia ở save.conflict.bak. \[Should] Hộp thoại cho người chơi chọn bản giữ lại, hiển thị prestige_balance, max_wave_cleared, total_runs của mỗi bên. **Không tự gộp** danh vọng | MVP / SHOULD |
 | ACCT-07 | **Mất mạng (MVP rút gọn).** Chơi tiếp bình thường. Yêu cầu gửi lỗi thì thử lại ở lần RunEnd hoặc mua shop kế tiếp (gửi bản mới nhất). Timeout sync_timeout 10 s. MainMenu hiện biểu tượng kèm chữ trạng thái: GUEST, SYNCED, SYNCING, OFFLINE, ERROR. Lỗi mạng không bao giờ chặn RunEnd hay mua shop. \[Should] Hàng đợi nền gộp bản mới nhất (như SAV-03) và trạng thái CONFLICT | MVP / SHOULD |
 | ACCT-08 | **Đăng nhập lần đầu.** Máy đã có profile cục bộ và tài khoản chưa có dữ liệu: hỏi "Tải profile cục bộ lên tài khoản". Cả hai bên đều có dữ liệu: theo ACCT-06 | MVP |
@@ -1861,12 +1861,12 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 | SCR-08 | PauseMenu | Resume, Settings, Abandon, Quit | Run, Settings, RunEnd |
 | SCR-09 | SummaryPanel | Tổng kết wave, XP, Cấp Chỉ huy, lượt chọn chờ, vũ khí nhận được (WPN-11) | Màn thắng (SCR-20) ở wave victory_wave, REWARD_PICK (SCR-17) hoặc wave kế |
 | SCR-10 | BossIntro overlay | Tên boss, miễn nhiễm pha 1 | BOSS_COMBAT |
-| SCR-11 | RunEnd (thua) | Mục 3.2.4, run_result = DEFEAT: "Thất bại ở wave N" | RunLoading, MetaShop, MainMenu |
+| SCR-11 | RunEnd (thua) | Mục 3.2.4, run_result = DEFEAT: "Thất bại ở đợt quái thứ N" | RunLoading, MetaShop, MainMenu |
 | SCR-12 | Hộp thoại hệ thống | Xác nhận, lỗi save, khôi phục run, cảnh báo hiệu năng | Đóng |
 | SCR-17 \[MVP] | RewardPick | 3 thẻ, thanh slot hiện tại, \[Should] nút Reroll (còn n), nút Bỏ qua (có xác nhận), dòng giải thích tĩnh cách chọn 3 chọn 1 | PREP |
 | SCR-18 | Login | Đăng nhập, đăng ký, tiếp tục chơi khách (ACCT-02, ACCT-03). Thông báo lỗi nêu rõ nguyên nhân (sai mật khẩu, mất mạng, email đã dùng) | MainMenu |
 | SCR-20 \[MVP] | Màn thắng (giữa run) | Hiện một lần khi hoàn thành victory_wave (END-07): tiêu đề chiến thắng, waves_cleared, run_elapsed (thời gian chiến đấu, RUN-02), quân đã diệt, gold kiếm được, uy tín đang tích (chưa quy đổi), bosses_defeated, Cấp Chỉ huy, vũ khí đã có. Game dừng (TIME-11, lý do VICTORY). Một nút "Chơi tiếp (endless)", phát victory_continue_requested (EVB-46); không tự đóng, không đếm ngược | REWARD_PICK hoặc PREP của wave kế (WAVE-13) |
-| SCR-21 \[MVP] | RunEnd (endless) | Mục 3.2.4, run_result = SURVIVED: "Sống sót đến wave N", cùng các chỉ số của RunEnd và nhãn đã thắng | RunLoading, MetaShop, MainMenu |
+| SCR-21 \[MVP] | RunEnd (endless) | Mục 3.2.4, run_result = SURVIVED: "Sống sót đến đợt quái thứ N", cùng các chỉ số của RunEnd và nhãn đã thắng | RunLoading, MetaShop, MainMenu |
 | SCR-19 | Leaderboard | Top 50 và hạng của chính người chơi (LBD-08). Nút Làm mới, Thử lại khi lỗi | MainMenu |
 
 | **ID** | **Luật điều hướng** |
@@ -1935,6 +1935,7 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 | HUD-22 \[MVP] | **HUD trong Hazard Trial:** nút "Rời tháp" ở dưới giữa (bấm một lần, không cần xác nhận, HZT-07), số quái còn trên 5 (con chưa xử lý xong theo HZT-16, Captain chờ nổ và Undead chờ hồi sinh vẫn tính là còn), gold và XP tạm tính, phần thưởng Mithril nếu thắng, nhãn "Chỉ số trong tháp không mang ra ngoài". Thanh HP chỉ huy hiển thị HP của bản sao. Khi kết thúc: toast kết quả (Thắng, Đã rời, Thất bại) kèm phần thưởng |
 | HUD-23 \[MVP] | **Tháp Hazard Trial** trên bản đồ ở PREP: biểu tượng trên cùng (như MSE-04), trạng thái "Sẵn sàng (E)", "Cần Frontline", "Đã dùng ở wave này" kèm biểu tượng; rê chuột hiện danh sách loại quái của nhóm (HZT-02) và phần thưởng Mithril. Ẩn ngoài PREP |
 | HUD-24 \[Should] | **Nút mũi tên ẩn/hiện kỹ năng** ngay trên hai hàng ô skill, chỉ có mũi tên, không có chữ: mũi tên xuống khi đang hiện (bấm để ẩn), mũi tên lên khi đã ẩn (bấm để hiện); tooltip ghi "Ẩn kỹ năng" hoặc "Hiện kỹ năng" (UI-05). Nút ẩn hoặc hiện cả hai hàng ô skill (HUD-16) và ô vũ khí (HUD-21), ô Emergency repair vẫn hiện. Chỉ ẩn phần hiển thị: phím 1-3 vẫn dùng skill, cooldown vẫn chạy, hiện lại thì đúng số giây còn lại. Ẩn ô vũ khí thì panel vũ khí đang mở cũng đóng. Nút không nhận focus bàn phím (INP-04), không có phím tắt. Run mới luôn hiện lại. Cooldown vẫn luôn có số khi đang hiện (ACC-07); ẩn là lựa chọn của người chơi như F1 (HUD-12) |
+| HUD-25 \[Should] | **Xem trước đợt quái ở PREP** (EN-18, mục 3.3.2): khung bên phải dưới Tháp Hazard Trial, tiêu đề "Đợt quái thứ N" (đợt boss thêm "(Boss)"), tối đa 5 loại quân kể cả boss (boss đứng đầu, rồi loại đông nhất), mỗi dòng có tên, số lượng và biểu tượng trait kèm chữ; đợt boss có rơi vũ khí ghi "Hạ boss: nhận 1 vũ khí ngẫu nhiên (còn N thanh kiếm chưa sở hữu)" (WPN-11). Bề rộng cố định để cột phải không nhảy. **Nút mũi tên** nằm bên trái khung, ẩn hoặc hiện cả khung như HUD-24: ">" khi đang hiện (bấm để đẩy khung sang phải và ẩn), "<" khi đã ẩn (bấm để hiện lại); khi ẩn chỉ còn nút "<", không còn tiêu đề hay nội dung. Tooltip "Ẩn xem trước đợt quái" hoặc "Hiện xem trước đợt quái", không nhận focus, không phím tắt. Run mới luôn hiện lại. Ẩn ngoài PREP |
 
 ### 4.1.4 Panel tương tác
 
@@ -1946,7 +1947,7 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 | PNL-02 | Tower | Loại, cấp, HP, chỉ số hiện tại và cấp kế, Nâng cấp lên cấp kế kèm giá (xám kèm "Yêu cầu chỉ huy: cấp N" khi qua ranh giới bậc mà chưa đủ, UPG-06), bậc model hiện tại (TWR-17), Bán (xám kèm "Bán được từ wave 3" với trụ có sẵn, SELL-06), priority | PREP hoặc COMBAT, chọn tower |
 | PNL-03 | Commander (priority) | 2 lựa chọn (First, Nearest); \[Should] 4 lựa chọn và nút "Áp dụng cho mọi tower cùng loại" | Chọn tower ở Commander hoặc PREP |
 | PNL-04 | Fortress | HP, số Mithril đang có, nút "Sửa bằng Mithril (+20%)" (MTH-03), tooltip ghi sẵn số HP sẽ hồi và "Hồi thừa" khi thiếu dưới 20% (MTH-04). Nút xám khi Fortress đầy máu hoặc mithril = 0, kèm lý do. **Số lượt Emergency repair còn lại n/3, cooldown 60 s** và dòng gợi ý "Nhận +1 lượt khi diệt boss" khi lượt dưới 3 | PREP, chọn Fortress |
-| PNL-05 \[Should] | Wave preview | Loại quân, modifier, cảnh báo boss. Thu gọn, mở rộng khi rê chuột | PREP |
+| PNL-05 \[Should] | Wave preview | Bản đầy đủ của khung xem trước HUD-25: thêm modifier và cảnh báo boss. Ẩn hiện bằng nút ">" / "<" như HUD-25 | PREP |
 | PNL-06 | Buff \[Should] | Kho buff, chọn 1 để kích hoạt | PREP, phím V |
 
 | **ID** | **Luật** |
@@ -2013,7 +2014,7 @@ Camera orthographic, camera_pitch -45, camera_yaw 20 (giá trị khởi điểm,
 | MSE-03 | Thứ tự chọn: UI > tower > Fortress > slot trống > quân địch (chỉ hover) > mặt đất |
 | MSE-04 | Biểu tượng slot và ô grid vẽ **trên cùng** (billboard, tắt depth test) ở PREP nên slot sau tường vẫn bấm được |
 | MSE-05 | **Xuyên thấu:** vật thể nhóm occluder dither mờ alpha 0.3 khi che (a) chỉ huy, (b) quân trong 3 m quanh chỉ huy, (c) vật đang hover. Bán kính 2.5 m, chuyển 0.15 s. Dùng dithering, không blend |
-| MSE-06 | Hover công trình: outline và vòng tầm bắn. Hover quân: tên, HP, mục tiêu hiện tại sau 0.3 s |
+| MSE-06 | Hover công trình: outline và vòng tầm bắn. Hover quân: tên, HP, trait (EN-18), mục tiêu hiện tại sau 0.3 s (hover_info_delay) |
 | MSE-07 | \[Should] Con trỏ đổi hình theo ngữ cảnh (mặc định, chọn được, cấm, mục tiêu). Kích thước theo UI scale. MVP: con trỏ hệ thống mặc định |
 | MSE-08 | Camera Frontline bám chỉ huy có smoothing, zoom gần, kẹp trong camera_bounds. Commander và PREP dùng khung overview, dịch bằng phím (CAM-02). Chuyển camera 0.5 s **thời gian thực** (CAM-05) |
 | MSE-09 | \[Could] Kéo chuột giữa dịch camera |
@@ -2054,13 +2055,13 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | **ID** | **Điều kiện** | **Tầng** | **Nội dung mẫu** |
 | --- | --- | --- | --- |
 | ALR-01 | fortress_hp chạm 30% (một lần mỗi wave) | T1 | "Thành sắp thất thủ" |
-| ALR-02 | commander_hp chạm 25% | T1 | Viền đỏ, nhịp tim |
-| ALR-03 | Boss T-30 | T2 | "Mech sắp cuồng nộ" |
-| ALR-04 | Boss Cuồng nộ (T-0) | T1 | "Mech cuồng nộ" |
+| ALR-02 | Chỉ huy vào trạng thái máu thấp (commander_low_hp_changed, dưới commander_low_hp_warning_pct 25%), mỗi lần tụt xuống một lần | T1 | "Chỉ huy sắp gục", dòng phụ "Lùi về hoặc hồi máu ở Trạm hồi lực"; viền đỏ, nhịp tim |
+| ALR-03 | Boss T-30 | T2 | "Boss sắp cuồng nộ", dòng phụ "Còn 30 giây" |
+| ALR-04 | Boss Cuồng nộ (T-0) | T1 | "Boss đã vào trạng thái cuồng nộ", dòng phụ "Nhanh hơn và đánh mạnh hơn cho tới khi bị hạ" |
 | ALR-05 | \[ĐÃ XÓA v1.8] | | |
 | ALR-06 | \[ĐÃ XÓA v1.8] | | |
-| ALR-07 | Tower vào RUINED (nhiều tower cùng frame: gộp thành một toast "N tower bị phá") | T2 | "Arrow cấp 2 ở W3 bị phá (xây lại 120 gold)" (gợi ý camera, không tự động) |
-| ALR-09 | Wave kế là boss | T2 | "Boss ở wave kế. Kiểm tra miễn nhiễm" |
+| ALR-07 | Tower vào RUINED. Tower bị phá trong tower_ruined_merge_seconds (2.5 s thời gian thực, bằng thời gian sống của toast T2, tính lại từ lần phá gần nhất) dùng chung một toast: toast đang hiện được thay nội dung và tính lại thời gian sống, không xếp thêm toast mới | T2 | Một tower: "Tháp cung cấp 2 ở W3 bị phá", dòng phụ "Xây lại: 120 vàng". Nhiều tower: "N tower bị phá", dòng phụ "Ở các ô: W1, W3" (gợi ý camera, không tự động) |
+| ALR-09 | Wave kế là boss (một lần mỗi wave, kể cả khi ra khỏi Hazard Trial về lại PREP) | T2 | "Boss ở đợt quái thứ N", dòng phụ "Kiểm tra miễn nhiễm trước khi bắt đầu" |
 | ALR-10 | FPS tụt, tự hạ tốc độ | T2 | "Đã hạ về x2 để giữ ổn định" |
 | ALR-11 | Lưu thất bại | T1 | Hộp thoại |
 | ALR-12 | \[Should] Bán, hoàn tác 3 s | T3 | "Hoàn tác (3)". Biến mất khi hoàn tác bị hủy. Tooltip "Hết hạn khi vào chiến đấu" |
@@ -2075,6 +2076,7 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | ALR-14 | Cùng loại không hiện lại trong 5 s (trừ số đếm từ T-10) |
 | ALR-15 | Hiển thị và thời gian sống theo **thời gian thực** |
 | ALR-16 | Không che hành lang và nút kỹ năng. \[Should] T2, T3 tắt được trong Settings (tab Gameplay), MVP luôn bật. **T1 không tắt được** |
+| ALR-21 | Mỗi banner và toast có biểu tượng theo tầng (tam giác "!" cho T1 và T2, vòng tròn "i" cho T3, kèm màu tầng), một dòng chính ngắn và một dòng phụ khi cần (giá, số giây, gợi ý). Không dùng câu có dấu chấm câu trong cảnh báo. Banner và toast ở giữa rộng tối đa 440 px (khung 1920), dài hơn thì xuống dòng, để không che khung xem trước đợt quái (HUD-25) và cột bên trái |
 
 ## 4.4 Phản hồi và hiệu ứng
 
@@ -2445,6 +2447,7 @@ Nút cân bằng ưu tiên khi chỉnh (không sửa code): tower_gate_tier2/tie
 | camera_lookahead | 2 m | \[Should] CAM-06 |
 | online_enabled / backend_url | true / để trống trong repo | ACCT-12. Không đưa khóa riêng vào repo |
 | sync_timeout / lbd_top_n | 10 s / 50 | ACCT-07, LBD-08 |
+| tower_ruined_merge_seconds / hover_info_delay | 2.5 s / 0.3 s (thời gian thực) | ALR-07, MSE-06 |
 | lbd_min_seconds_per_wave | 15 s | LBD-06. Phải ≤ spawn_duration nhỏ nhất của mọi wave (SPN-15, BAL-05) |
 | lbd_elapsed_tolerance | 1 s | LBD-06. Sai số tổng do làm tròn frame |
 | display_name_min_len / display_name_max_len | 3 / 16 | LBD-09 |
@@ -2879,7 +2882,7 @@ Pause, sửa bằng Mithril, trần armor, tải quét (v1.3, cập nhật v2.0)
 | --- | --- | --- |
 | VC1 | Hoàn thành wave 30: victory_reached = true, run_victory phát một lần, sau SUMMARY hiện màn thắng, game dừng; bấm "Chơi tiếp" thì sang REWARD_PICK hoặc PREP wave 31. Không có thêm uy tín hay danh vọng | END-07, SCR-20, PRS-02 |
 | VC2 | Chết ở wave 30: RunEnd thua (DEFEAT), waves_cleared 29. Fortress sập đúng frame hoàn thành wave 30: thua đè thắng, không hiện màn thắng | END-08, WAVE-02 |
-| VC3 | Chết ở wave 34 sau khi thắng: RunEnd endless "Sống sót đến wave 34", waves_cleared 33, run_result SURVIVED. Abandon ở wave 32 cũng là SURVIVED. Bảng xếp hạng nhận waves_cleared như thường | END-10, SCR-21, LBD-04 |
+| VC3 | Chết ở wave 34 sau khi thắng: RunEnd endless "Sống sót đến đợt quái thứ 34", waves_cleared 33, run_result SURVIVED. Abandon ở wave 32 cũng là SURVIVED. Bảng xếp hạng nhận waves_cleared như thường | END-10, SCR-21, LBD-04 |
 | VC4 | Đổi victory_wave trong GameConfig thành 10: thắng ở wave 10, công thức scale dùng từ wave 11 | END-07, SCL-06 |
 | VC5 | Hoàn thành wave 30 khi có 2 lượt chọn đang chờ (pending_picks = 2), chạy hai lần: (a) bấm Tiếp tục ở SUMMARY; (b) không bấm, chờ hết 10 s. Cả hai lần đúng thứ tự SUMMARY → màn thắng → REWARD_PICK → PREP wave 31: màn thắng hiện trước, REWARD_PICK không mở khi màn thắng còn mở, màn thắng không tự đóng sau 10 s; bấm "Chơi tiếp" thì vào REWARD_PICK chọn đủ 2 lượt rồi vào PREP wave 31. summary_continue_requested và run_victory mỗi tín hiệu phát đúng một lần; bấm Tiếp tục đúng frame hết 10 s cũng chỉ một lần. Lặp lại với pending_picks = 0: màn thắng rồi thẳng PREP wave 31 | WAVE-13, END-07, EVB-37, EVB-44, EVB-46, SCR-20, RWP-01 |
 | TU1 | Save mới (tutorial_done = false): run đầu không có trụ có sẵn, chỉ hai slot mặc định sáng, xây Arrow rồi Cannon miễn phí, nút Bắt đầu wave mở sau khi xây xong, tutorial_done = true được ghi save ngay | TUT-01, TUT-14, TUT-15, BLD-11, SAV-04 |
@@ -3166,6 +3169,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 89 | **12/11: đồng bộ theo code UI cửa hàng và bảng xếp hạng tuần 10** (SHP-06, LBD-08, mục 6.2, 6.6): thiếu danh vọng thì số còn thiếu nằm ở dòng giá trên nút Mua (nút xám), vì chữ trên nút xám khó đọc; ghi rõ các trường của ShopItem, đơn vị hiển thị của effect_base và effect_step, nơi đặt tệp; ghi API fetch_leaderboard và dạng dữ liệu trả về |
 | 90 | **12/11: đồng bộ theo code UI panel Xây, Tháp và Trạm hồi lực tuần 10** (BLD-10, GRID-07, UPG-06, PNL-02, FRT-03, ALR-19, mục 3.5.13, 7.1 mục 18, F6): chữ lý do chặn kín đường đổi thành "Đường đi sẽ bị chặn"; chữ khóa nâng cấp đổi thành "Yêu cầu chỉ huy: cấp N"; bảng vũ khí và ví dụ ALR-19 ghi tên hiển thị tiếng Việt kèm tên hiệu ứng (Hàn Sương Kiếm, Lôi Kiếm, Xích Tiêu Kiếm, Nộ Kiếm, Truy Phong Kiếm) |
 | 91 | **16/11: bộ đòn và AI của Bulwark** (mục 3.8.2, 3.8.2.1, BOSS-06, BOSS-07, BOSS-40, BOSS-44 đến BOSS-50, HZT-14, PRJ-08, FBK-06, mục 6.6, test Boss 9 đến 13, Phụ lục C mục 68, 69): thêm Đánh thường, Stomp x3 và Combo khi đánh chỉ huy; chọn đòn theo hướng của chỉ huy và máu boss; mở khóa đòn theo lần xuất hiện; khoảng nghỉ sau đòn lớn; tâm mọi Stomp dời tới điểm chùy nện, 1.25 chiều cao phía trước. Trạng thái: đề xuất, chờ nhóm duyệt |
+| 92 | **16/11: đồng bộ theo code UI tuần 11** (mục 3.2.4, mục 3.3.2, ACCT-05, ALR-02, PNL-05, END-10, SCR-11, SCR-21, VC3, ENR-01, ALR-03, ALR-04, ALR-07, ALR-09, ALR-21, HUD-25, MSE-06, mục 6.3): tiêu đề RunEnd dùng "đợt quái thứ N" thay cho "wave N"; cảnh báo boss gọi "Boss" thay cho "Mech" và banner Cuồng nộ ghi "Boss đã vào trạng thái cuồng nộ"; tower bị phá trong 2.5 s (bằng thời gian sống của toast) dùng chung một toast được cập nhật số lượng (tower_ruined_merge_seconds); cảnh báo boss ở đợt kế một lần mỗi wave; thêm ALR-21 (biểu tượng theo tầng, dòng chính và dòng phụ, không dấu chấm câu); thêm HUD-25 (xem trước đợt quái ở PREP, nút ">" / "<" bên trái ẩn hiện cả khung như HUD-24); ô đếm đợt quái trong COMBAT có hai dòng riêng "Quân địch:" và "Thời gian:", tên căn phải và số căn trái để dấu hai chấm thẳng hàng; banner và toast ở giữa rộng tối đa 440 px rồi xuống dòng; hover quân hiện trait; thêm tham số tower_ruined_merge_seconds và hover_info_delay; ALR-02 dùng tín hiệu máu thấp của chỉ huy và có banner "Chỉ huy sắp gục"; xem trước wave boss ở mục 3.3.2 theo HUD-25 (tên boss, "(Boss)", vũ khí sẽ rơi), miễn nhiễm pha 1 và boss_timer chuyển sang \[Should]; PNL-05 là bản đầy đủ của HUD-25; ACCT-05 không đồng bộ trong suốt run |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 

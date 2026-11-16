@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://bh747x5g5ys1q"]
+
+[ext_resource type="Script" uid="uid://tbeeumg73t7u" path="res://ui/hud/parts/trait_badge.gd" id="1_badge"]
+[ext_resource type="Script" uid="uid://di53ynmsvk0d1" path="res://ui/hud/parts/trait_glyph.gd" id="2_glyph"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+content_margin_left = 8.0
+content_margin_top = 3.0
+content_margin_right = 10.0
+content_margin_bottom = 3.0
+bg_color = Color(0.16470589, 0.18431373, 0.22745098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2784314, 0.3019608, 0.3529412, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="TraitBadge" type="PanelContainer" unique_id=929666845]
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+script = ExtResource("1_badge")
+
+[node name="Row" type="HBoxContainer" parent="." unique_id=177261776]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Glyph" type="Control" parent="Row" unique_id=1700185920]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("2_glyph")
+
+[node name="Name" type="Label" parent="Row" unique_id=513515569]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 20
