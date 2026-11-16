@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://bfjuigl6cnhun" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_1.fbx" id="3_l1"]
 [ext_resource type="PackedScene" uid="uid://dmem7pxeyk21c" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_2.fbx" id="4_l2"]
 [ext_resource type="PackedScene" uid="uid://cvqdrdujd3pmp" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_4_rig.fbx" id="5_l3"]
-[ext_resource type="Material" path="res://contents/assets/towers/texture/tower_tier1_material.tres" id="6_tier1"]
+[ext_resource type="Material" uid="uid://ddsa1xq7rbbdh" path="res://contents/assets/towers/texture/tower_tier1_material.tres" id="6_tier1"]
 
 [node name="ArrowTowerModel" type="Node3D" unique_id=1567500813 groups=["occluder"]]
 script = ExtResource("1_turret")

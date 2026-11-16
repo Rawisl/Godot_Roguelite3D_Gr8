@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://e4mwtg16cufo" path="res://contents/assets/towers/fbx/Rig_unity/cannon_tower_LVL_1_rig.fbx" id="3_l1"]
 [ext_resource type="PackedScene" uid="uid://cwy8dkytllau0" path="res://contents/assets/towers/fbx/Rig_unity/cannon_tower_LVL_2_rig.fbx" id="4_l2"]
 [ext_resource type="PackedScene" uid="uid://ca61iukwo7hho" path="res://contents/assets/towers/fbx/Rig_unity/cannon_tower_LVL_4_rig.fbx" id="5_l3"]
-[ext_resource type="Material" path="res://contents/assets/towers/texture/tower_tier1_material.tres" id="6_tier1"]
+[ext_resource type="Material" uid="uid://ddsa1xq7rbbdh" path="res://contents/assets/towers/texture/tower_tier1_material.tres" id="6_tier1"]
 
 [node name="CannonTowerModel" type="Node3D" unique_id=299528441 groups=["occluder"]]
 script = ExtResource("1_turret")
