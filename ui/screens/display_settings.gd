@@ -21,6 +21,10 @@ const DEFAULTS := {
 static func apply(key: StringName, value: Variant) -> void:
 	if not DEFAULTS.has(key):
 		return
+	# settings.cfg is a text file a player can edit: an unknown value is left alone.
+	if not is_valid(key, value):
+		push_warning("DisplaySettings: %s = %s is not a valid value, ignored" % [key, value])
+		return
 	if key == &"max_fps":
 		Engine.max_fps = maxi(int(value), 0)
 		return
@@ -39,9 +43,22 @@ static func apply(key: StringName, value: Variant) -> void:
 		&"vsync":
 			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if value else DisplayServer.VSYNC_DISABLED)
 
-## Current value of a window setting: the one set last, or the default.
+## Current value of a window setting: the one set last and valid, or the default.
 static func current(key: StringName) -> Variant:
-	return GameState.get_setting(key, DEFAULTS.get(key))
+	var value: Variant = GameState.get_setting(key, DEFAULTS.get(key))
+	return value if is_valid(key, value) else DEFAULTS.get(key)
+
+static func is_valid(key: StringName, value: Variant) -> bool:
+	match key:
+		&"window_mode":
+			return (value is int) and (value == WINDOWED or value == FULLSCREEN)
+		&"resolution":
+			return value is Vector2i and RESOLUTIONS.has(value)
+		&"vsync":
+			return value is bool
+		&"max_fps":
+			return (value is int) and FPS_LIMITS.has(value)
+	return true
 
 static func _apply_size(size: Variant) -> void:
 	if not size is Vector2i:

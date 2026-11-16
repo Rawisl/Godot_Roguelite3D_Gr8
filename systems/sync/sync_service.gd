@@ -2,15 +2,19 @@ extends Node
 ## Keeps profile, meta and flags (tutorial_done too) in step with the account. It pulls and
 ## compares after a sign in, and pushes after a run end and after a shop purchase. The local save
 ## is always written first and nothing here blocks the UI: a failure only shows OFFLINE or ERROR,
-## and the next run end or purchase tries again with the latest data. Never runs in combat.
-# TODO(Rawisl): swap the rule in _resolve() for the agreed conflict policy (now: the higher revision wins, and when the other copy came from another machine it is kept in save.conflict.bak with a notice).
+## and the next run end or purchase tries again with the latest data. Never runs during a run, so
+## the run being played keeps the profile and meta it started with; a sync asked for then goes out
+## when the run ends.
+# TODO(Rawisl): swap the rule in _resolve() for the agreed conflict policy (now: the higher revision wins, and when the other copy came from another machine it is kept in save.conflict.bak with a notice). Equal revisions from two machines are treated as synced, so a run played on each before syncing is lost on the next write.
+
+## A sync started or finished, for the Account tab's Sync now button.
+signal busy_changed(busy: bool)
 
 const GUEST := &"GUEST"
 const SYNCED := &"SYNCED"
 const SYNCING := &"SYNCING"
 const OFFLINE := &"OFFLINE"
 const ERROR := &"ERROR"
-const COMBAT_STATES: Array[StringName] = [&"COMBAT", &"BOSS_COMBAT"]
 const NOTICE_SCENE := preload("res://ui/screens/notice_dialog.tscn")
 
 var state: StringName = GUEST
@@ -22,7 +26,7 @@ var upload_prompt: Callable
 
 var _busy := false
 var _again := false
-## A sync asked for during combat, sent when combat ends.
+## A sync asked for during a run, sent when the run ends.
 var _held := false
 ## The account whose empty cloud save the player chose not to fill this session.
 var _declined_user := ""
@@ -34,7 +38,7 @@ func _ready() -> void:
 	# Deferred: SaveManager writes the run and the purchase in the same frame, before this reads them.
 	EventBus.run_ended.connect(func(_end_type: StringName, _summary: Dictionary) -> void: request_sync.call_deferred())
 	EventBus.meta_item_purchased.connect(func(_id: StringName, _level: int) -> void: request_sync.call_deferred())
-	EventBus.state_changed.connect(_on_wave_state_changed)
+	GameState.app_state_changed.connect(_on_app_state_changed)
 
 ## The Account tab's Sync now.
 func sync_now() -> void:
@@ -44,15 +48,17 @@ func request_sync() -> void:
 	if not AuthService.is_signed_in():
 		_set_state(GUEST)
 		return
-	if _in_combat():
+	if _in_run():
 		_held = true
 		return
 	if _busy:
 		_again = true
 		return
 	_busy = true
+	busy_changed.emit(true)
 	await _run()
 	_busy = false
+	busy_changed.emit(false)
 	if _again:
 		_again = false
 		request_sync()
@@ -153,17 +159,20 @@ func make_upload_dialog() -> NoticeDialog:
 	dialog.set_buttons(&"dialog.sync_upload.confirm", &"dialog.sync_upload.cancel")
 	return dialog
 
+## null when there was no answer: another dialog was open, or a screen change closed it. Only a
+## press on "Để sau" counts as no for this session.
 func _ask_upload() -> Variant:
 	var dialog := make_upload_dialog()
-	var answer := [false]
+	var answer: Array = [null]
 	dialog.confirmed.connect(func() -> void: answer[0] = true)
+	dialog.cancelled.connect(func() -> void: answer[0] = false)
 	if not ScreenManager.open_dialog(dialog):
 		return null
 	await dialog.tree_exited
 	return answer[0]
 
-func _in_combat() -> bool:
-	return GameState.current == GameState.AppState.RUN and GameState.wave_state in COMBAT_STATES
+func _in_run() -> bool:
+	return GameState.current == GameState.AppState.RUN
 
 func _set_state(new_state: StringName, detail: String = "") -> void:
 	state = new_state
@@ -175,7 +184,7 @@ func _on_session_changed(signed_in: bool) -> void:
 	else:
 		_set_state(GUEST)
 
-func _on_wave_state_changed(new_state: StringName) -> void:
-	if _held and new_state not in COMBAT_STATES:
+func _on_app_state_changed(new_state: GameState.AppState, _old_state: GameState.AppState) -> void:
+	if _held and new_state != GameState.AppState.RUN:
 		_held = false
 		request_sync()

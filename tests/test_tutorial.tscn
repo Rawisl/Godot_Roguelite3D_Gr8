@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bhqbobsquaruc" path="res://tests/test_tutorial.gd" id="1_checks"]
 [ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="2_hint"]
+[ext_resource type="Script" uid="uid://bumdio8mdm4kc" path="res://systems/tutorial/tutorial_service.gd" id="4_service"]
 [ext_resource type="PackedScene" uid="uid://c3jndrrp8vrgp" path="res://ui/hud/parts/start_wave_button.tscn" id="3_button"]
 
 [node name="TestTutorial" type="Control" unique_id=1240684716]
@@ -22,6 +23,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.4980392, 0.627451, 0.3529412, 1)
+
+[node name="TutorialService" type="Node" parent="." unique_id=362659335]
+script = ExtResource("4_service")
 
 [node name="TutorialHint" parent="." unique_id=438872981 instance=ExtResource("2_hint")]
 layout_mode = 1

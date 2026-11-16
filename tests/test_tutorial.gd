@@ -18,6 +18,17 @@ class TutorialFakeBuilds:
 		EventBus.tower_built.emit(slot_id, type)
 		return true
 
+## Stands in for BuildService once build_starter() exists.
+class TutorialFakeStarterBuilds:
+	extends TutorialFakeBuilds
+
+	func build_starter(slot_id: StringName, type: StringName) -> bool:
+		return build(slot_id, type)
+
+## Only start_wave, read by the tutorial.
+class TutorialFakeRunState:
+	extends Node
+	var start_wave := 2
 var _passed := 0
 var _failed := 0
 var _steps_done: Array[StringName] = []
@@ -88,10 +99,11 @@ func _run_checks() -> void:
 	_expect(_visible_chips() == 1, "tutorial: the Arrow step shows the camera key")
 	_expect(_button._lock_reason() == &"hud.start_wave.tutorial", "tutorial: Start wave is grey until both towers stand")
 
-	_build(&"W1", &"cannon")
-	_expect(_service.step == TutorialService.BUILD_ARROW, "tutorial: a tower on another slot does not count")
-	_build(GameConfig.starter_arrow_slot, &"arrow")
-	_expect(_service.step == TutorialService.BUILD_CANNON and _steps_done == [TutorialService.BUILD_ARROW], "tutorial: the Arrow moves on to the Cannon")
+	_build(&"W1", &"barricade")
+	_expect(_service.step == TutorialService.BUILD_ARROW, "tutorial: another tower type does not count")
+	# Until the starter slots are lit and locked, an Arrow on any cell counts, so the step never gets stuck.
+	_build(&"G_2_2", &"arrow")
+	_expect(_service.step == TutorialService.BUILD_CANNON and _steps_done == [TutorialService.BUILD_ARROW], "tutorial: an Arrow on any cell moves on to the Cannon")
 	_expect(not _flag_saved(), "tutorial: one tower is not enough to finish")
 	_build(GameConfig.starter_cannon_slot, &"cannon")
 	_expect(_service.step == TutorialService.START_WAVE and _flag_saved() and _completed == 1,
@@ -102,10 +114,12 @@ func _run_checks() -> void:
 	_expect(_service.step == TutorialService.FIGHT and _hint._action.text == tr(&"tutorial.fight.action"), "tutorial: the wave start shows the fight hint")
 	_expect(_visible_chips() == 3 and _dot_color(3) == TutorialHint.DOT_NOW and _dot_color(0) == TutorialHint.DOT_DONE,
 		"tutorial: the fight step shows three keys and the last dot is the current one")
-	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 1.0, 0, false, false)
-	_expect(_service.step == TutorialService.FIGHT, "tutorial: a kill by towers alone does not count")
-	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 1.0, 0, false, true)
-	_expect(_service.step == TutorialService.OFF and not _hint.visible, "tutorial: a hit by the commander ends the hints")
+	_service._on_enemy_damaged(5, DamageInfo.new(5))
+	_expect(_service.step == TutorialService.FIGHT, "tutorial: a hit by a tower does not count")
+	var hit := DamageInfo.new(5)
+	hit.hit_by_commander = true
+	_service._on_enemy_damaged(5, hit)
+	_expect(_service.step == TutorialService.OFF and not _hint.visible, "tutorial: one commander hit ends the hints, no kill needed")
 
 	# The next run gets nothing.
 	_new_run(true)
@@ -117,12 +131,40 @@ func _run_checks() -> void:
 	_new_run(false)
 	_expect(_service.step == TutorialService.BUILD_ARROW and not _flag_saved(), "tutorial: leaving before both towers runs it again")
 
-	# Skip after the Arrow builds the Cannon.
+	# Skip without a free starter build: the hints close for this run, but the flag stays unsaved.
 	_build(GameConfig.starter_arrow_slot, &"arrow")
 	_fake.calls.clear()
 	_hint._skip.pressed.emit()
-	_expect(_fake.calls == [[GameConfig.starter_cannon_slot, &"cannon"]], "tutorial: Skip builds only the missing tower on its slot")
+	_expect(_fake.calls.is_empty() and not _flag_saved() and _service.step == TutorialService.OFF and _button._lock_reason() == &"",
+		"tutorial: without build_starter Skip hides the hints and unlocks the wave but does not save tutorial_done")
+	_new_run(false)
+	_expect(_service.step == TutorialService.BUILD_ARROW, "tutorial: so the next run asks again")
+
+	# Skip with a free starter build: it builds only the missing tower on its slot and saves the flag.
+	var starter := TutorialFakeStarterBuilds.new()
+	_fake.remove_from_group(&"build_service")
+	starter.add_to_group(&"build_service")
+	add_child(starter)
+	_build(GameConfig.starter_arrow_slot, &"arrow")
+	_hint._skip.pressed.emit()
+	_expect(starter.calls == [[GameConfig.starter_cannon_slot, &"cannon"]], "tutorial: Skip builds only the missing tower on its slot")
 	_expect(_flag_saved() and _service.step == TutorialService.OFF and not _hint.visible, "tutorial: Skip saves tutorial_done and hides the hint")
+	starter.free()
+	_fake.add_to_group(&"build_service")
+
+	# The step sent on tutorial_step_completed is the one of the tower just built.
+	_new_run(false)
+	_steps_done.clear()
+	_build(GameConfig.starter_cannon_slot, &"cannon")
+	_expect(_steps_done == [TutorialService.BUILD_CANNON] and _service.step == TutorialService.BUILD_ARROW, "tutorial: a Cannon first is reported as the Cannon step")
+
+	# A run that starts past the first wave has no tutorial.
+	var run_state := TutorialFakeRunState.new()
+	run_state.add_to_group(&"run_state")
+	add_child(run_state)
+	_new_run(false)
+	_expect(_service.step == TutorialService.OFF, "tutorial: a run from a later start wave skips it")
+	run_state.free()
 
 	# The first wave ending without a hit drops the fight hint.
 	_new_run(false)

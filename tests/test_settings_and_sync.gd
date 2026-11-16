@@ -110,6 +110,8 @@ func _run_checks() -> void:
 	await _check_sync()
 	await _check_save_notices()
 	await _check_notice_layout()
+	await _check_leaving_settings()
+	_check_invalid_window_values()
 
 func _check_settings_file() -> void:
 	EventBus.settings_changed.emit(&"volume_music", 0.35)
@@ -224,28 +226,56 @@ func _check_sync() -> void:
 	await _sync()
 	_expect(SyncService.state == &"ERROR", "sync: a server error shows ERROR")
 
-	# Never in combat.
+	# Never during a run, also in PREP and SUMMARY, so the run keeps the profile it started with.
 	_fake.pull_result = {"ok": true, "revision": SaveManager.get_revision(), "device_id": SaveManager.get_device_id(), "data": {}}
 	var pulls := _fake.pulls
 	var app_state := GameState.current
 	GameState.current = GameState.AppState.RUN
-	GameState.wave_state = &"COMBAT"
-	SyncService.request_sync()
+	for wave_state in [&"COMBAT", &"PREP", &"SUMMARY"]:
+		GameState.wave_state = wave_state
+		SyncService.request_sync()
 	await get_tree().process_frame
 	await get_tree().process_frame
-	_expect(_fake.pulls == pulls, "sync: nothing is sent in combat")
-	GameState.wave_state = &"SUMMARY"
-	EventBus.state_changed.emit(&"SUMMARY")
+	_expect(_fake.pulls == pulls, "sync: nothing is sent during a run, in combat, PREP or SUMMARY")
+	GameState.current = GameState.AppState.RUN_END
+	GameState.app_state_changed.emit(GameState.AppState.RUN_END, GameState.AppState.RUN)
 	await _wait_sync()
-	_expect(_fake.pulls == pulls + 1, "sync: a sync held in combat goes out when combat ends")
+	_expect(_fake.pulls == pulls + 1, "sync: a sync held during the run goes out when the run ends")
 	GameState.current = app_state
 	GameState.wave_state = &""
 
+	# The Sync now button is ready again once a sync ends.
+	await _open_settings(&"account")
+	var sync_now := _settings.find_child("SyncNow", true, false) as Button
+	await _sync()
+	await get_tree().process_frame
+	_expect(not sync_now.disabled, "sync: Sync now is ready again after a sync")
+	_settings.queue_free()
+	await get_tree().process_frame
+
+	# An upload question closed by a screen change is asked again, not taken as "Để sau".
+	_fake.pull_result = {"ok": true, "revision": 0, "device_id": "", "data": {}}
+	SyncService._declined_user = ""
+	SyncService.upload_prompt = _real_prompt
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+	SyncService.request_sync()
+	for i in 5:
+		await get_tree().process_frame
+	ScreenManager.close_all_dialogs()
+	await _wait_sync()
+	_expect(SyncService._declined_user == "" and SyncService.state == &"OFFLINE", "sync: a closed upload question is asked again later")
+	SyncService.upload_prompt = func() -> Variant:
+		_prompt_calls += 1
+		return _prompt_answer
+	_fake.pull_result = {"ok": true, "revision": SaveManager.get_revision(), "device_id": SaveManager.get_device_id(), "data": {}}
+
 	# Shop purchases sync too; the run end path is the same deferred call.
+	pulls = _fake.pulls
 	EventBus.meta_item_purchased.emit(&"FORT_HP", 1)
 	await get_tree().process_frame
 	await _wait_sync()
-	_expect(_fake.pulls == pulls + 2, "sync: a shop purchase syncs")
+	_expect(_fake.pulls == pulls + 1, "sync: a shop purchase syncs")
 	_sign_out_fake()
 
 func _check_save_notices() -> void:
@@ -288,6 +318,48 @@ func _check_notice_layout() -> void:
 		"notice: an unreadable save is a danger notice with a note")
 	ScreenManager.close_all_dialogs()
 	await get_tree().process_frame
+
+## Esc from the pause menu and closing the window both treat a window change not kept as no answer.
+func _check_leaving_settings() -> void:
+	var before: Variant = DisplaySettings.current(&"resolution")
+	var other: Vector2i = DisplaySettings.RESOLUTIONS[1] if before != DisplaySettings.RESOLUTIONS[1] else DisplaySettings.RESOLUTIONS[0]
+	var holder := Control.new()
+	add_child(holder)
+	var pause: Control = load("res://ui/screens/pause_menu.tscn").instantiate()
+	holder.add_child(pause)
+	await get_tree().process_frame
+	pause._open_settings()
+	await get_tree().process_frame
+	var graphics: Node = pause._settings_overlay.find_child("TabGraphics", true, false)
+	graphics._change_window(&"resolution", other)
+	pause.go_back()
+	await get_tree().process_frame
+	_expect(DisplaySettings.current(&"resolution") == before and _file_value("resolution") == before and pause._settings_overlay == null,
+		"settings: Esc from the pause menu goes back on a window change not kept and writes settings.cfg")
+	pause._open_settings()
+	await get_tree().process_frame
+	graphics = pause._settings_overlay.find_child("TabGraphics", true, false)
+	graphics._change_window(&"resolution", other)
+	GameState._notification(NOTIFICATION_WM_CLOSE_REQUEST)
+	_expect(_file_value("resolution") == before, "settings: closing the window does not save a window change not kept")
+	pause._settings_overlay.queue_free()
+	holder.queue_free()
+	await get_tree().process_frame
+
+func _check_invalid_window_values() -> void:
+	EventBus.settings_changed.emit(&"window_mode", 7)
+	EventBus.settings_changed.emit(&"resolution", Vector2i(123, 45))
+	EventBus.settings_changed.emit(&"max_fps", 33)
+	_expect(DisplaySettings.current(&"window_mode") == DisplaySettings.WINDOWED and DisplaySettings.current(&"resolution") == DisplaySettings.DEFAULTS[&"resolution"]
+		and Engine.max_fps == 0, "settings: values a window cannot use are ignored")
+	for key: StringName in DisplaySettings.DEFAULTS:
+		EventBus.settings_changed.emit(key, DisplaySettings.DEFAULTS[key])
+
+func _file_value(key: String) -> Variant:
+	var config := ConfigFile.new()
+	if config.load(TEST_SETTINGS) != OK:
+		return null
+	return config.get_value("settings", key, null)
 
 func _sync() -> void:
 	SyncService.request_sync()
