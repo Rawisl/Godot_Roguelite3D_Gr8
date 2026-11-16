@@ -5,7 +5,6 @@ extends Button
 ## hazard_enter action), a click on the marker or a click on the tower asks to enter; the wave
 ## side checks the rules again. The marker sits over the tower; without a tower in the level it
 ## docks at the top right.
-# TODO(kimvux): add the hazard_portal tower to the level (group hazard_portal, a click area on layer 7) so the marker follows it.
 
 const PREP := &"PREP"
 const HAZARD := &"HAZARD_TRIAL"

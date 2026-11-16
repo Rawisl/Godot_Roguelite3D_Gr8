@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://beqssqeyh4p5l"]
+
+[ext_resource type="Shader" uid="uid://b3s3sp6vdyqgk" path="res://art/shaders/hazard_cloud_ring.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "hazard_cloud_ring"
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/cloud_color = Color(0.95, 0.93, 1, 1)
+shader_parameter/shade_color = Color(0.74, 0.7, 0.96, 1)
+shader_parameter/opacity = 0.22
+shader_parameter/clumps = 4.0
+shader_parameter/puffs = 24.0
+shader_parameter/gaps = 0.35
+shader_parameter/softness = 0.035

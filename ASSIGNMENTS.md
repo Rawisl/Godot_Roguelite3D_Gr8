@@ -1038,7 +1038,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM4
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nhạc theo state (COMBAT một lớp, sting SUMMARY, RunEnd); HAZARD_TRIAL dùng nhạc COMBAT (nhạc boss nếu có boss)
 - Nghiệm thu: Crossfade 1.5 s thực
 - Cần xong trước: W8-KM4, W10-KT4
@@ -1070,7 +1070,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM8
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Level: Tháp Hazard Trial (hazard_portal gần Fortress, chọn được bằng chuột) và hazard_room (điểm xuất hiện chỉ huy, các điểm sinh quân, khung camera cố định)
 - Nghiệm thu: Phòng đủ chỗ cho 5 quân và chỉ huy; có navmesh cho phòng (quân và boss đi được); Tháp bấm được
 - Tệp liên quan: levels/corridor/level.tscn (thêm hazard_portal, hazard_room)
@@ -1080,7 +1080,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM9
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Camera frame HAZARD_TRIAL (CAM-16): cắt hoặc chuyển 0.5 s sang khung phòng, không bám nhân vật, không dịch phím, rời phòng về khung PREP; phát camera_frame_changed
 - Nghiệm thu: HZ7 đạt phần camera
 - Tệp liên quan: systems/camera/camera_rig.gd, autoload/event_bus.gd (camera_frame_changed chưa có)

@@ -58,6 +58,8 @@ const VOLUME_BUSES := {
 @export var music: MusicLibrary
 ## Real-time seconds for one track to replace another.
 @export var crossfade_time: float = 1.5
+## Enemy ids that are bosses: a Hazard Trial group with one of them plays the boss track.
+@export var boss_enemy_ids: Array[StringName] = [&"bulwark"]
 ## Real-time seconds for Master to come back after the window gets focus again.
 @export var focus_fade_time: float = 0.5
 
@@ -130,6 +132,8 @@ func _ready() -> void:
 	EventBus.sfx_requested.connect(_on_sfx_requested)
 	EventBus.pause_changed.connect(_on_pause_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
+	EventBus.hazard_trial_entered.connect(_on_hazard_trial_entered)
+	EventBus.hazard_trial_exited.connect(_on_hazard_trial_exited)
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.duck_requested.connect(duck)
 	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
@@ -263,6 +267,19 @@ func _on_wave_state_changed(new_state: StringName) -> void:
 			play_music(music.boss)
 		&"SUMMARY":
 			play_sting(music.win_sting, music.prep)
+		# HAZARD_TRIAL: the track comes from hazard_trial_entered, which knows the group.
+
+## Hazard Trial room: the COMBAT track, or the boss track when the group has a boss.
+func _on_hazard_trial_entered(_wave_index: int, enemy_types: Array) -> void:
+	if music == null:
+		return
+	var has_boss := enemy_types.any(func(id: Variant) -> bool: return StringName(str(id)) in boss_enemy_ids)
+	play_music(music.boss if has_boss else music.combat)
+
+## Leaving the room goes back to PREP; no win sting, that belongs to the real wave's SUMMARY.
+func _on_hazard_trial_exited(_result: StringName, _kills: int, _gold: int, _xp: float, _mithril: int) -> void:
+	if music != null:
+		play_music(music.prep)
 
 func _on_app_state_changed(new_state: int, _old_state: int) -> void:
 	if music == null:

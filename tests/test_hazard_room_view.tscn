@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://kpws50avtivo"]
+
+[ext_resource type="Script" uid="uid://doh7suscrpsnn" path="res://tests/test_hazard_room_view.gd" id="1_hazardview"]
+
+[node name="TestHazardRoomView" type="Node" unique_id=1222665427]
+script = ExtResource("1_hazardview")
