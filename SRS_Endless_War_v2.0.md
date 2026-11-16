@@ -942,7 +942,7 @@ Sát thương tower gây ra = base × dealt_mult, với dealt_mult = 1 + (aura_a
 | PRJ-05 | Chạy theo game time, đúng ở x1/x2/x3 |
 | PRJ-06 | Hủy mọi projectile khi hết SUMMARY hoặc kết thúc Run |
 | PRJ-07 | Buff (\[Should] BUFF_FURY, meta, modifier) tính lúc trúng đích |
-| PRJ-08 | Nổ Cannon (BLAST, bán kính theo cấp trong bảng cân bằng) không gây knockback và không gây STAGGER lên quân địch ở MVP. Lý do: STAGGER ngắt đòn 0.4 s rồi miễn knockback 2 s (AI-04); nếu mỗi viên đạn diện rộng đều gây hiệu ứng này, cả cụm quân đang đánh Barricade bị gián đoạn đồng loạt, nhả slot (CRD-03) và tăng ca kẹt (NAV-03). Nguồn knockback lên quân thường ở MVP chỉ gồm đòn 3 của chỉ huy (combo_hit3_knockback) và shockwave khi Deploy (mục 3.5.5, deploy_shockwave_*). Stomp của Bulwark chỉ knockback chỉ huy (BOSS-07). \[Could] Knockback nhẹ cho Cannon bậc 3 nếu playtest cần |
+| PRJ-08 | Nổ Cannon (BLAST, bán kính theo cấp trong bảng cân bằng) không gây knockback và không gây STAGGER lên quân địch ở MVP. Lý do: STAGGER ngắt đòn 0.4 s rồi miễn knockback 2 s (AI-04); nếu mỗi viên đạn diện rộng đều gây hiệu ứng này, cả cụm quân đang đánh Barricade bị gián đoạn đồng loạt, nhả slot (CRD-03) và tăng ca kẹt (NAV-03). Nguồn knockback lên quân thường ở MVP chỉ gồm đòn 3 của chỉ huy (combo_hit3_knockback) và shockwave khi Deploy (mục 3.5.5, deploy_shockwave_*). Đòn của Bulwark (Stomp, nhát đâm của Combo) chỉ knockback chỉ huy (BOSS-07). \[Could] Knockback nhẹ cho Cannon bậc 3 nếu playtest cần |
 
 | **ID** | **Barricade** | **Đặc tả** |
 | --- | --- | --- |
@@ -1310,15 +1310,15 @@ Mọi nguồn sát thương phải khai báo damage_type.
 
 ### 3.8.2 Dữ liệu (BossData)
 
-armor_hp, core_hp, resist_table (theo pha), move_speed, attack_*, target_rules, phase2_speed_mult, phase2_attack_rate_mult, is_ranged. Giá trị dưới đây là ở wave 1 trước hệ số scale.
+armor_hp, core_hp, resist_table (theo pha), move_speed, attack_*, target_rules, phase2_speed_mult, phase2_attack_rate_mult, is_ranged. Từ 16/11 thêm tham số bộ đòn và AI của Bulwark (mục 3.8.2.1). Giá trị dưới đây là ở wave 1 trước hệ số scale.
 
 |  | **Bulwark (Siege Walker, cận chiến) \[MVP]** | **Barrage (Artillery Mech, tầm xa) \[Should]** |
 | --- | --- | --- |
 | Xuất hiện | Wave 5 | Wave 10 |
 | armor_hp / core_hp | 1200 / 900 | 1000 / 800 |
 | Tốc độ | 1.6 m/s (pha 2 x1.2) | 1.4 m/s (pha 2 x1.2) |
-| Đòn | **Stomp**: damage 45, AoE 3 m, wind-up 1.0 s (vòng đỏ), nhịp 2.5 s, knockback 3 m lên chỉ huy | **Shell**: damage 40, AoE 2 m, tầm 18 m, barrage_hold_distance 13 m (BOSS-41), đạn cong 15 m/s, nhịp 3 s, đánh dấu điểm rơi 1.2 s trước khi nổ |
-| Pha 2 | Nhịp đánh nhanh hơn 30% (1.9 s) | Bắn **2 quả** mỗi nhịp vào hai mục tiêu khác nhau nếu có |
+| Đòn | **Stomp**: damage 45, AoE 3 m có tâm ở điểm chùy nện phía trước boss (BOSS-45), wind-up 1.0 s (vòng đỏ), nhịp 2.5 s, knockback 3 m lên chỉ huy. Đánh chỉ huy thì dùng thêm Đánh thường, Stomp x3 và Combo (mục 3.8.2.1) | **Shell**: damage 40, AoE 2 m, tầm 18 m, barrage_hold_distance 13 m (BOSS-41), đạn cong 15 m/s, nhịp 3 s, đánh dấu điểm rơi 1.2 s trước khi nổ |
+| Pha 2 | Nhịp đánh nhanh hơn 30% (1.9 s); các chuỗi đòn của mục 3.8.2.1 nhanh lên cùng tỉ lệ | Bắn **2 quả** mỗi nhịp vào hai mục tiêu khác nhau nếu có |
 | Miễn nhiễm pha 1 | PIERCE, MAGIC | BLAST, TRAP |
 | Bảng kháng pha 1 | PIERCE 0, MAGIC 0, BLAST 1.0, SLASH 0.6, TRAP 1.0 | BLAST 0, TRAP 0, PIERCE 1.0, SLASH 0.6, MAGIC 1.0 |
 | is_ranged | Không | Có |
@@ -1334,6 +1334,27 @@ Bulwark dạy cần Cannon (hoặc kiếm, skill BLAST/SLASH), Barrage dạy ng�
 | Bulwark | 1. PLAYER nếu khiêu khích và trong 4 m. 2. BARRICADE trong 8 m phía trước. 3. TOWER_GROUND trong 8 m phía trước. 4. FORTRESS. Không nhắm TOWER_WALL và chỉ huy Commander |
 | Barrage \[Should] | Trong tầm 18 m: 1. Tower, ưu tiên Arrow rồi gần nhất. 2. PLAYER (chỉ Frontline). 3. BARRICADE. 4. FORTRESS. Bắn khi mục tiêu trong tầm, tiếp tục ADVANCE tới khi cách mục tiêu đang nhắm barrage_hold_distance rồi mới dừng (hold, BOSS-41) |
 
+#### 3.8.2.1 Bộ đòn và AI của Bulwark \[MVP, đề xuất 16/11]
+
+Bulwark dùng Stomp (bảng trên) khi mục tiêu là công trình hoặc Fortress. Khi mục tiêu là chỉ huy Frontline (khiêu khích theo bảng thứ tự mục tiêu, hoặc trong Hazard Trial, HZT-14), boss chọn đòn theo vị trí của chỉ huy và máu của boss (BOSS-46). Mọi đòn có wind-up đọc được, Dodge (i-frame) né được (BOSS-07). Số liệu nằm trong BossData, sửa tay (BAL-04). Số dưới đây là giá trị khởi điểm ở wave 1, nhân dmg_mult(w) và enrage_damage_mult như Stomp.
+
+| **Đòn** | **Diễn biến** | **Hitbox** | **Sát thương** |
+| --- | --- | --- | --- |
+| Stomp | Như bảng trên. Đòn duy nhất dùng lên công trình và Fortress | Tròn 3 m quanh điểm chùy nện (BOSS-45) | 45 BLAST, knockback chỉ huy 3 m |
+| Đánh thường | Một nhát chém một tay (clip 1.57 s), chạm ở giây 0.55 | Hình quạt 120°, tầm 3.2 m phía trước | 18 SLASH |
+| Stomp x3 | Ba nhát Stomp liền nhau. Mỗi nhát phát lại clip đập đất từ đầu và cắt ở 75% độ dài clip (khoảng 2.12 s mỗi nhát), chạm ở giây 0.97 của nhát đó. Mỗi nhát có telegraph riêng | Tròn quanh điểm chùy nện, bán kính 3 m, 4.5 m, 6.6 m (×1, ×1.5, ×2.2 bán kính Stomp) | 50%, 50%, 75% sát thương Stomp, BLAST (23, 23, 34), knockback chỉ huy 3 m |
+| Combo | Chém một tay (1.57 s, chạm ở 0.55 s), đâm một tay (1.40 s, chạm ở 0.5 s), đập đất hai tay (2.83 s, chạm ở 1.0 s) | Chém: quạt 120°, tầm 3.2 m. Đâm: hộp rộng 1.2 m, dài 3.8 m thẳng phía trước. Đập: tròn 3 m quanh điểm chùy nện | 15 SLASH, 20 SLASH (knockback chỉ huy 1.5 m), 75% Stomp BLAST (34) |
+
+| **ID** | **Đặc tả** |
+| --- | --- |
+| BOSS-44 | **Phạm vi trúng.** Đánh thường và Combo gây sát thương lên chỉ huy Frontline, tower trên ô grid, Barricade và Fortress nằm trong hitbox ở khung chạm; không trúng tower WALL (như mọi quân cận chiến, ETG-01), không friendly fire (BOSS-06). Khoảng cách đo tới điểm gần nhất của collider mục tiêu; với chỉ huy cộng bán kính capsule. Mỗi khung chạm trúng mỗi mục tiêu tối đa một lần. Chỉ huy ở Commander mode miễn (CMD-10) |
+| BOSS-45 | **Tâm Stomp.** Mọi đòn Stomp (Stomp, ba nhát của Stomp x3, nhát đập của Combo) có tâm cách tâm boss stomp_forward_offset_heights (1.25) lần chiều cao model của boss về phía trước mặt, là chỗ chùy nện xuống (Bulwark cao khoảng 3.17 m nên tâm cách khoảng 3.96 m). Đứng sát hoặc sau lưng boss thì nằm ngoài vòng Stomp 3 m. Tâm được chốt lúc telegraph hiện ra; từ đó tới khung chạm boss không xoay, nên vòng đỏ và chỗ trúng luôn trùng nhau |
+| BOSS-46 | **Chọn đòn.** Chọn ở đầu mỗi lần đánh (khi vào ATTACK và sau mỗi lần nghỉ). (1) Mục tiêu không phải chỉ huy: Stomp. (2) Chỉ huy ở hông hoặc sau lưng (ngoài vùng ai_front_arc_deg 120° phía trước): Stomp x3 nếu đã mở khóa và hết triple_stomp_cooldown (8 s game time, tính từ lúc bắt đầu Stomp x3); đang cooldown thì Đánh thường; chưa mở khóa thì Stomp. (3) Chỉ huy trước mặt: Đánh thường; khi tổng máu (armor_hp + core_hp) dưới combo_hp_threshold (50%) và Combo đã mở khóa thì rút theo combo_chance (50%) ra Combo. Phép rút dùng RNG riêng seed = hash(run_seed, "boss_ai", wave_index) để test và replay tái hiện được |
+| BOSS-47 | **Xoay chậm.** Trong ATTACK boss xoay về mục tiêu tối đa ai_turn_rate_deg (90°/s). Đánh thường, nhát chém và nhát đâm của Combo bám hướng chỉ huy tới khung chạm rồi khóa. Giữa các nhát Stomp x3 (sau khung chạm) boss xoay dần về chỉ huy, nên nhát sau rơi gần chỗ chỉ huy đứng hơn. Nhờ vậy vòng ra sau lưng boss là cách né có giá trị nhưng không an toàn tuyệt đối |
+| BOSS-48 | **Mở khóa theo lần xuất hiện.** Lần xuất hiện n = wave_index / boss_wave_interval (wave 5 là n = 1). Stomp x3 mở từ n ≥ triple_stomp_unlock_appearance (2), Combo mở từ n ≥ combo_unlock_appearance (3). Boss trong Hazard Trial dùng bộ đòn của lần xuất hiện n − hazard_appearance_offset (1), thấp nhất là n = 1 (HZT-14) |
+| BOSS-49 | **Khoảng hở sau đòn.** Sau Đánh thường boss nghỉ attack_recovery (0.6 s); sau Stomp x3 và Combo nghỉ heavy_attack_recovery (1.75 s) để người chơi đánh trả. Pha EXPOSED và Cuồng nộ rút ngắn các chuỗi và khoảng nghỉ cùng tỉ lệ rút ngắn nhịp Stomp (attack_interval chia phase2_attack_rate_mult và enrage_attack_rate_mult) |
+| BOSS-50 | **Ngắt chuỗi và mục tiêu độ khó.** Chuỗi đang chạy dừng ngay khi boss chết, vào TRANSITION (vỡ giáp), mục tiêu chết hoặc mất hợp lệ (chọn lại theo ETG-04), hoặc boss rời ATTACK. Mục tiêu cân bằng: ăn trọn một chuỗi không giết chỉ huy đầy máu ở wave của nó (wave 5: Stomp x3 gây 80, Combo gây 69 trên 100 HP); các wave sau kiểm lại khi playtest (Phụ lục C mục 68) |
+
 ### 3.8.3 Luật chung của boss
 
 | **ID** | **Đặc tả** |
@@ -1343,8 +1364,8 @@ Bulwark dạy cần Cannon (hoặc kiếm, skill BLAST/SLASH), Barrage dạy ng�
 | BOSS-03 | Agent điều hướng lớn nav_layer_large (bán kính 1.6 m). Luôn còn đường đi rộng tối thiểu path_check_min_width (3.2 m) tới cổng Fortress và tới boss_melee_point nhờ luật cấm chặn kín (GRID-07) và vùng cấm xây quanh điểm đứng (GRID-08) |
 | BOSS-04 | **Kẹt** (NAV-01 với ngưỡng boss_stuck_time 5 s): boss không bao giờ bị recycle hay cull. Bậc 1: tính lại đường với agent lớn. Bậc 2 (thêm 5 s): nếu vật cản là Barricade hoặc tower trên ô grid thì đặt vật đó làm mục tiêu bắt buộc để Stomp hoặc Shell phá đường. Bậc 3 (thêm 5 s): hop tới điểm nav hợp lệ gần nhất trong boss_hop_radius (6 m) theo chiều tiến, không vượt Fortress. Từ v2.0 boss không va chạm quân hộ tống (EN-16) nên bỏ bậc xuyên qua hộ tống của v1.9. Mọi bậc ghi log. Thang này độc lập với NAV-07, vẫn là MVP dù NAV-07 là \[Should] |
 | BOSS-05 | spawn_grace (EN-04) áp dụng cho boss |
-| BOSS-06 | Stomp và Shell không friendly fire quân địch. Gây sát thương tower, Barricade, Fortress, chỉ huy |
-| BOSS-07 | Stomp, Shell có telegraph. Dodge (i-frame) né được. Knockback Stomp bị miễn khi Dodge hoặc Deploying |
+| BOSS-06 | Mọi đòn của Bulwark (mục 3.8.2.1) và Shell không friendly fire quân địch. Gây sát thương tower, Barricade, Fortress, chỉ huy |
+| BOSS-07 | Mọi nhát Stomp (kể cả trong Stomp x3 và Combo) và Shell có telegraph; nhát chém, nhát đâm có wind-up đọc được. Dodge (i-frame) né được mọi đòn. Knockback của Stomp và nhát đâm bị miễn khi Dodge hoặc Deploying |
 | BOSS-08 | command_post cách slot gần nhất (kể cả ô grid, GRID-03) tối thiểu 3 m để hiệu ứng nổ không chồng lên chỉ huy (chỉ mang tính hình ảnh, chỉ huy ở Commander mode không nhận sát thương). Không còn liên quan tới hiệu ứng nổ Overload |
 | BOSS-42 \[MVP] | Hộ tống và boss tính hit_by_commander như quân thường (XP-03). Boss chết cho XP boss (30) theo bảng XP |
 | BOSS-43 \[MVP] | Khi Cuồng nộ mà chỉ huy ở Commander mode: tower vẫn bắn bình thường (không có Aura), Fortress chịu 1.5 lần sát thương đòn boss, người chơi có thể Deploy để thêm Aura và skill. Đây là lựa chọn rủi ro cố ý |
@@ -1471,7 +1492,7 @@ Kiểm tra cân bằng thô wave 5: Cannon cấp 1 (\~14 dps mỗi cái, 2 cái)
 | BOSS-37 | Boss trong spawn_zone chưa bị nhắm | Bất tử. Ra khỏi vùng sau ~8 s, tối đa spawn_grace_max_time 10 s (EN-04) |
 | BOSS-38 | Abandon giữa wave boss | Chốt ABANDONED |
 | BOSS-39 | enemies_alive == 0 nhưng đồng hồ còn (lỗi) | Coi như boss chết (BOSS-21), ghi log |
-| BOSS-40 | Vị trí đứng của Bulwark khi tới Fortress (boss_melee_point) | Marker3D do Level đặt, một điểm mỗi level, ngoài tường Fortress ở giữa mặt tường hướng ra hành lang. Ràng buộc: tâm boss cách mặt ngoài collider Fortress từ 1.6 m (bán kính agent nav_layer_large, BOSS-03) đến 2.0 m để AoE 3 m của Stomp luôn chạm tường; nằm trên navmesh của agent lớn; không nằm trong collider tower hay Barricade (bảo đảm bởi vùng cấm xây GRID-08). Bulwark đi tới điểm này, dừng, quay mặt về Fortress rồi Stomp theo nhịp (BOSS-32), không chiếm melee_slot (BOSS-02). Thiếu marker: dùng điểm navmesh gần cổng nhất cách tường 1.8 m và ghi log. Barrage không dùng, đứng ở tầm bắn (BOSS-01). Quân không va chạm Bulwark (EN-16) nên không bị Bulwark chắn đường |
+| BOSS-40 | Vị trí đứng của Bulwark khi tới Fortress (boss_melee_point) | Marker3D do Level đặt, một điểm mỗi level, ngoài tường Fortress ở giữa mặt tường hướng ra hành lang. Ràng buộc: tâm boss cách mặt ngoài collider Fortress từ 1.6 m (bán kính agent nav_layer_large, BOSS-03) đến 2.0 m để tâm Stomp (BOSS-45, khoảng 3.96 m phía trước) rơi vào tường và AoE 3 m luôn chạm Fortress; nằm trên navmesh của agent lớn; không nằm trong collider tower hay Barricade (bảo đảm bởi vùng cấm xây GRID-08). Bulwark đi tới điểm này, dừng, quay mặt về Fortress rồi Stomp theo nhịp (BOSS-32), không chiếm melee_slot (BOSS-02). Thiếu marker: dùng điểm navmesh gần cổng nhất cách tường 1.8 m và ghi log. Barrage không dùng, đứng ở tầm bắn (BOSS-01). Quân không va chạm Bulwark (EN-16) nên không bị Bulwark chắn đường |
 | BOSS-41 \[Should] | Barrage dừng ngoài tầm mọi tower | Shell tầm 18 m lớn hơn tầm Arrow và Cannon ở các cấp thấp (Arrow cấp 1 là 14 m, tầm theo cấp trong bảng cân bằng), nên nếu Barrage dừng ngay khi có mục tiêu trong tầm thì không tower nào bắn trả được. Vì vậy Barrage bắn từ 18 m nhưng chỉ dừng khi cách mục tiêu đang nhắm barrage_hold_distance (13 m), nhỏ hơn tầm Arrow cấp 1 (14 m), nên tower Arrow ở mọi cấp bị nhắm đều bắn trả được. Mục tiêu bị phá thì chọn lại (ETG-03) và tiếp tục ADVANCE nếu cần. Không dừng khi còn trong spawn_zone (EN-04) |
 
 ## 3.9 Kinh tế: Gold, Mithril, Uy tín, Danh vọng
@@ -1805,7 +1826,7 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 | HZT-11 | **Camera.** Camera cố định khung phòng, không bám nhân vật, không dịch bằng phím; WASD di chuyển nhân vật (CAM-16) | MVP |
 | HZT-12 | **Pause, thoát.** Pause được (TIME-02); ở Pause mọi panel chỉ đọc (TIME-08). Abandon hay Quit trong phòng chốt run như thường (FLOW-04), phần thưởng phòng chưa rời thì mất. Crash trong phòng xử lý theo FLOW-03 | MVP |
 | HZT-13 | **Ngoài phòng.** Trong lúc ở phòng, bản đồ chính không có quân, Fortress và tower không đổi. Không có cách nào sinh quân thật trước khi bấm Bắt đầu wave | MVP |
-| HZT-14 | **AI trong phòng.** Mục tiêu duy nhất của quái là chỉ huy (không có tower, Barricade, Fortress trong phòng). Sniper, Archer bắn chỉ huy; Suicide Squad lao vào chỉ huy rồi nổ; Brute ủi về phía chỉ huy (EN-25); Assassin hiện mờ như ngoài (EN-20). Battle Cry vẫn taunt quân thường. Boss dùng bảng mục tiêu riêng với PLAYER là lựa chọn duy nhất | MVP |
+| HZT-14 | **AI trong phòng.** Mục tiêu duy nhất của quái là chỉ huy (không có tower, Barricade, Fortress trong phòng). Sniper, Archer bắn chỉ huy; Suicide Squad lao vào chỉ huy rồi nổ; Brute ủi về phía chỉ huy (EN-25); Assassin hiện mờ như ngoài (EN-20). Battle Cry vẫn taunt quân thường. Boss dùng bảng mục tiêu riêng với PLAYER là lựa chọn duy nhất, chọn đòn theo BOSS-46 với bộ đòn lùi một lần xuất hiện (BOSS-48) | MVP |
 | HZT-15 | **Giao dịch đang dở.** Vào phòng đúng frame đang xác nhận giao dịch (xây, bán, sửa) thì giao dịch hoàn tất trước hoặc bị từ chối (BLD-02) | MVP |
 | HZT-16 | **Khi nào một con tính là xử lý xong** (cho WON ở HZT-07). (a) **Bị diệt hẳn:** HP về 0 và không còn lần hồi sinh; Undead đang nằm chờ hồi sinh (EN-26) chưa xong. (b) **Tự nổ:** Suicide Squad đã nổ (EN-22) thì biến mất và tính là xong, nhưng không cho gold, XP và không tính vào số con đã giết. (c) **Captain chờ nổ:** Suicide Squad Captain có HP về 0 thì gold và XP tính ngay lúc đó như ngoài (EN-23), nhưng chỉ tính là xong khi vụ nổ sau explode_windup đã gây sát thương; trong lúc chờ nổ phòng chưa WON, và nếu vụ nổ làm HP bản sao về 0 thì kết quả là DIED. Số con đã giết (kills ở EVB-41, gold và XP ở HZT-08) chỉ đếm (a) và (c). Nhóm toàn quân tự nổ hết mà chỉ huy còn sống vẫn là WON và vẫn có Mithril (MTH-02) | MVP |
 
@@ -2064,7 +2085,7 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | FBK-03 | Rung màn hình cho: chỉ huy trúng đòn nặng, Stomp, Fortress nhận sát thương lớn, Cuồng nộ boss. Biên độ có trần. Giảm hoặc tắt được (ACC-05) |
 | FBK-04 | Flash trắng 0.1 s khi chỉ huy trúng đòn, bỏ nếu "Giảm nhấp nháy" |
 | FBK-05 | **Không dùng hit stop toàn cục**. Cảm giác va chạm bằng đóng băng animation riêng thực thể 0.05 s, chớp trắng shader và âm thanh |
-| FBK-06 | Telegraph Stomp, Shell \[Should]: vòng đỏ viền đậm có họa tiết (không chỉ màu), chiếu sát mặt đất (quân và công trình đứng trên vòng), không che đè lên tường hay chỉ huy |
+| FBK-06 | Telegraph Stomp (đặt ở điểm chùy nện, BOSS-45; mỗi nhát của Stomp x3 một vòng), Shell \[Should]: vòng đỏ viền đậm có họa tiết (không chỉ màu), chiếu sát mặt đất (quân và công trình đứng trên vòng), không che đè lên tường hay chỉ huy |
 | FBK-07 | Boss chuyển pha: hơi nước, giáp bay, lõi sáng, banner "Lộ lõi" 1.5 s, giảm nhạc 0.5 s |
 | FBK-08 | Tower bị phá: khói, mảnh vỡ, đống đổ nát. Xây xong: hiệu ứng dựng 0.5 s |
 | FBK-09 | Giới hạn hạt theo preset (Thấp 500, Trung bình 1500, Cao 3000). Vượt thì bỏ hiệu ứng thứ yếu trước, không bỏ telegraph |
@@ -2483,7 +2504,7 @@ Bảng giá trị đầy đủ nằm ở mục đã trỏ. Bảng này chỉ ghi
 | --- | --- | --- |
 | TowerData | 3.6.3 | arrow_projectile_speed* = 30 m/s (PRJ-01). cannon_falloff_edge* = 0.5 (sát thương nổ ở mép, PRJ-02). default_priority*: Arrow = First, Cannon = Nearest. Dữ liệu 36 cấp của bốn loại (cost, chỉ số, hp; kho của Trạm hồi lực, cấp 1 là heal_tower_hp* = 300 và heal_tower_cost* = 80) sinh từ sheet towers (BAL). model_tier_scenes: 3 scene model theo bậc (TWR-17). Trạm hồi lực không có target_priority. |
 | EnemyData | 3.7.1, RWD-05 | xp_value: Grunt 1, Archer 2, Brute 5 (XP-01). resist_table tùy chọn (FRT-05 \[Should]). Archer: projectile_speed* = 20 m/s (AI-02). Trait của quân mới (mục 3.7.1, 3.7.8) và chỉ số của 7 loại mới sinh từ sheet enemies (BAL). avoid_radius và avoid_priority đã bỏ (EN-16) |
-| BossData | 3.8.2 | xp_value = 30 (XP-01). nav_radius* = 1.6 m (BOSS-03). resist_table pha TRANSITION = ×1.5 và EXPOSED = ×1.25 cho mọi loại, không miễn nhiễm (3.8.4) |
+| BossData | 3.8.2 | xp_value = 30 (XP-01). nav_radius* = 1.6 m (BOSS-03). resist_table pha TRANSITION = ×1.5 và EXPOSED = ×1.25 cho mọi loại, không miễn nhiễm (3.8.4). Bộ đòn Bulwark (mục 3.8.2.1): stomp_forward_offset_heights = 1.25, fallback_model_height* = 3.17 m; ai_front_arc_deg = 120°, ai_turn_rate_deg = 90°/s, triple_stomp_cooldown = 8 s, combo_hp_threshold = 0.5, combo_chance = 0.5, attack_recovery = 0.6 s, heavy_attack_recovery = 1.75 s, triple_stomp_unlock_appearance = 2, combo_unlock_appearance = 3, hazard_appearance_offset = 1; normal_attack_damage = 18; combo_slash_* (15, 3.2 m, 120°, clip 1.57 s, chạm 0.55 s), combo_stab_* (20, hộp 3.8 × 1.2 m, knockback 1.5 m, clip 1.40 s, chạm 0.5 s), combo_slam_* (×0.75 Stomp, chạm 1.0 s, clip 2.83 s); triple_stomp_clip_cut = 0.75, triple_stomp_hit_time = 0.97 s, triple_stomp_radius_mults = [1, 1.5, 2.2], triple_stomp_damage_mults = [0.5, 0.5, 0.75] |
 | ScaleConfig | 3.7.6 | scale_soft_cap_wave = 40. budget_soft_cap_factor* = 0.5 (SCL-02) |
 | WaveTable | 3.7.5 | archer_max_ratio* = 0.40 (SPN-05). support_max_ratio* = 0.20 (SPN-06). support_min_combat* = 3 (SPN-07). group_count = clamp(2 + floor(w/5), 2, 6). Khoảng cách spawn trong nhóm 0.4 đến 0.8 s, nghỉ giữa nhóm 3 s. spawn_overlap_radius* = 1 m, spawn_retry_delay* = 0.2 s, spawn_retry_timeout* = 3 s (SPN-03). escort_budget_ratio* = 0.5 (SPN-10). intro_count*: Archer 2, Bat 2, Brute 1 (bước 2 của thuật toán mục 3.7.5) |
 | ShopItem | 3.10.1 | Trường: id (trùng khóa trong meta.levels của save), name_key, effect_key, note_key (ghi chú giới hạn, có thể trống), costs (giá từng cấp, số phần tử là số cấp tối đa), effect_base (giá trị ở cấp 0), effect_step (cộng thêm mỗi cấp). Hai trường cuối tính theo đơn vị hiển thị: FORT_HP +5 (%), GOLD_PCT +4 (%), CMD_HP +10 (HP), EMG_REPAIR gốc 20 và +3 (điểm %), trong đó gốc 20 phải khớp emg_repair_base_heal_pct (0.20); hệ thống áp meta chia 100 cho các mục tính theo %. \[Should]: SLOT_ACTIVE, SLOT_PASSIVE, REROLL_PLUS, SKILL_UNLOCK_*, BUFF_CHARGE, UNLOCK_TRAP. STARTER_KIT và UNLOCK_WAND đã bỏ ở v2.0 |
@@ -2670,6 +2691,11 @@ Từ v2.0 đã bỏ các test của gọi wave sớm, đếm ngược PREP, sử
 6. enemies_alive == 0 khi đồng hồ boss chưa về 0 (lỗi giả lập): coi như boss chết, wave kết thúc không Cuồng nộ, có log (BOSS-39, BOSS-21).
 7. \[Should] Barrage tiến vào 18 m của Arrow cấp 1 (tầm 14 m): vẫn bắn nhưng tiếp tục ADVANCE, dừng ở 13 m rồi bị Arrow bắn trả. Barrage không dừng và không bắn khi còn trong spawn_zone dù có tower trong 18 m; spawn_grace tự hết sau tối đa 10 s (BOSS-41, EN-04).
 8. Tua x2/x3 dùng được suốt BOSS_COMBAT, không có khóa theo đồng hồ boss (TIME-03).
+9. Tâm Stomp nằm 1.25 chiều cao boss phía trước: chỉ huy đứng ngay sau lưng boss không trúng Stomp, đứng cách điểm chùy nện 2 m thì trúng. Xoay boss trong lúc wind-up không đổi chỗ trúng, telegraph vẽ đúng điểm đó (BOSS-45, FBK-06).
+10. Chọn đòn (BOSS-46): chỉ huy trước mặt, boss đầy máu: luôn Đánh thường. Ở hông hoặc sau lưng: Stomp x3, rồi Đánh thường trong 8 s cooldown. Boss dưới 50% máu, chỉ huy trước mặt, Combo đã mở: Combo chiếm khoảng 50% qua nhiều lần rút; cùng seed thì cùng dãy lựa chọn. Mục tiêu là Fortress: luôn Stomp.
+11. Mở khóa (BOSS-48): wave 5 không có Stomp x3 và Combo (sau lưng thì Stomp); wave 10 có Stomp x3, chưa có Combo; wave 15 có cả hai. Boss trong Hazard Trial của wave 15 không có Combo.
+12. Stomp x3: mỗi nhát phát lại clip đập đất từ đầu, dài 75% clip, bán kính 3, 4.5, 6.6 m; chỉ huy đứng yên sau lưng boss vẫn trúng các nhát sau vì boss xoay dần (BOSS-47). Ăn trọn Stomp x3 hoặc Combo ở wave 5 không giết chỉ huy 100 HP (BOSS-50).
+13. Sau Stomp x3 và Combo boss nghỉ 1.75 s, sau Đánh thường 0.6 s (BOSS-49). Vỡ giáp, mất mục tiêu hoặc boss chết giữa chuỗi thì chuỗi dừng ngay (BOSS-50). Runner tự động `tests/test_bulwark_combo_runner.tscn`; xem và chỉnh bằng mắt ở `tests/test_bulwark_attacks.tscn`.
 
 Các test Overload, Retreat, ép x1 ở T-20, cảnh báo y% và retarget sau Overload của v1.7 đã xóa. Test Cuồng nộ, kháng boss với skill và đường thắng nằm ở nhóm "Frontline, XP, Skill, Cuồng nộ" (F10 đến F12, F14).
 
@@ -3036,6 +3062,13 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 | 66 | Sàn run_elapsed của máy chủ có thể từ chối lượt chơi thật | RUN-02: run_elapsed là game time chỉ của COMBAT và BOSS_COMBAT (không tính PREP, HAZARD_TRIAL, BOSS_INTRO, SUMMARY, REWARD_PICK, màn thắng, Pause; tua x2, x3 không làm giảm). Tự chọn giữ sàn 15 s và thêm ràng buộc lịch sinh SPN-15 (quân cuối sinh không sớm hơn spawn_duration) thay vì hạ sàn, vì giữ được chống gian lận và làm par_time khớp thời lượng thật. Hệ quả: không wave nào xong trước spawn_duration game time. BAL-05 kiểm spawn_duration ≥ 15 s và wave boss có hộ tống; thêm lbd_elapsed_tolerance 1 s (LBD-04, LBD-06, mục 6.3, test AC9, BL3) |
 | 67 | Quân kẹt trong khe giữa hai công trình ở ô kề nhau | Bake lại navmesh khi vật cản trên ô grid đổi (GRID-09), thay vì chỉ dựa vào né tránh. Đo 11/11: bake luồng phụ, luồng chính dưới 1 ms, xong sau khoảng 10 frame |
 
+**Bộ đòn Bulwark 16/11** (trạng thái: đề xuất của Enemy & Wave, chờ nhóm duyệt)
+
+| **#** | **Vấn đề** | **Đề xuất** |
+| --- | --- | --- |
+| 68 | Bulwark chỉ có Stomp nên trận đánh với chỉ huy Frontline đơn điệu; nhưng game là thủ thành và chỉ huy chết là hết run (COMMANDER_DIED), nên không thể làm boss kiểu soulsborne | Thêm Đánh thường, Stomp x3 và Combo, chỉ dùng khi đánh chỉ huy (mục 3.8.2.1); công trình và Fortress vẫn chỉ nhận Stomp. Giữ độ khó vừa phải bằng: hạ sát thương các chuỗi, khoảng nghỉ 1.75 s sau đòn lớn, mở khóa đòn theo lần xuất hiện, boss xoay chậm 90°/s. Còn mở: sát thương boss nhân dmg_mult(w) (wave 25 khoảng ×3.9) trong khi HP chỉ huy chỉ tăng qua thẻ stat, nên BOSS-50 mới bảo đảm ở wave 5; cần đo số lần chỉ huy chết trong trận boss ở playtest (W11-KM4) rồi chỉnh trong BossData |
+| 69 | Vòng Stomp đặt quanh tâm boss không khớp chỗ chùy nện trong animation | Tâm Stomp cách 1.25 chiều cao model về phía trước, chốt lúc telegraph hiện (BOSS-45). Hệ quả: đứng sát boss không trúng Stomp; BOSS-40 vẫn đúng vì boss đứng cách tường 1.6 đến 2.0 m và quay mặt vào tường |
+
 ## Phụ lục D. Nhật ký đồng bộ (so với các bản soạn Phần 1-7)
 
 Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy vết; dòng 77 trở đi là v2.0. Một số nội dung trong đó (Overload, Retreat, ép x1 ở T-20, shop 5 mục, MOV là MVP) đã bị thay thế bởi các dòng 54 trở đi. Khi mâu thuẫn, mục 3 đến 7 của tài liệu này và các dòng 54 trở đi là nguồn đúng.
@@ -3132,6 +3165,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 88 | **12/11: đồng bộ theo code UI Hazard Trial và cảnh báo tuần 10** (HUD-22, HUD-23, HZT-01, HZT-07, ALR-18, ALR-20, mục 3.6.6, EVB-48 đến EVB-51): chữ hiển thị cho người chơi gọi Hazard Trial là "tháp" (nút "Rời tháp", nhãn "Chỉ số trong tháp không mang ra ngoài", toast "Đã rời tháp", kết quả thua ghi "Thất bại"); thêm heal_store_low_pct (0.20) cho cảnh báo kho Trạm hồi lực sắp cạn; thêm bốn tín hiệu cho Hazard Trial: nhóm quái và thưởng ở Tháp, tiến độ trong tháp, yêu cầu vào và yêu cầu rời |
 | 89 | **12/11: đồng bộ theo code UI cửa hàng và bảng xếp hạng tuần 10** (SHP-06, LBD-08, mục 6.2, 6.6): thiếu danh vọng thì số còn thiếu nằm ở dòng giá trên nút Mua (nút xám), vì chữ trên nút xám khó đọc; ghi rõ các trường của ShopItem, đơn vị hiển thị của effect_base và effect_step, nơi đặt tệp; ghi API fetch_leaderboard và dạng dữ liệu trả về |
 | 90 | **12/11: đồng bộ theo code UI panel Xây, Tháp và Trạm hồi lực tuần 10** (BLD-10, GRID-07, UPG-06, PNL-02, FRT-03, ALR-19, mục 3.5.13, 7.1 mục 18, F6): chữ lý do chặn kín đường đổi thành "Đường đi sẽ bị chặn"; chữ khóa nâng cấp đổi thành "Yêu cầu chỉ huy: cấp N"; bảng vũ khí và ví dụ ALR-19 ghi tên hiển thị tiếng Việt kèm tên hiệu ứng (Hàn Sương Kiếm, Lôi Kiếm, Xích Tiêu Kiếm, Nộ Kiếm, Truy Phong Kiếm) |
+| 91 | **16/11: bộ đòn và AI của Bulwark** (mục 3.8.2, 3.8.2.1, BOSS-06, BOSS-07, BOSS-40, BOSS-44 đến BOSS-50, HZT-14, PRJ-08, FBK-06, mục 6.6, test Boss 9 đến 13, Phụ lục C mục 68, 69): thêm Đánh thường, Stomp x3 và Combo khi đánh chỉ huy; chọn đòn theo hướng của chỉ huy và máu boss; mở khóa đòn theo lần xuất hiện; khoảng nghỉ sau đòn lớn; tâm mọi Stomp dời tới điểm chùy nện, 1.25 chiều cao phía trước. Trạng thái: đề xuất, chờ nhóm duyệt |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 
