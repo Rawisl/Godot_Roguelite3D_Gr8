@@ -4,6 +4,9 @@ extends Node3D
 ## let the move keys pan it. Runs on TimeManager's real-time clock, so it ignores the game
 ## speed and keeps working while paused. The boss intro pan is the exception: it runs on game
 ## time, so it holds still while paused and lasts as long as the intro itself.
+## In the Hazard Trial the camera cuts to the room's fixed frame (CAM-16): no follow, no panning,
+## C does nothing; leaving cuts back to the PREP frame. Every frame change is sent on
+## EventBus.camera_frame_changed (EVB-35).
 
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_down", &"move_left", &"move_right"]
 const CONTEXT_FRONTLINE := &"FRONTLINE"
@@ -11,6 +14,11 @@ const CONTEXT_COMMANDER := &"COMMANDER"
 const CONTEXT_PREP := &"PREP"
 const STATE_BOSS_INTRO := &"BOSS_INTRO"
 const STATE_REWARD_PICK := &"REWARD_PICK"
+const STATE_HAZARD_TRIAL := &"HAZARD_TRIAL"
+const FRAME_FRONTLINE := &"FRONTLINE"
+const FRAME_OVERVIEW := &"OVERVIEW"
+const FRAME_BOSS_INTRO := &"BOSS_INTRO"
+const FRAME_HAZARD_TRIAL := &"HAZARD_TRIAL"
 
 @export var camera_pan_speed: float = 14.0
 ## Seconds to reach full pan speed, so starting and stopping does not jerk.
@@ -64,6 +72,8 @@ var _intro_to: Vector3
 var _intro_total: float = 0.0
 var _intro_left: float = 0.0
 var _last_game_time: float = 0.0
+var _hazard: bool = false
+var _frame: StringName = &""
 
 
 func _ready() -> void:
@@ -84,7 +94,10 @@ func _ready() -> void:
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.screen_shake_requested.connect(_on_screen_shake_requested)
 	EventBus.pause_changed.connect(_on_pause_changed)
+	EventBus.hazard_trial_entered.connect(_on_hazard_trial_entered)
+	EventBus.hazard_trial_exited.connect(_on_hazard_trial_exited)
 	ScreenManager.dialog_context_changed.connect(_clear_held)
+	_update_frame()
 
 
 func _notification(what: int) -> void:
@@ -94,7 +107,7 @@ func _notification(what: int) -> void:
 
 ## Panning is off in Frontline and while the boss intro, a reward pick or a dialog owns input.
 func is_panning_enabled() -> bool:
-	if _context() == CONTEXT_FRONTLINE or ScreenManager.has_dialog():
+	if _hazard or _context() == CONTEXT_FRONTLINE or ScreenManager.has_dialog():
 		return false
 	return _state != STATE_BOSS_INTRO and _state != STATE_REWARD_PICK \
 			and not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK)
@@ -107,6 +120,16 @@ func is_gliding() -> bool:
 ## True from the start of BOSS_INTRO until the state after it begins.
 func is_in_boss_intro() -> bool:
 	return _intro
+
+
+## True while the camera holds the Hazard Trial room frame.
+func is_in_hazard_trial() -> bool:
+	return _hazard
+
+
+## The frame sent last on camera_frame_changed: FRONTLINE, OVERVIEW, BOSS_INTRO or HAZARD_TRIAL.
+func get_frame() -> StringName:
+	return _frame
 
 
 ## Where the boss appears, on the camera's ground plane: the boss_spawn_point marker, else the
@@ -165,6 +188,9 @@ func _process(_delta: float) -> void:
 	var game_delta := _game_delta()
 	_update_shake(real_delta)
 	_update_size(real_delta)
+	if _hazard:
+		_velocity = Vector3.ZERO
+		return
 	if _intro:
 		_update_intro(game_delta)
 		return
@@ -192,7 +218,7 @@ func _physics_process(_delta: float) -> void:
 ## Frontline follow. It must step with the commander's physics ticks: sampling the
 ## commander once per rendered frame mixes two clocks and makes it shake on screen.
 func _follow(real_delta: float) -> void:
-	if _intro or _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
+	if _intro or _hazard or _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
 		return
 	var weight := 1.0 - exp(-real_delta / maxf(follow_smoothing, 0.001))
 	position = _clamped(position.lerp(get_default_focus(), weight))
@@ -362,12 +388,13 @@ func _on_mode_changed(mode: StringName) -> void:
 	var before := _context()
 	_commander_mode = (mode == &"COMMANDER")
 	_clear_held()
-	# The intro keeps the camera on the boss whatever the mode; the frame follows after it.
-	if _intro:
+	# The intro and the Hazard Trial keep their frame whatever the mode; the frame follows after.
+	if _intro or _hazard:
 		return
 	if _context() != before:
 		_glide_to_focus(transition_time)
 		_glide_size()
+	_update_frame()
 
 
 func _on_state_changed(new_state: StringName) -> void:
@@ -375,8 +402,16 @@ func _on_state_changed(new_state: StringName) -> void:
 	_state = new_state
 	_in_prep = (new_state == &"PREP")
 	_clear_held()
+	if new_state == STATE_HAZARD_TRIAL:
+		_enter_hazard()
+		return
+	if _hazard:
+		# The room always gives back to PREP (HZT-07), whichever signal comes first.
+		_leave_hazard()
+		return
 	if new_state == STATE_BOSS_INTRO:
 		_start_intro()
+		_update_frame()
 		return
 	var was_intro := _intro
 	_intro = false
@@ -385,6 +420,73 @@ func _on_state_changed(new_state: StringName) -> void:
 	if was_intro or _context() != before or new_state == &"PREP":
 		_glide_to_focus(transition_time)
 		_glide_size()
+	_update_frame()
+
+
+## The wave side sends hazard_trial_entered and the HAZARD_TRIAL state; either one switches the
+## frame, and the second does nothing.
+func _on_hazard_trial_entered(_wave_index: int, _enemy_types: Array) -> void:
+	_enter_hazard()
+
+
+func _on_hazard_trial_exited(_result: StringName, _kills: int, _gold: int, _xp: float, _mithril: int) -> void:
+	if _hazard:
+		_leave_hazard()
+
+
+## Cuts to the room's fixed frame (CAM-16): the room is far from the corridor, so a glide would
+## fly over the void. The room is the node in group "hazard_room" (HazardRoom), which gives the
+## focus and the orthographic size.
+func _enter_hazard() -> void:
+	if _hazard:
+		return
+	_hazard = true
+	_intro = false
+	_velocity = Vector3.ZERO
+	_glide_left = 0.0
+	_size_left = 0.0
+	_clear_held()
+	var room := get_tree().get_first_node_in_group(&"hazard_room") if is_inside_tree() else null
+	if room != null and room.has_method(&"get_camera_focus"):
+		var focus: Vector3 = room.call(&"get_camera_focus")
+		position = Vector3(focus.x, _home.y, focus.z)
+		var room_size = room.get(&"camera_size")
+		if _camera != null and room_size != null:
+			_camera.size = float(room_size)
+	else:
+		push_warning("CameraRig: no hazard_room in the level, the camera stays where it is")
+	_update_frame()
+
+
+## Cuts back to the default PREP frame (CAM-07): the middle of the corridor at overview size.
+func _leave_hazard() -> void:
+	_hazard = false
+	_in_prep = true
+	_velocity = Vector3.ZERO
+	_glide_left = 0.0
+	_size_left = 0.0
+	_clear_held()
+	position = get_default_focus()
+	if _camera != null and bounds != null:
+		_camera.size = _target_size()
+	_update_frame()
+
+
+func _current_frame() -> StringName:
+	if _hazard:
+		return FRAME_HAZARD_TRIAL
+	if _intro:
+		return FRAME_BOSS_INTRO
+	return FRAME_FRONTLINE if _context() == CONTEXT_FRONTLINE else FRAME_OVERVIEW
+
+
+## Sends camera_frame_changed when the frame starts to change (EVB-35), once per change.
+func _update_frame() -> void:
+	var frame := _current_frame()
+	if frame == _frame:
+		return
+	_frame = frame
+	EventBus.camera_frame_changed.emit(frame)
 
 
 func _on_settings_changed(key: StringName, value: Variant) -> void:
