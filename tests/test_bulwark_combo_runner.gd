@@ -300,6 +300,30 @@ func test_turn_rate_limit() -> void:
 	bulwark.free()
 
 	print("
+[GROUP 6d] Phase 2 and Enrage turn faster by the attack speed-up")
+	for case in [["phase 2", true, false], ["phase 2 + Enrage", true, true], ["Enrage", false, true]]:
+		bulwark = _make_bulwark()
+		cmd = _make_commander(Vector3(0.0, 0.0, -2.0))
+		bulwark.current_target = cmd
+		if case[1]:
+			bulwark.current_phase = Enums.BossPhase.EXPOSED
+		if case[2]:
+			bulwark.enter_enrage()
+		bulwark.change_state(Enums.EnemyState.ATTACK)
+		bulwark.stop_attack_sequence()
+		bulwark.is_attacking_active = true
+		bulwark.attack_recovery_timer = 5.0
+		for i in range(30):
+			bulwark._update_state(STEP)
+		turned = rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
+		var speed_up := boss_data.attack_interval / bulwark._get_attack_interval()
+		var expected := boss_data.ai_turn_rate_deg * speed_up * 0.5
+		assert_true(speed_up > 1.01 and absf(turned - expected) < 0.5,
+				"%s: turns %.1f deg in 0.5 s (%.0f deg/s, x%.2f)" % [case[0], turned, turned * 2.0, speed_up])
+		cmd.free()
+		bulwark.free()
+
+	print("
 [GROUP 6c] Commander behind with no triple stomp ready: turn first, never swing at air")
 	bulwark = _make_bulwark()
 	cmd = _make_commander(Vector3(0.0, 0.0, -2.0))

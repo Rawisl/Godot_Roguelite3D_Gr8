@@ -294,11 +294,12 @@ func _walk_clip() -> StringName:
 	return data.anim_walk if (data != null and not data.anim_walk.is_empty()) else &"move/Walking_A"
 
 
+## Phase 2 and Enrage turn the boss faster by the same ratio they shorten its attack interval.
 func _turn_limited(from_yaw: float, to_yaw: float, delta: float) -> float:
 	var boss_data := data as BossData
 	if boss_data == null:
 		return to_yaw
-	var max_step := deg_to_rad(boss_data.ai_turn_rate_deg) * delta
+	var max_step := deg_to_rad(boss_data.ai_turn_rate_deg * _combo_speed()) * delta
 	return from_yaw + clampf(angle_difference(from_yaw, to_yaw), -max_step, max_step)
 
 
