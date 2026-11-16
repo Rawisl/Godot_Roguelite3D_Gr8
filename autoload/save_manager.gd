@@ -9,7 +9,6 @@ extends Node
 ## on defaults in memory and save() refuses until the file is fixed (an unreadable save can
 ## be replaced with start_new_save()).
 # TODO(kiezroth): when the save loads with run_flag.run_in_progress true, settle the run as ABANDONED before MainMenu (prestige from prestige_pending), clear the flag, save and tell the player.
-# TODO(WhoKeng): when the tutorial lands, call SaveManager.mark_tutorial_done() as soon as both starter towers are built or Skip is pressed; it saves the flag and emits tutorial_completed.
 
 signal save_loaded
 
@@ -261,6 +260,36 @@ func start_new_save() -> Error:
 	# data was replaced, so listeners have to read get_section() again.
 	save_loaded.emit()
 	return error
+
+## Revision of the last write, 0 before the first one. Account sync compares it with the cloud.
+func get_revision() -> int:
+	return int(_envelope_extras.get("revision", 0))
+
+## The id of this machine, made once and written with the next save.
+func get_device_id() -> String:
+	if not _envelope_extras.has("device_id"):
+		_envelope_extras["device_id"] = _new_device_id()
+	return String(_envelope_extras["device_id"])
+
+## Takes profile, meta and flags from the account and writes them at the cloud revision, so both
+## sides match. run_flag stays local: a run in progress is never synced.
+func apply_synced(synced: Dictionary, revision: int) -> Error:
+	for section in AccountApi.data_for_sync({}):
+		var value: Variant = synced.get(section)
+		if value is Dictionary:
+			data[section] = _merge_defaults(value, DEFAULT_DATA[section])
+	_clamp_values(data)
+	# _write() adds one.
+	_envelope_extras["revision"] = maxi(revision - 1, 0)
+	var error := save_now()
+	save_loaded.emit()
+	EventBus.prestige_balance_changed.emit(int(get_section(PROFILE)["prestige_balance"]))
+	return error
+
+## Keeps the copy that lost a sync in save.conflict.bak.
+func keep_conflict_copy(other_data: Dictionary, revision: int, device_id: String) -> Error:
+	return repository.save_conflict_copy({"save_version": SAVE_VERSION, "revision": revision,
+		"device_id": device_id, "data": other_data.duplicate(true)})
 
 ## Live dictionary of one section (PROFILE, META, RUN_FLAG, FLAGS). Change it, then call save().
 ## load_save() replaces data, so call this again after save_loaded instead of keeping the dictionary.

@@ -1,5 +1,23 @@
 [gd_scene format=3 uid="uid://bbg0ghrmn2br1"]
 
+[ext_resource type="Script" uid="uid://cqgqf3bbklcf6" path="res://ui/screens/tab_graphics.gd" id="1_gfx"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_keep"]
+content_margin_left = 24.0
+content_margin_top = 16.0
+content_margin_right = 24.0
+content_margin_bottom = 16.0
+bg_color = Color(0.10980392, 0.12156863, 0.14901961, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="TabGraphics" type="Control" unique_id=1662895451]
 layout_mode = 3
 anchors_preset = 15
@@ -7,8 +25,91 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_gfx")
 
-[node name="Label" type="Label" parent="." unique_id=402428171]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="Rows" type="VBoxContainer" parent="." unique_id=137340634]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="WindowModeRow" type="HBoxContainer" parent="Rows" unique_id=1172163217]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="WindowModeLabel" type="Label" parent="Rows/WindowModeRow" unique_id=1148257660]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="WindowMode" type="OptionButton" parent="Rows/WindowModeRow" unique_id=622530639]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="ResolutionRow" type="HBoxContainer" parent="Rows" unique_id=899656721]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="ResolutionLabel" type="Label" parent="Rows/ResolutionRow" unique_id=1353661946]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Resolution" type="OptionButton" parent="Rows/ResolutionRow" unique_id=1800425212]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="VSync" type="CheckButton" parent="Rows" unique_id=994647479]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MaxFpsRow" type="HBoxContainer" parent="Rows" unique_id=200308460]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="MaxFpsLabel" type="Label" parent="Rows/MaxFpsRow" unique_id=483780869]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MaxFps" type="OptionButton" parent="Rows/MaxFpsRow" unique_id=1192126254]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="KeepPanel" type="PanelContainer" parent="Rows" unique_id=702000959]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_keep")
+
+[node name="KeepRow" type="HBoxContainer" parent="Rows/KeepPanel" unique_id=230396767]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="KeepLabel" type="Label" parent="Rows/KeepPanel/KeepRow" unique_id=752708718]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+
+[node name="KeepButton" type="Button" parent="Rows/KeepPanel/KeepRow" unique_id=1035369993]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
+
+[node name="RevertButton" type="Button" parent="Rows/KeepPanel/KeepRow" unique_id=1904217964]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
