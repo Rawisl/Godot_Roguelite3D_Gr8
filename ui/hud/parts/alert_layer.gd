@@ -5,6 +5,10 @@ extends Control
 ## T1 first, then by tier, then by time. The same alert is not shown again within repeat_gap
 ## (params "repeat" = true skips that, for countdowns). Lifetimes run in real time, so x2, x3 and
 ## Pause do not change them. The panels are placed in the scene; nothing is created here.
+## Each panel has a tone mark, the main line and an optional second line (params "sub_key", read
+## with the same params), so a toast never needs a sentence with punctuation. An alert with
+## params "merge" replaces the one of the same group still on screen or waiting, and restarts its
+## time, instead of stacking a second toast.
 
 ## How long each tier stays, in real seconds.
 @export var banner_time := 3.0
@@ -14,6 +18,9 @@ extends Control
 @export var repeat_gap := 5.0
 ## Toasts on screen at once, T2 and T3 together.
 @export var max_toasts := 3
+## Widest the banner and the top toasts may get before their lines wrap, so they stay between the
+## left column and the open wave preview on the right (1920 wide layout).
+@export var max_centre_width := 440.0
 
 var _queue: Array[Dictionary] = []
 var _last_shown: Dictionary = {}  # key -> real time it was last queued
@@ -44,6 +51,9 @@ func _hide_all() -> void:
 
 func _on_alert_requested(tier: int, key: StringName, params: Dictionary) -> void:
 	var now := TimeManager.real_time
+	if params.has("merge") and _merge(key, params):
+		_last_shown[key] = now
+		return
 	if not params.get(&"repeat", params.get("repeat", false)):
 		if _last_shown.has(key) and now - float(_last_shown[key]) < repeat_gap:
 			return
@@ -88,13 +98,77 @@ func _try_show(item: Dictionary) -> bool:
 		if panel == null:
 			return false
 		life = t2_time if tier == 2 else t3_time
-	(panel.get_child(0) as Label).text = UiFormat.tr_fmt(item.key, item.params)
-	panel.set_meta(&"key", item.key)
+	_fill(panel, item.key, item.params)
+	panel.set_meta(&"merge", item.params.get("merge", &""))
 	panel.set_meta(&"until", TimeManager.real_time + life)
 	panel.visible = true
 	# Newest toast at the end of its column.
 	panel.get_parent().move_child(panel, -1)
 	return true
+
+## Panel > Row > [mark, Texts > [main line, second line]].
+func _fill(panel: Control, key: StringName, params: Dictionary) -> void:
+	var texts := panel.get_child(0).get_child(1)
+	(texts.get_child(0) as Label).text = UiFormat.tr_fmt(key, params)
+	var sub := texts.get_child(1) as Label
+	var sub_key: StringName = params.get("sub_key", &"")
+	sub.visible = sub_key != &""
+	sub.text = UiFormat.tr_fmt(sub_key, params) if sub.visible else ""
+	panel.set_meta(&"key", key)
+	if panel == _banner or panel.get_parent() == _top:
+		_fit_width(panel, texts.get_children())
+
+## Lets the lines wrap only when the alert would be wider than max_centre_width. Widths are read from
+## the fonts, since a label's minimum size only updates on the next frame.
+func _fit_width(panel: Control, lines: Array) -> void:
+	var row := panel.get_child(0) as HBoxContainer
+	var mark := row.get_child(0) as Control
+	var extra := panel.get_theme_stylebox(&"panel").get_minimum_size().x + mark.custom_minimum_size.x 			+ row.get_theme_constant(&"separation")
+	var widest := 0.0
+	for line: Label in lines:
+		if line.visible:
+			var font := line.get_theme_font(&"font")
+			widest = maxf(widest, font.get_string_size(line.text, HORIZONTAL_ALIGNMENT_LEFT, -1.0,
+				line.get_theme_font_size(&"font_size")).x)
+	var wrap := extra + widest > max_centre_width
+	for line: Label in lines:
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+		line.custom_minimum_size.x = max_centre_width - extra if wrap else 0.0
+	if panel == _banner:
+		_centre_banner.call_deferred()
+
+## The banner sits on its own anchor; after a size change it is put back in the middle.
+func _centre_banner() -> void:
+	_banner.reset_size()
+	var half := _banner.size * 0.5
+	_banner.offset_left = -half.x
+	_banner.offset_right = half.x
+	_banner.offset_top = -half.y
+	_banner.offset_bottom = half.y
+
+## Updates the alert of the same group on screen (restarting its time) or waiting. False when none.
+func _merge(key: StringName, params: Dictionary) -> bool:
+	var group: Variant = params["merge"]
+	for panel in _all_panels():
+		if panel.visible and panel.get_meta(&"merge", &"") == group:
+			_fill(panel, key, params)
+			var tier := 1 if panel == _banner else (2 if panel.get_parent() == _top else 3)
+			panel.set_meta(&"until", TimeManager.real_time + [banner_time, t2_time, t3_time][tier - 1])
+			return true
+	for item in _queue:
+		if item.params.get("merge", &"") == group:
+			item.key = key
+			item.params = params
+			return true
+	return false
+
+## Main line of each alert on screen, banner first. For tests.
+func shown_texts() -> Array[String]:
+	var texts: Array[String] = []
+	for panel in _all_panels():
+		if panel.visible:
+			texts.append((panel.get_child(0).get_child(1).get_child(0) as Label).text)
+	return texts
 
 func _free_toast(column: VBoxContainer) -> Control:
 	for toast in column.get_children():
