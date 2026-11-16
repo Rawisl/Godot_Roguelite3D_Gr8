@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://dx1yjttn4bkfe"]
 
 [ext_resource type="Script" uid="uid://b0m1aaxkgovw8" path="res://ui/hud/parts/alert_layer.gd" id="1_e8v0x"]
+[ext_resource type="Script" uid="uid://d2xbw1sp7svxh" path="res://ui/hud/parts/alert_sources.gd" id="9_sources"]
+[ext_resource type="Script" uid="uid://bi5iq5fi8c3ov" path="res://ui/screens/notice_glyph.gd" id="10_glyph"]
 
 [node name="AlertLayer" type="Control" unique_id=328027326]
 layout_mode = 3
@@ -26,10 +28,35 @@ grow_vertical = 2
 mouse_filter = 2
 theme_type_variation = &"AlertT1"
 
-[node name="Text" type="Label" parent="Banner" unique_id=1739206001]
+[node name="Row" type="HBoxContainer" parent="Banner" unique_id=165909629]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Glyph" type="Control" parent="Banner/Row" unique_id=1602207333]
+custom_minimum_size = Vector2(39, 39)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_glyph")
+warning = true
+color = Color(1, 0.1764706, 0.1764706, 1)
+
+[node name="Texts" type="VBoxContainer" parent="Banner/Row" unique_id=1650187988]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Text" type="Label" parent="Banner/Row/Texts" unique_id=1739206001]
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
-horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="Banner/Row/Texts" unique_id=1829224862]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.1764706, 0.1764706, 1)
+theme_override_font_sizes/font_size = 25
 
 [node name="ToastTop" type="VBoxContainer" parent="." unique_id=514554512]
 unique_name_in_owner = true
@@ -50,10 +77,35 @@ size_flags_horizontal = 4
 mouse_filter = 2
 theme_type_variation = &"AlertT2"
 
-[node name="Text" type="Label" parent="ToastTop/Toast1" unique_id=1739206060]
+[node name="Row" type="HBoxContainer" parent="ToastTop/Toast1" unique_id=861824681]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Glyph" type="Control" parent="ToastTop/Toast1/Row" unique_id=562747373]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_glyph")
+warning = true
+color = Color(1, 0.6039216, 0.18039216, 1)
+
+[node name="Texts" type="VBoxContainer" parent="ToastTop/Toast1/Row" unique_id=1349832931]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Text" type="Label" parent="ToastTop/Toast1/Row/Texts" unique_id=1739206060]
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="ToastTop/Toast1/Row/Texts" unique_id=137000312]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6039216, 0.18039216, 1)
+theme_override_font_sizes/font_size = 18
 
 [node name="Toast2" type="PanelContainer" parent="ToastTop" unique_id=1739206011]
 visible = false
@@ -62,10 +114,35 @@ size_flags_horizontal = 4
 mouse_filter = 2
 theme_type_variation = &"AlertT2"
 
-[node name="Text" type="Label" parent="ToastTop/Toast2" unique_id=1739206061]
+[node name="Row" type="HBoxContainer" parent="ToastTop/Toast2" unique_id=1053579327]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Glyph" type="Control" parent="ToastTop/Toast2/Row" unique_id=334675817]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_glyph")
+warning = true
+color = Color(1, 0.6039216, 0.18039216, 1)
+
+[node name="Texts" type="VBoxContainer" parent="ToastTop/Toast2/Row" unique_id=594228219]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Text" type="Label" parent="ToastTop/Toast2/Row/Texts" unique_id=1739206061]
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="ToastTop/Toast2/Row/Texts" unique_id=1363074921]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6039216, 0.18039216, 1)
+theme_override_font_sizes/font_size = 18
 
 [node name="Toast3" type="PanelContainer" parent="ToastTop" unique_id=1739206012]
 visible = false
@@ -74,10 +151,35 @@ size_flags_horizontal = 4
 mouse_filter = 2
 theme_type_variation = &"AlertT2"
 
-[node name="Text" type="Label" parent="ToastTop/Toast3" unique_id=1739206062]
+[node name="Row" type="HBoxContainer" parent="ToastTop/Toast3" unique_id=990043640]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Glyph" type="Control" parent="ToastTop/Toast3/Row" unique_id=662584726]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_glyph")
+warning = true
+color = Color(1, 0.6039216, 0.18039216, 1)
+
+[node name="Texts" type="VBoxContainer" parent="ToastTop/Toast3/Row" unique_id=1043775228]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Text" type="Label" parent="ToastTop/Toast3/Row/Texts" unique_id=1739206062]
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="ToastTop/Toast3/Row/Texts" unique_id=1097077720]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6039216, 0.18039216, 1)
+theme_override_font_sizes/font_size = 18
 
 [node name="ToastBottom" type="VBoxContainer" parent="." unique_id=1252747203]
 unique_name_in_owner = true
@@ -104,10 +206,35 @@ size_flags_horizontal = 8
 mouse_filter = 2
 theme_type_variation = &"AlertT3"
 
-[node name="Text" type="Label" parent="ToastBottom/Toast1" unique_id=1739206070]
+[node name="Row" type="HBoxContainer" parent="ToastBottom/Toast1" unique_id=571792887]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Glyph" type="Control" parent="ToastBottom/Toast1/Row" unique_id=1708027457]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_glyph")
+warning = false
+color = Color(0.9098039, 0.8784314, 0.3529412, 1)
+
+[node name="Texts" type="VBoxContainer" parent="ToastBottom/Toast1/Row" unique_id=1412440779]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Text" type="Label" parent="ToastBottom/Toast1/Row/Texts" unique_id=1739206070]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="ToastBottom/Toast1/Row/Texts" unique_id=723165309]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.8784314, 0.3529412, 1)
+theme_override_font_sizes/font_size = 16
 
 [node name="Toast2" type="PanelContainer" parent="ToastBottom" unique_id=1739206021]
 visible = false
@@ -116,10 +243,35 @@ size_flags_horizontal = 8
 mouse_filter = 2
 theme_type_variation = &"AlertT3"
 
-[node name="Text" type="Label" parent="ToastBottom/Toast2" unique_id=1739206071]
+[node name="Row" type="HBoxContainer" parent="ToastBottom/Toast2" unique_id=248026011]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Glyph" type="Control" parent="ToastBottom/Toast2/Row" unique_id=1164944603]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_glyph")
+warning = false
+color = Color(0.9098039, 0.8784314, 0.3529412, 1)
+
+[node name="Texts" type="VBoxContainer" parent="ToastBottom/Toast2/Row" unique_id=297263730]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Text" type="Label" parent="ToastBottom/Toast2/Row/Texts" unique_id=1739206071]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="ToastBottom/Toast2/Row/Texts" unique_id=1934574916]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.8784314, 0.3529412, 1)
+theme_override_font_sizes/font_size = 16
 
 [node name="Toast3" type="PanelContainer" parent="ToastBottom" unique_id=1739206022]
 visible = false
@@ -128,7 +280,35 @@ size_flags_horizontal = 8
 mouse_filter = 2
 theme_type_variation = &"AlertT3"
 
-[node name="Text" type="Label" parent="ToastBottom/Toast3" unique_id=1739206072]
+[node name="Row" type="HBoxContainer" parent="ToastBottom/Toast3" unique_id=1305326985]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Glyph" type="Control" parent="ToastBottom/Toast3/Row" unique_id=1200814022]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("10_glyph")
+warning = false
+color = Color(0.9098039, 0.8784314, 0.3529412, 1)
+
+[node name="Texts" type="VBoxContainer" parent="ToastBottom/Toast3/Row" unique_id=747419224]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Text" type="Label" parent="ToastBottom/Toast3/Row/Texts" unique_id=1739206072]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="ToastBottom/Toast3/Row/Texts" unique_id=1996373608]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.8784314, 0.3529412, 1)
+theme_override_font_sizes/font_size = 16
+
+[node name="AlertSources" type="Node" parent="." unique_id=116313539]
+script = ExtResource("9_sources")

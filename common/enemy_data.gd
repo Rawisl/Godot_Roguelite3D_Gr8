@@ -39,6 +39,24 @@ extends Resource
 @export var prestige_reward: int = 1
 @export var xp_value: int = 1
 
+@export_group("Traits")
+# TODO(endervia): consume these traits in enemy behavior, including stealth targeting, explosions, invulnerability, charge impacts and revival.
+@export var is_stealth: bool = false
+@export var stealth_opacity: float = 1.0
+@export var explode_on_contact: bool = false
+@export var explode_on_death: bool = false
+@export var explode_radius: float = 0.0
+@export var explode_damage: int = 0
+@export var explode_windup: float = 0.0
+@export var invuln_hp_threshold: float = 0.0
+@export var invuln_duration: float = 0.0
+@export var is_charger: bool = false
+@export var impact_damage: int = 0
+@export var impact_knockback: float = 0.0
+@export var revive_count: int = 0
+@export var revive_delay: float = 0.0
+@export var revive_dmg_mult: float = 1.0
+
 # Backward-compatibility aliases
 var max_hp: int:
 	get: return base_hp

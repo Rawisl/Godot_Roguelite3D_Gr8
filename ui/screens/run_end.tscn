@@ -1,6 +1,23 @@
 [gd_scene format=3 uid="uid://ne4b4ktg8jsp"]
 
 [ext_resource type="Script" uid="uid://kektgv000ide" path="res://ui/screens/run_end.gd" id="1_v82ie"]
+[ext_resource type="PackedScene" uid="uid://nquuvepiqqpa" path="res://ui/screens/run_end_row.tscn" id="2_row"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+content_margin_left = 40.0
+content_margin_top = 32.0
+content_margin_right = 40.0
+content_margin_bottom = 32.0
+bg_color = Color(0, 0, 0, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="MarginContainer" type="MarginContainer" unique_id=297996740]
 texture_filter = 2
@@ -14,26 +31,166 @@ script = ExtResource("1_v82ie")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=163728926]
 layout_mode = 2
-size_flags_horizontal = 0
-theme_override_constants/separation = 16
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 20
 alignment = 1
 
-[node name="Result" type="Label" parent="VBoxContainer" unique_id=822675748]
+[node name="Box" type="PanelContainer" parent="VBoxContainer" unique_id=562240864]
+custom_minimum_size = Vector2(1280, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
+
+[node name="Content" type="VBoxContainer" parent="VBoxContainer/Box" unique_id=759128055]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Result" type="Label" parent="VBoxContainer/Box/Content" unique_id=822675748]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 52
+horizontal_alignment = 1
 
-[node name="PlayAgain" type="Button" parent="VBoxContainer" unique_id=1741688518]
+[node name="Cause" type="Label" parent="VBoxContainer/Box/Content" unique_id=678891358]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.1764706, 0.1764706, 1)
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+
+[node name="Badges" type="HBoxContainer" parent="VBoxContainer/Box/Content" unique_id=778750644]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="VictoryBadge" type="Label" parent="VBoxContainer/Box/Content/Badges" unique_id=168132658]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="RecordBadge" type="Label" parent="VBoxContainer/Box/Content/Badges" unique_id=192324785]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer/Box/Content" unique_id=1273907253]
+layout_mode = 2
+
+[node name="Columns" type="HBoxContainer" parent="VBoxContainer/Box/Content" unique_id=1625904984]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="RunCol" type="VBoxContainer" parent="VBoxContainer/Box/Content/Columns" unique_id=1468690512]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="RunHeading" type="Label" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=968143801]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 26
+
+[node name="WavesRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=1652675658 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+value_font_size = 34
+
+[node name="TimeRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=1654850036 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="KillsRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=1520195989 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CommanderKillsRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=691910062 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GoldRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=1413298108 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+value_color = Color(1, 0.78431374, 0.23921569, 1)
+
+[node name="BossesRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=143828441 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LevelRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=1325515815 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TopTowerRow" parent="VBoxContainer/Box/Content/Columns/RunCol" unique_id=1555290283 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VSeparator" type="VSeparator" parent="VBoxContainer/Box/Content/Columns" unique_id=183988211]
+layout_mode = 2
+
+[node name="PrestigeCol" type="VBoxContainer" parent="VBoxContainer/Box/Content/Columns" unique_id=1343300121]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PrestigeHeading" type="Label" parent="VBoxContainer/Box/Content/Columns/PrestigeCol" unique_id=566220214]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 26
+
+[node name="CollectedRow" parent="VBoxContainer/Box/Content/Columns/PrestigeCol" unique_id=1316284129 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+accent_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+
+[node name="RateRow" parent="VBoxContainer/Box/Content/Columns/PrestigeCol" unique_id=522523208 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+accent_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+
+[node name="StartMultRow" parent="VBoxContainer/Box/Content/Columns/PrestigeCol" unique_id=1234343971 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+accent_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+
+[node name="GainRow" parent="VBoxContainer/Box/Content/Columns/PrestigeCol" unique_id=1810722161 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+accent_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+value_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+value_font_size = 34
+
+[node name="BalanceRow" parent="VBoxContainer/Box/Content/Columns/PrestigeCol" unique_id=1383128858 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+accent_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+
+[node name="UnlocksRow" parent="VBoxContainer/Box/Content/Columns/PrestigeCol" unique_id=183659639 instance=ExtResource("2_row")]
+unique_name_in_owner = true
+layout_mode = 2
+accent_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+
+[node name="Buttons" type="HBoxContainer" parent="VBoxContainer" unique_id=1989818726]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PlayAgain" type="Button" parent="VBoxContainer/Buttons" unique_id=1741688518]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
 
-[node name="MetaShop" type="Button" parent="VBoxContainer" unique_id=652915547]
+[node name="MetaShop" type="Button" parent="VBoxContainer/Buttons" unique_id=652915547]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2
 
-[node name="MainMenu" type="Button" parent="VBoxContainer" unique_id=1230801325]
+[node name="MainMenu" type="Button" parent="VBoxContainer/Buttons" unique_id=1230801325]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 56)
 layout_mode = 2

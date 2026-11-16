@@ -13,7 +13,7 @@ var _next_is_boss := false
 var _state: StringName = &""
 var _hazard_used := false
 
-## True while the tutorial waits for the first two towers.
+## Forces the tutorial lock on, for tests; the tutorial itself is read from its group.
 var tutorial_lock := false:
 	set(value):
 		tutorial_lock = value
@@ -54,10 +54,14 @@ func _lock_reason() -> StringName:
 		return &"hud.start_wave.paused"
 	if ScreenManager.has_transaction_dialog():
 		return &"hud.start_wave.dialog"
-		# TODO(WhoKeng): the tutorial sets tutorial_lock until both starter towers are built.
-	if tutorial_lock:
+	if tutorial_lock or _tutorial_waits():
 		return &"hud.start_wave.tutorial"
 	return &""
+
+## The first run tutorial keeps the button grey until both starter towers stand.
+func _tutorial_waits() -> bool:
+	var tutorial := get_tree().get_first_node_in_group(&"tutorial") as TutorialService
+	return tutorial != null and tutorial.is_wave_locked()
 
 func _set_next_wave(wave: int) -> void:
 	_next_wave = wave

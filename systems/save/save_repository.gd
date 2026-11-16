@@ -46,3 +46,7 @@ func discard_temp() -> void:
 ## Keeps the broken copies aside (main as .corrupt, temp as .corrupt.tmp, backup as .corrupt.bak).
 func quarantine() -> void:
 	pass
+
+## Keeps the copy that lost an account sync, so a player can still get it back by hand.
+func save_conflict_copy(_envelope: Dictionary) -> Error:
+	return ERR_UNAVAILABLE

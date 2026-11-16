@@ -15,6 +15,22 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hint"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.10980392, 0.12156863, 0.14901961, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.6039216, 0.18039216, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="FortressBar" type="MarginContainer" unique_id=1658010275]
 offset_right = 4.0
 offset_bottom = 27.0
@@ -76,3 +92,19 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_jpyye")
+
+[node name="RepairHintBox" type="PanelContainer" parent="VBoxContainer" unique_id=1312744819]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hint")
+
+[node name="RepairHint" type="Label" parent="VBoxContainer/RepairHintBox" unique_id=538292004]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(336, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6039216, 0.18039216, 1)
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
