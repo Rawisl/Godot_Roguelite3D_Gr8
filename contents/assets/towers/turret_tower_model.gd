@@ -1,7 +1,8 @@
 class_name TurretTowerModel
 extends Node3D
 ## Rigged model for the Cannon and Arrow towers that turns toward the tower's target.
-## - Shows Level1, Level2 or Level3 to match Tower.level (the LVL_1, LVL_2 and LVL_4 meshes).
+## - Shows Level1, Level2 or Level3 to match the model tier of Tower.level (TowerData.model_tier),
+##   so the mesh only changes when the level crosses a tier boundary.
 ## - Turns yaw_bone around the vertical axis and tilts pitch_bone up or down, so the barrel or
 ##   the bolt points where the shot goes.
 ## - Puts a muzzle marker at the tip of the barrel or bolt and hands it to the Tower, so
@@ -135,7 +136,7 @@ func _find_tip(sk: Skeleton3D) -> Vector3:
 func _process(delta: float) -> void:
 	if _tower == null:
 		return
-	if _tower.level - 1 != _shown:
+	if TowerData.model_tier(_tower.level) - 1 != _shown:
 		_show_level()
 	if _shown < 0 or _shown >= _rigs.size():
 		return
@@ -186,7 +187,7 @@ func _pose(r: Rig) -> void:
 func _show_level() -> void:
 	if _tower == null:
 		return
-	_shown = clampi(_tower.level - 1, 0, _levels.size() - 1)
+	_shown = clampi(TowerData.model_tier(_tower.level) - 1, 0, _levels.size() - 1)
 	for i in _levels.size():
 		_levels[i].visible = i == _shown
 	var r := _rigs[_shown]

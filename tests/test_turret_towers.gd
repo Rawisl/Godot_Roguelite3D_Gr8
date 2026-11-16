@@ -1,6 +1,6 @@
 extends Node3D
 ## Automated test for the rigged Arrow and Cannon tower models:
-## - level 1, 2 and 3 show the LVL_1, LVL_2 and LVL_4 meshes, one at a time
+## - levels 1, 12, 13, 24, 25 and 36 show the Level1, Level2 or Level3 mesh of their model tier, one at a time
 ## - the barrel or bolt turns toward the target, wherever it is around the tower
 ## - the Arrow tower tilts down at a close target, the cannon rises with distance
 ## - the muzzle sits at the tip, follows the turn, and is where shots leave from
@@ -102,18 +102,25 @@ func _clear(nodes: Array) -> void:
 
 
 func test_levels(scene: PackedScene, label: String) -> void:
-	print("\n[GROUP] %s: one level mesh at a time" % label)
+	print("
+[GROUP] %s: one level mesh at a time, chosen by model tier" % label)
 	var t := _tower(scene)
 	var m := _model(t)
-	for lv in [1, 2, 3]:
+	assert_true(t.data.levels.size() >= 36, "%s has 36 levels of data (%d)" % [label, t.data.levels.size()])
+	for lv in [1, 12, 13, 24, 25, 36]:
 		t.apply_level(lv)
 		await get_tree().process_frame
+		var tier := TowerData.model_tier(lv)
 		var shown := []
 		for i in 3:
 			if (m.get_node("Level%d" % (i + 1)) as Node3D).visible:
 				shown.append(i + 1)
-		assert_true(shown == [lv], "%s level %d shows Level%d only (shown %s)" % [label, lv, lv, shown])
+		assert_true(shown == [tier], "%s level %d shows Level%d only (shown %s)" % [label, lv, tier, shown])
 		assert_true(t._muzzle_node == m.muzzle(), "%s level %d: the tower shoots from this level's muzzle" % [label, lv])
+		var muzzle := m.muzzle()
+		await get_tree().process_frame
+		await get_tree().process_frame
+		assert_true(m.muzzle() == muzzle and t._muzzle_node == muzzle, "%s level %d: the shown mesh stays put across frames" % [label, lv])
 	_clear([t])
 
 
