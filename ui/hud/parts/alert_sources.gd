@@ -3,15 +3,11 @@ extends Node
 ## Turns game events into alerts for the AlertLayer next to it: the commander at low HP (T1),
 ## the boss enrage warning and the enrage itself (T2, T1), towers destroyed (T2) and a boss in the
 ## next wave (T2). Each alert is a short main line and a second line, without sentence punctuation.
-## Towers lost within GameConfig.tower_ruined_merge_seconds of each other share one toast that
-## counts them, so a chain of losses never stacks a column of toasts.
+## Towers lost within GameConfig.tower_ruined_merge_seconds of each other (as long as the toast
+## stays) share one toast that counts them, so a chain of losses never stacks a column of toasts.
+## The slot is read from BuildService because tower_destroyed carries only the slot id.
 # TODO(kimvux): play a heartbeat sound with the commander low HP banner; AudioManager has no such cue yet.
 
-## Same threshold as the commander's own low HP warning.
-@export var commander_stats: CharacterStats = preload("res://data/config/commander_stats.tres")
-
-## Set while the commander is at or under the threshold, so the banner shows once per drop.
-var _commander_low := false
 ## Slots lost this frame, and all slots lost in the current merge window.
 var _destroyed: Array[StringName] = []
 var _ruined_window: Array[StringName] = []
@@ -23,7 +19,10 @@ var _boss_next := false
 var _boss_told_for := 0
 
 func _ready() -> void:
-	EventBus.commander_hp_changed.connect(_on_commander_hp_changed)
+	# The commander decides when it is low (exact HP, its own threshold), so the banner follows it.
+	EventBus.commander_low_hp_changed.connect(func(is_low: bool) -> void:
+		if is_low:
+			_alert(Enums.AlertTier.T1, &"alert.commander_low", {"sub_key": &"alert.commander_low_sub"}))
 	EventBus.boss_timer_milestone.connect(_on_boss_timer_milestone)
 	EventBus.boss_enraged.connect(func() -> void:
 		_alert(Enums.AlertTier.T1, &"alert.boss_enraged", {"sub_key": &"alert.boss_enraged_sub"}))
@@ -36,19 +35,12 @@ func _ready() -> void:
 	EventBus.run_started.connect(_on_run_started)
 
 func _on_run_started() -> void:
-	_commander_low = false
 	_destroyed.clear()
 	_ruined_window.clear()
 	_ruined_until = 0.0
 	_last_wave = 0
 	_boss_next_known = false
 	_boss_told_for = 0
-
-func _on_commander_hp_changed(hp: int, max_hp: int) -> void:
-	var low := max_hp > 0 and hp > 0 and float(hp) / max_hp <= commander_stats.commander_low_hp_warning_pct
-	if low and not _commander_low:
-		_alert(Enums.AlertTier.T1, &"alert.commander_low", {"sub_key": &"alert.commander_low_sub"})
-	_commander_low = low
 
 func _on_boss_timer_milestone(t_mark: int) -> void:
 	if t_mark == int(GameConfig.enrage_warn_time):
