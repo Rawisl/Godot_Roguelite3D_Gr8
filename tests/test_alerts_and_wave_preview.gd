@@ -90,7 +90,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _run_checks() -> void:
 	_check_commander()
-	_check_boss_timer()
+	await _check_boss_timer()
 	await _check_towers()
 	_check_boss_next()
 	await _check_clear_time()
@@ -117,6 +117,12 @@ func _check_boss_timer() -> void:
 	EventBus.boss_enraged.emit()
 	_expect(_keys() == [&"alert.boss_enrage_soon", &"alert.boss_enraged"] and _alerts[0][0] == 2 and _alerts[1][0] == 1,
 		"alerts: T-30 is a T2 toast and the enrage a T1 banner, the countdown adds nothing")
+	_layer.clear()
+	EventBus.boss_enraged.emit()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_expect(_layer._banner.size.x <= _layer.max_centre_width + 0.5 and absf(_layer._banner.get_global_rect().get_center().x - _layer.size.x * 0.5) < 2.0,
+		"alerts: a long banner wraps to stay centred and clear of the wave preview")
 
 func _check_towers() -> void:
 	EventBus.run_started.emit()

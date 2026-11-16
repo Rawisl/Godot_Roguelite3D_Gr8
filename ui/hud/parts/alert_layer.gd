@@ -18,6 +18,9 @@ extends Control
 @export var repeat_gap := 5.0
 ## Toasts on screen at once, T2 and T3 together.
 @export var max_toasts := 3
+## Widest the banner and the top toasts may get before their lines wrap, so they stay between the
+## left column and the open wave preview on the right (1920 wide layout).
+@export var max_centre_width := 440.0
 
 var _queue: Array[Dictionary] = []
 var _last_shown: Dictionary = {}  # key -> real time it was last queued
@@ -112,6 +115,36 @@ func _fill(panel: Control, key: StringName, params: Dictionary) -> void:
 	sub.visible = sub_key != &""
 	sub.text = UiFormat.tr_fmt(sub_key, params) if sub.visible else ""
 	panel.set_meta(&"key", key)
+	if panel == _banner or panel.get_parent() == _top:
+		_fit_width(panel, texts.get_children())
+
+## Lets the lines wrap only when the alert would be wider than max_centre_width. Widths are read from
+## the fonts, since a label's minimum size only updates on the next frame.
+func _fit_width(panel: Control, lines: Array) -> void:
+	var row := panel.get_child(0) as HBoxContainer
+	var mark := row.get_child(0) as Control
+	var extra := panel.get_theme_stylebox(&"panel").get_minimum_size().x + mark.custom_minimum_size.x 			+ row.get_theme_constant(&"separation")
+	var widest := 0.0
+	for line: Label in lines:
+		if line.visible:
+			var font := line.get_theme_font(&"font")
+			widest = maxf(widest, font.get_string_size(line.text, HORIZONTAL_ALIGNMENT_LEFT, -1.0,
+				line.get_theme_font_size(&"font_size")).x)
+	var wrap := extra + widest > max_centre_width
+	for line: Label in lines:
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+		line.custom_minimum_size.x = max_centre_width - extra if wrap else 0.0
+	if panel == _banner:
+		_centre_banner.call_deferred()
+
+## The banner sits on its own anchor; after a size change it is put back in the middle.
+func _centre_banner() -> void:
+	_banner.reset_size()
+	var half := _banner.size * 0.5
+	_banner.offset_left = -half.x
+	_banner.offset_right = half.x
+	_banner.offset_top = -half.y
+	_banner.offset_bottom = half.y
 
 ## Updates the alert of the same group on screen (restarting its time) or waiting. False when none.
 func _merge(key: StringName, params: Dictionary) -> bool:
