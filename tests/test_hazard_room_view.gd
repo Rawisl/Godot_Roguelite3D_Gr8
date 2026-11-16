@@ -1,6 +1,6 @@
 extends Node
 ## Visual check of the Hazard Trial room on the real corridor level: the real CameraRig cutting to
-## the room's fixed frame and back to PREP (CAM-16), the painted backdrop, the room light and the
+## the room's fixed frame and back to PREP, the painted backdrop, the room light and the
 ## rocks drifting clockwise around the island.
 ## Signals are sent by hand, so it works before the Hazard Trial wave state exists. Not shipped.
 ## Keys: E enter / leave the room (hazard_trial_entered / exited), P pause, 1 / 2 / 3 game speed,
@@ -67,6 +67,7 @@ func _process(_delta: float) -> void:
 
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
+	get_tree().paused = false
 
 
 ## Enters or leaves the room the way the wave side will: the signal, then PREP on the way out.

@@ -35,6 +35,9 @@
 [ext_resource type="Script" uid="uid://cbk5vw2hro2sa" path="res://ui/hud/parts/arrow_glyph.gd" id="26_arrow"]
 [ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="27_hgate"]
 [ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
+[ext_resource type="PackedScene" uid="uid://c3jq3i3ok6u3s" path="res://ui/screens/victory_screen.tscn" id="29_victory"]
+[ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
+[ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="31_preview"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -170,6 +173,9 @@ layout_mode = 2
 [node name="BossBar" parent="Root/SafeArea/Frame/TopCenter" unique_id=615647234 instance=ExtResource("1_4d6w6")]
 layout_mode = 2
 
+[node name="TutorialHint" parent="Root/SafeArea/Frame/TopCenter" unique_id=1614868657 instance=ExtResource("30_tutorial")]
+layout_mode = 2
+
 [node name="TopRight" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=215340958]
 layout_mode = 1
 anchors_preset = 1
@@ -184,6 +190,7 @@ theme_override_constants/separation = 8
 [node name="ResourceBox" type="PanelContainer" parent="Root/SafeArea/Frame/TopRight" unique_id=1093847261]
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
+size_flags_horizontal = 8
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_resbox")
 
@@ -199,7 +206,18 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="SpeedButtons" parent="Root/SafeArea/Frame/TopRight" unique_id=1199262953 instance=ExtResource("9_aixkq")]
+custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="HazardDockSpace" type="Control" parent="Root/SafeArea/Frame/TopRight" unique_id=199344208]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="WavePreview" parent="Root/SafeArea/Frame/TopRight" unique_id=682810540 instance=ExtResource("31_preview")]
+layout_mode = 2
+size_flags_horizontal = 8
 
 [node name="BottomLeft" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=52446867]
 custom_minimum_size = Vector2(200, 64)
@@ -373,6 +391,10 @@ layout_mode = 1
 layout_mode = 1
 
 [node name="RewardPick" parent="Root" unique_id=1840273361 instance=ExtResource("18_rwpck")]
+visible = false
+layout_mode = 1
+
+[node name="VictoryScreen" parent="Root" unique_id=749418655 instance=ExtResource("29_victory")]
 visible = false
 layout_mode = 1
 

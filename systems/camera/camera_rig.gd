@@ -4,9 +4,9 @@ extends Node3D
 ## let the move keys pan it. Runs on TimeManager's real-time clock, so it ignores the game
 ## speed and keeps working while paused. The boss intro pan is the exception: it runs on game
 ## time, so it holds still while paused and lasts as long as the intro itself.
-## In the Hazard Trial the camera cuts to the room's fixed frame (CAM-16): no follow, no panning,
-## C does nothing; leaving cuts back to the PREP frame. Every frame change is sent on
-## EventBus.camera_frame_changed (EVB-35).
+## In the Hazard Trial the camera cuts to the room's fixed frame: no follow, no panning, C does
+## nothing; leaving cuts back to the PREP frame. Every frame change is sent on
+## EventBus.camera_frame_changed.
 
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_down", &"move_left", &"move_right"]
 const CONTEXT_FRONTLINE := &"FRONTLINE"
@@ -304,6 +304,10 @@ func _stop_shake() -> void:
 	_update_shake(0.0)
 
 
+func _flat_distance(a: Vector3, b: Vector3) -> float:
+	return Vector2(a.x, a.z).distance_to(Vector2(b.x, b.z))
+
+
 ## Fast at first, settling at the end.
 func _ease_out(progress: float) -> float:
 	return 1.0 - pow(1.0 - progress, 3.0)
@@ -313,7 +317,8 @@ func _glide_to_focus(duration: float) -> void:
 	_velocity = Vector3.ZERO
 	_glide_from = position
 	_glide_to = get_default_focus()
-	if reduced_motion:
+	# Already there (for example right after a cut): no glide, so panning is free at once.
+	if reduced_motion or _flat_distance(_glide_from, _glide_to) < 0.01:
 		position = _glide_to
 		_glide_left = 0.0
 		return
@@ -325,7 +330,7 @@ func _glide_size() -> void:
 	if _camera == null or bounds == null:
 		return
 	_size_to = _target_size()
-	if reduced_motion:
+	if reduced_motion or absf(_camera.size - _size_to) < 0.01:
 		_camera.size = _size_to
 		_size_left = 0.0
 		return
@@ -406,8 +411,12 @@ func _on_state_changed(new_state: StringName) -> void:
 		_enter_hazard()
 		return
 	if _hazard:
-		# The room always gives back to PREP (HZT-07), whichever signal comes first.
-		_leave_hazard()
+		# Leaving the room, whichever signal comes first. PREP is the normal way out; any other
+		# state (a reset or a recovery) cuts to that state's own frame instead.
+		_leave_hazard(new_state == &"PREP")
+		if new_state == STATE_BOSS_INTRO:
+			_start_intro()
+			_update_frame()
 		return
 	if new_state == STATE_BOSS_INTRO:
 		_start_intro()
@@ -431,10 +440,10 @@ func _on_hazard_trial_entered(_wave_index: int, _enemy_types: Array) -> void:
 
 func _on_hazard_trial_exited(_result: StringName, _kills: int, _gold: int, _xp: float, _mithril: int) -> void:
 	if _hazard:
-		_leave_hazard()
+		_leave_hazard(true)
 
 
-## Cuts to the room's fixed frame (CAM-16): the room is far from the corridor, so a glide would
+## Cuts to the room's fixed frame: the room is far from the corridor, so a glide would
 ## fly over the void. The room is the node in group "hazard_room" (HazardRoom), which gives the
 ## focus and the orthographic size.
 func _enter_hazard() -> void:
@@ -446,30 +455,44 @@ func _enter_hazard() -> void:
 	_glide_left = 0.0
 	_size_left = 0.0
 	_clear_held()
+	# A hard cut of 100 m: shake left from the corridor would jolt the new frame.
+	_stop_shake()
 	var room := get_tree().get_first_node_in_group(&"hazard_room") if is_inside_tree() else null
 	if room != null and room.has_method(&"get_camera_focus"):
 		var focus: Vector3 = room.call(&"get_camera_focus")
 		position = Vector3(focus.x, _home.y, focus.z)
 		var room_size = room.get(&"camera_size")
-		if _camera != null and room_size != null:
+		if _camera != null and room_size != null and float(room_size) > 0.0:
 			_camera.size = float(room_size)
 	else:
 		push_warning("CameraRig: no hazard_room in the level, the camera stays where it is")
 	_update_frame()
 
 
-## Cuts back to the default PREP frame (CAM-07): the middle of the corridor at overview size.
-func _leave_hazard() -> void:
+## Cuts out of the room. Back to PREP: the default PREP frame, the middle of the corridor at
+## the overview size, whatever the mode (a pan made before entering is not restored). Into any
+## other state: that state's default frame.
+func _leave_hazard(to_prep: bool) -> void:
 	_hazard = false
-	_in_prep = true
+	if to_prep:
+		_in_prep = true
 	_velocity = Vector3.ZERO
 	_glide_left = 0.0
 	_size_left = 0.0
 	_clear_held()
-	position = get_default_focus()
+	_stop_shake()
+	position = _prep_focus() if to_prep else get_default_focus()
 	if _camera != null and bounds != null:
-		_camera.size = _target_size()
+		_camera.size = bounds.camera_size_overview if to_prep else _target_size()
 	_update_frame()
+
+
+## The middle of the camera bounds, the PREP frame's focus.
+func _prep_focus() -> Vector3:
+	if bounds == null:
+		return _home
+	var center := bounds.global_position
+	return Vector3(center.x, _home.y, center.z)
 
 
 func _current_frame() -> StringName:
@@ -480,7 +503,7 @@ func _current_frame() -> StringName:
 	return FRAME_FRONTLINE if _context() == CONTEXT_FRONTLINE else FRAME_OVERVIEW
 
 
-## Sends camera_frame_changed when the frame starts to change (EVB-35), once per change.
+## Sends camera_frame_changed when the frame starts to change, once per change.
 func _update_frame() -> void:
 	var frame := _current_frame()
 	if frame == _frame:

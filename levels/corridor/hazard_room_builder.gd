@@ -78,12 +78,7 @@ var _old_uid := ""
 
 func _init() -> void:
 	_rng.seed = 20261116
-	if FileAccess.file_exists(SCENE_PATH):
-		var header := FileAccess.get_file_as_string(SCENE_PATH).get_slice("
-", 0)
-		var at := header.find('uid="')
-		if at >= 0:
-			_old_uid = header.substr(at + 5, header.find('"', at + 5) - at - 5)
+	_old_uid = _scene_uid()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(MESH_DIR))
 	var floor_mesh := _build_floor()
 	var walls_mesh := _build_walls(false)
@@ -111,7 +106,27 @@ func _save(res: Resource, file: String) -> void:
 	var err := ResourceSaver.save(res, path)
 	if err != OK:
 		push_error("hazard_room: cannot save %s (%d)" % [path, err])
+		return
 	res.take_over_path(path)
+
+
+## uid of the scene file before this run, so references to it stay valid.
+func _scene_uid() -> String:
+	if not FileAccess.file_exists(SCENE_PATH):
+		return ""
+	var header := FileAccess.get_file_as_string(SCENE_PATH).get_slice("\n", 0)
+	var at := header.find('uid="')
+	if at < 0:
+		return ""
+	return header.substr(at + 5, header.find('"', at + 5) - at - 5)
+
+
+## uid of the room script from its .uid file; --script runs have no uid cache to ask.
+func _script_uid() -> String:
+	var uid_path := ROOM_SCRIPT + ".uid"
+	if not FileAccess.file_exists(uid_path):
+		return ""
+	return FileAccess.get_file_as_string(uid_path).strip_edges()
 
 
 #region Layout
@@ -516,20 +531,29 @@ func _build_scene() -> void:
 ## The room script uses autoloads, which a --script run does not load, so it is written into the
 ## saved scene as text instead of being attached while building.
 func _attach_script() -> void:
-	var text := FileAccess.get_file_as_string(SCENE_PATH)
-	# Keep the uid the level already points at.
-	if not _old_uid.is_empty() and text.begins_with("[gd_scene format=3]"):
-		text = text.replace("[gd_scene format=3]", '[gd_scene format=3 uid="%s"]' % _old_uid)
+	# Line ends are normalised, so a checkout with CRLF still finds every line.
+	var text := FileAccess.get_file_as_string(SCENE_PATH).replace("\r\n", "\n")
+	var header := "[gd_scene format=3]"
+	if not _old_uid.is_empty() and text.begins_with(header):
+		text = text.replace(header, '[gd_scene format=3 uid="%s"]' % _old_uid)
+	var uid := _script_uid()
+	var uid_attr := (' uid="%s"' % uid) if uid.begins_with("uid://") else ""
+	var ext := '[ext_resource type="Script"%s path="%s" id="0_room"]\n' % [uid_attr, ROOM_SCRIPT]
 	var first_ext := text.find("[ext_resource")
-	text = text.insert(first_ext, '[ext_resource type="Script" path="%s" id="0_room"]
-' % ROOM_SCRIPT)
-	var root_line := text.find("
-", text.find('[node name="HazardRoom"'))
-	text = text.insert(root_line + 1, 'script = ExtResource("0_room")
-camera_size = %s
-boss_spawn_index = %d
-' % [CAMERA_SIZE, BOSS_PAD])
+	var root_at := text.find('[node name="HazardRoom"')
+	if first_ext < 0 or root_at < 0:
+		push_error("hazard_room: unexpected scene layout, the room script was not attached")
+		return
+	text = text.insert(first_ext, ext)
+	var root_line := text.find("\n", text.find('[node name="HazardRoom"'))
+	if root_line < 0:
+		push_error("hazard_room: unexpected scene layout, the room script was not attached")
+		return
+	text = text.insert(root_line + 1, 'script = ExtResource("0_room")\ncamera_size = %s\nboss_spawn_index = %d\n' % [CAMERA_SIZE, BOSS_PAD])
 	var file := FileAccess.open(SCENE_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("hazard_room: cannot write %s (%d)" % [SCENE_PATH, FileAccess.get_open_error()])
+		return
 	file.store_string(text)
 
 

@@ -1,6 +1,6 @@
 class_name HazardPortal
 extends Node3D
-## Hazard Trial tower next to the Fortress (HZT-01): the player clicks it (ClickArea on layer 7,
+## Hazard Trial tower next to the Fortress: the player clicks it (ClickArea on layer 7,
 ## group hazard_portal) or presses E to enter the room. The ring on top turns slowly round the
 ## energy orb, and the rune shards drift around it (FloatingRocks). Decoration only: it follows the
 ## game clock, so it stops on pause and speeds up at x2 and x3.

@@ -1,0 +1,206 @@
+[gd_scene format=3 uid="uid://cbicjn5ct374k"]
+
+[ext_resource type="Script" uid="uid://dia118lmj4hbw" path="res://ui/screens/notice_dialog.gd" id="1_dialog"]
+[ext_resource type="Script" uid="uid://bi5iq5fi8c3ov" path="res://ui/screens/notice_glyph.gd" id="2_glyph"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frame"]
+content_margin_left = 36.0
+content_margin_top = 28.0
+content_margin_right = 36.0
+content_margin_bottom = 28.0
+bg_color = Color(0.10980392, 0.12156863, 0.14901961, 1)
+border_width_left = 6
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_row"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.16470589, 0.18431373, 0.22745098, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="NoticeDialog" type="Control" unique_id=140131907]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_dialog")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1774285985]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1275082300]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Frame" type="PanelContainer" parent="Center" unique_id=1018681500]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_frame")
+
+[node name="Content" type="VBoxContainer" parent="Center/Frame" unique_id=1308439527]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="HBoxContainer" parent="Center/Frame/Content" unique_id=383598263]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Glyph" type="Control" parent="Center/Frame/Content/Header" unique_id=1956387366]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("2_glyph")
+
+[node name="Title" type="Label" parent="Center/Frame/Content/Header" unique_id=117469124]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 34
+
+[node name="Lines" type="VBoxContainer" parent="Center/Frame/Content" unique_id=662500547]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Line1" type="Label" parent="Center/Frame/Content/Lines" unique_id=1579467288]
+visible = false
+custom_minimum_size = Vector2(680, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 26
+autowrap_mode = 3
+
+[node name="Line2" type="Label" parent="Center/Frame/Content/Lines" unique_id=253292443]
+visible = false
+custom_minimum_size = Vector2(680, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 26
+autowrap_mode = 3
+
+[node name="Line3" type="Label" parent="Center/Frame/Content/Lines" unique_id=240736946]
+visible = false
+custom_minimum_size = Vector2(680, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 26
+autowrap_mode = 3
+
+[node name="Rows" type="VBoxContainer" parent="Center/Frame/Content" unique_id=568180917]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Row1" type="PanelContainer" parent="Center/Frame/Content/Rows" unique_id=1061482815]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_row")
+
+[node name="Cells" type="HBoxContainer" parent="Center/Frame/Content/Rows/Row1" unique_id=1287623859]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="Center/Frame/Content/Rows/Row1/Cells" unique_id=1309022660]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="Value" type="Label" parent="Center/Frame/Content/Rows/Row1/Cells" unique_id=141781352]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 2
+
+[node name="Row2" type="PanelContainer" parent="Center/Frame/Content/Rows" unique_id=1773490298]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_row")
+
+[node name="Cells" type="HBoxContainer" parent="Center/Frame/Content/Rows/Row2" unique_id=678284309]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="Center/Frame/Content/Rows/Row2/Cells" unique_id=1052842843]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="Value" type="Label" parent="Center/Frame/Content/Rows/Row2/Cells" unique_id=1836163493]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 2
+
+[node name="Row3" type="PanelContainer" parent="Center/Frame/Content/Rows" unique_id=1025546135]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_row")
+
+[node name="Cells" type="HBoxContainer" parent="Center/Frame/Content/Rows/Row3" unique_id=162810881]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="Center/Frame/Content/Rows/Row3/Cells" unique_id=181851364]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="Value" type="Label" parent="Center/Frame/Content/Rows/Row3/Cells" unique_id=445628152]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 2
+
+[node name="Note" type="Label" parent="Center/Frame/Content" unique_id=326720131]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(680, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6627451, 0.654902, 0.62352943, 1)
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Frame/Content" unique_id=1072167055]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="Cancel" type="Button" parent="Center/Frame/Content/Buttons" unique_id=1973577399]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
+
+[node name="Confirm" type="Button" parent="Center/Frame/Content/Buttons" unique_id=1128564169]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
