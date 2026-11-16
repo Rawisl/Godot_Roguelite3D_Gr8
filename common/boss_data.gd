@@ -46,6 +46,72 @@ func _init() -> void:
 @export var stomp_stun_duration: float = 0.0
 @export var stomp_windup: float = 1.0
 @export var stomp_screen_shake: float = 0.6
+## Every stomp lands where the mace hits the ground: this many boss heights in front of the boss.
+@export var stomp_forward_offset_heights: float = 1.25
+## Used when the model height cannot be measured (no meshes, e.g. stripped test scenes).
+@export var fallback_model_height: float = 3.17
+
+@export_group("Commander AI")
+## Only fights against the commander use this AI; towers, Barricades and the Fortress get the stomp.
+## The commander counts as "in front" inside this cone (full angle) around the boss's facing.
+@export var ai_front_arc_deg: float = 120.0
+## Top turning speed while attacking. Low values make flanking the boss pay off.
+@export var ai_turn_rate_deg: float = 90.0
+## Commander at the flank or behind: triple stomp, then this many game seconds before the next one.
+## While it cools down the boss turns and uses the normal attack instead.
+@export var triple_stomp_cooldown: float = 8.0
+## Below this share of total HP (armor + core) the normal attack may become the combo.
+@export var combo_hp_threshold: float = 0.5
+## Chance that a front attack is the combo once below combo_hp_threshold (0.5 = 50/50).
+@export var combo_chance: float = 0.5
+## Pause after the normal attack before the next move is chosen.
+@export var attack_recovery: float = 0.6
+## Longer pause after the triple stomp and the combo: the opening to hit back.
+@export var heavy_attack_recovery: float = 1.75
+## The boss shows up every few waves; appearance 1 is its first wave. Moves unlock by appearance:
+## below triple_stomp_unlock_appearance a commander at the flank or behind gets the single stomp.
+@export var triple_stomp_unlock_appearance: int = 2
+## Below combo_unlock_appearance the front attack is always the normal attack.
+@export var combo_unlock_appearance: int = 3
+## Inside the Hazard Trial room the boss fights with the moveset of this many appearances earlier.
+@export var hazard_appearance_offset: int = 1
+
+@export_group("Normal Attack")
+## One-handed slash; it uses the slash hitbox and timing of the combo below.
+@export var normal_attack_damage: int = 18
+
+@export_group("Combo Slam Attack")
+@export var combo_slash_damage: int = 15
+## Slash hitbox: a sector in front of the boss.
+@export var combo_slash_range: float = 3.2
+@export var combo_slash_arc_deg: float = 120.0
+@export var combo_slash_duration: float = 1.57
+@export var combo_slash_hit_time: float = 0.55
+@export var combo_stab_damage: int = 20
+## Stab hitbox: a narrow box straight ahead of the boss.
+@export var combo_stab_range: float = 3.8
+@export var combo_stab_width: float = 1.2
+@export var combo_stab_knockback: float = 1.5
+@export var combo_stab_duration: float = 1.40
+@export var combo_stab_hit_time: float = 0.5
+## The finisher is a stomp (BLAST) with its own timing, radius and share of stomp_damage.
+@export var combo_slam_damage_mult: float = 0.75
+@export var combo_slam_windup: float = 1.0
+@export var combo_slam_duration: float = 2.83
+@export var combo_slam_radius_mult: float = 1.0
+@export var combo_slam_screen_shake: float = 0.7
+
+@export_group("Triple Stomp Attack")
+## Share of the slam clip each stomp plays before the next one restarts it (1.0 = whole clip).
+@export var triple_stomp_clip_cut: float = 0.75
+## Clip second at which the weapon meets the ground; the hit and the telegraph follow it.
+@export var triple_stomp_hit_time: float = 0.97
+@export var triple_stomp_anim_speed: float = 1.0
+## One entry per stomp: radius as a multiple of stomp_radius, and the screen shake.
+@export var triple_stomp_radius_mults: PackedFloat32Array = PackedFloat32Array([1.0, 1.5, 2.2])
+@export var triple_stomp_screen_shakes: PackedFloat32Array = PackedFloat32Array([0.5, 0.8, 1.2])
+## Share of stomp_damage each stomp deals, so the whole chain never kills a full-health commander.
+@export var triple_stomp_damage_mults: PackedFloat32Array = PackedFloat32Array([0.5, 0.5, 0.75])
 
 var stomp_cadence_phase1: float:
 	get: return attack_interval
