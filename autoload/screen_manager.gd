@@ -149,6 +149,8 @@ func _on_save_failed(reason: StringName) -> void:
 			_show_save_notice(NoticeDialog.DANGER, "dialog.save_corrupt", &"dialog.save_corrupt.new", SaveManager.start_new_save)
 		SaveManager.REASON_WRITE_ERROR:
 			_show_save_notice(NoticeDialog.WARNING, "dialog.save_failed", &"dialog.save_failed.retry", SaveManager.save)
+		SaveManager.REASON_VERSION_TOO_NEW:
+			_show_save_notice(NoticeDialog.WARNING, "dialog.save_too_new")
 		_:
 			_show_save_notice(NoticeDialog.WARNING, "dialog.save_blocked")
 

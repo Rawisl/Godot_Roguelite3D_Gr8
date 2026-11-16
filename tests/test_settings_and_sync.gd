@@ -6,11 +6,13 @@ extends Control
 ## 3: Settings on the Accessibility tab. 4: the next sync state on the Account tab.
 ## 5: the "upload the local profile?" dialog. 6: the "data from another machine" notice.
 ## 7: the unreadable save notice with "New save". 8: the failed write notice with "Retry".
+## 9: the newer save notice.
 ## Nothing here reaches the network or the real save and settings files.
 
 const SETTINGS_SCENE := preload("res://ui/screens/settings.tscn")
 const TEST_SETTINGS := "user://test_settings_and_sync.cfg"
 const TEST_SAVE := "user://test_settings_and_sync_save.json"
+const TEST_NEWER_SAVE := "user://test_settings_and_sync_newer.json"
 const CONFLICT_FILE := "user://save.conflict.bak"
 const SYNC_STATES: Array[StringName] = [&"GUEST", &"SYNCED", &"SYNCING", &"OFFLINE", &"ERROR"]
 
@@ -101,6 +103,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			EventBus.save_failed.emit(SaveManager.REASON_CORRUPT)
 		KEY_8:
 			EventBus.save_failed.emit(SaveManager.REASON_WRITE_ERROR)
+		KEY_9:
+			EventBus.save_failed.emit(SaveManager.REASON_VERSION_TOO_NEW)
 
 func _run_checks() -> void:
 	_check_settings_file()
@@ -294,7 +298,28 @@ func _check_save_notices() -> void:
 	ScreenManager.close_all_dialogs()
 	await get_tree().process_frame
 
+	EventBus.save_failed.emit(SaveManager.REASON_VERSION_TOO_NEW)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var notice := _shown_notice()
+	_expect(notice != null and notice._title_text == tr(&"dialog.save_too_new.title")
+		and notice._lines == [tr(&"dialog.save_too_new.line1"), tr(&"dialog.save_too_new.line2")]
+		and notice._note_text == tr(&"dialog.save_too_new.note") and notice._tone == NoticeDialog.WARNING
+		and notice.is_notice() and _dialog_has(tr(&"dialog.ok")), "save: a newer save asks to update the game")
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+
+	EventBus.save_failed.emit(SaveManager.REASON_WRITE_BLOCKED)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	notice = _shown_notice()
+	_expect(notice != null and notice._title_text == tr(&"dialog.save_blocked.title")
+		and notice._note_text == tr(&"dialog.save_blocked.note"), "save: a blocked write keeps the general notice")
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+
 	await _check_startup_notices()
+	await _check_newer_save_file()
 
 ## The first load runs before ScreenManager listens, so it shows what was left in load_failure
 ## after the first screen change, once.
@@ -308,7 +333,7 @@ func _check_startup_notices() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var notice := _shown_notice()
-	_expect(before_screen == null and notice != null and notice._title_text == tr(&"dialog.save_blocked.title"),
+	_expect(before_screen == null and notice != null and notice._title_text == tr(&"dialog.save_too_new.title"),
 		"save: a newer save found while loading is shown once after the first screen")
 	ScreenManager.close_all_dialogs()
 	await get_tree().process_frame
@@ -346,6 +371,40 @@ func _check_startup_notices() -> void:
 		ScreenManager.screen_changed.disconnect(ScreenManager._show_startup_load_failure)
 	ScreenManager.close_all_dialogs()
 	await get_tree().process_frame
+
+## A save from a newer game is refused, the update notice shows, and a later blocked write queues its own notice.
+func _check_newer_save_file() -> void:
+	var file := FileAccess.open(TEST_NEWER_SAVE, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": SaveManager.SAVE_VERSION + 1,
+		"data": {"profile": {"prestige_balance": 999}}}))
+	file.close()
+	SaveManager.set_repository(LocalSaveRepository.new(TEST_NEWER_SAVE))
+	SaveManager.load_save()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var notice := _shown_notice()
+	_expect(notice != null and notice._title_text == tr(&"dialog.save_too_new.title")
+		and SaveManager.load_failure == SaveManager.REASON_VERSION_TOO_NEW
+		and int(SaveManager.get_section(SaveManager.PROFILE)["prestige_balance"]) == 0,
+		"save: a newer save file on disk is refused, shown and left as it was")
+	SaveManager.save()
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	notice = _shown_notice()
+	_expect(notice != null and notice._title_text == tr(&"dialog.save_blocked.title"),
+		"save: the blocked write notice is queued behind the update notice")
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+
+	SaveManager.set_repository(LocalSaveRepository.new(TEST_SAVE))
+	SaveManager.load_save()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_expect(SaveManager.load_failure == &"" and SaveManager.can_write and _shown_notice() == null,
+		"save: a save of the supported version shows no notice")
+	if FileAccess.file_exists(TEST_NEWER_SAVE):
+		DirAccess.remove_absolute(TEST_NEWER_SAVE)
 
 ## The one NoticeDialog open under ScreenManager, or null when there is none or several.
 func _shown_notice() -> NoticeDialog:
@@ -460,7 +519,7 @@ func _sign_out_fake() -> void:
 	AuthService.user_id = ""
 
 func _remove_files() -> void:
-	for path in [TEST_SETTINGS, TEST_SETTINGS + ".corrupt", TEST_SAVE, CONFLICT_FILE]:
+	for path in [TEST_SETTINGS, TEST_SETTINGS + ".corrupt", TEST_SAVE, TEST_NEWER_SAVE, CONFLICT_FILE]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
 
