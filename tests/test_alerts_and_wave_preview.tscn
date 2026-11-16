@@ -39,7 +39,7 @@ anchor_right = 1.0
 offset_left = -400.0
 offset_top = 330.0
 offset_right = -40.0
-offset_bottom = 530.0
+offset_bottom = 330.0
 grow_horizontal = 0
 
 [node name="HazardGate" parent="." unique_id=1886289194 instance=ExtResource("5_gate")]

@@ -119,16 +119,39 @@ func _check_boss_timer() -> void:
 		"alerts: T-30 is a T2 toast and the enrage a T1 banner, the countdown adds nothing")
 
 func _check_towers() -> void:
+	EventBus.run_started.emit()
+	_layer.clear()
 	_alerts.clear()
 	EventBus.tower_destroyed.emit(&"W3")
 	await get_tree().process_frame
-	_expect(_keys() == [&"alert.tower_ruined"] and _alerts[0][2] == {"name": tr(&"tower.cannon"), "level": 2, "slot": &"W3",
-		"cost": _fake.slot.get_rebuild_cost()}, "alerts: one destroyed tower names its type, level, slot and rebuild price")
-	_alerts.clear()
-	for slot_id in [&"W1", &"W2", &"G_0_4"]:
+	var p: Dictionary = _alerts[0][2] if not _alerts.is_empty() else {}
+	_expect(_keys() == [&"alert.tower_ruined"] and p.get("name") == tr(&"tower.cannon") and p.get("level") == 2 and p.get("slot") == &"W3"
+		and p.get("cost") == _fake.slot.get_rebuild_cost(), "alerts: one destroyed tower names its type, level, slot and rebuild price")
+	_expect(_layer.shown_texts() == [UiFormat.tr_fmt(&"alert.tower_ruined", p)] and _toast_sub_visible(),
+		"alerts: the toast has the tower on its main line and the rebuild price on the second line")
+	# A second loss inside the window replaces the toast with a count instead of stacking a new one.
+	EventBus.tower_destroyed.emit(&"W1")
+	await get_tree().process_frame
+	_expect(_layer.visible_toast_count() == 1 and _layer.shown_keys() == [&"alert.towers_ruined"]
+		and _alerts[-1][2].get("count") == 2, "alerts: a loss within the merge window updates the same toast to a count")
+	for slot_id in [&"W2", &"G_0_4"]:
 		EventBus.tower_destroyed.emit(slot_id)
 	await get_tree().process_frame
-	_expect(_keys() == [&"alert.towers_ruined"] and _alerts[0][2] == {"count": 3}, "alerts: towers lost in one frame become one toast")
+	_expect(_layer.visible_toast_count() == 1 and _alerts[-1][2].get("count") == 4 and _alerts[-1][2].get("slots") == "W3, W1, W2, G_0_4",
+		"alerts: towers lost in one frame join the count and the second line lists the slots")
+	# After the window, a new loss starts a new toast of its own.
+	# Stands in for the window running out, without waiting five real seconds.
+	(_layer.find_child("AlertSources", false, false) as AlertSources)._ruined_until = 0.0
+	EventBus.tower_destroyed.emit(&"W2")
+	await get_tree().process_frame
+	_expect(_alerts[-1][1] == &"alert.tower_ruined", "alerts: a loss after the window is told on its own")
+	_layer.clear()
+
+func _toast_sub_visible() -> bool:
+	for toast in _layer._top.get_children():
+		if (toast as Control).visible:
+			return (toast.get_child(0).get_child(1).get_child(1) as Label).visible
+	return false
 
 func _check_boss_next() -> void:
 	_alerts.clear()
@@ -136,7 +159,9 @@ func _check_boss_next() -> void:
 	EventBus.wave_started.emit(4)
 	EventBus.state_changed.emit(&"PREP")
 	EventBus.state_changed.emit(&"PREP")
-	_expect(_keys() == [&"alert.boss_next"] and _alerts[0][2] == {"wave": 5}, "alerts: the PREP before a boss wave warns once")
+	_expect(_keys() == [&"alert.boss_next"] and _alerts[0][2].get("wave") == 5 and _alerts[0][2].get("sub_key") == &"alert.boss_next_sub",
+		"alerts: the PREP before a boss wave warns once, with the immunity reminder on the second line")
+	_expect(not tr(&"alert.boss_next").contains(".") and not tr(&"alert.boss_next_sub").contains("."), "alerts: no sentence punctuation in the boss warning")
 	_alerts.clear()
 	EventBus.wave_started.emit(6)
 	EventBus.wave_preview_ready.emit(7, {}, true)
@@ -193,6 +218,13 @@ func _check_preview() -> void:
 	_expect(not note.visible, "preview: no drop line once every weapon is owned")
 	_preview.show_preview(6, {&"grunt": 1, &"archer": 1, &"brute": 1, &"grunt_b": 1, &"grunt_c": 1, &"grunt_d": 1}, false)
 	_expect(rows.filter(func(r: Node) -> bool: return (r as Control).visible).size() == 5, "preview: at most five types")
+	(_preview.get_node("%Toggle") as Button).pressed.emit()
+	_expect(not _preview.get_node("%Body").visible and _preview.visible and (_preview.get_node("%ToggleArrow") as ArrowGlyph).pointing_up,
+		"preview: the arrow folds the list away and keeps the title")
+	EventBus.run_started.emit()
+	_expect(_preview.expanded and _preview.get_node("%Body").visible, "preview: a new run shows the list again")
+	EventBus.state_changed.emit(&"PREP")
+	_preview.show_preview(5, {&"grunt": 1}, true)
 	EventBus.state_changed.emit(&"COMBAT")
 	_expect(not _preview.visible, "preview: hidden outside PREP")
 
