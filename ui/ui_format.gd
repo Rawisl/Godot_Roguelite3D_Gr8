@@ -15,13 +15,9 @@ static func num(value: float, digits: int = 1) -> String:
 		return str(roundi(value))
 	return String.num(value, digits)
 
-## Model tier (bậc) of a tower level: 1 below the tier 2 level, 2 up to the tier 3 level, then 3.
+## Model tier (bậc) of a tower level; the rule lives in TowerData.model_tier.
 static func model_tier(level: int) -> int:
-	if level >= GameConfig.tower_tier3_level:
-		return 3
-	if level >= GameConfig.tower_tier2_level:
-		return 2
-	return 1
+	return TowerData.model_tier(level)
 
 ## Fills named placeholders such as {gold} instead of concatenating strings.
 static func tr_fmt(key: StringName, params: Dictionary) -> String:

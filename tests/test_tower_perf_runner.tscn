@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c386cxp7jrrs6"]
+
+[ext_resource type="Script" uid="uid://dwgh30y6k7wf8" path="res://tests/test_tower_perf_runner.gd" id="1_perf"]
+
+[node name="TestTowerPerfRunner" type="Node3D" unique_id=123459030]
+script = ExtResource("1_perf")
