@@ -1423,13 +1423,14 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG1
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 10 | Nguồn: CŨ-SỬA + MỚI + ĐỔI NGƯỜI (Ngọc sang Khang)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tutorial một lần theo tài khoản (đổi người: từ Ngọc sang Khang): TUT-01 xây Arrow, TUT-14 xây Cannon, TUT-15 bấm Bắt đầu wave (nút xám tới khi xây xong), Bỏ qua luôn có và tự xây trụ còn thiếu, ghi tutorial_done ngay khi xây xong, thoát giữa chừng thì chạy lại, tutorial_completed
 - Nghiệm thu: TU1, TU2, TU3 đạt; run sau có trụ có sẵn; đăng nhập máy mới không chạy lại (TU4)
 - Tệp liên quan: mới: systems/tutorial/; ui/; autoload/save_manager.gd (flags.tutorial_done); tín hiệu tutorial_step_completed đã có trong event_bus.gd
 - ID SRS: TUT-01, 03, 08..11, 14, 15, 17; BLD-11; EVB-45
 - Cần xong trước: W10-MH10, W8B-KH1, W11-KH4
 - Ghi chú: ghi tutorial_done qua SaveManager.mark_tutorial_done() (tự phát tutorial_completed)
+- Ghi chú bàn giao: TutorialService (systems/tutorial/) is a run system node in main.tscn next to BuildService; the new HUD part ui/hud/parts/tutorial_hint.* under the wave counter shows what it says. A profile with tutorial_done false gets four hints (build the Arrow on GameConfig.starter_arrow_slot, the Cannon on starter_cannon_slot, start the wave, hit an enemy), each with "Bước n/4", progress dots, one large line for what to do, a gold line for where, key caps for the keys and an always present Skip; a build step reminds after GameConfig.tutorial_remind_seconds (30 s). Start wave stays grey until both towers stand, and tutorial_done is saved through SaveManager.mark_tutorial_done() as soon as they do, so leaving earlier runs it again. Skip builds the missing towers on their slots and saves the flag once BuildService.build_starter() exists; until then it only hides the hints for that run, so a run never starts without its towers. Until the starter slots are lit and locked, an Arrow or a Cannon on any cell counts. The fight step ends on the first commander hit, and a run from a later start wave has no tutorial. A run after it is done shows nothing; an account synced with tutorial_done true skips it too. @kiezroth: the free starter build is not on main yet, so the player pays the normal price and Skip falls back to BuildService.build(); add BuildService.build_starter(slot_id, type) and light and lock the starter slots while the tutorial waits (TODOs left in tutorial_service.gd). Runner tests/test_tutorial.tscn.
 
 ##### W11-KH6
 - Người: Khang
