@@ -93,7 +93,7 @@ func _init() -> void:
 @export var combo_stab_width: float = 1.2
 @export var combo_stab_knockback: float = 1.5
 @export var combo_stab_duration: float = 1.40
-@export var combo_stab_hit_time: float = 0.5
+@export var combo_stab_hit_time: float = 0.75
 ## The finisher is a stomp (BLAST) with its own timing, radius and share of stomp_damage.
 @export var combo_slam_damage_mult: float = 0.75
 @export var combo_slam_windup: float = 1.0

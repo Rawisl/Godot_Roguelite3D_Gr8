@@ -165,7 +165,7 @@ func test_full_combo_timeline() -> void:
 	assert_true(cmd.damage_taken == 0, "No damage before the slash lands")
 	_run_process(bulwark, 0.25)
 	assert_true(cmd.damage_taken == 15, "Slash lands at its hit time")
-	_run_process(bulwark, 1.57 - 0.65 + 0.6)
+	_run_process(bulwark, 1.57 - 0.65 + 0.85)
 	assert_true(cmd.damage_taken == 35, "Stab lands during the second step")
 	_run_process(bulwark, 3.0)
 	assert_true(cmd.damage_taken == 69, "Slam lands for 75% of the stomp (34)")
