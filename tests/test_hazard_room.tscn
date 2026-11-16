@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://f2w5mr0uj2ta" path="res://tests/test_hazard_room.gd" id="1_hazardroom"]
+
+[node name="TestHazardRoom" type="Node"]
+script = ExtResource("1_hazardroom")

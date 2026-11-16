@@ -1,0 +1,82 @@
+[gd_scene format=3 uid="uid://cd384eh4o2vce"]
+
+[ext_resource type="Script" uid="uid://dtef5plrr5ush" path="res://levels/corridor/hazard_portal.gd" id="1_script"]
+[ext_resource type="Material" uid="uid://1sukt4eglwju" path="res://art/materials/env_rock.tres" id="2_rock"]
+[ext_resource type="ArrayMesh" uid="uid://bvypdg336878y" path="res://contents/assets/towers/hazard_portal_body.res" id="3_body"]
+[ext_resource type="ArrayMesh" uid="uid://b1ccsoloviyav" path="res://contents/assets/towers/hazard_portal_ring.res" id="4_ring"]
+[ext_resource type="Script" uid="uid://ctetkgylhjvof" path="res://art/vfx/energy_orb.gd" id="5_orb"]
+[ext_resource type="Material" uid="uid://dm6na2iu3c0o1" path="res://art/materials/hazard_orb_core.tres" id="6_orbcore"]
+[ext_resource type="Material" uid="uid://b8yyqowwampgq" path="res://art/materials/hazard_orb_glow.tres" id="7_orbglow"]
+[ext_resource type="Script" uid="uid://d1ao3q8airmsm" path="res://levels/corridor/floating_rocks.gd" id="8_drift"]
+[ext_resource type="ArrayMesh" uid="uid://bj40feixcx8ru" path="res://contents/assets/towers/hazard_portal_shard_1.res" id="9_shard1"]
+[ext_resource type="ArrayMesh" uid="uid://bqkkndny4qfhg" path="res://contents/assets/towers/hazard_portal_shard_2.res" id="10_shard2"]
+[ext_resource type="ArrayMesh" uid="uid://bhxgcpmydum3l" path="res://contents/assets/towers/hazard_portal_shard_3.res" id="11_shard3"]
+
+[sub_resource type="CylinderMesh" id="Mesh_foundation"]
+top_radius = 1.5
+bottom_radius = 0.7
+height = 1.6
+radial_segments = 8
+rings = 1
+
+[sub_resource type="CylinderShape3D" id="Shape_click"]
+height = 5.6
+radius = 1.5
+
+[node name="HazardPortal" type="Node3D" unique_id=723951800 groups=["hazard_portal"]]
+script = ExtResource("1_script")
+
+[node name="Foundation" type="MeshInstance3D" parent="." unique_id=447211034]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.8, 0)
+mesh = SubResource("Mesh_foundation")
+surface_material_override/0 = ExtResource("2_rock")
+
+[node name="Body" type="MeshInstance3D" parent="." unique_id=1811852844]
+transform = Transform3D(0.9396926, 0, 0.34202015, 0, 1, 0, -0.34202015, 0, 0.9396926, 0, 0, 0)
+mesh = ExtResource("3_body")
+
+[node name="Ring" type="MeshInstance3D" parent="." unique_id=850391420]
+unique_name_in_owner = true
+transform = Transform3D(0.9396926, 0, 0.34202015, 0, 1, 0, -0.34202015, 0, 0.9396926, 0, 4.1, 0)
+mesh = ExtResource("4_ring")
+
+[node name="EnergyOrb" type="Node3D" parent="." unique_id=1495308072]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.1, 0)
+script = ExtResource("5_orb")
+core_material = ExtResource("6_orbcore")
+glow_material = ExtResource("7_orbglow")
+radius = 0.4
+glow_radius = 0.46
+bob_height = 0.08
+light_energy = 0.9
+light_range = 4.0
+
+[node name="Shards" type="Node3D" parent="." unique_id=925056386]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.1, 0)
+script = ExtResource("8_drift")
+orbit_speed_deg = 35.0
+speed_variation = 0.0
+bob_height = 0.15
+bob_period = 3.0
+spin_speed_deg = 30.0
+
+[node name="Shard1" type="MeshInstance3D" parent="Shards" unique_id=874995348]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 0.1, 0)
+mesh = ExtResource("9_shard1")
+
+[node name="Shard2" type="MeshInstance3D" parent="Shards" unique_id=1646437108]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.625, -0.2, 1.0825)
+mesh = ExtResource("10_shard2")
+
+[node name="Shard3" type="MeshInstance3D" parent="Shards" unique_id=1035714741]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.625, 0.3, -1.0825)
+mesh = ExtResource("11_shard3")
+
+[node name="ClickArea" type="Area3D" parent="." unique_id=1902096405]
+collision_layer = 64
+collision_mask = 0
+monitoring = false
+
+[node name="Shape" type="CollisionShape3D" parent="ClickArea" unique_id=1301375659]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
+shape = SubResource("Shape_click")

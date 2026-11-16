@@ -20,6 +20,8 @@
 [ext_resource type="Script" uid="uid://s8tk5ayl5tn6" path="res://art/vfx/skill_fx_manager.gd" id="19_skillfx"]
 [ext_resource type="Script" uid="uid://bek0xfq4dxoae" path="res://art/vfx/boss_fx_manager.gd" id="20_bossfx"]
 [ext_resource type="Script" uid="uid://tokwkffr20je" path="res://art/vfx/immune_fx_manager.gd" id="21_immunefx"]
+[ext_resource type="PackedScene" uid="uid://dqav6wa12be80" path="res://levels/corridor/hazard_room.tscn" id="22_hazardroom"]
+[ext_resource type="PackedScene" uid="uid://cd384eh4o2vce" path="res://levels/corridor/hazard_portal.tscn" id="23_hazardportal"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -34,8 +36,8 @@ ambient_light_energy = 0.5
 tonemap_mode = 3
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_41ihd"]
-vertices = PackedVector3Array(-19.5, 4.5, -11.75, -19.5, 4.5, 11.75, -15.5, 4.5, 11.75, -15.5, 4.5, -11.75, -19.25, 0.5, -11, -19.25, 0.5, -8.5, -15.5, 0.5, -8.5, -15.5, 0.5, -11, -14.25, 0.5, -11, -14.25, 0.5, 11.25, 19.5, 0.5, 11.25, 19.5, 0.5, -11, -19.25, 0.5, -7.25, -19.25, 0.5, 7.5, -15.5, 0.5, 7.5, -15.5, 0.5, -7.25, -19.25, 0.5, 8.75, -19.25, 0.5, 11.25, -15.5, 0.5, 11.25, -15.5, 0.5, 8.75)
-polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9), PackedInt32Array(15, 14, 12), PackedInt32Array(12, 14, 13), PackedInt32Array(19, 18, 16), PackedInt32Array(16, 18, 17)]
+vertices = PackedVector3Array(-19.5, 4.5, -11.75, -19.5, 4.5, 11.75, -15.5, 4.5, 11.75, -15.5, 4.5, -11.75, -19.25, 0.5, -11, -19.25, 0.5, -8.5, -15.5, 0.5, -8.5, -15.5, 0.5, -11, -14.25, 0.5, -11, -14.25, 0.5, 11.25, 19.5, 0.5, 11.25, 19.5, 0.5, -11, -19.25, 0.5, -7.25, -19.25, 0.5, 7.5, -15.5, 0.5, 7.5, -15.5, 0.5, -7.25, -19.25, 0.5, 8.75, -19.25, 0.5, 11.25, -15.5, 0.5, 11.25, -15.5, 0.5, 8.75, 12, 0.5, 88.25, 11.25, 0.5, 88.5, 10.75, 0.5, 89.5, 14, 0.5, 89.25, 13.25, 0.5, 88.5, 12.5, 0.5, 92.75, 14.25, 0.5, 91.25, 5, 0.5, 83, 3.5, 0.5, 83, 2.75, 0.5, 83.5, 1.75, 0.5, 85.75, 5.75, 0.5, 87.25, 5.75, 0.5, 86.5, 12.5, 0.5, 93.75, 9.5, 0.5, 89.5, 6.5, 0.5, 88, -2.5, 0.5, 86, -8, 0.5, 83.25, -8.5, 0.5, 85, -7.5, 0.5, 86.5, -6.5, 0.5, 82, 7.5, 0.5, 87.75, -7.5, 0.5, 87.75, -9.5, 0.5, 89.25, -9.75, 0.5, 90.25, -3.25, 0.5, 83, -4.75, 0.5, 82, -13.5, 0.5, 89.25, -14.75, 0.5, 90.25, -14.75, 0.5, 92.5, -13, 0.5, 93.5, 6.5, 0.5, 84.75, -16.75, 0.5, 98.75, -17.75, 0.5, 100.5, -16.5, 0.5, 102.5, -14, 0.5, 102.75, -14.25, 0.5, 98.5, -9, 0.5, 111.25, 3.5, 0.5, 114, 12, 0.5, 108, -13.75, 0.5, 97.75, 8, 0.5, 112, -12.75, 0.5, 106.75, -6.25, 0.5, 113, -2.25, 0.5, 114.25, 14.25, 0.5, 102.25, 14, 0.5, 96.5, -14, 0.5, 96.5)
+polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9), PackedInt32Array(15, 14, 12), PackedInt32Array(12, 14, 13), PackedInt32Array(19, 18, 16), PackedInt32Array(16, 18, 17), PackedInt32Array(22, 21, 20), PackedInt32Array(24, 23, 20), PackedInt32Array(20, 23, 22), PackedInt32Array(22, 23, 26), PackedInt32Array(22, 26, 25), PackedInt32Array(28, 27, 29), PackedInt32Array(29, 27, 30), PackedInt32Array(30, 27, 32), PackedInt32Array(30, 32, 31), PackedInt32Array(25, 33, 34), PackedInt32Array(34, 33, 35), PackedInt32Array(35, 33, 30), PackedInt32Array(30, 33, 36), PackedInt32Array(38, 37, 39), PackedInt32Array(39, 37, 40), PackedInt32Array(35, 41, 34), PackedInt32Array(43, 42, 44), PackedInt32Array(44, 42, 36), PackedInt32Array(46, 45, 40), PackedInt32Array(40, 45, 36), PackedInt32Array(40, 36, 39), PackedInt32Array(39, 36, 42), PackedInt32Array(48, 47, 49), PackedInt32Array(49, 47, 50), PackedInt32Array(50, 47, 44), PackedInt32Array(27, 51, 32), PackedInt32Array(53, 52, 54), PackedInt32Array(54, 52, 56), PackedInt32Array(54, 56, 55), PackedInt32Array(58, 57, 59), PackedInt32Array(59, 57, 33), PackedInt32Array(33, 57, 60), PackedInt32Array(33, 60, 36), PackedInt32Array(59, 61, 58), PackedInt32Array(56, 60, 55), PackedInt32Array(55, 60, 62), PackedInt32Array(62, 60, 57), PackedInt32Array(63, 57, 64), PackedInt32Array(64, 57, 58), PackedInt32Array(66, 65, 33), PackedInt32Array(33, 65, 59), PackedInt32Array(30, 31, 35), PackedInt32Array(67, 50, 60), PackedInt32Array(60, 50, 44), PackedInt32Array(60, 44, 36), PackedInt32Array(34, 22, 25)]
 geometry_parsed_geometry_type = 1
 geometry_source_geometry_mode = 1
 geometry_source_group_name = &"nav_source"
@@ -71,8 +73,8 @@ size = Vector3(5, 4, 4.25)
 size = Vector3(0.2, 3, 4)
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_large"]
-vertices = PackedVector3Array(-18.25, 4.5, -10.5, -18.25, 4.5, 10.5, -16.75, 4.5, 10.5, -16.75, 4.5, -10.5, -13, 0.5, -9.75, -13, 0.5, 10, 18.25, 0.5, 10, 18.25, 0.5, -9.75, -18, 0.5, -6, -18, 0.5, 6.25, -16.75, 0.5, 6.25, -16.75, 0.5, -6)
-polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9)]
+vertices = PackedVector3Array(-18.25, 4.5, -10.5, -18.25, 4.5, 10.5, -16.75, 4.5, 10.5, -16.75, 4.5, -10.5, -13, 0.5, -9.75, -13, 0.5, 10, 18.25, 0.5, 10, 18.25, 0.5, -9.75, -18, 0.5, -6, -18, 0.5, 6.25, -16.75, 0.5, 6.25, -16.75, 0.5, -6, -16.25, 0.5, 99.75, -16.5, 0.5, 100.5, -16.25, 0.5, 101.25, -14.25, 0.5, 101.25, -13.75, 0.5, 99.5, 12.5, 0.5, 91.25, 13, 0.5, 91.25, 13, 0.5, 89.75, 12, 0.5, 89.5, 10.75, 0.5, 90.75, 5.25, 0.5, 85.25, 5, 0.5, 84.25, 3.75, 0.5, 84.25, 3, 0.5, 86, 4.5, 0.5, 87.25, -12.5, 0.5, 97.75, -11.75, 0.5, 106.25, -2.25, 0.5, 113, 11, 0.5, 107.5, 11.25, 0.5, 93.75, -2.5, 0.5, 87.25, -9.25, 0.5, 91.25, -11, 0.5, 91.5, -11.75, 0.5, 93.5, -12.75, 0.5, 96.5, -6.5, 0.5, 83.25, -7, 0.5, 83.75, -7.25, 0.5, 85, -12.25, 0.5, 90.5, -13.75, 0.5, 90.75, -13.75, 0.5, 91.75, 11.25, 0.5, 92.75, 9.5, 0.5, 90.75, -3.75, 0.5, 86.25, -6.25, 0.5, 86.5, -6.25, 0.5, 87.75, 7.5, 0.5, 89, 6, 0.5, 89, -8.5, 0.5, 110.25, -6.25, 0.5, 111.75, 3.5, 0.5, 112.75, 7.5, 0.5, 111, -4, 0.5, 84, -4.75, 0.5, 83.25, 1.75, 0.5, 87, -13, 0.5, 102.25, 13, 0.5, 97.75, 12.25, 0.5, 95, 13, 0.5, 102.25)
+polygons = [PackedInt32Array(3, 2, 0), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 4), PackedInt32Array(4, 6, 5), PackedInt32Array(11, 10, 8), PackedInt32Array(8, 10, 9), PackedInt32Array(13, 12, 14), PackedInt32Array(14, 12, 15), PackedInt32Array(15, 12, 16), PackedInt32Array(18, 17, 19), PackedInt32Array(19, 17, 20), PackedInt32Array(20, 17, 21), PackedInt32Array(23, 22, 24), PackedInt32Array(24, 22, 25), PackedInt32Array(25, 22, 26), PackedInt32Array(28, 27, 29), PackedInt32Array(29, 27, 30), PackedInt32Array(30, 27, 31), PackedInt32Array(31, 27, 32), PackedInt32Array(34, 33, 35), PackedInt32Array(35, 33, 36), PackedInt32Array(36, 33, 27), PackedInt32Array(39, 38, 37), PackedInt32Array(41, 40, 42), PackedInt32Array(42, 40, 34), PackedInt32Array(42, 34, 35), PackedInt32Array(17, 43, 21), PackedInt32Array(21, 43, 44), PackedInt32Array(47, 46, 45), PackedInt32Array(49, 48, 44), PackedInt32Array(51, 50, 29), PackedInt32Array(29, 50, 28), PackedInt32Array(53, 52, 30), PackedInt32Array(30, 52, 29), PackedInt32Array(55, 54, 37), PackedInt32Array(37, 54, 39), PackedInt32Array(39, 54, 46), PackedInt32Array(46, 54, 45), PackedInt32Array(45, 32, 47), PackedInt32Array(47, 32, 33), PackedInt32Array(33, 32, 27), PackedInt32Array(25, 26, 56), PackedInt32Array(56, 26, 49), PackedInt32Array(43, 31, 44), PackedInt32Array(44, 31, 49), PackedInt32Array(49, 31, 56), PackedInt32Array(56, 31, 32), PackedInt32Array(16, 27, 57), PackedInt32Array(57, 27, 28), PackedInt32Array(57, 15, 16), PackedInt32Array(59, 58, 31), PackedInt32Array(31, 58, 60), PackedInt32Array(31, 60, 30)]
 geometry_parsed_geometry_type = 1
 geometry_source_geometry_mode = 1
 geometry_source_group_name = &"nav_source"
@@ -226,6 +228,13 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13, 0, 0)
 
 [node name="BossSpawnPoint" type="Marker3D" parent="Markers" unique_id=847261953 groups=["boss_spawn_point"]]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, 0)
+
+[node name="HazardPortal" parent="Markers" unique_id=1976050653 instance=ExtResource("23_hazardportal")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, 14.6)
+
+[node name="HazardRoom" parent="." unique_id=2013969149 node_paths=PackedStringArray("sun") instance=ExtResource("22_hazardroom")]
+transform = Transform3D(0.9396926, 0, 0.34202015, 0, 1, 0, -0.34202015, 0, 0.9396926, 0, 0, 100)
+sun = NodePath("../DirectionalLight3D")
 
 [node name="SpawnZone" type="Area3D" parent="." unique_id=232184628 groups=["level", "spawn_zone"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, 0)

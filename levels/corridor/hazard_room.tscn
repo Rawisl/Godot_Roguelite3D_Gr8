@@ -1,0 +1,124 @@
+[gd_scene format=3 uid="uid://dqav6wa12be80"]
+
+[ext_resource type="Script" uid="uid://govqwf34onq7" path="res://levels/corridor/hazard_room.gd" id="0_room"]
+[ext_resource type="ArrayMesh" uid="uid://ytiswv42tl3w" path="res://contents/assets/environment/hazard_room/hazard_room_floor.res" id="1_uljog"]
+[ext_resource type="Shape3D" uid="uid://te2thps2fwdi" path="res://contents/assets/environment/hazard_room/hazard_room_floor_shape.res" id="2_mb4cy"]
+[ext_resource type="ArrayMesh" uid="uid://m6xew0eqavyq" path="res://contents/assets/environment/hazard_room/hazard_room_walls.res" id="3_4t8bq"]
+[ext_resource type="Shape3D" uid="uid://jfaopuieqhh8" path="res://contents/assets/environment/hazard_room/hazard_room_walls_shape.res" id="4_ib40e"]
+[ext_resource type="ArrayMesh" uid="uid://ckwb8dyln1naj" path="res://contents/assets/environment/hazard_room/hazard_room_marks.res" id="5_53khd"]
+[ext_resource type="Script" uid="uid://d1ao3q8airmsm" path="res://levels/corridor/floating_rocks.gd" id="6_4un42"]
+[ext_resource type="ArrayMesh" uid="uid://04k7ujudpbs4" path="res://contents/assets/environment/hazard_room/hazard_room_rock_1.res" id="7_8r500"]
+[ext_resource type="ArrayMesh" uid="uid://w0oixpaibsdo" path="res://contents/assets/environment/hazard_room/hazard_room_rock_2.res" id="8_iva6m"]
+[ext_resource type="ArrayMesh" uid="uid://dyhhbc0irox6a" path="res://contents/assets/environment/hazard_room/hazard_room_rock_3.res" id="9_cdsv8"]
+[ext_resource type="ArrayMesh" uid="uid://dbuyhb65i61s1" path="res://contents/assets/environment/hazard_room/hazard_room_rock_4.res" id="10_307e8"]
+[ext_resource type="ArrayMesh" uid="uid://btsikrihoeydj" path="res://contents/assets/environment/hazard_room/hazard_room_rock_5.res" id="11_82rah"]
+[ext_resource type="ArrayMesh" uid="uid://d0g7r62seut8k" path="res://contents/assets/environment/hazard_room/hazard_room_rock_6.res" id="12_06atw"]
+[ext_resource type="Script" uid="uid://duyikuksfr34" path="res://levels/corridor/cloud_rings.gd" id="13_6r66d"]
+[ext_resource type="ArrayMesh" uid="uid://b38focbjlaywt" path="res://contents/assets/environment/hazard_room/hazard_room_clouds_1.res" id="14_liwrq"]
+[ext_resource type="ArrayMesh" uid="uid://caio31mu81i26" path="res://contents/assets/environment/hazard_room/hazard_room_clouds_2.res" id="15_v7yfx"]
+[ext_resource type="ArrayMesh" uid="uid://byoff2na7o07t" path="res://contents/assets/environment/hazard_room/hazard_room_clouds_3.res" id="16_gnl27"]
+[ext_resource type="Material" uid="uid://da3jx5f2y18oe" path="res://art/materials/hazard_backdrop.tres" id="17_aa8ln"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_3rcih"]
+material = ExtResource("17_aa8ln")
+size = Vector2(70, 35)
+
+[node name="HazardRoom" type="Node3D" unique_id=121629625]
+script = ExtResource("0_room")
+
+[node name="Geometry" type="Node3D" parent="." unique_id=536407845 groups=["nav_source"]]
+
+[node name="Floor" type="StaticBody3D" parent="Geometry" unique_id=1472207562]
+
+[node name="Mesh" type="MeshInstance3D" parent="Geometry/Floor" unique_id=1139514162]
+mesh = ExtResource("1_uljog")
+
+[node name="Shape" type="CollisionShape3D" parent="Geometry/Floor" unique_id=1871569742]
+shape = ExtResource("2_mb4cy")
+
+[node name="Walls" type="StaticBody3D" parent="Geometry" unique_id=809206445]
+
+[node name="Mesh" type="MeshInstance3D" parent="Geometry/Walls" unique_id=1804418958]
+mesh = ExtResource("3_4t8bq")
+
+[node name="Shape" type="CollisionShape3D" parent="Geometry/Walls" unique_id=50567995]
+shape = ExtResource("4_ib40e")
+
+[node name="FloorMarks" type="MeshInstance3D" parent="." unique_id=314012490]
+cast_shadow = 0
+mesh = ExtResource("5_53khd")
+
+[node name="FloatingRocks" type="Node3D" parent="." unique_id=1697082187]
+script = ExtResource("6_4un42")
+
+[node name="Rock1" type="MeshInstance3D" parent="FloatingRocks" unique_id=258080939]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, -3.5, -9)
+mesh = ExtResource("7_8r500")
+
+[node name="Rock2" type="MeshInstance3D" parent="FloatingRocks" unique_id=453194922]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.5, -5, -6)
+mesh = ExtResource("8_iva6m")
+
+[node name="Rock3" type="MeshInstance3D" parent="FloatingRocks" unique_id=2026660106]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, -7, 8)
+mesh = ExtResource("9_cdsv8")
+
+[node name="Rock4" type="MeshInstance3D" parent="FloatingRocks" unique_id=2050022272]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, -8, 9.5)
+mesh = ExtResource("10_307e8")
+
+[node name="Rock5" type="MeshInstance3D" parent="FloatingRocks" unique_id=2061869269]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, -9.5, -24)
+mesh = ExtResource("11_82rah")
+
+[node name="Rock6" type="MeshInstance3D" parent="FloatingRocks" unique_id=971647634]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, -6, -25)
+mesh = ExtResource("12_06atw")
+
+[node name="CloudRings" type="Node3D" parent="." unique_id=1362348136]
+script = ExtResource("13_6r66d")
+
+[node name="Ring1" type="MeshInstance3D" parent="CloudRings" unique_id=1809752326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+cast_shadow = 0
+mesh = ExtResource("14_liwrq")
+
+[node name="Ring2" type="MeshInstance3D" parent="CloudRings" unique_id=2109070684]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
+cast_shadow = 0
+mesh = ExtResource("15_v7yfx")
+
+[node name="Ring3" type="MeshInstance3D" parent="CloudRings" unique_id=2084855245]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
+cast_shadow = 0
+mesh = ExtResource("16_gnl27")
+
+[node name="Backdrop" type="MeshInstance3D" parent="." unique_id=166893983]
+transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, -42.426407, -44.726406)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_3rcih")
+
+[node name="CommanderSpawn" type="Marker3D" parent="." unique_id=337516567]
+unique_name_in_owner = true
+
+[node name="EnemySpawns" type="Node3D" parent="." unique_id=103473909]
+unique_name_in_owner = true
+
+[node name="S1" type="Marker3D" parent="EnemySpawns" unique_id=1766345576]
+transform = Transform3D(-0.309017, 0, -0.95105654, 0, 1, 0, 0.95105654, 0, -0.309017, -14.741376, 0, -4.7897635)
+
+[node name="S2" type="Marker3D" parent="EnemySpawns" unique_id=1235952290]
+transform = Transform3D(-0.809017, 0, -0.58778524, 0, 1, 0, 0.58778524, 0, -0.809017, -9.110671, 0, -12.539763)
+
+[node name="S3" type="Marker3D" parent="EnemySpawns" unique_id=790886990 groups=["hazard_boss_spawn"]]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, -16.2)
+
+[node name="S4" type="Marker3D" parent="EnemySpawns" unique_id=1702345252]
+transform = Transform3D(-0.809017, 0, 0.58778524, 0, 1, 0, -0.58778524, 0, -0.809017, 9.110671, 0, -12.539763)
+
+[node name="S5" type="Marker3D" parent="EnemySpawns" unique_id=259053451]
+transform = Transform3D(-0.309017, 0, 0.95105654, 0, 1, 0, -0.95105654, 0, -0.309017, 14.741376, 0, -4.7897635)
+
+[node name="CameraFrame" type="Marker3D" parent="." unique_id=1312582815]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.3)
