@@ -205,7 +205,7 @@ hud.mode.key,Tab
 hud.mode.frontline,Tiền tuyến
 hud.mode.commander,Chỉ huy
 hud.mode.cooldown,Đổi chế độ sau {sec} s
-hud.mode.denied.hazard,Không thể đổi chế độ trong Thử thách Hazard
+hud.mode.denied.hazard,Không thể đổi chế độ trong Hazard Trial
 hud.invulnerable,Bất khả xâm phạm
 hud.emg.key,R
 hud.emg.title,Sửa khẩn cấp
@@ -484,3 +484,20 @@ tutorial.start_wave,"Chuẩn bị xong thì bấm Bắt đầu wave. Không có 
 tutorial.fight,"WASD di chuyển, chuột trái đánh, Space né. Đánh trúng quân để nhận XP đầy đủ và mở nâng cấp tower."
 tutorial.remind,(Nhắc lại)
 tutorial.skip,Bỏ qua hướng dẫn
+alert.commander_low,Chỉ huy sắp gục
+alert.boss_enrage_soon,Boss sắp cuồng nộ (còn {seconds} giây)
+alert.boss_enraged,Boss cuồng nộ
+alert.tower_ruined,{name} cấp {level} ở {slot} bị phá (xây lại {cost} vàng)
+alert.tower_ruined_plain,Tower ở {slot} bị phá
+alert.towers_ruined,{count} tower bị phá
+alert.boss_next,Boss ở đợt quái thứ {wave}. Kiểm tra miễn nhiễm
+hud.clear_time,Thời gian:
+enemy.trait.stealth,Tàng hình
+enemy.trait.explode,Tự nổ
+enemy.trait.undying,Bất tử một lần
+enemy.trait.revive,Hồi sinh
+enemy.trait.charge,Ủi thẳng
+hud.preview.title,Đợt quái thứ {wave}
+hud.preview.boss_title,Đợt quái thứ {wave} (Boss)
+hud.preview.count,×{value}
+hud.preview.weapon_drop,"Hạ boss: nhận 1 vũ khí ngẫu nhiên chưa có (còn {left} cây)"
