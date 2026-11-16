@@ -2,8 +2,9 @@ class_name TutorialHint
 extends PanelContainer
 ## The tutorial's hint box under the wave counter. Each step reads at a glance: dots for the
 ## progress, one large line for what to do, a gold line for where, and key caps for the keys,
-## with no sentence punctuation. It only shows what TutorialService says; the hint never blocks
-## the game (the Start wave lock lives in the service). A reminder adds a tag and a short pulse.
+## with no sentence punctuation. It only shows what TutorialService (a run system in main.tscn,
+## found by its group) says; the hint never blocks the game (the Start wave lock lives in the
+## service). A reminder adds a tag and a short pulse. Without a service it stays hidden.
 # TODO(kiezroth): the build steps say the starter towers are free; that is only true once BuildService.build_starter() lands (see tutorial_service.gd).
 # TODO(WhoKeng): add "Xem lại hướng dẫn" to the Gameplay tab once that tab exists; it shows these hints again without clearing tutorial_done.
 
@@ -25,7 +26,7 @@ const DOT_WAIT := Color(0.2784314, 0.3019608, 0.3529412, 1)
 
 var _pulse: Tween
 
-@onready var _service: TutorialService = %TutorialService
+var _service: TutorialService
 @onready var _title: Label = %Title
 @onready var _step: Label = %StepCount
 @onready var _dots: HBoxContainer = %StepDots
@@ -40,6 +41,10 @@ func _ready() -> void:
 	_remind.text = tr(&"tutorial.remind")
 	_skip.text = tr(&"tutorial.skip")
 	_skip.focus_mode = Control.FOCUS_NONE
+	visible = false
+	_service = get_tree().get_first_node_in_group(&"tutorial") as TutorialService
+	if _service == null:
+		return
 	_skip.pressed.connect(_service.skip)
 	_service.step_changed.connect(show_step)
 	_service.reminded.connect(_on_reminded)

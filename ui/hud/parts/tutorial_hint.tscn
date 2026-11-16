@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://cfrxnqetkxddw"]
 
 [ext_resource type="Script" uid="uid://b151kpjlpag6v" path="res://ui/hud/parts/tutorial_hint.gd" id="1_hint"]
-[ext_resource type="Script" uid="uid://bumdio8mdm4kc" path="res://systems/tutorial/tutorial_service.gd" id="2_service"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
 content_margin_left = 24.0
@@ -216,7 +215,3 @@ layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.6627451, 0.654902, 0.62352943, 1)
 theme_override_font_sizes/font_size = 20
-
-[node name="TutorialService" type="Node" parent="." unique_id=1751882031]
-unique_name_in_owner = true
-script = ExtResource("2_service")
