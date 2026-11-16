@@ -23,6 +23,8 @@ var _keep_until := 0.0
 @onready var _undo: Button = %RevertButton
 
 func _ready() -> void:
+	# GameState asks this group to go back before it saves on closing the window.
+	add_to_group(&"pending_window_change")
 	_mode_label.text = tr(&"settings.gfx.window_mode")
 	_resolution_label.text = tr(&"settings.gfx.resolution")
 	_vsync.text = tr(&"settings.gfx.vsync")

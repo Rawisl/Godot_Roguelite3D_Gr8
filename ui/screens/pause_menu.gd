@@ -31,20 +31,25 @@ func _ready() -> void:
 		button.mouse_entered.connect(button.grab_focus)
 	_resume.grab_focus()
 
-## Esc closes Settings first, then resumes.
+## Esc closes Settings first, then resumes. Settings closes through its own Back, so a window
+## change not kept goes back and settings.cfg is written, the same as pressing Back.
 func go_back() -> void:
 	if is_instance_valid(_settings_overlay):
-		_settings_overlay.queue_free()
-		_settings_overlay = null
-		_resume.grab_focus()
+		_settings_overlay.go_back()
 	else:
 		GameState.resume()
+
+func _on_settings_closed() -> void:
+	if is_instance_valid(_settings_overlay):
+		_settings_overlay.queue_free()
+	_settings_overlay = null
+	_resume.grab_focus()
 
 ## The run stays frozen while Settings is open.
 func _open_settings() -> void:
 	_settings_overlay = SETTINGS_SCENE.instantiate()
 	_settings_overlay.is_overlay = true
-	_settings_overlay.closed.connect(go_back)
+	_settings_overlay.closed.connect(_on_settings_closed)
 	get_parent().add_child(_settings_overlay)
 
 ## Wave and fight time of the run under the title, hidden outside a run.

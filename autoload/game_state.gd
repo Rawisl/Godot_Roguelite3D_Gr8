@@ -95,6 +95,8 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and current == AppState.RUN and _pause_menu == null:
 		open_pause()
 	elif what == NOTIFICATION_WM_CLOSE_REQUEST and _settings_dirty:
+		# A window change still waiting for Keep counts as no answer, so it is not saved.
+		get_tree().call_group(&"pending_window_change", &"revert_pending")
 		save_settings()
 
 ## Returns false if the transition is not allowed or a fade is running.
