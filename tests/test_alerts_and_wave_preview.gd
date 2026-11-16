@@ -175,6 +175,8 @@ func _check_boss_next() -> void:
 
 func _check_clear_time() -> void:
 	var label := _counter.get_node("%ClearTime") as Label
+	_expect(label.get_parent() == _counter.get_node("%ClearRow") and _counter.get_node("%ClearRow") != _counter.get_node("%EnemiesRow"),
+		"fight time: it has a row of its own under the enemies left")
 	EventBus.wave_started.emit(3)
 	EventBus.state_changed.emit(&"COMBAT")
 	var start := TimeManager.game_time
@@ -218,11 +220,14 @@ func _check_preview() -> void:
 	_expect(not note.visible, "preview: no drop line once every weapon is owned")
 	_preview.show_preview(6, {&"grunt": 1, &"archer": 1, &"brute": 1, &"grunt_b": 1, &"grunt_c": 1, &"grunt_d": 1}, false)
 	_expect(rows.filter(func(r: Node) -> bool: return (r as Control).visible).size() == 5, "preview: at most five types")
-	(_preview.get_node("%Toggle") as Button).pressed.emit()
-	_expect(not _preview.get_node("%Body").visible and _preview.visible and (_preview.get_node("%ToggleArrow") as ArrowGlyph).pointing_up,
-		"preview: the arrow folds the list away and keeps the title")
+	var toggle := _preview.get_node("%Toggle") as Button
+	var arrow := _preview.get_node("%ToggleArrow") as ArrowGlyph
+	_expect(arrow.sideways and not arrow.pointing_left and toggle.get_index() == 0, "preview: the button sits left of the panel and shows >")
+	toggle.pressed.emit()
+	_expect(not _preview.get_node("%Panel").visible and _preview.visible and toggle.visible and arrow.pointing_left,
+		"preview: folding hides the whole panel and leaves only the < button")
 	EventBus.run_started.emit()
-	_expect(_preview.expanded and _preview.get_node("%Body").visible, "preview: a new run shows the list again")
+	_expect(_preview.expanded and _preview.get_node("%Panel").visible and not arrow.pointing_left, "preview: a new run shows the panel again")
 	EventBus.state_changed.emit(&"PREP")
 	_preview.show_preview(5, {&"grunt": 1}, true)
 	EventBus.state_changed.emit(&"COMBAT")
