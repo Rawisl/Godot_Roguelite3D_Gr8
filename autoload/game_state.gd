@@ -144,6 +144,17 @@ func quit_from_run() -> void:
 	get_tree().quit()
 
 
+## The run as it stands, for the pause and victory screens: the run end summary as if the run were
+## abandoned now, plus owned_weapons. Empty outside a run.
+func run_snapshot() -> Dictionary:
+	var rs := _get_run_state()
+	if rs == null or not is_instance_valid(rs):
+		return {}
+	var snapshot := rs.build_summary(&"ABANDONED", &"SURVIVED" if rs.victory_reached else &"DEFEAT")
+	snapshot["owned_weapons"] = rs.owned_weapons.duplicate()
+	return snapshot
+
+
 func _get_run_state() -> RunState:
 	if not is_inside_tree():
 		return null

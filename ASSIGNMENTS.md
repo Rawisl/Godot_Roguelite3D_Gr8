@@ -1377,20 +1377,22 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KH1
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: RunEnd SCR-11 (PRS-06) và RunEnd endless SCR-21 ('Sống sót đến wave N')
 - Nghiệm thu: Đủ trường mục 3.2.4; hai loại RunEnd tách theo run_result
 - Tệp liên quan: ui/screens/run_end.gd, mới: ui/screens/run_end_survived (hoặc biến thể)
 - ID SRS: SCR-11, SCR-21
 - Cần xong trước: W10-KT2, W10-KM3
+- Ghi chú bàn giao: One RunEnd scene shows both results from GameState.last_run_summary: "Thất bại ở đợt quái N" or "Sống sót đến đợt quái N" with a victory tag and "(Kỷ lục mới)", the run rows and the prestige conversion rows (collected, rate, start_mult, gain, new balance read from the save). Rows hide while the summary lacks their key. @Ender-Via: new_record, damage_by_tower_type and unlocked_starts are read from the run end summary when present (TODOs left). Runner tests/test_run_flow_screens.tscn.
 
 ##### W11-KH2
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: PauseMenu hoàn chỉnh (FLOW-04, 05)
 - Nghiệm thu: Pause mở Settings vẫn đóng băng
 - Cần xong trước: W11-KH1
+- Ghi chú bàn giao: PauseMenu shows the wave and fight time, and the Abandon and Quit dialogs name the wave, defeat or survived, and the prestige gain, from GameState.run_snapshot(). Resume, Settings while frozen, auto pause on focus loss and Quit saving before exit were already in place and are kept.
 
 ##### W11-KH3
 - Người: Khang
@@ -1430,12 +1432,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KH6
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Màn thắng SCR-20 (một nút 'Chơi tiếp', không đếm ngược, game dừng)
 - Nghiệm thu: VC1, VC5 đạt phần giao diện
 - Tệp liên quan: mới: ui/screens/victory_screen.*
 - ID SRS: SCR-20, EVB-46
 - Cần xong trước: W11-NG9
+- Ghi chú bàn giao: VictoryScreen (ui/screens/victory_screen.*) sits in the HUD with process_mode Always, opens on run_victory and sends victory_continue_requested once; no countdown. WaveManager.enable_victory_screen now defaults to true so the wave side pauses with VICTORY (@Ender-Via). @Rawisl: stats come from GameState.run_snapshot() until run_victory carries them (TODO left).
 
 ##### W11-KH7
 - Người: Khang
@@ -1450,12 +1453,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KH8
 - Người: Khang
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SummaryPanel: dòng 'Nhận vũ khí X', ghi chú gold/XP/Mithril của Hazard đã cộng lúc rời phòng, bỏ dòng gọi sớm (nếu còn)
 - Nghiệm thu: Dòng vũ khí chỉ hiện khi có rơi; SUMMARY khi Fortress dưới 30% gợi ý 'Sửa Fortress bằng Mithril' (FORT-06)
 - Tệp liên quan: ui/screens/summary_panel.gd
 - ID SRS: 3.3.4, WPN-11
 - Cần xong trước: W11-MH9
+- Ghi chú bàn giao: SummaryPanel adds the "Nhận vũ khí" row (summary key weapon_gained, falling back to the weapon_gained signal; TODO for @kiezroth), a note that Hazard Trial rewards were added when leaving the tower, and the repair hint at or under FortressStats.low_hp_warning_pct (the HUD warning threshold): repair with Mithril, or win a Hazard Trial when there is none; the Fortress value turns orange with it, and the same hint shows under the HUD Fortress bar in the next PREP. No early-call line was left.
 
 #### Kim (Art/Level/Audio), tuần 11, 36.5h
 

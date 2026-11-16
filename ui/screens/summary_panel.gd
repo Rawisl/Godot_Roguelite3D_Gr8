@@ -2,11 +2,21 @@ class_name SummaryPanel
 extends Control
 ## End-of-wave summary. Shown in SUMMARY, continues after 10 s of pausable real time or on Continue.
 
+## Same low HP threshold as the HUD Fortress warning, so the hint and the warning agree.
+@export var fortress_stats: FortressStats = preload("res://data/config/fortress_stats.tres")
+## The Fortress value under that threshold, the same orange as the hint under it.
+@export var fortress_low_color := Color(1, 0.6039216, 0.18039216, 1)
+
 ## Each row hides until the summary data carries its key.
 var _summary: Dictionary = {}
 var _wave := 0
 var _continue_at := -1.0
 var _sent := false
+## A boss weapon drop of this wave, if weapon_gained came before the summary has it.
+var _weapon_gained: StringName = &""
+## True once the Hazard Trial of this wave ended: its rewards were added when leaving the tower.
+var _hazard_done := false
+var _mithril := 0
 
 @onready var _title: Label = %Title
 @onready var _no_data: Label = %NoData
@@ -21,9 +31,12 @@ var _sent := false
 @onready var _fortress: SummaryRow = %FortressRow
 @onready var _ruined: SummaryRow = %RuinedRow
 @onready var _emg: SummaryRow = %EmgRow
+@onready var _weapon: SummaryRow = %WeaponRow
 @onready var _xp: SummaryRow = %XpRow
 @onready var _level: SummaryRow = %LevelRow
 @onready var _picks: SummaryRow = %PicksRow
+@onready var _hazard_note: Label = %HazardNote
+@onready var _fortress_hint: Label = %FortressHint
 @onready var _countdown: Label = %Countdown
 @onready var _continue: Button = %ContinueButton
 
@@ -35,8 +48,16 @@ func _ready() -> void:
 	_continue.text = tr(&"summary.continue")
 	_continue.pressed.connect(_request_continue)
 	EventBus.state_changed.connect(_on_state_changed)
-	EventBus.wave_started.connect(func(index: int) -> void: _wave = index)
 	EventBus.wave_cleared.connect(func(index: int) -> void: _wave = index)
+	EventBus.wave_started.connect(_on_wave_started)
+	EventBus.run_started.connect(_on_run_started)
+	# TODO(kiezroth): add weapon_gained (the weapon id) to the wave summary when a boss drops one; the signal is the fallback until then.
+	EventBus.weapon_gained.connect(func(id: StringName) -> void:
+		_weapon_gained = id
+		if visible:
+			_refresh())
+	EventBus.hazard_trial_exited.connect(func(_r: StringName, _k: int, _g: int, _x: float, _m: int) -> void: _hazard_done = true)
+	EventBus.mithril_changed.connect(func(value: int, _delta: int) -> void: _mithril = value)
 	# TODO(Ender-Via): emit wave_summary_ready with the keys read below once the summary is saved.
 	EventBus.wave_summary_ready.connect(_on_summary_ready)
 
@@ -59,6 +80,16 @@ func _on_state_changed(new_state: StringName) -> void:
 	_refresh()
 	visible = true
 
+func _on_wave_started(index: int) -> void:
+	_wave = index
+	_weapon_gained = &""
+	_hazard_done = false
+
+func _on_run_started() -> void:
+	_weapon_gained = &""
+	_hazard_done = false
+	_mithril = 0
+
 func _on_summary_ready(summary: Dictionary) -> void:
 	_summary = summary
 	_wave = summary.get("wave_index", _wave)
@@ -76,8 +107,12 @@ func _refresh() -> void:
 	var has_data := not _summary.is_empty()
 	_no_data.visible = not has_data
 	_columns.visible = has_data
+	_hazard_note.visible = _hazard_done
+	_hazard_note.text = tr(&"summary.hazard_note")
+	_fortress_hint.visible = false
 	if not has_data:
 		return
+	_show_fortress_hint()
 	_set_row(_clear_time, "clear_time", &"summary.row.clear_time", _clear_time_text)
 	_set_row(_kills, "kills_by_type", &"summary.row.kills", _kills_text)
 	_set_row(_gold, "gold_base", &"summary.row.gold", func(v: int) -> String:
@@ -92,6 +127,10 @@ func _refresh() -> void:
 	_set_row(_ruined, "ruined_towers", &"summary.row.ruined", _ruined_text)
 	_set_row(_emg, "emg_repair_gained", &"summary.row.emg", func(v: int) -> String:
 		return UiFormat.tr_fmt(&"summary.value.charges", {"value": v}))
+	var weapon: StringName = StringName(_summary.get("weapon_gained", _weapon_gained))
+	_weapon.visible = weapon != &""
+	if _weapon.visible:
+		_weapon.set_row(tr(&"summary.row.weapon"), tr(StringName("weapon.%s.name" % weapon)))
 	_set_row(_xp, "xp_from_commander", &"summary.row.xp", func(v: int) -> String:
 		return UiFormat.tr_fmt(&"summary.value.xp", {"commander": v, "towers": _summary.get("xp_from_towers", 0)}))
 	_set_row(_level, "commander_level", &"summary.row.level", func(v: int) -> String:
@@ -99,7 +138,17 @@ func _refresh() -> void:
 	_set_row(_picks, "pending_picks", &"summary.row.picks", func(v: int) -> String:
 		return UiFormat.tr_fmt(&"summary.value.picks", {"value": v}))
 
-## Hides the row when its key is missing, or when there is nothing to report (no ruined tower, no charge, no early bonus).
+## Low Fortress HP: repair with Mithril in the next PREP, or win a Hazard Trial first when there is none.
+## The Fortress value turns the hint colour too, so the number and the hint say the same thing.
+func _show_fortress_hint() -> void:
+	var max_hp := int(_summary.get("fortress_max_hp", 0))
+	var hp := int(_summary.get("fortress_hp", max_hp))
+	_fortress_hint.visible = max_hp > 0 and float(hp) / max_hp <= fortress_stats.low_hp_warning_pct
+	_fortress.set_value_color(fortress_low_color if _fortress_hint.visible else _fortress.value_color)
+	if _fortress_hint.visible:
+		_fortress_hint.text = tr(&"summary.fortress_hint" if _mithril > 0 else &"summary.fortress_hint_hazard")
+
+## Hides the row when its key is missing, or when there is nothing to report (no ruined tower, no charge).
 func _set_row(row: SummaryRow, key: String, name_key: StringName, format: Callable) -> void:
 	var value: Variant = _summary.get(key)
 	var shown := value != null
