@@ -4,24 +4,47 @@
 [ext_resource type="Script" uid="uid://bumdio8mdm4kc" path="res://systems/tutorial/tutorial_service.gd" id="2_service"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.10980392, 0.12156863, 0.14901961, 0.94)
-border_width_left = 2
+content_margin_left = 24.0
+content_margin_top = 16.0
+content_margin_right = 24.0
+content_margin_bottom = 18.0
+bg_color = Color(0.10980392, 0.12156863, 0.14901961, 0.95)
+border_width_left = 6
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dot"]
+bg_color = Color(0.2784314, 0.3019608, 0.3529412, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_key"]
+content_margin_left = 10.0
+content_margin_top = 2.0
+content_margin_right = 10.0
+content_margin_bottom = 2.0
+bg_color = Color(0.16470589, 0.18431373, 0.22745098, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 4
+border_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="TutorialHint" type="PanelContainer" unique_id=602394901]
 visible = false
-custom_minimum_size = Vector2(640, 0)
+custom_minimum_size = Vector2(700, 0)
 size_flags_horizontal = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_box")
@@ -30,7 +53,7 @@ script = ExtResource("1_hint")
 [node name="Rows" type="VBoxContainer" parent="." unique_id=1610664370]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="Header" type="HBoxContainer" parent="Rows" unique_id=518233606]
 layout_mode = 2
@@ -42,15 +65,50 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 
 [node name="StepCount" type="Label" parent="Rows/Header" unique_id=432782117]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(110, 0)
+custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
+
+[node name="StepDots" type="HBoxContainer" parent="Rows/Header" unique_id=471774515]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Dot1" type="Panel" parent="Rows/Header/StepDots" unique_id=1885912491]
+custom_minimum_size = Vector2(26, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot")
+
+[node name="Dot2" type="Panel" parent="Rows/Header/StepDots" unique_id=1457792122]
+custom_minimum_size = Vector2(26, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot")
+
+[node name="Dot3" type="Panel" parent="Rows/Header/StepDots" unique_id=350200270]
+custom_minimum_size = Vector2(26, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot")
+
+[node name="Dot4" type="Panel" parent="Rows/Header/StepDots" unique_id=978501126]
+custom_minimum_size = Vector2(26, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dot")
 
 [node name="RemindTag" type="Label" parent="Rows/Header" unique_id=648498148]
 unique_name_in_owner = true
@@ -58,7 +116,7 @@ visible = false
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(1, 0.6039216, 0.18039216, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 
 [node name="Spacer" type="Control" parent="Rows/Header" unique_id=1678362383]
 layout_mode = 2
@@ -67,16 +125,97 @@ mouse_filter = 2
 
 [node name="SkipButton" type="Button" parent="Rows/Header" unique_id=957295487]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 44)
+custom_minimum_size = Vector2(210, 44)
 layout_mode = 2
 
-[node name="HintText" type="Label" parent="Rows" unique_id=429598683]
+[node name="Action" type="Label" parent="Rows" unique_id=836181628]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(600, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 30
+
+[node name="Where" type="Label" parent="Rows" unique_id=236652882]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_font_sizes/font_size = 22
 autowrap_mode = 3
+
+[node name="Keys" type="HBoxContainer" parent="Rows" unique_id=933823416]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 20
+
+[node name="Key1" type="HBoxContainer" parent="Rows/Keys" unique_id=1654898257]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Cap" type="PanelContainer" parent="Rows/Keys/Key1" unique_id=173691834]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_key")
+
+[node name="CapText" type="Label" parent="Rows/Keys/Key1/Cap" unique_id=1989178594]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="KeyText" type="Label" parent="Rows/Keys/Key1" unique_id=561214957]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.6627451, 0.654902, 0.62352943, 1)
+theme_override_font_sizes/font_size = 20
+
+[node name="Key2" type="HBoxContainer" parent="Rows/Keys" unique_id=286846544]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Cap" type="PanelContainer" parent="Rows/Keys/Key2" unique_id=1586299222]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_key")
+
+[node name="CapText" type="Label" parent="Rows/Keys/Key2/Cap" unique_id=1545604195]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="KeyText" type="Label" parent="Rows/Keys/Key2" unique_id=404953815]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.6627451, 0.654902, 0.62352943, 1)
+theme_override_font_sizes/font_size = 20
+
+[node name="Key3" type="HBoxContainer" parent="Rows/Keys" unique_id=1340617612]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Cap" type="PanelContainer" parent="Rows/Keys/Key3" unique_id=818535247]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_key")
+
+[node name="CapText" type="Label" parent="Rows/Keys/Key3/Cap" unique_id=126221615]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="KeyText" type="Label" parent="Rows/Keys/Key3" unique_id=1463861712]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.6627451, 0.654902, 0.62352943, 1)
+theme_override_font_sizes/font_size = 20
 
 [node name="TutorialService" type="Node" parent="." unique_id=1751882031]
 unique_name_in_owner = true

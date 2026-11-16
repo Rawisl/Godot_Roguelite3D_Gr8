@@ -65,6 +65,7 @@ func step_number() -> int:
 	return STEPS.find(step) + 1
 
 ## Builds what is missing on the default slots, saves tutorial_done and hides every hint.
+# TODO(kiezroth): with build_starter() missing and no starting gold, Skip builds nothing yet still saves tutorial_done, so that run starts without towers; build_starter() fixes it.
 func skip() -> void:
 	if not is_active():
 		return
