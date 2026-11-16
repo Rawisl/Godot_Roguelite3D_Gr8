@@ -1090,7 +1090,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM10
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model 3 bậc cho tower, phần 1 (Arrow và Cannon, bậc 2 và 3): dùng lại model bậc 1 làm gốc, thêm chi tiết và đổi material để dựng nhanh
 - Nghiệm thu: Bậc 2 và 3 nhìn khác bậc 1 ở khoảng cách camera chuẩn
 - Tệp liên quan: entities/tower/arrow.tscn, cannon.tscn, tower_model.gd
