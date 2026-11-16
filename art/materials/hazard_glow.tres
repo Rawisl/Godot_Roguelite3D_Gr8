@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://c0pyrami7r0u7"]
+
+[resource]
+resource_name = "hazard_glow"
+shading_mode = 0
+albedo_color = Color(0.608, 0.42, 1, 1)
+emission_enabled = true
+emission = Color(0.608, 0.42, 1, 1)
+emission_energy_multiplier = 1.5

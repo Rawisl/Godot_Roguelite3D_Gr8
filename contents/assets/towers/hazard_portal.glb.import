@@ -1,0 +1,118 @@
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+uid="uid://vk7ekpin7u0p"
+path="res://.godot/imported/hazard_portal.glb-40665bbc1fcf2ca3ecdf224205e00568.scn"
+
+[deps]
+
+source_file="res://contents/assets/towers/hazard_portal.glb"
+dest_files=["res://.godot/imported/hazard_portal.glb-40665bbc1fcf2ca3ecdf224205e00568.scn"]
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=false
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=true
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=0
+materials/extract_format=0
+materials/extract_path=""
+_subresources={
+"materials": {
+"portal_core": {
+"use_external/enabled": false
+},
+"portal_glow": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/hazard_glow.tres",
+"use_external/path": "uid://c0pyrami7r0u7"
+},
+"portal_joint": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/struct_stone_dark.tres",
+"use_external/path": "res://art/materials/struct_stone_dark.tres"
+},
+"portal_sandstone": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/struct_stone.tres",
+"use_external/path": "uid://bseh2kw3vpopx"
+},
+"portal_slate": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/hazard_pad.tres",
+"use_external/path": "uid://crcdokwqb1qul"
+}
+},
+"meshes": {
+"HazardPortal_PortalBody": {
+"generate/lightmap_uv": 0,
+"generate/lods": 0,
+"generate/shadow_meshes": 0,
+"lods/normal_merge_angle": 20.0,
+"save_to_file/enabled": true,
+"save_to_file/fallback_path": "res://contents/assets/towers/hazard_portal_body.res",
+"save_to_file/path": "uid://bvypdg336878y"
+},
+"HazardPortal_PortalRing": {
+"generate/lightmap_uv": 0,
+"generate/lods": 0,
+"generate/shadow_meshes": 0,
+"lods/normal_merge_angle": 20.0,
+"save_to_file/enabled": true,
+"save_to_file/fallback_path": "res://contents/assets/towers/hazard_portal_ring.res",
+"save_to_file/path": "uid://b1ccsoloviyav"
+},
+"HazardPortal_PortalShard1": {
+"generate/lightmap_uv": 0,
+"generate/lods": 0,
+"generate/shadow_meshes": 0,
+"lods/normal_merge_angle": 20.0,
+"save_to_file/enabled": true,
+"save_to_file/fallback_path": "res://contents/assets/towers/hazard_portal_shard_1.res",
+"save_to_file/path": "uid://bj40feixcx8ru"
+},
+"HazardPortal_PortalShard2": {
+"generate/lightmap_uv": 0,
+"generate/lods": 0,
+"generate/shadow_meshes": 0,
+"lods/normal_merge_angle": 20.0,
+"save_to_file/enabled": true,
+"save_to_file/fallback_path": "res://contents/assets/towers/hazard_portal_shard_2.res",
+"save_to_file/path": "uid://bqkkndny4qfhg"
+},
+"HazardPortal_PortalShard3": {
+"generate/lightmap_uv": 0,
+"generate/lods": 0,
+"generate/shadow_meshes": 0,
+"lods/normal_merge_angle": 20.0,
+"save_to_file/enabled": true,
+"save_to_file/fallback_path": "res://contents/assets/towers/hazard_portal_shard_3.res",
+"save_to_file/path": "uid://bhxgcpmydum3l"
+}
+}
+}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
+gltf/texture_map_mode=1
