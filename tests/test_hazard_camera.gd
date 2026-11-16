@@ -1,5 +1,5 @@
 extends Node3D
-## Test for the camera in the Hazard Trial (CAM-16, HZT-11, EVB-35): entering cuts to the room's
+## Test for the camera in the Hazard Trial: entering cuts to the room's
 ## fixed frame and size, nothing moves it there (follow, move keys, C, Tab), leaving cuts back to
 ## the PREP frame, either signal order works, and camera_frame_changed reports every frame once.
 ## Uses the real hazard_room.tscn. Not shipped. Run with F6, prints OK/FAIL per case then quits.
@@ -93,7 +93,6 @@ func _enter_prep() -> void:
 
 func _run() -> void:
 	_add_room()
-	var overview := 18.0
 
 	# Entering from PREP with hazard_trial_entered: a cut on the same frame, room size, one signal.
 	_new_rig()
@@ -135,11 +134,11 @@ func _run() -> void:
 	# Leaving with hazard_trial_exited first: a cut to the PREP frame, then PREP changes nothing.
 	EventBus.hazard_trial_exited.emit(&"LEFT", 2, 10, 4.0, 0)
 	_check("leaving cuts back to the middle of the corridor", _at(Vector3.ZERO))
-	_check("leaving sets the overview size at once", is_equal_approx(_camera.size, overview))
+	_check("leaving sets the overview size at once", is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
 	_check("leaving reports OVERVIEW once", _frames == [&"HAZARD_TRIAL", &"OVERVIEW"])
 	EventBus.state_changed.emit(&"PREP")
 	_step(0.6)
-	_check("the PREP state after leaving keeps the PREP frame", _at(Vector3.ZERO) and is_equal_approx(_camera.size, overview))
+	_check("the PREP state after leaving keeps the PREP frame", _at(Vector3.ZERO) and is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
 	_check("the PREP state after leaving sends nothing more", _frames.size() == 2)
 	_check("panning works again in PREP", _rig.is_panning_enabled())
 
@@ -152,9 +151,9 @@ func _run() -> void:
 	EventBus.state_changed.emit(&"PREP")
 	EventBus.hazard_trial_exited.emit(&"WON", 5, 30, 12.0, 1)
 	_check("PREP first: back to the corridor, one OVERVIEW", _at(Vector3.ZERO) and _frames == [&"HAZARD_TRIAL", &"OVERVIEW"])
-	_check("PREP first: overview size", is_equal_approx(_camera.size, overview))
+	_check("PREP first: overview size", is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
 
-	# Panned away in PREP before entering: leaving still returns to the default focus (CAM-07).
+	# Panned away in PREP before entering: leaving still returns to the default focus.
 	_new_rig()
 	_enter_prep()
 	_rig.position = Vector3(10, 0, 1)
@@ -173,6 +172,55 @@ func _run() -> void:
 	_check("frames follow the context: %s" % [_frames], _frames == [&"OVERVIEW", &"FRONTLINE", &"OVERVIEW", &"FRONTLINE", &"BOSS_INTRO", &"FRONTLINE"])
 	EventBus.state_changed.emit(&"BOSS_COMBAT")
 	_check("the same frame again sends nothing", _frames.size() == 6)
+
+	# Panning is free at once after leaving, in both signal orders: no hidden glide.
+	for order in [["exited", "prep"], ["prep", "exited"]]:
+		_new_rig()
+		_enter_prep()
+		EventBus.hazard_trial_entered.emit(5, [])
+		for step in order:
+			if step == "exited":
+				EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
+			else:
+				EventBus.state_changed.emit(&"PREP")
+		_check("%s then %s: no glide left and panning works at once" % order, not _rig.is_gliding() and _rig.is_panning_enabled())
+		Input.action_press(&"move_right")
+		_step(0.3)
+		Input.action_release(&"move_right")
+		_check("%s then %s: the move keys pan right away" % order, not _at(Vector3.ZERO))
+
+	# Commander mode set while in the room: leaving still frames the PREP middle.
+	_new_rig()
+	_enter_prep()
+	EventBus.hazard_trial_entered.emit(5, [])
+	EventBus.mode_changed.emit(&"COMMANDER")
+	EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
+	_check("Commander mode across the room: back to the PREP middle at overview size",
+		_at(Vector3.ZERO) and is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
+	EventBus.mode_changed.emit(&"FRONTLINE")
+
+	# Game speed and Pause in the room do not move the frame.
+	_new_rig()
+	_enter_prep()
+	EventBus.hazard_trial_entered.emit(5, [])
+	Engine.time_scale = 3.0
+	_step(0.5)
+	TimeManager.request_pause(TimeManager.REASON_USER)
+	_step(0.5)
+	TimeManager.release_pause(TimeManager.REASON_USER)
+	Engine.time_scale = 1.0
+	_check("x3 and Pause in the room keep the room frame", _at(_room_focus()) and is_equal_approx(_camera.size, _room_size()))
+
+	# Leaving into another state than PREP (a reset or a recovery): that state's own frame.
+	_new_rig()
+	_enter_prep()
+	EventBus.hazard_trial_entered.emit(5, [])
+	_frames.clear()
+	EventBus.state_changed.emit(&"COMBAT")
+	_check("leaving into COMBAT frames the commander in Frontline",
+		_at(_rig.bounds.clamp_focus(Vector3(-6, 0, 0), true)) and _frames == [&"FRONTLINE"])
+	_check("leaving into COMBAT uses the Frontline size", is_equal_approx(_camera.size, _rig.bounds.camera_size_frontline))
+	_check("leaving into COMBAT is not taken for PREP", not _rig.is_panning_enabled())
 
 	# Without a room the frame still locks and reports, and leaving restores PREP.
 	_remove_room()
