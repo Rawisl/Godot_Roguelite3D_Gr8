@@ -491,9 +491,20 @@ dialog.save_blocked.line2,Game vẫn chơi bình thường nhưng tiến trình 
 dialog.save_blocked.note,(Save được tạo bởi bản game mới hơn hoặc không đọc được nên được giữ nguyên)
 tutorial.title,Hướng dẫn
 tutorial.step,Bước {n}/{total}
-tutorial.build_arrow,"Bấm vào ô sáng trên mặt đất để xây Arrow miễn phí. Dùng WASD để dịch camera xem toàn bản đồ."
-tutorial.build_cannon,Bấm vào slot sáng trên tường để xây Cannon miễn phí.
-tutorial.start_wave,"Chuẩn bị xong thì bấm Bắt đầu wave. Không có giới hạn thời gian."
-tutorial.fight,"WASD di chuyển, chuột trái đánh, Space né. Đánh trúng quân để nhận XP đầy đủ và mở nâng cấp tower."
 tutorial.remind,(Nhắc lại)
 tutorial.skip,Bỏ qua hướng dẫn
+tutorial.build_arrow.action,Xây Arrow miễn phí
+tutorial.build_arrow.where,Bấm vào ô sáng trên mặt đất
+tutorial.build_cannon.action,Xây Cannon miễn phí
+tutorial.build_cannon.where,Bấm vào slot sáng trên tường
+tutorial.start_wave.action,Bấm Bắt đầu wave khi đã sẵn sàng
+tutorial.start_wave.where,(Không giới hạn thời gian chuẩn bị)
+tutorial.fight.action,Đánh trúng một quân địch
+tutorial.fight.where,Chỉ huy đánh trúng thì nhận đủ XP và mở nâng cấp tower
+tutorial.key.wasd,WASD
+tutorial.key.mouse,Chuột trái
+tutorial.key.space,Space
+tutorial.key.camera,Dịch camera xem toàn bản đồ
+tutorial.key.move,Di chuyển
+tutorial.key.attack,Đánh
+tutorial.key.dodge,Né
