@@ -16,6 +16,7 @@ const STATE_KEYS := {
 @onready var _enemies_title: Label = %EnemiesTitle
 @onready var _enemies: Label = %Enemies
 @onready var _enemies_row: HBoxContainer = %EnemiesRow
+@onready var _clear_row: HBoxContainer = %ClearRow
 @onready var _clear_title: Label = %ClearTitle
 @onready var _clear_time: Label = %ClearTime
 
@@ -51,8 +52,10 @@ func _on_state_changed(new_state: StringName) -> void:
 	_last_game_time = TimeManager.game_time
 	_set_enemies_visible(_fighting)
 
+## Enemies left and the fight time sit on two rows of their own, shown together in combat.
 func _set_enemies_visible(value: bool) -> void:
 	_enemies_row.visible = value
+	_clear_row.visible = value
 
 # TODO(Ender-Via): send wave_preview_ready in PREP so the counter can show the upcoming wave.
 ## "Wave N / 30" up to the victory wave, then "Wave N" with the Endless tag.
