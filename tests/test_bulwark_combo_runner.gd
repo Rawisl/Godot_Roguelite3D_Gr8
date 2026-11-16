@@ -29,6 +29,7 @@ func _ready() -> void:
 	test_triple_stomp_clip_cut()
 	test_triple_stomp_hits()
 	test_moves_unlock_by_appearance()
+	test_stomp_punishes_kiting()
 	test_chains_never_kill_full_commander()
 	test_stomp_lands_in_front()
 
@@ -445,6 +446,38 @@ func test_triple_stomp_hits() -> void:
 			and absf(hit_times[1] - (step_len + 0.97)) < 0.03, "Each stomp hits 0.97 s into its own clip")
 	assert_true(hits == [&"TRIPLE_STOMP_2", &"TRIPLE_STOMP_3"], "Commander 4 m from the impact point dodges the first ring, eats the bigger two")
 	assert_true(cmd.damage_taken == 57, "Second and third stomp deal 50% and 75% of 45 (23 + 34)")
+	cmd.free()
+	bulwark.free()
+
+
+func test_stomp_punishes_kiting() -> void:
+	print("
+[GROUP 12b] Commander kept out of slash reach in front gets the stomp")
+	var bulwark := _make_bulwark()
+	var boss_data := bulwark.data as BossData
+	var cmd := _make_commander(Vector3(0.0, 0.0, 2.0))
+	bulwark.current_target = cmd
+	bulwark.spawn_wave = 5  # first appearance: the stomp is there from the start
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_NORMAL, "Front, 2 m: the slash")
+
+	cmd.global_position = Vector3(0.0, 0.0, 5.0)
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_STOMP, "Front, 5 m (in the ring, out of slash reach): the stomp")
+	cmd.global_position = Vector3(0.0, 0.0, 7.5)
+	assert_true(not bulwark._can_stomp_commander_from_range(), "Front, 7.5 m (past the ring): no stomp")
+	cmd.global_position = Vector3(0.0, 0.0, -5.0)
+	assert_true(not bulwark._can_stomp_commander_from_range(), "Behind, 5 m: no stomp (its ring lands in front)")
+
+	# Chasing: walking into the ring starts the stomp from range.
+	cmd.global_position = Vector3(0.0, 0.0, 5.0)
+	bulwark.change_state(Enums.EnemyState.CHASE)
+	bulwark._update_state(STEP)
+	assert_true(bulwark.current_state == Enums.EnemyState.ATTACK and bulwark.last_chosen_move == Bulwark.MOVE_STOMP,
+			"Chasing a commander 5 m ahead: the boss stops and stomps")
+	assert_true(is_equal_approx(bulwark.commander_stomp_cooldown_left, boss_data.commander_stomp_cooldown),
+			"Stomping the commander starts its cooldown")
+	assert_true(not bulwark._can_stomp_commander_from_range(), "On cooldown: no second stomp from range")
+	bulwark._process(boss_data.commander_stomp_cooldown + 0.1)
+	assert_true(bulwark._can_stomp_commander_from_range(), "Cooldown over: the stomp from range is back")
 	cmd.free()
 	bulwark.free()
 

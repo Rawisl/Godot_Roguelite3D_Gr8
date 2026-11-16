@@ -100,6 +100,8 @@ var _triple_time: float = 0.0
 var _triple_hit_done: bool = false
 var _triple_from_ai: bool = false
 var triple_stomp_cooldown_left: float = 0.0
+## Game seconds until the boss may stomp a commander that keeps out of its slash reach.
+var commander_stomp_cooldown_left: float = 0.0
 
 ## Rolls the combo chance; seeded from the run so a replay makes the same choices.
 var _ai_rng: RandomNumberGenerator = null
@@ -180,6 +182,8 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	if triple_stomp_cooldown_left > 0.0:
 		triple_stomp_cooldown_left = maxf(0.0, triple_stomp_cooldown_left - delta)
+	if commander_stomp_cooldown_left > 0.0:
+		commander_stomp_cooldown_left = maxf(0.0, commander_stomp_cooldown_left - delta)
 	if combo_step != ComboStep.NONE:
 		_tick_combo(delta)
 	if _triple_index >= 0:
@@ -235,6 +239,10 @@ func _update_state(delta: float) -> void:
 		return
 
 	_turn_walking = false
+	# Chasing a commander that keeps just out of reach: stomp it once it stands in the ring.
+	if current_state == Enums.EnemyState.CHASE and _can_stomp_commander_from_range():
+		change_state(Enums.EnemyState.ATTACK)
+		return
 	super._update_state(delta)
 
 
@@ -467,6 +475,9 @@ func _play_attack_anim() -> void:
 		MOVE_NORMAL:
 			_begin_slash_sequence(NORMAL_ATTACK_ID, ComboStep.SLASH, true)
 		_:
+			if current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"commander"):
+				var boss_data := data as BossData
+				commander_stomp_cooldown_left = boss_data.commander_stomp_cooldown if boss_data != null else 0.0
 			attack_step_started.emit(1, &"STOMP_WINDUP", CLIP_SLAM_2H, _get_attack_windup())
 			_play_stomp_anim()
 
@@ -483,9 +494,26 @@ func _must_turn_before_attacking() -> bool:
 	return choose_attack() != MOVE_TRIPLE
 
 
+## The commander is in front, out of the slash's reach but inside the ring the stomp would
+## land on right now, and the stomp against the commander is off cooldown.
+func _can_stomp_commander_from_range() -> bool:
+	var boss_data := data as BossData
+	if boss_data == null or commander_stomp_cooldown_left > 0.0 or is_dead or spawn_grace:
+		return false
+	if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"commander"):
+		return false
+	if not _is_target_valid(current_target) or not is_in_front(current_target):
+		return false
+	if _in_slash_hitbox(current_target, boss_data.combo_slash_range, boss_data.combo_slash_arc_deg):
+		return false
+	return _get_distance_to_target(current_target, get_stomp_center()) <= stomp_radius
+
+
 ## Picks the next move against the current target.
 ## - Not the commander (tower, Barricade, Fortress): the stomp.
-## - Commander at the flank or behind: triple stomp; while it cools down, the normal attack.
+## - Commander at the flank or behind: triple stomp; while it cools down, the normal attack (the
+##   boss turns to face it first, see _must_turn_before_attacking).
+## - Commander in front, out of slash reach but inside the stomp ring: the stomp (commander_stomp_cooldown).
 ## - Commander in front: the normal attack, or below combo_hp_threshold a combo_chance roll for the combo.
 func choose_attack() -> StringName:
 	var boss_data := data as BossData
@@ -498,6 +526,8 @@ func choose_attack() -> StringName:
 		if appearance < boss_data.triple_stomp_unlock_appearance:
 			return MOVE_STOMP
 		return MOVE_TRIPLE if triple_stomp_cooldown_left <= 0.0 else MOVE_NORMAL
+	if _can_stomp_commander_from_range():
+		return MOVE_STOMP
 	if appearance < boss_data.combo_unlock_appearance:
 		return MOVE_NORMAL
 	if get_hp_fraction() < boss_data.combo_hp_threshold and _ai_roll() < boss_data.combo_chance:

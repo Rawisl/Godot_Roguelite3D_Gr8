@@ -440,14 +440,14 @@ func _update_labels() -> void:
 				"ON" if ms >= bd.triple_stomp_unlock_appearance else "locked", bd.triple_stomp_unlock_appearance,
 				"ON" if ms >= bd.combo_unlock_appearance else "locked", bd.combo_unlock_appearance,
 				int(bd.combo_hp_threshold * 100.0), int(bd.combo_chance * 100.0)]
-		_boss_label.text = "BOSS  wave %d | appearance %d | moveset %d%s%s | %s%s\nHP %d%%  armor %d/%d  core %d/%d  | state %s | move speed x%.2f | attack interval %.2fs\nAI: last pick %s | triple cooldown %.1fs | commander %s, %.1f m | fight %.1fs\nUnlocks: %s" % [
+		_boss_label.text = "BOSS  wave %d | appearance %d | moveset %d%s%s | %s%s\nHP %d%%  armor %d/%d  core %d/%d  | state %s | move speed x%.2f | attack interval %.2fs\nAI: last pick %s | triple cooldown %.1fs | range stomp cooldown %.1fs | commander %s, %.1f m | fight %.1fs\nUnlocks: %s" % [
 			b.spawn_wave, b.get_appearance(), b.get_moveset_appearance(),
 			" | Hazard" if b.in_hazard_trial else "", " | ENRAGED" if b.is_enraged else "",
 			b._get_phase_name(), " | AI PAUSED" if _ai_paused else "",
 			int(round(b.get_hp_fraction() * 100.0)), b.current_armor_hp, b.max_armor_hp,
 			b.current_core_hp, b.max_core_hp, Enums.EnemyState.keys()[b.current_state],
 			b.speed_multiplier, b._get_attack_interval(),
-			b.last_chosen_move if b.last_chosen_move != &"" else &"-", b.triple_stomp_cooldown_left,
+			b.last_chosen_move if b.last_chosen_move != &"" else &"-", b.triple_stomp_cooldown_left, b.commander_stomp_cooldown_left,
 			"IN FRONT" if b.is_in_front(_commander) else "FLANK/BEHIND", dist, _fight_time,
 			unlock_text]
 	else:

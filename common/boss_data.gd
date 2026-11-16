@@ -60,6 +60,9 @@ func _init() -> void:
 ## Commander at the flank or behind: triple stomp, then this many game seconds before the next one.
 ## While it cools down the boss turns and uses the normal attack instead.
 @export var triple_stomp_cooldown: float = 8.0
+## Commander in front but out of the slash's reach, inside the ring the stomp would land on: the
+## boss stomps it, then waits this many game seconds before it stomps the commander again.
+@export var commander_stomp_cooldown: float = 6.0
 ## Below this share of total HP (armor + core) the normal attack may become the combo.
 @export var combo_hp_threshold: float = 0.5
 ## Chance that a front attack is the combo once below combo_hp_threshold (0.5 = 50/50).
