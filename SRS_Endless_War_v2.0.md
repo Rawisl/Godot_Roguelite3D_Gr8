@@ -371,7 +371,7 @@ REWARD_PICK là \[MVP]. Không có lượt chờ (pending_picks = 0) hoặc pool
 | Cho phép | Xây, nâng cấp, bán, sửa Fortress bằng Mithril (MTH-03), đổi target priority, đổi vũ khí (WPN-03), vào Hazard Trial một lần (HZT-01), dịch camera bằng WASD ở cả hai chế độ (nhân vật đứng yên, CAM-02), đổi chế độ (không cooldown, không channel). \[Should] Kích hoạt buff |
 | Không có quái | Chỉ huy và Fortress không nhận sát thương (trong Hazard Trial chỉ bản sao chỉ số của chỉ huy nhận sát thương, HZT-06). Tower hồi đầy HP ở đầu PREP (TWR-01, trừ Trạm hồi lực, HLT-08). Chỉ huy hồi prep_heal_pct (35%, cả hai chế độ, một lần khi vào PREP từ SUMMARY hoặc REWARD_PICK, không lặp lại khi ra khỏi Hazard Trial). Không dùng được Trạm hồi lực ở PREP (HLT-03) |
 | **Kết thúc** | Bấm nút **Bắt đầu wave** (HUD-19, WAVE-11) |
-| Preview | Loại quân sắp tới (tối đa 5 loại kể cả boss, SPN-14), modifier \[Should]. Wave boss: tên boss, miễn nhiễm pha 1, boss_timer, vũ khí sẽ rơi nếu còn (WPN-11); \[Should] PNL-05 đầy đủ và cảnh báo BOSS-15 |
+| Preview | Loại quân sắp tới (tối đa 5 loại kể cả boss, SPN-14), modifier \[Should]. Wave boss: tên boss kèm nhãn "(Boss)" và vũ khí sẽ rơi nếu còn (WPN-11), hiển thị theo HUD-25; \[Should] miễn nhiễm pha 1, boss_timer, PNL-05 đầy đủ và cảnh báo BOSS-15 |
 
 ### 3.3.3 COMBAT
 
@@ -1751,7 +1751,7 @@ Mục đích: thêm yếu tố online cho game. Tài khoản chỉ là lớp b�
 | ACCT-02 | **Chơi khách.** Trạng thái mặc định là GUEST. Mọi chức năng chơi được như cũ, không có hạng trên bảng xếp hạng. Đăng nhập là tùy chọn, từ MainMenu hoặc Settings | MVP |
 | ACCT-03 | **Đăng ký, đăng nhập, đăng xuất** bằng email và mật khẩu qua dịch vụ xác thực có sẵn của nhà cung cấp backend. Client không tự lưu mật khẩu, không chứa khóa quản trị, chỉ dùng khóa công khai. Phiên đăng nhập (token, có hạn dùng và được làm mới) lưu ở tệp riêng user://auth.cfg, **không nằm trong endlesswar_save.json** và không nằm trong quy trình chuyển máy (SAV-17). Đăng xuất xóa auth.cfg và về GUEST. Khởi động thử khôi phục phiên, không được thì về GUEST và báo nhẹ | MVP |
 | ACCT-04 | **Dữ liệu đồng bộ:** profile, meta (levels, unlocks, buff_stock), flags (gồm tutorial_done, nên tutorial chỉ chạy một lần theo tài khoản dù đổi máy). **Không đồng bộ:** run_flag, settings.cfg, mọi trạng thái trong run, auth.cfg. endlesswar_save.json thêm ba trường ngoài `data` (mục 3.12.1): revision, updated_at, device_id | MVP |
-| ACCT-05 | **Thời điểm đồng bộ:** khi đăng nhập (kéo và so sánh), ở RunEnd, sau mỗi lần mua ở shop. Không đồng bộ trong COMBAT (SAV-04). SUMMARY mỗi wave chỉ ghi cục bộ. Ghi cloud chạy bất đồng bộ, luôn ghi cục bộ trước, không chặn UI và không làm ghi save vượt ACP-06 | MVP |
+| ACCT-05 | **Thời điểm đồng bộ:** khi đăng nhập (kéo và so sánh), ở RunEnd, sau mỗi lần mua ở shop. Không đồng bộ trong suốt run, kể cả PREP và SUMMARY, để run đang chơi giữ nguyên profile và meta lúc bắt đầu (TUT-17); yêu cầu đồng bộ trong run được gửi khi run kết thúc (SAV-04). SUMMARY mỗi wave chỉ ghi cục bộ. Ghi cloud chạy bất đồng bộ, luôn ghi cục bộ trước, không chặn UI và không làm ghi save vượt ACP-06 | MVP |
 | ACCT-06 | **Xung đột (MVP rút gọn).** Cùng device_id thì bản có revision cao hơn thắng. Khác device_id và revision lệch nhau: lấy bản có revision cao hơn, hiện thông báo "Đã dùng dữ liệu từ máy khác" và giữ bản kia ở save.conflict.bak. \[Should] Hộp thoại cho người chơi chọn bản giữ lại, hiển thị prestige_balance, max_wave_cleared, total_runs của mỗi bên. **Không tự gộp** danh vọng | MVP / SHOULD |
 | ACCT-07 | **Mất mạng (MVP rút gọn).** Chơi tiếp bình thường. Yêu cầu gửi lỗi thì thử lại ở lần RunEnd hoặc mua shop kế tiếp (gửi bản mới nhất). Timeout sync_timeout 10 s. MainMenu hiện biểu tượng kèm chữ trạng thái: GUEST, SYNCED, SYNCING, OFFLINE, ERROR. Lỗi mạng không bao giờ chặn RunEnd hay mua shop. \[Should] Hàng đợi nền gộp bản mới nhất (như SAV-03) và trạng thái CONFLICT | MVP / SHOULD |
 | ACCT-08 | **Đăng nhập lần đầu.** Máy đã có profile cục bộ và tài khoản chưa có dữ liệu: hỏi "Tải profile cục bộ lên tài khoản". Cả hai bên đều có dữ liệu: theo ACCT-06 | MVP |
@@ -1926,7 +1926,7 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 | PNL-02 | Tower | Loại, cấp, HP, chỉ số hiện tại và cấp kế, Nâng cấp lên cấp kế kèm giá (xám kèm "Yêu cầu chỉ huy: cấp N" khi qua ranh giới bậc mà chưa đủ, UPG-06), bậc model hiện tại (TWR-17), Bán (xám kèm "Bán được từ wave 3" với trụ có sẵn, SELL-06), priority | PREP hoặc COMBAT, chọn tower |
 | PNL-03 | Commander (priority) | 2 lựa chọn (First, Nearest); \[Should] 4 lựa chọn và nút "Áp dụng cho mọi tower cùng loại" | Chọn tower ở Commander hoặc PREP |
 | PNL-04 | Fortress | HP, số Mithril đang có, nút "Sửa bằng Mithril (+20%)" (MTH-03), tooltip ghi sẵn số HP sẽ hồi và "Hồi thừa" khi thiếu dưới 20% (MTH-04). Nút xám khi Fortress đầy máu hoặc mithril = 0, kèm lý do. **Số lượt Emergency repair còn lại n/3, cooldown 60 s** và dòng gợi ý "Nhận +1 lượt khi diệt boss" khi lượt dưới 3 | PREP, chọn Fortress |
-| PNL-05 \[Should] | Wave preview | Loại quân, modifier, cảnh báo boss. Thu gọn, mở rộng khi rê chuột | PREP |
+| PNL-05 \[Should] | Wave preview | Bản đầy đủ của khung xem trước HUD-25: thêm modifier và cảnh báo boss. Ẩn hiện bằng nút ">" / "<" như HUD-25 | PREP |
 | PNL-06 | Buff \[Should] | Kho buff, chọn 1 để kích hoạt | PREP, phím V |
 
 | **ID** | **Luật** |
@@ -2034,12 +2034,12 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | **ID** | **Điều kiện** | **Tầng** | **Nội dung mẫu** |
 | --- | --- | --- | --- |
 | ALR-01 | fortress_hp chạm 30% (một lần mỗi wave) | T1 | "Thành sắp thất thủ" |
-| ALR-02 | commander_hp chạm 25% | T1 | Viền đỏ, nhịp tim |
+| ALR-02 | Chỉ huy vào trạng thái máu thấp (commander_low_hp_changed, dưới commander_low_hp_warning_pct 25%), mỗi lần tụt xuống một lần | T1 | "Chỉ huy sắp gục", dòng phụ "Lùi về hoặc hồi máu ở Trạm hồi lực"; viền đỏ, nhịp tim |
 | ALR-03 | Boss T-30 | T2 | "Boss sắp cuồng nộ", dòng phụ "Còn 30 giây" |
 | ALR-04 | Boss Cuồng nộ (T-0) | T1 | "Boss đã vào trạng thái cuồng nộ", dòng phụ "Nhanh hơn và đánh mạnh hơn cho tới khi bị hạ" |
 | ALR-05 | \[ĐÃ XÓA v1.8] | | |
 | ALR-06 | \[ĐÃ XÓA v1.8] | | |
-| ALR-07 | Tower vào RUINED. Tower bị phá trong tower_ruined_merge_seconds (5 s thời gian thực, tính lại từ lần phá gần nhất) dùng chung một toast: toast đang hiện được thay nội dung và tính lại thời gian sống, không xếp thêm toast mới | T2 | Một tower: "Tháp cung cấp 2 ở W3 bị phá", dòng phụ "Xây lại: 120 vàng". Nhiều tower: "N tower bị phá", dòng phụ "Ở các ô: W1, W3" (gợi ý camera, không tự động) |
+| ALR-07 | Tower vào RUINED. Tower bị phá trong tower_ruined_merge_seconds (2.5 s thời gian thực, bằng thời gian sống của toast T2, tính lại từ lần phá gần nhất) dùng chung một toast: toast đang hiện được thay nội dung và tính lại thời gian sống, không xếp thêm toast mới | T2 | Một tower: "Tháp cung cấp 2 ở W3 bị phá", dòng phụ "Xây lại: 120 vàng". Nhiều tower: "N tower bị phá", dòng phụ "Ở các ô: W1, W3" (gợi ý camera, không tự động) |
 | ALR-09 | Wave kế là boss (một lần mỗi wave, kể cả khi ra khỏi Hazard Trial về lại PREP) | T2 | "Boss ở đợt quái thứ N", dòng phụ "Kiểm tra miễn nhiễm trước khi bắt đầu" |
 | ALR-10 | FPS tụt, tự hạ tốc độ | T2 | "Đã hạ về x2 để giữ ổn định" |
 | ALR-11 | Lưu thất bại | T1 | Hộp thoại |
@@ -2426,7 +2426,7 @@ Nút cân bằng ưu tiên khi chỉnh (không sửa code): tower_gate_tier2/tie
 | camera_lookahead | 2 m | \[Should] CAM-06 |
 | online_enabled / backend_url | true / để trống trong repo | ACCT-12. Không đưa khóa riêng vào repo |
 | sync_timeout / lbd_top_n | 10 s / 50 | ACCT-07, LBD-08 |
-| tower_ruined_merge_seconds / hover_info_delay | 5 s / 0.3 s (thời gian thực) | ALR-07, MSE-06 |
+| tower_ruined_merge_seconds / hover_info_delay | 2.5 s / 0.3 s (thời gian thực) | ALR-07, MSE-06 |
 | lbd_min_seconds_per_wave | 15 s | LBD-06. Phải ≤ spawn_duration nhỏ nhất của mọi wave (SPN-15, BAL-05) |
 | lbd_elapsed_tolerance | 1 s | LBD-06. Sai số tổng do làm tròn frame |
 | display_name_min_len / display_name_max_len | 3 / 16 | LBD-09 |
@@ -3135,7 +3135,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 88 | **12/11: đồng bộ theo code UI Hazard Trial và cảnh báo tuần 10** (HUD-22, HUD-23, HZT-01, HZT-07, ALR-18, ALR-20, mục 3.6.6, EVB-48 đến EVB-51): chữ hiển thị cho người chơi gọi Hazard Trial là "tháp" (nút "Rời tháp", nhãn "Chỉ số trong tháp không mang ra ngoài", toast "Đã rời tháp", kết quả thua ghi "Thất bại"); thêm heal_store_low_pct (0.20) cho cảnh báo kho Trạm hồi lực sắp cạn; thêm bốn tín hiệu cho Hazard Trial: nhóm quái và thưởng ở Tháp, tiến độ trong tháp, yêu cầu vào và yêu cầu rời |
 | 89 | **12/11: đồng bộ theo code UI cửa hàng và bảng xếp hạng tuần 10** (SHP-06, LBD-08, mục 6.2, 6.6): thiếu danh vọng thì số còn thiếu nằm ở dòng giá trên nút Mua (nút xám), vì chữ trên nút xám khó đọc; ghi rõ các trường của ShopItem, đơn vị hiển thị của effect_base và effect_step, nơi đặt tệp; ghi API fetch_leaderboard và dạng dữ liệu trả về |
 | 90 | **12/11: đồng bộ theo code UI panel Xây, Tháp và Trạm hồi lực tuần 10** (BLD-10, GRID-07, UPG-06, PNL-02, FRT-03, ALR-19, mục 3.5.13, 7.1 mục 18, F6): chữ lý do chặn kín đường đổi thành "Đường đi sẽ bị chặn"; chữ khóa nâng cấp đổi thành "Yêu cầu chỉ huy: cấp N"; bảng vũ khí và ví dụ ALR-19 ghi tên hiển thị tiếng Việt kèm tên hiệu ứng (Hàn Sương Kiếm, Lôi Kiếm, Xích Tiêu Kiếm, Nộ Kiếm, Truy Phong Kiếm) |
-| 91 | **16/11: đồng bộ theo code UI tuần 11** (mục 3.2.4, END-10, SCR-11, SCR-21, VC3, ENR-01, ALR-03, ALR-04, ALR-07, ALR-09, ALR-21, HUD-25, MSE-06, mục 6.3): tiêu đề RunEnd dùng "đợt quái thứ N" thay cho "wave N"; cảnh báo boss gọi "Boss" thay cho "Mech" và banner Cuồng nộ ghi "Boss đã vào trạng thái cuồng nộ"; tower bị phá trong 5 s dùng chung một toast được cập nhật số lượng (tower_ruined_merge_seconds); cảnh báo boss ở đợt kế một lần mỗi wave; thêm ALR-21 (biểu tượng theo tầng, dòng chính và dòng phụ, không dấu chấm câu); thêm HUD-25 (xem trước đợt quái ở PREP, nút ">" / "<" bên trái ẩn hiện cả khung như HUD-24); ô đếm đợt quái trong COMBAT có hai dòng riêng "Quân địch:" và "Thời gian:", tên căn phải và số căn trái để dấu hai chấm thẳng hàng; banner và toast ở giữa rộng tối đa 440 px rồi xuống dòng; hover quân hiện trait; thêm tham số tower_ruined_merge_seconds và hover_info_delay |
+| 91 | **16/11: đồng bộ theo code UI tuần 11** (mục 3.2.4, mục 3.3.2, ACCT-05, ALR-02, PNL-05, END-10, SCR-11, SCR-21, VC3, ENR-01, ALR-03, ALR-04, ALR-07, ALR-09, ALR-21, HUD-25, MSE-06, mục 6.3): tiêu đề RunEnd dùng "đợt quái thứ N" thay cho "wave N"; cảnh báo boss gọi "Boss" thay cho "Mech" và banner Cuồng nộ ghi "Boss đã vào trạng thái cuồng nộ"; tower bị phá trong 2.5 s (bằng thời gian sống của toast) dùng chung một toast được cập nhật số lượng (tower_ruined_merge_seconds); cảnh báo boss ở đợt kế một lần mỗi wave; thêm ALR-21 (biểu tượng theo tầng, dòng chính và dòng phụ, không dấu chấm câu); thêm HUD-25 (xem trước đợt quái ở PREP, nút ">" / "<" bên trái ẩn hiện cả khung như HUD-24); ô đếm đợt quái trong COMBAT có hai dòng riêng "Quân địch:" và "Thời gian:", tên căn phải và số căn trái để dấu hai chấm thẳng hàng; banner và toast ở giữa rộng tối đa 440 px rồi xuống dòng; hover quân hiện trait; thêm tham số tower_ruined_merge_seconds và hover_info_delay; ALR-02 dùng tín hiệu máu thấp của chỉ huy và có banner "Chỉ huy sắp gục"; xem trước wave boss ở mục 3.3.2 theo HUD-25 (tên boss, "(Boss)", vũ khí sẽ rơi), miễn nhiễm pha 1 và boss_timer chuyển sang \[Should]; PNL-05 là bản đầy đủ của HUD-25; ACCT-05 không đồng bộ trong suốt run |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 
