@@ -51,7 +51,6 @@ func _ready() -> void:
 	EventBus.wave_cleared.connect(func(index: int) -> void: _wave = index)
 	EventBus.wave_started.connect(_on_wave_started)
 	EventBus.run_started.connect(_on_run_started)
-	# TODO(kiezroth): add weapon_gained (the weapon id) to the wave summary when a boss drops one; the signal is the fallback until then.
 	EventBus.weapon_gained.connect(func(id: StringName) -> void:
 		_weapon_gained = id
 		if visible:

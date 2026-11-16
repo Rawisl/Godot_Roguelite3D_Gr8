@@ -16,6 +16,8 @@ extends Node
 @export var summary_auto_advance: float = 10.0
 @export var boss_wave_interval: int = 5
 @export var weapon_drop_waves: Array[int] = [5, 10, 15, 20, 25]
+## Weapons a boss can drop, the base sword excluded; ids match data/weapons/<id>.tres.
+@export var boss_drop_weapons: Array[StringName] = [&"frost", &"chain_lightning", &"burn", &"rampage", &"swift"]
 
 @export_group("Hazard Trial and Mithril")
 @export var hazard_enemy_count: int = 5

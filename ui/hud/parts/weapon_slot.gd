@@ -95,7 +95,6 @@ func _on_equipped(weapon_id: StringName) -> void:
 	_cd_end = 0.0
 	_show()
 
-# TODO(Ender-Via): emit EventBus.weapon_gained(id) in RunState.grant_weapon when a weapon is added, so the count updates.
 func _on_gained(weapon_id: StringName) -> void:
 	if _owned.has(weapon_id):
 		return
