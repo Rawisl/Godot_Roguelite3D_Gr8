@@ -2,7 +2,8 @@ class_name WavePreview
 extends PanelContainer
 ## What the next wave brings, shown in PREP: up to five enemy types (the boss first), how many of
 ## each and their traits with icon and name. Before a boss wave that drops a weapon it also says
-## a weapon not owned yet will drop. Hidden outside PREP and until a preview arrives.
+## a weapon not owned yet will drop. Hidden outside PREP and until a preview arrives. The arrow in
+## the header folds the list away and brings it back, like the skill slots; a new run shows it again.
 # TODO(Ender-Via): send wave_preview_ready(wave_index, {enemy_id: count}, is_boss) at the start of each PREP; nothing shows before it does.
 # TODO(kiezroth): the composition sent with wave_preview_ready should come from the WaveScript of that wave.
 
@@ -12,10 +13,14 @@ extends PanelContainer
 var _in_prep := false
 var _has_preview := false
 var _owned := 1
+var expanded := true
 
 @onready var _title: Label = %Title
 @onready var _rows: VBoxContainer = %Rows
 @onready var _weapon_note: Label = %WeaponNote
+@onready var _body: VBoxContainer = %Body
+@onready var _toggle: Button = %Toggle
+@onready var _arrow: ArrowGlyph = %ToggleArrow
 
 func _ready() -> void:
 	visible = false
@@ -25,6 +30,22 @@ func _ready() -> void:
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.weapon_gained.connect(func(_id: StringName) -> void: _owned += 1)
 	_in_prep = GameState.wave_state == &"PREP"
+	_toggle.text = ""
+	_toggle.pressed.connect(func() -> void: set_expanded(not expanded))
+	_apply_expanded()
+
+## Folds the list under the title away (false) or brings it back.
+func set_expanded(value: bool) -> void:
+	expanded = value
+	_apply_expanded()
+
+func _apply_expanded() -> void:
+	_body.visible = expanded
+	# Shrink to the title when folded; inside a container this only asks for the new size.
+	reset_size()
+	# Down folds the list away, up brings it back; the words are in the tooltip.
+	_arrow.pointing_up = not expanded
+	_toggle.tooltip_text = tr(&"hud.preview.hide" if expanded else &"hud.preview.show")
 
 ## Kept apart from the signal so the test scene can draw any wave.
 func show_preview(wave_index: int, composition: Dictionary, is_boss: bool) -> void:
@@ -70,6 +91,7 @@ func _on_state_changed(new_state: StringName) -> void:
 func _on_run_started() -> void:
 	_owned = 1
 	_has_preview = false
+	set_expanded(true)
 	_refresh()
 
 func _refresh() -> void:

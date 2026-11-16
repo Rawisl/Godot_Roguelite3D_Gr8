@@ -4,10 +4,10 @@
 [ext_resource type="Script" uid="uid://di53ynmsvk0d1" path="res://ui/hud/parts/trait_glyph.gd" id="2_glyph"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
-content_margin_left = 6.0
-content_margin_top = 2.0
-content_margin_right = 8.0
-content_margin_bottom = 2.0
+content_margin_left = 8.0
+content_margin_top = 3.0
+content_margin_right = 10.0
+content_margin_bottom = 3.0
 bg_color = Color(0.16470589, 0.18431373, 0.22745098, 1)
 border_width_left = 1
 border_width_top = 1
@@ -31,7 +31,7 @@ theme_override_constants/separation = 4
 
 [node name="Glyph" type="Control" parent="Row" unique_id=1700185920]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(26, 26)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -41,4 +41,4 @@ script = ExtResource("2_glyph")
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 20
