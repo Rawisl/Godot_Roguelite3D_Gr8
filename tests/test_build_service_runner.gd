@@ -11,6 +11,8 @@ extends Node
 ## - commander level from the real XpTracker (level_up and xp_changed)
 ## - ground builds that would seal the path are refused before any gold is spent
 ## - every tower type has one level per tower_max_level and a positive price
+## - every tower type upgrades from level 1 to the top level with the real data
+## - a level 14 tower is rebuilt from the real data at the summed price
 
 const SLOT_SCENE: PackedScene = preload("res://systems/build/slot.tscn")
 const ARROW: TowerData = preload("res://data/towers/arrow.tres")
@@ -25,6 +27,8 @@ const WALL_IDS: Array[StringName] = [&"W1", &"W2", &"W3"]
 const HEAL_STATION_SCENE: PackedScene = preload("res://entities/tower/heal_station.tscn")
 const LONG_ID := &"arrow_long"
 const OVER_ID := &"arrow_over"
+## Level lost and rebuilt in the real data rebuild group.
+const REBUILD_LEVEL := 14
 
 ## Off when driven from the editor or godot-mcp, so results can still be read.
 @export var quit_when_done := true
@@ -44,8 +48,8 @@ var _nested_ran := false
 var _nested_results: Array = []
 var _slot_changes: Array = []
 
-## Arrow copies with many levels, since the real data has only three. Built from scenes
-## packed with this data, so build, rebuild and apply_level all read the same levels.
+## Arrow copies with many levels and a price of 1 gold per level, to try the gates and the level cap cheaply.
+## Built from scenes packed with this data, so build, rebuild and apply_level all read the same levels.
 var _long: TowerData
 var _over: TowerData
 
@@ -64,6 +68,8 @@ func _ready() -> void:
 	test_not_enough_gold()
 	test_commander_level()
 	test_rebuild()
+	test_upgrade_all_types_to_max()
+	test_rebuild_level14_real_data()
 	test_level_range()
 	test_tier_gate_table()
 	test_level_cap()
@@ -376,6 +382,98 @@ func test_rebuild() -> void:
 	assert_true(_service.build(&"W2", LONG_ID, t2 + 1), "rebuild above the tier 2 level works at commander level 0")
 	assert_true(_slot(&"W2").tower.level == t2 + 1, "rebuilt long tower keeps its level")
 	assert_true(5000 - _gold.gold == _long.get_total_cost(t2 + 1), "long rebuild costs the total up to the level")
+
+func test_upgrade_all_types_to_max() -> void:
+	print("
+[GROUP 8b] Every tower type upgrades from level 1 to the top")
+	var cases := [[ARROW, &"W1"], [CANNON, &"W2"], [BARRICADE, &"G1"]]
+	for c in cases:
+		var data: TowerData = c[0]
+		var slot_id: StringName = c[1]
+		_reset()
+		EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+		_gold.gold = 1000000
+		assert_true(_service.build(slot_id, data.id), "%s builds at level 1" % data.id)
+		var t := _slot(slot_id).tower
+		var bad_step := 0
+		var bad_hp := 0
+		var bad_cost := 0
+		for n in range(2, GameConfig.tower_max_level + 1):
+			var gold0 := _gold.gold
+			if not _service.upgrade(slot_id) or t.level != n:
+				bad_step = n
+				break
+			if bad_cost == 0 and gold0 - _gold.gold != data.levels[n - 1].build_cost:
+				bad_cost = n
+			if bad_hp == 0 and not (t.health.hp == t.health.max_hp and t.health.max_hp == data.levels[n - 1].max_hp):
+				bad_hp = n
+		assert_true(bad_step == 0, "%s: every upgrade to the top succeeds (first miss at level %d)" % [data.id, bad_step])
+		assert_true(bad_cost == 0, "%s: gold spent equals the level cost (first miss at level %d)" % [data.id, bad_cost])
+		assert_true(bad_hp == 0, "%s: HP is full at the new max after each upgrade (first miss at level %d)" % [data.id, bad_hp])
+		assert_true(t.invested_gold == data.get_total_cost(GameConfig.tower_max_level), "%s: invested gold is the total cost of all levels" % data.id)
+		assert_true(_service.get_upgrade_block_reason(slot_id) == &"MAX_LEVEL", "%s: reason is MAX_LEVEL at the top" % data.id)
+		var info := _service.get_tower_info(slot_id)
+		assert_true(info.is_max and not info.has("upgrade_cost"), "%s: info reports the top level and no upgrade price" % data.id)
+	# Gates with the real data: only the first level of tier 2 and tier 3 needs a commander level.
+	var t2 := GameConfig.tower_tier2_level
+	var t3 := GameConfig.tower_tier3_level
+	_reset()
+	_gold.gold = 1000000
+	_service.build(&"W1", &"arrow")
+	assert_true(_upgrade_to(&"W1", t2 - 1), "upgrades run up to just below the tier 2 level")
+	assert_true(not _service.upgrade(&"W1"), "the tier 2 level is refused at commander level 0")
+	assert_true(_service.get_upgrade_block_reason(&"W1") == &"COMMANDER_LEVEL", "tier 2 reason is COMMANDER_LEVEL")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier2, 0)
+	assert_true(_upgrade_to(&"W1", t3 - 1), "upgrades run up to just below the tier 3 level")
+	assert_true(not _service.upgrade(&"W1"), "the tier 3 level is refused at the tier 2 gate")
+	assert_true(_service.get_upgrade_block_reason(&"W1") == &"COMMANDER_LEVEL", "tier 3 reason is COMMANDER_LEVEL")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	assert_true(_upgrade_to(&"W1", GameConfig.tower_max_level), "upgrades reach the top once the tier 3 gate is open")
+
+func test_rebuild_level14_real_data() -> void:
+	print("
+[GROUP 8c] Rebuild a level 14 tower from the real data")
+	var cases := [[ARROW, &"W1"], [CANNON, &"W2"], [BARRICADE, &"G1"]]
+	for c in cases:
+		var data: TowerData = c[0]
+		var slot_id: StringName = c[1]
+		_reset()
+		EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+		_gold.gold = 1000000
+		_service.build(slot_id, data.id)
+		assert_true(_upgrade_to(slot_id, REBUILD_LEVEL), "%s reaches the level to lose" % data.id)
+		_slot(slot_id).ruin()
+		# Back to commander level 0: rebuilding must not need the level again.
+		EventBus.run_started.emit()
+		EventBus.state_changed.emit(&"PREP")
+		_gold.gold = 1000000
+		var opts := _service.get_build_options(slot_id)
+		var summed := 0
+		for lv in data.levels.slice(0, REBUILD_LEVEL):
+			summed += lv.build_cost
+		var o: Dictionary = opts[0] if not opts.is_empty() else {}
+		assert_true(o.get("rebuild") == true and o.get("data") == data, "%s: first option is the rebuild of the same type" % data.id)
+		assert_true(o.get("level") == REBUILD_LEVEL, "%s: rebuild option is at level %d" % [data.id, REBUILD_LEVEL])
+		assert_true(o.get("cost") == data.get_total_cost(REBUILD_LEVEL), "%s: rebuild cost is the total cost" % data.id)
+		assert_true(o.get("cost") == summed, "%s: rebuild cost equals the summed level costs" % data.id)
+		assert_true(not _service.build(slot_id, data.id, REBUILD_LEVEL - 1), "%s: wrong level refused" % data.id)
+		assert_true(_gold.gold == 1000000, "%s: gold unchanged by the wrong level" % data.id)
+		assert_true(_service.build(slot_id, data.id, REBUILD_LEVEL), "%s: rebuild works at commander level 0" % data.id)
+		var t := _slot(slot_id).tower
+		var cost: int = summed
+		assert_true(t.level == REBUILD_LEVEL, "%s: rebuilt at level %d" % [data.id, REBUILD_LEVEL])
+		assert_true(1000000 - _gold.gold == cost, "%s: gold spent equals the rebuild cost" % data.id)
+		assert_true(t.invested_gold == cost, "%s: invested gold equals the rebuild cost" % data.id)
+		assert_true(t.health.hp == t.health.max_hp and t.health.max_hp == data.levels[REBUILD_LEVEL - 1].max_hp, "%s: HP is full at the level 14 max" % data.id)
+		assert_true(t.priority == data.default_priority, "%s: priority is back to the default" % data.id)
+		assert_true(_service.get_tower_info(slot_id).sell_value == floori(float(cost) * GameConfig.sell_refund_pct), "%s: sell value follows the rebuild cost" % data.id)
+		if data == BARRICADE:
+			var shown: Array[String] = []
+			for i in range(1, 4):
+				var n := t.find_child("Level%d" % i, true, false) as Node3D
+				if n != null and n.visible:
+					shown.append("Level%d" % i)
+			assert_true(shown == ["Level2"], "barricade rebuilt at level 14 shows only Level2 (shows %s)" % [shown])
 
 func test_tier_gate_table() -> void:
 	print("\n[GROUP 9a] Upgrade gate table")
