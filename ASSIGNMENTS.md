@@ -1080,7 +1080,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM9
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Camera frame HAZARD_TRIAL (CAM-16): cắt hoặc chuyển 0.5 s sang khung phòng, không bám nhân vật, không dịch phím, rời phòng về khung PREP; phát camera_frame_changed
 - Nghiệm thu: HZ7 đạt phần camera
 - Tệp liên quan: systems/camera/camera_rig.gd, autoload/event_bus.gd (camera_frame_changed chưa có)
