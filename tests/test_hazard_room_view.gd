@@ -75,6 +75,7 @@ func _process(_delta: float) -> void:
 
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
+	get_tree().paused = false
 
 
 func _place_camera() -> void:

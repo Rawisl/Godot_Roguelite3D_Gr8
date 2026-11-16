@@ -45,8 +45,9 @@ func _process(delta: float) -> void:
 	for r in _rocks:
 		var rock: Node3D = r["node"]
 		# A growing angle goes from +X (right) to +Z (bottom of the screen): clockwise.
-		r["angle"] += orbit * r["speed"]
-		r["phase"] += bob
+		# Kept within one turn so the values stay small however long the room is shown.
+		r["angle"] = fposmod(r["angle"] + orbit * r["speed"], TAU)
+		r["phase"] = fposmod(r["phase"] + bob, TAU)
 		var angle: float = r["angle"]
 		var radius: float = r["radius"]
 		rock.position = Vector3(cos(angle) * radius, r["height"] + sin(r["phase"]) * bob_height, sin(angle) * radius)

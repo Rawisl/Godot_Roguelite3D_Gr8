@@ -1,6 +1,6 @@
 class_name HazardRoom
 extends Node3D
-## Hazard Trial room (HZT-01, HZT-11, CAM-16, SRS 6.7): a round floating arena, far from the
+## Hazard Trial room: a round floating arena, far from the
 ## corridor so real wave units never reach it. Its navmesh is baked by the level's own regions,
 ## because the floor and walls sit in the nav_source group.
 ## - CommanderSpawn: the middle of the floor, where the commander appears.
@@ -13,7 +13,7 @@ extends Node3D
 ## While the commander is inside (hazard_trial_entered until hazard_trial_exited) the sun turns
 ## lavender to match it, and goes back on the way out.
 
-## Orthographic size of the fixed Hazard Trial frame (CAM-16).
+## Orthographic size of the fixed Hazard Trial camera frame.
 @export var camera_size: float = 31.0
 ## Index in get_enemy_spawns() of the larger pad that takes the boss.
 @export var boss_spawn_index: int = 2
@@ -23,12 +23,13 @@ extends Node3D
 @export var sun: DirectionalLight3D
 @export var sun_color := Color("#D9C2FF")
 @export var sun_energy := 1.05
-## Real seconds for the sun to change, the same as a camera frame change (CAM-05).
+## Real seconds for the sun to change, the same as a camera frame change.
 @export var fade_time := 0.5
 
 var _inside := false
 var _level_sun_color := Color.WHITE
 var _level_sun_energy := 1.0
+var _level_sun_known := false
 var _tween: Tween
 
 @onready var _commander_spawn: Marker3D = %CommanderSpawn
@@ -40,6 +41,7 @@ func _ready() -> void:
 	add_to_group(&"hazard_room")
 	EventBus.hazard_trial_entered.connect(_on_hazard_trial_entered)
 	EventBus.hazard_trial_exited.connect(_on_hazard_trial_exited)
+	_remember_level_sun()
 
 
 func get_commander_spawn() -> Marker3D:
@@ -55,8 +57,11 @@ func get_enemy_spawns() -> Array[Marker3D]:
 	return result
 
 
+## The larger pad that takes the boss, or null when the room has no spawn markers.
 func get_boss_spawn() -> Marker3D:
 	var spawns := get_enemy_spawns()
+	if spawns.is_empty():
+		return null
 	return spawns[clampi(boss_spawn_index, 0, spawns.size() - 1)]
 
 
@@ -74,21 +79,30 @@ func _on_hazard_trial_entered(_wave_index: int, _enemy_types: Array) -> void:
 	if _inside:
 		return
 	_inside = true
-	if sun != null:
-		_level_sun_color = sun.light_color
-		_level_sun_energy = sun.light_energy
-		_fade_sun(sun_color, sun_energy)
+	# The level's own light is read once, never in the middle of a fade back.
+	_remember_level_sun()
+	_fade_sun(sun_color, sun_energy)
 
 
 func _on_hazard_trial_exited(_result: StringName, _kills: int, _gold: int, _xp: float, _mithril: int) -> void:
 	if not _inside:
 		return
 	_inside = false
-	if sun != null:
+	if _level_sun_known:
 		_fade_sun(_level_sun_color, _level_sun_energy)
 
 
+func _remember_level_sun() -> void:
+	if _level_sun_known or not is_instance_valid(sun):
+		return
+	_level_sun_color = sun.light_color
+	_level_sun_energy = sun.light_energy
+	_level_sun_known = true
+
+
 func _fade_sun(color: Color, energy: float) -> void:
+	if not is_instance_valid(sun):
+		return
 	if _tween != null:
 		_tween.kill()
 	# Real time: the change looks the same at x1, x2 and x3.
