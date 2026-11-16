@@ -259,8 +259,7 @@ func test_ai_picks_combo() -> void:
 
 
 func test_turn_rate_limit() -> void:
-	print("
-[GROUP 6b] Boss turns slowly while attacking")
+	print("\n[GROUP 6b] Boss locks facing and movement while attacking")
 	var bulwark := _make_bulwark()
 	var cmd := _make_commander(Vector3(0.0, 0.0, 2.0))
 	bulwark.current_target = cmd
@@ -272,7 +271,8 @@ func test_turn_rate_limit() -> void:
 	for i in range(30):  # half a second
 		bulwark._update_state(STEP)
 	var turned := rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
-	assert_true(absf(turned - 45.0) < 2.0, "Turns about 45 degrees in 0.5 s at 90 deg/s (got %.1f)" % turned)
+	assert_true(turned < 0.001, "Boss does not turn while in attack state (turned %.1f deg)" % turned)
+	assert_true(bulwark.velocity.x == 0.0 and bulwark.velocity.z == 0.0, "Boss does not move while in attack state")
 	cmd.free()
 	bulwark.free()
 
@@ -502,8 +502,7 @@ func test_stomp_lands_in_front() -> void:
 	at_mace.free()
 	bulwark.free()
 
-	print("
-[GROUP 15] Triple stomp turns toward the commander between stomps")
+	print("\n[GROUP 15] Triple stomp locks facing and does not turn towards the commander during attack")
 	bulwark = _make_bulwark()
 	var behind := _make_commander(Vector3(0.0, 0.0, -2.5))
 	bulwark.current_target = behind
@@ -512,9 +511,8 @@ func test_stomp_lands_in_front() -> void:
 	bulwark.attack_hit.connect(func(_id: int, _s: StringName, _t: Array) -> void: rings.append(bulwark.get_stomp_center()))
 	_run_process(bulwark, bulwark.get_triple_stomp_step_length() * 3.0 + 0.1)
 	var yaw := rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
-	print("  boss turned %.0f degrees over the chain, commander took %d" % [yaw, behind.damage_taken])
-	assert_true(yaw > 150.0, "Boss ends the chain facing the commander behind it")
-	assert_true(behind.damage_taken > 0, "Later rings catch the commander who stayed behind")
+	print("  boss facing delta: %.1f degrees over the chain, commander damage: %d" % [yaw, behind.damage_taken])
+	assert_true(yaw < 1.0, "Boss remains locked in facing and does not turn toward target during attack")
 	behind.free()
 	bulwark.free()
 

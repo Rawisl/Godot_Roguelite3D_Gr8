@@ -147,7 +147,13 @@ func _physics_process(delta: float) -> void:
 		if _transition_timer <= 0.0:
 			_on_transition_finished()
 		return
+	if is_in_attack_state():
+		velocity.x = 0.0
+		velocity.z = 0.0
 	super._physics_process(delta)
+	if is_in_attack_state():
+		velocity.x = 0.0
+		velocity.z = 0.0
 	_update_stuck_detection(delta)
 
 
@@ -162,23 +168,30 @@ func _process(delta: float) -> void:
 		_tick_triple_stomp(delta)
 
 
+## Returns true when the boss is executing an attack or attack sequence (locked from moving or turning).
+func is_in_attack_state() -> bool:
+	return current_state == Enums.EnemyState.ATTACK or is_in_attack_sequence or combo_step != ComboStep.NONE or _triple_index >= 0
+
+
 func _update_state(delta: float) -> void:
-	if current_state == Enums.EnemyState.ATTACK and (combo_step != ComboStep.NONE or _triple_index >= 0):
-		# Committed to a sequence: stand still and let the sequence tick drive it.
+	if is_in_attack_state():
+		# Committed to attack / attack sequence: stand still and lock rotation completely.
 		velocity.x = 0.0
 		velocity.z = 0.0
-		if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
-			stop_attack_sequence()
-			_retarget_now()
+		if combo_step != ComboStep.NONE or _triple_index >= 0:
+			if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
+				stop_attack_sequence()
+				_retarget_now()
+			return
+		var yaw_before := rotation.y
+		super._update_state(delta)
+		# Lock rotation completely while attacking: do not rotate or turn toward target.
+		rotation.y = yaw_before
+		velocity.x = 0.0
+		velocity.z = 0.0
 		return
-	var yaw_before := rotation.y
+
 	super._update_state(delta)
-	# The base ATTACK state snaps toward the target; a boss turns slowly so flanking means something.
-	if current_state == Enums.EnemyState.ATTACK:
-		if _locked_stomp_center.is_finite() and not is_attacking_active:
-			rotation.y = yaw_before  # the stomp ring is on the ground already; do not swing away from it
-		else:
-			rotation.y = _turn_limited(yaw_before, rotation.y, delta)
 
 
 func _turn_limited(from_yaw: float, to_yaw: float, delta: float) -> float:
@@ -734,8 +747,7 @@ func _tick_combo(delta: float) -> void:
 	# Step time advances faster in phase 2 and Enrage, so the data timings stay in clip seconds.
 	_combo_step_time += delta * _combo_speed()
 	if not _combo_hit_done:
-		if combo_step != ComboStep.SLAM:  # the slam ring is already on the ground
-			_track_combo_target(delta)
+		# Lock rotation in attack state: do not track combo target while swinging.
 		if _combo_step_time >= _combo_step_hit_time(combo_step):
 			_combo_hit_done = true
 			_strike_combo_step(combo_step)
@@ -749,16 +761,10 @@ func _tick_combo(delta: float) -> void:
 			_enter_combo_step((combo_step + 1) as ComboStep)
 
 
-## Turns toward the target only until the blow lands; after that the swing is committed and
-## the commander can step out of it.
-func _track_combo_target(delta: float) -> void:
-	if current_target == null or not is_instance_valid(current_target):
-		return
-	var look_dir := current_target.global_position - global_position
-	look_dir.y = 0.0
-	if look_dir.length_squared() <= 0.001:
-		return
-	rotation.y = _turn_limited(rotation.y, atan2(look_dir.x, look_dir.z), delta)
+## Turns toward target; disabled while attacking as facing and movement are locked during attacks.
+func _track_combo_target(_delta: float) -> void:
+	# Locked during attack state: do not turn toward target while attacking.
+	return
 
 
 func _strike_combo_step(step: ComboStep) -> void:
@@ -1008,10 +1014,7 @@ func _tick_triple_stomp(delta: float) -> void:
 		attack_hit.emit(TRIPLE_STOMP_ID, step_name, execute_stomp(get_triple_stomp_radius(_triple_index), shake, dmg_mult, center))
 		if _triple_index < 0:
 			return
-	elif _triple_hit_done:
-		# Between stomps the boss turns (slowly) toward its target, so a commander who stays at its
-		# back still has to move: each new ring lands closer to where they stand.
-		_track_combo_target(delta)
+	# In attack state: facing is locked, do not turn toward target between stomps.
 	if _triple_time >= get_triple_stomp_step_length():
 		if _triple_index + 1 < get_triple_stomp_count():
 			_enter_triple_stomp(_triple_index + 1)
@@ -1252,7 +1255,7 @@ func can_be_culled() -> bool:
 
 
 func _update_stuck_detection(delta: float) -> void:
-	if is_dead or spawn_grace or current_phase == Enums.BossPhase.TRANSITION:
+	if is_dead or spawn_grace or current_phase == Enums.BossPhase.TRANSITION or is_in_attack_state():
 		_stuck_timer = 0.0
 		_last_stuck_progress = -INF
 		return
