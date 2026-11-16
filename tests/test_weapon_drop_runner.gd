@@ -78,6 +78,7 @@ func _ready() -> void:
 	test_two_boss_signals_one_drop()
 	test_late_start_no_compensation()
 	test_no_run_state_no_drop()
+	test_summary_after_summary_state()
 
 	test_hazard_boss_gives_no_drop()
 	test_hazard_boss_then_real_boss_drops()
@@ -524,6 +525,20 @@ func test_no_run_state_no_drop() -> void:
 	assert_true(_last_summary().get("weapon_gained", &"x") == &"", "Without a RunState the key is empty")
 	assert_true(_gained.is_empty(), "Without a RunState no weapon_gained is sent")
 	wm.free()
+
+
+func test_summary_after_summary_state() -> void:
+	print("\n[CASE] test_summary_after_summary_state")
+	_reset_logs()
+	var rs := _new_run(SEED_A)
+	var wm := _new_wave_manager(5)
+	_clear_boss_wave(wm, 5)
+	var gained_at := _order.find("weapon_gained")
+	var state_at := _order.find("SUMMARY")
+	var summary_at := _order.find("summary")
+	assert_true(gained_at >= 0 and gained_at < state_at and state_at < summary_at, "Order is weapon_gained, SUMMARY state, then the summary")
+	wm.free()
+	rs.free()
 
 
 # --- Hazard Trial ---

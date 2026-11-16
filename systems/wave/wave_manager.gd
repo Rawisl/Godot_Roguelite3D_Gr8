@@ -780,9 +780,10 @@ func _end_combat_to_summary() -> void:
 		"pending_picks": pend_picks,
 	}
 
-	EventBus.wave_summary_ready.emit(summary)
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"SUMMARY")
+	# After the state change, so a panel that clears its data on entering SUMMARY keeps this summary.
+	EventBus.wave_summary_ready.emit(summary)
 	EventBus.wave_cleared.emit(current_wave)
 
 

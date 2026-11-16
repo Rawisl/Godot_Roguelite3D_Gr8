@@ -57,7 +57,6 @@ func _ready() -> void:
 			_refresh())
 	EventBus.hazard_trial_exited.connect(func(_r: StringName, _k: int, _g: int, _x: float, _m: int) -> void: _hazard_done = true)
 	EventBus.mithril_changed.connect(func(value: int, _delta: int) -> void: _mithril = value)
-	# TODO(Ender-Via): emit wave_summary_ready with the keys read below once the summary is saved.
 	EventBus.wave_summary_ready.connect(_on_summary_ready)
 
 func _process(_delta: float) -> void:
