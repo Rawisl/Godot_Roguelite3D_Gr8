@@ -27,6 +27,8 @@ func _ready() -> void:
 	_sync_now.pressed.connect(_sync)
 	AuthService.session_changed.connect(_on_session_changed)
 	EventBus.sync_state_changed.connect(func(_state: StringName, _detail: String) -> void: refresh())
+	# The last state of a sync arrives while it is still busy, so the end of the sync refreshes too.
+	SyncService.busy_changed.connect(func(_busy: bool) -> void: refresh())
 	refresh()
 
 func refresh() -> void:
