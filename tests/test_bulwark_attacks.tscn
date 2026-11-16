@@ -1,0 +1,289 @@
+[gd_scene format=3 uid="uid://c8m3v9j4x1y2p"]
+
+[ext_resource type="Script" path="res://tests/test_bulwark_attacks.gd" id="1_attacks"]
+[ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="2_grass"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_atk"]
+sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
+sky_horizon_color = Color(0.647059, 0.654902, 0.670588, 1)
+ground_bottom_color = Color(0.2, 0.168627, 0.133333, 1)
+ground_horizon_color = Color(0.647059, 0.654902, 0.670588, 1)
+
+[sub_resource type="Sky" id="Sky_atk"]
+sky_material = SubResource("ProceduralSkyMaterial_atk")
+
+[sub_resource type="Environment" id="Environment_atk"]
+background_mode = 2
+sky = SubResource("Sky_atk")
+ambient_light_source = 3
+ambient_light_energy = 0.6
+tonemap_mode = 3
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(100, 2, 100)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_atk"]
+size = Vector2(80, 80)
+
+[sub_resource type="SystemFont" id="SystemFont_mono"]
+font_names = PackedStringArray("Consolas", "Courier New", "Monospace")
+
+[node name="TestBulwarkAttacks" type="Node3D" unique_id=718294101]
+script = ExtResource("1_attacks")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1029384756]
+environment = SubResource("Environment_atk")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1928374650]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 5, 12, 5)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1239847102]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1239847103]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1239847104]
+mesh = SubResource("PlaneMesh_atk")
+surface_material_override/0 = ExtResource("2_grass")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1948201948]
+unique_name_in_owner = true
+transform = Transform3D(0.970296, -0.0631143, 0.233549, 0, 0.965367, 0.260897, -0.241922, -0.253147, 0.936687, 0.2, 2.2, 5.2)
+fov = 42.0
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1029471928]
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer" unique_id=1849201940]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/MarginContainer" unique_id=1948204812]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1849102948]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 24
+text = "BULWARK ATTACK TEST"
+
+[node name="SubtitleLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1849201928]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "Keys 1-5: attack chains | Keys 6-0: single attacks | Space: stop/Idle | F/B/S/I: camera | Q/E: rotate boss | R: reset
+Commander: arrows move (hold Shift: fine steps) | Left click on the floor: place | T: toggle Dodge | G: back to start | H: show/hide hitboxes | A: toggle AI fight | K: boss HP 100% <-> 45% | N: cycle boss appearance | Z: boss in Hazard Trial"
+
+[node name="StatusPanel" type="PanelContainer" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1948291048]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/MarginContainer/VBoxContainer/StatusPanel" unique_id=1849201949]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/MarginContainer/VBoxContainer/StatusPanel/Margin" unique_id=1029384719]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="StatusLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/StatusPanel/Margin/VBox" unique_id=1849201944]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = SubResource("SystemFont_mono")
+theme_override_font_sizes/font_size = 16
+text = "ACTION: Ready (Idle)
+STEP: Waiting for a command"
+
+[node name="AnimInfoLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/StatusPanel/Margin/VBox" unique_id=1849201945]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 1, 1)
+theme_override_fonts/font = SubResource("SystemFont_mono")
+theme_override_font_sizes/font_size = 13
+text = "AnimationPlayer: stopped"
+
+[node name="CommanderLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/StatusPanel/Margin/VBox" unique_id=1849201990]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 1, 0.75, 1)
+theme_override_fonts/font = SubResource("SystemFont_mono")
+theme_override_font_sizes/font_size = 13
+text = "Commander: -"
+
+[node name="HitLogLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/StatusPanel/Margin/VBox" unique_id=1849201991]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.7, 1)
+theme_override_fonts/font = SubResource("SystemFont_mono")
+theme_override_font_sizes/font_size = 13
+text = "Hit log: -"
+
+[node name="StepContainer" type="HBoxContainer" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1948201946]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ControlsRow" type="HBoxContainer" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1849201947]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ComboLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/ControlsRow" unique_id=1849201970]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_font_sizes/font_size = 14
+text = "Attack chains:"
+
+[node name="BtnAttack1" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/ControlsRow" unique_id=1849201941]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(135, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "1: Stomp (1)"
+
+[node name="BtnTripleStomp" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/ControlsRow" unique_id=1849201981]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(165, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "2: Triple stomp (2)"
+
+[node name="BtnComboSlam" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/ControlsRow" unique_id=1849201982]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(195, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "3: Slash-Stab-Slam (3)"
+
+[node name="BtnAttack2" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/ControlsRow" unique_id=1849201942]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(175, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "4: Guard combo (4)"
+
+[node name="BtnAttack3" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/ControlsRow" unique_id=1849201971]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(165, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "5: Two-handed chain (5)"
+
+[node name="BtnIdle" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/ControlsRow" unique_id=1849201943]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Stop / Idle (Space)"
+
+[node name="SingleRow" type="HBoxContainer" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1849201974]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SingleLabel" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/SingleRow" unique_id=1849201975]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Single attacks:"
+
+[node name="BtnSingle1H" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/SingleRow" unique_id=1849201976]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Normal attack (6)"
+
+[node name="BtnSingle2H" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/SingleRow" unique_id=1849201977]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Two-handed slash (7)"
+
+[node name="BtnSingleDual" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/SingleRow" unique_id=1849201978]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Dual-wield slash (8)"
+
+[node name="BtnSingleOffhand" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/SingleRow" unique_id=1849201979]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Off-hand slash (9)"
+
+[node name="BtnSingleStab" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/SingleRow" unique_id=1849201980]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "One-handed stab (0)"
+
+[node name="CameraRow" type="HBoxContainer" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1849201964]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/CameraRow" unique_id=1849201965]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+text = "Camera:"
+
+[node name="BtnCamFront" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/CameraRow" unique_id=1849201966]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 36)
+layout_mode = 2
+text = "Front (F)"
+
+[node name="BtnCamBack" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/CameraRow" unique_id=1849201967]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 36)
+layout_mode = 2
+text = "Back (B)"
+
+[node name="BtnCamSide" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/CameraRow" unique_id=1849201968]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 36)
+layout_mode = 2
+text = "Side (S)"
+
+[node name="BtnCamIso" type="Button" parent="CanvasLayer/MarginContainer/VBoxContainer/CameraRow" unique_id=1849201969]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 36)
+layout_mode = 2
+text = "Isometric (I)"
+
+[node name="SpeedRow" type="HBoxContainer" parent="CanvasLayer/MarginContainer/VBoxContainer" unique_id=1849201961]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="CanvasLayer/MarginContainer/VBoxContainer/SpeedRow" unique_id=1849201962]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+text = "Playback speed (slow motion):"
+
+[node name="SpeedGroup" type="HBoxContainer" parent="CanvasLayer/MarginContainer/VBoxContainer/SpeedRow" unique_id=1849201963]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
