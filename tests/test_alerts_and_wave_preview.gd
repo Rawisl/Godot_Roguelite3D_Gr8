@@ -55,8 +55,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	_layer.clear()
 	match key.keycode:
 		KEY_1:
-			EventBus.commander_hp_changed.emit(100, 100)
-			EventBus.commander_hp_changed.emit(20, 100)
+			EventBus.commander_low_hp_changed.emit(true)
 		KEY_2:
 			EventBus.boss_timer_milestone.emit(int(GameConfig.enrage_warn_time))
 			await TimeManager.wait_real(2.0)
@@ -101,13 +100,13 @@ func _run_checks() -> void:
 
 func _check_commander() -> void:
 	_alerts.clear()
-	EventBus.commander_hp_changed.emit(100, 100)
-	EventBus.commander_hp_changed.emit(24, 100)
-	EventBus.commander_hp_changed.emit(10, 100)
-	_expect(_keys() == [&"alert.commander_low"] and _alerts[0][0] == 1, "alerts: the commander under 25% raises one T1 banner")
-	EventBus.commander_hp_changed.emit(60, 100)
-	EventBus.commander_hp_changed.emit(20, 100)
-	_expect(_keys().size() == 2, "alerts: healing back up arms the banner again")
+	# The banner follows the commander's own low HP signal, so both use one rule.
+	EventBus.commander_hp_changed.emit(25, 100)
+	_expect(_alerts.is_empty(), "alerts: HP alone never raises the banner, the commander decides")
+	EventBus.commander_low_hp_changed.emit(true)
+	_expect(_keys() == [&"alert.commander_low"] and _alerts[0][0] == 1, "alerts: the commander going low raises one T1 banner")
+	EventBus.commander_low_hp_changed.emit(false)
+	_expect(_keys().size() == 1, "alerts: recovering raises nothing")
 	_expect(_layer._banner.visible, "alerts: the banner shows")
 
 func _check_boss_timer() -> void:
@@ -254,6 +253,7 @@ func _check_hover() -> void:
 	var badges := _bars._hover_badges.get_children()
 	_expect(_bars._hover_name.text == tr(&"enemy.grunt") and (badges[0] as Control).visible and not (badges[1] as Control).visible,
 		"hover: the enemy box names the enemy and its trait")
+	_expect(badges.size() == EnemyTraits.ALL.size(), "hover: there is a badge slot for every trait, none is dropped")
 
 func _keys() -> Array:
 	return _alerts.map(func(a: Array) -> StringName: return a[1])
