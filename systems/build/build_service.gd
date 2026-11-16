@@ -4,7 +4,6 @@ extends Node
 ## the gold or Mithril in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice. A ground build that would seal the
 ## lane is refused before any gold is spent.
-# TODO(kiezroth): when tower data for levels 1 to 36 lands, give all four tower types those levels
 
 ## Lock key for Fortress repairs in _busy; slot ids never take this value.
 const FORTRESS_LOCK := &"FORTRESS"
@@ -335,7 +334,7 @@ func _do_upgrade(slot_id: StringName) -> bool:
 	if not gold.try_spend(cost):
 		EventBus.build_denied.emit(&"NOT_ENOUGH_GOLD", gold.shortfall(cost))
 		return false
-	# apply_level refills HP to the new max and keeps the target priority.
+	# apply_level refills HP to the new max (a heal station only gains the difference) and keeps the target priority.
 	t.apply_level(t.level + 1)
 	t.invested_gold += cost
 	EventBus.tower_upgraded.emit(slot_id, t.data.id, t.level)

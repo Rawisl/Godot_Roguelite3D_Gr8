@@ -710,13 +710,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG8
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
-- Việc: Công cụ dịch phần 2: sinh WeaponData, WaveScript, WaveRewardTable; kiểm lỗi bảng (báo dòng và cột, không ghi file nào khi lỗi); chuyển các .tres cân bằng hiện có sang sinh từ bảng và xóa enemies.csv, CsvLoader không dùng
+- Trạng thái: Xong
+- Việc: Công cụ dịch phần 2: hoàn thiện sinh WaveScript, WaveRewardTable và kiểm lỗi bảng (báo dòng và cột, không ghi file nào khi lỗi); chuyển .tres wave sang sinh từ bảng. WeaponData đã sinh từ phần trước; enemies.csv và CsvLoader đã xóa ở tuần 9
 - Nghiệm thu: Xóa một ô trong sheet towers hoặc ghi số âm thì công cụ báo đúng dòng, cột và không ghi file nào (BL2); .tres cũ được thay bằng bản sinh tự động
 - Tệp liên quan: tools/balance/*.py; data/weapons/, data/waves/wave_script.tres, data/waves/wave_rewards.tres
 - ID SRS: BAL-02, BAL-04, BAL-06, BL2
 - Cần xong trước: W9-NG7, W10-KT7, W10-MH9
-- Ghi chú: data/waves/wave_rewards.tres đang viết tay theo sheet wave_rewards (W10-MH7). Khi sinh, giữ tên và kiểu field của common/wave_reward_table.gd: gold_mult, xp_mult (PackedFloat32Array), mithril_reward (PackedInt32Array), phần tử thứ w − 1 là wave w, đủ victory_wave phần tử
+- Ghi chú bàn giao: Kiệt (`endervia`): `common/wave_script.gd` dùng mảng entry phẳng vì parser không hỗ trợ `[sub_resource]`; không đổi sang `Array[WaveScriptEntry]`. `get_wave(w)` trả `{enemy_type, count, is_escort}` độc lập với mảng thời lượng; thời lượng/hệ số dùng index `w - 1`, thiếu thì dùng `GameConfig.lbd_min_seconds_per_wave`/1.0. `EnemyData` đã thêm 15 export trait và sinh lại bốn resource quân hiện có; xử lý AI còn TODO(endervia), chưa hoàn tất hành vi trait. Wave rewards chỉ thêm AUTO-GENERATED; workbook, wave_table.tres và scale_config.tres giữ nguyên. Generator --check: 0 files would change, không còn cảnh báo bỏ cột trait; 52 test Python đạt, gồm main ghi file thật trong bản sao tạm. Đã kiểm header/khóa dòng trùng cho mọi generator, miền enum số và đủ cấp tower; alias tương thích nằm ở tools/balance/aliases.json. Runner BAL đã mở rộng đủ tower/EnemyData/số âm và kiểm resource khác (771 PASS); còn BL4 về lựa chọn nguồn gameplay chờ Kiệt tích hợp spawner. Tài khoản bàn giao: Mạnh kieroth, Kim kimvux, Khang whokeng, Kiệt endervia
 
 ##### W10-NG9
 - Người: Ngọc
@@ -749,6 +749,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Trạng thái: Xong
 - Việc: Trạm hồi lực phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
 - Nghiệm thu: Đòn raw 17 ở wave 10 gây 14; hút máu không bị chuẩn hóa
+- Ghi chú: TODO(Rawisl) ở entities/tower/heal_station.gd
 - Cần xong trước: W8-MH5
 - Ghi chú bàn giao: HealStation chuẩn hóa DamageInfo/int tại lúc trúng theo wave_manager và heal_tower_dmg_norm_exp; giữ nguyên hit dùng chung và đường drain. Panel nhận EVB-34 và tốc độ thật từ HealChannel qua heal_status_updated; mỗi sự kiện kho render một lần. Đã chặn sát thương ngoài SceneTree và bỏ reflection khi sao chép hit. Runner heal station 90/90, heal status 130/130, heal channel 204/204, ETG 27/27, panel HT12 12/12. F6 panel giữ preview để bấm 1/2/3; chạy tự động thêm -- --run-tests. TODO phân biệt cạn kho với bị phá giữ lại và gán kiezroth để nối cảnh báo sau. PR thông báo Mạnh (@kiezroth) và Khang (@WhoKeng).
 
@@ -843,12 +844,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT7
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: EnemyData thêm trait (is_stealth, explode_*, invuln_*, is_charger/impact_*, revive_*) và WaveScript Resource; hàm tra kịch bản theo wave
 - Nghiệm thu: Mọi trường mặc định 'tắt'; code xử lý theo trait, không rẽ nhánh theo tên loại
 - Tệp liên quan: common/enemy_data.gd, entities/enemy/enemy.gd, mới: common/wave_script.gd
 - ID SRS: 3.7.1, EN-27, SPN-13
 - Cần xong trước: W9-KT5
+- Ghi chú bàn giao: Đã có WaveScript và 15 export trait trong EnemyData; generator đã sinh các cột trait vào bốn EnemyData hiện có. TODO(endervia): implement trait-driven enemy behavior for stealth, explosions, invulnerability, charge impacts and revival; verify the matching runtime behavior before completing this task. TODO tại common/enemy_data.gd
 
 ##### W10-KT8
 - Người: Kiệt
@@ -922,11 +924,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH9
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 10 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tower cấp 1-36 cho cả 4 loại: dữ liệu 36 cấp từ bảng, nâng từng cấp, 'MAX' ở 36; Trạm hồi lực cấp 1-36 (nâng chỉ cộng phần kho tăng thêm, xây lại giữ cấp, hoàn bán theo kho còn lại); xây lại giá bằng tổng cost; đo hiệu năng với 6 tower
 - Nghiệm thu: Tower cấp 14 bị phá thì 'Xây lại' đúng cấp 14 với giá tổng cost cấp 1-14; trạm nâng cấp không hồi đầy kho
 - Tệp liên quan: common/tower_data.gd, common/tower_level_data.gd, data/towers/*, entities/tower/tower.gd (apply_level), entities/tower/heal_station.gd, systems/build/slot.gd (get_rebuild_cost), ui/panels/heal_station_panel.gd
 - ID SRS: TWR, UPG-01..03, HLT-01, HLT-07, HLT-08, SELL-05, TWR-15
+- Ghi chú: dữ liệu 36 cấp, MAX, cổng 13/25 và giá xây lại đã có từ W9-NG7 và W10-MH8; nhánh này cho Trạm hồi lực nâng cấp chỉ cộng phần kho tăng thêm (xây lại vẫn đầy kho), Barricade hiện mesh theo bậc 1-12 / 13-24 / 25-36 tạm tới W11-MH8, thêm test nâng 1-36 cả 4 loại, xây lại cấp 14 và đo quét 6 tower cấp 36 (dưới 1 ms mỗi frame).
 - Cần xong trước: W9-NG7, W10-MH8
 
 ##### W10-MH10
@@ -1173,12 +1176,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG10
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Runner BAL tests/test_balance_config_runner.tscn (BAL-05, BL3, BL4)
 - Nghiệm thu: Pass với bảng chuẩn; fail khi thiếu cấp 36 hoặc spawn_duration 12 s
 - Tệp liên quan: mới: tests/test_balance_config_runner.tscn
 - ID SRS: BAL-05, BL3, BL4
 - Cần xong trước: W10-NG8, W11-MH11
+- Ghi chú bàn giao: Đã làm trước runner kiểm đủ 36 cấp của bốn tower, EnemyData theo ID, CharacterStats/SkillData/WeaponData, số hữu hạn/không âm, cấu trúc wave/reward và hệ số nối ScaleConfig. Đã xác minh runner phát hiện số âm wave 2, thời lượng 12 giây và thiếu cấp cuối. TODO(endervia): integrate scripted spawning and verify gameplay uses WaveScript through victory_wave and ScaleConfig afterwards; the runner currently checks boundary coefficients only. Kịch bản cuối và dữ liệu quân mới chờ kieroth; giữ task Đang làm tới khi kiểm BL4 trong gameplay và bảng cuối
 
 ##### W11-MH5
 - Người: Ngọc
@@ -1304,6 +1308,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: balance/balance.xlsx (sheet waves, enemies, weapons)
 - ID SRS: SPN-08, SCL-04, 3.7.8, 3.5.13
 - Cần xong trước: W10-KT7, W10-KT8, W8B-MH1
+- Ghi chú bàn giao: Schema trait và generator đã sẵn sàng; runner hiện không cố định tổng số entry. TODO(kieroth): populate the seven new enemy archetypes and final wave composition after enemy traits and scenes are ready; regenerate resources and run the BAL checks after updating wave composition. Workbook chưa sửa trong phần công cụ này
 
 ##### W11-MH1
 - Người: Mạnh
