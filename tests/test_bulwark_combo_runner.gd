@@ -259,20 +259,61 @@ func test_ai_picks_combo() -> void:
 
 
 func test_turn_rate_limit() -> void:
-	print("\n[GROUP 6b] Boss locks facing and movement while attacking")
+	print("
+[GROUP 6b] Boss locks facing during a swing and turns at ai_turn_rate_deg between moves")
 	var bulwark := _make_bulwark()
+	var boss_data := bulwark.data as BossData
 	var cmd := _make_commander(Vector3(0.0, 0.0, 2.0))
 	bulwark.current_target = cmd
 	bulwark.change_state(Enums.EnemyState.ATTACK)
+	assert_true(bulwark.combo_step != Bulwark.ComboStep.NONE, "Commander in front: the boss swings")
+	cmd.global_position = Vector3(0.0, 0.0, -2.0)
+	for i in range(30):  # half a second of the swing
+		bulwark._update_state(STEP)
+	var turned := rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
+	assert_true(turned < 0.001, "Boss does not turn during a swing (turned %.1f deg)" % turned)
+	assert_true(bulwark.velocity.x == 0.0 and bulwark.velocity.z == 0.0, "Boss does not move during a swing")
+
+	# Pause after the swing: the boss turns, no faster than ai_turn_rate_deg.
 	bulwark.stop_attack_sequence()
 	bulwark.is_attacking_active = true
 	bulwark.attack_recovery_timer = 5.0
-	cmd.global_position = Vector3(0.0, 0.0, -2.0)
-	for i in range(30):  # half a second
+	for i in range(30):
 		bulwark._update_state(STEP)
-	var turned := rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
-	assert_true(turned < 0.001, "Boss does not turn while in attack state (turned %.1f deg)" % turned)
-	assert_true(bulwark.velocity.x == 0.0 and bulwark.velocity.z == 0.0, "Boss does not move while in attack state")
+	turned = rad_to_deg(absf(angle_difference(0.0, bulwark.rotation.y)))
+	var max_turn := boss_data.ai_turn_rate_deg * 0.5
+	assert_true(turned > max_turn * 0.9 and turned <= max_turn + 0.01,
+			"Boss turns toward the commander between moves at the turn rate (%.1f of max %.1f deg)" % [turned, max_turn])
+	var walk_speed := Vector2(bulwark.velocity.x, bulwark.velocity.z).length()
+	var max_walk := boss_data.move_speed * bulwark.speed_multiplier * Bulwark.TURN_WALK_SPEED_MULT
+	assert_true(walk_speed > 0.0 and walk_speed <= max_walk + 0.001,
+			"Boss walks slowly while it turns between moves (%.2f m/s, max %.2f)" % [walk_speed, max_walk])
+	var fwd := bulwark._combo_forward()
+	assert_true(Vector3(bulwark.velocity.x, 0.0, bulwark.velocity.z).normalized().dot(fwd) > 0.99,
+			"The turning walk goes along the boss's facing")
+	assert_true(bulwark.anim_player.current_animation == bulwark._walk_clip(), "The turning walk plays the walk clip")
+	cmd.global_position = Vector3(3.0 * sin(bulwark.rotation.y), 0.0, 3.0 * cos(bulwark.rotation.y))
+	bulwark._update_state(STEP)
+	assert_true(bulwark.velocity.x == 0.0 and bulwark.velocity.z == 0.0, "Facing the target: the boss stops walking")
+	cmd.free()
+	bulwark.free()
+
+	print("
+[GROUP 6c] Commander behind with no triple stomp ready: turn first, never swing at air")
+	bulwark = _make_bulwark()
+	cmd = _make_commander(Vector3(0.0, 0.0, -2.0))
+	bulwark.current_target = cmd
+	bulwark.triple_stomp_cooldown_left = 99.0
+	bulwark.change_state(Enums.EnemyState.ATTACK)
+	assert_true(bulwark.combo_step == Bulwark.ComboStep.NONE and not bulwark.is_in_attack_sequence,
+			"No normal attack is swung at a commander behind the boss")
+	var swung := false
+	for i in range(240):  # 4 s: enough to turn 180 degrees at 90 deg/s
+		bulwark._update_state(STEP)
+		if bulwark.combo_step != Bulwark.ComboStep.NONE:
+			swung = true
+			break
+	assert_true(swung and bulwark.is_in_front(cmd), "Boss turns to face the commander, then attacks")
 	cmd.free()
 	bulwark.free()
 

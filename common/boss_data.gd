@@ -34,7 +34,7 @@ func _init() -> void:
 	move_speed = 1.6
 	agent_radius = 1.6
 	attack_range = 3.0
-	attack_interval = 2.5
+	attack_interval = 3.0
 	knockback_immune = true
 	base_hp = armor_hp + core_hp
 	anim_walk = &"move/Walking_A"

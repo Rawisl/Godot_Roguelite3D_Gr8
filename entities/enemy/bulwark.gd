@@ -44,6 +44,12 @@ const COMBO_SLAM_ID: int = 6
 const TRIPLE_STOMP_ID: int = 7
 const NORMAL_ATTACK_ID: int = 11
 
+## Turning more than this between moves, the boss walks slowly while it turns.
+const TURN_WALK_MIN_DEG: float = 15.0
+## Walking speed while turning between moves, as a share of its move speed.
+const TURN_WALK_SPEED_MULT: float = 0.35
+## How often a boss that is turning to face the commander checks again whether it can attack.
+const TURN_RECHECK_TIME: float = 0.1
 ## Moves the commander AI can pick (choose_attack).
 const MOVE_STOMP: StringName = &"stomp"
 const MOVE_NORMAL: StringName = &"normal"
@@ -55,6 +61,12 @@ const CLIP_SLASH_1H: StringName = &"melee/Melee_1H_Slash"
 const CLIP_STAB_1H: StringName = &"melee/Melee_1H_Stab"
 const CLIP_SLAM_2H: StringName = &"melee/Melee_2H_Slam"
 const CLIP_IDLE: StringName = &"general/Idle_A"
+## Clip second of the slam where the mace is back in the guard pose: the single stomp blends to
+## Idle from here, so the next stomp always starts the clip from its wind-up.
+const STOMP_CLIP_RECOVERED: float = 2.37
+const STOMP_RECOVER_BLEND: float = 0.15
+## Clip second of the slam where the mace hits the ground.
+const STOMP_CLIP_IMPACT: float = 0.97
 
 enum ComboStep { NONE = -1, SLASH = 0, STAB = 1, SLAM = 2 }
 
@@ -74,6 +86,12 @@ var _combo_from_ai: bool = false
 ## Where the stomp being wound up will land, fixed when its telegraph appears so the ring and
 ## the hit always match. Vector3.INF when no stomp is pending.
 var _locked_stomp_center: Vector3 = Vector3.INF
+## Walking slowly while turning between moves (see _update_turn_walk).
+var _turn_walking: bool = false
+## Facing at the start of an ATTACK-state update; NAN outside of it.
+var _yaw_during_attack_update: float = NAN
+## True from a single stomp's impact until its clip reaches STOMP_CLIP_RECOVERED.
+var _stomp_recovering: bool = false
 var _model_height: float = -1.0
 
 ## Triple stomp chain, ticked on game time in _process. -1 when not running.
@@ -166,6 +184,21 @@ func _process(delta: float) -> void:
 		_tick_combo(delta)
 	if _triple_index >= 0:
 		_tick_triple_stomp(delta)
+	if _stomp_recovering:
+		_tick_stomp_recovery()
+
+
+## Ends the single stomp's clip once the mace is back up. Without this the clip runs on past the
+## next stomp's start, and play() on a clip that is still playing does not restart it.
+func _tick_stomp_recovery() -> void:
+	if anim_player == null or anim_player.current_animation != CLIP_SLAM_2H:
+		_stomp_recovering = false
+		return
+	if anim_player.current_animation_position >= STOMP_CLIP_RECOVERED:
+		_stomp_recovering = false
+		anim_player.speed_scale = 1.0
+		if anim_player.has_animation(CLIP_IDLE):
+			anim_player.play(CLIP_IDLE, STOMP_RECOVER_BLEND)
 
 
 ## Returns true when the boss is executing an attack or attack sequence (locked from moving or turning).
@@ -184,14 +217,73 @@ func _update_state(delta: float) -> void:
 				_retarget_now()
 			return
 		var yaw_before := rotation.y
+		# Enemy's ATTACK state eases toward the target before it starts the next move; the move
+		# must be chosen and aimed with the real (locked) facing, see _play_attack_anim.
+		_yaw_during_attack_update = yaw_before
 		super._update_state(delta)
-		# Lock rotation completely while attacking: do not rotate or turn toward target.
+		_yaw_during_attack_update = NAN
+		# Facing is locked from the wind-up to the hit. In the pause after a hit the boss turns
+		# toward its target at ai_turn_rate_deg, so it never freezes with the commander behind it.
 		rotation.y = yaw_before
 		velocity.x = 0.0
 		velocity.z = 0.0
+		if _is_recovering_between_moves():
+			_turn_toward_target(delta)
+			_update_turn_walk()
+		else:
+			_turn_walking = false
 		return
 
+	_turn_walking = false
 	super._update_state(delta)
+
+
+## The pause between two moves of the ATTACK state: the last hit has landed and no sequence runs.
+func _is_recovering_between_moves() -> bool:
+	return (current_state == Enums.EnemyState.ATTACK and is_attacking_active
+			and not is_in_attack_sequence and combo_step == ComboStep.NONE and _triple_index < 0)
+
+
+func _turn_toward_target(delta: float) -> void:
+	if current_target == null or not is_instance_valid(current_target):
+		return
+	var look_dir := _get_attack_point(current_target) - global_position
+	look_dir.y = 0.0
+	if look_dir.length_squared() > 0.001:
+		rotation.y = _turn_limited(rotation.y, atan2(look_dir.x, look_dir.z), delta)
+
+
+## While turning a wide angle between moves the boss walks slowly along its facing instead of
+## spinning on the spot. Only once the last move's clip is over (Idle), so no swing is cut short.
+func _update_turn_walk() -> void:
+	var walk := false
+	if current_target != null and is_instance_valid(current_target) and anim_player != null:
+		var look_dir := _get_attack_point(current_target) - global_position
+		look_dir.y = 0.0
+		var anim_free := anim_player.current_animation == CLIP_IDLE or anim_player.current_animation == _walk_clip() 				or not anim_player.is_playing()
+		walk = anim_free and look_dir.length_squared() > 0.001 				and absf(rad_to_deg(angle_difference(rotation.y, atan2(look_dir.x, look_dir.z)))) > TURN_WALK_MIN_DEG
+	if not walk:
+		if _turn_walking:
+			_turn_walking = false
+			if anim_player != null and anim_player.has_animation(CLIP_IDLE):
+				anim_player.speed_scale = 1.0
+				anim_player.play(CLIP_IDLE, 0.25)
+		return
+	var base_speed: float = data.move_speed if data != null else 1.6
+	var speed := base_speed * speed_multiplier * get_slow_factor() * TURN_WALK_SPEED_MULT
+	var fwd := _combo_forward()
+	velocity.x = fwd.x * speed
+	velocity.z = fwd.z * speed
+	if not _turn_walking:
+		_turn_walking = true
+		var clip := _walk_clip()
+		if anim_player.has_animation(clip):
+			anim_player.play(clip, 0.25)
+	anim_player.speed_scale = speed / WALK_ANIM_BASE_SPEED
+
+
+func _walk_clip() -> StringName:
+	return data.anim_walk if (data != null and not data.anim_walk.is_empty()) else &"move/Walking_A"
 
 
 func _turn_limited(from_yaw: float, to_yaw: float, delta: float) -> float:
@@ -357,6 +449,15 @@ func _play_locomotion_anim() -> void:
 
 ## Called by the ATTACK state at the start of every swing: this is where the boss picks its move.
 func _play_attack_anim() -> void:
+	if not is_nan(_yaw_during_attack_update):
+		rotation.y = _yaw_during_attack_update
+	if _must_turn_before_attacking():
+		# Keep pausing (and turning, see _update_state) a moment longer, then check again.
+		is_attacking_active = true
+		attack_windup_timer = 0.0
+		attack_recovery_timer = TURN_RECHECK_TIME
+		return
+	_turn_walking = false
 	last_chosen_move = choose_attack()
 	match last_chosen_move:
 		MOVE_TRIPLE:
@@ -368,6 +469,18 @@ func _play_attack_anim() -> void:
 		_:
 			attack_step_started.emit(1, &"STOMP_WINDUP", CLIP_SLAM_2H, _get_attack_windup())
 			_play_stomp_anim()
+
+
+## The commander is at the flank or behind and the only move left would swing at empty air
+## (the normal attack while the triple stomp cools down, or the stomp before the triple stomp
+## unlocks: its ring lands in front). The boss turns to face it first.
+func _must_turn_before_attacking() -> bool:
+	var boss_data := data as BossData
+	if boss_data == null or current_target == null or not is_instance_valid(current_target):
+		return false
+	if not current_target.is_in_group(&"commander") or is_in_front(current_target):
+		return false
+	return choose_attack() != MOVE_TRIPLE
 
 
 ## Picks the next move against the current target.
@@ -454,24 +567,27 @@ func _hand_back_to_attack_state(speed: float, heavy: bool) -> void:
 
 func _play_stomp_anim() -> void:
 	_locked_stomp_center = get_stomp_center()
+	_stomp_recovering = false
 	EventBus.telegraph_started.emit(&"stomp", _locked_stomp_center, stomp_radius, _get_attack_windup())
 	if anim_player != null and anim_player.has_animation(CLIP_SLAM_2H):
 		anim_player.speed_scale = 1.0
 		anim_player.play(CLIP_SLAM_2H, 0.05, 1.0)
+		# play() keeps going when the clip is already playing; rewind so every stomp has its wind-up.
+		anim_player.seek(0.0, true)
 
 
 func _execute_attack_action() -> void:
 	var center := _locked_stomp_center
 	_locked_stomp_center = Vector3.INF
 	attack_hit.emit(1, &"STOMP_SLAM", execute_stomp(-1.0, -1.0, 1.0, center))
-	if anim_player == null or not anim_player.is_playing():
+	if anim_player == null or anim_player.current_animation != CLIP_SLAM_2H:
 		return
-	# Enrage shortens the interval in phase 1 too, so the recovery clip must speed up there as well.
-	if current_phase != Enums.BossPhase.EXPOSED and not is_enraged:
-		return
-	var recovery_time: float = _get_attack_interval() - _get_attack_windup() - 0.15
-	var recovery_speed: float = (2.37 - 0.97) / maxf(0.1, recovery_time)
-	anim_player.speed_scale = recovery_speed
+	_stomp_recovering = true
+	# Phase 2 and Enrage shorten the interval: speed the mace's return up so it is back in guard,
+	# and blended to Idle, before the next stomp starts.
+	var recovery_time: float = _get_attack_interval() - _get_attack_windup() - STOMP_RECOVER_BLEND
+	var recovery_speed: float = (STOMP_CLIP_RECOVERED - STOMP_CLIP_IMPACT) / maxf(0.1, recovery_time)
+	anim_player.speed_scale = maxf(1.0, recovery_speed)
 
 
 ## Creates a timer on game time that pauses when the game is paused and scales with game speed.
@@ -1121,6 +1237,8 @@ func stop_attack_sequence() -> void:
 	_triple_index = -1
 	_triple_from_ai = false
 	_locked_stomp_center = Vector3.INF
+	_stomp_recovering = false
+	_turn_walking = false
 	is_in_attack_sequence = false
 	current_attack_id = 0
 	if anim_player != null and is_instance_valid(anim_player):
