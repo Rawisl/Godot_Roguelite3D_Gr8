@@ -82,8 +82,10 @@ func _run_checks() -> void:
 	# A new profile runs the tutorial.
 	_new_run(false)
 	_expect(_service.step == TutorialService.BUILD_ARROW and _hint.visible, "tutorial: a new profile starts at the Arrow")
-	_expect(_hint._step.text == UiFormat.tr_fmt(&"tutorial.step", {"n": 1, "total": 4}) and _hint._text.text == tr(&"tutorial.build_arrow"),
-		"tutorial: the hint says step 1 of 4 and what to do")
+	_expect(_hint._step.text == UiFormat.tr_fmt(&"tutorial.step", {"n": 1, "total": 4}) and _hint._action.text == tr(&"tutorial.build_arrow.action")
+		and _hint._where.text == tr(&"tutorial.build_arrow.where"), "tutorial: the hint says step 1 of 4, what to do and where")
+	_expect(not _hint._action.text.ends_with(".") and not _hint._where.text.ends_with("."), "tutorial: the hint lines end without a full stop")
+	_expect(_visible_chips() == 1, "tutorial: the Arrow step shows the camera key")
 	_expect(_button._lock_reason() == &"hud.start_wave.tutorial", "tutorial: Start wave is grey until both towers stand")
 
 	_build(&"W1", &"cannon")
@@ -97,7 +99,9 @@ func _run_checks() -> void:
 	_expect(_button._lock_reason() == &"", "tutorial: Start wave is ready once both towers stand")
 
 	EventBus.state_changed.emit(&"COMBAT")
-	_expect(_service.step == TutorialService.FIGHT and _hint._text.text == tr(&"tutorial.fight"), "tutorial: the wave start shows the fight hint")
+	_expect(_service.step == TutorialService.FIGHT and _hint._action.text == tr(&"tutorial.fight.action"), "tutorial: the wave start shows the fight hint")
+	_expect(_visible_chips() == 3 and _dot_color(3) == TutorialHint.DOT_NOW and _dot_color(0) == TutorialHint.DOT_DONE,
+		"tutorial: the fight step shows three keys and the last dot is the current one")
 	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 1.0, 0, false, false)
 	_expect(_service.step == TutorialService.FIGHT, "tutorial: a kill by towers alone does not count")
 	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 1.0, 0, false, true)
@@ -146,6 +150,12 @@ func _new_run(done: bool) -> void:
 	_button.tutorial_lock = false
 	EventBus.state_changed.emit(&"PREP")
 	EventBus.run_started.emit()
+
+func _visible_chips() -> int:
+	return _hint._keys.get_children().filter(func(c: Node) -> bool: return (c as Control).visible).size()
+
+func _dot_color(index: int) -> Color:
+	return (_hint._dots.get_child(index).get_theme_stylebox(&"panel") as StyleBoxFlat).bg_color
 
 func _build(slot_id: StringName, type: StringName) -> void:
 	EventBus.tower_built.emit(slot_id, type)

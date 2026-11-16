@@ -96,7 +96,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_progress()
 			SyncService._ask_upload()
 		KEY_6:
-			ScreenManager.show_notice(&"dialog.sync_other_device.title", &"dialog.sync_other_device.body")
+			SyncService.show_other_device_notice()
 		KEY_7:
 			EventBus.save_failed.emit(SaveManager.REASON_CORRUPT)
 		KEY_8:
@@ -109,6 +109,7 @@ func _run_checks() -> void:
 	await _check_accessibility()
 	await _check_sync()
 	await _check_save_notices()
+	await _check_notice_layout()
 
 func _check_settings_file() -> void:
 	EventBus.settings_changed.emit(&"volume_music", 0.35)
@@ -260,6 +261,31 @@ func _check_save_notices() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_expect(_dialog_has(tr(&"dialog.save_failed.retry")), "save: a failed write offers Retry")
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+
+func _check_notice_layout() -> void:
+	_set_progress()
+	var dialog := SyncService.make_upload_dialog()
+	add_child(dialog)
+	var lines := dialog.get_node("%Lines").get_children()
+	var rows := dialog.get_node("%Rows").get_children()
+	_expect((lines[0] as Label).text == tr(&"dialog.sync_upload.line_empty") and (lines[1] as Label).text == tr(&"dialog.sync_upload.line_take")
+		and not (lines[2] as Label).visible, "notice: the upload dialog says the account is empty on its own line, then what it uploads")
+	var first_row := rows[0].get_child(0).get_children()
+	_expect((first_row[0] as Label).text == tr(&"dialog.sync_upload.row_balance") and (first_row[1] as Label).text == "120"
+		and (rows[2] as Control).visible, "notice: each uploaded value is its own row")
+	_expect(not (lines[0] as Label).text.ends_with("."), "notice: the lines end without a full stop")
+	dialog.cancel()
+	await get_tree().process_frame
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+	EventBus.save_failed.emit(SaveManager.REASON_CORRUPT)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var shown := ScreenManager.find_children("*", "NoticeDialog", true, false)
+	_expect(shown.size() == 1 and (shown[0] as NoticeDialog)._tone == NoticeDialog.DANGER and (shown[0].get_node("%Note") as Label).visible,
+		"notice: an unreadable save is a danger notice with a note")
 	ScreenManager.close_all_dialogs()
 	await get_tree().process_frame
 
