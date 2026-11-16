@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://gfd5emuvtyar"]
+
+[ext_resource type="Script" uid="uid://bq0qtsh1ckg01" path="res://tests/test_alerts_and_wave_preview.gd" id="1_checks"]
+[ext_resource type="PackedScene" uid="uid://dx1yjttn4bkfe" path="res://ui/hud/parts/alert_layer.tscn" id="2_alerts"]
+[ext_resource type="PackedScene" uid="uid://cq44hfvyi502b" path="res://ui/hud/parts/wave_counter.tscn" id="3_counter"]
+[ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="4_preview"]
+[ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="5_gate"]
+[ext_resource type="PackedScene" uid="uid://b0j2regl1w6bn" path="res://ui/hud/parts/enemy_bar_layer.tscn" id="6_bars"]
+
+[node name="TestAlertsAndWavePreview" type="Control" unique_id=1104994315]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_checks")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1729102063]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.4980392, 0.627451, 0.3529412, 1)
+
+[node name="WaveCounter" parent="." unique_id=1001688618 instance=ExtResource("3_counter")]
+layout_mode = 1
+offset_top = 24.0
+offset_bottom = 149.0
+
+[node name="WavePreview" parent="." unique_id=1690209404 instance=ExtResource("4_preview")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -400.0
+offset_top = 330.0
+offset_right = -40.0
+offset_bottom = 530.0
+grow_horizontal = 0
+
+[node name="HazardGate" parent="." unique_id=1886289194 instance=ExtResource("5_gate")]
+layout_mode = 1
+
+[node name="EnemyBarLayer" parent="." unique_id=213820261 instance=ExtResource("6_bars")]
+layout_mode = 1
+
+[node name="AlertLayer" parent="." unique_id=348763329 instance=ExtResource("2_alerts")]
+layout_mode = 1
