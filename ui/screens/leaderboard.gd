@@ -72,7 +72,6 @@ func refresh() -> void:
 func is_loading() -> bool:
 	return _loading
 
-# TODO(Rawisl): add fetch_leaderboard(top_n) to AuthService (or a node in group leaderboard_source) returning {ok, rows, own}: rows are the top runs of this game_version in rank order, own is the signed-in player's line or {} (each line: rank, display_name, waves_cleared, run_elapsed).
 func _source() -> Object:
 	var node := get_tree().get_first_node_in_group(&"leaderboard_source")
 	if node != null and node.has_method(&"fetch_leaderboard"):

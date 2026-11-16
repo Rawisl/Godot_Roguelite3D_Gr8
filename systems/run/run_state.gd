@@ -4,7 +4,7 @@ extends Node
 ## In-memory runtime state container for the active run session.
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
-# TODO(Ender-Via): when RunLoading builds the RunConfig, call init_from_config() with it and then SaveManager.record_run_start(config.start_wave, config.start_mult) before the first PREP, so an interrupted run can be settled on the next launch.
+# TODO(Ender-Via): when RunLoading builds the RunConfig, call init_from_config() and then start_run() before the first PREP; start_run() records the run flag and announces the new run once.
 
 ## The base sword: owned and equipped at the start of every run.
 const BASE_WEAPON := &"sword_base"
@@ -82,6 +82,7 @@ var _current_state: StringName = &""
 var _pending_fortress_destroyed: bool = false
 var _pending_commander_died: bool = false
 var _run_is_ended: bool = false
+var _run_started: bool = false
 
 
 func _ready() -> void:
@@ -96,6 +97,22 @@ func _ready() -> void:
 	EventBus.emergency_repair_state_changed.connect(_on_emergency_repair_state_changed)
 	EventBus.mode_changed.connect(_on_commander_mode_changed)
 	EventBus.run_started.connect(_on_run_started)
+	_start_main_scene_run.call_deferred()
+
+
+func _start_main_scene_run() -> void:
+	var scene := get_tree().current_scene
+	if scene != null and scene.scene_file_path == "res://main.tscn" and scene.is_ancestor_of(self):
+		start_run()
+
+
+## RunLoading may call this after initialization; direct main launches use the same path.
+func start_run() -> void:
+	if _run_started:
+		return
+	_run_started = true
+	SaveManager.record_run_start(start_wave, start_mult)
+	EventBus.run_started.emit()
 
 
 func _exit_tree() -> void:
@@ -290,6 +307,7 @@ func _on_commander_mode_changed(mode: StringName) -> void:
 
 ## Mithril does not carry over between runs.
 func _on_run_started() -> void:
+	_run_started = true
 	var previous := mithril
 	mithril = 0
 	if previous != 0:

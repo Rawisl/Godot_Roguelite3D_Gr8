@@ -179,7 +179,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W13-KM1 | Kim | 10 | 2 | DỜI | FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13] |
 | W13-KM3 | Kim | 10 | 2.5 | DỜI | FBK-08 tower bị phá (khói, mảnh vỡ, đống đổ nát) [dời từ tuần 13] |
 | W11-MH5 | Ngọc | 11 | 2 | CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Chính sách xung đột đơn giản |
-| W11-MH6 | Ngọc | 11 | 2 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hook nộp điểm ở RunEnd |
+| W11-MH6 | Ngọc | 11 | 2 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Tích hợp và hồi quy hook nộp điểm với RunEnd hoàn chỉnh |
 | W11-MH7 | Ngọc | 11 | 3 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hồi quy Trạm hồi lực: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36 |
 | W11-NG10 | Ngọc | 11 | 4 | MỚI | Runner BAL tests/test_balance_config_runner.tscn (BAL-05, BL3, BL4) |
 | W11-NG2 | Ngọc | 11 | 3 | CŨ-SỬA | Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí) |
@@ -680,21 +680,23 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG5
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Backend 2: bảng saves có revision, API đọc/ghi profile và meta, kiểm tra revision và device_id (ACCT-04, 06)
 - Nghiệm thu: Ghi và đọc đúng, revision tăng một mỗi lần ghi, tài khoản khác không đọc được; flags (gồm tutorial_done) nằm trong dữ liệu đồng bộ
 - ID SRS: ACCT-04
 - Cần xong trước: W9-MH4b
+- Ghi chú bàn giao: Added `006_saves.sql` with own-row RLS, restricted column grants, server timestamps and stale-revision rejection. `AccountApi.pull_save() -> {ok, revision, device_id, updated_at, data}`; `push_save(revision, device_id, data) -> {ok, conflict, revision}`; `data_for_sync()` deep-copies profile/meta/flags, including flags.tutorial_done, and excludes run_flag. Khang (@WhoKeng) owns revision comparison, save.conflict.bak, retry and sync UI states in week 11; CloudSaveRepository TODO remains for that work. Uses save envelope metadata from PR #187. Migration 007 adds server validation for save objects, payload size, integer counts, meta caps and nonnegative revisions. Expanded live suite: dev 90 passed and demo 86 passed, both temporary accounts deleted on each project. Offline submit/account runner: 51 passed; save hooks: 72 passed; save repository: 68 passed without teardown leaks. Migrations 005–007 confirmed on both projects.
 
 ##### W10-NG6
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 7 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Backend 3: nộp điểm, một dòng tốt nhất mỗi tài khoản, kiểm tra hợp lý (LBD-06), lọc theo game_version, top 50 và hạng của tôi (LBD-01..08); migration 005 nới ràng buộc thành run_elapsed + 1 >= 15 x waves_cleared
 - Nghiệm thu: Từ chối điểm vô lý (40 wave trong 100 s); lượt thật chạy nhanh nhất vẫn được nhận (AC9); xếp đúng LBD-04
 - Tệp liên quan: backend/001_init.sql:76-77 (leaderboard_min_time), mới: backend/005_*.sql, backend/README.md
 - ID SRS: LBD-01..08, LBD-06, AC9
 - Cần xong trước: W6-NG8
+- Ghi chú bàn giao: Added `005_leaderboard_tolerance.sql`, bounded top/own-rank RPCs, AuthService.fetch_leaderboard()/submit_score() and a save-gated in-memory retry queue. All three ending types qualify only for signed-in wave-1 runs; interrupted/recovered runs are excluded. Kiệt (@kiezroth): GameConfig.game_version defaults to 1.0.0. Khang (@WhoKeng): existing leaderboard UI contract is implemented; only its completed TODO was removed. Other heal/weapon UI TODOs remain outside scope. Migration 007 rejects negative/nonfinite elapsed time. Expanded live suite: dev 90 passed and demo 86 passed, including direct submit_score(), invalid data and RLS. Offline submit/account runner: 51 passed without BOOT warning; leaderboard/account UI: 17 passed; headless main starts without errors. SaveManager correlates successful writes with the exact RunEnd summary, unaffected by later save failures. RunState.start_run() supplies the missing production start signal. W11-MH6 now owns full-flow integration verification rather than another hook. This branch depends on PR #187 and includes current main's save hooks without creating a commit.
 
 ##### W10-NG7
 - Người: Ngọc
@@ -747,6 +749,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Trạng thái: Xong
 - Việc: Trạm hồi lực phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
 - Nghiệm thu: Đòn raw 17 ở wave 10 gây 14; hút máu không bị chuẩn hóa
+- Ghi chú: TODO(Rawisl) ở entities/tower/heal_station.gd
 - Cần xong trước: W8-MH5
 - Ghi chú bàn giao: HealStation chuẩn hóa DamageInfo/int tại lúc trúng theo wave_manager và heal_tower_dmg_norm_exp; giữ nguyên hit dùng chung và đường drain. Panel nhận EVB-34 và tốc độ thật từ HealChannel qua heal_status_updated; mỗi sự kiện kho render một lần. Đã chặn sát thương ngoài SceneTree và bỏ reflection khi sao chép hit. Runner heal station 90/90, heal status 130/130, heal channel 204/204, ETG 27/27, panel HT12 12/12. F6 panel giữ preview để bấm 1/2/3; chạy tự động thêm -- --run-tests. TODO phân biệt cạn kho với bị phá giữ lại và gán kiezroth để nối cảnh báo sau. PR thông báo Mạnh (@kiezroth) và Khang (@WhoKeng).
 
@@ -921,11 +924,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH9
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 10 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tower cấp 1-36 cho cả 4 loại: dữ liệu 36 cấp từ bảng, nâng từng cấp, 'MAX' ở 36; Trạm hồi lực cấp 1-36 (nâng chỉ cộng phần kho tăng thêm, xây lại giữ cấp, hoàn bán theo kho còn lại); xây lại giá bằng tổng cost; đo hiệu năng với 6 tower
 - Nghiệm thu: Tower cấp 14 bị phá thì 'Xây lại' đúng cấp 14 với giá tổng cost cấp 1-14; trạm nâng cấp không hồi đầy kho
 - Tệp liên quan: common/tower_data.gd, common/tower_level_data.gd, data/towers/*, entities/tower/tower.gd (apply_level), entities/tower/heal_station.gd, systems/build/slot.gd (get_rebuild_cost), ui/panels/heal_station_panel.gd
 - ID SRS: TWR, UPG-01..03, HLT-01, HLT-07, HLT-08, SELL-05, TWR-15
+- Ghi chú: dữ liệu 36 cấp, MAX, cổng 13/25 và giá xây lại đã có từ W9-NG7 và W10-MH8; nhánh này cho Trạm hồi lực nâng cấp chỉ cộng phần kho tăng thêm (xây lại vẫn đầy kho), Barricade hiện mesh theo bậc 1-12 / 13-24 / 25-36 tạm tới W11-MH8, thêm test nâng 1-36 cả 4 loại, xây lại cấp 14 và đo quét 6 tower cấp 36 (dưới 1 ms mỗi frame).
 - Cần xong trước: W9-NG7, W10-MH8
 
 ##### W10-MH10
@@ -1192,9 +1196,10 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc)
 - Trạng thái: Chưa bắt đầu
-- Việc: Hook nộp điểm ở RunEnd: chỉ gửi khi đăng nhập, start_wave = 1, không phải lượt khôi phục; lấy số liệu từ RunState (LBD-02, 03, 05)
+- Việc: Tích hợp và hồi quy hook đã có ở W10-NG6 với RunLoading/RunEnd hoàn chỉnh: xác nhận start_run(), run_elapsed, lưu cục bộ trước gửi, và loại trừ lượt khôi phục (LBD-02, 03, 05); không tạo hook nộp điểm thứ hai
 - Nghiệm thu: Khách, lượt khôi phục, start_wave > 1 không gửi điểm; run_elapsed theo RUN-02
-- Cần xong trước: W10-KT2, W10-NG6
+- Cần xong trước: W10-KT1, W10-KT2, W10-NG6
+- Ghi chú bàn giao: Submission hook and retry queue were delivered by W10-NG6. RunState.start_run() now announces direct main launches once and saves the start flag; RunLoading must call it after init_from_config(). This task remains open for end-to-end verification with completed RunEnd and interrupted-run recovery.
 
 ##### W11-MH7
 - Người: Ngọc

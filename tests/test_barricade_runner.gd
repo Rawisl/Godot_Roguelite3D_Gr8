@@ -2,6 +2,7 @@ extends Node3D
 
 ## Automated test runner for the Barricade (branch week3/barricade):
 ## - Data: HP rises over the first 3 levels, aggro_weight 1.0 / 1.2 / 1.5, GROUND only, never attacks
+## - One mesh per model tier at every level (1-12, 13-24, 25-36)
 ## - 5 attack positions on an arc in front of the Barricade, a 6th unit is refused
 ## - Enemies pick the Barricade with the smallest distance / aggro_weight
 ## - destroyed while 5 Grunts attack it, all 5 choose again at once; slot turns RUINED
@@ -30,6 +31,7 @@ func _ready() -> void:
 
 	_add_floor()
 	test_data()
+	test_mesh_by_tier()
 	test_arc_slots()
 	test_attacker_cap()
 	test_aggro_weight()
@@ -144,11 +146,42 @@ func test_data() -> void:
 	var model_ok := true
 	for i in range(1, 4):
 		var n := b.find_child("Level%d" % i, true, false) as Node3D
-		model_ok = model_ok and n != null and n.visible == (i == 3)
-	assert_true(model_ok, "model shows only the Level3 mesh at level 3")
+		model_ok = model_ok and n != null and n.visible == (i == 1)
+	assert_true(model_ok, "level 3 shows the tier 1 mesh (Level1)")
 	var obstacle := b.get_node(^"NavigationObstacle3D") as NavigationObstacle3D
 	assert_true(obstacle.avoidance_enabled and not obstacle.affect_navigation_mesh,
 			"obstacle steers agents and does not change the navmesh")
+	_clear([b])
+
+
+## Number of Level1..Level3 mesh groups showing, and the name of the first one.
+func _shown_meshes(b: Barricade) -> Array:
+	var shown: Array[String] = []
+	for i in range(1, 4):
+		var n := b.find_child("Level%d" % i, true, false) as Node3D
+		if n != null and n.visible:
+			shown.append("Level%d" % i)
+	return shown
+
+
+func test_mesh_by_tier() -> void:
+	print("
+[GROUP 1b] One mesh per model tier at every level")
+	var t2 := GameConfig.tower_tier2_level
+	var t3 := GameConfig.tower_tier3_level
+	var b := _barricade(Vector3(0, 0, -40))
+	for n in [1, t2 - 1, t2, t3 - 1, t3, GameConfig.tower_max_level]:
+		var tier := 1 if n < t2 else (2 if n < t3 else 3)
+		b.apply_level(n)
+		var shown := _shown_meshes(b)
+		assert_true(shown == ["Level%d" % tier], "level %d shows only Level%d (shows %s)" % [n, tier, shown])
+	var bad_level := 0
+	for n in range(1, GameConfig.tower_max_level + 1):
+		b.apply_level(n)
+		if _shown_meshes(b).size() != 1:
+			bad_level = n
+			break
+	assert_true(bad_level == 0, "exactly one mesh shows at every level (first miss at level %d)" % bad_level)
 	_clear([b])
 
 
