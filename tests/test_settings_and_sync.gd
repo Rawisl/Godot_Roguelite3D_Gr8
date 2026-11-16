@@ -294,6 +294,66 @@ func _check_save_notices() -> void:
 	ScreenManager.close_all_dialogs()
 	await get_tree().process_frame
 
+	await _check_startup_notices()
+
+## The first load runs before ScreenManager listens, so it shows what was left in load_failure
+## after the first screen change, once.
+func _check_startup_notices() -> void:
+	SaveManager.load_failure = SaveManager.REASON_VERSION_TOO_NEW
+	ScreenManager._watch_startup_load_failure()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var before_screen := _shown_notice()
+	ScreenManager.screen_changed.emit("res://ui/screens/main_menu.tscn")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var notice := _shown_notice()
+	_expect(before_screen == null and notice != null and notice._title_text == tr(&"dialog.save_blocked.title"),
+		"save: a newer save found while loading is shown once after the first screen")
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+	ScreenManager.screen_changed.emit("res://ui/screens/main_menu.tscn")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_expect(_shown_notice() == null and not ScreenManager.has_dialog(), "save: the startup notice is not shown a second time")
+
+	SaveManager.load_failure = SaveManager.REASON_CORRUPT
+	ScreenManager._watch_startup_load_failure()
+	ScreenManager.screen_changed.emit("res://ui/screens/main_menu.tscn")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_expect(_dialog_has(tr(&"dialog.save_corrupt.new")),
+		"save: an unreadable save found while loading offers New save after the first screen")
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+
+	SaveManager.load_failure = &""
+	ScreenManager._watch_startup_load_failure()
+	ScreenManager.screen_changed.emit("res://ui/screens/main_menu.tscn")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_expect(_shown_notice() == null and not ScreenManager.screen_changed.is_connected(ScreenManager._show_startup_load_failure),
+		"save: nothing is shown after the first screen when loading went fine")
+
+	SaveManager.load_failure = SaveManager.REASON_CORRUPT
+	ScreenManager._watch_startup_load_failure()
+	SaveManager.load_failure = &""
+	ScreenManager.screen_changed.emit("res://ui/screens/main_menu.tscn")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_expect(_shown_notice() == null, "save: a failure cleared before the first screen shows nothing")
+	if ScreenManager.screen_changed.is_connected(ScreenManager._show_startup_load_failure):
+		ScreenManager.screen_changed.disconnect(ScreenManager._show_startup_load_failure)
+	ScreenManager.close_all_dialogs()
+	await get_tree().process_frame
+
+## The one NoticeDialog open under ScreenManager, or null when there is none or several.
+func _shown_notice() -> NoticeDialog:
+	var shown := ScreenManager.find_children("*", "NoticeDialog", true, false)
+	if shown.size() != 1:
+		return null
+	return shown[0] as NoticeDialog
+
 func _check_notice_layout() -> void:
 	_set_progress()
 	var dialog := SyncService.make_upload_dialog()
