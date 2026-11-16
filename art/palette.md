@@ -72,6 +72,21 @@ Thân trạm (`contents/assets/towers/heal_station.glb`) dùng màu phẳng, m�
 
 Đèn và hạt sáng của quả cầu không có màu riêng: `energy_orb.gd` lấy giữa `heal_orb_core` và `heal_orb_rim`, nên chỉ cần chỉnh trong `energy_orb_core.tres`.
 
+### Hazard Trial (tháp và phòng)
+
+Phòng (`levels/corridor/hazard_room.tscn`) là một đảo tròn lơ lửng: sàn `env_grass`, tường `struct_stone`, mặt dưới đảo và đá trôi `env_rock`. Tím chỉ dùng cho Hazard Trial để tháp và hốc sinh quái không lẫn với màu phe địch hay telegraph đỏ.
+
+Sau đảo là một ảnh bầu trời vẽ sẵn (`contents/assets/environment/hazard_room/hazard_backdrop.png`, tạo bằng ChatGPT) dán lên một tấm phẳng quay về phía camera, qua `art/materials/hazard_backdrop.tres`. Shader `art/shaders/hazard_backdrop.gdshader` giảm sáng cả ảnh (`brightness`) và kéo phần dưới về `hazard_backdrop_dark` (`dark_start`, `dark_end`, `dark_floor`) để mắt dồn vào đảo. Khi chỉ huy ở trong phòng, `hazard_room.gd` chuyển nắng sang `#D9C2FF` trong 0.5 s; ra phòng thì trả lại.
+
+| Tên | Hex | Dùng cho | File |
+|---|---|---|---|
+| hazard_glow | `#9B6BFF` | Vòng sáng trên hốc sinh quái, vòng và tinh thể trên tháp, đèn tháp | `art/materials/hazard_glow.tres` |
+| hazard_pad | `#6A6A80` | Nền đá của hốc sinh quái, bệ và nắp tháp (cùng `struct_slate`) | `art/materials/hazard_pad.tres` |
+| hazard_backdrop_dark | `#170D33` | Màu phần dưới ảnh nền được kéo về | `hazard_backdrop.tres` (`dark_tint`) |
+| hazard_sun | `#D9C2FF` | Màu nắng trong phòng | `hazard_room.gd` (`sun_color`) |
+| env_dirt | `#A88D63` | Vòng đất chỗ chỉ huy xuất hiện | `art/materials/env_dirt.tres` |
+| env_rock | `#757575` | Mặt dưới đảo, đá trôi, móng tháp | `art/materials/env_rock.tres` |
+
 ## Nhân vật
 
 | Tên | Hex | Dùng cho | Nguồn |
