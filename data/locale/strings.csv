@@ -1,7 +1,7 @@
 keys,vi
 hud.wave,Đợt
 hud.gold,Vàng
-hud.enemies,Quân địch
+hud.enemies,Quân địch:
 menu.play,Chơi
 menu.meta_shop,Cửa hàng
 menu.settings,Cài đặt
@@ -23,11 +23,9 @@ run_end.type.fortress_destroyed,Fortress bị phá hủy
 run_end.type.commander_died,Chỉ huy đã ngã xuống
 run_end.type.abandoned,Đã bỏ cuộc
 settings.tab.gameplay,Gameplay
-settings.tab.controls,Điều khiển
 settings.tab.audio,Âm thanh
 settings.tab.graphics,Đồ họa
 settings.tab.accessibility,Tiếp cận
-settings.tab.data,Dữ liệu
 menu.title,Chiến Tuyến Vô Tận
 menu.prestige,Danh vọng: {value}
 menu.record,Kỷ lục: đợt {wave}
@@ -83,7 +81,6 @@ fbk.resist,RESIST
 fbk.immune,IMMUNE
 dialog.ok,Đã hiểu
 dialog.save_failed.title,Lưu thất bại
-dialog.save_failed.body,Không ghi được dữ liệu lưu. Hãy kiểm tra dung lượng ổ đĩa và quyền ghi.
 dialog.run_recovered.title,Phiên chơi bị gián đoạn
 dialog.run_recovered.body,Phiên chơi trước bị gián đoạn. Đã quy đổi {value} danh vọng.
 hud.speed.x1,x1
@@ -207,7 +204,7 @@ hud.mode.key,Tab
 hud.mode.frontline,Tiền tuyến
 hud.mode.commander,Chỉ huy
 hud.mode.cooldown,Đổi chế độ sau {sec} s
-hud.mode.denied.hazard,Không thể đổi chế độ trong Thử thách Hazard
+hud.mode.denied.hazard,Không thể đổi chế độ khi ở trong tháp Hazard Trial
 hud.invulnerable,Bất khả xâm phạm
 hud.emg.key,R
 hud.emg.title,Sửa khẩn cấp
@@ -406,5 +403,133 @@ account.title,Tài khoản
 account.guest,Khách
 account.sync,Đồng bộ
 account.sync_now,Đồng bộ ngay
-account.sync_unavailable,Chưa có đồng bộ tự động
 account.offline,"Tính năng trực tuyến đang tắt, game vẫn chơi bình thường."
+run_end.result.defeat,Thất bại ở đợt quái thứ {wave}
+run_end.result.survived,Sống sót đến đợt quái thứ {wave}
+run_end.badge.victory,Đã chiến thắng đợt quái thứ {wave}
+run_end.badge.record,(Kỷ lục mới)
+run_end.cause,Lý do thua: {cause}
+run_end.cause_survived,Lý do kết thúc: {cause}
+run_end.section.run,LƯỢT CHƠI
+run_end.section.prestige,DANH VỌNG
+run_end.row.waves,Đợt quái đã vượt qua:
+run_end.row.time,Thời gian chiến đấu:
+run_end.row.kills,Quân đã diệt:
+run_end.row.commander_kills,Chỉ huy tự hạ:
+run_end.row.gold,Vàng kiếm được:
+run_end.row.bosses,Boss đã hạ:
+run_end.row.level,Cấp Chỉ huy:
+run_end.row.top_tower,Tower mạnh nhất:
+run_end.row.collected,Uy tín (+ đợt quái hiện tại):
+run_end.row.rate,Tỷ lệ quy đổi:
+run_end.row.start_mult,Hệ số mốc bắt đầu:
+run_end.row.gain,Danh vọng nhận:
+run_end.row.balance,Số dư mới:
+run_end.row.unlocks,Mở mốc mới:
+run_end.value.gold,{value} vàng
+run_end.value.top_tower,{name} · {damage}
+run_end.value.collected,{pending} + {buffer} × {ratio}%
+run_end.value.percent,{value}%
+run_end.value.mult,x{value}
+run_end.value.unlocks,Đợt quái thứ {waves}
+victory.title,Chiến thắng!
+victory.subtitle,Bạn đã vượt qua đợt quái thứ {wave}. Chơi tiếp để lập kỷ lục mới.
+victory.continue,Chơi tiếp (endless)
+victory.row.prestige,Uy tín đang tích (chưa quy đổi):
+victory.row.weapons,Vũ khí đã có:
+summary.row.weapon,Nhận vũ khí
+summary.hazard_note,"Vàng, XP và Mithril của Hazard Trial đã cộng lúc rời tháp."
+summary.fortress_hint,Thành sắp sập: sửa Fortress bằng Mithril ở giai đoạn chuẩn bị.
+summary.fortress_hint_hazard,Thành sắp sập: vào Hazard Trial để nhận Mithril sửa Fortress.
+hud.fortress_hint,Sửa Fortress bằng Mithril trước khi bắt đầu đợt quái.
+hud.fortress_hint_hazard,Chưa có Mithril: vào Hazard Trial để nhận Mithril sửa Fortress.
+menu.paused_info,Đợt quái {wave} · {time}
+dialog.abandon.body_run,Lượt chơi kết thúc ở đợt quái {wave} và tính là thất bại. Bạn nhận {gain} danh vọng.
+dialog.abandon.body_survived,Lượt chơi kết thúc và tính là sống sót đến đợt quái {wave}. Bạn nhận {gain} danh vọng.
+dialog.quit_run.body_run,"Lượt chơi kết thúc ở đợt quái {wave}, tính là thất bại, rồi thoát game. Bạn nhận {gain} danh vọng."
+dialog.quit_run.body_survived,Lượt chơi tính là sống sót đến đợt quái {wave} rồi thoát game. Bạn nhận {gain} danh vọng.
+settings.gfx.window_mode,Chế độ cửa sổ:
+settings.gfx.windowed,Cửa sổ
+settings.gfx.fullscreen,Toàn màn hình
+settings.gfx.resolution,Độ phân giải:
+settings.gfx.size,{w} × {h}
+settings.gfx.vsync,Đồng bộ dọc (VSync)
+settings.gfx.max_fps,Giới hạn FPS:
+settings.gfx.fps,{value} FPS
+settings.gfx.fps_none,Không giới hạn
+settings.gfx.keep_question,Giữ thay đổi? Tự quay lại sau {seconds} giây
+settings.gfx.keep,Giữ
+settings.gfx.revert,Quay lại
+settings.acc.hold_toggle,Phím giữ thành bấm bật/tắt
+settings.acc.hold_toggle_tip,"Bật: bấm E một lần để bắt đầu hồi lực, bấm lại để dừng, không cần giữ phím."
+sync.detail.not_uploaded,"Tài khoản chưa có dữ liệu, tiến trình trên máy này chưa được tải lên"
+sync.detail.local_write,"Không ghi được dữ liệu tải về, tiến trình trên máy này giữ nguyên"
+dialog.sync_upload.title,Tải profile lên tài khoản?
+dialog.sync_upload.confirm,Tải lên
+dialog.sync_upload.cancel,Để sau
+dialog.sync_other_device.title,Đã dùng dữ liệu từ máy khác
+dialog.close,Đóng
+dialog.save_failed.retry,Thử lại
+dialog.save_corrupt.title,Dữ liệu lưu bị hỏng
+dialog.save_corrupt.new,Tạo save mới
+dialog.sync_upload.line_empty,Tài khoản này chưa có profile
+dialog.sync_upload.line_take,Tải tiến trình trên máy này lên:
+dialog.sync_upload.row_balance,Danh vọng:
+dialog.sync_upload.row_wave,Kỷ lục đợt quái:
+dialog.sync_upload.row_runs,Lượt chơi:
+dialog.sync_other_device.line,Tài khoản có tiến trình mới hơn từ máy khác
+dialog.sync_other_device.note,(Bản trên máy này được giữ ở save.conflict.bak)
+dialog.save_corrupt.line1,Không đọc được dữ liệu lưu
+dialog.save_corrupt.line2,Game đang chạy với tiến trình mới và chưa ghi gì
+dialog.save_corrupt.note,(Tạo save mới sẽ cất bản hỏng thành .corrupt rồi bắt đầu lại)
+dialog.save_failed.line1,Không ghi được dữ liệu lưu
+dialog.save_failed.line2,Hãy kiểm tra dung lượng ổ đĩa và quyền ghi
+dialog.save_failed.note,(Tiến trình vẫn còn trong game và được ghi lại khi bấm Thử lại)
+dialog.save_blocked.title,Chưa lưu được
+dialog.save_blocked.line1,Dữ liệu lưu trên máy đang bị khóa ghi
+dialog.save_blocked.line2,Game vẫn chơi bình thường nhưng tiến trình mới chưa được ghi
+dialog.save_blocked.note,(Save được tạo bởi bản game mới hơn hoặc không đọc được nên được giữ nguyên)
+tutorial.title,Hướng dẫn
+tutorial.step,Bước {n}/{total}
+tutorial.remind,(Nhắc lại)
+tutorial.skip,Bỏ qua hướng dẫn
+alert.commander_low,Chỉ huy sắp gục
+alert.commander_low_sub,Lùi về hoặc hồi máu ở Trạm hồi lực
+alert.boss_enrage_soon,Boss sắp cuồng nộ
+alert.boss_enrage_soon_sub,Còn {seconds} giây
+alert.boss_enraged,Boss đã vào trạng thái cuồng nộ
+alert.boss_enraged_sub,Nhanh hơn và đánh mạnh hơn cho tới khi bị hạ
+alert.tower_ruined,{name} cấp {level} ở {slot} bị phá
+alert.tower_ruined_sub,Xây lại: {cost} vàng
+alert.tower_ruined_plain,Tower ở {slot} bị phá
+alert.towers_ruined,{count} tower bị phá
+alert.towers_ruined_sub,Ở các ô: {slots}
+alert.boss_next,Boss ở đợt quái thứ {wave}
+alert.boss_next_sub,Kiểm tra miễn nhiễm trước khi bắt đầu
+hud.clear_time,Thời gian:
+enemy.trait.stealth,Tàng hình
+enemy.trait.explode,Tự nổ
+enemy.trait.undying,Bất tử một lần
+enemy.trait.revive,Hồi sinh
+enemy.trait.charge,Ủi thẳng
+hud.preview.title,Đợt quái thứ {wave}
+hud.preview.boss_title,Đợt quái thứ {wave} (Boss)
+hud.preview.count,×{value}
+hud.preview.weapon_drop,"Hạ boss: nhận 1 vũ khí ngẫu nhiên (còn {left} thanh kiếm chưa sở hữu)"
+hud.preview.hide,Ẩn xem trước đợt quái
+hud.preview.show,Hiện xem trước đợt quái
+tutorial.build_arrow.action,Xây Arrow miễn phí
+tutorial.build_arrow.where,Bấm vào ô sáng trên mặt đất
+tutorial.build_cannon.action,Xây Cannon miễn phí
+tutorial.build_cannon.where,Bấm vào slot sáng trên tường
+tutorial.start_wave.action,Bấm Bắt đầu wave khi đã sẵn sàng
+tutorial.start_wave.where,(Không giới hạn thời gian chuẩn bị)
+tutorial.fight.action,Đánh trúng một quân địch
+tutorial.fight.where,Chỉ huy đánh trúng thì nhận đủ XP và mở nâng cấp tower
+tutorial.key.wasd,WASD
+tutorial.key.mouse,Chuột trái
+tutorial.key.space,Space
+tutorial.key.camera,Dịch camera xem toàn bản đồ
+tutorial.key.move,Di chuyển
+tutorial.key.attack,Đánh
+tutorial.key.dodge,Né

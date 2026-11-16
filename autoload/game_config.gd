@@ -9,6 +9,8 @@ extends Node
 @export var starter_arrow_slot: StringName = &"G_0_4"
 @export var starter_cannon_slot: StringName = &"W2"
 @export var starter_sell_unlock_wave: int = 3
+## Real seconds (paused time not counted) a tutorial build step waits before showing its hint again.
+@export var tutorial_remind_seconds: float = 30.0
 @export var max_alive: int = 70
 @export var wave_max_enemy_types: int = 5
 @export var summary_auto_advance: float = 10.0
@@ -153,6 +155,13 @@ extends Node
 @export_group("Timing and Performance")
 @export var fps_downscale_floor: float = 30.0
 @export var fps_downscale_duration: float = 3.0
+## Real seconds to keep a new window mode or resolution before it goes back to the old one.
+@export var settings_keep_seconds: float = 10.0
+## Real seconds the pointer rests on an enemy before its name and traits show.
+@export var hover_info_delay: float = 0.3
+## Real seconds after a tower falls during which the next loss joins the same toast; the same as a
+## T2 toast stays, so a loss after the toast is gone gets a toast of its own.
+@export var tower_ruined_merge_seconds: float = 2.5
 
 @export_group("Skills")
 @export var skill_max_level: int = 3
