@@ -1356,12 +1356,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH9
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Rơi vũ khí từ boss wave 5/10/15/20/25 (RNG riêng hash(run_seed,'weapon',wave), không trùng, cộng tự động ở SUMMARY cùng điều kiện BRW-07), weapon_gained, summary_data.weapon_gained
 - Nghiệm thu: WP1 đạt: wave 5 nhận 1 cây, wave 25 đủ 5, boss wave 30 không rơi; thua đè thắng thì không nhận
 - Tệp liên quan: systems/wave/wave_manager.gd (_end_combat_to_summary)
 - ID SRS: WPN-11, BRW-09, EVB-42
 - Cần xong trước: W9-NG6, W10-MH3
+- Ghi chú: WeaponDrop (systems/reward/weapon_drop.gd) chọn một vũ khí chưa sở hữu từ GameConfig.boss_drop_weapons bằng seed riêng theo từng run và wave. WaveManager cộng vũ khí ở bước SUMMARY, sau bước kiểm thua, nên wave thua không nhận gì; summary có khóa weapon_gained (rỗng khi không rơi) và RunState.grant_weapon giờ phát weapon_gained. Boss chết khi trạng thái wave là HAZARD_TRIAL không cho gì. WaveManager phát wave_summary_ready sau state_changed(SUMMARY) để SummaryPanel không xóa mất summary vừa nhận. TODO cho @Ender-Via ở systems/wave/wave_manager.gd và systems/run/run_state.gd: phía wave Hazard Trial phải giữ trạng thái đó suốt lúc phòng mở, và run_bosses_defeated vẫn đếm boss trong phòng. Runner tests/test_weapon_drop_runner.tscn.
 
 ##### W11-MH10
 - Người: Mạnh
