@@ -61,3 +61,11 @@ layout_mode = 2
 [node name="Badge3" parent="HoverInfo/Box/HoverBadges" unique_id=1596477235 instance=ExtResource("2_badge")]
 visible = false
 layout_mode = 2
+
+[node name="Badge4" parent="HoverInfo/Box/HoverBadges" unique_id=812411514 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2
+
+[node name="Badge5" parent="HoverInfo/Box/HoverBadges" unique_id=413753532 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2

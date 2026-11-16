@@ -8,6 +8,7 @@ extends HBoxContainer
 ## it again. The node grows to the left, so folding keeps its right edge where it was.
 # TODO(Ender-Via): send wave_preview_ready(wave_index, {enemy_id: count}, is_boss) at the start of each PREP; nothing shows before it does.
 # TODO(kiezroth): the composition sent with wave_preview_ready should come from the WaveScript of that wave.
+# TODO(Ender-Via): emit weapon_gained in RunState.grant_weapon(); until then the weapons left in the boss line never go down in a real run.
 
 ## Every weapon in the game, to know when none is left to drop.
 @export var weapons: Array[WeaponData] = []

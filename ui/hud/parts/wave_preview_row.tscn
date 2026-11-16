@@ -40,3 +40,11 @@ layout_mode = 2
 [node name="Badge3" parent="Badges" unique_id=1635991129 instance=ExtResource("2_badge")]
 visible = false
 layout_mode = 2
+
+[node name="Badge4" parent="Badges" unique_id=1638714316 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2
+
+[node name="Badge5" parent="Badges" unique_id=1299815057 instance=ExtResource("2_badge")]
+visible = false
+layout_mode = 2

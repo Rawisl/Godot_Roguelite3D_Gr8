@@ -3,7 +3,7 @@ class_name TraitGlyph
 extends Control
 ## A drawn icon for one enemy trait until trait icons exist. Each shape differs, so the traits
 ## read apart even in black and white; the badge always shows the name next to it.
-# TODO(kimvux): swap these drawn shapes for trait icons when they are made (same 20 px slot).
+# TODO(kimvux): swap these drawn shapes for trait icons when they are made (same 26 px slot).
 
 @export var trait_id: StringName = EnemyTraits.STEALTH:
 	set(value):
