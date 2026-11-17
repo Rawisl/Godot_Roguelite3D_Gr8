@@ -21,6 +21,7 @@ func _ready() -> void:
 	EventBus.duck_requested.disconnect(autoload.duck)
 	EventBus.boss_phase_changed.disconnect(autoload._on_boss_phase_changed)
 	EventBus.boss_enraged.disconnect(autoload._on_boss_enraged)
+	EventBus.heal_state_changed.disconnect(autoload._on_heal_state_changed)
 	_run()
 	_free_manager()
 	EventBus.sfx_requested.connect(autoload._on_sfx_requested)
@@ -29,6 +30,7 @@ func _ready() -> void:
 	EventBus.duck_requested.connect(autoload.duck)
 	EventBus.boss_phase_changed.connect(autoload._on_boss_phase_changed)
 	EventBus.boss_enraged.connect(autoload._on_boss_enraged)
+	EventBus.heal_state_changed.connect(autoload._on_heal_state_changed)
 	# The test instances wrote to the shared buses; put back the autoload's volumes.
 	autoload._apply_buses()
 	TimeManager.reset()
@@ -60,6 +62,8 @@ func _new_manager() -> void:
 	lib.entries.append(_entry(&"commander", &"SFX", AudioManager.PRIORITY_COMMANDER))
 	lib.entries.append(_entry(&"click", &"UI", AudioManager.PRIORITY_COMMANDER))
 	lib.entries.append(_entry(&"boss_enraged", &"SFX", AudioManager.PRIORITY_T1))
+	lib.entries.append(_entry(&"heal_start", &"SFX", AudioManager.PRIORITY_COMMANDER))
+	lib.entries.append(_entry(&"heal_station_drained", &"SFX", AudioManager.PRIORITY_T1))
 	_am.set_library(lib)
 	TimeManager.real_time = 100.0
 
@@ -85,7 +89,7 @@ func _run() -> void:
 	# Library from the autoload scene loads every placeholder sound.
 	var shipped: Node = AM_SCENE.instantiate()
 	add_child(shipped)
-	for id in [&"ui_click", &"alert_t1", &"commander_hit", &"boss_stomp_windup", &"tower_arrow_shot", &"enemy_hit", &"boss_enraged"]:
+	for id in [&"ui_click", &"alert_t1", &"commander_hit", &"boss_stomp_windup", &"tower_arrow_shot", &"enemy_hit", &"boss_enraged", &"heal_start", &"heal_station_drained"]:
 		_check("shipped library has %s" % id, shipped._entries.has(id) and shipped._entries[id].stream != null)
 	_check("pool has 32 voices", shipped._voices.size() == 32)
 	# every state has a track; loops loop, stings play once.
@@ -291,6 +295,23 @@ func _run_ducking() -> void:
 	_tick(0.05)
 	_check("boss_enraged dips the music", is_equal_approx(_am.duck_db(), _am.boss_duck_db))
 	_check("boss_enraged plays its cue over a full pool", _am.playing_count(&"boss_enraged") == 1)
+
+	# Heal station: one pulse on the step into HEALING, not on HOLD; a T1 cue when the station runs dry.
+	_new_manager()
+	for i in 4:
+		EventBus.heal_state_changed.emit(&"HOLD", &"slot_1", i * 0.25)
+	_check("holding E plays no heal sound", _am.playing_count(&"heal_start") == 0)
+	EventBus.heal_state_changed.emit(&"HEALING", &"slot_1", 1.0)
+	_check("starting to heal plays heal_start once", _am.playing_count(&"heal_start") == 1)
+	_wait(0.2)
+	EventBus.heal_state_changed.emit(&"HEALING", &"slot_1", 1.0)
+	_check("a repeated HEALING plays nothing more", _am.playing_count(&"heal_start") == 1)
+	_fill(&"unit_", 10)
+	_fill(&"t1_", 8)
+	EventBus.heal_state_changed.emit(&"DEPLETED", &"slot_1", 0.0)
+	_check("a drained station plays its cue over a full pool", _am.playing_count(&"heal_station_drained") == 1)
+	EventBus.heal_state_changed.emit(&"CANCELLED", &"slot_1", 0.0)
+	_check("cancelling plays no drained cue", _am.playing_count(&"heal_station_drained") == 1)
 
 	# The boss track runs on from BOSS_INTRO into BOSS_COMBAT without starting over.
 	_new_manager()

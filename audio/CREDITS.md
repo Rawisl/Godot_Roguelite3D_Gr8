@@ -37,3 +37,5 @@ Credit line for the Kevin MacLeod tracks, as the licence asks:
 | `394186__saturdaysoundguy__slingshot-fly-by-2.wav` | Slingshot Fly by 2 | saturdaysoundguy | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | [freesound.org/s/394186](https://freesound.org/s/394186/) |
 | `boss_stomp_windup.wav` | Placeholder made for this project | Team | - | - |
 | `565954__algoto__monster-cry.wav` | Monster Cry (boss enrage cue) | Algoto | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | [freesound.org/s/565954](https://freesound.org/s/565954/) |
+| `maximize_006.ogg` | Interface Sounds (heal start) | Kenney | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | [kenney.nl/assets/interface-sounds](https://kenney.nl/assets/interface-sounds) |
+| `minimize_006.ogg` | Interface Sounds (heal station drained) | Kenney | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | [kenney.nl/assets/interface-sounds](https://kenney.nl/assets/interface-sounds) |

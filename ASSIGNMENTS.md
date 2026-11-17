@@ -1057,7 +1057,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM6
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: VFX và SFX Trạm hồi lực: vòng tiến trình hold, tia sáng trạm sang chỉ huy, số nổi xanh, âm bắt đầu hồi và trạm cạn (HLT-11, FBK-12, AUD-07)
 - Nghiệm thu: Vòng hold và tia hồi đọc được, giảm nhấp nháy tôn trọng ACC-06
 - Cần xong trước: W7-MH1
