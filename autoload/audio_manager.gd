@@ -16,6 +16,8 @@ extends Node
 ## - The music dips for a moment when the boss changes phase or enrages, and on duck_requested.
 ##   The dip runs on real time; a deeper or longer request extends the one in progress.
 ## - The boss enraging also plays its own cue (boss_enraged), as a T1 so it is never dropped.
+## - Heal station: a soft pulse (heal_start) when the commander starts healing, and a cue
+##   (heal_station_drained, T1) when the station it heals from runs dry.
 ##
 ## Settings keys on EventBus.settings_changed: volume_master, volume_music, volume_sfx and
 ## volume_ui (0 to 1), mute_on_focus_loss (bool).
@@ -104,6 +106,7 @@ var _last_real := 0.0
 ## playing at quit is kept by the dummy driver, so every runner printed the music as leaked at
 ## exit. Test instances of this scene are not the autoload and still play.
 var _silent := false
+var _heal_state: StringName = &""
 
 @onready var _music: AudioStreamPlayer = $MusicPlayer
 @onready var _pool: Node = $SfxPool
@@ -138,6 +141,7 @@ func _ready() -> void:
 	EventBus.duck_requested.connect(duck)
 	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
 	EventBus.boss_enraged.connect(_on_boss_enraged)
+	EventBus.heal_state_changed.connect(_on_heal_state_changed)
 	GameState.app_state_changed.connect(_on_app_state_changed)
 
 func set_library(value: SfxLibrary) -> void:
@@ -328,6 +332,15 @@ func _on_boss_phase_changed(phase: StringName) -> void:
 func _on_boss_enraged() -> void:
 	duck(boss_duck_db, boss_duck_time)
 	play(&"boss_enraged", PRIORITY_T1)
+
+## HOLD repeats while E is held and HEALING is sent once per channel; the pulse plays only on the
+## step into HEALING. DEPLETED means the source station ran out while healing.
+func _on_heal_state_changed(state: StringName, _source_slot: StringName, _hold_progress: float) -> void:
+	if state == &"HEALING" and _heal_state != &"HEALING":
+		play(&"heal_start")
+	elif state == &"DEPLETED":
+		play(&"heal_station_drained", PRIORITY_T1)
+	_heal_state = state
 #endregion
 
 #region Settings and focus

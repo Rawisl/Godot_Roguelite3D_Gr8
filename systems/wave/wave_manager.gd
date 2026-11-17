@@ -7,6 +7,7 @@ extends Node
 # TODO(Ender-Via): when meta progression lands, return gold_pct_meta + gold_pct_buff from _gold_pct_total(); it feeds both the wave gold and the boss gold.
 # TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
 # TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
+# TODO(Ender-Via): when the Hazard Trial room opens, keep wave_state at HAZARD_TRIAL until it closes; _on_boss_defeated skips a boss that dies then (no prestige, repair charge or weapon), so the room must still pay that boss's boss_gold and boss XP itself, added to the room gold paid out when the hero leaves.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -159,6 +160,9 @@ func _exit_tree() -> void:
 
 
 func _on_boss_defeated() -> void:
+	# A boss in the Hazard Trial room is not the wave's boss: no flag, no number, no summary reward.
+	if wave_state == Enums.WaveState.HAZARD_TRIAL:
+		return
 	if _boss_defeated_this_wave:
 		return
 	_boss_defeated_this_wave = true
@@ -719,6 +723,7 @@ func _end_combat_to_summary() -> void:
 	var rs := _get_run_state()
 	if rs != null:
 		rs.waves_cleared = current_wave
+	var weapon_gained: StringName = _grant_boss_weapon(rs)
 
 	# Save progress before the summary shows; a failed write does not hold the summary back
 	var start_wave: int = rs.start_wave if rs != null else 1
@@ -768,16 +773,32 @@ func _end_combat_to_summary() -> void:
 		"fortress_max_hp": fortress_max_hp,
 		"ruined_towers": ruined_towers,
 		"emg_repair_gained": 1 if _boss_defeated_this_wave else 0,
+		"weapon_gained": weapon_gained,
 		"xp_from_commander": xp_cmd,
 		"xp_from_towers": xp_tow,
 		"commander_level": cmd_lv,
 		"pending_picks": pend_picks,
 	}
 
-	EventBus.wave_summary_ready.emit(summary)
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"SUMMARY")
+	# After the state change, so a panel that clears its data on entering SUMMARY keeps this summary.
+	EventBus.wave_summary_ready.emit(summary)
 	EventBus.wave_cleared.emit(current_wave)
+
+
+## The boss weapon of this wave, granted to the run; &"" when nothing drops.
+func _grant_boss_weapon(rs: RunState) -> StringName:
+	if rs == null:
+		return &""
+	if not _boss_defeated_this_wave:
+		return &""
+	if not GameConfig.weapon_drop_waves.has(current_wave):
+		return &""
+	var id := WeaponDrop.pick(rs.run_seed, current_wave, rs.owned_weapons, GameConfig.boss_drop_weapons)
+	if not rs.grant_weapon(id):
+		return &""
+	return id
 
 
 func advance_from_summary() -> void:

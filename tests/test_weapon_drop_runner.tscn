@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bahi52yljd1bg"]
+
+[ext_resource type="Script" uid="uid://cga2uvbdae1ev" path="res://tests/test_weapon_drop_runner.gd" id="1_test"]
+
+[node name="TestWeaponDropRunner" type="Node" unique_id=554416710]
+script = ExtResource("1_test")
