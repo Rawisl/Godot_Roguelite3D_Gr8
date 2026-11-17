@@ -1,18 +1,20 @@
 extends Node
 ## The only entry point for player progress. Other systems read and change
 ## get_section() dictionaries, then call save(); nobody else touches save files.
-## Wave SUMMARY, run start, run end and the tutorial go through record_* / mark_tutorial_done().
+## Wave SUMMARY, run start, run end and the tutorial go through record_* / mark_tutorial_done(); Boot settles a run left in progress with recover_interrupted_run().
 ##
 ## Missing fields fall back to DEFAULT_DATA, unknown fields are kept and written back.
 ## The main file, then a leftover .tmp, then the .bak are tried in turn. A save from a newer
 ## game version, or one where every copy is unreadable, is never overwritten: the game runs
 ## on defaults in memory and save() refuses until the file is fixed (an unreadable save can
 ## be replaced with start_new_save()).
-# TODO(kiezroth): when the save loads with run_flag.run_in_progress true, settle the run as ABANDONED before MainMenu (prestige from prestige_pending), clear the flag, save and tell the player.
 
 signal save_loaded
 
 const SAVE_VERSION := 1
+
+## Value recover_interrupted_run() returns when it settled nothing.
+const NO_RECOVERY := -1
 
 const PROFILE := &"profile"
 const META := &"meta"
@@ -78,6 +80,8 @@ var _request_queued: bool = false
 var _run_recorded: bool = false
 var _run_end_summary: Dictionary = {}
 var _saved_run_end_summary: Dictionary = {}
+## True once recover_interrupted_run() ran in this session, so a later call never settles the run being played.
+var _recovery_checked: bool = false
 
 func _ready() -> void:
 	set_repository(LocalSaveRepository.new())
@@ -204,23 +208,52 @@ func record_run_end(summary: Dictionary) -> Error:
 		return ERR_INVALID_PARAMETER
 	if _run_recorded:
 		return ERR_ALREADY_EXISTS
-	var waves_cleared := int(summary.get("waves_cleared", 0))
-	var start_key := str(int(summary.get("start_wave", 1)))
 	var profile := get_section(PROFILE)
 	var stats: Dictionary = profile["stats"]
-	var best_by_start: Dictionary = profile["best_by_start"]
-	profile["prestige_balance"] = int(profile["prestige_balance"]) + maxi(0, int(summary.get("prestige_gain", 0)))
+	_add_run_to_profile(int(summary.get("start_wave", 1)), int(summary.get("waves_cleared", 0)), int(summary.get("prestige_gain", 0)))
 	stats["total_runs"] = int(stats["total_runs"]) + 1
 	stats["total_kills"] = int(stats["total_kills"]) + int(summary.get("run_kills", 0))
 	stats["bosses_defeated"] = int(stats["bosses_defeated"]) + int(summary.get("run_bosses_defeated", 0))
-	profile["max_wave_cleared"] = maxi(int(profile["max_wave_cleared"]), waves_cleared)
-	best_by_start[start_key] = maxi(int(best_by_start.get(start_key, 0)), waves_cleared)
 	get_section(RUN_FLAG)["run_in_progress"] = false
 	_run_recorded = true
 	_run_end_summary = summary.duplicate(true)
 	var error := save_now()
 	EventBus.prestige_balance_changed.emit(int(profile["prestige_balance"]))
 	return error
+
+## Start of the game, before the main menu: a run that was still in progress when the game
+## closed is settled as abandoned from the last wave summary, without the unfinished wave's
+## buffer. Returns the prestige gained, or NO_RECOVERY when nothing was settled.
+func recover_interrupted_run() -> int:
+	if _recovery_checked:
+		return NO_RECOVERY
+	_recovery_checked = true
+	if not can_write:
+		return NO_RECOVERY
+	var run_flag := get_section(RUN_FLAG)
+	if run_flag["run_in_progress"] != true:
+		return NO_RECOVERY
+	var start_wave := int(run_flag["start_wave"])
+	var start_mult := float(run_flag["start_mult"])
+	var waves_cleared := int(run_flag["waves_cleared"])
+	var pending := int(run_flag["prestige_pending"])
+	var gain := PrestigeCalc.prestige_gain(pending, 0, start_mult)
+	_add_run_to_profile(start_wave, waves_cleared, gain)
+	run_flag["run_in_progress"] = false
+	# A failed write is reported by _write(); the result stays in memory for the next successful save.
+	save_now()
+	EventBus.prestige_balance_changed.emit(int(get_section(PROFILE)["prestige_balance"]))
+	EventBus.run_recovered.emit(gain)
+	return gain
+
+## Adds a finished or settled run to the profile records: prestige, best wave overall and per start wave.
+func _add_run_to_profile(start_wave: int, waves_cleared: int, prestige_gain: int) -> void:
+	var profile := get_section(PROFILE)
+	var best_by_start: Dictionary = profile["best_by_start"]
+	var start_key := str(start_wave)
+	profile["prestige_balance"] = int(profile["prestige_balance"]) + maxi(0, prestige_gain)
+	profile["max_wave_cleared"] = maxi(int(profile["max_wave_cleared"]), waves_cleared)
+	best_by_start[start_key] = maxi(int(best_by_start.get(start_key, 0)), waves_cleared)
 
 ## Correlates a score with a successful local write, independent of later save failures.
 func is_run_end_saved(summary: Dictionary) -> bool:
