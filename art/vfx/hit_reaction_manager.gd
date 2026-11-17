@@ -23,6 +23,8 @@ extends Node
 var _reduce_flash := false
 ## target -> {flash_until, freeze_until, last_flash, meshes, player, speed}
 var _hits: Dictionary = {}
+## Meshes whose overlay slot was taken by something else during a flash -> overlay before the flash.
+var _handed_back: Dictionary = {}
 
 
 func _ready() -> void:
@@ -95,7 +97,8 @@ func _freeze(hit: Dictionary, now: float) -> void:
 
 func _process(_delta: float) -> void:
 	var now := TimeManager.pausable_real_time
-	for target in _hits.keys():
+	var busy := false
+	for target in _hits:
 		var hit: Dictionary = _hits[target]
 		if hit.flash_on and hit.flash_until <= now:
 			_set_flash(hit, false)
@@ -105,11 +108,16 @@ func _process(_delta: float) -> void:
 			# Something else (a slow, the boss) may have set its own speed meanwhile: keep that.
 			if is_instance_valid(player) and player.speed_scale == 0.0:
 				player.speed_scale = hit.speed
-	if _hits.values().all(func(h: Dictionary) -> bool: return not h.flash_on and h.freeze_until <= 0.0):
+		busy = busy or hit.flash_on or hit.freeze_until > 0.0
+	_settle_handed_back()
+	if not busy and _handed_back.is_empty():
 		set_process(false)
 
 
 ## The overlay a mesh had (the hover outline) is put back when the flash ends.
+## If something else took the overlay slot during the flash (an outline that keeps the flash as
+## "the overlay before", to put back later), the mesh is watched until that happens and the flash
+## is then swapped for what was there before it, so it never stays on.
 func _set_flash(hit: Dictionary, on: bool) -> void:
 	if hit.flash_on == on:
 		return
@@ -121,10 +129,22 @@ func _set_flash(hit: Dictionary, on: bool) -> void:
 			continue
 		var geometry := mesh as GeometryInstance3D
 		if on:
+			_handed_back.erase(geometry)
 			hit.before[geometry] = geometry.material_overlay
 			geometry.material_overlay = flash_material
 		elif geometry.material_overlay == flash_material:
 			geometry.material_overlay = hit.before.get(geometry)
+		else:
+			_handed_back[geometry] = hit.before.get(geometry)
+
+
+func _settle_handed_back() -> void:
+	for geometry in _handed_back.keys():
+		if not is_instance_valid(geometry):
+			_handed_back.erase(geometry)
+		elif geometry.material_overlay == flash_material:
+			geometry.material_overlay = _handed_back[geometry]
+			_handed_back.erase(geometry)
 
 
 func _forget(target: Node3D) -> void:

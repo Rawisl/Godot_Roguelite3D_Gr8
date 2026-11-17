@@ -69,7 +69,7 @@ func _run() -> void:
 	_step(0.05)
 	_check("after 0.1 s the flash is off", mesh.material_overlay == null and not _manager.is_flashing(unit))
 
-	# ACC-06: at most 3 flashes a second whatever the setting.
+	# At most 3 flashes a second whatever the setting.
 	_step(0.1)
 	_hit(enemy[3])
 	_check("a hit 0.21 s after the last flash does not flash", mesh.material_overlay == null)
@@ -92,6 +92,19 @@ func _run() -> void:
 	_step(0.15)
 	_check("the hover outline comes back after the flash", mesh.material_overlay == outline)
 	mesh.material_overlay = null
+
+	# An outline put on during the flash keeps the flash as "before"; when it is taken off later the
+	# flash must not come back for good.
+	_step(1.0)
+	_hit(enemy[3])
+	var kept_by_outline: Material = mesh.material_overlay
+	mesh.material_overlay = outline
+	_step(0.15)
+	_check("the flash ends under an outline put on during it", mesh.material_overlay == outline)
+	mesh.material_overlay = kept_by_outline
+	_step(0.02)
+	_check("taking the outline off later does not leave the flash on", mesh.material_overlay == null)
+	_check("nothing is left to watch afterwards", _manager._handed_back.is_empty())
 
 	# Someone else changes the speed while frozen: theirs is kept.
 	_step(1.0)
