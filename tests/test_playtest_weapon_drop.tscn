@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bla3vnpn13iwc"]
+
+[ext_resource type="Script" uid="uid://br1esqakvh7qp" path="res://tests/test_playtest_weapon_drop.gd" id="1_play"]
+
+[node name="TestPlaytestWeaponDrop" type="Node" unique_id=1819727706]
+script = ExtResource("1_play")
