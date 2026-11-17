@@ -1,5 +1,6 @@
 class_name Bulwark
 extends Enemy
+# TODO(Ender-Via): set in_hazard_trial = true on the boss the Hazard Trial spawns into the room.
 
 const WALK_ANIM_BASE_SPEED: float = 1.42
 
@@ -48,13 +49,18 @@ const NORMAL_ATTACK_ID: int = 11
 const TURN_WALK_MIN_DEG: float = 15.0
 ## Walking speed while turning between moves, as a share of its move speed.
 const TURN_WALK_SPEED_MULT: float = 0.35
-## How often a boss that is turning to face the commander checks again whether it can attack.
+## How often a boss that is turning to face its target checks again whether it can attack.
 const TURN_RECHECK_TIME: float = 0.1
-## Moves the commander AI can pick (choose_attack).
+## Facing a structure this closely, the boss stomps even if the ring would miss, so it never turns forever.
+const STRUCTURE_FACE_TOLERANCE_DEG: float = 10.0
+## Actions the utility AI can pick (see BulwarkBrain).
 const MOVE_STOMP: StringName = &"stomp"
 const MOVE_NORMAL: StringName = &"normal"
 const MOVE_COMBO: StringName = &"combo"
 const MOVE_TRIPLE: StringName = &"triple"
+const MOVE_CHASE: StringName = &"chase"
+const MOVE_FACE: StringName = &"face"
+const MOVE_PUSH: StringName = &"push"
 ## Used only when the model has no slam clip (tests without the animation library).
 const SLAM_CLIP_FALLBACK_LENGTH: float = 2.83
 const CLIP_SLASH_1H: StringName = &"melee/Melee_1H_Slash"
@@ -103,11 +109,25 @@ var triple_stomp_cooldown_left: float = 0.0
 ## Game seconds until the boss may stomp a commander that keeps out of its slash reach.
 var commander_stomp_cooldown_left: float = 0.0
 
-## Rolls the combo chance; seeded from the run so a replay makes the same choices.
+## Breaks ties between close scores; seeded from the run so a replay makes the same choices.
 var _ai_rng: RandomNumberGenerator = null
+## Last move the boss started (a stomp on a structure counts as MOVE_STOMP).
 var last_chosen_move: StringName = &""
-## Set on the boss copy spawned inside the Hazard Trial room; it then uses an easier moveset.
-# TODO(Ender-Via): set in_hazard_trial = true on the boss the Hazard Trial spawns into the room.
+## Last action the utility AI picked and the scores behind it, for the debug scenes.
+var last_decision: StringName = &""
+var last_scores: Dictionary = {}
+## Seconds the commander has stayed where the boss cannot hit it; pushes the boss on to structures.
+var t_away: float = 0.0
+## Game seconds left in which the boss ignores the commander after pushing on.
+var push_commit_left: float = 0.0
+var _pushing: bool = false
+## True after the boss left the commander to push on, until it picks a commander move again.
+var _left_commander: bool = false
+## Seconds the commander has stood in reach without a break.
+var _in_reach_time: float = 0.0
+var _think_timer: float = 0.0
+## Set on the boss copy spawned inside the Hazard Trial room: an easier moveset, no structures to
+## push on to, and a faster turn.
 var in_hazard_trial: bool = false
 
 var _transition_timer: float = 0.0
@@ -184,6 +204,9 @@ func _process(delta: float) -> void:
 		triple_stomp_cooldown_left = maxf(0.0, triple_stomp_cooldown_left - delta)
 	if commander_stomp_cooldown_left > 0.0:
 		commander_stomp_cooldown_left = maxf(0.0, commander_stomp_cooldown_left - delta)
+	if push_commit_left > 0.0:
+		push_commit_left = maxf(0.0, push_commit_left - delta)
+	_update_t_away(delta)
 	if combo_step != ComboStep.NONE:
 		_tick_combo(delta)
 	if _triple_index >= 0:
@@ -239,10 +262,14 @@ func _update_state(delta: float) -> void:
 		return
 
 	_turn_walking = false
-	# Chasing a commander that keeps just out of reach: stomp it once it stands in the ring.
-	if current_state == Enums.EnemyState.CHASE and _can_stomp_commander_from_range():
-		change_state(Enums.EnemyState.ATTACK)
-		return
+	if current_state in [Enums.EnemyState.ADVANCE, Enums.EnemyState.CHASE, Enums.EnemyState.WAIT] \
+			and current_phase != Enums.BossPhase.TRANSITION:
+		_think_timer -= delta
+		var boss_data := data as BossData
+		if boss_data != null and _think_timer <= 0.0:
+			_think_timer = boss_data.ai_think_interval
+			if _act_while_moving():
+				return
 	super._update_state(delta)
 
 
@@ -257,7 +284,8 @@ func _is_recovering_between_moves() -> bool:
 func _turn_toward_target(delta: float) -> void:
 	if current_target == null or not is_instance_valid(current_target):
 		return
-	var look_dir := _get_attack_point(current_target) - global_position
+	# The target itself, not its attack point: at a structure that point is where the boss stands.
+	var look_dir := current_target.global_position - global_position
 	look_dir.y = 0.0
 	if look_dir.length_squared() > 0.001:
 		rotation.y = _turn_limited(rotation.y, atan2(look_dir.x, look_dir.z), delta)
@@ -267,7 +295,8 @@ func _turn_toward_target(delta: float) -> void:
 ## spinning on the spot. Only once the last move's clip is over (Idle), so no swing is cut short.
 func _update_turn_walk() -> void:
 	var walk := false
-	if current_target != null and is_instance_valid(current_target) and anim_player != null:
+	# Only around the commander: at a structure (and the Fortress's melee point) it turns on the spot.
+	if _is_commander(current_target) and anim_player != null:
 		var look_dir := _get_attack_point(current_target) - global_position
 		look_dir.y = 0.0
 		var anim_free := anim_player.current_animation == CLIP_IDLE or anim_player.current_animation == _walk_clip() 				or not anim_player.is_playing()
@@ -301,8 +330,18 @@ func _turn_limited(from_yaw: float, to_yaw: float, delta: float) -> float:
 	var boss_data := data as BossData
 	if boss_data == null:
 		return to_yaw
-	var max_step := deg_to_rad(boss_data.ai_turn_rate_deg * _combo_speed()) * delta
-	return from_yaw + clampf(angle_difference(from_yaw, to_yaw), -max_step, max_step)
+	return from_yaw + clampf(angle_difference(from_yaw, to_yaw), -get_turn_rate_rad() * delta, get_turn_rate_rad() * delta)
+
+
+## Top turning speed between moves, in radians per second.
+func get_turn_rate_rad() -> float:
+	var boss_data := data as BossData
+	if boss_data == null:
+		return INF
+	var rate := boss_data.ai_turn_rate_deg * _combo_speed()
+	if in_hazard_trial:
+		rate *= boss_data.hazard_turn_rate_mult
+	return deg_to_rad(rate)
 
 
 func get_resist(dmg_type: Enums.DamageType) -> float:
@@ -462,15 +501,39 @@ func _play_locomotion_anim() -> void:
 func _play_attack_anim() -> void:
 	if not is_nan(_yaw_during_attack_update):
 		rotation.y = _yaw_during_attack_update
-	if _must_turn_before_attacking():
-		# Keep pausing (and turning, see _update_state) a moment longer, then check again.
-		is_attacking_active = true
-		attack_windup_timer = 0.0
-		attack_recovery_timer = TURN_RECHECK_TIME
-		return
+	var action := choose_attack()
+	match action:
+		MOVE_PUSH:
+			if _is_commander(current_target):
+				_push_on()
+				return
+			_attack_structure()
+			return
+		&"":
+			# Nothing scores (no commander to fight, nothing to push on to): a commander target is
+			# only waited on; anything else gets the stomp as usual.
+			if _is_commander(current_target):
+				_wait_and_turn()
+			else:
+				_attack_structure()
+			return
+		MOVE_FACE:
+			_retarget_commander()
+			_wait_and_turn()
+			return
+		MOVE_CHASE:
+			_retarget_commander()
+			change_state(Enums.EnemyState.CHASE)
+			return
+	_retarget_commander()
+	_start_move(action)
+
+
+## Plays one of the commander moves the AI picked.
+func _start_move(move: StringName) -> void:
 	_turn_walking = false
-	last_chosen_move = choose_attack()
-	match last_chosen_move:
+	last_chosen_move = move
+	match move:
 		MOVE_TRIPLE:
 			play_triple_stomp(true)
 		MOVE_COMBO:
@@ -478,64 +541,225 @@ func _play_attack_anim() -> void:
 		MOVE_NORMAL:
 			_begin_slash_sequence(NORMAL_ATTACK_ID, ComboStep.SLASH, true)
 		_:
-			if current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"commander"):
+			if _is_commander(current_target):
 				var boss_data := data as BossData
 				commander_stomp_cooldown_left = boss_data.commander_stomp_cooldown if boss_data != null else 0.0
 			attack_step_started.emit(1, &"STOMP_WINDUP", CLIP_SLAM_2H, _get_attack_windup())
 			_play_stomp_anim()
 
 
-## The commander is at the flank or behind and the only move left would swing at empty air
-## (the normal attack while the triple stomp cools down, or the stomp before the triple stomp
-## unlocks: its ring lands in front). The boss turns to face it first.
-func _must_turn_before_attacking() -> bool:
+## Structures only get the stomp. The boss first turns until the ring would reach the target, so
+## a structure beside it is not stomped from the side.
+func _attack_structure() -> void:
+	if current_target != null and is_instance_valid(current_target) and not _stomp_reaches(current_target):
+		_wait_and_turn()
+		return
+	_start_move(MOVE_STOMP)
+
+
+## Hold the ATTACK state without a move; the pause turns the boss (see _update_state), then the
+## ATTACK state calls _play_attack_anim again.
+func _wait_and_turn() -> void:
+	is_attacking_active = true
+	attack_windup_timer = 0.0
+	attack_recovery_timer = TURN_RECHECK_TIME
+
+
+## True when a stomp started now lands on the target, or the boss already faces it closely enough.
+func _stomp_reaches(target: Node3D) -> bool:
+	if _get_distance_to_target(target, get_stomp_center()) <= stomp_radius:
+		return true
+	var to_target := target.global_position - global_position
+	to_target.y = 0.0
+	if to_target.length_squared() < 0.01:
+		return true
+	return rad_to_deg(absf(angle_difference(rotation.y, atan2(to_target.x, to_target.z)))) <= STRUCTURE_FACE_TOLERANCE_DEG
+
+
+## Between moves in CHASE, ADVANCE or WAIT: acts on the AI's pick. True when it changed state.
+func _act_while_moving() -> bool:
+	var action := choose_attack()
+	if action == &"":
+		return false
+	if action == MOVE_PUSH:
+		if _is_commander(current_target):
+			_push_on()
+			return true
+		return false
+	var cmd := _get_valid_commander()
+	if cmd == null:
+		return false
+	if action == MOVE_STOMP and current_state == Enums.EnemyState.CHASE and current_target == cmd:
+		# A commander kiting just out of slash reach stands in the ring: stop and stomp.
+		change_state(Enums.EnemyState.ATTACK)
+		return true
+	if current_target != cmd:
+		set_target(cmd)
+		if current_state != Enums.EnemyState.CHASE:
+			change_state(Enums.EnemyState.CHASE)
+		return true
+	return false
+
+
+## Leave the commander and push on to the next structure, ignoring it for push_commit_time.
+func _push_on() -> void:
 	var boss_data := data as BossData
-	if boss_data == null or current_target == null or not is_instance_valid(current_target):
-		return false
-	if not current_target.is_in_group(&"commander") or is_in_front(current_target):
-		return false
-	return choose_attack() != MOVE_TRIPLE
+	_pushing = true
+	_left_commander = true
+	push_commit_left = boss_data.push_commit_time if boss_data != null else 0.0
+	provoked_by_player = false
+	provoked_timer = 0.0
+	var structure := _find_structure_target()
+	if structure != null:
+		set_target(structure)
+		change_state(Enums.EnemyState.CHASE)
+	else:
+		_find_default_target()
+		change_state(Enums.EnemyState.ADVANCE)
 
 
-## The commander is in front, out of the slash's reach but inside the ring the stomp would
-## land on right now, and the stomp against the commander is off cooldown.
-func _can_stomp_commander_from_range() -> bool:
+func _retarget_commander() -> void:
+	var cmd := _get_valid_commander()
+	if cmd != null and current_target != cmd:
+		set_target(cmd)
+
+
+## Every target pick goes through the AI: the commander while it fights it, otherwise the next
+## structure by target_rules (without the PLAYER rule) or the Fortress.
+func _find_best_target() -> void:
+	if current_state == Enums.EnemyState.FRENZY:
+		super._find_best_target()
+		return
+	var action := choose_attack()
+	if BulwarkBrain.is_commander_action(action):
+		var cmd := _get_valid_commander()
+		if cmd != null:
+			set_target(cmd)
+			return
+	var structure := _find_structure_target()
+	if structure != null:
+		set_target(structure)
+	else:
+		_find_default_target()
+
+
+## Next structure by target_rules, skipping the commander rule.
+func _find_structure_target() -> Node3D:
+	if data == null:
+		return _get_valid_fortress()
+	for rule in data.target_rules:
+		var found: Node3D = null
+		match rule:
+			&"BARRICADE":
+				found = _find_closest_valid_barricade()
+			&"TOWER":
+				found = _find_closest_valid_tower_any()
+			&"TOWER_GROUND":
+				found = _find_closest_valid_tower(false)
+			&"FORTRESS":
+				found = _get_valid_fortress()
+		if found != null:
+			return found
+	return _get_valid_fortress()
+
+
+func _is_commander(target: Node3D) -> bool:
+	return target != null and is_instance_valid(target) and target.is_in_group(&"commander")
+
+
+## The boss minds the commander when it is close, or hit the boss recently and is within the
+## leash. Inside the Hazard Trial room the commander is the only target, so always.
+func _is_engaged(cmd: Node3D) -> bool:
+	if cmd == null:
+		return false
+	if in_hazard_trial:
+		return true
 	var boss_data := data as BossData
-	if boss_data == null or commander_stomp_cooldown_left > 0.0 or is_dead or spawn_grace:
-		return false
-	if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"commander"):
-		return false
-	if not _is_target_valid(current_target) or not is_in_front(current_target):
-		return false
-	if _in_slash_hitbox(current_target, boss_data.combo_slash_range, boss_data.combo_slash_arc_deg):
-		return false
-	return _get_distance_to_target(current_target, get_stomp_center()) <= stomp_radius
+	var offset := cmd.global_position - global_position
+	offset.y = 0.0
+	var dist := offset.length()
+	var aggro: float = data.aggro_range if data != null else 4.0
+	if dist <= aggro:
+		return true
+	# Bosses ignore Battle Cry, so a taunt only comes from scripted fights (the AI test arena).
+	if taunted_by_player and dist <= GameConfig.leash_distance:
+		return true
+	return provoked_by_player and boss_data != null and dist <= boss_data.commander_leash
 
 
-## Picks the next move against the current target.
-## - Not the commander (tower, Barricade, Fortress): the stomp.
-## - Commander at the flank or behind: triple stomp; while it cools down, the normal attack (the
-##   boss turns to face it first, see _must_turn_before_attacking).
-## - Commander in front, out of slash reach but inside the stomp ring: the stomp (commander_stomp_cooldown).
-## - Commander in front: the normal attack, or below combo_hp_threshold a combo_chance roll for the combo.
+## The commander stands in front, inside the slash or inside the ring a stomp would land on.
+func _commander_in_reach(cmd: Node3D) -> bool:
+	var boss_data := data as BossData
+	if boss_data == null or not is_in_front(cmd):
+		return false
+	if _in_slash_hitbox(cmd, boss_data.combo_slash_range, boss_data.combo_slash_arc_deg):
+		return true
+	return _get_distance_to_target(cmd, get_stomp_center()) <= stomp_radius
+
+
+## Counts while the commander keeps out of reach. It starts only once the boss minds the commander
+## (or has already left it to push on), and resets as soon as the commander stands in reach.
+## Only standing in reach for reach_reset_time resets it: circling past the front cone just
+## pauses the count. Landing a hit on the commander also resets it (see _on_commander_hit).
+func _update_t_away(delta: float) -> void:
+	var cmd := _get_valid_commander()
+	if cmd == null or (not _left_commander and not _is_engaged(cmd)):
+		t_away = 0.0
+		_in_reach_time = 0.0
+		return
+	if _commander_in_reach(cmd):
+		_in_reach_time += delta
+		var boss_data := data as BossData
+		if boss_data == null or _in_reach_time >= boss_data.reach_reset_time:
+			t_away = 0.0
+	else:
+		_in_reach_time = 0.0
+		t_away += delta
+
+
+## A hit that lands on the commander means the fight is on: the commander is not out of reach.
+func _on_commander_hit() -> void:
+	t_away = 0.0
+
+
+## What the boss knows about the fight right now, for BulwarkBrain.
+func build_situation() -> BulwarkBrain.Situation:
+	var s := BulwarkBrain.Situation.new()
+	var boss_data := data as BossData
+	s.hp_fraction = get_hp_fraction()
+	s.t_away = t_away
+	s.pushing = _pushing
+	s.push_committed = push_commit_left > 0.0
+	s.has_objective = not in_hazard_trial and _find_structure_target() != null
+	var appearance := get_moveset_appearance()
+	s.combo_unlocked = boss_data != null and appearance >= boss_data.combo_unlock_appearance
+	s.triple_unlocked = boss_data != null and appearance >= boss_data.triple_stomp_unlock_appearance
+	s.triple_ready = triple_stomp_cooldown_left <= 0.0
+	s.commander_stomp_ready = commander_stomp_cooldown_left <= 0.0
+	var cmd := _get_valid_commander()
+	if cmd == null or boss_data == null or is_dead or spawn_grace:
+		return s
+	s.engaged = _is_engaged(cmd)
+	s.in_front = is_in_front(cmd)
+	s.in_slash = _in_slash_hitbox(cmd, boss_data.combo_slash_range, boss_data.combo_slash_arc_deg)
+	var center := get_stomp_center()
+	s.in_ring = _get_distance_to_target(cmd, center) <= stomp_radius
+	s.in_triple_reach = _get_distance_to_target(cmd, center) <= get_triple_stomp_radius(get_triple_stomp_count() - 1)
+	return s
+
+
+## The utility AI's pick right now (see BulwarkBrain). Also remembers the scores for debugging.
 func choose_attack() -> StringName:
 	var boss_data := data as BossData
-	if boss_data == null or current_target == null or not is_instance_valid(current_target):
+	if boss_data == null:
 		return MOVE_STOMP
-	if not current_target.is_in_group(&"commander"):
-		return MOVE_STOMP
-	var appearance := get_moveset_appearance()
-	if not is_in_front(current_target):
-		if appearance < boss_data.triple_stomp_unlock_appearance:
-			return MOVE_STOMP
-		return MOVE_TRIPLE if triple_stomp_cooldown_left <= 0.0 else MOVE_NORMAL
-	if _can_stomp_commander_from_range():
-		return MOVE_STOMP
-	if appearance < boss_data.combo_unlock_appearance:
-		return MOVE_NORMAL
-	if get_hp_fraction() < boss_data.combo_hp_threshold and _ai_roll() < boss_data.combo_chance:
-		return MOVE_COMBO
-	return MOVE_NORMAL
+	last_scores = BulwarkBrain.score_all(build_situation(), boss_data)
+	last_decision = BulwarkBrain.pick(last_scores, boss_data, _ai_roll)
+	if last_decision != &"":
+		_pushing = last_decision == MOVE_PUSH
+		if not _pushing:
+			_left_commander = false
+	return last_decision
 
 
 ## Which appearance of the boss this is: 1 on its first boss wave, 2 on the next, and so on.
@@ -1027,6 +1251,8 @@ func _apply_combo_hit(target: Node3D, base_damage: int, knockback: float) -> boo
 	diff.y = 0.0
 	var hit_dir := diff.normalized() if diff.length_squared() > 0.001 else _combo_forward()
 	target.take_damage(DamageInfo.new(_scale_attack_damage(base_damage), Enums.DamageType.SLASH, self, kb, hit_dir))
+	if is_cmd:
+		_on_commander_hit()
 	return true
 
 
@@ -1337,6 +1563,8 @@ func execute_stomp(custom_radius: float = -1.0, custom_shake: float = -1.0, dama
 		var info := DamageInfo.new(dmg, Enums.DamageType.BLAST, self, kb, hit_dir)
 		tgt.take_damage(info)
 		hits.append(tgt)
+		if is_cmd:
+			_on_commander_hit()
 
 		if is_cmd and not is_dodge and tgt.has_method("apply_stun") and stomp_stun_duration > 0.0:
 			tgt.apply_stun(stomp_stun_duration)
@@ -1411,7 +1639,9 @@ func can_be_culled() -> bool:
 
 
 func _update_stuck_detection(delta: float) -> void:
-	if is_dead or spawn_grace or current_phase == Enums.BossPhase.TRANSITION or is_in_attack_state():
+	# Progress is measured along the lane, so chasing the commander off the lane is not being stuck.
+	if is_dead or spawn_grace or current_phase == Enums.BossPhase.TRANSITION or is_in_attack_state() \
+			or _is_commander(current_target):
 		_stuck_timer = 0.0
 		_last_stuck_progress = -INF
 		return
