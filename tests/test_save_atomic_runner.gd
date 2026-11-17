@@ -237,6 +237,8 @@ func test_newer_version_stops_fallback() -> void:
 	_write_envelope_file(SaveRepository.Source.MAIN, _data_with(50), true, SaveManager.SAVE_VERSION + 1)
 	_write_envelope_file(SaveRepository.Source.BACKUP, _data_with(3))
 	var main_text := _text_of(SaveRepository.Source.MAIN)
+	var main_bytes := FileAccess.get_file_as_bytes(_local.path_of(SaveRepository.Source.MAIN))
+	var backup_bytes := FileAccess.get_file_as_bytes(_local.path_of(SaveRepository.Source.BACKUP))
 	SaveManager.load_save()
 	assert_true(_only_reason(SaveManager.REASON_VERSION_TOO_NEW), "save_failed(VERSION_TOO_NEW) emitted once")
 	assert_true(SaveManager.data == SaveManager.DEFAULT_DATA, "backup not loaded")
@@ -244,6 +246,25 @@ func test_newer_version_stops_fallback() -> void:
 	assert_true(SaveManager.start_new_save() == ERR_UNAVAILABLE, "start_new_save() refuses")
 	assert_true(_text_of(SaveRepository.Source.MAIN) == main_text, "main file untouched")
 	assert_true(not FileAccess.file_exists(_local.corrupt_path()), "no .corrupt file")
+	assert_true(SaveManager.load_failure == SaveManager.REASON_VERSION_TOO_NEW, "load_failure is VERSION_TOO_NEW")
+	assert_true(not SaveManager.can_write and SaveManager.loaded_from == SaveManager.SOURCE_DEFAULTS, "writing stays blocked")
+	assert_true(SaveManager.record_run_start(1, 1.0) == ERR_UNAVAILABLE
+			and SaveManager.record_wave_summary(3, 5, 1, 1.0) == ERR_UNAVAILABLE
+			and SaveManager.record_run_end({"waves_cleared": 3, "start_wave": 1, "prestige_gain": 5}) == ERR_UNAVAILABLE
+			and SaveManager.save_now() == ERR_UNAVAILABLE and _completed == 0, "run hooks do not write")
+	SaveManager._save_pending = true
+	SaveManager._flush_on_quit()
+	assert_true(_completed == 0, "held-back save is not written on quit")
+	assert_true(FileAccess.get_file_as_bytes(_local.path_of(SaveRepository.Source.MAIN)) == main_bytes
+			and FileAccess.get_file_as_bytes(_local.path_of(SaveRepository.Source.BACKUP)) == backup_bytes
+			and not _exists(SaveRepository.Source.TEMP), "main and backup keep every byte, no temp file")
+	SaveManager._run_recorded = false
+	SaveManager._save_pending = false
+	# The notices from this case are still queued (they open next frame), so free them here.
+	for notice in ScreenManager._pending_notices:
+		notice.free()
+	ScreenManager._pending_notices.clear()
+	ScreenManager.close_all_dialogs()
 
 func test_start_new_save() -> void:
 	print("\n--- Start new save ---")

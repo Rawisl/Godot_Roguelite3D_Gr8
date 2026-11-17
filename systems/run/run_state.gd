@@ -4,10 +4,14 @@ extends Node
 ## In-memory runtime state container for the active run session.
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
-# TODO(Ender-Via): when RunLoading builds the RunConfig, call init_from_config() and then start_run() before the first PREP; start_run() records the run flag and announces the new run once.
+# TODO(Ender-Via): when the Hazard Trial wave side lands, skip run_bosses_defeated in _on_boss_defeated for a boss that dies in the room.
 
 ## The base sword: owned and equipped at the start of every run.
 const BASE_WEAPON := &"sword_base"
+## The run scene. Only a RunState inside it starts a run by itself.
+const RUN_SCENE := "res://main.tscn"
+## StatBlock source of the meta shop upgrade on the commander's max HP.
+const META_SOURCE := &"meta"
 
 # --- Progress ---
 var wave_index: int = 1
@@ -24,6 +28,8 @@ var mithril: int = 0
 var prestige_pending: int = 0
 var wave_gold_base: float = 0.0
 var wave_prestige_buffer: int = 0
+## Gold bonus from the meta shop, added to wave gold and boss gold.
+var gold_pct_meta: float = 0.0
 
 # --- Hazard Trial ---
 var hazard_used: bool = false
@@ -83,6 +89,17 @@ var _pending_fortress_destroyed: bool = false
 var _pending_commander_died: bool = false
 var _run_is_ended: bool = false
 var _run_started: bool = false
+var _configured: bool = false
+## The config the run started from. Its values are the ones put on the scene at the start: the
+## effective fields above follow the Fortress and the commander once they report their HP.
+var _config: RunConfig = null
+
+
+## Reads the run config before any other node of the run scene is ready, so the wave manager,
+## the gold and the commander start from the values of this run.
+func _enter_tree() -> void:
+	if not _configured and _is_in_run_scene():
+		init_from_config(RunLoader.take())
 
 
 func _ready() -> void:
@@ -101,9 +118,20 @@ func _ready() -> void:
 
 
 func _start_main_scene_run() -> void:
+	if not _is_in_run_scene():
+		return
+	if not _configured:
+		init_from_config(RunLoader.take())
+	apply_to_scene()
+	place_starter_towers()
+	start_run()
+
+
+func _is_in_run_scene() -> bool:
+	if not is_inside_tree():
+		return false
 	var scene := get_tree().current_scene
-	if scene != null and scene.scene_file_path == "res://main.tscn" and scene.is_ancestor_of(self):
-		start_run()
+	return scene != null and scene.scene_file_path == RUN_SCENE and scene.is_ancestor_of(self)
 
 
 ## RunLoading may call this after initialization; direct main launches use the same path.
@@ -146,6 +174,7 @@ func _process(delta: float) -> void:
 func init_from_config(config: RunConfig) -> void:
 	if config == null:
 		return
+	_config = config
 	wave_index = config.start_wave
 	start_wave = config.start_wave
 	start_mult = config.start_mult
@@ -157,16 +186,75 @@ func init_from_config(config: RunConfig) -> void:
 	commander_hp = config.commander_max_hp
 	commander_max_hp = config.commander_max_hp
 	emg_repair_heal_pct = config.emg_repair_heal_pct
+	gold_pct_meta = config.gold_pct_meta
+	emg_repair_charges = GameConfig.emg_repair_charges_start
+	emg_repair_cd = 0.0
+	xp = 0.0
+	commander_level = 0
+	pending_picks = 0
+	active_slots = []
+	passive_slots = []
+	stat_stacks = {}
 	rerolls_left = config.rerolls_per_run
+	heal_station_built = false
+	mithril = 0
 	owned_weapons = [BASE_WEAPON]
 	equipped_weapon = BASE_WEAPON
+	chain_cd = 0.0
+	hazard_used = false
+	hazard_session = {}
+	victory_reached = false
+	_configured = true
 
 
-## Adds a weapon to the run. False when the id is empty or the weapon is already owned.
+## Puts the run config on the Fortress, the commander and Emergency repair,
+## full HP on both. Called once before the run starts; nodes that are missing are skipped.
+func apply_to_scene() -> void:
+	var fortress_max := _config.fortress_max_hp if _config != null else fortress_max_hp
+	var commander_max := _config.commander_max_hp if _config != null else commander_max_hp
+	var heal_pct := _config.emg_repair_heal_pct if _config != null else emg_repair_heal_pct
+	var fortress := get_tree().get_first_node_in_group(&"fortress")
+	var fortress_health := fortress.get(&"health") as HealthComponent if fortress != null else null
+	if fortress_health != null:
+		# hp first: set_max_hp is what tells the HUD.
+		fortress_health.hp = fortress_max
+		fortress_health.set_max_hp(fortress_max)
+	var commander := get_tree().get_first_node_in_group(&"commander")
+	if commander == null:
+		return
+	var block := commander.get(&"stat_block") as StatBlock
+	var health := commander.get(&"health") as HealthComponent
+	if block != null and health != null:
+		block.set_add(&"commander_max_hp", META_SOURCE, commander_max - block.get_base(&"commander_max_hp"))
+		health.hp = block.get_max_hp()
+		health.set_max_hp(block.get_max_hp())
+		# The commander sends its starting HP deferred, and when it is spawned after this node that
+		# stale value arrives after the one above; send the real one again after it.
+		EventBus.commander_hp_changed.emit.call_deferred(health.hp, health.max_hp)
+	var repair := commander.get_node_or_null(^"EmergencyRepair")
+	if repair != null and &"heal_bonus_pct" in repair:
+		repair.set(&"heal_bonus_pct", maxf(0.0, heal_pct - GameConfig.emg_repair_base_heal_pct))
+
+
+## The two starter towers of a run from wave 1 once the tutorial is done. Without the tutorial
+## done the tutorial has the player build them instead, and a later start wave has none.
+func place_starter_towers() -> bool:
+	if start_wave != 1 or not bool(SaveManager.get_section(&"flags").get("tutorial_done", false)):
+		return false
+	# TODO(kiezroth): add BuildService.place_starter_towers() that builds a level 1 Arrow on starter_arrow_slot and a level 1 Cannon on starter_cannon_slot (full HP, default priority, no invested gold, is_starter); RunState calls it here before the first PREP.
+	var build_service := get_tree().get_first_node_in_group(&"build_service")
+	if build_service == null or not build_service.has_method(&"place_starter_towers"):
+		return false
+	build_service.call(&"place_starter_towers")
+	return true
+
+
+## Adds a weapon to the run and sends weapon_gained. False (and no signal) when the id is empty or the weapon is already owned.
 func grant_weapon(id: StringName) -> bool:
 	if id == &"" or owned_weapons.has(id):
 		return false
 	owned_weapons.append(id)
+	EventBus.weapon_gained.emit(id)
 	return true
 
 
@@ -209,12 +297,26 @@ func end_run(end_type: StringName = &"DEFEAT") -> void:
 	if _run_is_ended:
 		return
 	_run_is_ended = true
-	var run_result: StringName = &"SURVIVED" if victory_reached else &"DEFEAT"
-	if end_type == &"ABANDONED":
-		run_result = &"SURVIVED" if victory_reached else &"ABANDONED"
-	
-	var summary := build_summary(end_type, run_result)
+	var summary := build_summary(end_type, get_run_result())
 	EventBus.run_ended.emit(end_type, summary)
+
+
+## How the run went, apart from how it ended: SURVIVED once the victory wave was cleared,
+## whatever the end type (abandoning included), DEFEAT before that.
+func get_run_result() -> StringName:
+	return &"SURVIVED" if victory_reached else &"DEFEAT"
+
+
+func is_run_ended() -> bool:
+	return _run_is_ended
+
+
+## True when this run cleared more waves than the saved best for its start wave. Read before the
+## save adds this run, which happens when run_ended is sent.
+func is_new_record() -> bool:
+	var best: Variant = SaveManager.get_section(&"profile").get("best_by_start", {})
+	var saved_best := int((best as Dictionary).get(str(start_wave), 0)) if best is Dictionary else 0
+	return waves_cleared > saved_best
 
 
 func build_summary(end_type: StringName, run_result: StringName) -> Dictionary:
@@ -239,6 +341,10 @@ func build_summary(end_type: StringName, run_result: StringName) -> Dictionary:
 		"run_bosses_defeated": run_bosses_defeated,
 		"commander_level": commander_level,
 		"equipped_weapon": equipped_weapon,
+		"new_record": is_new_record(),
+		# A run settled after the game was closed mid-run is never built here, so this is always
+		# false; the leaderboard leaves such runs out.
+		"recovered": false,
 	}
 
 

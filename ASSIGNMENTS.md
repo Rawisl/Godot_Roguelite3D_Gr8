@@ -77,7 +77,7 @@ Tính năng và task bảo đảm nó (logic, giao diện, art, test):
 | --- | --- | --- | --- | --- | --- | --- |
 | 8 | 8 | 10 | 9 | 7 | 8 | một phiên (bổ sung) |
 | 9 | 30 | 28 | 28 | 21 | 25 | 12h |
-| 10 | 45 | 40 | 38 | 34 | 31.5 | 18h |
+| 10 | 45 | 48 | 38 | 34 | 31.5 | 18h |
 | 11 | 47 | 43 | 31 | 38 | 36.5 | 18h |
 | 12 | 18 | 18 | 18 | 18 | 18 | 18h |
 | 13 | 12 | 12 | 12 | 12 | 12 | 12h |
@@ -150,6 +150,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W10-KT6 | Kiệt | 10 | 4 | MỚI | Hazard Trial AI trong phòng |
 | W10-KT7 | Kiệt | 10 | 6 | MỚI | EnemyData thêm trait (is_stealth, explode_*, invuln_*, is_charger/impact_*, revive_*) và W... |
 | W10-KT8 | Kiệt | 10 | 3 | MỚI | Sniper và Rider |
+| W10-KT9 | Kiệt | 10 | 8 | MỚI | Bộ đòn Bulwark (Đánh thường, Stomp x3, Combo) và AI chọn hành động bằng điểm số |
 | W10-NG3 | Kiệt | 10 | 4 | CŨ-SỬA | Thang kẹt MVP (NAV-01..06, 08, 09, 14 log) theo v2.0 (không ally_phase; thêm NAV-15 bị chặ... |
 | W10-NG4 | Kiệt | 10 | 2 | CŨ | TIME-06 tự hạ x2 + ALR-10 |
 | W10-MH1 | Mạnh | 10 | 4 | CŨ | Save atomic + checksum + .bak (SAV-01..06, 10..14, 19; FLOW-01, 02, 07) |
@@ -762,12 +763,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Cần xong trước: W10-MH1
 - Ghi chú bàn giao: Envelope ghi revision +1, updated_at UTC và UUID v4 khi thiếu device_id; chỉ cập nhật metadata bộ nhớ sau repository trả OK. Không đổi save_version/checksum của data. Runner repository 68/68, atomic 128/128 assert; có kiểm tra legacy, reload, ghi lỗi/retry và timestamp bằng đồng hồ giả, không chờ wall clock hoặc đọc metadata nội bộ. Timestamp production vẫn dùng UTC hệ thống. Giữ TODO CloudSaveRepository cho tuần 11; các TODO Rawisl ngoài phạm vi (leaderboard, icon vũ khí, cooldown chain lightning) chưa xử lý. Godot 4.7.2 chạy main.tscn có render 300 frame, exit 0, không lỗi runtime; test dùng APPDATA riêng dưới .godot/test-profile. Các ca save lỗi cố ý phát push_error và runner save còn cảnh báo resource/RID lúc thoát. PR thông báo Mạnh (@kiezroth).
 
-#### Kiệt (Enemy & Wave), tuần 10, 40h
+#### Kiệt (Enemy & Wave), tuần 10, 48h
 
 ##### W10-KT1
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: RunLoading 8 bước (RUN-01, APL-01..04) trên RunState có sẵn; áp meta; gọi bước đặt trụ có sẵn hoặc tutorial (A: W10-MH10)
 - Nghiệm thu: RunLoading < 5 s, start_wave = 1, gold 0
 - Tệp liên quan: ui/screens/run_loading.gd, systems/run/
@@ -775,16 +776,18 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - ID SRS: 3.2.1
 - Cần xong trước: W8B-KT1, W8-KT1
 
+- Ghi chú bàn giao: RunLoading builds the run config with `RunLoader.build_config` (meta shop levels from the save, a new non-zero seed), loads main.tscn on a thread while the bar fills, and hands the config over; RunState takes it in `_enter_tree`, so the wave manager and gold start from it. Before the first PREP RunState puts the config on the Fortress (max HP, full), the commander (meta HP as a `meta` StatBlock add, full) and Emergency repair (heal bonus), then writes the run flag. WaveManager reads `run_seed` and the meta gold bonus from RunState. Starter towers: RunState calls `BuildService.place_starter_towers()` when start_wave = 1 and tutorial_done; Mạnh (@kiezroth) adds that method in W10-MH10 (TODO in run_state.gd). The commander is still spawned by CommanderSpawner. Run scene reached in about 3 s headless. Runner `tests/test_run_lifecycle_runner.tscn`.
 ##### W10-KT2
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kết thúc Run END-01..06, dữ liệu RunEnd (Cấp Chỉ huy, run_commander_kills, run_elapsed theo RUN-02, run_seed, cờ lượt khôi phục cho LBD-02, LBD-05); thêm run_result DEFEAT/SURVIVED tách khỏi end_type
 - Nghiệm thu: Thua cùng frame ghi FORTRESS_DESTROYED xử lý một lần; run_elapsed chỉ tính COMBAT và BOSS_COMBAT; RunEnd có run_result; GameState.abandon_run và quit_from_run (đang là TODO) đi qua RunState và phát run_ended
 - Tệp liên quan: systems/run/, autoload/game_state.gd (abandon_run, quit_from_run), ui/screens/run_end.gd
 - ID SRS: END-01..06, RUN-02
 - Cần xong trước: W8-MH3, W8B-KT1
 
+- Ghi chú bàn giao: run_result is DEFEAT or SURVIVED only (SURVIVED once the victory wave was cleared, whatever the end type); `RunState.get_run_result()` is also used by the pause snapshot. The summary adds `new_record` (against best_by_start of the run's start wave, read before the save adds the run) and `recovered` (always false from RunState; the leaderboard already skips recovered runs). Same-frame losses, run_elapsed in COMBAT and BOSS_COMBAT only, and abandon/quit through RunState were already on main and are now covered by the runner. damage_by_tower_type and unlocked_starts stay TODO on the RunEnd screen. Khang (@WhoKeng): small change in `game_state.gd` (run_snapshot) and the new_record TODO removed from `run_end.gd`.
 ##### W10-KT3
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
@@ -861,6 +864,16 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: entities/enemy/ (mới sniper.*, rider.*), data/enemies/
 - ID SRS: EN-19, EN-21
 - Cần xong trước: W10-KT7
+
+##### W10-KT9
+- Người: Kiệt
+- Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
+- Trạng thái: Đang review (PR #192), SRS mục 3.8.2.1 chờ nhóm duyệt
+- Việc: Bulwark thêm Đánh thường, Stomp x3 và Combo khi đánh chỉ huy; tâm mọi Stomp dời tới điểm chùy nện; AI chọn hành động bằng điểm số (utility): các đòn, đuổi, quay, và bỏ chỉ huy để tiến lên đập công trình khi chỉ huy đứng ngoài tầm; mở khóa đòn theo lần xuất hiện; boss quay về phía công trình trước khi Stomp; Hazard Trial quay nhanh gấp đôi. Đổi kèm: nhịp Stomp 2.5 s thành 3.0 s, sát thương các chuỗi đòn trong BossData
+- Nghiệm thu: runner `tests/test_bulwark_combo_runner.tscn` qua hết; ở `tests/test_bulwark_ai.tscn` chỉ huy đứng trước mặt thì bị đánh, chạy vòng sau lưng thì boss bỏ đi phá trụ; các runner boss và wave cũ vẫn qua
+- Tệp liên quan: entities/enemy/bulwark.gd, entities/enemy/bulwark_brain.gd (mới), common/boss_data.gd, tests/test_bulwark_*
+- ID SRS: BOSS-04, BOSS-06, BOSS-07, BOSS-40, BOSS-44..50, HZT-14, FBK-06, test Boss 9..13
+- Cần xong trước: W9-KT1
 
 #### Mạnh (Tower & Build), tuần 10, 38h
 
@@ -1046,7 +1059,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM6
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: VFX và SFX Trạm hồi lực: vòng tiến trình hold, tia sáng trạm sang chỉ huy, số nổi xanh, âm bắt đầu hồi và trạm cạn (HLT-11, FBK-12, AUD-07)
 - Nghiệm thu: Vòng hold và tia hồi đọc được, giảm nhấp nháy tôn trọng ACC-06
 - Cần xong trước: W7-MH1
@@ -1054,10 +1067,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KM1
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13]
 - Nghiệm thu: Không hit stop toàn cục
 - Cần xong trước: W7-KM2
+- Ghi chú bàn giao: `art/vfx/hit_reaction_manager.gd` (HitReactionManager, in `levels/corridor/level.tscn`) listens to `HealthComponent.damaged` of enemies and the commander: a white overlay (`art/materials/hit_flash.tres`) for 0.1 s, only that entity's AnimationPlayer frozen for 0.05 s, and `enemy_hit` / `commander_hit` through `EventBus.sfx_requested`. No global hit stop. Setting `reduce_flash` turns the flash off; at most 3 flashes a second per entity in any case. Damage over time ticks are skipped. A hover outline is put back after the flash. Timers on pausable real time. Verified by `tests/test_hit_reaction.tscn` (19 checks).
 
 ##### W13-KM3
 - Người: Kim
@@ -1315,18 +1329,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH1
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Khôi phục run gián đoạn (3.12.4, PRS-05, FLOW-03)
 - Nghiệm thu: Mất điện giữa wave 7 chốt ABANDONED theo SUMMARY wave 6
-- Cần xong trước: W10-MH1, W8-MH2
+- Cần xong trước: W10-MH1, W10-MH2
+- Ghi chú: Boot chốt run còn dở một lần ngay trước MainMenu qua SaveManager.recover_interrupted_run(): danh vọng tính từ SUMMARY gần nhất, không tính buffer của wave dở; cập nhật wave tốt nhất; tắt cờ và ghi save; rồi run_recovered hiện hộp thoại. Không phát run_ended nên điểm không được nộp (W11-MH6 kiểm được đầu-cuối). Chưa trừ buff vì game chưa có buff.
 
 ##### W11-MH2
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 1 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SAV-09 (cắt tab Dữ liệu và Xóa tiến trình SAV-16, đưa vào backlog)
 - Nghiệm thu: Hoàn tất
 - Cần xong trước: W10-MH1
+- Ghi chú: SaveManager đã từ chối nạp và không ghi đè save từ bản game mới hơn từ W10-MH1. Nhánh này thêm thông báo yêu cầu cập nhật game (dialog.save_too_new.*) và hiện lỗi save phát hiện lúc khởi động một lần trên MainMenu, nhờ đó thông báo save hỏng lúc mở game hoạt động lại. Tab Dữ liệu đã bỏ ở W11-KH3; xóa tiến trình vẫn nằm trong backlog. Bản save trên cloud chưa được kiểm save_version (TODO cho @Rawisl ở systems/sync/sync_service.gd).
 
 ##### W11-MH3
 - Người: Mạnh
@@ -1357,12 +1373,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH9
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Rơi vũ khí từ boss wave 5/10/15/20/25 (RNG riêng hash(run_seed,'weapon',wave), không trùng, cộng tự động ở SUMMARY cùng điều kiện BRW-07), weapon_gained, summary_data.weapon_gained
 - Nghiệm thu: WP1 đạt: wave 5 nhận 1 cây, wave 25 đủ 5, boss wave 30 không rơi; thua đè thắng thì không nhận
 - Tệp liên quan: systems/wave/wave_manager.gd (_end_combat_to_summary)
 - ID SRS: WPN-11, BRW-09, EVB-42
 - Cần xong trước: W9-NG6, W10-MH3
+- Ghi chú: WeaponDrop (systems/reward/weapon_drop.gd) chọn một vũ khí chưa sở hữu từ GameConfig.boss_drop_weapons bằng seed riêng theo từng run và wave. WaveManager cộng vũ khí ở bước SUMMARY, sau bước kiểm thua, nên wave thua không nhận gì; summary có khóa weapon_gained (rỗng khi không rơi) và RunState.grant_weapon giờ phát weapon_gained. Boss chết khi trạng thái wave là HAZARD_TRIAL không cho gì. WaveManager phát wave_summary_ready sau state_changed(SUMMARY) để SummaryPanel không xóa mất summary vừa nhận. TODO cho @Ender-Via ở systems/wave/wave_manager.gd và systems/run/run_state.gd: phía wave Hazard Trial phải giữ trạng thái đó suốt lúc phòng mở, và run_bosses_defeated vẫn đếm boss trong phòng. Runner tests/test_weapon_drop_runner.tscn.
 
 ##### W11-MH10
 - Người: Mạnh

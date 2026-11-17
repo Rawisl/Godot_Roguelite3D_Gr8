@@ -162,7 +162,7 @@ func run_snapshot() -> Dictionary:
 	var rs := _get_run_state()
 	if rs == null or not is_instance_valid(rs):
 		return {}
-	var snapshot := rs.build_summary(&"ABANDONED", &"SURVIVED" if rs.victory_reached else &"DEFEAT")
+	var snapshot := rs.build_summary(&"ABANDONED", rs.get_run_result())
 	snapshot["owned_weapons"] = rs.owned_weapons.duplicate()
 	return snapshot
 

@@ -489,6 +489,10 @@ dialog.save_blocked.title,Chưa lưu được
 dialog.save_blocked.line1,Dữ liệu lưu trên máy đang bị khóa ghi
 dialog.save_blocked.line2,Game vẫn chơi bình thường nhưng tiến trình mới chưa được ghi
 dialog.save_blocked.note,(Save được tạo bởi bản game mới hơn hoặc không đọc được nên được giữ nguyên)
+dialog.save_too_new.title,Bản lưu từ phiên bản game mới hơn
+dialog.save_too_new.line1,Hãy cập nhật game để chơi tiếp tiến trình này
+dialog.save_too_new.line2,Game đang chạy với tiến trình mới và chưa ghi gì
+dialog.save_too_new.note,"(Bản lưu được giữ nguyên, không bị ghi đè)"
 tutorial.title,Hướng dẫn
 tutorial.step,Bước {n}/{total}
 tutorial.remind,(Nhắc lại)

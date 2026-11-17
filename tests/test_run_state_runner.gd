@@ -281,7 +281,7 @@ func test_abandon_run_flow() -> void:
 
 	assert_true(result["end_type"] == &"ABANDONED", "end_run emits ABANDONED end_type")
 	assert_true(result["summary"].get("end_type") == &"ABANDONED", "Summary contains ABANDONED end_type")
-	assert_true(result["summary"].get("run_result") == &"ABANDONED", "Summary contains ABANDONED run_result")
+	assert_true(result["summary"].get("run_result") == &"DEFEAT", "Abandoning before the victory wave is a DEFEAT run_result")
 
 	EventBus.run_ended.disconnect(callback)
 	remove_child(rs)
