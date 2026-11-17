@@ -384,7 +384,7 @@ func test_bulwark_stomp_no_friendly_fire() -> void:
 	add_child(bulwark)
 
 	var ally_grunt := GRUNT_SCENE.instantiate() as Enemy
-	ally_grunt.position = Vector3(1.0, 0.0, 0.0)
+	ally_grunt.position = bulwark.get_stomp_center() + Vector3(1.0, 0.0, 0.0)
 	add_child(ally_grunt)
 
 	var initial_hp: int = ally_grunt.health.hp
@@ -403,7 +403,7 @@ func test_bulwark_stomp_commander_interaction() -> void:
 	add_child(bulwark)
 
 	var cmd_mock := MockCommander.new()
-	cmd_mock.position = Vector3(1.5, 0.0, 0.0)
+	cmd_mock.position = bulwark.get_stomp_center() + Vector3(1.5, 0.0, 0.0)  # 1.5 m from where the mace lands
 	add_child(cmd_mock)
 
 	bulwark.execute_stomp()
@@ -432,7 +432,7 @@ func test_bulwark_stomp_dodge_evasion() -> void:
 	bulwark.data = boss_data
 
 	var cmd_mock := MockCommander.new()
-	cmd_mock.position = Vector3(1.5, 0.0, 0.0)
+	cmd_mock.position = bulwark.get_stomp_center() + Vector3(1.5, 0.0, 0.0)  # 1.5 m from where the mace lands
 	cmd_mock.is_dodging = true
 	add_child(cmd_mock)
 
@@ -452,7 +452,7 @@ func test_bulwark_stomp_deploy_immunity() -> void:
 	add_child(bulwark)
 
 	var cmd_mock := MockCommander.new()
-	cmd_mock.position = Vector3(1.5, 0.0, 0.0)
+	cmd_mock.position = bulwark.get_stomp_center() + Vector3(1.5, 0.0, 0.0)  # 1.5 m from where the mace lands
 	cmd_mock.is_deploying = true
 	add_child(cmd_mock)
 
