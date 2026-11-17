@@ -1314,10 +1314,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH1
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Khôi phục run gián đoạn (3.12.4, PRS-05, FLOW-03)
 - Nghiệm thu: Mất điện giữa wave 7 chốt ABANDONED theo SUMMARY wave 6
-- Cần xong trước: W10-MH1, W8-MH2
+- Cần xong trước: W10-MH1, W10-MH2
+- Ghi chú: Boot chốt run còn dở một lần ngay trước MainMenu qua SaveManager.recover_interrupted_run(): danh vọng tính từ SUMMARY gần nhất, không tính buffer của wave dở; cập nhật wave tốt nhất; tắt cờ và ghi save; rồi run_recovered hiện hộp thoại. Không phát run_ended nên điểm không được nộp (W11-MH6 kiểm được đầu-cuối). Chưa trừ buff vì game chưa có buff.
 
 ##### W11-MH2
 - Người: Mạnh
