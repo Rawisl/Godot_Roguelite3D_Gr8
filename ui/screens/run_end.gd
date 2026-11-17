@@ -56,7 +56,6 @@ func show_summary(end_type: StringName, summary: Dictionary, balance: int) -> vo
 			{"cause": tr(StringName("run_end.type." + String(end_type).to_lower()))})
 	_victory_badge.visible = survived
 	_victory_badge.text = UiFormat.tr_fmt(&"run_end.badge.victory", {"wave": GameConfig.victory_wave})
-	# TODO(Ender-Via): add new_record (bool) to the run end summary, true when waves_cleared beats the saved best for this start wave.
 	_record_badge.visible = bool(summary.get("new_record", false))
 
 	_set_row(_waves, summary.get("waves_cleared"), &"run_end.row.waves", _plain)

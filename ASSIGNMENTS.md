@@ -768,7 +768,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT1
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: RunLoading 8 bước (RUN-01, APL-01..04) trên RunState có sẵn; áp meta; gọi bước đặt trụ có sẵn hoặc tutorial (A: W10-MH10)
 - Nghiệm thu: RunLoading < 5 s, start_wave = 1, gold 0
 - Tệp liên quan: ui/screens/run_loading.gd, systems/run/
@@ -776,16 +776,18 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - ID SRS: 3.2.1
 - Cần xong trước: W8B-KT1, W8-KT1
 
+- Ghi chú bàn giao: RunLoading builds the run config with `RunLoader.build_config` (meta shop levels from the save, a new non-zero seed), loads main.tscn on a thread while the bar fills, and hands the config over; RunState takes it in `_enter_tree`, so the wave manager and gold start from it. Before the first PREP RunState puts the config on the Fortress (max HP, full), the commander (meta HP as a `meta` StatBlock add, full) and Emergency repair (heal bonus), then writes the run flag. WaveManager reads `run_seed` and the meta gold bonus from RunState. Starter towers: RunState calls `BuildService.place_starter_towers()` when start_wave = 1 and tutorial_done; Mạnh (@kiezroth) adds that method in W10-MH10 (TODO in run_state.gd). The commander is still spawned by CommanderSpawner. Run scene reached in about 3 s headless. Runner `tests/test_run_lifecycle_runner.tscn`.
 ##### W10-KT2
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kết thúc Run END-01..06, dữ liệu RunEnd (Cấp Chỉ huy, run_commander_kills, run_elapsed theo RUN-02, run_seed, cờ lượt khôi phục cho LBD-02, LBD-05); thêm run_result DEFEAT/SURVIVED tách khỏi end_type
 - Nghiệm thu: Thua cùng frame ghi FORTRESS_DESTROYED xử lý một lần; run_elapsed chỉ tính COMBAT và BOSS_COMBAT; RunEnd có run_result; GameState.abandon_run và quit_from_run (đang là TODO) đi qua RunState và phát run_ended
 - Tệp liên quan: systems/run/, autoload/game_state.gd (abandon_run, quit_from_run), ui/screens/run_end.gd
 - ID SRS: END-01..06, RUN-02
 - Cần xong trước: W8-MH3, W8B-KT1
 
+- Ghi chú bàn giao: run_result is DEFEAT or SURVIVED only (SURVIVED once the victory wave was cleared, whatever the end type); `RunState.get_run_result()` is also used by the pause snapshot. The summary adds `new_record` (against best_by_start of the run's start wave, read before the save adds the run) and `recovered` (always false from RunState; the leaderboard already skips recovered runs). Same-frame losses, run_elapsed in COMBAT and BOSS_COMBAT only, and abandon/quit through RunState were already on main and are now covered by the runner. damage_by_tower_type and unlocked_starts stay TODO on the RunEnd screen. Khang (@WhoKeng): small change in `game_state.gd` (run_snapshot) and the new_record TODO removed from `run_end.gd`.
 ##### W10-KT3
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
