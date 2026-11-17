@@ -5,6 +5,7 @@ extends Node
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
 # TODO(Ender-Via): when RunLoading builds the RunConfig, call init_from_config() and then start_run() before the first PREP; start_run() records the run flag and announces the new run once.
+# TODO(Ender-Via): when the Hazard Trial wave side lands, skip run_bosses_defeated in _on_boss_defeated for a boss that dies in the room.
 
 ## The base sword: owned and equipped at the start of every run.
 const BASE_WEAPON := &"sword_base"
@@ -162,11 +163,12 @@ func init_from_config(config: RunConfig) -> void:
 	equipped_weapon = BASE_WEAPON
 
 
-## Adds a weapon to the run. False when the id is empty or the weapon is already owned.
+## Adds a weapon to the run and sends weapon_gained. False (and no signal) when the id is empty or the weapon is already owned.
 func grant_weapon(id: StringName) -> bool:
 	if id == &"" or owned_weapons.has(id):
 		return false
 	owned_weapons.append(id)
+	EventBus.weapon_gained.emit(id)
 	return true
 
 
