@@ -4,14 +4,23 @@ extends Node
 ## Wave FSM (PREP - COMBAT - SUMMARY) and Spawner.
 ## Supports queue-based spawning, spawn_zone placement, spawn_grace,
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
-# TODO(Ender-Via): when meta progression lands, return gold_pct_meta + gold_pct_buff from _gold_pct_total(); it feeds both the wave gold and the boss gold.
-# TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
 # TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
 # TODO(Ender-Via): when the Hazard Trial room opens, keep wave_state at HAZARD_TRIAL until it closes; _on_boss_defeated skips a boss that dies then (no prestige, repair charge or weapon), so the room must still pay that boss's boss_gold and boss XP itself, added to the room gold paid out when the hero leaves.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
-@export var run_seed: int = 0
+## The run seed of RunState, so the waves of a run follow its seed. The export is only used
+## when there is no RunState (test scenes).
+@export var run_seed: int = 0:
+	get:
+		var rs := _get_run_state()
+		return rs.run_seed if rs != null else _fallback_run_seed
+	set(value):
+		_fallback_run_seed = value
+		var rs := _get_run_state()
+		if rs != null:
+			rs.run_seed = value
+var _fallback_run_seed: int = 0
 @export var grunt_scene: PackedScene = preload("res://entities/enemy/grunt.tscn")
 @export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
 @export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
@@ -185,9 +194,10 @@ func _boss_reward_mult() -> float:
 	return GameConfig.enrage_reward_mult if _boss_enraged_this_wave else 1.0
 
 
-## Gold bonus percent applied to wave gold and boss gold.
+## Gold bonus percent applied to wave gold and boss gold: the meta shop upgrade of this run.
 func _gold_pct_total() -> float:
-	return 0.0
+	var rs := _get_run_state()
+	return rs.gold_pct_meta if rs != null else 0.0
 
 
 ## Boss gold paid at the summary step and shown when the boss dies: table gold, Enrage cut, gold bonus, rounded down once.
