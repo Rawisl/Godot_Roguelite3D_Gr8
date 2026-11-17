@@ -1062,10 +1062,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KM3
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2.5 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FBK-08 tower bị phá (khói, mảnh vỡ, đống đổ nát) [dời từ tuần 13]
 - Nghiệm thu: Hiện đúng khi vào RUINED
 - Cần xong trước: W8-KM4
+- Ghi chú bàn giao: Already delivered in #106 and #107. `art/vfx/destroy_fx_manager.gd` (in `levels/corridor/level.tscn`) follows `EventBus.tower_destroyed`, which `Slot.ruin()` sends when the slot turns RUINED: the tower shrinks, swells and pops into smoke and debris (`destroy_burst.tscn`), then the rubble drops in. A drained heal station goes through the same signal, so it gets the same effect. Runs on pausable real time, follows x2/x3 for the particles. Verified by `tests/test_destroy_fx.tscn` (20 checks).
 
 ##### W10-KM8
 - Người: Kim
