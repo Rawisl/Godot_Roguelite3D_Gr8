@@ -768,7 +768,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT1
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: RunLoading 8 bước (RUN-01, APL-01..04) trên RunState có sẵn; áp meta; gọi bước đặt trụ có sẵn hoặc tutorial (A: W10-MH10)
 - Nghiệm thu: RunLoading < 5 s, start_wave = 1, gold 0
 - Tệp liên quan: ui/screens/run_loading.gd, systems/run/
@@ -776,16 +776,18 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - ID SRS: 3.2.1
 - Cần xong trước: W8B-KT1, W8-KT1
 
+- Ghi chú bàn giao: RunLoading builds the run config with `RunLoader.build_config` (meta shop levels from the save, a new non-zero seed), loads main.tscn on a thread while the bar fills, and hands the config over; RunState takes it in `_enter_tree`, so the wave manager and gold start from it. Before the first PREP RunState puts the config on the Fortress (max HP, full), the commander (meta HP as a `meta` StatBlock add, full) and Emergency repair (heal bonus), then writes the run flag. WaveManager reads `run_seed` and the meta gold bonus from RunState. Starter towers: RunState calls `BuildService.place_starter_towers()` when start_wave = 1 and tutorial_done; Mạnh (@kiezroth) adds that method in W10-MH10 (TODO in run_state.gd). The commander is still spawned by CommanderSpawner. Run scene reached in about 3 s headless. Runner `tests/test_run_lifecycle_runner.tscn`.
 ##### W10-KT2
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kết thúc Run END-01..06, dữ liệu RunEnd (Cấp Chỉ huy, run_commander_kills, run_elapsed theo RUN-02, run_seed, cờ lượt khôi phục cho LBD-02, LBD-05); thêm run_result DEFEAT/SURVIVED tách khỏi end_type
 - Nghiệm thu: Thua cùng frame ghi FORTRESS_DESTROYED xử lý một lần; run_elapsed chỉ tính COMBAT và BOSS_COMBAT; RunEnd có run_result; GameState.abandon_run và quit_from_run (đang là TODO) đi qua RunState và phát run_ended
 - Tệp liên quan: systems/run/, autoload/game_state.gd (abandon_run, quit_from_run), ui/screens/run_end.gd
 - ID SRS: END-01..06, RUN-02
 - Cần xong trước: W8-MH3, W8B-KT1
 
+- Ghi chú bàn giao: run_result is DEFEAT or SURVIVED only (SURVIVED once the victory wave was cleared, whatever the end type); `RunState.get_run_result()` is also used by the pause snapshot. The summary adds `new_record` (against best_by_start of the run's start wave, read before the save adds the run) and `recovered` (always false from RunState; the leaderboard already skips recovered runs). Same-frame losses, run_elapsed in COMBAT and BOSS_COMBAT only, and abandon/quit through RunState were already on main and are now covered by the runner. damage_by_tower_type and unlocked_starts stay TODO on the RunEnd screen. Khang (@WhoKeng): small change in `game_state.gd` (run_snapshot) and the new_record TODO removed from `run_end.gd`.
 ##### W10-KT3
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
@@ -1066,18 +1068,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KM1
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13]
 - Nghiệm thu: Không hit stop toàn cục
 - Cần xong trước: W7-KM2
+- Ghi chú bàn giao: `art/vfx/hit_reaction_manager.gd` (HitReactionManager, in `levels/corridor/level.tscn`) listens to `HealthComponent.damaged` of enemies and the commander: a white overlay (`art/materials/hit_flash.tres`) for 0.1 s, only that entity's AnimationPlayer frozen for 0.05 s, and `enemy_hit` / `commander_hit` through `EventBus.sfx_requested`. No global hit stop. Setting `reduce_flash` turns the flash off; at most 3 flashes a second per entity in any case. Damage over time ticks are skipped. A hover outline is put back after the flash. Timers on pausable real time. Verified by `tests/test_hit_reaction.tscn` (19 checks).
 
 ##### W13-KM3
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2.5 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FBK-08 tower bị phá (khói, mảnh vỡ, đống đổ nát) [dời từ tuần 13]
 - Nghiệm thu: Hiện đúng khi vào RUINED
 - Cần xong trước: W8-KM4
+- Ghi chú bàn giao: Already delivered in #106 and #107. `art/vfx/destroy_fx_manager.gd` (in `levels/corridor/level.tscn`) follows `EventBus.tower_destroyed`, which `Slot.ruin()` sends when the slot turns RUINED: the tower shrinks, swells and pops into smoke and debris (`destroy_burst.tscn`), then the rubble drops in. A drained heal station goes through the same signal, so it gets the same effect. Runs on pausable real time, follows x2/x3 for the particles. Verified by `tests/test_destroy_fx.tscn` (20 checks).
 
 ##### W10-KM8
 - Người: Kim
@@ -1326,10 +1330,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH1
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Khôi phục run gián đoạn (3.12.4, PRS-05, FLOW-03)
 - Nghiệm thu: Mất điện giữa wave 7 chốt ABANDONED theo SUMMARY wave 6
-- Cần xong trước: W10-MH1, W8-MH2
+- Cần xong trước: W10-MH1, W10-MH2
+- Ghi chú: Boot chốt run còn dở một lần ngay trước MainMenu qua SaveManager.recover_interrupted_run(): danh vọng tính từ SUMMARY gần nhất, không tính buffer của wave dở; cập nhật wave tốt nhất; tắt cờ và ghi save; rồi run_recovered hiện hộp thoại. Không phát run_ended nên điểm không được nộp (W11-MH6 kiểm được đầu-cuối). Chưa trừ buff vì game chưa có buff.
 
 ##### W11-MH2
 - Người: Mạnh

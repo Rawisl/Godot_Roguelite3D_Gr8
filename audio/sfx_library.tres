@@ -9,8 +9,8 @@
 [ext_resource type="AudioStream" uid="uid://dtrylat6t7xml" path="res://audio/sfx/impactWood_light_001.ogg" id="7_exlo3"]
 [ext_resource type="Script" uid="uid://djjstbfgh1hvx" path="res://audio/sfx_library.gd" id="8_vgvlt"]
 [ext_resource type="AudioStream" uid="uid://dtr4tjn8rmn6i" path="res://audio/sfx/565954__algoto__monster-cry.wav" id="9_enrage"]
-[ext_resource type="AudioStream" path="res://audio/sfx/maximize_006.ogg" id="10_heal"]
-[ext_resource type="AudioStream" path="res://audio/sfx/minimize_006.ogg" id="11_drain"]
+[ext_resource type="AudioStream" uid="uid://bc40s30vcw2g1" path="res://audio/sfx/maximize_006.ogg" id="10_heal"]
+[ext_resource type="AudioStream" uid="uid://bkeeyed1c2cq3" path="res://audio/sfx/minimize_006.ogg" id="11_drain"]
 
 [sub_resource type="Resource" id="Resource_c0njm"]
 script = ExtResource("1_hx12n")
