@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bv8k2p1m0x4y5"]
+
+[ext_resource type="Script" path="res://tests/test_bulwark_attack_sequence_runner.gd" id="1_test"]
+
+[node name="TestBulwarkAttackSequenceRunner" type="Node"]
+script = ExtResource("1_test")
