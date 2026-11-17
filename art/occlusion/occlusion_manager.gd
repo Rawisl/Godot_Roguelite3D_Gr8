@@ -19,6 +19,8 @@ const SHADOW_PROXY_META := &"occlusion_shadow_proxy"
 ## Quân địch trong bán kính này quanh chỉ huy cũng được xét.
 @export var enemy_radius := 3.0
 @export var scan_interval := 0.1
+## Off when the player picks no see-through in Settings: whatever is faded comes back.
+@export var enabled := true
 
 ## Vật đang hover. Hệ thống chọn mục tiêu gán qua set_hover_target().
 var _hover_target: Node3D
@@ -48,6 +50,8 @@ func _process(delta: float) -> void:
 
 func _scan() -> void:
 	_occluding.clear()
+	if not enabled:
+		return
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
 		return

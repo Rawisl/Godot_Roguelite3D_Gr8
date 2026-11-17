@@ -460,6 +460,20 @@ settings.gfx.fps_none,Không giới hạn
 settings.gfx.keep_question,Giữ thay đổi? Tự quay lại sau {seconds} giây
 settings.gfx.keep,Giữ
 settings.gfx.revert,Quay lại
+settings.gfx.preset,Chất lượng đồ họa:
+settings.gfx.preset_low,Thấp
+settings.gfx.preset_medium,Trung bình
+settings.gfx.preset_high,Cao
+settings.gfx.preset_custom,Tùy chỉnh
+settings.gfx.shadows,Chất lượng bóng:
+settings.gfx.shadow_off,Tắt
+settings.gfx.shadow_low,Thấp
+settings.gfx.shadow_high,Cao
+settings.gfx.particles,Giới hạn hạt:
+settings.gfx.particles_value,{value} hạt
+settings.gfx.see_through,Kiểu xuyên thấu:
+settings.gfx.see_through_dither,Làm mờ vật che
+settings.gfx.see_through_off,Tắt
 settings.acc.hold_toggle,Phím giữ thành bấm bật/tắt
 settings.acc.hold_toggle_tip,"Bật: bấm E một lần để bắt đầu hồi lực, bấm lại để dừng, không cần giữ phím."
 sync.detail.not_uploaded,"Tài khoản chưa có dữ liệu, tiến trình trên máy này chưa được tải lên"

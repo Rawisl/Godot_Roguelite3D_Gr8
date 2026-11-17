@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d3r5tekbv27oj"]
+
+[ext_resource type="Script" uid="uid://bose7tg8wo658" path="res://tests/test_quality_settings.gd" id="1_test"]
+
+[node name="TestQualitySettings" type="Node3D" unique_id=1932913720]
+script = ExtResource("1_test")

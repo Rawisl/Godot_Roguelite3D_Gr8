@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://bi0ehmxyhpdpo" path="res://levels/corridor/ground_grid.gd" id="15_ggrid"]
 [ext_resource type="Script" uid="uid://bq062ooam7kqg" path="res://art/vfx/aura_fx_manager.gd" id="16_aurafx"]
 [ext_resource type="Script" uid="uid://7b1ybgbmvkdo" path="res://art/vfx/destroy_fx_manager.gd" id="17_destroyfx"]
+[ext_resource type="Script" uid="uid://ddigwj24iuhwi" path="res://art/quality/quality_applier.gd" id="17_quality"]
 [ext_resource type="Script" uid="uid://bugsw0c7vnk0x" path="res://art/vfx/hit_reaction_manager.gd" id="17_hitreact"]
 [ext_resource type="Script" uid="uid://b1g5qc0fjeal3" path="res://art/vfx/telegraph_fx_manager.gd" id="18_telegraphfx"]
 [ext_resource type="Script" uid="uid://bd6nitpisuc5m" path="res://art/vfx/heal_fx_manager.gd" id="19_healfx"]
@@ -262,6 +263,9 @@ script = ExtResource("16_aurafx")
 
 [node name="DestroyFxManager" type="Node" parent="." unique_id=1626181688]
 script = ExtResource("17_destroyfx")
+
+[node name="QualityApplier" type="Node" parent="." unique_id=1198169652]
+script = ExtResource("17_quality")
 
 [node name="HitReactionManager" type="Node" parent="." unique_id=1324784986]
 script = ExtResource("17_hitreact")
