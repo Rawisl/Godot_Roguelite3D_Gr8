@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ba2so128hft3c"]
+
+[ext_resource type="Script" uid="uid://ctmbjgdpbi4gl" path="res://tests/test_run_recovery_boot_runner.gd" id="1_test"]
+
+[node name="TestRunRecoveryBootRunner" type="Node" unique_id=397563746]
+script = ExtResource("1_test")
