@@ -32,6 +32,12 @@ func _ready() -> void:
 	test_stomp_punishes_kiting()
 	test_chains_never_kill_full_commander()
 	test_stomp_lands_in_front()
+	test_brain_scores()
+	test_t_away()
+	test_push_on_when_circled()
+	test_hazard_turns_faster()
+	test_structure_turn_first()
+	test_no_structures_keeps_fighting()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -220,8 +226,9 @@ func test_ai_picks_combo() -> void:
 	assert_true(bulwark.current_attack_id == Bulwark.TRIPLE_STOMP_ID, "The pick plays the triple stomp")
 	assert_true(bulwark.triple_stomp_cooldown_left > 0.0, "Triple stomp goes on cooldown")
 	bulwark.stop_attack_sequence()
-	assert_true(bulwark.choose_attack() == Bulwark.MOVE_NORMAL, "Behind while the stomp cools down: normal attack")
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_FACE, "Behind while the stomp cools down: turn to face, no swing at air")
 	bulwark._process(bulwark.triple_stomp_cooldown_left + 0.01)
+	bulwark.t_away = 0.0
 	assert_true(bulwark.choose_attack() == Bulwark.MOVE_TRIPLE, "Cooldown runs out on game time")
 
 	cmd.global_position = Vector3(0.0, 0.0, 2.0)
@@ -248,12 +255,17 @@ func test_ai_picks_combo() -> void:
 		picks_b.append(bulwark.choose_attack())
 	assert_true(picks_a == picks_b, "Same seed, same choices")
 
-	cmd.global_position = Vector3(0.0, 0.0, -2.0)
+	cmd.global_position = Vector3(0.0, 0.0, -20.0)
 	var fortress := MockFortress.new()
 	add_child(fortress)
-	fortress.global_position = Vector3(0.0, 0.0, 2.0)
+	fortress.global_position = Vector3(0.0, 0.0, 4.0)
 	bulwark.current_target = fortress
-	assert_true(bulwark.choose_attack() == Bulwark.MOVE_STOMP, "Fortress gets the stomp")
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_PUSH, "Commander far away: the boss keeps on at the structures")
+	bulwark.change_state(Enums.EnemyState.ADVANCE)
+	bulwark.current_target = fortress
+	bulwark.change_state(Enums.EnemyState.ATTACK)
+	assert_true(bulwark.current_target == fortress and bulwark.last_chosen_move == Bulwark.MOVE_STOMP, "Fortress gets the stomp")
+	bulwark._locked_stomp_center = Vector3.INF
 	fortress.free()
 	cmd.free()
 	bulwark.free()
@@ -305,6 +317,7 @@ func test_turn_rate_limit() -> void:
 	bulwark.spawn_wave = 5
 	cmd = _make_commander(Vector3(0.0, 0.0, 5.0))
 	bulwark.current_target = cmd
+	bulwark.provoked_by_player = true  # the commander just hit it, so the boss minds it at 5 m
 	bulwark.change_state(Enums.EnemyState.ATTACK)
 	assert_true(bulwark.last_chosen_move == Bulwark.MOVE_STOMP, "Commander 5 m ahead: the stomp")
 	var steps := 0
@@ -513,11 +526,13 @@ func test_stomp_punishes_kiting() -> void:
 	assert_true(bulwark.choose_attack() == Bulwark.MOVE_NORMAL, "Front, 2 m: the slash")
 
 	cmd.global_position = Vector3(0.0, 0.0, 5.0)
+	assert_true(not BulwarkBrain.is_commander_action(bulwark.choose_attack()), "Front, 5 m, has not hit the boss: the boss does not mind it")
+	bulwark.provoked_by_player = true  # the commander hit the boss, then backed off
 	assert_true(bulwark.choose_attack() == Bulwark.MOVE_STOMP, "Front, 5 m (in the ring, out of slash reach): the stomp")
 	cmd.global_position = Vector3(0.0, 0.0, 7.5)
-	assert_true(not bulwark._can_stomp_commander_from_range(), "Front, 7.5 m (past the ring): no stomp")
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_CHASE, "Front, 7.5 m (past the ring): chase, no stomp")
 	cmd.global_position = Vector3(0.0, 0.0, -5.0)
-	assert_true(not bulwark._can_stomp_commander_from_range(), "Behind, 5 m: no stomp (its ring lands in front)")
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_FACE, "Behind, 5 m: turn, no stomp (its ring lands in front)")
 
 	# Chasing: walking into the ring starts the stomp from range.
 	cmd.global_position = Vector3(0.0, 0.0, 5.0)
@@ -527,9 +542,10 @@ func test_stomp_punishes_kiting() -> void:
 			"Chasing a commander 5 m ahead: the boss stops and stomps")
 	assert_true(is_equal_approx(bulwark.commander_stomp_cooldown_left, boss_data.commander_stomp_cooldown),
 			"Stomping the commander starts its cooldown")
-	assert_true(not bulwark._can_stomp_commander_from_range(), "On cooldown: no second stomp from range")
-	bulwark._process(boss_data.commander_stomp_cooldown + 0.1)
-	assert_true(bulwark._can_stomp_commander_from_range(), "Cooldown over: the stomp from range is back")
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_CHASE, "On cooldown: no second stomp from range, the boss chases")
+	bulwark.commander_stomp_cooldown_left = 0.0
+	bulwark.t_away = 0.0
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_STOMP, "Cooldown over: the stomp from range is back")
 	cmd.free()
 	bulwark.free()
 
@@ -555,7 +571,7 @@ func test_moves_unlock_by_appearance() -> void:
 	bulwark.spawn_wave = 5
 	assert_true(bulwark.get_appearance() == 1, "Wave 5 is the first appearance")
 	cmd.global_position = behind
-	assert_true(bulwark.choose_attack() == Bulwark.MOVE_STOMP, "Appearance 1, behind: single stomp")
+	assert_true(bulwark.choose_attack() == Bulwark.MOVE_FACE, "Appearance 1, behind: no triple stomp yet, so it turns")
 	assert_true(not saw_combo.call(), "Appearance 1, front at low HP: never the combo")
 
 	bulwark.spawn_wave = 10
@@ -643,6 +659,275 @@ func test_stomp_lands_in_front() -> void:
 	bulwark.free()
 
 
+func _situation() -> BulwarkBrain.Situation:
+	var s := BulwarkBrain.Situation.new()
+	s.engaged = true
+	s.in_front = true
+	s.in_slash = true
+	s.in_ring = false
+	s.in_triple_reach = true
+	s.has_objective = true
+	s.combo_unlocked = true
+	s.triple_unlocked = true
+	s.triple_ready = true
+	s.commander_stomp_ready = true
+	return s
+
+
+func _behind(s: BulwarkBrain.Situation) -> BulwarkBrain.Situation:
+	s.in_front = false
+	s.in_slash = false
+	return s
+
+
+func test_brain_scores() -> void:
+	print("\n[GROUP 16] Utility scores pick the expected action")
+	var d := BossData.new()
+	var low := func() -> float: return 0.0
+	var high := func() -> float: return 0.99
+	var s := _situation()
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.NORMAL, "Front, in reach, full HP: normal attack")
+	s.hp_fraction = 0.4
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.NORMAL and BulwarkBrain.decide(s, d, high) == BulwarkBrain.COMBO,
+			"Below half HP the normal attack and the combo tie, the roll picks")
+	s.combo_unlocked = false
+	assert_true(BulwarkBrain.decide(s, d, high) == BulwarkBrain.NORMAL, "Combo locked: always the normal attack")
+
+	s = _behind(_situation())
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.TRIPLE, "Behind, triple stomp ready: triple stomp")
+	s.triple_ready = false
+	s.t_away = 1.0
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.FACE, "Behind, triple stomp cooling down, 1 s away: turn")
+	s.t_away = 5.0
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.PUSH, "Behind for 5 s: push on to the structures")
+	s.triple_ready = true
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.PUSH, "Behind for 5 s: pushing on beats the triple stomp")
+	s.has_objective = false
+	s.t_away = 30.0
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.TRIPLE, "Hazard Trial (nothing to push on to): never pushes")
+
+	s = _situation()
+	s.engaged = false
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.PUSH, "Commander not minded: keep on at the structures")
+	s.has_objective = false
+	assert_true(BulwarkBrain.decide(s, d, low) == &"", "Nothing to fight and nothing to push on to: no action")
+
+	s = _situation()
+	s.push_committed = true
+	s.pushing = true
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.PUSH, "Committed to pushing on: ignores a commander in reach")
+	s.push_committed = false
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.NORMAL, "After the commitment, a commander in front and in reach pulls it back")
+
+	s = _situation()
+	s.in_slash = false
+	s.in_ring = true
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.STOMP, "Front, out of slash reach, in the ring: the stomp")
+	s.commander_stomp_ready = false
+	assert_true(BulwarkBrain.decide(s, d, low) == BulwarkBrain.CHASE, "Stomp cooling down: chase")
+
+	var scores := BulwarkBrain.score_all(_behind(_situation()), d)
+	assert_true(is_equal_approx(float(scores[BulwarkBrain.PUSH]), d.weight_push * d.push_base),
+			"Push starts at its base score while the commander has just left reach")
+
+
+func test_t_away() -> void:
+	print("\n[GROUP 17] Time out of reach")
+	var bulwark := _make_bulwark()
+	var cmd := _make_commander(Vector3(0.0, 0.0, -2.0))
+	_run_process(bulwark, 1.0)
+	assert_true(absf(bulwark.t_away - 1.0) < 0.05, "Commander behind: t_away counts up (%.2f s)" % bulwark.t_away)
+	cmd.global_position = Vector3(0.0, 0.0, 2.0)
+	_run_process(bulwark, 0.5)
+	assert_true(bulwark.t_away > 0.9, "Commander passes through the front for 0.5 s: t_away only pauses (%.2f s)" % bulwark.t_away)
+	_run_process(bulwark, 0.6)
+	assert_true(bulwark.t_away == 0.0, "Commander stays in reach for 1 s: t_away resets")
+	cmd.global_position = Vector3(0.0, 0.0, -2.0)
+	_run_process(bulwark, 1.0)
+	bulwark._on_commander_hit()
+	assert_true(bulwark.t_away == 0.0, "Landing a hit on the commander resets t_away")
+	cmd.global_position = Vector3(0.0, 0.0, -20.0)
+	_run_process(bulwark, 1.0)
+	assert_true(bulwark.t_away == 0.0, "Commander far away and not minded: t_away stays at 0")
+	bulwark._pushing = true  # marching on to the structures as usual
+	_run_process(bulwark, 3.0)
+	cmd.global_position = Vector3(0.0, 0.0, -2.0)
+	bulwark._process(STEP)
+	assert_true(bulwark.t_away < 0.05, "Marching on, then the commander walks up behind: t_away starts from 0")
+	bulwark._pushing = false
+	cmd.global_position = Vector3(0.0, 0.0, -20.0)
+
+	# Chasing the commander off the lane makes no lane progress; that is not being stuck.
+	cmd.global_position = Vector3(0.0, 0.0, 3.0)
+	bulwark.current_target = cmd
+	bulwark.change_state(Enums.EnemyState.CHASE)
+	for i in range(int(8.0 / STEP)):
+		bulwark._update_stuck_detection(STEP)
+	assert_true(bulwark._stuck_timer == 0.0 and bulwark._current_stuck_tier == 0, "Chasing the commander never counts as stuck")
+	cmd.free()
+	bulwark.free()
+
+
+## A commander circling the boss at full run speed, stopping now and then to swing at it.
+func _circle_commander(bulwark: Bulwark, cmd: MockCommander, seconds: float, on_step: Callable) -> void:
+	var radius := 2.5
+	var angle := 0.0
+	var t := 0.0
+	while t < seconds:
+		var cycle := fmod(t, 1.6)
+		if cycle < 1.0:
+			angle += 6.0 / radius * STEP
+		else:
+			bulwark.provoked_by_player = true
+			bulwark.provoked_timer = GameConfig.aggro_duration
+		cmd.global_position = Vector3(radius * sin(angle), 0.0, radius * cos(angle))
+		bulwark._update_state(STEP)
+		bulwark._process(STEP)
+		t += STEP
+		if not on_step.call(t):
+			return
+
+
+func test_push_on_when_circled() -> void:
+	print("\n[GROUP 18] A commander circling the boss gets it to push on to the structures")
+	var bulwark := _make_bulwark()
+	var boss_data := bulwark.data as BossData
+	bulwark.spawn_wave = 5
+	var fortress := MockFortress.new()
+	add_child(fortress)
+	fortress.global_position = Vector3(-30.0, 0.0, 0.0)
+	var cmd := _make_commander(Vector3(0.0, 0.0, 2.5))
+	bulwark.current_target = cmd
+	bulwark.change_state(Enums.EnemyState.CHASE)
+	var pushed_at := [-1.0]
+	_circle_commander(bulwark, cmd, 20.0, func(t: float) -> bool:
+		if bulwark.current_target == fortress:
+			pushed_at[0] = t
+			return false
+		return true)
+	print("  pushed on after %.1f s, commander took %d damage" % [pushed_at[0], cmd.damage_taken])
+	assert_true(pushed_at[0] > 0.0 and pushed_at[0] < 12.0, "Boss leaves the circling commander for the Fortress")
+	assert_true(bulwark.provoked_by_player == false, "Pushing on drops the commander's aggro")
+
+	var held := [true]
+	_circle_commander(bulwark, cmd, boss_data.push_commit_time - 0.2, func(_t: float) -> bool:
+		if bulwark.current_target != fortress:
+			held[0] = false
+		return true)
+	assert_true(held[0], "Hits from the commander do not pull the boss back during the commitment")
+	cmd.free()
+	fortress.free()
+	bulwark.free()
+
+
+func test_hazard_turns_faster() -> void:
+	print("\n[GROUP 19] Hazard Trial: no structures, a faster turn instead")
+	var bulwark := _make_bulwark()
+	var boss_data := bulwark.data as BossData
+	var base_rate := bulwark.get_turn_rate_rad()
+	bulwark.in_hazard_trial = true
+	assert_true(is_equal_approx(bulwark.get_turn_rate_rad(), base_rate * boss_data.hazard_turn_rate_mult),
+			"Hazard Trial boss turns %.0fx faster (%.0f deg/s)" % [boss_data.hazard_turn_rate_mult, rad_to_deg(bulwark.get_turn_rate_rad())])
+	bulwark.free()
+
+	for hazard in [false, true]:
+		bulwark = _make_bulwark()
+		bulwark.spawn_wave = 5
+		bulwark.in_hazard_trial = hazard
+		var cmd := _make_commander(Vector3(0.0, 0.0, 2.5))
+		bulwark.current_target = cmd
+		bulwark.change_state(Enums.EnemyState.CHASE)
+		var left := [false]
+		_circle_commander(bulwark, cmd, 20.0, func(_t: float) -> bool:
+			if bulwark.current_target != cmd:
+				left[0] = true
+			return true)
+		var label := "Hazard Trial" if hazard else "No structures on the map"
+		print("  %s: commander circling for 20 s took %d damage" % [label, cmd.damage_taken])
+		assert_true(not left[0], "%s: the boss stays on the commander" % label)
+		if hazard:
+			assert_true(cmd.damage_taken > 0, "Hazard Trial: the faster turn catches a circling commander")
+		cmd.free()
+		bulwark.free()
+
+
+func test_structure_turn_first() -> void:
+	print("\n[GROUP 20] A structure beside the boss: turn on the spot, then stomp it")
+	var bulwark := _make_bulwark()
+	var tower := MockTower.new()
+	add_child(tower)
+	tower.global_position = Vector3(3.0, 0.0, 0.0)  # 90 degrees off the boss's facing
+	bulwark.current_target = tower
+	bulwark.change_state(Enums.EnemyState.ATTACK)
+	assert_true(bulwark.last_chosen_move != Bulwark.MOVE_STOMP, "Ring would miss the tower: no stomp yet")
+	var moved := false
+	var t := 0.0
+	while t < 4.0 and tower.damage_taken == 0:
+		bulwark._update_state(STEP)
+		bulwark._process(STEP)
+		if bulwark.velocity.x != 0.0 or bulwark.velocity.z != 0.0:
+			moved = true
+		t += STEP
+	var facing := rad_to_deg(absf(angle_difference(bulwark.rotation.y, atan2(3.0, 0.0))))
+	print("  first stomp hit the tower after %.2f s, facing %.1f deg off" % [t, facing])
+	assert_true(tower.damage_taken > 0, "The first stomp lands on the tower")
+	assert_true(not moved, "The boss turns on the spot (it does not walk off its point)")
+	tower.free()
+	bulwark.free()
+
+	# At the Fortress the attack point is the melee point under the boss; it still turns to the wall.
+	bulwark = _make_bulwark()
+	var melee_point := Marker3D.new()
+	melee_point.add_to_group(&"boss_melee_point")
+	add_child(melee_point)
+	melee_point.global_position = Vector3.ZERO
+	var fortress := MockFortress.new()
+	add_child(fortress)
+	fortress.global_position = Vector3(-3.0, 0.0, 0.0)
+	var fortress_hit := [false]
+	bulwark.attack_hit.connect(func(_id: int, _s: StringName, targets: Array) -> void:
+		if targets.has(fortress):
+			fortress_hit[0] = true)
+	bulwark.current_target = fortress
+	bulwark.change_state(Enums.EnemyState.ATTACK)
+	t = 0.0
+	while t < 4.0 and not fortress_hit[0]:
+		bulwark._update_state(STEP)
+		bulwark._process(STEP)
+		t += STEP
+	print("  Fortress 90 deg off: first stomp hit it after %.2f s" % t)
+	assert_true(fortress_hit[0], "Fortress beside the boss at its melee point: turns, then the stomp hits the Fortress")
+	assert_true(bulwark.global_position.distance_to(melee_point.global_position) < 0.01, "The boss stays on its melee point")
+	fortress.free()
+	melee_point.free()
+	bulwark.free()
+
+
+func test_no_structures_keeps_fighting() -> void:
+	print("
+[GROUP 21] Nothing to push on to: the boss never gives up on the commander")
+	var bulwark := _make_bulwark()
+	var cmd := _make_commander(Vector3(0.0, 0.0, 6.0))
+	bulwark.current_target = cmd
+	assert_true(bulwark.choose_attack() == &"", "Commander 6 m away, not minded, no structures: no action")
+	bulwark.taunted_by_player = true  # the AI test arena keeps the boss on the commander this way
+	assert_true(BulwarkBrain.is_commander_action(bulwark.choose_attack()), "A taunt makes the boss mind the commander")
+	bulwark.taunted_by_player = false
+	bulwark.change_state(Enums.EnemyState.CHASE)
+	for i in range(30):
+		bulwark._update_state(STEP)
+		bulwark._process(STEP)
+	assert_true(bulwark.push_commit_left == 0.0, "No action does not count as leaving the commander")
+	bulwark.rotation.y = 0.0  # it turned while walking; face the commander again
+	cmd.global_position = Vector3(0.0, 0.0, 2.0)
+	bulwark.change_state(Enums.EnemyState.ADVANCE)
+	bulwark.current_target = cmd
+	bulwark.change_state(Enums.EnemyState.ATTACK)
+	assert_true(bulwark.last_chosen_move == Bulwark.MOVE_NORMAL, "Commander walks up in front: the boss swings")
+	cmd.free()
+	bulwark.free()
+
+
 class MockCommander extends Node3D:
 	var is_dodging: bool = false
 	var is_deploying: bool = false
@@ -657,6 +942,16 @@ class MockCommander extends Node3D:
 		damage_taken += info.amount
 		knockback_taken = info.knockback_force
 		last_type = info.damage_type
+
+
+class MockTower extends Node3D:
+	var damage_taken: int = 0
+
+	func _init() -> void:
+		add_to_group(&"tower")
+
+	func take_damage(info: DamageInfo) -> void:
+		damage_taken += info.amount
 
 
 class MockFortress extends Node3D:

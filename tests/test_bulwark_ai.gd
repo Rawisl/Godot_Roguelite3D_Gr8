@@ -7,7 +7,10 @@ extends Node3D
 ##   gone and the boss goes to phase 2 (EXPOSED), optionally through the real armor-break transition.
 ## - A stand-in commander you walk with WASD / arrows (Shift = run, Space = dodge roll, left click
 ##   on the floor = teleport). It never dies, so the AI can be watched for as long as needed.
-## - The boss always fights the commander (taunt is refreshed every frame, there is no Fortress).
+## - Without structures the boss always fights the commander (taunt is refreshed every frame).
+##   With "Towers + Fortress" on, three towers and a Fortress stand along the lane (-X) and the boss
+##   picks freely: it minds the commander within 4 m or after being hit (J/K), and leaves it to push
+##   on to the towers when the commander keeps out of reach. Structures take real stomp damage.
 ##   Every move the AI picks is logged and counted, every hit on the commander is logged.
 ## - The front cone the AI uses to choose between front / flank moves is drawn in cyan, the hitbox
 ##   of the step being wound up in yellow, a landed hit flashes red (white when it misses).
@@ -37,6 +40,16 @@ const QUICK_WAVES: Array[int] = [5, 10, 15, 20, 25, 30]
 const QUICK_HP: Array[int] = [100, 75, 50, 45, 30, 10]
 ## First step of every move the AI can pick, to count picks.
 const AI_FIRST_STEPS: Array[StringName] = [&"SLASH_1H", &"TRIPLE_STOMP_1", &"STOMP_WINDUP"]
+## Towers along the lane ahead of the boss (the boss advances toward -X), then the Fortress.
+const TOWER_SPOTS: Array[Vector3] = [Vector3(-6.0, 0.0, -10.0), Vector3(-12.0, 0.0, -5.0), Vector3(-18.0, 0.0, -10.0)]
+const TOWER_HP: int = 300
+const FORTRESS_POS := Vector3(-27.0, 0.0, -8.0)
+const FORTRESS_SIZE := Vector3(2.0, 5.0, 12.0)
+const FORTRESS_HP: int = 1500
+## Where the boss stands to stomp the Fortress: 1.8 m outside its wall.
+const MELEE_POINT_POS := Vector3(-24.2, 0.0, -8.0)
+const COLOR_TOWER := Color(0.45, 0.55, 0.8)
+const COLOR_FORTRESS := Color(0.75, 0.65, 0.45)
 
 var _bulwark: Bulwark = null
 var _commander: TestCommander = null
@@ -51,6 +64,9 @@ var _flashes: Array[Dictionary] = []
 var _log_lines: PackedStringArray = []
 var _move_counts: Dictionary = {}
 var _fight_time: float = 0.0
+var _structures: Array[Node3D] = []
+var _melee_point: Marker3D = null
+var _last_target: Node3D = null
 
 # UI
 var _wave_spin: SpinBox = null
@@ -66,6 +82,7 @@ var _commander_label: Label = null
 var _stats_label: Label = null
 var _log_label: Label = null
 var _pause_button: Button = null
+var _structures_check: CheckBox = null
 
 
 func _ready() -> void:
@@ -170,6 +187,7 @@ func _spawn_commander() -> void:
 
 func _spawn_boss() -> void:
 	_despawn_boss()
+	_build_structures()
 	var wave := int(_wave_spin.value)
 	_bulwark = BULWARK_SCENE.instantiate() as Bulwark
 	_bulwark.name = "Bulwark"
@@ -213,8 +231,63 @@ func _despawn_boss() -> void:
 func _start_fight() -> void:
 	_bulwark.spawn_grace = false
 	_bulwark.is_in_spawn_zone = false
+	_last_target = null
+	if _structures_on():
+		# The boss picks its own target: the commander or the next structure.
+		_bulwark.change_state(Enums.EnemyState.ADVANCE)
+		_bulwark._find_best_target()
+		return
 	_bulwark.set_target(_commander)
 	_bulwark.change_state(Enums.EnemyState.CHASE)
+
+
+func _structures_on() -> bool:
+	return _structures_check != null and _structures_check.button_pressed
+
+
+## Three towers along the lane and a Fortress at its end, at full HP. Cleared when the option is off.
+func _build_structures() -> void:
+	for node in _structures:
+		if is_instance_valid(node):
+			node.queue_free()
+	_structures.clear()
+	if _melee_point != null and is_instance_valid(_melee_point):
+		_melee_point.queue_free()
+	_melee_point = null
+	if not _structures_on():
+		return
+	for i in TOWER_SPOTS.size():
+		var tower := TestStructure.new()
+		tower.setup(&"tower", "Tower %d" % (i + 1), TOWER_HP, Vector3(2.0, 3.0, 2.0), COLOR_TOWER, true)
+		add_child(tower)
+		tower.global_position = TOWER_SPOTS[i]
+		tower.destroyed.connect(_on_structure_destroyed)
+		_structures.append(tower)
+	var fortress := TestStructure.new()
+	fortress.setup(&"fortress", "Fortress", FORTRESS_HP, FORTRESS_SIZE, COLOR_FORTRESS, false)
+	add_child(fortress)
+	fortress.global_position = FORTRESS_POS
+	fortress.destroyed.connect(_on_structure_destroyed)
+	_structures.append(fortress)
+	_melee_point = Marker3D.new()
+	_melee_point.name = "BossMeleePoint"
+	_melee_point.add_to_group(&"boss_melee_point")
+	add_child(_melee_point)
+	_melee_point.global_position = MELEE_POINT_POS
+
+
+func _on_structure_destroyed(structure: Node3D) -> void:
+	_log("%s destroyed" % structure.get("display_name"))
+	_structures.erase(structure)
+
+
+func _target_name(t: Node3D) -> String:
+	if t == null or not is_instance_valid(t):
+		return "-"
+	if t == _commander:
+		return "commander"
+	var n: Variant = t.get("display_name")
+	return str(n) if n != null else str(t.name)
 
 
 ## Sets armor + core to pct % of their total. Above the core share only the armor is chipped and
@@ -303,11 +376,19 @@ func _process(delta: float) -> void:
 
 	if _boss_alive() and not _ai_paused:
 		_fight_time += delta
-		# Keep the boss locked on the commander wherever it walks; there is no Fortress here.
-		_bulwark.taunted_by_player = true
-		_bulwark.taunt_timer = 999.0
-		if _bulwark.current_target != _commander and _bulwark.current_phase != Enums.BossPhase.TRANSITION:
-			_bulwark.set_target(_commander)
+		if not _structures_on():
+			# Nothing else to attack: keep the boss locked on the commander wherever it walks.
+			_bulwark.taunted_by_player = true
+			_bulwark.taunt_timer = 999.0
+			if _bulwark.current_target != _commander and _bulwark.current_phase != Enums.BossPhase.TRANSITION:
+				_bulwark.set_target(_commander)
+		var target := _bulwark.current_target
+		if target != _last_target and target != null and is_instance_valid(target):
+			if _last_target == _commander and target != _commander:
+				_log("Boss LEAVES the commander (out of reach %.1fs) -> %s" % [_bulwark.t_away, _target_name(target)])
+			else:
+				_log("Boss targets %s" % _target_name(target))
+			_last_target = target
 	_update_labels()
 	_draw_debug()
 
@@ -436,10 +517,16 @@ func _update_labels() -> void:
 		var unlock_text := ""
 		if bd != null:
 			var ms := b.get_moveset_appearance()
-			unlock_text = "triple stomp %s (from %d) | combo %s (from %d, below %d%% HP, %d%% chance)" % [
+			unlock_text = "triple stomp %s (from %d) | combo %s (from %d, below %d%% HP)" % [
 				"ON" if ms >= bd.triple_stomp_unlock_appearance else "locked", bd.triple_stomp_unlock_appearance,
 				"ON" if ms >= bd.combo_unlock_appearance else "locked", bd.combo_unlock_appearance,
-				int(bd.combo_hp_threshold * 100.0), int(bd.combo_chance * 100.0)]
+				int(bd.combo_hp_threshold * 100.0)]
+		var score_parts: PackedStringArray = []
+		for action: StringName in BulwarkBrain.ACTIONS:
+			score_parts.append("%s %.2f" % [action, float(b.last_scores.get(action, 0.0))])
+		unlock_text += "\nScores: %s -> %s | out of reach %.1fs | push commit %.1fs | turn %.0f deg/s" % [
+			" ".join(score_parts), b.last_decision if b.last_decision != &"" else &"-",
+			b.t_away, b.push_commit_left, rad_to_deg(b.get_turn_rate_rad())]
 		_boss_label.text = "BOSS  wave %d | appearance %d | moveset %d%s%s | %s%s\nHP %d%%  armor %d/%d  core %d/%d  | state %s | move speed x%.2f | attack interval %.2fs\nAI: last pick %s | triple cooldown %.1fs | range stomp cooldown %.1fs | commander %s, %.1f m | fight %.1fs\nUnlocks: %s" % [
 			b.spawn_wave, b.get_appearance(), b.get_moveset_appearance(),
 			" | Hazard" if b.in_hazard_trial else "", " | ENRAGED" if b.is_enraged else "",
@@ -455,6 +542,13 @@ func _update_labels() -> void:
 	_commander_label.text = "COMMANDER  x=%.1f z=%.1f | damage taken %d | hits %d | %s" % [
 		_commander.global_position.x, _commander.global_position.z, _commander.total_damage,
 		_commander.hit_count, "GOD DODGE" if _commander.always_dodging else ("dodging" if _commander.is_dodging else "-")]
+	if _boss_alive():
+		var parts: PackedStringArray = []
+		for node in _structures:
+			if is_instance_valid(node):
+				parts.append("%s %d" % [node.get("display_name"), int(node.get("hp"))])
+d		_commander_label.text += "\nBOSS TARGET %s%s" % [_target_name(_bulwark.current_target),
+				("  |  " + ", ".join(parts)) if not parts.is_empty() else ""]
 	var total := 0
 	for k: StringName in _move_counts:
 		total += int(_move_counts[k])
@@ -700,6 +794,11 @@ func _build_ui() -> void:
 		if on and _boss_alive():
 			_bulwark.enter_enrage())
 	box.add_child(_enrage_check)
+	_structures_check = CheckBox.new()
+	_structures_check.text = "Towers + Fortress (boss may leave the commander)"
+	_structures_check.button_pressed = true
+	_structures_check.toggled.connect(func(_on: bool) -> void: _spawn_boss())
+	box.add_child(_structures_check)
 	var seed_row := HBoxContainer.new()
 	var seed_label := Label.new()
 	seed_label.text = "AI seed"
@@ -748,7 +847,7 @@ func _build_ui() -> void:
 	box.add_child(speed_row)
 
 	var help := _small_label(Color(0.75, 0.75, 0.75))
-	help.text = "WASD/arrows: walk (Shift run) | Space: dodge roll\nClick floor: teleport | G: back to start | T: god dodge\nJ/K: hit boss 5%/10% | P: pause AI | H: hitboxes\nMouse wheel: zoom | Cyan cone = AI front arc"
+	help.text = "WASD/arrows: walk (Shift run) | Space: dodge roll\nClick floor: teleport | G: back to start | T: god dodge\nJ/K: hit boss 5%/10% (also makes it mind you) | P: pause AI\nH: hitboxes | Mouse wheel: zoom | Cyan cone = AI front arc\nRespawn (Enter) also rebuilds the towers at full HP"
 	box.add_child(help)
 
 	# Right/top: live info.
@@ -801,6 +900,76 @@ func _mono_label(color: Color, size: int) -> Label:
 	label.add_theme_constant_override("outline_size", 3)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return label
+
+
+## Stand-in tower or Fortress: same group, collider and health the boss reads. Takes stomp damage
+## and frees itself at 0 HP. It does not block movement (collision layer 0).
+class TestStructure extends StaticBody3D:
+	signal destroyed(structure: Node3D)
+
+	var display_name: String = ""
+	var hp: int = 1
+	var max_hp: int = 1
+	## The boss checks target.health.hp; the structure carries its own hp.
+	var health: Node = null
+	var _label: Label3D = null
+
+	func setup(group: StringName, p_name: String, p_hp: int, size: Vector3, color: Color, round_shape: bool) -> void:
+		add_to_group(group)
+		display_name = p_name
+		name = p_name.replace(" ", "")
+		hp = p_hp
+		max_hp = p_hp
+		health = self
+		collision_layer = 0
+		collision_mask = 0
+		var col := CollisionShape3D.new()
+		col.name = "CollisionShape3D"
+		var mesh := MeshInstance3D.new()
+		if round_shape:
+			var cyl := CylinderShape3D.new()
+			cyl.radius = size.x * 0.5
+			cyl.height = size.y
+			col.shape = cyl
+			var cyl_mesh := CylinderMesh.new()
+			cyl_mesh.top_radius = size.x * 0.4
+			cyl_mesh.bottom_radius = size.x * 0.5
+			cyl_mesh.height = size.y
+			mesh.mesh = cyl_mesh
+		else:
+			var box := BoxShape3D.new()
+			box.size = size
+			col.shape = box
+			var box_mesh := BoxMesh.new()
+			box_mesh.size = size
+			mesh.mesh = box_mesh
+		col.position = Vector3(0.0, size.y * 0.5, 0.0)
+		mesh.position = col.position
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = color
+		mesh.material_override = mat
+		add_child(col)
+		add_child(mesh)
+		_label = Label3D.new()
+		_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_label.font_size = 48
+		_label.outline_size = 8
+		_label.position = Vector3(0.0, size.y + 0.8, 0.0)
+		add_child(_label)
+		_update_label()
+
+	func take_damage(info: DamageInfo) -> void:
+		if hp <= 0:
+			return
+		hp = maxi(0, hp - info.amount)
+		_update_label()
+		if hp == 0:
+			destroyed.emit(self)
+			queue_free()
+
+	func _update_label() -> void:
+		if _label != null:
+			_label.text = "%s\n%d / %d" % [display_name, hp, max_hp]
 
 
 ## Stand-in for the commander: same group, body capsule and flags the boss reads, so the boss AI
