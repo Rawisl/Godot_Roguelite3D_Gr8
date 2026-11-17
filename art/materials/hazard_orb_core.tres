@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dm6na2iu3c0o1"]
+
+[ext_resource type="Shader" uid="uid://ccx3e8miydgor" path="res://art/shaders/energy_orb.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "hazard_orb_core"
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/core_color = Color(0.76, 0.62, 1, 1)
+shader_parameter/rim_color = Color(0.52, 0.32, 0.95, 1)
+shader_parameter/empty_color = Color(0.46, 0.49, 0.52, 1)
+shader_parameter/swirl_speed = 0.3
+shader_parameter/swirl_strength = 0.14

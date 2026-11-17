@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://bfjuigl6cnhun" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_1.fbx" id="3_l1"]
 [ext_resource type="PackedScene" uid="uid://dmem7pxeyk21c" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_2.fbx" id="4_l2"]
 [ext_resource type="PackedScene" uid="uid://cvqdrdujd3pmp" path="res://contents/assets/towers/fbx/Rig_unity/ballista_tower_LVL_4_rig.fbx" id="5_l3"]
+[ext_resource type="Material" uid="uid://ddsa1xq7rbbdh" path="res://contents/assets/towers/texture/tower_tier1_material.tres" id="6_tier1"]
 
 [node name="ArrowTowerModel" type="Node3D" unique_id=1567500813 groups=["occluder"]]
 script = ExtResource("1_turret")
@@ -17,15 +18,15 @@ pitch_mode = 0
 unique_name_in_owner = true
 transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
 
-[node name="Ballista_tower_LVL_1" parent="Level1/B_tower_1_rig/Skeleton3D" parent_id_path=PackedInt32Array(1761637560, 1181377281) index="0" unique_id=60261664]
-material_override = ExtResource("2_mat")
+[node name="Ballista_tower_LVL_1" parent="Level1/B_tower_1_rig/Skeleton3D" parent_id_path=PackedInt32Array(1761637560, 674451889) index="0" unique_id=93903237]
+material_override = ExtResource("6_tier1")
 
 [node name="Level2" parent="." unique_id=354627581 instance=ExtResource("4_l2")]
 unique_name_in_owner = true
 transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
 visible = false
 
-[node name="Ballista_tower_LVL_2" parent="Level2/B_tower_2_rig/Skeleton3D" parent_id_path=PackedInt32Array(354627581, 949609209) index="0" unique_id=729473713]
+[node name="Ballista_tower_LVL_2" parent="Level2/B_tower_2_rig/Skeleton3D" parent_id_path=PackedInt32Array(354627581, 361201633) index="0" unique_id=1635446186]
 material_override = ExtResource("2_mat")
 
 [node name="Level3" parent="." unique_id=759708145 instance=ExtResource("5_l3")]
@@ -33,7 +34,7 @@ unique_name_in_owner = true
 transform = Transform3D(0.27, 0, 0, 0, 0.27, 0, 0, 0, 0.27, 0, 0, 0)
 visible = false
 
-[node name="Ballista_tower_LVL_4" parent="Level3/B_tower_4_rig/Skeleton3D" parent_id_path=PackedInt32Array(759708145, 1846636140) index="0" unique_id=659837010]
+[node name="Ballista_tower_LVL_4" parent="Level3/B_tower_4_rig/Skeleton3D" parent_id_path=PackedInt32Array(759708145, 921136532) index="0" unique_id=1223665977]
 material_override = ExtResource("2_mat")
 
 [editable path="Level1"]

@@ -1049,7 +1049,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM4
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nhạc theo state (COMBAT một lớp, sting SUMMARY, RunEnd); HAZARD_TRIAL dùng nhạc COMBAT (nhạc boss nếu có boss)
 - Nghiệm thu: Crossfade 1.5 s thực
 - Cần xong trước: W8-KM4, W10-KT4
@@ -1081,7 +1081,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM8
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Level: Tháp Hazard Trial (hazard_portal gần Fortress, chọn được bằng chuột) và hazard_room (điểm xuất hiện chỉ huy, các điểm sinh quân, khung camera cố định)
 - Nghiệm thu: Phòng đủ chỗ cho 5 quân và chỉ huy; có navmesh cho phòng (quân và boss đi được); Tháp bấm được
 - Tệp liên quan: levels/corridor/level.tscn (thêm hazard_portal, hazard_room)
@@ -1091,7 +1091,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM9
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Camera frame HAZARD_TRIAL (CAM-16): cắt hoặc chuyển 0.5 s sang khung phòng, không bám nhân vật, không dịch phím, rời phòng về khung PREP; phát camera_frame_changed
 - Nghiệm thu: HZ7 đạt phần camera
 - Tệp liên quan: systems/camera/camera_rig.gd, autoload/event_bus.gd (camera_frame_changed chưa có)
@@ -1101,12 +1101,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM10
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model 3 bậc cho tower, phần 1 (Arrow và Cannon, bậc 2 và 3): dùng lại model bậc 1 làm gốc, thêm chi tiết và đổi material để dựng nhanh
 - Nghiệm thu: Bậc 2 và 3 nhìn khác bậc 1 ở khoảng cách camera chuẩn
 - Tệp liên quan: entities/tower/arrow.tscn, cannon.tscn, tower_model.gd
 - ID SRS: TWR-17
 - Cần xong trước: W8-KM4
+- Ghi chú bàn giao: Tier 1 Arrow and Cannon use `tower_tier1_material.tres`, the tower toon material with `tower_tier1_wood.png` (the tower palette with the two white wall swatches turned brown, `#7C6D5F` and `#8D7D6F`, listed in `art/palette.md`). Only the `Level1` meshes in `arrow_tower_model.tscn` and `cannon_tower_model.tscn` use it; tiers 2 and 3 and the tier choice from #189 are unchanged. Verified by `test_turret_towers` and `test_build_service_runner`.
 
 ##### W10-KM11
 - Người: Kim

@@ -18,6 +18,8 @@ extends Node
 # TODO(Ender-Via): the Bulwark should stand on boss_melee_point so its 3 m Stomp reaches the wall
 # (BOSS-40). It stops attack_range short of the point today, so this test only checks it gets there.
 
+## Half of the floor across the corridor (28 m); navmesh beyond it belongs to other areas.
+const CORRIDOR_HALF_DEPTH := 14.0
 const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const BULWARK_SCENE: PackedScene = preload("res://entities/enemy/bulwark.tscn")
@@ -42,10 +44,15 @@ func _ready() -> void:
 	add_child(_level)
 	# The navigation map only answers path queries once it has synced the level's regions.
 	var map := _level.get_world_3d().navigation_map
+	# The first sync can hold the regions without their polygons yet (more often on a heavier
+	# level), so also wait until a point in the spawn zone snaps onto the navmesh. An empty map
+	# answers (0, 0, 0), which is why the probe is not at the origin.
+	var probe := Vector3(15, 0, 0)
 	var start_iteration := NavigationServer3D.map_get_iteration_id(map)
 	for i in 120:
 		await get_tree().physics_frame
-		if i >= 4 and NavigationServer3D.map_get_iteration_id(map) > start_iteration:
+		if i >= 4 and NavigationServer3D.map_get_iteration_id(map) > start_iteration \
+				and NavigationServer3D.map_get_closest_point(map, probe).distance_to(probe) < 1.0:
 			break
 
 	test_walls_and_floor()
@@ -130,7 +137,8 @@ func test_nav_paths() -> void:
 	assert_true(normal_ok, "normal navmesh reaches the gate from across the spawn zone")
 	assert_true(large_ok, "large-agent navmesh reaches boss_melee_point from across the spawn zone")
 	var large_region: NavigationRegion3D = _level.get_node("NavigationRegionLarge")
-	var zs := Array(large_region.navigation_mesh.get_vertices()).filter(func(v: Vector3) -> bool: return v.y < 1.0).map(func(v: Vector3) -> float: return v.z)
+	# Only the corridor: the level's navmesh also holds the Hazard Trial room island far away.
+	var zs := Array(large_region.navigation_mesh.get_vertices()).filter(func(v: Vector3) -> bool: return v.y < 1.0 and absf(v.z) < CORRIDOR_HALF_DEPTH).map(func(v: Vector3) -> float: return v.z)
 	assert_true(zs.max() - zs.min() >= 3.2, "the large-agent lane is at least 3.2 m wide (%.1f m)" % (zs.max() - zs.min()))
 
 
