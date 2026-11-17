@@ -1065,10 +1065,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KM1
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13]
 - Nghiệm thu: Không hit stop toàn cục
 - Cần xong trước: W7-KM2
+- Ghi chú bàn giao: `art/vfx/hit_reaction_manager.gd` (HitReactionManager, in `levels/corridor/level.tscn`) listens to `HealthComponent.damaged` of enemies and the commander: a white overlay (`art/materials/hit_flash.tres`) for 0.1 s, only that entity's AnimationPlayer frozen for 0.05 s, and `enemy_hit` / `commander_hit` through `EventBus.sfx_requested`. No global hit stop. Setting `reduce_flash` turns the flash off; at most 3 flashes a second per entity in any case. Damage over time ticks are skipped. A hover outline is put back after the flash. Timers on pausable real time. Verified by `tests/test_hit_reaction.tscn` (19 checks).
 
 ##### W13-KM3
 - Người: Kim
