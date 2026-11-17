@@ -6,6 +6,7 @@ extends Node
 ## the run being played keeps the profile and meta it started with; a sync asked for then goes out
 ## when the run ends.
 # TODO(Rawisl): swap the rule in _resolve() for the agreed conflict policy (now: the higher revision wins, and when the other copy came from another machine it is kept in save.conflict.bak with a notice). Equal revisions from two machines are treated as synced, so a run played on each before syncing is lost on the next write.
+# TODO(Rawisl): when the cloud save carries a save_version, refuse to apply or push over a copy newer than SaveManager.SAVE_VERSION in _resolve(), so a newer game's progress is never replaced from this machine.
 
 ## A sync started or finished, for the Account tab's Sync now button.
 signal busy_changed(busy: bool)

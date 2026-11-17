@@ -1333,10 +1333,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH2
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 1 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: SAV-09 (cắt tab Dữ liệu và Xóa tiến trình SAV-16, đưa vào backlog)
 - Nghiệm thu: Hoàn tất
 - Cần xong trước: W10-MH1
+- Ghi chú: SaveManager đã từ chối nạp và không ghi đè save từ bản game mới hơn từ W10-MH1. Nhánh này thêm thông báo yêu cầu cập nhật game (dialog.save_too_new.*) và hiện lỗi save phát hiện lúc khởi động một lần trên MainMenu, nhờ đó thông báo save hỏng lúc mở game hoạt động lại. Tab Dữ liệu đã bỏ ở W11-KH3; xóa tiến trình vẫn nằm trong backlog. Bản save trên cloud chưa được kiểm save_version (TODO cho @Rawisl ở systems/sync/sync_service.gd).
 
 ##### W11-MH3
 - Người: Mạnh

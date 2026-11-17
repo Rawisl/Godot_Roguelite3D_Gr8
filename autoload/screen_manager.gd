@@ -2,6 +2,7 @@ extends CanvasLayer
 ## Switches screens with a fade and owns the system dialog layer.
 ## Screens that support Back implement go_back(); Esc calls the same function
 ## Dialogs that support Esc implement cancel(); otherwise they are freed.
+## A save problem found while loading at start, before this node listens, is shown once after the first screen change.
 
 signal screen_changed(scene_path: String)
 signal dialog_context_changed
@@ -28,6 +29,7 @@ func _ready() -> void:
 		_open_next_notice.call_deferred())
 	EventBus.save_failed.connect(_on_save_failed)
 	EventBus.run_recovered.connect(_on_run_recovered)
+	_watch_startup_load_failure()
 
 func _input(event: InputEvent) -> void:
 	# Lock all input while fading
@@ -147,8 +149,25 @@ func _on_save_failed(reason: StringName) -> void:
 			_show_save_notice(NoticeDialog.DANGER, "dialog.save_corrupt", &"dialog.save_corrupt.new", SaveManager.start_new_save)
 		SaveManager.REASON_WRITE_ERROR:
 			_show_save_notice(NoticeDialog.WARNING, "dialog.save_failed", &"dialog.save_failed.retry", SaveManager.save)
+		SaveManager.REASON_VERSION_TOO_NEW:
+			_show_save_notice(NoticeDialog.WARNING, "dialog.save_too_new")
 		_:
 			_show_save_notice(NoticeDialog.WARNING, "dialog.save_blocked")
+
+## SaveManager loads before this node listens, so a failure from that first load is missed.
+## Wait for the first screen change: the fade has closed all dialogs by then and the notice
+## opens on the new screen.
+func _watch_startup_load_failure() -> void:
+	if SaveManager.load_failure == &"":
+		return
+	if screen_changed.is_connected(_show_startup_load_failure):
+		return
+	screen_changed.connect(_show_startup_load_failure, CONNECT_ONE_SHOT)
+
+func _show_startup_load_failure(_scene_path: String) -> void:
+	if SaveManager.load_failure == &"":
+		return
+	_on_save_failed(SaveManager.load_failure)
 
 func _on_run_recovered(prestige_gain: int) -> void:
 	show_notice(&"dialog.run_recovered.title", &"dialog.run_recovered.body", {"value": prestige_gain})
