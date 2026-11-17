@@ -7,7 +7,7 @@ extends Node
 # TODO(Ender-Via): when meta progression lands, return gold_pct_meta + gold_pct_buff from _gold_pct_total(); it feeds both the wave gold and the boss gold.
 # TODO(Ender-Via): when the start_wave run flag lands, account for start_wave > 1 when computing waves_cleared in the summary step.
 # TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
-# TODO(Ender-Via): when the Hazard Trial room opens, keep wave_state at HAZARD_TRIAL until it closes; _on_boss_defeated skips a boss that dies then, so the room boss gives no summary gold, prestige, repair charge or weapon.
+# TODO(Ender-Via): when the Hazard Trial room opens, keep wave_state at HAZARD_TRIAL until it closes; _on_boss_defeated skips a boss that dies then (no prestige, repair charge or weapon), so the room must still pay that boss's boss_gold and boss XP itself, added to the room gold paid out when the hero leaves.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
