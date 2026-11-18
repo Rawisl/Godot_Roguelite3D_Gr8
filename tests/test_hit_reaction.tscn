@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://btig27oxxyjt4"]
+
+[ext_resource type="Script" uid="uid://cgiuvr584dbsw" path="res://tests/test_hit_reaction.gd" id="1_test"]
+
+[node name="TestHitReaction" type="Node3D" unique_id=1047818142]
+script = ExtResource("1_test")

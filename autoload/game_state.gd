@@ -225,6 +225,7 @@ func _on_settings_changed(key: StringName, value: Variant) -> void:
 	_settings[key] = value
 	_settings_dirty = true
 	DisplaySettings.apply(key, value)
+	QualitySettings.apply(key, value)
 
 ## Runs in the background, so a slow network never holds the boot screen. A failure only
 ## leaves a hint on the menu; the player keeps playing as before.
