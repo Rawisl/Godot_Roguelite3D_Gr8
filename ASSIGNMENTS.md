@@ -1541,10 +1541,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KM4
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Preset hạt FBK-09 [dời từ tuần 13]
 - Nghiệm thu: Giới hạn 500/1500/3000
 - Cần xong trước: W7-KM1
+- Ghi chú bàn giao: The 500/1500/3000 limit (Graphics tab, W10-KM3) now feeds one shared budget, `art/vfx/particle_budget.gd` (ParticleBudget.limit). Every effect manager joins the group `particle_source` and reports `active_particles()`: HitFxManager, SkillFxManager, BuildFxManager, DestroyFxManager and BossFxManager, so the managers no longer each count against the full limit. Extras (muzzle flashes, arrow hits, skill dust and embers, build dust) are skipped when a new one would go over; main effects (cannon blasts, a tower breaking, the boss plates and steam) always play. Telegraphs use meshes and are never touched. Verified by `tests/test_particle_budget.tscn` (11 checks).
 
 ##### W11-KM7
 - Người: Kim
