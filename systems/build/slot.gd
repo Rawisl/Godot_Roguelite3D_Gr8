@@ -150,6 +150,14 @@ func set_buildable_visible(v: bool) -> void:
 	_ring_on = v
 	marker.visible = _ring_on and is_free()
 
+## An empty ground cell while the ground building limit is reached: dim, dashed ring.
+func set_locked(v: bool) -> void:
+	marker.set_instance_shader_parameter(&"locked", 1.0 if v else 0.0)
+
+func is_locked() -> bool:
+	var value: Variant = marker.get_instance_shader_parameter(&"locked")
+	return value != null and float(value) > 0.5
+
 ## Mouse over the slot: the ring glows white.
 func set_hovered(v: bool) -> void:
 	marker.set_instance_shader_parameter(&"hovered", 1.0 if v else 0.0)
