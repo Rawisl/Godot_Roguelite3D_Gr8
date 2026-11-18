@@ -58,9 +58,11 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 @export var ground_lift := 0.05
 ## Room outside the radius for the soft edge.
 @export var ring_margin := 0.3
-## Particle cap for the current graphics preset (Low 500, Medium 1500, High 3000).
-## Over it, dust and embers are skipped; the effects themselves always play.
-@export var particle_budget := 1500
+## The shared particle limit (ParticleBudget). Over it, dust and embers are skipped; the
+## effects themselves always play.
+var particle_budget: int:
+	get: return ParticleBudget.limit
+	set(value): ParticleBudget.limit = value
 
 var _effects: Array[Dictionary] = []
 var _skill_data: Dictionary = {}  # StringName -> SkillData, or null when there is no file
@@ -70,6 +72,7 @@ var _flicker := 1.0
 
 
 func _ready() -> void:
+	add_to_group(ParticleBudget.GROUP)
 	# A small sphere like the SwordHit dust. Billboard particles draw a black square at the
 	# emitter on the Compatibility renderer.
 	_particle_mesh = SphereMesh.new()
@@ -342,7 +345,7 @@ func _particles(count: int, lifetime: float, color: Color) -> CPUParticles3D:
 
 
 func _has_room(count: int) -> bool:
-	return active_particles() + count <= particle_budget
+	return ParticleBudget.has_room(get_tree(), count, true)
 
 
 ## Particles of the effects still emitting. For the budget and for tests.

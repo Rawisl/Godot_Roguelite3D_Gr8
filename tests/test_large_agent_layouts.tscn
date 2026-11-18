@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dbux3503p0vrh"]
+
+[ext_resource type="Script" uid="uid://c6jreialyiubw" path="res://tests/test_large_agent_layouts.gd" id="1_test"]
+
+[node name="TestLargeAgentLayouts" type="Node3D" unique_id=1835411390]
+script = ExtResource("1_test")
