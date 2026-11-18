@@ -8,6 +8,8 @@
 [ext_resource type="AudioStream" uid="uid://i124ia6kcj40" path="res://audio/music/Morning.ogg" id="4_l0n76"]
 [ext_resource type="AudioStream" uid="uid://dhwekaqbwa23y" path="res://audio/music/Silver Blue Light.ogg" id="5_h1aio"]
 [ext_resource type="AudioStream" uid="uid://2ttck2hyh3xy" path="res://audio/music/jingles_STEEL10.ogg" id="8_h1aio"]
+[ext_resource type="AudioStream" path="res://audio/music/jingles_STEEL07.ogg" id="9_victory"]
+[ext_resource type="AudioStream" path="res://audio/music/jingles_STEEL02.ogg" id="10_endless"]
 
 [resource]
 script = ExtResource("1_i7m6j")
@@ -18,3 +20,5 @@ boss = ExtResource("1_15b2g")
 run_end = ExtResource("5_h1aio")
 win_sting = ExtResource("8_h1aio")
 lose_sting = ExtResource("3_l0n76")
+victory_sting = ExtResource("9_victory")
+endless_end_sting = ExtResource("10_endless")

@@ -50,6 +50,7 @@ var _reduce_flash := false
 
 
 func _ready() -> void:
+	add_to_group(ParticleBudget.GROUP)
 	_reduce_flash = GameState.get_setting(&"reduce_flash", false) == true
 	EventBus.boss_spawned.connect(_on_boss_spawned)
 	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
@@ -337,3 +338,17 @@ func _puff_texture() -> GradientTexture2D:
 	tex.width = 64
 	tex.height = 64
 	return tex
+
+
+## Plates and steam still emitting. The boss effects are main effects: they always play and
+## only count toward the shared particle budget.
+func active_particles() -> int:
+	if _rig.is_empty():
+		return 0
+	var total := 0
+	var list: Array = [_rig.get("plates"), _rig.get("break_steam")]
+	list.append_array(_rig.get("vents", []))
+	for p in list:
+		if is_instance_valid(p) and (p as CPUParticles3D).emitting:
+			total += (p as CPUParticles3D).amount
+	return total

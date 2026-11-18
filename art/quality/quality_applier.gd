@@ -2,7 +2,7 @@ class_name QualityApplier
 extends Node
 ## Puts the quality rows of the Graphics tab on the level it sits in, at start and on every change:
 ## - shadow_quality: the level's sun casts shadows or not (QualitySettings.apply_shadows)
-## - particle_limit: the particle budget of HitFxManager and SkillFxManager
+## - particle_limit: the shared particle budget (ParticleBudget.limit)
 ## - see_through: OcclusionManager fades what hides the commander, or leaves it
 ## The values come from QualitySettings.current(), so a machine with no settings.cfg gets the
 ## preset of its GPU.
@@ -32,10 +32,7 @@ func _apply(key: StringName) -> void:
 		&"shadow_quality":
 			QualitySettings.apply_shadows(level)
 		&"particle_limit":
-			var budget := int(QualitySettings.current(&"particle_limit"))
-			for node in level.get_children():
-				if node is HitFxManager or node is SkillFxManager:
-					node.set(&"particle_budget", budget)
+			ParticleBudget.limit = int(QualitySettings.current(&"particle_limit"))
 		&"see_through":
 			var on := int(QualitySettings.current(&"see_through")) == QualitySettings.SEE_THROUGH_DITHER
 			for node in level.get_children():
