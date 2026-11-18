@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bb8dv5o4hs1h"]
+
+[ext_resource type="Script" uid="uid://b3ti87f611mkp" path="res://tests/test_slot_ring_lock.gd" id="1_test"]
+
+[node name="TestSlotRingLock" type="Node3D" unique_id=634889837]
+script = ExtResource("1_test")
