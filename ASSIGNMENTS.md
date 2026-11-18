@@ -1491,10 +1491,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM1
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Accessibility ACC-05, 06 và kiểm UI-05 (gồm biểu tượng trait quân)
 - Nghiệm thu: Không nhấp nháy quá 3 lần/s
 - Cần xong trước: W10-KM4
+- Ghi chú bàn giao: Screen shake already follows the Accessibility setting through CameraRig.shake_scale (normal, 50 %, off). Reduce flashing now also removes the white core of the cannon blast (`art/vfx/cannon_blast.gd`); the boss core, fire zone, Fortress border and hit flash already honoured it. Every repeating effect was checked at or under 3 per second. The drawn trait shapes are replaced by five icons in `art/icons/traits/` (64 px, shown at 26 px), each a different shape and always next to the trait name. Verified by `tests/test_accessibility.tscn` (12 checks).
 
 ##### W11-KM2
 - Người: Kim
@@ -1524,34 +1525,38 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM6
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 1.5 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kiểm navmesh agent lớn và boss_melee_point trên hành lang mới với 3 công trình grid
 - Nghiệm thu: Có đường cho agent bán kính 1.6 m
 - Cần xong trước: W9-KM6
+- Ghi chú bàn giao: `tests/test_large_agent_layouts.tscn` lists every legal layout of three ground buildings with the build rule (50 116 on the 68 cells), takes the tightest ones (refused with 3 m more width), builds eight of them for real on `level.tscn`, rebakes and checks a 1.6 m agent path on the large-agent navmesh from the spawn to the Bulwark standing point and to the gate: all reach. No change to the level was needed. Runs in about 2 minutes.
 
 ##### W13-KM2
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Vòng sáng slot ở PREP, tắt ở COMBAT (SLOT-06) [dời từ tuần 13]
 - Nghiệm thu: Chỉ hiện trên slot còn xây được
 - Cần xong trước: W7-KM1
+- Ghi chú bàn giao: The ring on/off in PREP and COMBAT and on free slots only were already in (SlotManager.set_rings_visible, Slot.set_buildable_visible). Added the locked ring: once max_ground_buildings ground slots hold a tower or rubble, the empty ground cells show a dim grey, dashed, steady ring (`systems/build/slot_ring.gdshader`, `Slot.set_locked`), updated by SlotManager on every slot change and on PREP; wall slots never lock. Verified by `tests/test_slot_ring_lock.tscn` (11 checks).
 
 ##### W13-KM4
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Preset hạt FBK-09 [dời từ tuần 13]
 - Nghiệm thu: Giới hạn 500/1500/3000
 - Cần xong trước: W7-KM1
+- Ghi chú bàn giao: The 500/1500/3000 limit (Graphics tab, W10-KM3) now feeds one shared budget, `art/vfx/particle_budget.gd` (ParticleBudget.limit). Every effect manager joins the group `particle_source` and reports `active_particles()`: HitFxManager, SkillFxManager, BuildFxManager, DestroyFxManager and BossFxManager, so the managers no longer each count against the full limit. Extras (muzzle flashes, arrow hits, skill dust and embers, build dust) are skipped when a new one would go over; main effects (cannon blasts, a tower breaking, the boss plates and steam) always play. Telegraphs use meshes and are never touched. Verified by `tests/test_particle_budget.tscn` (11 checks).
 
 ##### W11-KM7
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Chỉnh camera cùng Level trên map thật: size Frontline và overview, camera_bounds, tốc độ dịch; chạy CM1, CM2, CM3
 - Nghiệm thu: CM1, CM2, CM3 đạt trên map thật
 - Cần xong trước: W9-KM6
+- Ghi chú bàn giao: CM1, CM2 and CM3 pass on `main.tscn` with the current values (Frontline 14, overview 23.5, bounds 32 x 12 with frontline_depth 12, pan 14 m/s, recenter 0.3 s); nothing needed tuning. `tests/test_camera_flow.gd` now runs at 1920x1080 headless so the Frontline view width is measured (13.2 m each side), and also checks holding a pan key past both ends and across the corridor stays in the bounds, and the commander at the far walkable point of each end is followed but the focus stays in the bounds.
 
 ##### W11-KM8
 - Người: Kim

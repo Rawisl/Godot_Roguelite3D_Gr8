@@ -23,6 +23,7 @@ var _problems: PackedStringArray = []
 func _ready() -> void:
 	reload_slots()
 	EventBus.state_changed.connect(_on_game_state_changed)
+	EventBus.slot_state_changed.connect(_on_slot_state_changed)
 
 func reload_slots() -> void:
 	_collect_slots()
@@ -129,6 +130,22 @@ func reset_all() -> void:
 func set_rings_visible(v: bool) -> void:
 	for slot in get_all_slots():
 		slot.set_buildable_visible(v)
+	update_ground_lock()
+
+## Once max_ground_buildings ground slots hold a tower or rubble, the empty ground cells show
+## the locked ring; a sale, a cleared rubble or a new run unlocks them again.
+func update_ground_lock() -> void:
+	var used := 0
+	for slot in get_slots_in_zone(Enums.SlotZone.GROUND):
+		if is_instance_valid(slot) and slot.uses_ground_space():
+			used += 1
+	var full := used >= GameConfig.max_ground_buildings
+	for slot in get_slots_in_zone(Enums.SlotZone.GROUND):
+		if is_instance_valid(slot):
+			slot.set_locked(full and slot.state == Enums.SlotState.EMPTY)
+
+func _on_slot_state_changed(_slot_id: StringName, _state: StringName) -> void:
+	update_ground_lock()
 
 func _on_game_state_changed(new_state: StringName) -> void:
 	set_rings_visible(new_state == &"PREP")

@@ -16,8 +16,19 @@ const DUST := preload("res://art/vfx/build_dust.tscn")
 @export var start_size := 0.6
 @export var peak_size := 1.15
 
+var _dust: Array[CPUParticles3D] = []
+
 func _ready() -> void:
+	add_to_group(ParticleBudget.GROUP)
 	EventBus.tower_built.connect(_on_tower_built)
+
+## Build dust still emitting, for the shared particle budget.
+func active_particles() -> int:
+	var total := 0
+	for p in _dust:
+		if is_instance_valid(p) and p.emitting:
+			total += p.amount
+	return total
 
 func _on_tower_built(slot_id: StringName, _type: StringName) -> void:
 	for slot in get_tree().get_nodes_in_group(&"slot"):
@@ -56,12 +67,19 @@ func play(tower: Node3D) -> void:
 	spin.tween_property(model, "rotation:y", base_rot + TAU, 0.30)
 	spin.tween_callback(func() -> void: model.rotation.y = base_rot)
 
+## Dust is an extra: skipped when the particle budget is full, the build pop still plays.
 func _spawn_dust(at: Vector3) -> void:
 	var fx := DUST.instantiate() as Node3D
+	var dust := fx.get_node(^"Dust") as CPUParticles3D
+	if not ParticleBudget.has_room(get_tree(), dust.amount, true):
+		fx.free()
+		return
 	get_tree().current_scene.add_child(fx)
 	fx.global_position = at
-	var dust := fx.get_node(^"Dust") as CPUParticles3D
-	dust.finished.connect(fx.queue_free)
+	_dust.append(dust)
+	dust.finished.connect(func() -> void:
+		_dust.erase(dust)
+		fx.queue_free())
 	# Particles chạy theo thời gian game; bù lại để bụi tan cùng nhịp với tower khi tua x2, x3.
 	dust.speed_scale = 1.0 / maxf(Engine.time_scale, 0.001)
 	dust.emitting = true

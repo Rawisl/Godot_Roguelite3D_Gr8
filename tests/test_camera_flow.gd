@@ -21,6 +21,8 @@ var _waves: WaveManager
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# The game's window shape; a headless run would otherwise frame a square.
+	get_tree().root.size = Vector2i(1920, 1080)
 	_main = (load(MAIN_SCENE) as PackedScene).instantiate()
 	add_child(_main)
 	await _frames(5)
@@ -65,6 +67,15 @@ func _run() -> void:
 	await _hold(&"move_right", 0.4)
 	var panned := _focus()
 	_check("WASD pans in PREP", panned.distance_to(centre) > 1.0)
+	# Holding a pan key well past each end stops at the bounds.
+	var rect := bounds.get_rect()
+	await _hold(&"move_right", 3.0)
+	_check("holding right stops at the spawn end of the bounds", _focus().x <= rect.end.x + NEAR and _focus().x >= rect.end.x - 1.0)
+	await _hold(&"move_left", 6.0)
+	_check("holding left stops at the Fortress end of the bounds", _focus().x >= rect.position.x - NEAR and _focus().x <= rect.position.x + 1.0)
+	await _hold(&"move_up", 2.0)
+	await _hold(&"move_down", 0.01)
+	_check("panning across the corridor stays in the bounds", rect.grow(NEAR).has_point(Vector2(_focus().x, _focus().z)))
 	_press(&"camera_recenter")
 	await _wait(0.1)
 	_check("recenter glides, it does not jump", _rig.is_gliding() and _focus().distance_to(centre) > NEAR)
@@ -113,17 +124,29 @@ func _run() -> void:
 	await _wait(0.6)
 	_check("COMBAT uses the Frontline size", is_equal_approx(_camera.size, bounds.camera_size_frontline))
 	_check("Frontline focuses the commander", _near(_focus(), _flat(bounds.clamp_focus(_commander.global_position)), 0.5))
-	# The headless viewport is not 16:9, so the view width is only measured in a real window.
-	if DisplayServer.get_name() != "headless":
-		var reach := _ground_half_width()
-		print("[test] Frontline shows %.1f m left and %.1f m right of the focus along the corridor" % [reach.x, reach.y])
-		_check("Frontline shows about 12-14 m each side", reach.x >= 12.0 and reach.y >= 12.0 and reach.x <= 14.0 and reach.y <= 14.0)
+	var reach := _ground_half_width()
+	print("[test] Frontline shows %.1f m left and %.1f m right of the focus along the corridor" % [reach.x, reach.y])
+	_check("Frontline shows about 12-14 m each side", reach.x >= 12.0 and reach.y >= 12.0 and reach.x <= 14.0 and reach.y <= 14.0)
 	var before := _focus()
 	await _hold(&"move_up", 0.3)
 	_check("WASD moved the commander, so the camera moved with it", _focus().distance_to(before) > 0.3)
 	# The follow is smoothed over 0.15 s, so it settles shortly after the commander stops.
 	await _wait(0.6)
 	_check("Frontline follows the commander when it walks", _near(_focus(), _flat(bounds.clamp_focus(_commander.global_position))))
+	# The commander at the far walkable point of either end of the corridor: the camera follows but
+	# stays in the bounds.
+	var walk_back := _commander.global_position
+	var front_rect := bounds.get_rect(true)
+	var nav_map := _commander.get_world_3d().navigation_map
+	for side in [1.0, -1.0]:
+		var far := NavigationServer3D.map_get_closest_point(nav_map, Vector3(side * 60.0, 0.0, walk_back.z))
+		_commander.global_position = far
+		await _wait(1.0)
+		var f := _focus()
+		_check("commander at the %s end (x %.1f): the camera follows and stops at the bounds" % ["spawn" if side > 0.0 else "Fortress", far.x],
+			front_rect.grow(NEAR).has_point(Vector2(f.x, f.z)) and _near(f, _flat(bounds.clamp_focus(_commander.global_position, true)), 0.3))
+	_commander.global_position = walk_back
+	await _wait(0.8)
 	var stand := _focus()
 	_press(&"camera_recenter")
 	await _wait(0.2)
