@@ -1491,10 +1491,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM1
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Accessibility ACC-05, 06 và kiểm UI-05 (gồm biểu tượng trait quân)
 - Nghiệm thu: Không nhấp nháy quá 3 lần/s
 - Cần xong trước: W10-KM4
+- Ghi chú bàn giao: Screen shake already follows the Accessibility setting through CameraRig.shake_scale (normal, 50 %, off). Reduce flashing now also removes the white core of the cannon blast (`art/vfx/cannon_blast.gd`); the boss core, fire zone, Fortress border and hit flash already honoured it. Every repeating effect was checked at or under 3 per second. The drawn trait shapes are replaced by five icons in `art/icons/traits/` (64 px, shown at 26 px), each a different shape and always next to the trait name. Verified by `tests/test_accessibility.tscn` (12 checks).
 
 ##### W11-KM2
 - Người: Kim
@@ -1532,18 +1533,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KM2
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Vòng sáng slot ở PREP, tắt ở COMBAT (SLOT-06) [dời từ tuần 13]
 - Nghiệm thu: Chỉ hiện trên slot còn xây được
 - Cần xong trước: W7-KM1
+- Ghi chú bàn giao: The ring on/off in PREP and COMBAT and on free slots only were already in (SlotManager.set_rings_visible, Slot.set_buildable_visible). Added the locked ring: once max_ground_buildings ground slots hold a tower or rubble, the empty ground cells show a dim grey, dashed, steady ring (`systems/build/slot_ring.gdshader`, `Slot.set_locked`), updated by SlotManager on every slot change and on PREP; wall slots never lock. Verified by `tests/test_slot_ring_lock.tscn` (11 checks).
 
 ##### W13-KM4
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Preset hạt FBK-09 [dời từ tuần 13]
 - Nghiệm thu: Giới hạn 500/1500/3000
 - Cần xong trước: W7-KM1
+- Ghi chú bàn giao: The 500/1500/3000 limit (Graphics tab, W10-KM3) now feeds one shared budget, `art/vfx/particle_budget.gd` (ParticleBudget.limit). Every effect manager joins the group `particle_source` and reports `active_particles()`: HitFxManager, SkillFxManager, BuildFxManager, DestroyFxManager and BossFxManager, so the managers no longer each count against the full limit. Extras (muzzle flashes, arrow hits, skill dust and embers, build dust) are skipped when a new one would go over; main effects (cannon blasts, a tower breaking, the boss plates and steam) always play. Telegraphs use meshes and are never touched. Verified by `tests/test_particle_budget.tscn` (11 checks).
 
 ##### W11-KM7
 - Người: Kim

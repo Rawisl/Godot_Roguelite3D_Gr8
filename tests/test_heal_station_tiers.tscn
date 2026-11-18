@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://glv11050e8qv"]
+
+[ext_resource type="Script" uid="uid://bxec7fdhn5n31" path="res://tests/test_heal_station_tiers.gd" id="1_test"]
+
+[node name="TestHealStationTiers" type="Node3D" unique_id=1858325805]
+script = ExtResource("1_test")

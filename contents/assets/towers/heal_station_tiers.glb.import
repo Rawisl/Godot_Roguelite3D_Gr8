@@ -1,0 +1,98 @@
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+uid="uid://614ht7mwnwwk"
+path="res://.godot/imported/heal_station_tiers.glb-fc85bbfdad33c631b4da0a061f67f008.scn"
+
+[deps]
+
+source_file="res://contents/assets/towers/heal_station_tiers.glb"
+dest_files=["res://.godot/imported/heal_station_tiers.glb-fc85bbfdad33c631b4da0a061f67f008.scn"]
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=true
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=true
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=0
+materials/extract_format=0
+materials/extract_path=""
+_subresources={
+"materials": {
+"hs3_crystal": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_crystal.tres",
+"use_external/path": "uid://crmr5sh40rjh1"
+},
+"hs3_door": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_door.tres",
+"use_external/path": "uid://cq806gxr2hjry"
+},
+"hs3_panel": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_panel.tres",
+"use_external/path": "uid://k6x78gq6xoas"
+},
+"hs3_panel_tier1": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_panel_tier1.tres",
+"use_external/path": "res://contents/assets/towers/texture/heal_station_panel_tier1.tres"
+},
+"hs3_stone": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_stone.tres",
+"use_external/path": "uid://dnkxon7g3104s"
+},
+"hs3_stone_light": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_stone_light.tres",
+"use_external/path": "uid://beyxto5hy6o7"
+},
+"hs3_stone_light_tier1": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_stone_light_tier1.tres",
+"use_external/path": "res://contents/assets/towers/texture/heal_station_stone_light_tier1.tres"
+},
+"hs3_stone_tier1": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://contents/assets/towers/texture/heal_station_stone_tier1.tres",
+"use_external/path": "res://contents/assets/towers/texture/heal_station_stone_tier1.tres"
+},
+"hs3_water": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/heal_water.tres",
+"use_external/path": "uid://c7m2ptjwjsawd"
+},
+"hs3_water_core": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/heal_water.tres",
+"use_external/path": "uid://c7m2ptjwjsawd"
+}
+}
+}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
+gltf/texture_map_mode=1
