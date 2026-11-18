@@ -1,6 +1,7 @@
 class_name Bulwark
 extends Enemy
 # TODO(Ender-Via): set in_hazard_trial = true on the boss the Hazard Trial spawns into the room.
+# TODO(Ender-Via): move the structure pick into BulwarkBrain as a scored action so _find_best_target only reads the result and no longer changes push state or uses the AI roll.
 
 const WALK_ANIM_BASE_SPEED: float = 1.42
 
