@@ -1043,10 +1043,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM3
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Logic tab Âm thanh và Đồ họa (SET-01..04)
 - Nghiệm thu: Volume áp ngay; đổi độ phân giải xác nhận 10 s
 - Cần xong trước: W10-KH3
+- Ghi chú bàn giao: Volume (applied at once by AudioManager), the 10 s keep for window mode and resolution, and the corrupt settings.cfg fallback were already in from #193. Added the quality rows to the Graphics tab: preset (Low, Medium, High, Custom; default by GPU type, Medium when unknown), shadow quality (off, low, high), particle limit (500, 1500, 3000) and see-through (fade or off). `ui/screens/quality_settings.gd` holds the rules and the engine-wide part; `art/quality/quality_applier.gd` (in `levels/corridor/level.tscn`) puts them on the level's sun, HitFxManager and SkillFxManager budgets and OcclusionManager. A row changed by hand turns the preset to Custom. Verified by `tests/test_quality_settings.tscn` (21 checks) and `test_settings_and_sync` (51).
 
 ##### W10-KM4
 - Người: Kim
@@ -1490,10 +1491,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM1
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Accessibility ACC-05, 06 và kiểm UI-05 (gồm biểu tượng trait quân)
 - Nghiệm thu: Không nhấp nháy quá 3 lần/s
 - Cần xong trước: W10-KM4
+- Ghi chú bàn giao: Screen shake already follows the Accessibility setting through CameraRig.shake_scale (normal, 50 %, off). Reduce flashing now also removes the white core of the cannon blast (`art/vfx/cannon_blast.gd`); the boss core, fire zone, Fortress border and hit flash already honoured it. Every repeating effect was checked at or under 3 per second. The drawn trait shapes are replaced by five icons in `art/icons/traits/` (64 px, shown at 26 px), each a different shape and always next to the trait name. Verified by `tests/test_accessibility.tscn` (12 checks).
 
 ##### W11-KM2
 - Người: Kim
