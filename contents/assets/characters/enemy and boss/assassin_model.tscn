@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://bcusdmcp6o0mu"]
 
-[ext_resource type="Script" uid="uid://cof0hcmqhst2l" path="res://contents/assets/characters/enemy and boss/stealth_model.gd" id="1_ipj3r"]
+[ext_resource type="Script" uid="uid://cof0hcmqhst2l" path="res://art/characters/stealth_model.gd" id="1_ipj3r"]
 [ext_resource type="PackedScene" uid="uid://cesfyly6jhukb" path="res://contents/assets/characters/enemy and boss/characters/gltf/Skeleton_Warrior.glb" id="2_jabd7"]
 [ext_resource type="Material" path="res://contents/assets/characters/enemy and boss/textures/assassin_material.tres" id="3_usp3j"]
 [ext_resource type="Material" uid="uid://5cahvk1m3kux" path="res://contents/assets/characters/enemy and boss/textures/assassin_eyes.tres" id="4_pjb0q"]

@@ -1,12 +1,12 @@
-[gd_scene format=4]
+[gd_scene format=4 uid="uid://dgpph0mvodhty"]
 
-[ext_resource type="Script" path="res://contents/assets/characters/enemy and boss/rider/rider_model.gd" id="1_4dytm"]
-[ext_resource type="PackedScene" path="res://contents/assets/characters/enemy and boss/brute_model.tscn" id="2_t2suq"]
-[ext_resource type="Material" path="res://contents/assets/characters/enemy and boss/textures/skeleton_material_A.tres" id="3_f8eg1"]
-[ext_resource type="PackedScene" path="res://contents/assets/characters/enemy and boss/assets/gltf/Skeleton_Blade.gltf" id="4_otkia"]
-[ext_resource type="Texture2D" path="res://contents/assets/characters/enemy and boss/assets/gltf/skeleton_texture_A.png" id="5_scadp"]
-[ext_resource type="AnimationLibrary" path="res://contents/assets/characters/additional animations/Animations/gltf/Rig_Medium/Rig_Medium_Simulation.glb" id="6_14piu"]
-[ext_resource type="PackedScene" path="res://contents/assets/characters/enemy and boss/rider/rider_horse.glb" id="7_aqc8i"]
+[ext_resource type="Script" uid="uid://barlqtei3yqk5" path="res://art/characters/rider_model.gd" id="1_4dytm"]
+[ext_resource type="PackedScene" uid="uid://b6omvmb0o2xm" path="res://contents/assets/characters/enemy and boss/brute_model.tscn" id="2_t2suq"]
+[ext_resource type="Material" uid="uid://c8fdqqscpfttr" path="res://contents/assets/characters/enemy and boss/textures/skeleton_material_A.tres" id="3_f8eg1"]
+[ext_resource type="PackedScene" uid="uid://by1tas46lmeml" path="res://contents/assets/characters/enemy and boss/assets/gltf/Skeleton_Blade.gltf" id="4_otkia"]
+[ext_resource type="Texture2D" uid="uid://4gnyebygcga" path="res://contents/assets/characters/enemy and boss/assets/gltf/skeleton_texture_A.png" id="5_scadp"]
+[ext_resource type="AnimationLibrary" uid="uid://hqskusp75tvi" path="res://contents/assets/characters/additional animations/Animations/gltf/Rig_Medium/Rig_Medium_Simulation.glb" id="6_14piu"]
+[ext_resource type="PackedScene" uid="uid://dnjb2w1nmfla1" path="res://contents/assets/characters/enemy and boss/rider/rider_horse.glb" id="7_aqc8i"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5c5b8"]
 resource_name = "skeleton"
@@ -86,7 +86,10 @@ bones/20/rotation = Quaternion(0.5896323, 5.3284204e-08, -4.0652054e-07, 0.80767
 bones/21/rotation = Quaternion(-0.62060446, 0.09371697, -0.016651304, 0.77832514)
 bones/22/rotation = Quaternion(-3.493554e-05, 0.9201413, -0.39158672, 7.916632e-06)
 
-[node name="Skeleton_Warrior_Helmet" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/head" parent_id_path=PackedInt32Array(1675170944, 579878053, 1994916705) index="0" unique_id=1843560160]
+[node name="head" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D" index="0" unique_id=1994916705]
+transform = Transform3D(0.9999971, -5.2386895e-09, 0.002416909, 5.204356e-09, 0.99999994, -7.450581e-09, -0.0024169085, 1.4901161e-08, 0.9999971, -4.338571e-09, 1.3139387, -0.4561526)
+
+[node name="Skeleton_Warrior_Helmet" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/head" index="0" unique_id=1843560160]
 material_override = ExtResource("3_f8eg1")
 
 [node name="Skeleton_Warrior_ArmLeft" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D" index="1" unique_id=401622782]
@@ -116,19 +119,27 @@ material_override = ExtResource("3_f8eg1")
 [node name="Skeleton_Warrior_LegRight" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D" index="9" unique_id=1964848185]
 material_override = ExtResource("3_f8eg1")
 
-[node name="Sword" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot" parent_id_path=PackedInt32Array(1675170944, 185827917) index="0" unique_id=29959550 instance=ExtResource("4_otkia")]
+[node name="RightHandSlot" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D" index="10" unique_id=185827917]
+transform = Transform3D(-0.06901675, 0.5496552, -0.83253527, -0.89023423, 0.34270388, 0.30005926, 0.45024177, 0.76186126, 0.46566975, -0.3820416, 0.71482295, -0.2261997)
+
+[node name="Sword" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot" index="0" unique_id=29959550 instance=ExtResource("4_otkia")]
 
 [node name="Skeleton_Blade" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot/Sword" index="0" unique_id=2014644844]
 material_override = ExtResource("3_f8eg1")
 mesh = SubResource("ArrayMesh_5u76s")
 
+[node name="LeftHandSlot" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D" index="11" unique_id=1518003297]
+transform = Transform3D(-0.046268933, -0.1368255, 0.98951346, 0.9772853, 0.19888267, 0.07319789, -0.20681196, 0.9704245, 0.1245155, 0.40278468, 0.7197095, -0.23445293)
+
 [node name="AnimationPlayer" parent="Mount/Rider/Skeleton_Warrior" parent_id_path=PackedInt32Array(1675170944, 579878053) index="1" unique_id=900034506]
 libraries/simulation = ExtResource("6_14piu")
 
-[node name="Horse" type="Node3D" parent="Mount" unique_id=813708190 instance=ExtResource("7_aqc8i")]
+[node name="Horse" parent="Mount" unique_id=813708190 instance=ExtResource("7_aqc8i")]
 unique_name_in_owner = true
 transform = Transform3D(1.54375, 0, 0, 0, 1.54375, 0, 0, 0, 1.54375, 0, 0, 0)
 
 [editable path="Mount/Rider"]
 [editable path="Mount/Rider/Skeleton_Warrior"]
 [editable path="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot/Sword"]
+[editable path="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/RightHandSlot/Skeleton_Axe2"]
+[editable path="Mount/Rider/Skeleton_Warrior/Rig_Medium/Skeleton3D/LeftHandSlot/Skeleton_Shield_Large_A2"]
