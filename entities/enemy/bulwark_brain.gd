@@ -1,5 +1,6 @@
 class_name BulwarkBrain
 extends RefCounted
+# TODO(Ender-Via): after the boss-wave playtest, replace the on/off front and reach checks with curves (angle off the facing for the turn, distance to the stomp ring for the stomp) so close situations score differently.
 
 ## Utility scoring for the Bulwark: what to do next when fighting near the commander.
 ## Pure functions over a Situation snapshot, so the scoring is testable without a scene.

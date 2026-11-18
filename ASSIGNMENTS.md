@@ -791,21 +791,23 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT3
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FRENZY, marker, giới hạn cứng (EN-01..03, WAVE-05, NAV-13, NAV-12)
 - Nghiệm thu: Wave không treo quá 300 s
 - Cần xong trước: W8-KT1
 
+- Ghi chú bàn giao: The straggler clock now runs per wave in WaveManager from the last spawn (it used to be each unit's own lifetime): marker at straggler_marker_time, FRENZY at frenzy_time, and at wave_hard_cap every unit left that is not a boss is removed as a cull (no gold, prestige or kill) so the wave ends. Being sent back does not reset the clock. FRENZY is for good: kept through spawning again and stagger, taunt is ignored, bosses never enter it (`Enemy.enter_frenzy`, `Enemy.mark_straggler`, `Enemy.cull`). Runner `tests/test_stuck_ladder_runner.tscn`.
 ##### W10-NG3
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thang kẹt MVP (NAV-01..06, 08, 09, 14 log) theo v2.0 (không ally_phase; thêm NAV-15 bị chặn kín thì nhắm công trình gần nhất)
 - Nghiệm thu: Kẹt giả lập đi đúng bậc; xếp hàng không tính kẹt; chỉ huy đứng ở điểm hẹp không làm quân bị recycle
 - Tệp liên quan: entities/enemy/enemy.gd (khối stuck), entities/enemy/bulwark.gd
 - ID SRS: NAV-15
 - Cần xong trước: W9-KT5
 
+- Ghi chú bàn giao: Stuck ladder in `Enemy.check_stuck`, every 0.5 s while ADVANCE, CHASE or FRENZY: no 0.5 m progress along the navmesh path in 3 s asks for a new path; still stuck 3 s later, or stuck for the third time, sends the unit back to a spawn zone point (`WaveManager.random_spawn_zone_point`, HP and FRENZY kept); once sent back recycle_max times it is removed as a cull. 10 s of normal progress resets the ladder. WAIT, ATTACK, STAGGER, spawn grace, arriving and the commander standing in front never count. Knockback off the navmesh snaps back; a fall goes to the nearest navmesh point behind, the second fall sends the unit back. With no path to its target the unit attacks the nearest ground tower or Barricade and goes back to its normal targets once the Fortress can be reached. Sent back, removed and hard cap go to `Log.warn` (tag nav) with type, position, wave, state, path left, FRENZY and run seed; `Enemy.stuck_cull_count` counts the removals. Bosses keep their own ladder. Not done here: the 20-wave run at x3 for the cull rate, and the blocked-path case is only checked in a level with a navmesh, not in the runner. Bulwark TODO to move the structure pick into BulwarkBrain stays for later.
 ##### W10-NG4
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ

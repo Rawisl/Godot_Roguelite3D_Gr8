@@ -121,6 +121,11 @@ const BOSS_TIMER_SCRIPT := preload("res://systems/wave/boss_timer.gd")
 var _combat_timer: float = 0.0
 var _clear_time: float = 0.0
 var _first_enemy_spawned: bool = false
+## Game seconds since the wave's last enemy spawned. Negative while enemies are still queued.
+var _since_last_spawn: float = -1.0
+var _stragglers_marked: bool = false
+var _frenzy_sent: bool = false
+var _hard_cap_reached: bool = false
 var _is_run_lost: bool = false
 var _boss_defeated_this_wave: bool = false
 var _boss_enraged_this_wave: bool = false
@@ -345,6 +350,7 @@ func start_combat() -> void:
 	spawn_timer = 0.0
 	_combat_timer = 0.0
 	_first_enemy_spawned = false
+	_reset_straggler_clock()
 
 	if is_boss:
 		_spawn_boss()
@@ -562,6 +568,7 @@ func _physics_process(delta: float) -> void:
 				var non_boss_count: int = enemies_alive - (1 if (_boss_instance != null and is_instance_valid(_boss_instance)) else 0)
 				if non_boss_count < GameConfig.max_alive:
 					_try_spawn_next_enemy()
+			_update_straggler_clock(delta)
 
 		Enums.WaveState.SUMMARY:
 			if auto_advance_summary:
@@ -571,6 +578,52 @@ func _physics_process(delta: float) -> void:
 
 		Enums.WaveState.REWARD_PICK:
 			pass
+
+
+func _reset_straggler_clock() -> void:
+	_since_last_spawn = -1.0
+	_stragglers_marked = false
+	_frenzy_sent = false
+	_hard_cap_reached = false
+
+
+## Once the last enemy of the wave has spawned: a marker on the stragglers, then FRENZY, then the
+## hard cap, which removes every unit left that is not a boss so the wave always ends. The clock
+## runs from the last spawn and is not reset when a unit is sent back to the spawn zone.
+func _update_straggler_clock(delta: float) -> void:
+	if not _first_enemy_spawned or not spawn_queue.is_empty():
+		return
+	_since_last_spawn = maxf(_since_last_spawn, 0.0) + delta
+	if not _stragglers_marked and _since_last_spawn >= GameConfig.straggler_marker_time:
+		_stragglers_marked = true
+		for enemy in _wave_enemies():
+			enemy.mark_straggler()
+	if not _frenzy_sent and _since_last_spawn >= GameConfig.frenzy_time:
+		_frenzy_sent = true
+		for enemy in _wave_enemies():
+			enemy.enter_frenzy()
+	if not _hard_cap_reached and _since_last_spawn >= GameConfig.wave_hard_cap:
+		_hard_cap_reached = true
+		for enemy in _wave_enemies():
+			enemy.cull(&"HARD_CAP")
+
+
+## Living units of the wave, the boss included; each unit decides what applies to it.
+func _wave_enemies() -> Array[Enemy]:
+	var result: Array[Enemy] = []
+	for node in get_tree().get_nodes_in_group(&"enemy"):
+		var enemy := node as Enemy
+		if enemy != null and is_instance_valid(enemy) and not enemy.is_dead:
+			result.append(enemy)
+	return result
+
+
+## A random point in the spawn zone, for a unit sent back to walk the lane again.
+func random_spawn_zone_point() -> Vector3:
+	var rng: RandomNumberGenerator = _wave_rng if _wave_rng != null else RandomNumberGenerator.new()
+	var offset_x: float = rng.randf_range(-spawn_zone_half_extents.x + 0.5, spawn_zone_half_extents.x - 0.5)
+	var offset_z: float = rng.randf_range(-spawn_zone_half_extents.z + 0.5, spawn_zone_half_extents.z - 0.5)
+	return spawn_point + Vector3(offset_x, 0.0, offset_z)
 
 
 func _is_position_occupied(pos: Vector3, min_dist: float = 1.0) -> bool:
