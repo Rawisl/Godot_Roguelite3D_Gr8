@@ -4,7 +4,6 @@ extends Node
 ## In-memory runtime state container for the active run session.
 ## Tracks progress, economy, weapons, health, upgrades, and run statistics.
 ## Does not write any state to persistent disk storage during the run.
-# TODO(Ender-Via): when the Hazard Trial wave side lands, skip run_bosses_defeated in _on_boss_defeated for a boss that dies in the room.
 
 ## The base sword: owned and equipped at the start of every run.
 const BASE_WEAPON := &"sword_base"

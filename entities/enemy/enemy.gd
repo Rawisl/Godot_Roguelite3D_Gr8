@@ -110,6 +110,9 @@ var stuck_detections: int = 0
 var stuck_tier: int = 0
 ## True while the unit attacks the nearest building because no path reaches its target.
 var breaking_through: bool = false
+## A unit of the Hazard Trial room: it goes for the commander only, pays nothing on its own
+## (the room counts the kill) and is never sent back or removed by the stuck ladder.
+var in_hazard_room: bool = false
 var _stuck_clock: float = 0.0
 var _stuck_window: float = 0.0
 var _stuck_anchor: float = INF
@@ -288,11 +291,11 @@ func can_be_targeted() -> bool:
 
 
 func can_be_recycled() -> bool:
-	return true
+	return not in_hazard_room
 
 
 func can_be_culled() -> bool:
-	return true
+	return not in_hazard_room
 
 
 ## Bosses keep their own stuck handling, are never sent back or removed and never go into FRENZY.
@@ -372,7 +375,8 @@ func recycle() -> bool:
 ## first, then back to the spawn zone, then removed once it was sent back recycle_max times.
 ## Queueing, attacking, staggering, spawning and being blocked by the commander never count.
 func _update_stuck_ladder(delta: float) -> void:
-	if is_dead or is_boss():
+	# The room is an open arena with only the commander to reach; the ladder is for the lane.
+	if is_dead or is_boss() or in_hazard_room:
 		return
 	_stuck_clock += delta
 	if _stuck_clock < STUCK_CHECK_INTERVAL:
@@ -1213,6 +1217,9 @@ func _find_closest_valid_tower_any() -> Node3D:
 	return closest
  
 func _find_best_target() -> void:
+	if in_hazard_room:
+		_find_default_target()
+		return
 	if current_state == Enums.EnemyState.FRENZY:
 		_find_default_target()
 		return
@@ -1306,6 +1313,12 @@ func _find_best_target() -> void:
 	_find_default_target()
  
 func _find_default_target() -> void:
+	if in_hazard_room:
+		# The room has no tower, Barricade or Fortress: the commander is the only target.
+		var cmd := _get_valid_commander()
+		if cmd != null:
+			set_target(cmd)
+		return
 	var fortress := _get_valid_fortress()
 	if fortress != null:
 		set_target(fortress)
@@ -1701,7 +1714,8 @@ func _on_died() -> void:
 	if hurt_shape != null:
 		hurt_shape.set_deferred("disabled", true)
  
-	if data != null:
+	# A room unit is counted by the Hazard Trial when it reaches DEAD, never by the wave.
+	if data != null and not in_hazard_room:
 		var kill_gold: float = _get_kill_gold()
 		var display_gold: int = int(round(kill_gold))
 		if display_gold > 0:
