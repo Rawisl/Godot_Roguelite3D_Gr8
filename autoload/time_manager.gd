@@ -26,6 +26,8 @@ var real_time: float = 0.0
 
 var _time_scale: int = SCALE_MIN
 var _pause_requests: Dictionary = {}  # used as a set
+## Real seconds the frame rate has stayed under the floor at x3.
+var _low_fps_time: float = 0.0
 
 var is_paused: bool:
 	get:
@@ -47,6 +49,21 @@ func _process(delta: float) -> void:
 	if not get_tree().paused:
 		pausable_real_time += real_delta
 		game_time += delta
+	check_frame_rate(real_delta, Engine.get_frames_per_second())
+
+## Drops x3 to x2 when the frame rate stays under fps_downscale_floor for fps_downscale_duration
+## real seconds, and tells the player. Slowing the game comes before touching AI or scan rates.
+## Only x3 is lowered; Pause and the other speeds reset the count.
+func check_frame_rate(real_delta: float, fps: float) -> void:
+	if _time_scale != SCALE_MAX or is_paused or fps >= GameConfig.fps_downscale_floor:
+		_low_fps_time = 0.0
+		return
+	_low_fps_time += real_delta
+	if _low_fps_time < GameConfig.fps_downscale_duration:
+		return
+	_low_fps_time = 0.0
+	_apply_time_scale(SCALE_MAX - 1)
+	EventBus.alert_requested.emit(int(Enums.AlertTier.T2), &"alert.fps_downscale", {})
 
 func get_time_scale() -> int:
 	return _time_scale
