@@ -1491,10 +1491,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM1
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Accessibility ACC-05, 06 và kiểm UI-05 (gồm biểu tượng trait quân)
 - Nghiệm thu: Không nhấp nháy quá 3 lần/s
 - Cần xong trước: W10-KM4
+- Ghi chú bàn giao: Screen shake already follows the Accessibility setting through CameraRig.shake_scale (normal, 50 %, off). Reduce flashing now also removes the white core of the cannon blast (`art/vfx/cannon_blast.gd`); the boss core, fire zone, Fortress border and hit flash already honoured it. Every repeating effect was checked at or under 3 per second. The drawn trait shapes are replaced by five icons in `art/icons/traits/` (64 px, shown at 26 px), each a different shape and always next to the trait name. Verified by `tests/test_accessibility.tscn` (12 checks).
 
 ##### W11-KM2
 - Người: Kim
