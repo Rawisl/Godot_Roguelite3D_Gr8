@@ -1043,10 +1043,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM3
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Logic tab Âm thanh và Đồ họa (SET-01..04)
 - Nghiệm thu: Volume áp ngay; đổi độ phân giải xác nhận 10 s
 - Cần xong trước: W10-KH3
+- Ghi chú bàn giao: Volume (applied at once by AudioManager), the 10 s keep for window mode and resolution, and the corrupt settings.cfg fallback were already in from #193. Added the quality rows to the Graphics tab: preset (Low, Medium, High, Custom; default by GPU type, Medium when unknown), shadow quality (off, low, high), particle limit (500, 1500, 3000) and see-through (fade or off). `ui/screens/quality_settings.gd` holds the rules and the engine-wide part; `art/quality/quality_applier.gd` (in `levels/corridor/level.tscn`) puts them on the level's sun, HitFxManager and SkillFxManager budgets and OcclusionManager. A row changed by hand turns the preset to Custom. Verified by `tests/test_quality_settings.tscn` (21 checks) and `test_settings_and_sync` (51).
 
 ##### W10-KM4
 - Người: Kim
@@ -1067,18 +1068,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W13-KM1
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13]
 - Nghiệm thu: Không hit stop toàn cục
 - Cần xong trước: W7-KM2
+- Ghi chú bàn giao: `art/vfx/hit_reaction_manager.gd` (HitReactionManager, in `levels/corridor/level.tscn`) listens to `HealthComponent.damaged` of enemies and the commander: a white overlay (`art/materials/hit_flash.tres`) for 0.1 s, only that entity's AnimationPlayer frozen for 0.05 s, and `enemy_hit` / `commander_hit` through `EventBus.sfx_requested`. No global hit stop. Setting `reduce_flash` turns the flash off; at most 3 flashes a second per entity in any case. Damage over time ticks are skipped. A hover outline is put back after the flash. Timers on pausable real time. Verified by `tests/test_hit_reaction.tscn` (19 checks).
 
 ##### W13-KM3
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 2.5 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FBK-08 tower bị phá (khói, mảnh vỡ, đống đổ nát) [dời từ tuần 13]
 - Nghiệm thu: Hiện đúng khi vào RUINED
 - Cần xong trước: W8-KM4
+- Ghi chú bàn giao: Already delivered in #106 and #107. `art/vfx/destroy_fx_manager.gd` (in `levels/corridor/level.tscn`) follows `EventBus.tower_destroyed`, which `Slot.ruin()` sends when the slot turns RUINED: the tower shrinks, swells and pops into smoke and debris (`destroy_burst.tscn`), then the rubble drops in. A drained heal station goes through the same signal, so it gets the same effect. Runs on pausable real time, follows x2/x3 for the particles. Verified by `tests/test_destroy_fx.tscn` (20 checks).
 
 ##### W10-KM8
 - Người: Kim
@@ -1488,10 +1491,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM1
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Accessibility ACC-05, 06 và kiểm UI-05 (gồm biểu tượng trait quân)
 - Nghiệm thu: Không nhấp nháy quá 3 lần/s
 - Cần xong trước: W10-KM4
+- Ghi chú bàn giao: Screen shake already follows the Accessibility setting through CameraRig.shake_scale (normal, 50 %, off). Reduce flashing now also removes the white core of the cannon blast (`art/vfx/cannon_blast.gd`); the boss core, fire zone, Fortress border and hit flash already honoured it. Every repeating effect was checked at or under 3 per second. The drawn trait shapes are replaced by five icons in `art/icons/traits/` (64 px, shown at 26 px), each a different shape and always next to the trait name. Verified by `tests/test_accessibility.tscn` (12 checks).
 
 ##### W11-KM2
 - Người: Kim
