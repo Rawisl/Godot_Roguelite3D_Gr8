@@ -811,41 +811,45 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-NG4
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: TIME-06 tự hạ x2 + ALR-10
 - Nghiệm thu: FPS < 30 trong 3 s ở x3 thì hạ x2
 - Cần xong trước: W8-KT1
 
+- Ghi chú bàn giao: `TimeManager.check_frame_rate` drops x3 to x2 when the frame rate stays under fps_downscale_floor for fps_downscale_duration real seconds, outside Pause, and sends alert_requested T2 with `alert.fps_downscale` (new string). Only x3 is lowered. Ngọc owns time_manager.gd; Khang owns strings.csv.
 ##### W10-KT4
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: State HAZARD_TRIAL trong Wave FSM (PREP -> HAZARD_TRIAL -> PREP cùng wave, không hồi 35% và hồi tower lần hai); thêm vào Enums.WaveState từ cuối; TimeManager, camera, HUD nhận state mới
 - Nghiệm thu: Ra khỏi phòng không chạy lại việc đầu PREP; tua x1/x2/x3 dùng được trong phòng và vào/ra phòng không làm TimeManager đổi mức tua
 - Tệp liên quan: common/enums.gd:6 (WaveState, thêm HAZARD_TRIAL ở cuối), systems/wave/wave_manager.gd, autoload/time_manager.gd
 - ID SRS: 3.3.1, TIME-02, TIME-08
 - Cần xong trước: W9-KT3, W9-KT6
 
+- Ghi chú bàn giao: `WaveManager.enter_hazard_state()` and `leave_hazard_state()` switch PREP to HAZARD_TRIAL and back to the same PREP without running start_prep again (no new spawn queue, tallies, offer or hazard_used reset). The commander already skips its PREP heal after the room; BuildService now skips the tower heal too (Mạnh). TimeManager does not change the speed on either state, and the speed buttons only lock BOSS_INTRO, SUMMARY and REWARD_PICK, so x1/x2/x3 work in the room.
 ##### W10-KT5
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial phía wave: điều kiện vào (PREP, một lần mỗi wave, Frontline, không Pause hay hộp thoại), chọn nhóm 5 quái (mỗi loại >= 1, RNG riêng hash(run_seed,'hazard',wave); wave boss = boss + 4 hộ tống), sinh quân vào hazard_room, phân xử kết quả cuối frame DIED > WON > LEFT, trả gold, XP, Mithril khi rời phòng, không đụng spawn_queue, uy tín, run_kills
 - Nghiệm thu: HZ1, HZ2, HZ5, HZ6 đạt; thắng phòng được Mithril và sửa Fortress được; boss trong phòng không rơi vũ khí và không +1 Emergency repair; Pause trong phòng không rời phòng, Abandon hoặc Quit trong phòng chốt run và mất thưởng chưa nhận (HZT-12)
 - Tệp liên quan: mới: systems/hazard/ (hoặc systems/wave/), systems/xp/xp_tracker.gd, systems/wave/wave_manager.gd
 - ID SRS: HZT-01, 02, 04, 07, 08, 09, 13, 15, 16; GLD-10; XP-06; MTH-02
 - Cần xong trước: W10-KT4, W10-NG10, W10-KM8, W8B-KT1
 
+- Ghi chú bàn giao: New `systems/hazard/hazard_trial.gd`, created by WaveManager. Each new PREP builds the group (`build_group`: 5 units from the wave's composition, each type at least once, the rest by count with an RNG seeded by run seed, 'hazard' and the wave; a boss wave gives the boss plus 4 escorts) and sends hazard_trial_offered with the Mithril for a win. hazard_enter_requested is checked again (PREP, not used, Frontline, not paused, no dialog, a room in the level); entering moves the commander to the room's CommanderSpawn, spawns the group on the pads at this wave's scale and sends hazard_trial_entered and hazard_trial_progress. Results are settled at the end of the frame, DIED over WON over LEFT; leaving puts the commander back, sends hazard_trial_exited, then pays the room gold (kill gold of the wave plus boss gold when the boss died, with the gold bonus, no clear bonus) to GoldManager, the XP to XpTracker and Mithril on WON, sets hazard_used and returns to PREP. Room units do not send enemy_died, so the wave, prestige, run kills and boss count never see them; the room boss does not send boss_defeated (no prestige, repair charge or weapon). Ending the run in the room drops the room and its rewards. The group comes from the generated composition until scripted waves land (W11-KT9); self-destructing, Captain and Undead rules wait for the traits (W10-KT7). Runner `tests/test_hazard_trial_runner.tscn`.
 ##### W10-KT6
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial AI trong phòng: quân chỉ nhắm chỉ huy; boss trong phòng có pha giáp nhưng không BOSS_INTRO, boss_timer, Cuồng nộ
 - Nghiệm thu: Quân trong phòng không tấn công tower; Bulwark trong phòng không đếm giờ
 - Tệp liên quan: entities/enemy/enemy.gd, entities/enemy/bulwark.gd
 - ID SRS: HZT-03, HZT-14
 - Cần xong trước: W10-KT5
 
+- Ghi chú bàn giao: Room units (`Enemy.in_hazard_room`) only target the commander, never a tower, Barricade or Fortress, and the stuck ladder skips them. The room boss gets `in_hazard_trial`, which the Bulwark already uses for its room behaviour; no BOSS_INTRO, boss timer or Enrage is started for it. Battle Cry still taunts room units.
 ##### W10-KT7
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
