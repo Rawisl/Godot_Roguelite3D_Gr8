@@ -1,0 +1,19 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/toon_stealth.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://binrfdgin8c4t" path="res://contents/assets/characters/enemy and boss/textures/skeleton_texture_B.png" id="2_tex"]
+
+[resource]
+resource_name = "skeleton_assassin"
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/albedo_texture = ExtResource("2_tex")
+shader_parameter/albedo_color = Color(0.4, 0.37, 0.46, 1)
+shader_parameter/bands = 2
+shader_parameter/band_softness = 0.03
+shader_parameter/shadow_tint = Color(0.16, 0.15, 0.24, 1)
+shader_parameter/light_strength = 0.75
+shader_parameter/ambient_strength = 0.5
+shader_parameter/rim_strength = 0.0
+shader_parameter/rim_width = 0.3
+shader_parameter/opacity = 1.0
