@@ -1523,10 +1523,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM6
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 1.5 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kiểm navmesh agent lớn và boss_melee_point trên hành lang mới với 3 công trình grid
 - Nghiệm thu: Có đường cho agent bán kính 1.6 m
 - Cần xong trước: W9-KM6
+- Ghi chú bàn giao: `tests/test_large_agent_layouts.tscn` lists every legal layout of three ground buildings with the build rule (50 116 on the 68 cells), takes the tightest ones (refused with 3 m more width), builds eight of them for real on `level.tscn`, rebakes and checks a 1.6 m agent path on the large-agent navmesh from the spawn to the Bulwark standing point and to the gate: all reach. No change to the level was needed. Runs in about 2 minutes.
 
 ##### W13-KM2
 - Người: Kim
@@ -1547,10 +1548,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM7
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Chỉnh camera cùng Level trên map thật: size Frontline và overview, camera_bounds, tốc độ dịch; chạy CM1, CM2, CM3
 - Nghiệm thu: CM1, CM2, CM3 đạt trên map thật
 - Cần xong trước: W9-KM6
+- Ghi chú bàn giao: CM1, CM2 and CM3 pass on `main.tscn` with the current values (Frontline 14, overview 23.5, bounds 32 x 12 with frontline_depth 12, pan 14 m/s, recenter 0.3 s); nothing needed tuning. `tests/test_camera_flow.gd` now runs at 1920x1080 headless so the Frontline view width is measured (13.2 m each side), and also checks holding a pan key past both ends and across the corridor stays in the bounds, and the commander at the far walkable point of each end is followed but the focus stays in the bounds.
 
 ##### W11-KM8
 - Người: Kim
