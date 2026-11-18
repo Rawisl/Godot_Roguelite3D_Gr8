@@ -43,6 +43,12 @@ func _ready() -> void:
 	add_child(_light)
 
 
+## Height the orb bobs around; the model calls it when the station changes tier.
+func set_base_height(height: float) -> void:
+	_base_y = height
+	position.y = height
+
+
 func get_store() -> float:
 	var value = _core.get_instance_shader_parameter(&"store")
 	return 1.0 if value == null else clampf(float(value), 0.0, 1.0)

@@ -109,7 +109,7 @@ func test_beam() -> void:
 func test_pool_follows_store() -> void:
 	_station.hp = 75.0
 	await _settle()
-	var pool := _station.find_child("heal_station_v3", true, false) as MeshInstance3D
+	var pool := _station.find_child("HealStationL*", true, false) as MeshInstance3D
 	assert_true(pool != null and is_equal_approx(pool.get_instance_shader_parameter(&"store"), 0.25), "a quarter store sets the pool to 0.25")
 	var orb := _station.find_child("EnergyOrb", true, false) as EnergyOrb
 	assert_true(orb != null and is_equal_approx(orb.get_store(), 0.25), "the energy orb follows the store")
