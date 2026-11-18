@@ -18,6 +18,12 @@ extends Node
 ## - The boss enraging also plays its own cue (boss_enraged), as a T1 so it is never dropped.
 ## - Heal station: a soft pulse (heal_start) when the commander starts healing, and a cue
 ##   (heal_station_drained, T1) when the station it heals from runs dry.
+## - Game cues, each with its own sound: the Stomp wind-up (boss_stomp_windup, from the stomp
+##   telegraph), level up, reward cards on screen, a tower destroyed, a heavy hit on the
+##   Fortress (one hit taking fortress_heavy_hit_pct of its max HP or more), the T1 alert siren
+##   and a heartbeat when the commander falls to low HP.
+## - Stings: win_sting when a wave is cleared, victory_sting on the victory screen, lose_sting at
+##   RunEnd, or endless_end_sting when the run had already passed the victory wave.
 ##
 ## Settings keys on EventBus.settings_changed: volume_master, volume_music, volume_sfx and
 ## volume_ui (0 to 1), mute_on_focus_loss (bool).
@@ -62,6 +68,10 @@ const VOLUME_BUSES := {
 @export var crossfade_time: float = 1.5
 ## Enemy ids that are bosses: a Hazard Trial group with one of them plays the boss track.
 @export var boss_enemy_ids: Array[StringName] = [&"bulwark"]
+
+@export_group("Cues")
+## Share of the Fortress max HP one hit must take to play fortress_heavy_hit.
+@export_range(0.0, 1.0) var fortress_heavy_hit_pct: float = 0.05
 ## Real-time seconds for Master to come back after the window gets focus again.
 @export var focus_fade_time: float = 0.5
 
@@ -142,6 +152,14 @@ func _ready() -> void:
 	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
 	EventBus.boss_enraged.connect(_on_boss_enraged)
 	EventBus.heal_state_changed.connect(_on_heal_state_changed)
+	EventBus.telegraph_started.connect(_on_telegraph_started)
+	EventBus.level_up.connect(func(_level: int, _picks: int) -> void: play(&"level_up"))
+	EventBus.reward_offered.connect(func(_cards: Array, _rerolls: int) -> void: play(&"reward_cards"))
+	EventBus.tower_destroyed.connect(func(_slot_id: StringName) -> void: play(&"tower_destroyed"))
+	EventBus.fortress_hp_changed.connect(_on_fortress_hp_changed)
+	EventBus.alert_requested.connect(_on_alert_requested)
+	EventBus.commander_low_hp_changed.connect(_on_commander_low_hp_changed)
+	EventBus.run_victory.connect(_on_run_victory)
 	GameState.app_state_changed.connect(_on_app_state_changed)
 
 func set_library(value: SfxLibrary) -> void:
@@ -294,7 +312,10 @@ func _on_app_state_changed(new_state: int, _old_state: int) -> void:
 		GameState.AppState.RUN_LOADING:
 			play_music(null)
 		GameState.AppState.RUN_END:
-			play_sting(music.lose_sting, music.run_end)
+			# A run that already passed the victory wave ended in endless: its own sting.
+			var endless: bool = GameState.last_run_summary.get("victory_reached", false) == true
+			var sting := music.endless_end_sting if endless and music.endless_end_sting != null else music.lose_sting
+			play_sting(sting, music.run_end)
 
 func _update_music_volume() -> void:
 	var offset := _music_db + _duck_db + (pause_music_db if get_tree().paused else 0.0)
@@ -335,6 +356,28 @@ func _on_boss_enraged() -> void:
 
 ## HOLD repeats while E is held and HEALING is sent once per channel; the pulse plays only on the
 ## step into HEALING. DEPLETED means the source station ran out while healing.
+func _on_telegraph_started(kind: StringName, _position: Vector3, _radius: float, _duration: float) -> void:
+	if kind == &"stomp":
+		play(&"boss_stomp_windup")
+
+## One hit that takes fortress_heavy_hit_pct of the max HP or more; small hits stay silent.
+func _on_fortress_hp_changed(_new_hp: int, max_hp: int, delta: int) -> void:
+	if delta < 0 and max_hp > 0 and float(-delta) >= fortress_heavy_hit_pct * max_hp:
+		play(&"fortress_heavy_hit")
+
+## The T1 siren always comes with its banner.
+func _on_alert_requested(tier: int, _key: StringName, _params: Dictionary) -> void:
+	if tier == 1:
+		play(&"alert_t1")
+
+func _on_commander_low_hp_changed(is_low: bool) -> void:
+	if is_low:
+		play(&"low_hp_heartbeat")
+
+func _on_run_victory(_wave_index: int) -> void:
+	if music != null:
+		play_sting(music.victory_sting, music.prep)
+
 func _on_heal_state_changed(state: StringName, _source_slot: StringName, _hold_progress: float) -> void:
 	if state == &"HEALING" and _heal_state != &"HEALING":
 		play(&"heal_start")

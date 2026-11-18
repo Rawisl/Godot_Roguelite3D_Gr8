@@ -1500,9 +1500,10 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM2
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Âm thanh hoàn chỉnh (AUD-06..09, -14 LUFS nhạc, -12 LUFS SFX); sting thắng và sting RunEnd endless
 - Nghiệm thu: Nhạc .ogg, SFX .wav
+- Ghi chú bàn giao: Every SFX is now a 16-bit 44.1 kHz .wav normalized toward -12 LUFS (true peak -1 dBTP, at most 6 dB of limiting, so short clicks stay a bit under); music stays .ogg at -14 LUFS. AudioManager plays the AUD-07 cues from EventBus: Stomp wind-up (stomp telegraph), level up, reward cards, tower destroyed, Fortress heavy hit (one hit of fortress_heavy_hit_pct = 5 % of max HP or more), the T1 alert siren and a heartbeat on low commander HP (promised in #195). New MusicLibrary stings: victory_sting on run_victory (PREP music after) and endless_end_sting at RunEnd when the run had passed the victory wave. Crossfade, Pause and focus mute (AUD-06, AUD-08) were already in. Sources in `audio/CREDITS.md`, all Kenney CC0. Verified by `tests/test_audio_manager.tscn` (116 checks).
 - Cần xong trước: Mốc B2
 
 ##### W11-KM4

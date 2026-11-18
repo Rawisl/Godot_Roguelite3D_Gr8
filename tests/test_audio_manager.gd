@@ -64,6 +64,8 @@ func _new_manager() -> void:
 	lib.entries.append(_entry(&"boss_enraged", &"SFX", AudioManager.PRIORITY_T1))
 	lib.entries.append(_entry(&"heal_start", &"SFX", AudioManager.PRIORITY_COMMANDER))
 	lib.entries.append(_entry(&"heal_station_drained", &"SFX", AudioManager.PRIORITY_T1))
+	for id in [&"boss_stomp_windup", &"level_up", &"reward_cards", &"tower_destroyed", &"fortress_heavy_hit", &"alert_t1", &"low_hp_heartbeat"]:
+		lib.entries.append(_entry(id, &"SFX", AudioManager.PRIORITY_T1))
 	_am.set_library(lib)
 	TimeManager.real_time = 100.0
 
@@ -89,7 +91,8 @@ func _run() -> void:
 	# Library from the autoload scene loads every placeholder sound.
 	var shipped: Node = AM_SCENE.instantiate()
 	add_child(shipped)
-	for id in [&"ui_click", &"alert_t1", &"commander_hit", &"boss_stomp_windup", &"tower_arrow_shot", &"enemy_hit", &"boss_enraged", &"heal_start", &"heal_station_drained"]:
+	for id in [&"ui_click", &"alert_t1", &"commander_hit", &"boss_stomp_windup", &"tower_arrow_shot", &"enemy_hit", &"boss_enraged", &"heal_start", &"heal_station_drained",
+			&"level_up", &"reward_cards", &"tower_destroyed", &"fortress_heavy_hit", &"low_hp_heartbeat"]:
 		_check("shipped library has %s" % id, shipped._entries.has(id) and shipped._entries[id].stream != null)
 	_check("pool has 32 voices", shipped._voices.size() == 32)
 	# every state has a track; loops loop, stings play once.
@@ -97,7 +100,7 @@ func _run() -> void:
 	for key in [&"menu", &"prep", &"combat", &"boss", &"run_end"]:
 		var t: AudioStream = tracks.get(key)
 		_check("shipped %s track loops" % key, t is AudioStreamOggVorbis and t.loop)
-	for key in [&"win_sting", &"lose_sting"]:
+	for key in [&"win_sting", &"lose_sting", &"victory_sting", &"endless_end_sting"]:
 		var t: AudioStream = tracks.get(key)
 		_check("shipped %s plays once" % key, t is AudioStreamOggVorbis and not t.loop)
 	_check("combat and boss tracks differ", tracks.combat != tracks.boss)
@@ -209,6 +212,8 @@ func _run_music() -> void:
 		lib.set(key, _track(1.0))
 	lib.win_sting = _track(0.2, false)
 	lib.lose_sting = _track(0.2, false)
+	lib.victory_sting = _track(0.2, false)
+	lib.endless_end_sting = _track(0.2, false)
 	_am.music = lib
 	for pair in [[&"PREP", lib.prep], [&"COMBAT", lib.combat], [&"BOSS_INTRO", lib.boss], [&"BOSS_COMBAT", lib.boss]]:
 		_am._on_wave_state_changed(pair[0])
@@ -223,6 +228,13 @@ func _run_music() -> void:
 	_check("after the win sting, the PREP track comes in", _am.current_music() == lib.prep)
 	_am._on_app_state_changed(GameState.AppState.RUN_END, GameState.AppState.RUN)
 	_check("RunEnd plays the lose sting", _am.current_music() == null and _am._sting.stream == lib.lose_sting)
+	var saved_summary := GameState.last_run_summary
+	GameState.last_run_summary = {"victory_reached": true}
+	_am._on_app_state_changed(GameState.AppState.RUN_END, GameState.AppState.RUN)
+	_check("RunEnd after the victory wave plays the endless sting", _am._sting.stream == lib.endless_end_sting)
+	GameState.last_run_summary = saved_summary
+	EventBus.run_victory.emit(30)
+	_check("the victory screen plays the victory sting, PREP music after", _am._sting.stream == lib.victory_sting and _am._after_sting == lib.prep)
 	_am._on_wave_state_changed(&"PREP")
 	_check("a new state cancels the track waiting for the sting", _am._after_sting == null and _am.current_music() == lib.prep)
 	# Hazard Trial room (HAZARD_TRIAL row of the music table).
@@ -312,6 +324,33 @@ func _run_ducking() -> void:
 	_check("a drained station plays its cue over a full pool", _am.playing_count(&"heal_station_drained") == 1)
 	EventBus.heal_state_changed.emit(&"CANCELLED", &"slot_1", 0.0)
 	_check("cancelling plays no drained cue", _am.playing_count(&"heal_station_drained") == 1)
+
+	# Game cues, one sound each.
+	_new_manager()
+	EventBus.telegraph_started.emit(&"stomp", Vector3.ZERO, 3.0, 1.0)
+	_check("the stomp telegraph plays the wind-up", _am.playing_count(&"boss_stomp_windup") == 1)
+	EventBus.telegraph_started.emit(&"other", Vector3.ZERO, 3.0, 1.0)
+	_check("another telegraph plays nothing more", _am.playing_count(&"boss_stomp_windup") == 1)
+	EventBus.level_up.emit(4, 1)
+	_check("level up plays its cue", _am.playing_count(&"level_up") == 1)
+	EventBus.reward_offered.emit([], 0)
+	_check("reward cards on screen play their cue", _am.playing_count(&"reward_cards") == 1)
+	EventBus.tower_destroyed.emit(&"W1")
+	_check("a tower destroyed plays its cue", _am.playing_count(&"tower_destroyed") == 1)
+	EventBus.fortress_hp_changed.emit(990, 1000, -10)
+	_check("a small hit on the Fortress is silent", _am.playing_count(&"fortress_heavy_hit") == 0)
+	EventBus.fortress_hp_changed.emit(900, 1000, -90)
+	_check("a heavy hit on the Fortress plays its cue", _am.playing_count(&"fortress_heavy_hit") == 1)
+	EventBus.fortress_hp_changed.emit(1000, 1000, 100)
+	_check("a repair is silent", _am.playing_count(&"fortress_heavy_hit") == 1)
+	EventBus.alert_requested.emit(2, &"x", {})
+	_check("a T2 alert has no siren", _am.playing_count(&"alert_t1") == 0)
+	EventBus.alert_requested.emit(1, &"x", {})
+	_check("a T1 alert plays the siren", _am.playing_count(&"alert_t1") == 1)
+	EventBus.commander_low_hp_changed.emit(false)
+	_check("leaving low HP plays no heartbeat", _am.playing_count(&"low_hp_heartbeat") == 0)
+	EventBus.commander_low_hp_changed.emit(true)
+	_check("falling to low HP plays the heartbeat", _am.playing_count(&"low_hp_heartbeat") == 1)
 
 	# The boss track runs on from BOSS_INTRO into BOSS_COMBAT without starting over.
 	_new_manager()
