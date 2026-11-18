@@ -83,10 +83,12 @@ func play(center: Vector3, dir: Vector3, radius: float) -> void:
 	puffs.initial_velocity_max = _puff_speed_max * smoke_distance
 
 	core.scale = Vector3.ONE * 0.8 * blast_size * s
-	_core_mat.albedo_color = core_color_hot
+	# Reduced flashing: no white core, the blast starts at the fire colour.
+	var reduce_flash: bool = GameState.get_setting(&"reduce_flash", false) == true
+	_core_mat.albedo_color = core_color_fire if reduce_flash else core_color_hot
 
 	_tween = create_tween().set_parallel()
-	# Core: white flash that swells, turns orange, then gray and fades.
+	# Core: white flash (fire with reduced flashing) that swells, turns orange, then gray and fades.
 	_tween.tween_property(core, "scale", Vector3.ONE * 1.6 * blast_size * s, flash_time).set_ease(Tween.EASE_OUT)
 	_tween.chain().tween_property(core, "scale", Vector3.ONE * 2.0 * blast_size * s, fire_time)
 	_tween.tween_property(_core_mat, "albedo_color", core_color_fire, fire_time)
