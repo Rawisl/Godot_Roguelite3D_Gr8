@@ -24,10 +24,10 @@ var _rider_rest_y := 0.0
 var _body_rest_y := 0.0
 var _body_bone := -1
 
-@onready var _rider: Node3D = $Mount/Rider
+@onready var _rider: Node3D = %Rider
 @onready var _player: AnimationPlayer = _rider.find_child("AnimationPlayer", true, false) as AnimationPlayer
-@onready var _horse_player: AnimationPlayer = $Mount/Horse.find_child("AnimationPlayer", true, false) as AnimationPlayer
-@onready var _horse_skeleton: Skeleton3D = $Mount/Horse.find_child("Skeleton3D", true, false) as Skeleton3D
+@onready var _horse_player: AnimationPlayer = %Horse.find_child("AnimationPlayer", true, false) as AnimationPlayer
+@onready var _horse_skeleton: Skeleton3D = %Horse.find_child("Skeleton3D", true, false) as Skeleton3D
 
 
 func _ready() -> void:

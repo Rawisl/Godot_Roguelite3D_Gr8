@@ -54,6 +54,7 @@ script = ExtResource("1_4dytm")
 [node name="Mount" type="Node3D" parent="." unique_id=512069523]
 
 [node name="Rider" parent="Mount" unique_id=1675170944 instance=ExtResource("2_t2suq")]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.946719, -0.008893388)
 
 [node name="Skeleton3D" parent="Mount/Rider/Skeleton_Warrior/Rig_Medium" parent_id_path=PackedInt32Array(1675170944, 579878053, 1640851731) index="0" unique_id=1212381536]
@@ -125,6 +126,7 @@ mesh = SubResource("ArrayMesh_5u76s")
 libraries/simulation = ExtResource("6_14piu")
 
 [node name="Horse" type="Node3D" parent="Mount" unique_id=813708190 instance=ExtResource("7_aqc8i")]
+unique_name_in_owner = true
 transform = Transform3D(1.54375, 0, 0, 0, 1.54375, 0, 0, 0, 1.54375, 0, 0, 0)
 
 [editable path="Mount/Rider"]
