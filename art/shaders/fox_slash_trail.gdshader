@@ -3,10 +3,12 @@ shader_type spatial;
 // The ribbon mesh is swept by the blade in Blender: UV.x runs along the swing, UV.y across the blade
 // (0 at the tip edge after the glTF flip), and UV2.x * 100 is the clip frame at which the blade passed.
 // The clip's animation drives `trail_time` (current clip frame), so only the swept part shows and fades.
+// `opacity` is set by fox_slash_trails.gd: 0 hides the trail when reduced flashing is on.
 render_mode unshaded, cull_disabled, depth_draw_never, blend_mix, shadows_disabled;
 
 instance uniform float trail_time = -1000.0;
 instance uniform float life = 4.0;
+instance uniform float opacity = 1.0;
 
 uniform vec4 color_rim : source_color = vec4(0.30, 0.42, 0.55, 1.0);
 uniform vec4 color_mid : source_color = vec4(0.62, 0.78, 0.90, 1.0);
@@ -71,5 +73,5 @@ void fragment() {
 	float total = clamp((intensity + hot) * boost, 0.0, 1.0);
 
 	ALBEDO = ramp(total) * (1.0 + total * glow);
-	ALPHA = clamp(total * alpha_scale, 0.0, 1.0);
+	ALPHA = clamp(total * alpha_scale, 0.0, 1.0) * opacity;
 }

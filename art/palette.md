@@ -243,7 +243,7 @@ Màu loại thẻ (khung, dải nhãn; chủ động và bị động trùng mà
 
 ## Fox Commander (VFX)
 
-Vệt chém trắng theo lưỡi kiếm của 3 đòn combo (dải dựng sẵn từ Blender, `art/vfx/fox_commander/fox_slash_trails.tscn`). Màu đặt trong uniform của shader `fox_slash_trail.gdshader`, chỉnh ở `art/materials/fox_slash_trail.tres`.
+Vệt chém trắng theo lưỡi kiếm của 3 đòn combo (dải dựng sẵn từ Blender, `art/vfx/fox_commander/fox_slash_trails.tscn`). Màu đặt trong uniform của shader `fox_slash_trail.gdshader`, chỉnh ở `art/materials/fox_slash_trail.tres`. Khi bật "Giảm nhấp nháy", vệt bị ẩn hẳn (độ đục về 0 qua `fox_slash_trails.gd`), không đổi màu.
 
 | Tên | Hex | Dùng cho |
 |---|---|---|

@@ -2,8 +2,10 @@
 
 [ext_resource type="PackedScene" uid="uid://b0w041bff4wo3" path="res://art/vfx/fox_commander/fox_slash_trails.glb" id="1_trails"]
 [ext_resource type="Material" uid="uid://bo332emqpupra" path="res://art/materials/fox_slash_trail.tres" id="2_mat"]
+[ext_resource type="Script" uid="uid://tq7xgcld2jbm" path="res://art/vfx/fox_commander/fox_slash_trails.gd" id="3_script"]
 
 [node name="FoxSlashTrails" unique_id=776846409 instance=ExtResource("1_trails")]
+script = ExtResource("3_script")
 
 [node name="VFX_SlashTrail_M1_Chop" parent="." index="0" unique_id=1652844581]
 visible = false
