@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bvokxhweasbey"
-path="res://.godot/imported/barricade_tier1_albedo.png-e72623b4a22ea4bab432a26a36be783f.ctex"
+path.s3tc="res://.godot/imported/barricade_tier1_albedo.png-e72623b4a22ea4bab432a26a36be783f.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://contents/assets/towers/barricade/barricade_tier1_albedo.png"
-dest_files=["res://.godot/imported/barricade_tier1_albedo.png-e72623b4a22ea4bab432a26a36be783f.ctex"]
+dest_files=["res://.godot/imported/barricade_tier1_albedo.png-e72623b4a22ea4bab432a26a36be783f.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -23,7 +24,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -36,5 +37,5 @@ process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
-process/size_limit=0
+process/size_limit=1024
 detect_3d/compress_to=0
