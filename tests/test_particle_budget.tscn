@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bv4lp360j3k0h"]
+
+[ext_resource type="Script" uid="uid://bepae3gp45710" path="res://tests/test_particle_budget.gd" id="1_test"]
+
+[node name="TestParticleBudget" type="Node3D" unique_id=1744478723]
+script = ExtResource("1_test")

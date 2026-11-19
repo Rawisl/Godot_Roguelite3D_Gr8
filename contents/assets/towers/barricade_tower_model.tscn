@@ -1,73 +1,43 @@
 [gd_scene format=3 uid="uid://6ka6jtxno0f1"]
 
-[ext_resource type="PackedScene" uid="uid://myonujy056l6" path="res://contents/assets/fortress/fbx/full/_andiron1.fbx" id="1_0yqmx"]
-[ext_resource type="PackedScene" uid="uid://fdmn2b4xjpi7" path="res://contents/assets/fortress/fbx/full/_wall_2.fbx" id="2_8vxei"]
-[ext_resource type="PackedScene" uid="uid://dwux2nq3acwf1" path="res://contents/assets/fortress/fbx/full/wall_1_full.fbx" id="3_8siom"]
-[ext_resource type="Material" uid="uid://c3ev4fp1dcmd4" path="res://contents/assets/towers/texture/barricade_material.tres" id="9_matf"]
+[ext_resource type="PackedScene" uid="uid://4xpmnwfgpqgq" path="res://contents/assets/towers/barricade/barricade_tier1.fbx" id="1_tier1"]
+[ext_resource type="PackedScene" uid="uid://h2s8o3u6kksv" path="res://contents/assets/towers/barricade/barricade_tier2.fbx" id="2_tier2"]
+[ext_resource type="PackedScene" uid="uid://bhr2y5nrb3e0c" path="res://contents/assets/towers/barricade/barricade_tier3.fbx" id="3_tier3"]
+[ext_resource type="Material" uid="uid://byjtcak4aupqr" path="res://contents/assets/towers/texture/barricade_tier1_material.tres" id="4_mat1"]
+[ext_resource type="Material" uid="uid://xnvv0ah6v8yc" path="res://contents/assets/towers/texture/barricade_tier2_material.tres" id="5_mat2"]
+[ext_resource type="Material" uid="uid://farunvro34nd" path="res://contents/assets/towers/texture/barricade_tier3_material.tres" id="6_mat3"]
 
 [node name="BarricadeTowerModel" type="Node3D" unique_id=387524894 groups=["occluder"]]
 
 [node name="Level1" type="Node3D" parent="." unique_id=1265179963]
 unique_name_in_owner = true
-transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 0, 0, 0)
+transform = Transform3D(-0.710003, 0, -0.07705, 0, 0.72, 0, 0.119563, 0, -0.457543, -0.021914, 0, 0.012932)
 
-[node name="wall_1_full" parent="Level1" unique_id=1382850661 instance=ExtResource("3_8siom")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.4133663, 0, 0)
+[node name="Tier1" parent="Level1" unique_id=837537257 instance=ExtResource("1_tier1")]
 
-[node name="wall_1_part_02" parent="Level1/wall_1_full" index="0" unique_id=1403843435]
-material_override = ExtResource("9_matf")
-
-[node name="WALL_1_part_01" parent="Level1/wall_1_full" index="1" unique_id=1430274660]
-material_override = ExtResource("9_matf")
-
-[node name="wall_1_full2" parent="Level1" unique_id=2106134437 instance=ExtResource("3_8siom")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1.4866338, 0, 0)
-
-[node name="wall_1_part_02" parent="Level1/wall_1_full2" index="0" unique_id=1403843435]
-material_override = ExtResource("9_matf")
-
-[node name="WALL_1_part_01" parent="Level1/wall_1_full2" index="1" unique_id=1430274660]
-material_override = ExtResource("9_matf")
-
-[node name="wall_1_full3" parent="Level1" unique_id=1926680381 instance=ExtResource("3_8siom")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 4.3790755, 0, 0)
-
-[node name="wall_1_part_02" parent="Level1/wall_1_full3" index="0" unique_id=1403843435]
-material_override = ExtResource("9_matf")
-
-[node name="WALL_1_part_01" parent="Level1/wall_1_full3" index="1" unique_id=1430274660]
-material_override = ExtResource("9_matf")
+[node name="model" parent="Level1/Tier1" index="0" unique_id=456989461]
+material_override = ExtResource("4_mat1")
 
 [node name="Level2" type="Node3D" parent="." unique_id=490785677]
 unique_name_in_owner = true
-transform = Transform3D(0.336, 0, 0, 0, 0.336, 0, 0, 0, 0.336, 0, 0, -0.30212653)
+transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.626863, 0, 0, -0.005802, 0, -0.002546)
 visible = false
 
-[node name="_andiron1" parent="Level2" unique_id=2126488417 instance=ExtResource("1_0yqmx")]
+[node name="Tier2" parent="Level2" unique_id=781499478 instance=ExtResource("2_tier2")]
 
-[node name="andiron1" parent="Level2/_andiron1" index="0" unique_id=771805458]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
-material_override = ExtResource("9_matf")
+[node name="model" parent="Level2/Tier2" index="0" unique_id=676903267]
+material_override = ExtResource("5_mat2")
 
 [node name="Level3" type="Node3D" parent="." unique_id=975749217]
 unique_name_in_owner = true
-transform = Transform3D(0.14, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 0, 0, 0.16012931)
+transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.534967, 0, 0, 0.006504, 0, -0.000355)
 visible = false
 
-[node name="_wall_2" parent="Level3" unique_id=526511204 instance=ExtResource("2_8vxei")]
+[node name="Tier3" parent="Level3" unique_id=752898980 instance=ExtResource("3_tier3")]
 
-[node name="wall_2" parent="Level3/_wall_2" index="0" unique_id=500683322]
-material_override = ExtResource("9_matf")
+[node name="model" parent="Level3/Tier3" index="0" unique_id=731065578]
+material_override = ExtResource("6_mat3")
 
-[node name="_wall_3" parent="Level3" unique_id=226454970 instance=ExtResource("2_8vxei")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.612006, 0, 0)
-
-[node name="wall_2" parent="Level3/_wall_3" index="0" unique_id=500683322]
-material_override = ExtResource("9_matf")
-
-[editable path="Level1/wall_1_full"]
-[editable path="Level1/wall_1_full2"]
-[editable path="Level1/wall_1_full3"]
-[editable path="Level2/_andiron1"]
-[editable path="Level3/_wall_2"]
-[editable path="Level3/_wall_3"]
+[editable path="Level1/Tier1"]
+[editable path="Level2/Tier2"]
+[editable path="Level3/Tier3"]

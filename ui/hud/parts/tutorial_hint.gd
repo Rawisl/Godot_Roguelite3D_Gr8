@@ -5,7 +5,6 @@ extends PanelContainer
 ## with no sentence punctuation. It only shows what TutorialService (a run system in main.tscn,
 ## found by its group) says; the hint never blocks the game (the Start wave lock lives in the
 ## service). A reminder adds a tag and a short pulse. Without a service it stays hidden.
-# TODO(kiezroth): the build steps say the starter towers are free; that is only true once BuildService.build_starter() lands (see tutorial_service.gd).
 # TODO(WhoKeng): add "Xem lại hướng dẫn" to the Gameplay tab once that tab exists; it shows these hints again without clearing tutorial_done.
 
 ## Keys shown under each step: [key cap text, what it does], both locale keys.

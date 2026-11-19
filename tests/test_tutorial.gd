@@ -101,9 +101,11 @@ func _run_checks() -> void:
 
 	_build(&"W1", &"barricade")
 	_expect(_service.step == TutorialService.BUILD_ARROW, "tutorial: another tower type does not count")
-	# Until the starter slots are lit and locked, an Arrow on any cell counts, so the step never gets stuck.
+	# An Arrow off its starter slot does not count; the starter slot does.
 	_build(&"G_2_2", &"arrow")
-	_expect(_service.step == TutorialService.BUILD_CANNON and _steps_done == [TutorialService.BUILD_ARROW], "tutorial: an Arrow on any cell moves on to the Cannon")
+	_expect(_service.step == TutorialService.BUILD_ARROW and _steps_done.is_empty(), "tutorial: an Arrow off its starter slot does not count")
+	_build(GameConfig.starter_arrow_slot, &"arrow")
+	_expect(_service.step == TutorialService.BUILD_CANNON and _steps_done == [TutorialService.BUILD_ARROW], "tutorial: the Arrow on its starter slot moves on to the Cannon")
 	_expect(not _flag_saved(), "tutorial: one tower is not enough to finish")
 	_build(GameConfig.starter_cannon_slot, &"cannon")
 	_expect(_service.step == TutorialService.START_WAVE and _flag_saved() and _completed == 1,
