@@ -853,13 +853,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT7
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Đang làm
+- Trạng thái: Xong
 - Việc: EnemyData thêm trait (is_stealth, explode_*, invuln_*, is_charger/impact_*, revive_*) và WaveScript Resource; hàm tra kịch bản theo wave
 - Nghiệm thu: Mọi trường mặc định 'tắt'; code xử lý theo trait, không rẽ nhánh theo tên loại
 - Tệp liên quan: common/enemy_data.gd, entities/enemy/enemy.gd, mới: common/wave_script.gd
 - ID SRS: 3.7.1, EN-27, SPN-13
 - Cần xong trước: W9-KT5
-- Ghi chú bàn giao: Đã có WaveScript và 15 export trait trong EnemyData; generator đã sinh các cột trait vào bốn EnemyData hiện có. TODO(endervia): implement trait-driven enemy behavior for stealth, explosions, invulnerability, charge impacts and revival; verify the matching runtime behavior before completing this task. TODO tại common/enemy_data.gd
+- Ghi chú bàn giao: WaveScript, the 15 trait exports in EnemyData and the generated trait columns were already in. EnemyData now has `traits` (stealth, explode, undying, revive, charge, in the HUD order) built from the flags, so EnemyTraits reads real data; every flag is off by default and grunt, archer and brute have none. Each PREP sends wave_preview_ready (before PREP itself, and once more after the first PREP so the HUD gets it) with `WaveManager.get_wave_plan()`: exactly the units queued for the wave plus the boss on a boss wave, so the preview follows the WaveScript once the spawner reads it. What each trait does (stealth, Knight, Undead, explosions, the Brute charge) is W11-KT7, W11-KT8 and W11-KT9 (TODO in enemy_data.gd). Runner `tests/test_enemy_traits_runner.tscn`.
 
 ##### W10-KT8
 - Người: Kiệt
