@@ -3,7 +3,7 @@ extends Node
 ## - Sniper: ranged, with a range beyond the level 1 Arrow tower, so it shoots from where that
 ##   tower cannot reach; it stops and shoots like the Archer
 ## - Rider: melee like the Grunt, with the Grunt's targets, and faster
-## - both come from the balance table and the wave manager knows their scenes
+## - both come from the balance table, wear their own models and the wave manager knows their scenes
 ## Units run with physics off; the state step is called by hand.
 
 const SNIPER_SCENE: PackedScene = preload("res://entities/enemy/sniper.tscn")
@@ -78,6 +78,9 @@ func test_sniper_holds_and_shoots() -> void:
 	add_child(target)
 	var sniper := _unit(SNIPER_SCENE)
 	assert_true(sniper is Archer, "Sniper uses the Archer's ranged attack")
+	assert_true(sniper.find_child("Bow", true, false) != null, "Sniper wears its own model with the bow")
+	assert_true(sniper.anim_player != null and sniper.anim_player.has_animation(sniper.data.anim_attack)
+			and sniper.anim_player.has_animation(sniper.data.anim_shoot), "Its model has the aim and shoot clips")
 	var arrow_range := float(ARROW_L1.get(&"attack_range"))
 	var stand := (arrow_range + sniper.data.attack_range) * 0.5
 	sniper.global_position = Vector3(stand, 0.0, 0.0)
@@ -111,6 +114,9 @@ func test_rider_melee() -> void:
 	var target := Target.new()
 	add_child(target)
 	var rider := _unit(RIDER_SCENE)
+	assert_true(rider.find_child("Horse", true, false) != null, "Rider wears its own model on a horse")
+	assert_true(rider.anim_player != null and rider.anim_player.has_animation(rider.data.anim_walk)
+			and rider.anim_player.has_animation(rider.data.anim_attack), "Its walk clip is the seated one and it has a melee clip")
 	rider.global_position = Vector3(5.0, 0.0, 0.0)
 	rider.set_target(target)
 	rider.change_state(Enums.EnemyState.CHASE)
