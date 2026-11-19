@@ -68,16 +68,25 @@ func _ready() -> void:
 	print("[rider] hips at %s" % hip)
 	_check("the Rider's hips sit on the saddle (%.2f m up, z %.2f)" % [hip.y, hip.z], absf(hip.y - 0.92 * 1.544) < 0.15 and absf(hip.z + 0.25 * 1.544) < 0.15)
 	var horse_player := rider.get_node("Mount/Horse").find_child("AnimationPlayer", true, false) as AnimationPlayer
-	_check("the horse has its own rig with one clip, Walk", horse_player != null and horse_player.get_animation_list() == PackedStringArray(["Walk"]))
+	_check("the horse has its own rig with two clips, Walk and Run", horse_player != null and Array(horse_player.get_animation_list()) == ["Run", "Walk"])
 	_check("the unit finds the rider's player, not the horse's", rider.find_child("AnimationPlayer", true, false) == rplayer)
 	_check("standing still the horse does not walk", not horse_player.is_playing())
-	for i in 20:
-		rider.position.z += 0.08
-		await get_tree().process_frame
-	_check("moving plays the horse's Walk", horse_player.is_playing() and horse_player.current_animation == "Walk")
-	for i in 5:
-		await get_tree().process_frame
-	_check("stopping stops the Walk and the horse stands still", not horse_player.is_playing())
+	# Drive the model at a set speed with a fixed step, the same however fast the test runs.
+	var drive := func(speed: float, seconds: float) -> void:
+		var step := 0.05
+		for i in int(seconds / step):
+			rider.position.z += speed * step
+			rider.call(&"_process", step)
+	drive.call(2.0, 0.8)
+	_check("moving slowly plays the Walk", horse_player.is_playing() and horse_player.current_animation == "Walk" and rider.call(&"get_gait") == &"Walk")
+	drive.call(5.5, 0.8)
+	_check("moving fast switches to the Run", horse_player.current_animation == "Run" and rider.call(&"get_gait") == &"Run")
+	drive.call(3.3, 0.8)
+	_check("just under the threshold it keeps running (no flicker)", rider.call(&"get_gait") == &"Run")
+	drive.call(2.0, 0.8)
+	_check("slowing well down goes back to the Walk", rider.call(&"get_gait") == &"Walk")
+	drive.call(0.0, 0.8)
+	_check("stopping stops the horse and it stands still", not horse_player.is_playing() and rider.call(&"get_gait") == &"")
 	rider.free()
 
 	print("[test] done: %d passed, %d failed" % [_pass, _fail])
@@ -131,12 +140,12 @@ func _show_row() -> void:
 				player.play(name)
 				break
 		if ROW[i][0] == "Rider":
-			# Walks forward and back with a pause at each end: the horse walks, then stands still.
+			# Walks forward slowly, gallops back, and stands still at each end.
 			var start := model.position
 			var tw := create_tween().set_loops()
-			tw.tween_property(model, "position", start + Vector3(0, 0, 2.5), 1.4)
+			tw.tween_property(model, "position", start + Vector3(0, 0, 3.0), 1.5)
 			tw.tween_interval(1.0)
-			tw.tween_property(model, "position", start, 1.4)
+			tw.tween_property(model, "position", start, 0.55)
 			tw.tween_interval(1.0)
 		var label := Label.new()
 		label.text = ROW[i][0]
