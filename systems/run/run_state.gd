@@ -237,15 +237,14 @@ func apply_to_scene() -> void:
 
 ## The two starter towers of a run from wave 1 once the tutorial is done. Without the tutorial
 ## done the tutorial has the player build them instead, and a later start wave has none.
+## True when BuildService placed both towers.
 func place_starter_towers() -> bool:
 	if start_wave != 1 or not bool(SaveManager.get_section(&"flags").get("tutorial_done", false)):
 		return false
-	# TODO(kiezroth): add BuildService.place_starter_towers() that builds a level 1 Arrow on starter_arrow_slot and a level 1 Cannon on starter_cannon_slot (full HP, default priority, no invested gold, is_starter); RunState calls it here before the first PREP.
 	var build_service := get_tree().get_first_node_in_group(&"build_service")
 	if build_service == null or not build_service.has_method(&"place_starter_towers"):
 		return false
-	build_service.call(&"place_starter_towers")
-	return true
+	return build_service.call(&"place_starter_towers") == true
 
 
 ## Adds a weapon to the run and sends weapon_gained. False (and no signal) when the id is empty or the weapon is already owned.

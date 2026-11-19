@@ -1,7 +1,8 @@
 class_name Slot
 extends Node3D
-## A fixed build position on the map
-# TODO(kiezroth): when RunState fills ruined_type and ruined_level per slot, erase this slot's entries in clear_rubble
+## A fixed build position on the map. It also keeps RunState's per-slot records (is_starter,
+## ruined_type, ruined_level) in step with its own state.
+# TODO(kiezroth): when interrupted-run recovery lands, rebuild each slot from RunState's is_starter, ruined_type and ruined_level so restored starters keep their sell lock and RUINED slots keep their Rebuild option.
 
 signal state_changed(slot: Slot, new_state: Enums.SlotState)
 
@@ -19,6 +20,8 @@ var last_level: int = 0
 
 ## Last value from set_buildable_visible; the ring follows it when the state changes.
 var _ring_on := false
+## True while the tutorial hides this slot's ring (only the starter slots stay lit).
+var _ring_suppressed := false
 
 var facing: Vector3:
 	get: return global_basis.x
@@ -51,6 +54,7 @@ func set_state(new_state: Enums.SlotState) -> void:
 	if state != Enums.SlotState.RUINED:
 		last_data = null
 		last_level = 0
+	_forget_in_run_state()
 	_apply_state_visuals()
 	state_changed.emit(self, state)
 	EventBus.slot_state_changed.emit(slot_id, StringName(Enums.SlotState.keys()[state]))
@@ -72,6 +76,9 @@ func place_tower(t: Tower) -> void:
 	tower = t
 	t.destroyed.connect(_on_tower_destroyed)
 	set_state(Enums.SlotState.OCCUPIED)
+	var rs := _run_state()
+	if t.is_starter and rs != null:
+		rs.is_starter[slot_id] = true
 
 # Selling returns the slot to EMPTY
 func clear_tower() -> void:
@@ -105,6 +112,10 @@ func ruin() -> void:
 	set_state(Enums.SlotState.RUINED)
 	last_data = data
 	last_level = level
+	var rs := _run_state()
+	if rs != null:
+		rs.ruined_type[slot_id] = data.id
+		rs.ruined_level[slot_id] = level
 	EventBus.tower_destroyed.emit(slot_id)
 
 ## Rebuild only applies to the same tower type that was destroyed here.
@@ -148,7 +159,15 @@ func can_build(data: TowerData) -> bool:
 # The ring only shows on slots that can still be built on
 func set_buildable_visible(v: bool) -> void:
 	_ring_on = v
-	marker.visible = _ring_on and is_free()
+	marker.visible = _ring_visible()
+
+## An empty ground cell while the ground building limit is reached: dim, dashed ring.
+func set_locked(v: bool) -> void:
+	marker.set_instance_shader_parameter(&"locked", 1.0 if v else 0.0)
+
+func is_locked() -> bool:
+	var value: Variant = marker.get_instance_shader_parameter(&"locked")
+	return value != null and float(value) > 0.5
 
 ## Mouse over the slot: the ring glows white.
 func set_hovered(v: bool) -> void:
@@ -158,11 +177,35 @@ func set_hovered(v: bool) -> void:
 func set_selected(v: bool) -> void:
 	marker.set_instance_shader_parameter(&"selected", 1.0 if v else 0.0)
 
+## While the tutorial waits for the starter towers every other slot hides its ring.
+func set_ring_suppressed(v: bool) -> void:
+	_ring_suppressed = v
+	marker.visible = _ring_visible()
+
+func _ring_visible() -> bool:
+	return _ring_on and is_free() and not _ring_suppressed
+
+func _run_state() -> RunState:
+	if not is_inside_tree():
+		return null
+	return get_tree().get_first_node_in_group(&"run_state") as RunState
+
+## Drops the records RunState keeps for this slot once the state they describe has ended.
+func _forget_in_run_state() -> void:
+	var rs := _run_state()
+	if rs == null:
+		return
+	if state != Enums.SlotState.OCCUPIED:
+		rs.is_starter.erase(slot_id)
+	if state != Enums.SlotState.RUINED:
+		rs.ruined_type.erase(slot_id)
+		rs.ruined_level.erase(slot_id)
+
 # RUINED shows rubble. Rubble blocks movement and is avoided by agents.
 func _apply_state_visuals() -> void:
 	var ruined := state == Enums.SlotState.RUINED
 	# No ring under a new tower; it returns when the tower is ruined in PREP
-	marker.visible = _ring_on and is_free()
+	marker.visible = _ring_visible()
 	marker.set_instance_shader_parameter(&"ruined", 1.0 if ruined else 0.0)
 	if not is_free():
 		set_hovered(false)

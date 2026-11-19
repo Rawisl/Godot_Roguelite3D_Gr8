@@ -1,76 +1,111 @@
 [gd_resource type="Resource" script_class="SfxLibrary" format=3 uid="uid://d08uncq7nd8rc"]
 
-[ext_resource type="Script" uid="uid://ch0s8gm2cmq61" path="res://audio/sfx_entry.gd" id="1_hx12n"]
-[ext_resource type="AudioStream" uid="uid://ds1efea64848x" path="res://audio/sfx/click_002.ogg" id="2_hx12n"]
-[ext_resource type="AudioStream" uid="uid://bxqpnkdrhfrrf" path="res://audio/sfx/forceField_001.ogg" id="3_cojex"]
-[ext_resource type="AudioStream" uid="uid://bpfh2j6w8s47s" path="res://audio/sfx/impactPunch_heavy_001.ogg" id="4_4cc06"]
-[ext_resource type="AudioStream" uid="uid://tfckon7aus2w" path="res://audio/sfx/boss_stomp_windup.wav" id="5_3y37n"]
-[ext_resource type="AudioStream" uid="uid://b6ae7djtrb30n" path="res://audio/sfx/394186__saturdaysoundguy__slingshot-fly-by-2.wav" id="6_hx12n"]
-[ext_resource type="AudioStream" uid="uid://dtrylat6t7xml" path="res://audio/sfx/impactWood_light_001.ogg" id="7_exlo3"]
-[ext_resource type="Script" uid="uid://djjstbfgh1hvx" path="res://audio/sfx_library.gd" id="8_vgvlt"]
-[ext_resource type="AudioStream" uid="uid://dtr4tjn8rmn6i" path="res://audio/sfx/565954__algoto__monster-cry.wav" id="9_enrage"]
-[ext_resource type="AudioStream" uid="uid://bc40s30vcw2g1" path="res://audio/sfx/maximize_006.ogg" id="10_heal"]
-[ext_resource type="AudioStream" uid="uid://bkeeyed1c2cq3" path="res://audio/sfx/minimize_006.ogg" id="11_drain"]
+[ext_resource type="Script" uid="uid://ch0s8gm2cmq61" path="res://audio/sfx_entry.gd" id="1_entry"]
+[ext_resource type="Script" uid="uid://djjstbfgh1hvx" path="res://audio/sfx_library.gd" id="2_lib"]
+[ext_resource type="AudioStream" uid="uid://k700rbytgom5" path="res://audio/sfx/click_002.wav" id="s0"]
+[ext_resource type="AudioStream" uid="uid://c5tbdis3jqed" path="res://audio/sfx/forceField_001.wav" id="s1"]
+[ext_resource type="AudioStream" uid="uid://bvnona3x0k7hr" path="res://audio/sfx/impactPunch_heavy_001.wav" id="s2"]
+[ext_resource type="AudioStream" uid="uid://tfckon7aus2w" path="res://audio/sfx/boss_stomp_windup.wav" id="s3"]
+[ext_resource type="AudioStream" uid="uid://b6ae7djtrb30n" path="res://audio/sfx/394186__saturdaysoundguy__slingshot-fly-by-2.wav" id="s4"]
+[ext_resource type="AudioStream" uid="uid://nc43dds6s3e0" path="res://audio/sfx/impactWood_light_001.wav" id="s5"]
+[ext_resource type="AudioStream" uid="uid://dtr4tjn8rmn6i" path="res://audio/sfx/565954__algoto__monster-cry.wav" id="s6"]
+[ext_resource type="AudioStream" uid="uid://b5mgx75csvx4j" path="res://audio/sfx/maximize_006.wav" id="s7"]
+[ext_resource type="AudioStream" uid="uid://bhw5ajqbnm8by" path="res://audio/sfx/minimize_006.wav" id="s8"]
+[ext_resource type="AudioStream" uid="uid://cbnt5ma3paq0t" path="res://audio/sfx/level_up.wav" id="s9"]
+[ext_resource type="AudioStream" uid="uid://dla82mwjr67ap" path="res://audio/sfx/reward_cards.wav" id="s10"]
+[ext_resource type="AudioStream" uid="uid://jymj65dm8yrl" path="res://audio/sfx/tower_destroyed.wav" id="s11"]
+[ext_resource type="AudioStream" uid="uid://bqw34ev2erep1" path="res://audio/sfx/fortress_heavy_hit.wav" id="s12"]
+[ext_resource type="AudioStream" uid="uid://dlsmi7h4tjys5" path="res://audio/sfx/118649__pyzaist__bump.wav" id="s13"]
 
-[sub_resource type="Resource" id="Resource_c0njm"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e0"]
+script = ExtResource("1_entry")
 id = &"ui_click"
-stream = ExtResource("2_hx12n")
+stream = ExtResource("s0")
 bus = &"UI"
 priority = 3
 
-[sub_resource type="Resource" id="Resource_yjrhu"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("1_entry")
 id = &"alert_t1"
-stream = ExtResource("3_cojex")
+stream = ExtResource("s1")
 bus = &"UI"
 priority = 4
 
-[sub_resource type="Resource" id="Resource_6encv"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("1_entry")
 id = &"commander_hit"
-stream = ExtResource("4_4cc06")
+stream = ExtResource("s2")
 priority = 3
 
-[sub_resource type="Resource" id="Resource_qcjyq"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e3"]
+script = ExtResource("1_entry")
 id = &"boss_stomp_windup"
-stream = ExtResource("5_3y37n")
-priority = 2
+stream = ExtResource("s3")
+priority = 4
 
-[sub_resource type="Resource" id="Resource_7uqqq"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e4"]
+script = ExtResource("1_entry")
 id = &"tower_arrow_shot"
-stream = ExtResource("6_hx12n")
+stream = ExtResource("s4")
 volume_db = -3.0
 priority = 1
 
-[sub_resource type="Resource" id="Resource_nmj7l"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e5"]
+script = ExtResource("1_entry")
 id = &"enemy_hit"
-stream = ExtResource("7_exlo3")
+stream = ExtResource("s5")
 volume_db = -2.0
 
-[sub_resource type="Resource" id="Resource_enrage"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e6"]
+script = ExtResource("1_entry")
 id = &"boss_enraged"
-stream = ExtResource("9_enrage")
+stream = ExtResource("s6")
 priority = 4
 
-[sub_resource type="Resource" id="Resource_heal"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e7"]
+script = ExtResource("1_entry")
 id = &"heal_start"
-stream = ExtResource("10_heal")
-volume_db = 4.0
+stream = ExtResource("s7")
 priority = 3
 
-[sub_resource type="Resource" id="Resource_drain"]
-script = ExtResource("1_hx12n")
+[sub_resource type="Resource" id="e8"]
+script = ExtResource("1_entry")
 id = &"heal_station_drained"
-stream = ExtResource("11_drain")
-volume_db = 6.0
+stream = ExtResource("s8")
 priority = 4
 
+[sub_resource type="Resource" id="e9"]
+script = ExtResource("1_entry")
+id = &"level_up"
+stream = ExtResource("s9")
+priority = 3
+
+[sub_resource type="Resource" id="e10"]
+script = ExtResource("1_entry")
+id = &"reward_cards"
+stream = ExtResource("s10")
+bus = &"UI"
+priority = 3
+
+[sub_resource type="Resource" id="e11"]
+script = ExtResource("1_entry")
+id = &"tower_destroyed"
+stream = ExtResource("s11")
+volume_db = -8.0
+priority = 4
+
+[sub_resource type="Resource" id="e12"]
+script = ExtResource("1_entry")
+id = &"fortress_heavy_hit"
+stream = ExtResource("s12")
+priority = 4
+
+[sub_resource type="Resource" id="e13"]
+script = ExtResource("1_entry")
+id = &"low_hp_heartbeat"
+stream = ExtResource("s13")
+priority = 3
+
 [resource]
-script = ExtResource("8_vgvlt")
-entries = Array[ExtResource("1_hx12n")]([SubResource("Resource_c0njm"), SubResource("Resource_yjrhu"), SubResource("Resource_6encv"), SubResource("Resource_qcjyq"), SubResource("Resource_7uqqq"), SubResource("Resource_nmj7l"), SubResource("Resource_enrage"), SubResource("Resource_heal"), SubResource("Resource_drain")])
+script = ExtResource("2_lib")
+entries = Array[ExtResource("1_entry")]([SubResource("e0"), SubResource("e1"), SubResource("e2"), SubResource("e3"), SubResource("e4"), SubResource("e5"), SubResource("e6"), SubResource("e7"), SubResource("e8"), SubResource("e9"), SubResource("e10"), SubResource("e11"), SubResource("e12"), SubResource("e13")])

@@ -61,8 +61,9 @@ class StubBuildService extends Node:
 	func _init() -> void:
 		add_to_group(&"build_service")
 
-	func place_starter_towers() -> void:
+	func place_starter_towers() -> bool:
 		calls += 1
+		return true
 
 
 func _ready() -> void:

@@ -245,6 +245,7 @@ panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
 panel.build.heal_limit,Tối đa {max} Trạm hồi lực
 panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
+panel.build.tutorial,Làm theo hướng dẫn
 panel.need_commander_level,Yêu cầu chỉ huy: cấp {level}
 hud.start_wave,Bắt đầu wave
 hud.start_wave.boss,Bắt đầu wave boss

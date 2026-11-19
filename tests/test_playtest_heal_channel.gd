@@ -43,6 +43,8 @@ func _ready() -> void:
 	_previous_can_write = SaveManager.can_write
 	SaveManager.set_repository(MemoryRepository.new())
 	SaveManager.data = SaveManager.DEFAULT_DATA.duplicate(true)
+	# The harness builds its stations freely, so the first run tutorial is treated as done.
+	SaveManager.data["flags"]["tutorial_done"] = true
 	SaveManager.can_write = true
 	# Boot restores sessions deferred; disable networking before that callback runs.
 	_previous_backend_url = GameConfig.backend_url
