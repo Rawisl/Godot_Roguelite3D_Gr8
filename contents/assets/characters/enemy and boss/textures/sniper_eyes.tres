@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://i08jwdbb2p2o"]
+
+[resource]
+resource_name = "sniper_eyes"
+shading_mode = 0
+albedo_color = Color(1, 0.35, 0.15, 1)
+emission_enabled = true
+emission = Color(1, 0.3, 0.1, 1)
+emission_energy_multiplier = 2.0
