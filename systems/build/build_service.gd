@@ -3,12 +3,18 @@ extends Node
 ## Build, upgrade, sell, rubble clearing and Fortress repair (paid in Mithril) for the panels. Each call checks the wave state, the slot and
 ## the gold or Mithril in the same frame and either finishes or changes nothing. Calls are
 ## synchronous, so one press can never spend gold twice. A ground build that would seal the
-## lane is refused before any gold is spent.
+## lane is refused before any gold is spent. The two starter towers (placed at the start of a
+## run, or built free during the tutorial) and the sale lock on them live here too.
 
 ## Lock key for Fortress repairs in _busy; slot ids never take this value.
 const FORTRESS_LOCK := &"FORTRESS"
 const HEAL_LIMIT := &"HEAL_LIMIT"
 const BLOCKS_PATH := &"BLOCKS_PATH"
+const TUTORIAL_LOCKED := &"TUTORIAL"
+const STARTER_LOCKED := &"STARTER_LOCKED"
+## TowerData ids of the two starter towers (same as TutorialService.ARROW / CANNON).
+const STARTER_ARROW := &"arrow"
+const STARTER_CANNON := &"cannon"
 
 @export var towers: Array[TowerData] = []
 @export var tower_scenes: Dictionary[StringName, PackedScene] = {}
@@ -29,6 +35,7 @@ func _ready() -> void:
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.level_up.connect(_on_level_up)
 	EventBus.xp_changed.connect(_on_xp_changed)
+	EventBus.tutorial_completed.connect(_on_tutorial_completed)
 
 func is_prep() -> bool:
 	return _wave_state == &"PREP"
@@ -66,6 +73,8 @@ func get_build_options(slot_id: StringName) -> Array[Dictionary]:
 	var gold := _gold()
 	if slot == null or gold == null or not slot.is_free():
 		return result
+	if is_tutorial_pending():
+		return _tutorial_options(slot, gold)
 	var locked_reason: StringName = &"GROUND_FULL" if _ground_blocks(slot) else &""
 	var path_sealed := locked_reason == &"" and _seals_path(slot)
 	if slot.state == Enums.SlotState.RUINED and slot.last_data != null:
@@ -96,6 +105,8 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	var gold := _gold()
 	if not is_prep() or slot == null or data == null or gold == null:
 		return false
+	if is_tutorial_pending():
+		return _do_tutorial_build(slot_id, type, level)
 	if level < 1 or level > get_max_level(data):
 		return false
 	if not tower_scenes.has(type) or not slot.can_build(data):
@@ -124,6 +135,138 @@ func _do_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	tower.invested_gold = cost
 	EventBus.tower_built.emit(slot_id, type)
 	return true
+
+## Starter slot types, from GameConfig: &"arrow" on starter_arrow_slot, &"cannon" on
+## starter_cannon_slot, &"" for every other slot.
+func get_starter_type(slot_id: StringName) -> StringName:
+	if slot_id == &"":
+		return &""
+	if slot_id == GameConfig.starter_arrow_slot:
+		return STARTER_ARROW
+	if slot_id == GameConfig.starter_cannon_slot:
+		return STARTER_CANNON
+	return &""
+
+## True while the first run tutorial still waits for the starter towers: only inside a run
+## that has a tutorial node, from wave 1, with the tutorial not done yet.
+func is_tutorial_pending() -> bool:
+	var rs := _run_state()
+	if rs == null:
+		return false
+	if get_tree().get_first_node_in_group(&"tutorial") == null:
+		return false
+	if rs.start_wave != 1:
+		return false
+	return not _tutorial_done()
+
+func _tutorial_done() -> bool:
+	return bool(SaveManager.get_section(SaveManager.FLAGS).get("tutorial_done", false))
+
+## Places both starter towers at the start of a run (RunState calls it before the first PREP).
+## False and nothing placed when the tutorial is not done, the run starts after wave 1, or
+## either slot cannot take its tower.
+func place_starter_towers() -> bool:
+	var rs := _run_state()
+	var start_wave := rs.start_wave if rs != null else 1
+	if start_wave != 1 or not _tutorial_done():
+		return false
+	var pairs: Array[Array] = [
+		[GameConfig.starter_arrow_slot, STARTER_ARROW],
+		[GameConfig.starter_cannon_slot, STARTER_CANNON],
+	]
+	for pair in pairs:
+		var problem := _starter_problem(pair[0], pair[1])
+		if problem != "":
+			push_error("BuildService: starter %s slot %s %s" % [pair[1], pair[0], problem])
+			return false
+	var placed := true
+	for pair in pairs:
+		_begin(pair[0])
+		placed = _place_starter(pair[0], pair[1]) and placed
+		_end(pair[0])
+	return placed
+
+## Builds the starter tower of slot_id for free. Used by the tutorial's Skip for a tower the
+## player has not built yet; only while the tutorial waits, in PREP, and only the slot's own type.
+func build_starter(slot_id: StringName, type: StringName) -> bool:
+	if not is_tutorial_pending() or not is_prep():
+		return false
+	if get_starter_type(slot_id) != type:
+		return false
+	if not _begin(slot_id):
+		return false
+	var ok := _place_starter(slot_id, type)
+	_end(slot_id)
+	return ok
+
+## "" when type can be placed on slot_id as a starter tower, otherwise why not.
+func _starter_problem(slot_id: StringName, type: StringName) -> String:
+	var slot := find_slot(slot_id)
+	if slot == null:
+		return "does not exist"
+	if slot.state != Enums.SlotState.EMPTY:
+		return "is not empty"
+	var data := get_data(type)
+	if data == null or not tower_scenes.has(type) or not slot.allows(data):
+		return "does not allow it"
+	return ""
+
+## Free level 1 tower, full HP, no invested gold. Skips the PREP, ground cap and path checks:
+## RunState places the starters before the first PREP.
+func _place_starter(slot_id: StringName, type: StringName) -> bool:
+	if _starter_problem(slot_id, type) != "":
+		return false
+	var tower := tower_scenes[type].instantiate() as Tower
+	tower.is_starter = true
+	tower.invested_gold = 0
+	find_slot(slot_id).place_tower(tower)
+	EventBus.tower_built.emit(slot_id, type)
+	return true
+
+## Wave from which the starter tower on slot_id can be sold, or 0 when it can be sold now.
+func get_sell_locked_until_wave(slot_id: StringName) -> int:
+	var slot := find_slot(slot_id)
+	if slot == null or slot.state != Enums.SlotState.OCCUPIED:
+		return 0
+	if slot.tower == null or not slot.tower.is_starter:
+		return 0
+	var rs := _run_state()
+	var wave := rs.wave_index if rs != null else 1
+	if wave < GameConfig.starter_sell_unlock_wave:
+		return GameConfig.starter_sell_unlock_wave
+	return 0
+
+## While the tutorial waits only the starter slots keep their ring.
+func _refresh_tutorial_rings() -> void:
+	var pending := is_tutorial_pending()
+	for node in get_tree().get_nodes_in_group(&"slot"):
+		var slot := node as Slot
+		if slot != null:
+			slot.set_ring_suppressed(pending and get_starter_type(slot.slot_id) == &"")
+
+func _on_tutorial_completed() -> void:
+	_refresh_tutorial_rings()
+
+## While the tutorial waits for the starter towers only the starter type on its own slot is
+## offered, free; everything else is greyed out with the tutorial reason.
+func _tutorial_options(slot: Slot, gold: GoldManager) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for data in towers:
+		if not slot.allows(data):
+			continue
+		var free := data.id == get_starter_type(slot.slot_id) and slot.state == Enums.SlotState.EMPTY
+		var cost := 0 if free else data.get_total_cost(1)
+		result.append({"data": data, "level": 1, "cost": cost,
+			"shortfall": 0 if free else gold.shortfall(cost), "rebuild": false,
+			"locked_reason": &"" if free else TUTORIAL_LOCKED})
+	return result
+
+## Runs inside build()'s transaction; only the starter type on its own slot at level 1 is free.
+func _do_tutorial_build(slot_id: StringName, type: StringName, level: int) -> bool:
+	if level != 1 or get_starter_type(slot_id) != type:
+		EventBus.build_denied.emit(TUTORIAL_LOCKED, 0)
+		return false
+	return _place_starter(slot_id, type)
 
 ## Removes the rubble of a destroyed tower. Free; the slot goes back to EMPTY.
 func clear_rubble(slot_id: StringName) -> bool:
@@ -352,6 +495,9 @@ func _do_sell(slot_id: StringName) -> bool:
 	var gold := _gold()
 	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
 		return false
+	if get_sell_locked_until_wave(slot_id) > 0:
+		EventBus.build_denied.emit(STARTER_LOCKED, 0)
+		return false
 	var refund := slot.tower.get_sell_value()
 	slot.clear_tower()
 	gold.add(refund, true, false)
@@ -450,6 +596,7 @@ func _on_mode_changed(mode: StringName) -> void:
 func _on_run_started() -> void:
 	_commander_level = 0
 	_busy.clear()
+	_refresh_tutorial_rings()
 
 ## The level never goes down, so a late or repeated signal cannot lock upgrades again.
 func _on_level_up(new_level: int, _pending_picks: int) -> void:
