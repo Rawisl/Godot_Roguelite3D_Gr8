@@ -11,7 +11,6 @@ const FORTRESS_LOCK := &"FORTRESS"
 const HEAL_LIMIT := &"HEAL_LIMIT"
 const BLOCKS_PATH := &"BLOCKS_PATH"
 const TUTORIAL_LOCKED := &"TUTORIAL"
-const STARTER_LOCKED := &"STARTER_LOCKED"
 ## TowerData ids of the two starter towers (same as TutorialService.ARROW / CANNON).
 const STARTER_ARROW := &"arrow"
 const STARTER_CANNON := &"cannon"
@@ -264,7 +263,6 @@ func _tutorial_options(slot: Slot, gold: GoldManager) -> Array[Dictionary]:
 ## Runs inside build()'s transaction; only the starter type on its own slot at level 1 is free.
 func _do_tutorial_build(slot_id: StringName, type: StringName, level: int) -> bool:
 	if level != 1 or get_starter_type(slot_id) != type:
-		EventBus.build_denied.emit(TUTORIAL_LOCKED, 0)
 		return false
 	return _place_starter(slot_id, type)
 
@@ -496,7 +494,6 @@ func _do_sell(slot_id: StringName) -> bool:
 	if not is_prep() or slot == null or gold == null or slot.state != Enums.SlotState.OCCUPIED or slot.tower == null:
 		return false
 	if get_sell_locked_until_wave(slot_id) > 0:
-		EventBus.build_denied.emit(STARTER_LOCKED, 0)
 		return false
 	var refund := slot.tower.get_sell_value()
 	slot.clear_tower()

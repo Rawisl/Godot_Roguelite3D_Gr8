@@ -301,10 +301,10 @@ func test_tutorial_free_only_matching_type() -> void:
 	_new_run(false)
 	_gold.gold = 5000
 	assert_true(not _service.build(GameConfig.starter_arrow_slot, &"cannon"), "a Cannon on the Arrow slot is refused")
-	assert_true(_denied.back() == [BuildService.TUTORIAL_LOCKED, 0], "the refusal carries the tutorial reason")
+	assert_true(_denied.is_empty(), "the refusal sends no build_denied (the option reason covers it)")
 	_denied.clear()
 	assert_true(not _service.build(_other_ground_slot().slot_id, &"arrow"), "an Arrow on another slot is refused")
-	assert_true(_denied.back() == [BuildService.TUTORIAL_LOCKED, 0], "the other slot gets the tutorial reason")
+	assert_true(_denied.is_empty(), "the other slot sends no build_denied either")
 	assert_true(not _service.build(GameConfig.starter_arrow_slot, &"arrow", 2), "level 2 of the starter type is refused")
 	var gold_before := _gold.gold
 	assert_true(_service.build(GameConfig.starter_arrow_slot, &"arrow"), "the Arrow on the Arrow slot builds")
@@ -412,7 +412,7 @@ func test_sell_locked_until_wave3() -> void:
 		_denied.clear()
 		assert_true(_service.get_sell_locked_until_wave(GameConfig.starter_arrow_slot) == unlock, "wave %d: the sale is locked until wave %d" % [wave, unlock])
 		assert_true(not _service.sell(GameConfig.starter_arrow_slot), "wave %d: the sale is refused" % wave)
-		assert_true(_denied.back() == [BuildService.STARTER_LOCKED, 0], "wave %d: the refusal carries the lock reason" % wave)
+		assert_true(_denied.is_empty(), "wave %d: the refusal sends no build_denied (the greyed Sell covers it)" % wave)
 		assert_true(_arrow_slot().tower != null, "wave %d: the tower stays" % wave)
 	_rs.wave_index = unlock
 	var gold_before := _gold.gold
