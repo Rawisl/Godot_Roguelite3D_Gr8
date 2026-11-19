@@ -344,12 +344,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W8B-KM1
 - Người: Kim
 - Tuần: 8 | Giờ ước tính: 8 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Mở rộng hành lang 16 m lên 23.5 m, phần 1: sàn và tường, spawn_zone, return_zone, lane_curve, command_post, navmesh thường và agent lớn (bake lại)
 - Nghiệm thu: Quân đi từ spawn tới cổng không kẹt trên hành lang mới; chỉ huy đi được trọn bề ngang; wave 1 chơi được trên map mới
 - Tệp liên quan: levels/corridor/level.tscn (Floor, WallBack/Front, SpawnZone, ReturnZone, LaneCurve, CommandPost, NavigationRegion3D x2)
 - ID SRS: Phụ lục C #61
 - Cần xong trước: không
+- Ghi chú bàn giao: Done earlier, status updated now. `levels/corridor/level.tscn` has the 23.5 m corridor (Floor 12 x 23.5), walls, SpawnZone, Markers/ReturnZone, Markers/CommandPost, LaneCurve and both navigation regions (normal and the 1.6 m large agent), baked from the nav_source group. Covered by `test_corridor_layout`.
 
 ### Tuần 9 (9-15/11)
 
@@ -601,62 +602,69 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W9-KM1
 - Người: Kim
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Khung thẻ và hiệu ứng thẻ (SCR-17)
 - Nghiệm thu: Thẻ đọc được ở 1280x720
 - Cần xong trước: W9-KH2
+- Ghi chú bàn giao: Done earlier in commit 02c4efa, status updated now. `ui/screens/reward_card.gd` styles each card by kind (ACTIVE, PASSIVE, STAT frame, band and label variations from the theme) and adds the hover grow, press dip and picked glow.
 
 ##### W9-KM2
 - Người: Kim
 - Tuần: 9 | Giờ ước tính: 3.5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: VFX Whirlwind, Sword Wave, vùng cháy Firebomb
 - Nghiệm thu: VFX đúng bán kính và theo time_scale
 - Cần xong trước: W8-NG2, W9-NG1
+- Ghi chú bàn giao: Done earlier, status updated now. `art/vfx/skill_fx_manager.gd` plays Whirlwind, Sword Wave and the Firebomb fire zone at the skill's radius, following time_scale; covered by `test_skill_fx`.
 
 ##### W9-KM3
 - Người: Kim
 - Tuần: 9 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Nhạc boss một bản, AUD-07 cue Cuồng nộ, FBK-07 chuyển pha
 - Nghiệm thu: Nhạc boss không bị time_scale
 - Cần xong trước: W9-KT1, W9-MH1
+- Ghi chú bàn giao: Done earlier, status updated now. The boss track is `MusicLibrary.boss` for BOSS_INTRO and BOSS_COMBAT (no pitch or speed change with time_scale); AudioManager plays the boss_enraged cue as a T1 and dips the music on the phase change; BossFxManager shows the armour break. Covered by `test_audio_manager` and `test_boss_fx`.
 
 ##### W9-KM4
 - Người: Kim
 - Tuần: 9 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: VFX Cuồng nộ FBK-11 (lõi đỏ, hơi nước)
 - Nghiệm thu: Không dùng blend khi che; giảm nhấp nháy tôn trọng ACC-06
 - Cần xong trước: W9-MH1
+- Ghi chú bàn giao: Done earlier, status updated now. `art/vfx/boss_fx_manager.gd`: on enrage the core turns red and brighter and steam vents from the shoulders; the pulse holds steady with Reduce flashing and stays under 3 a second. Covered by `test_boss_fx`.
 
 ##### W9-KM5
 - Người: Kim
 - Tuần: 9 | Giờ ước tính: 1.5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Camera BOSS_INTRO tự lia tới boss trong 4 s game time, khóa dịch tay, hết intro về khung của state kế (CAM-11, BOSS-17)
 - Nghiệm thu: Camera lia mượt tới boss rồi về khung đúng state kế
 - Cần xong trước: W9-KT2
+- Ghi chú bàn giao: Done earlier, status updated now. `systems/camera/camera_rig.gd` glides to the boss during BOSS_INTRO (4 s game time), blocks manual panning, then frames the next state. Covered by `test_camera_flow`.
 
 ##### W9-KM6
 - Người: Kim
 - Tuần: 9 | Giờ ước tính: 5 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hành lang 23.5 m phần 2: đặt lại 3 slot WALL W1-W3 trên mặt tường (xóa W4-W6), camera_bounds và size camera nhìn trọn bề ngang, boss_melee_point (cách mặt tường 1.6-2.0 m), kiểm command_post
 - Nghiệm thu: Chỉ còn W1-W3; camera Frontline và overview thấy trọn bề ngang; Bulwark tới được boss_melee_point
 - Tệp liên quan: levels/corridor/slots_layout.tscn, levels/corridor/level.tscn (Markers/BossMeleePoint), systems/camera/camera_bounds.gd
 - ID SRS: SLOT-05, BOSS-40, CAM-04
 - Cần xong trước: W8B-KM1
+- Ghi chú bàn giao: Done earlier, status updated now. `levels/corridor/slots_layout.tscn` has only W1-W3 on the wall; Markers/BossMeleePoint is in the level and the boss reaches it (`test_nav_rebake_runner`, `test_large_agent_layouts`); the camera bounds and sizes show the whole width (checked again in W11-KM7).
 
 ##### W9-KM7
 - Người: Kim
 - Tuần: 9 | Giờ ước tính: 7 | Nguồn: SỬA + MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: GridData của map: 9 hàng (tâm 0, +-2.5, +-5, +-7.5, +-10), corridor_width 23.5, bỏ hẳn no_build_lane và GRID-03 cũ, thêm GRID-08 vùng cấm quanh boss_melee_point (boss_point_clear_radius 3.2 m), kiểm starter_arrow_slot và starter_cannon_slot (SLOT-05)
 - Nghiệm thu: Số ô sinh ra đúng GridData; không ô nào trong spawn_zone, return_zone hay vùng cấm boss; hai ô tham chiếu hợp lệ; test_grid_data, test_ground_grid, test_ground_grid_view chạy lại đạt với lưới mới
 - Tệp liên quan: levels/corridor/grid_data.gd, grid_data.tres, ground_grid.gd; tests/test_grid_data.gd, test_ground_grid*.gd
 - ID SRS: GRID-01..05, GRID-08, SLOT-05
 - Cần xong trước: W9-KM6
+- Ghi chú bàn giao: Done earlier, status updated now. `levels/corridor/grid_data.gd` and `grid_data.tres`: corridor_width 23.5, the row offsets, no no_build_lane, the GRID-08 clear zone around the boss point (GameConfig.boss_point_clear_radius) and the starter slot checks. Covered by `test_grid_data` and `test_ground_grid`.
 
 ### Tuần 10 (16-22/11)
 
@@ -1123,12 +1131,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KM11
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model quân mới, phần 1 (Sniper, Rider, Assassin): dùng lại rig KayKit hiện có, đổi material và thêm props; material độ mờ Assassin qua stealth_opacity
 - Nghiệm thu: Ba loại khác nhau rõ ở camera chuẩn; Assassin mờ 0.5 qua material
 - Tệp liên quan: contents/assets/characters/, art/
 - ID SRS: 3.7.8, EN-20, FBK-14
 - Cần xong trước: W10-KT7
+- Ghi chú bàn giao: Models only, in `contents/assets/characters/enemy and boss/`: `sniper_model.tscn` (Grunt skeleton, KayKit bow and quiver from the commander pack, glowing eyes, ranged clips), `assassin_model.tscn` (Brute skeleton, two daggers, dark material and yellow eyes; `stealth_model.gd` draws it at EnemyData.stealth_opacity through `toon_stealth.gdshader`, opaque when is_stealth is off) and `rider/rider_model.tscn` (Brute skeleton at the Brute size with a sword, seated on a horse made with Hyper3D and rigged here, 10 bones and one Walk clip that plays while it moves). The rider keeps only the sitting and melee clips, so its EnemyData must set anim_walk to `simulation/Sit_Chair_Idle`. Hooking the models to enemy scenes and data waits for W10-KT7. Verified by `tests/test_new_enemy_models.tscn` (20 checks).
 
 ### Tuần 11 (23-29/11)
 
