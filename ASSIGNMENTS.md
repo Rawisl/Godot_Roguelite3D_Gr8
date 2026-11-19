@@ -962,12 +962,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-MH10
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Trụ có sẵn: khi tutorial_done = true đặt Arrow cấp 1 ở starter_arrow_slot (ô grid hàng giữa) và Cannon cấp 1 ở W2; invested_gold = 0, cờ is_starter, khóa bán tới PREP wave 3; bị phá rồi xây lại là tower thường; BLD-11 (khóa slot khác khi tutorial chưa xong)
 - Nghiệm thu: Run thứ hai có sẵn hai trụ; bán trước wave 3 xám 'Bán được từ wave 3'; trụ xây lại bán được ngay
 - Tệp liên quan: systems/build/slot.gd, systems/build/build_service.gd, systems/run/commander_spawner.gd, ui/panels/tower_panel.gd, autoload/save_manager.gd (flags.tutorial_done đã có)
 - ID SRS: SELL-06, TWR-13, BLD-11, 3.2.1
 - Cần xong trước: W8B-KT1, W9-KM7, W10-KT1
+- Ghi chú: hai trụ có sẵn đặt qua BuildService.place_starter_towers() (RunState gọi trước PREP đầu tiên khi start_wave = 1 và tutorial đã xong); lúc tutorial chỉ hai slot mặc định có vòng sáng và xây được, đúng loại, miễn phí; khóa bán tới PREP wave 3; trụ xây lại là tower thường; RunState giữ is_starter, ruined_type, ruined_level theo slot; starter_arrow_slot đổi sang G_3_4. Runner tests/test_starter_towers_runner.tscn.
 
 #### Khang (UI/UX & Meta), tuần 10, 34h
 

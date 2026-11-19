@@ -14,6 +14,9 @@ const MELEE_ARRIVE_DISTANCE := 0.6
 var level: int = 1
 ## Gold spent on this tower (build plus upgrades); preplaced towers start at 0.
 var invested_gold: int = 0
+## Preplaced starter tower (or one built free in the tutorial): its sale is locked until
+## GameConfig.starter_sell_unlock_wave. A rebuilt tower is a new instance, so it is false.
+var is_starter: bool = false
 var priority: Enums.TargetPriority = Enums.TargetPriority.FIRST
 var scan_phase: float = 0.0
 ## Set by the Slot that holds this tower; used for slot-keyed EventBus signals.
