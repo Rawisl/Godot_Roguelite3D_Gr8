@@ -11,11 +11,11 @@
 
 [node name="Level1" type="Node3D" parent="." unique_id=1265179963]
 unique_name_in_owner = true
-transform = Transform3D(-0.869333, 0, -0.232937, 0, 0.9, 0, 0.152278, 0, -0.568311, -0.059356, 0, 0.072215)
+transform = Transform3D(-0.710003, 0, -0.07705, 0, 0.72, 0, 0.119563, 0, -0.457543, -0.021914, 0, 0.012932)
 
-[node name="Tier1" parent="Level1" instance=ExtResource("1_tier1")]
+[node name="Tier1" parent="Level1" unique_id=837537257 instance=ExtResource("1_tier1")]
 
-[node name="model" parent="Level1/Tier1" index="0"]
+[node name="model" parent="Level1/Tier1" index="0" unique_id=456989461]
 material_override = ExtResource("4_mat1")
 
 [node name="Level2" type="Node3D" parent="." unique_id=490785677]
@@ -23,9 +23,9 @@ unique_name_in_owner = true
 transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.626863, 0, 0, -0.005802, 0, -0.002546)
 visible = false
 
-[node name="Tier2" parent="Level2" instance=ExtResource("2_tier2")]
+[node name="Tier2" parent="Level2" unique_id=781499478 instance=ExtResource("2_tier2")]
 
-[node name="model" parent="Level2/Tier2" index="0"]
+[node name="model" parent="Level2/Tier2" index="0" unique_id=676903267]
 material_override = ExtResource("5_mat2")
 
 [node name="Level3" type="Node3D" parent="." unique_id=975749217]
@@ -33,9 +33,9 @@ unique_name_in_owner = true
 transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.534967, 0, 0, 0.006504, 0, -0.000355)
 visible = false
 
-[node name="Tier3" parent="Level3" instance=ExtResource("3_tier3")]
+[node name="Tier3" parent="Level3" unique_id=752898980 instance=ExtResource("3_tier3")]
 
-[node name="model" parent="Level3/Tier3" index="0"]
+[node name="model" parent="Level3/Tier3" index="0" unique_id=731065578]
 material_override = ExtResource("6_mat3")
 
 [editable path="Level1/Tier1"]
