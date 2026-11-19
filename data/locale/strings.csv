@@ -524,6 +524,7 @@ alert.towers_ruined,{count} tower bị phá
 alert.towers_ruined_sub,Ở các ô: {slots}
 alert.boss_next,Boss ở đợt quái thứ {wave}
 alert.boss_next_sub,Kiểm tra miễn nhiễm trước khi bắt đầu
+alert.fps_downscale,Đã hạ về x2 để giữ ổn định
 hud.clear_time,Thời gian:
 enemy.trait.stealth,Tàng hình
 enemy.trait.explode,Tự nổ

@@ -5,7 +5,6 @@ extends Node
 ## Supports queue-based spawning, spawn_zone placement, spawn_grace,
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
 # TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
-# TODO(Ender-Via): when the Hazard Trial room opens, keep wave_state at HAZARD_TRIAL until it closes; _on_boss_defeated skips a boss that dies then (no prestige, repair charge or weapon), so the room must still pay that boss's boss_gold and boss XP itself, added to the room gold paid out when the hero leaves.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -121,12 +120,19 @@ const BOSS_TIMER_SCRIPT := preload("res://systems/wave/boss_timer.gd")
 var _combat_timer: float = 0.0
 var _clear_time: float = 0.0
 var _first_enemy_spawned: bool = false
+## Game seconds since the wave's last enemy spawned. Negative while enemies are still queued.
+var _since_last_spawn: float = -1.0
+var _stragglers_marked: bool = false
+var _frenzy_sent: bool = false
+var _hard_cap_reached: bool = false
 var _is_run_lost: bool = false
 var _boss_defeated_this_wave: bool = false
 var _boss_enraged_this_wave: bool = false
 var _boss_instance: Enemy = null
 
 var _xp_tracker: Node = null
+## The Hazard Trial of each PREP: picks the group, runs the room and pays it out.
+var hazard_trial: HazardTrial = null
 var _boss_timer: Node = null
 
 
@@ -141,6 +147,7 @@ func _ready() -> void:
 	EventBus.boss_enraged.connect(_on_boss_enraged)
 	_setup_xp_tracker()
 	_setup_boss_timer()
+	_setup_hazard_trial()
 	EventBus.reward_picked.connect(_on_reward_picked)
 	EventBus.victory_continue_requested.connect(_on_victory_continue_requested)
 	_setup_container.call_deferred()
@@ -219,6 +226,36 @@ func _setup_xp_tracker() -> void:
 		add_child(_xp_tracker)
 
 
+func _setup_hazard_trial() -> void:
+	hazard_trial = HazardTrial.new()
+	hazard_trial.name = "HazardTrial"
+	hazard_trial.wave_manager = self
+	add_child(hazard_trial)
+
+
+func get_xp_tracker() -> Node:
+	return _xp_tracker
+
+
+## PREP to HAZARD_TRIAL for the room. Nothing of the wave is reset: the same PREP goes on after.
+func enter_hazard_state() -> void:
+	var old_state := wave_state
+	wave_state = Enums.WaveState.HAZARD_TRIAL
+	wave_fsm_state_changed.emit(wave_state, old_state)
+	EventBus.state_changed.emit(&"HAZARD_TRIAL")
+
+
+## Back to the same PREP after the room, without anything a new PREP does again (spawn queue,
+## per-wave tallies, the room being used, the group offer).
+func leave_hazard_state() -> void:
+	if wave_state != Enums.WaveState.HAZARD_TRIAL:
+		return
+	var old_state := wave_state
+	wave_state = Enums.WaveState.PREP
+	wave_fsm_state_changed.emit(wave_state, old_state)
+	EventBus.state_changed.emit(&"PREP")
+
+
 func _setup_boss_timer() -> void:
 	_boss_timer = get_tree().get_first_node_in_group(&"boss_timer")
 	if _boss_timer == null:
@@ -285,6 +322,9 @@ func start_prep() -> void:
 
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"PREP")
+	if hazard_trial != null:
+		# Deferred: on the first PREP the HUD gate is not ready yet when the wave manager is.
+		hazard_trial.offer.call_deferred(current_wave)
 
 
 func is_boss_wave(w: int = -1) -> bool:
@@ -345,6 +385,7 @@ func start_combat() -> void:
 	spawn_timer = 0.0
 	_combat_timer = 0.0
 	_first_enemy_spawned = false
+	_reset_straggler_clock()
 
 	if is_boss:
 		_spawn_boss()
@@ -562,6 +603,7 @@ func _physics_process(delta: float) -> void:
 				var non_boss_count: int = enemies_alive - (1 if (_boss_instance != null and is_instance_valid(_boss_instance)) else 0)
 				if non_boss_count < GameConfig.max_alive:
 					_try_spawn_next_enemy()
+			_update_straggler_clock(delta)
 
 		Enums.WaveState.SUMMARY:
 			if auto_advance_summary:
@@ -571,6 +613,52 @@ func _physics_process(delta: float) -> void:
 
 		Enums.WaveState.REWARD_PICK:
 			pass
+
+
+func _reset_straggler_clock() -> void:
+	_since_last_spawn = -1.0
+	_stragglers_marked = false
+	_frenzy_sent = false
+	_hard_cap_reached = false
+
+
+## Once the last enemy of the wave has spawned: a marker on the stragglers, then FRENZY, then the
+## hard cap, which removes every unit left that is not a boss so the wave always ends. The clock
+## runs from the last spawn and is not reset when a unit is sent back to the spawn zone.
+func _update_straggler_clock(delta: float) -> void:
+	if not _first_enemy_spawned or not spawn_queue.is_empty():
+		return
+	_since_last_spawn = maxf(_since_last_spawn, 0.0) + delta
+	if not _stragglers_marked and _since_last_spawn >= GameConfig.straggler_marker_time:
+		_stragglers_marked = true
+		for enemy in _wave_enemies():
+			enemy.mark_straggler()
+	if not _frenzy_sent and _since_last_spawn >= GameConfig.frenzy_time:
+		_frenzy_sent = true
+		for enemy in _wave_enemies():
+			enemy.enter_frenzy()
+	if not _hard_cap_reached and _since_last_spawn >= GameConfig.wave_hard_cap:
+		_hard_cap_reached = true
+		for enemy in _wave_enemies():
+			enemy.cull(&"HARD_CAP")
+
+
+## Living units of the wave, the boss included; each unit decides what applies to it.
+func _wave_enemies() -> Array[Enemy]:
+	var result: Array[Enemy] = []
+	for node in get_tree().get_nodes_in_group(&"enemy"):
+		var enemy := node as Enemy
+		if enemy != null and is_instance_valid(enemy) and not enemy.is_dead:
+			result.append(enemy)
+	return result
+
+
+## A random point in the spawn zone, for a unit sent back to walk the lane again.
+func random_spawn_zone_point() -> Vector3:
+	var rng: RandomNumberGenerator = _wave_rng if _wave_rng != null else RandomNumberGenerator.new()
+	var offset_x: float = rng.randf_range(-spawn_zone_half_extents.x + 0.5, spawn_zone_half_extents.x - 0.5)
+	var offset_z: float = rng.randf_range(-spawn_zone_half_extents.z + 0.5, spawn_zone_half_extents.z - 0.5)
+	return spawn_point + Vector3(offset_x, 0.0, offset_z)
 
 
 func _is_position_occupied(pos: Vector3, min_dist: float = 1.0) -> bool:

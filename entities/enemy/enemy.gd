@@ -17,6 +17,23 @@ const STALL_ATTACK_TIME: float = 0.5
 const WAIT_RING_TOLERANCE: float = 0.3
 ## A knockback that carries a slot holder further than this from where it was hit frees its slot.
 const KNOCKBACK_RELEASE_DISTANCE: float = 3.0
+## How often a walking unit checks whether it is stuck, in game seconds.
+const STUCK_CHECK_INTERVAL: float = 0.5
+## A unit this close to the end of its path (beyond its attack range) has arrived, not stuck.
+const STUCK_ARRIVE_MARGIN: float = 1.0
+## The commander this close in front of a unit blocks it; that time never counts as stuck.
+const COMMANDER_BLOCK_RADIUS: float = 2.5
+## Detections after which the unit goes straight to the spawn zone instead of a new path.
+const STUCK_DETECTIONS_TO_RECYCLE: int = 3
+## Below this height the unit has fallen off the map.
+const FALL_HEIGHT: float = -10.0
+## A unit knocked further than this from the navmesh is put back on it.
+const NAVMESH_SNAP_DISTANCE: float = 0.3
+## Where a unit sent back goes when no wave manager is there to pick a spawn zone point.
+const FALLBACK_SPAWN_POINT := Vector3(14.0, 0.0, 0.0)
+
+## Units removed by the stuck ladder since the game started, for the exported error log.
+static var stuck_cull_count: int = 0
 
 ## WAIT: not moved yet, walking in to the wait ring (walk animation applies),
 ## standing for the rest of this WAIT.
@@ -85,6 +102,23 @@ var knockback_immune: bool:
 var life_timer: float = 0.0
 var straggler_marked: bool = false
 var is_frenzied: bool = false
+## Times this unit was sent back to the spawn zone by the stuck ladder.
+var recycle_count: int = 0
+## Times this unit was found stuck; the third one sends it back at once.
+var stuck_detections: int = 0
+## 0 not stuck, 1 a new path was asked for and the unit is watched for one more window.
+var stuck_tier: int = 0
+## True while the unit attacks the nearest building because no path reaches its target.
+var breaking_through: bool = false
+## A unit of the Hazard Trial room: it goes for the commander only, pays nothing on its own
+## (the room counts the kill) and is never sent back or removed by the stuck ladder.
+var in_hazard_room: bool = false
+var _stuck_clock: float = 0.0
+var _stuck_window: float = 0.0
+var _stuck_anchor: float = INF
+var _stuck_target_id: int = 0
+var _normal_progress_time: float = 0.0
+var _fall_count: int = 0
 var wait_timer: float = 0.0
 var _wait_phase: WaitPhase = WaitPhase.NOT_MOVED
 ## Where the last knockback started, to measure how far it carried the unit.
@@ -257,11 +291,310 @@ func can_be_targeted() -> bool:
 
 
 func can_be_recycled() -> bool:
-	return true
+	return not in_hazard_room
 
 
 func can_be_culled() -> bool:
+	return not in_hazard_room
+
+
+## Bosses keep their own stuck handling, are never sent back or removed and never go into FRENZY.
+func is_boss() -> bool:
+	return data is BossData
+
+
+## The marker shown on a unit still alive a while after the wave's last spawn. Once per unit.
+func mark_straggler() -> void:
+	if is_dead or straggler_marked:
+		return
+	straggler_marked = true
+	EventBus.straggler_marker_shown.emit(self)
+
+
+## FRENZY for a unit still alive late in the wave: faster, goes for the Fortress only, ignores taunt
+## and the waiting slots. For good: nothing turns it off. A unit still spawning or staggered gets
+## the flag now and walks in FRENZY when that ends.
+func enter_frenzy() -> void:
+	if is_dead or is_frenzied or is_boss():
+		return
+	taunted_by_player = false
+	taunt_timer = 0.0
+	breaking_through = false
+	if current_state == Enums.EnemyState.SPAWN or current_state == Enums.EnemyState.STAGGER:
+		is_frenzied = true
+		speed_multiplier = wave_speed_mult * GameConfig.frenzy_speed_mult
+		EventBus.frenzy_started.emit(self)
+		return
+	change_state(Enums.EnemyState.FRENZY)
+
+
+## Removes the unit with no gold, prestige or kill. The wave counts it as gone, so the wave can
+## end. False for a boss or a unit already dead. reason is STUCK or HARD_CAP, for the log.
+func cull(reason: StringName) -> bool:
+	if is_dead or not can_be_culled():
+		return false
+	if reason == &"STUCK":
+		stuck_cull_count += 1
+	_log_stuck_event(4 if reason == &"STUCK" else 0, reason)
+	is_dead = true
+	_release_melee_slot()
+	remove_from_group(&"enemy")
+	collision_layer = 0
+	collision_mask = 0
+	set_physics_process(false)
+	EventBus.enemy_died.emit(data.id if data != null else &"", global_position, 0.0, 0, true, false)
+	current_state = Enums.EnemyState.DEAD
+	queue_free()
 	return true
+
+
+## Sends the unit back to a random point of the spawn zone to walk the lane again. HP, buffs,
+## rewards and FRENZY stay; the wave budget is not refunded. False for a boss or a dead unit.
+func recycle() -> bool:
+	if is_dead or not can_be_recycled():
+		return false
+	recycle_count += 1
+	_log_stuck_event(3, &"RECYCLE")
+	_release_melee_slot()
+	var wm := get_tree().get_first_node_in_group(&"wave_manager") if is_inside_tree() else null
+	var point: Vector3 = FALLBACK_SPAWN_POINT
+	if wm != null and wm.has_method(&"random_spawn_zone_point"):
+		point = wm.call(&"random_spawn_zone_point")
+	global_position = point
+	velocity = Vector3.ZERO
+	breaking_through = false
+	_reset_stuck_tracking()
+	stuck_tier = 0
+	current_target = null
+	has_target_position = false
+	change_state(Enums.EnemyState.SPAWN)
+	return true
+
+
+## Watches a walking unit for lack of progress along its path and climbs the ladder: a new path
+## first, then back to the spawn zone, then removed once it was sent back recycle_max times.
+## Queueing, attacking, staggering, spawning and being blocked by the commander never count.
+func _update_stuck_ladder(delta: float) -> void:
+	# The room is an open arena with only the commander to reach; the ladder is for the lane.
+	if is_dead or is_boss() or in_hazard_room:
+		return
+	_stuck_clock += delta
+	if _stuck_clock < STUCK_CHECK_INTERVAL:
+		return
+	var step := _stuck_clock
+	_stuck_clock = 0.0
+	check_stuck(step)
+
+
+## One check of the stuck ladder covering step game seconds. Runs every STUCK_CHECK_INTERVAL.
+func check_stuck(step: float) -> void:
+	if is_dead or is_boss() or _check_fall():
+		return
+	if not _is_stuck_tracked():
+		_reset_stuck_tracking()
+		return
+	_check_blocked_path()
+	var remaining := _remaining_path_length()
+	var target_id := current_target.get_instance_id() if is_instance_valid(current_target) else 0
+	if target_id != _stuck_target_id or _stuck_anchor == INF:
+		_stuck_target_id = target_id
+		_start_stuck_window(remaining)
+		return
+	if _arrived(remaining):
+		_start_stuck_window(remaining)
+		return
+	if _stuck_anchor - remaining >= GameConfig.stuck_progress_min:
+		_normal_progress_time += step
+		if _normal_progress_time >= GameConfig.stuck_reset_time:
+			stuck_tier = 0
+		_start_stuck_window(remaining)
+		return
+	_stuck_window += step
+	var limit := GameConfig.stuck_detect_time if stuck_tier == 0 else GameConfig.stuck_escalate_time
+	if _stuck_window < limit - 0.001:
+		return
+	stuck_detections += 1
+	_normal_progress_time = 0.0
+	if stuck_tier == 0 and stuck_detections < STUCK_DETECTIONS_TO_RECYCLE:
+		stuck_tier = 1
+		_log_stuck_event(1, &"REPATH")
+		# Setting the target again always asks the agent for a new path.
+		nav.target_position = nav.target_position
+		_start_stuck_window(remaining)
+	elif recycle_count >= GameConfig.recycle_max:
+		cull(&"STUCK")
+	else:
+		recycle()
+
+
+func _is_stuck_tracked() -> bool:
+	if spawn_grace or not (current_state == Enums.EnemyState.ADVANCE or current_state == Enums.EnemyState.CHASE
+			or current_state == Enums.EnemyState.FRENZY):
+		return false
+	if not (is_instance_valid(current_target) or has_target_position):
+		return false
+	return not _is_blocked_by_commander()
+
+
+## The commander standing right in front of the unit. Waiting behind it is not being stuck.
+func _is_blocked_by_commander() -> bool:
+	var cmd := get_tree().get_first_node_in_group(&"commander") as Node3D
+	if cmd == null or cmd == current_target:
+		return false
+	var to_cmd := cmd.global_position - global_position
+	to_cmd.y = 0.0
+	if to_cmd.length() > COMMANDER_BLOCK_RADIUS:
+		return false
+	var heading := nav.get_next_path_position() - global_position
+	heading.y = 0.0
+	if heading.length_squared() < 0.001:
+		heading = nav.target_position - global_position
+		heading.y = 0.0
+	return heading.length_squared() < 0.001 or to_cmd.dot(heading) > 0.0
+
+
+func _arrived(remaining: float) -> bool:
+	var reach: float = data.attack_range if data != null else 1.5
+	return remaining <= reach + STUCK_ARRIVE_MARGIN
+
+
+func _start_stuck_window(remaining: float) -> void:
+	_stuck_anchor = remaining
+	_stuck_window = 0.0
+
+
+func _reset_stuck_tracking() -> void:
+	_stuck_anchor = INF
+	_stuck_window = 0.0
+	_stuck_target_id = 0
+
+
+## Length left along the navmesh path to the target; the straight distance without a path.
+func _remaining_path_length() -> float:
+	var path := nav.get_current_navigation_path()
+	var index := nav.get_current_navigation_path_index()
+	if path.is_empty() or index < 0 or index >= path.size():
+		var flat := nav.target_position - global_position
+		flat.y = 0.0
+		return flat.length()
+	var here := global_position
+	here.y = path[index].y
+	var total := here.distance_to(path[index])
+	for i in range(index, path.size() - 1):
+		total += path[i].distance_to(path[i + 1])
+	return total
+
+
+func _has_navmesh() -> bool:
+	if not is_inside_tree() or nav == null:
+		return false
+	var map := nav.get_navigation_map()
+	return map.is_valid() and not NavigationServer3D.map_get_regions(map).is_empty()
+
+
+## When no path reaches the target (buildings and the commander close a narrow point), the unit
+## attacks the nearest ground tower or Barricade to open a way, and goes back to its usual
+## targets once a path to the Fortress exists again.
+func _check_blocked_path() -> void:
+	if not _has_navmesh() or is_frenzied:
+		return
+	if breaking_through:
+		if _fortress_reachable():
+			breaking_through = false
+			_find_best_target()
+		return
+	if nav.is_target_reachable() or _is_structure(current_target):
+		return
+	var structure := _find_breakthrough_structure()
+	if structure != null:
+		breaking_through = true
+		set_target(structure)
+		if current_state != Enums.EnemyState.CHASE:
+			change_state(Enums.EnemyState.CHASE)
+
+
+func _fortress_reachable() -> bool:
+	var goal := _get_fortress_fallback_position()
+	var fortress := _get_valid_fortress()
+	if fortress != null:
+		goal = _get_attack_point(fortress)
+	var path := NavigationServer3D.map_get_path(nav.get_navigation_map(), global_position, goal, true)
+	if path.is_empty():
+		return false
+	var end := path[path.size() - 1]
+	return Vector2(end.x - goal.x, end.z - goal.z).length() <= nav.target_desired_distance + STUCK_ARRIVE_MARGIN
+
+
+func _is_structure(t: Node3D) -> bool:
+	return is_instance_valid(t) and (t.is_in_group(&"tower") or t.is_in_group(&"barricade"))
+
+
+## The nearest ground tower or Barricade by straight distance, in any direction. Wall towers are
+## out of reach from the lane and never chosen.
+func _find_breakthrough_structure() -> Node3D:
+	_update_node_cache()
+	var best: Node3D = null
+	var best_dist := INF
+	for list: Array[Node] in [_cached_towers, _cached_barricades]:
+		for node in list:
+			var n := node as Node3D
+			if n == null or not is_instance_valid(n) or not _is_target_valid(n) or _is_wall_tower(n):
+				continue
+			var d := global_position.distance_to(n.global_position)
+			if d < best_dist:
+				best_dist = d
+				best = n
+	return best
+
+
+func _is_wall_tower(n: Node3D) -> bool:
+	if _is_barricade(n):
+		return false
+	if n.is_in_group(&"tower_wall"):
+		return true
+	if "slot" in n and n.slot != null and "zone" in n.slot:
+		return n.slot.zone == Enums.SlotZone.WALL
+	return n.global_position.y >= 2.5
+
+
+## Off the map: back to the nearest navmesh point behind the fall. The second fall in the wave
+## sends the unit back to the spawn zone instead.
+func _check_fall() -> bool:
+	if global_position.y > FALL_HEIGHT:
+		return false
+	_fall_count += 1
+	if _fall_count >= 2 or not _has_navmesh():
+		recycle()
+		return true
+	var behind := global_position + Vector3(1.0, 0.0, 0.0)
+	behind.y = 0.0
+	global_position = NavigationServer3D.map_get_closest_point(nav.get_navigation_map(), behind)
+	velocity = Vector3.ZERO
+	_log_stuck_event(0, &"FELL")
+	return true
+
+
+## After a knockback: back onto the navmesh when it carried the unit off it.
+func _snap_to_navmesh() -> void:
+	if not _has_navmesh():
+		return
+	var closest := NavigationServer3D.map_get_closest_point(nav.get_navigation_map(), global_position)
+	if Vector2(closest.x - global_position.x, closest.z - global_position.z).length() > NAVMESH_SNAP_DISTANCE:
+		global_position = Vector3(closest.x, maxf(closest.y, global_position.y), closest.z)
+
+
+## tier 1 new path, 3 sent back, 4 removed as stuck, 0 other events (hard cap, fall). Sent back,
+## removed and the hard cap go to the log for the exported error log.
+func _log_stuck_event(tier: int, reason: StringName) -> void:
+	var type_id: StringName = data.id if data != null else &""
+	if tier > 0:
+		EventBus.stuck_event_logged.emit(tier, type_id, global_position, spawn_wave)
+	if tier >= 3 or reason == &"HARD_CAP":
+		var run_state := get_tree().get_first_node_in_group(&"run_state") if is_inside_tree() else null
+		var run_seed: int = int(run_state.get(&"run_seed")) if run_state != null else 0
+		Log.warn("nav", "%s %s at %s, wave %d, state %s, nav left %.1f m, frenzy %s, seed %d", [
+			reason, type_id, global_position, spawn_wave, Enums.EnemyState.keys()[current_state],
+			_remaining_path_length(), is_frenzied, run_seed])
  
 ## Apply wave scale factors at spawn time. Immutable while alive.
 func apply_wave_scale(hp_mult: float, dmg_mult: float, p_speed_mult: float, wave_num: int = 1, p_scale_config: ScaleConfig = null) -> void:
@@ -340,6 +673,7 @@ func _physics_process(delta: float) -> void:
  
 	_update_timers(delta)
 	_update_state(delta)
+	_update_stuck_ladder(delta)
 	_apply_avoidance(delta)
 	move_and_slide()
  
@@ -418,14 +752,6 @@ func _update_timers(delta: float) -> void:
 		_progress_timer += GameConfig.path_update_interval
 		update_nav_progress()
  
-	if life_timer >= GameConfig.straggler_marker_time and not straggler_marked:
-		straggler_marked = true
-		EventBus.straggler_marker_shown.emit(self)
- 
-	if life_timer >= GameConfig.frenzy_time and not is_frenzied and current_state != Enums.EnemyState.DEAD:
-		is_frenzied = true
-		change_state(Enums.EnemyState.FRENZY)
- 
 	if knockback_immunity_timer > 0.0:
 		knockback_immunity_timer = maxf(0.0, knockback_immunity_timer - delta)
  
@@ -457,7 +783,7 @@ func _update_state(delta: float) -> void:
 			if exited_zone or expired:
 				spawn_grace = false
 				is_in_spawn_zone = false
-				change_state(Enums.EnemyState.ADVANCE)
+				change_state(Enums.EnemyState.FRENZY if is_frenzied else Enums.EnemyState.ADVANCE)
 				return
  
 			_move_towards_direction(Vector3(-1.0, 0.0, 0.0))
@@ -562,6 +888,7 @@ func _update_state(delta: float) -> void:
 			stagger_timer -= delta
 			if stagger_timer <= 0.0:
 				knockback_immunity_timer = GameConfig.enemy_knockback_immunity_time
+				_snap_to_navmesh()
 				if is_frenzied or _previous_state == Enums.EnemyState.FRENZY:
 					change_state(Enums.EnemyState.FRENZY)
 				elif _previous_state == Enums.EnemyState.CHASE and current_target != null and is_instance_valid(current_target) and _is_target_valid(current_target):
@@ -890,6 +1217,9 @@ func _find_closest_valid_tower_any() -> Node3D:
 	return closest
  
 func _find_best_target() -> void:
+	if in_hazard_room:
+		_find_default_target()
+		return
 	if current_state == Enums.EnemyState.FRENZY:
 		_find_default_target()
 		return
@@ -983,6 +1313,12 @@ func _find_best_target() -> void:
 	_find_default_target()
  
 func _find_default_target() -> void:
+	if in_hazard_room:
+		# The room has no tower, Barricade or Fortress: the commander is the only target.
+		var cmd := _get_valid_commander()
+		if cmd != null:
+			set_target(cmd)
+		return
 	var fortress := _get_valid_fortress()
 	if fortress != null:
 		set_target(fortress)
@@ -1030,7 +1366,7 @@ func _uses_melee_slot(t: Node3D) -> bool:
 	if t == null or not is_instance_valid(t) or not t.has_method(&"claim_melee_slot"):
 		return false
 	# Bosses are too big for a slot: they walk straight to the target.
-	if is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true):
+	if is_boss() or is_in_group(&"boss"):
 		return false
 	return data == null or not (data.is_ranged or data.is_flying)
  
@@ -1239,9 +1575,8 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 	if commander_node == null or not is_instance_valid(commander_node):
 		return
  
-	# Bosses are immune to taunt
-	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
-	if is_boss:
+	# Bosses are immune to taunt, and a unit in FRENZY ignores it.
+	if is_boss() or is_in_group(&"boss") or is_frenzied:
 		return
  
 	taunted_by_player = true
@@ -1325,8 +1660,7 @@ func apply_displacement(direction: Vector3, distance: float) -> void:
 func _ignores_knockback() -> bool:
 	if is_dead or spawn_grace:
 		return true
-	var is_boss: bool = is_in_group(&"boss") or (data != null and data is BossData) or (get("is_boss") == true)
-	return is_boss or knockback_immune or knockback_immunity_timer > 0.0
+	return is_boss() or is_in_group(&"boss") or knockback_immune or knockback_immunity_timer > 0.0
 
 ## Drops provocation and taunt, and picks a new target by the normal priorities if the commander was the target.
 func release_commander_aggro() -> void:
@@ -1380,7 +1714,8 @@ func _on_died() -> void:
 	if hurt_shape != null:
 		hurt_shape.set_deferred("disabled", true)
  
-	if data != null:
+	# A room unit is counted by the Hazard Trial when it reaches DEAD, never by the wave.
+	if data != null and not in_hazard_room:
 		var kill_gold: float = _get_kill_gold()
 		var display_gold: int = int(round(kill_gold))
 		if display_gold > 0:

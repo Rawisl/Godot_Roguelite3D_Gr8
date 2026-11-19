@@ -30,9 +30,11 @@ const MUZZLE := preload("res://art/vfx/muzzle_flash.tscn")
 @export var muzzle_pool := 16
 
 @export_group("Budget")
-## Particle cap for the current graphics preset (Low 500, Medium 1500, High 3000).
-## Over it, muzzle flashes and arrow hits are skipped first; cannon blasts always play.
-@export var particle_budget := 1500
+## The shared particle limit (ParticleBudget). Over it, muzzle flashes and arrow hits are
+## skipped first; cannon blasts always play.
+var particle_budget: int:
+	get: return ParticleBudget.limit
+	set(value): ParticleBudget.limit = value
 ## Height above a unit's origin where its hits show.
 @export var hit_height := 1.0
 ## How far the hit is pulled from the unit's centre toward the attacker, so it shows on
@@ -45,6 +47,7 @@ var _enemy_arrows: Array[Node3D] = []
 
 
 func _ready() -> void:
+	add_to_group(ParticleBudget.GROUP)
 	for pair in [[SWORD_HIT, sword_pool], [ARROW_HIT, arrow_pool], [CANNON_BLAST, blast_pool], [MUZZLE, muzzle_pool]]:
 		_fill(pair[0], pair[1])
 	for i in maxi(arrow_pool / 3, 1):
@@ -167,7 +170,7 @@ func active_particles() -> int:
 
 
 func _fits(cost: int, secondary: bool) -> bool:
-	return not secondary or active_particles() + cost <= particle_budget
+	return ParticleBudget.has_room(get_tree(), cost, secondary)
 
 
 ## A free instance from the pool, or the next one in turn when all are busy.

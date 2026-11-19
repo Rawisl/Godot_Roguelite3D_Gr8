@@ -37,7 +37,18 @@ var _particles: Array[CPUParticles3D] = []
 
 
 func _ready() -> void:
+	add_to_group(ParticleBudget.GROUP)
 	EventBus.tower_destroyed.connect(_on_tower_destroyed)
+
+
+## Smoke and debris still emitting. A tower breaking is a main effect: it always plays and only
+## counts toward the shared budget.
+func active_particles() -> int:
+	var total := 0
+	for p in _particles:
+		if is_instance_valid(p) and p.emitting:
+			total += p.amount
+	return total
 
 
 func _on_tower_destroyed(slot_id: StringName) -> void:

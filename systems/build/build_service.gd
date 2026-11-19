@@ -432,8 +432,10 @@ func _end(slot_id: StringName) -> void:
 	_busy.erase(slot_id)
 
 func _on_state_changed(new_state: StringName) -> void:
+	# Back from the Hazard Trial room is the same PREP: the towers were healed when it began.
+	var from_room := _wave_state == &"HAZARD_TRIAL"
 	_wave_state = new_state
-	if new_state == &"PREP" and GameConfig.tower_full_heal_on_prep:
+	if new_state == &"PREP" and not from_room and GameConfig.tower_full_heal_on_prep:
 		_heal_towers_for_prep()
 
 func _heal_towers_for_prep() -> void:

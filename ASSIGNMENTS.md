@@ -799,59 +799,65 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT3
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: FRENZY, marker, giới hạn cứng (EN-01..03, WAVE-05, NAV-13, NAV-12)
 - Nghiệm thu: Wave không treo quá 300 s
 - Cần xong trước: W8-KT1
 
+- Ghi chú bàn giao: The straggler clock now runs per wave in WaveManager from the last spawn (it used to be each unit's own lifetime): marker at straggler_marker_time, FRENZY at frenzy_time, and at wave_hard_cap every unit left that is not a boss is removed as a cull (no gold, prestige or kill) so the wave ends. Being sent back does not reset the clock. FRENZY is for good: kept through spawning again and stagger, taunt is ignored, bosses never enter it (`Enemy.enter_frenzy`, `Enemy.mark_straggler`, `Enemy.cull`). Runner `tests/test_stuck_ladder_runner.tscn`.
 ##### W10-NG3
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Thang kẹt MVP (NAV-01..06, 08, 09, 14 log) theo v2.0 (không ally_phase; thêm NAV-15 bị chặn kín thì nhắm công trình gần nhất)
 - Nghiệm thu: Kẹt giả lập đi đúng bậc; xếp hàng không tính kẹt; chỉ huy đứng ở điểm hẹp không làm quân bị recycle
 - Tệp liên quan: entities/enemy/enemy.gd (khối stuck), entities/enemy/bulwark.gd
 - ID SRS: NAV-15
 - Cần xong trước: W9-KT5
 
+- Ghi chú bàn giao: Stuck ladder in `Enemy.check_stuck`, every 0.5 s while ADVANCE, CHASE or FRENZY: no 0.5 m progress along the navmesh path in 3 s asks for a new path; still stuck 3 s later, or stuck for the third time, sends the unit back to a spawn zone point (`WaveManager.random_spawn_zone_point`, HP and FRENZY kept); once sent back recycle_max times it is removed as a cull. 10 s of normal progress resets the ladder. WAIT, ATTACK, STAGGER, spawn grace, arriving and the commander standing in front never count. Knockback off the navmesh snaps back; a fall goes to the nearest navmesh point behind, the second fall sends the unit back. With no path to its target the unit attacks the nearest ground tower or Barricade and goes back to its normal targets once the Fortress can be reached. Sent back, removed and hard cap go to `Log.warn` (tag nav) with type, position, wave, state, path left, FRENZY and run seed; `Enemy.stuck_cull_count` counts the removals. Bosses keep their own ladder. Not done here: the 20-wave run at x3 for the cull rate, and the blocked-path case is only checked in a level with a navmesh, not in the runner. Bulwark TODO to move the structure pick into BulwarkBrain stays for later.
 ##### W10-NG4
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: TIME-06 tự hạ x2 + ALR-10
 - Nghiệm thu: FPS < 30 trong 3 s ở x3 thì hạ x2
 - Cần xong trước: W8-KT1
 
+- Ghi chú bàn giao: `TimeManager.check_frame_rate` drops x3 to x2 when the frame rate stays under fps_downscale_floor for fps_downscale_duration real seconds, outside Pause, and sends alert_requested T2 with `alert.fps_downscale` (new string). Only x3 is lowered. Ngọc owns time_manager.gd; Khang owns strings.csv.
 ##### W10-KT4
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: State HAZARD_TRIAL trong Wave FSM (PREP -> HAZARD_TRIAL -> PREP cùng wave, không hồi 35% và hồi tower lần hai); thêm vào Enums.WaveState từ cuối; TimeManager, camera, HUD nhận state mới
 - Nghiệm thu: Ra khỏi phòng không chạy lại việc đầu PREP; tua x1/x2/x3 dùng được trong phòng và vào/ra phòng không làm TimeManager đổi mức tua
 - Tệp liên quan: common/enums.gd:6 (WaveState, thêm HAZARD_TRIAL ở cuối), systems/wave/wave_manager.gd, autoload/time_manager.gd
 - ID SRS: 3.3.1, TIME-02, TIME-08
 - Cần xong trước: W9-KT3, W9-KT6
 
+- Ghi chú bàn giao: `WaveManager.enter_hazard_state()` and `leave_hazard_state()` switch PREP to HAZARD_TRIAL and back to the same PREP without running start_prep again (no new spawn queue, tallies, offer or hazard_used reset). The commander already skips its PREP heal after the room; BuildService now skips the tower heal too (Mạnh). TimeManager does not change the speed on either state, and the speed buttons only lock BOSS_INTRO, SUMMARY and REWARD_PICK, so x1/x2/x3 work in the room.
 ##### W10-KT5
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial phía wave: điều kiện vào (PREP, một lần mỗi wave, Frontline, không Pause hay hộp thoại), chọn nhóm 5 quái (mỗi loại >= 1, RNG riêng hash(run_seed,'hazard',wave); wave boss = boss + 4 hộ tống), sinh quân vào hazard_room, phân xử kết quả cuối frame DIED > WON > LEFT, trả gold, XP, Mithril khi rời phòng, không đụng spawn_queue, uy tín, run_kills
 - Nghiệm thu: HZ1, HZ2, HZ5, HZ6 đạt; thắng phòng được Mithril và sửa Fortress được; boss trong phòng không rơi vũ khí và không +1 Emergency repair; Pause trong phòng không rời phòng, Abandon hoặc Quit trong phòng chốt run và mất thưởng chưa nhận (HZT-12)
 - Tệp liên quan: mới: systems/hazard/ (hoặc systems/wave/), systems/xp/xp_tracker.gd, systems/wave/wave_manager.gd
 - ID SRS: HZT-01, 02, 04, 07, 08, 09, 13, 15, 16; GLD-10; XP-06; MTH-02
 - Cần xong trước: W10-KT4, W10-NG10, W10-KM8, W8B-KT1
 
+- Ghi chú bàn giao: New `systems/hazard/hazard_trial.gd`, created by WaveManager. Each new PREP builds the group (`build_group`: 5 units from the wave's composition, each type at least once, the rest by count with an RNG seeded by run seed, 'hazard' and the wave; a boss wave gives the boss plus 4 escorts) and sends hazard_trial_offered with the Mithril for a win. hazard_enter_requested is checked again (PREP, not used, Frontline, not paused, no dialog, a room in the level); entering moves the commander to the room's CommanderSpawn, spawns the group on the pads at this wave's scale and sends hazard_trial_entered and hazard_trial_progress. Results are settled at the end of the frame, DIED over WON over LEFT; leaving puts the commander back, sends hazard_trial_exited, then pays the room gold (kill gold of the wave plus boss gold when the boss died, with the gold bonus, no clear bonus) to GoldManager, the XP to XpTracker and Mithril on WON, sets hazard_used and returns to PREP. Room units do not send enemy_died, so the wave, prestige, run kills and boss count never see them; the room boss does not send boss_defeated (no prestige, repair charge or weapon). Ending the run in the room drops the room and its rewards. The group comes from the generated composition until scripted waves land (W11-KT9); self-destructing, Captain and Undead rules wait for the traits (W10-KT7). Runner `tests/test_hazard_trial_runner.tscn`.
 ##### W10-KT6
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hazard Trial AI trong phòng: quân chỉ nhắm chỉ huy; boss trong phòng có pha giáp nhưng không BOSS_INTRO, boss_timer, Cuồng nộ
 - Nghiệm thu: Quân trong phòng không tấn công tower; Bulwark trong phòng không đếm giờ
 - Tệp liên quan: entities/enemy/enemy.gd, entities/enemy/bulwark.gd
 - ID SRS: HZT-03, HZT-14
 - Cần xong trước: W10-KT5
 
+- Ghi chú bàn giao: Room units (`Enemy.in_hazard_room`) only target the commander, never a tower, Barricade or Fortress, and the stuck ladder skips them. The room boss gets `in_hazard_trial`, which the Bulwark already uses for its room behaviour; no BOSS_INTRO, boss timer or Enrage is started for it. Battle Cry still taunts room units.
 ##### W10-KT7
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
@@ -1509,9 +1515,10 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM2
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Âm thanh hoàn chỉnh (AUD-06..09, -14 LUFS nhạc, -12 LUFS SFX); sting thắng và sting RunEnd endless
 - Nghiệm thu: Nhạc .ogg, SFX .wav
+- Ghi chú bàn giao: Every SFX is now a 16-bit 44.1 kHz .wav normalized toward -12 LUFS (true peak -1 dBTP, at most 6 dB of limiting, so short clicks stay a bit under); music stays .ogg at -14 LUFS. AudioManager plays the AUD-07 cues from EventBus: Stomp wind-up (stomp telegraph), level up, reward cards, tower destroyed, Fortress heavy hit (one hit of fortress_heavy_hit_pct = 5 % of max HP or more), the T1 alert siren and a heartbeat on low commander HP (promised in #195). New MusicLibrary stings: victory_sting on run_victory (PREP music after) and endless_end_sting at RunEnd when the run had passed the victory wave. Crossfade, Pause and focus mute (AUD-06, AUD-08) were already in. Sources in `audio/CREDITS.md`, all Kenney CC0. Verified by `tests/test_audio_manager.tscn` (116 checks).
 - Cần xong trước: Mốc B2
 
 ##### W11-KM4
@@ -1533,34 +1540,38 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM6
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 1.5 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kiểm navmesh agent lớn và boss_melee_point trên hành lang mới với 3 công trình grid
 - Nghiệm thu: Có đường cho agent bán kính 1.6 m
 - Cần xong trước: W9-KM6
+- Ghi chú bàn giao: `tests/test_large_agent_layouts.tscn` lists every legal layout of three ground buildings with the build rule (50 116 on the 68 cells), takes the tightest ones (refused with 3 m more width), builds eight of them for real on `level.tscn`, rebakes and checks a 1.6 m agent path on the large-agent navmesh from the spawn to the Bulwark standing point and to the gate: all reach. No change to the level was needed. Runs in about 2 minutes.
 
 ##### W13-KM2
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Vòng sáng slot ở PREP, tắt ở COMBAT (SLOT-06) [dời từ tuần 13]
 - Nghiệm thu: Chỉ hiện trên slot còn xây được
 - Cần xong trước: W7-KM1
+- Ghi chú bàn giao: The ring on/off in PREP and COMBAT and on free slots only were already in (SlotManager.set_rings_visible, Slot.set_buildable_visible). Added the locked ring: once max_ground_buildings ground slots hold a tower or rubble, the empty ground cells show a dim grey, dashed, steady ring (`systems/build/slot_ring.gdshader`, `Slot.set_locked`), updated by SlotManager on every slot change and on PREP; wall slots never lock. Verified by `tests/test_slot_ring_lock.tscn` (11 checks).
 
 ##### W13-KM4
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: DỜI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Preset hạt FBK-09 [dời từ tuần 13]
 - Nghiệm thu: Giới hạn 500/1500/3000
 - Cần xong trước: W7-KM1
+- Ghi chú bàn giao: The 500/1500/3000 limit (Graphics tab, W10-KM3) now feeds one shared budget, `art/vfx/particle_budget.gd` (ParticleBudget.limit). Every effect manager joins the group `particle_source` and reports `active_particles()`: HitFxManager, SkillFxManager, BuildFxManager, DestroyFxManager and BossFxManager, so the managers no longer each count against the full limit. Extras (muzzle flashes, arrow hits, skill dust and embers, build dust) are skipped when a new one would go over; main effects (cannon blasts, a tower breaking, the boss plates and steam) always play. Telegraphs use meshes and are never touched. Verified by `tests/test_particle_budget.tscn` (11 checks).
 
 ##### W11-KM7
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Chỉnh camera cùng Level trên map thật: size Frontline và overview, camera_bounds, tốc độ dịch; chạy CM1, CM2, CM3
 - Nghiệm thu: CM1, CM2, CM3 đạt trên map thật
 - Cần xong trước: W9-KM6
+- Ghi chú bàn giao: CM1, CM2 and CM3 pass on `main.tscn` with the current values (Frontline 14, overview 23.5, bounds 32 x 12 with frontline_depth 12, pan 14 m/s, recenter 0.3 s); nothing needed tuning. `tests/test_camera_flow.gd` now runs at 1920x1080 headless so the Frontline view width is measured (13.2 m each side), and also checks holding a pan key past both ends and across the corridor stays in the bounds, and the commander at the far walkable point of each end is followed but the focus stays in the bounds.
 
 ##### W11-KM8
 - Người: Kim
