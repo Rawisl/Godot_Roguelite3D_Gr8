@@ -17,3 +17,7 @@ extends Resource
 @export var win_sting: AudioStream
 ## Played once when the run is lost (RunEnd).
 @export var lose_sting: AudioStream
+## Played once when the victory wave is cleared and the victory screen opens; PREP music follows.
+@export var victory_sting: AudioStream
+## Played once at RunEnd when the run had already passed the victory wave (it ended in endless).
+@export var endless_end_sting: AudioStream

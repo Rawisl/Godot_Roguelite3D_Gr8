@@ -1,6 +1,6 @@
 class_name Bulwark
 extends Enemy
-# TODO(Ender-Via): set in_hazard_trial = true on the boss the Hazard Trial spawns into the room.
+# TODO(Ender-Via): move the structure pick into BulwarkBrain as a scored action so _find_best_target only reads the result and no longer changes push state or uses the AI roll.
 
 const WALK_ANIM_BASE_SPEED: float = 1.42
 
@@ -465,7 +465,9 @@ func _on_died() -> void:
 	stop_attack_sequence()
 	EventBus.boss_hp_changed.emit(0, 0, _get_phase_name())
 	# Announce the boss death first: when the boss is the last unit, enemy_died ends the wave and the summary must already see it.
-	EventBus.boss_defeated.emit()
+	# The room boss is not the wave's boss: no prestige, repair charge, weapon or boss count.
+	if not in_hazard_trial:
+		EventBus.boss_defeated.emit()
 	super._on_died()
 
 

@@ -9,6 +9,11 @@ uniform vec4 ring_color : source_color = vec4(1.0, 1.0, 1.0, 0.6);
 uniform vec4 ruined_color : source_color = vec4(0.78, 0.45, 0.23, 0.7);
 // Golden brown: the slot picked for building.
 uniform vec4 selected_color : source_color = vec4(0.92, 0.66, 0.28, 1.0);
+// A ground cell that cannot take a new building because the ground limit is reached. Dim and
+// with a dashed border, so it reads as locked without the colour.
+uniform vec4 locked_color : source_color = vec4(0.55, 0.55, 0.58, 0.45);
+// Dashes along each side of a locked ring.
+uniform float locked_dashes = 5.0;
 // Sizes are in metres, so resizing the plane only changes how much room the glow has.
 uniform float box_half = 0.95;
 uniform float border_width = 0.14;
@@ -24,6 +29,7 @@ uniform float pulse_amount = 0.3;
 instance uniform float ruined = 0.0;
 instance uniform float hovered = 0.0;
 instance uniform float selected = 0.0;
+instance uniform float locked = 0.0;
 
 varying vec2 local_xz;
 
@@ -46,8 +52,14 @@ void fragment() {
 	float glow = exp(-max(band, 0.0) / glow_falloff) * glow_strength * lit;
 	float inside = 1.0 - smoothstep(-edge_softness, 0.0, d);
 	float pulse = 1.0 - pulse_amount * (0.5 + 0.5 * sin(TIME * pulse_speed));
-	vec4 base = mix(ring_color, ruined_color, ruined);
+	vec4 base = mix(mix(ring_color, locked_color, locked), ruined_color, ruined);
 	vec4 c = mix(base, selected_color, selected);
+	// Locked: dashed border, steady (no pulse).
+	vec2 a = abs(local_xz) / box_half;
+	float along = a.x > a.y ? local_xz.y : local_xz.x;
+	float dash = step(0.5, fract(along / (2.0 * box_half) * locked_dashes + 0.25));
+	border *= mix(1.0, dash, locked);
+	pulse = mix(pulse, 1.0, locked);
 	float line = border * mix(pulse * base.a, 1.0, lit);
 	ALBEDO = c.rgb;
 	ALPHA = clamp(max(max(line, glow), inside * fill_alpha * (1.0 + lit)), 0.0, 1.0);
