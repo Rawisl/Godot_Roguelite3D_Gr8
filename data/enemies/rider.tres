@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" uid="uid://b5nxx0eyswlc0" path="res://common/enemy_data.gd" id="1_jggar"]
+
+[resource]
+script = ExtResource("1_jggar")
+id = &"rider"
+display_name_key = "enemy.rider"
+base_hp = 55
+base_damage = 8
+attack_interval = 1
+attack_range = 1.5
+move_speed = 6
+damage_type = 2
+knockback_force = 0
+projectile_speed = 20
+spawn_cost = 3
+is_flying = false
+is_ranged = false
+knockback_immune = false
+aggro_range = 10
+gold_reward = 8
+prestige_reward = 2
+xp_value = 2
+is_stealth = false
+stealth_opacity = 1
+explode_on_contact = false
+explode_on_death = false
+explode_radius = 0
+explode_damage = 0
+explode_windup = 0
+invuln_hp_threshold = 0
+invuln_duration = 0
+is_charger = false
+impact_damage = 0
+impact_knockback = 0
+revive_count = 0
+revive_delay = 0
+revive_dmg_mult = 1
