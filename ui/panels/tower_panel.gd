@@ -100,12 +100,8 @@ func refresh() -> void:
 	_priority.refresh(slot_id, info, service)
 
 ## Wave until which the starter tower on this slot cannot be sold, 0 when it can.
-## TODO(kiezroth): BuildService.get_sell_locked_until_wave() comes with the starter towers.
-## Until it exists this returns 0 and no tower is locked.
 func _sell_locked_until(service: BuildService, id: StringName) -> int:
-	if not service.has_method(&"get_sell_locked_until_wave"):
-		return 0
-	return int(service.call(&"get_sell_locked_until_wave", id))
+	return service.get_sell_locked_until_wave(id)
 
 ## The "next level" line is kept at MAX so the buttons below never move up.
 func _stats_text(cur: TowerLevelData, next: TowerLevelData) -> String:
