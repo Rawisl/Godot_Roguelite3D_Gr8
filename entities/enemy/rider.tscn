@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_base"]
 [ext_resource type="Resource" path="res://data/enemies/rider.tres" id="2_data"]
-[ext_resource type="PackedScene" uid="uid://dwbtltd50lqes" path="res://contents/assets/characters/enemy and boss/grunt_model.tscn" id="3_model"]
+[ext_resource type="PackedScene" uid="uid://dgpph0mvodhty" path="res://contents/assets/characters/enemy and boss/rider/rider_model.tscn" id="3_model"]
 
 [node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_base")]
 data = ExtResource("2_data")

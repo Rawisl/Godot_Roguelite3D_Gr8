@@ -15,6 +15,7 @@ move_speed = 6
 damage_type = 2
 knockback_force = 0
 projectile_speed = 20
+anim_walk = &"simulation/Sit_Chair_Idle"
 spawn_cost = 3
 is_flying = false
 is_ranged = false
