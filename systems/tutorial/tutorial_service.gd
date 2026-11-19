@@ -6,8 +6,8 @@ extends Node
 ## built, before the wave starts, so leaving earlier runs the tutorial again next time. Skip is
 ## always there and builds the missing towers on their default slots, like the next runs get them.
 ## It sits with the other run systems in main.tscn; the HUD hint only shows what it says.
-# TODO(kiezroth): add BuildService.build_starter(slot_id, type) for the free starter tower (level 1, invested_gold 0, is_starter, sell lock) and make a click on a starter slot use it while the tutorial runs. Until it exists the player pays the normal price, and Skip only hides the hints for this run without saving tutorial_done, so a run never starts without its towers.
-# TODO(kiezroth): while is_active() and the step is build_arrow or build_cannon, light only that step's starter slot and lock the others; then count a build only on its starter slot (now any Arrow or Cannon counts, so a build on another cell never leaves the step stuck).
+## While it waits, BuildService keeps every slot but the two starter slots locked, so a tower
+## built on a starter slot is the only one that can count.
 
 signal step_changed(step: StringName)
 ## The step waited too long without progress, so the hint is shown again.
@@ -92,8 +92,10 @@ func _start_wave() -> int:
 	var run_state := get_tree().get_first_node_in_group(&"run_state")
 	return int(run_state.get(&"start_wave")) if run_state != null else 1
 
-func _on_tower_built(_slot_id: StringName, type: StringName) -> void:
+func _on_tower_built(slot_id: StringName, type: StringName) -> void:
 	if not is_wave_locked() or not _starters.has(type) or _built.get(type, false):
+		return
+	if slot_id != _starters[type]:
 		return
 	_built[type] = true
 	EventBus.tutorial_step_completed.emit(BUILD_STEPS[type])

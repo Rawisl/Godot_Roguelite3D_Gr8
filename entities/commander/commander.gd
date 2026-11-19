@@ -31,7 +31,7 @@ const COMBO_ANIM_CLIPS: Array[StringName] = [
 	&"melee/Melee_1H_Attack_Slice_Diagonal",
 	&"melee/Melee_2H_Attack_Spinning"
 ]
-const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 1.4]
+const COMBO_ANIM_SPEEDS: Array[float] = [1.6, 1.6, 2.2]
 
 const KNOCKBACK_DURATION: float = 0.25
 const POST_ACTION_DURATION: float = 0.1
