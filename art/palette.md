@@ -240,3 +240,14 @@ Màu loại thẻ (khung, dải nhãn; chủ động và bị động trùng mà
 | fbk_resist | `#C8C8C8` | Kèm chữ RESIST hoặc IMMUNE (xám sáng để đọc được trên nền cỏ) |
 | fbk_commander | `#E04545` | Sát thương chỉ huy nhận |
 | fbk_heal | `#9CFF6A` | Số hồi máu "+n" |
+
+## Fox Commander (VFX)
+
+Vệt chém trắng theo lưỡi kiếm của 3 đòn combo (dải dựng sẵn từ Blender, `art/vfx/fox_commander/fox_slash_trails.tscn`). Màu đặt trong uniform của shader `fox_slash_trail.gdshader`, chỉnh ở `art/materials/fox_slash_trail.tres`. Khi bật "Giảm nhấp nháy", vệt bị ẩn hẳn (độ đục về 0 qua `fox_slash_trails.gd`), không đổi màu.
+
+| Tên | Hex | Dùng cho |
+|---|---|---|
+| fox_trail_rim | `#4D6B8C` | Mép trong và đuôi vệt (`color_rim`) |
+| fox_trail_mid | `#9EC7E6` | Thân vệt (`color_mid`) |
+| fox_trail_bright | `#E0F2FF` | Phần sáng gần mép lưỡi (`color_bright`) |
+| fox_trail_core | `#FFFFFF` | Lõi trắng ngay sau lưỡi kiếm (`color_core`) |
