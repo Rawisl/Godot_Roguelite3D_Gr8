@@ -1,0 +1,21 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://3gicyaqn5spj"]
+
+[ext_resource type="Shader" uid="uid://bfve6b7yh6fxj" path="res://art/shaders/toon_cloth_tint.gdshader" id="1_toon"]
+[ext_resource type="Texture2D" uid="uid://binrfdgin8c4t" path="res://contents/assets/characters/enemy and boss/textures/skeleton_texture_B.png" id="2_tex"]
+
+[resource]
+resource_name = "captain_material"
+render_priority = 0
+shader = ExtResource("1_toon")
+shader_parameter/albedo_texture = ExtResource("2_tex")
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/bands = 2
+shader_parameter/band_softness = 0.03
+shader_parameter/shadow_tint = Color(0.3, 0.32, 0.45, 1)
+shader_parameter/light_strength = 0.75
+shader_parameter/ambient_strength = 0.55
+shader_parameter/rim_strength = 0.0
+shader_parameter/rim_width = 0.3
+shader_parameter/cloth_color = Color(1, 0.72, 0.32, 1)
+shader_parameter/bone_min_brightness = 0.66
+shader_parameter/bone_max_saturation = 0.32
