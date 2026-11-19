@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dxr1c8yydmyi8"]
 
 [ext_resource type="Shader" uid="uid://ca0wvrr2vyyy3" path="res://art/shaders/toon.gdshader" id="1_toon"]
 [ext_resource type="Texture2D" uid="uid://c468yifgjt4jx" path="res://contents/assets/characters/enemy and boss/rider/rider_horse_texture.png" id="2_tex"]

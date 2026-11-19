@@ -1,6 +1,6 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dxexq0djmep4j"]
 
-[ext_resource type="Shader" path="res://art/shaders/toon_stealth.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://bfh4nsouhouen" path="res://art/shaders/toon_stealth.gdshader" id="1_shader"]
 [ext_resource type="Texture2D" uid="uid://binrfdgin8c4t" path="res://contents/assets/characters/enemy and boss/textures/skeleton_texture_B.png" id="2_tex"]
 
 [resource]
@@ -17,3 +17,5 @@ shader_parameter/ambient_strength = 0.5
 shader_parameter/rim_strength = 0.0
 shader_parameter/rim_width = 0.3
 shader_parameter/opacity = 1.0
+shader_parameter/glow = Color(0, 0, 0, 1)
+shader_parameter/glow_energy = 0.0
