@@ -40,7 +40,7 @@ extends Resource
 @export var xp_value: int = 1
 
 @export_group("Traits")
-# TODO(endervia): consume these traits in enemy behavior, including stealth targeting, explosions, invulnerability, charge impacts and revival.
+# TODO(Ender-Via): implement stealth targeting, explosions, temporary invulnerability and revival in enemy behavior.
 @export var is_stealth: bool = false
 @export var stealth_opacity: float = 1.0
 @export var explode_on_contact: bool = false
