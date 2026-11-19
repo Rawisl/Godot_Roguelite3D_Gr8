@@ -4,7 +4,7 @@ extends Node3D
 ## with a damage-over-time hit from the caster, so the kill counts for the commander's XP.
 ## Frees itself after the last tick. The flames are drawn by the VFX, not by this node.
 
-const ENEMY_GROUP: StringName = &"enemy"
+const SkillHitOrder = preload("res://systems/skill/skill_hit_order.gd")
 const TICK_SECONDS := 1.0
 
 var caster: Node3D
@@ -46,7 +46,7 @@ func tick(delta: float) -> void:
 func _burn() -> void:
 	var source: Node3D = caster if caster != null and is_instance_valid(caster) else null
 	var radius_sq := radius * radius
-	for node in get_tree().get_nodes_in_group(ENEMY_GROUP):
+	for node in SkillHitOrder.targets(get_tree(), source, SkillHitOrder.caster_aim(source)):
 		var enemy := node as Node3D
 		if enemy == null or not is_instance_valid(enemy) or enemy.is_queued_for_deletion():
 			continue

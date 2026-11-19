@@ -62,7 +62,7 @@ func _fit_width() -> void:
 	custom_minimum_size.x = maxf(custom_minimum_size.x, widest + _row.offset_left - _row.offset_right)
 
 func _process(_delta: float) -> void:
-	var left := maxf(_cd_end - TimeManager.game_time, 0.0)
+	var left := maxf(_cd_end - TimeManager.game_time, 0.0) if _equipped == &"chain_lightning" else 0.0
 	_sweep.ratio = left / _cd_total if _cd_total > 0.0 else 0.0
 	_sweep.visible = left > 0.0
 	_cooldown.visible = left > 0.0
@@ -74,10 +74,8 @@ func _show() -> void:
 	_name.text = tr(data.name_key) if data != null else ""
 	_effect.text = tr(StringName("weapon.effect." + str(data.effect_id))) if data != null else ""
 	_count.text = UiFormat.tr_fmt(&"hud.weapon.count", {"value": _owned.size(), "max": weapons.size()})
-	# TODO(Rawisl): give WeaponData an icon field; the slot shows it as soon as the field exists.
-	# TODO(kimvux): draw one icon per weapon (hilt lower left, tip upper right, like the placeholder) for that field.
-	var icon: Variant = data.get(&"icon") if data != null else null
-	_icon.texture = icon as Texture2D
+	# TODO(kimvux): assign each weapon's icon and VFX when its assets are available.
+	_icon.texture = data.icon if data != null else null
 	_icon.visible = _icon.texture != null
 	# The drawn sword keeps the spot until the weapon has its own icon.
 	_placeholder.visible = not _icon.visible
@@ -92,7 +90,6 @@ func _on_equipped(weapon_id: StringName) -> void:
 	_equipped = weapon_id
 	if not _owned.has(weapon_id):
 		_owned.append(weapon_id)
-	_cd_end = 0.0
 	_show()
 
 func _on_gained(weapon_id: StringName) -> void:
@@ -108,9 +105,8 @@ func _on_state_changed(new_state: StringName) -> void:
 	_state = new_state
 	_show()
 
-# TODO(Rawisl): emit skill_cooldown_changed(&"chain_lightning", chain_cd, chain_cooldown) when a chain starts, so the ring shows.
 func _on_cooldown_changed(skill_id: StringName, remaining: float, total: float) -> void:
-	if skill_id != _equipped:
+	if skill_id != &"chain_lightning":
 		return
 	_cd_end = TimeManager.game_time + remaining
 	_cd_total = maxf(total, remaining)
