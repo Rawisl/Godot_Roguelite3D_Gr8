@@ -2,6 +2,7 @@ class_name Slot
 extends Node3D
 ## A fixed build position on the map. It also keeps RunState's per-slot records (is_starter,
 ## ruined_type, ruined_level) in step with its own state.
+# TODO(kiezroth): when interrupted-run recovery lands, rebuild each slot from RunState's is_starter, ruined_type and ruined_level so restored starters keep their sell lock and RUINED slots keep their Rebuild option.
 
 signal state_changed(slot: Slot, new_state: Enums.SlotState)
 
