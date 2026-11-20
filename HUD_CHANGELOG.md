@@ -26,3 +26,13 @@ Sau khi đóng bảng kiếm bằng × hoặc Esc, bảng Chỉ huy hiện lại
 Xác nhận bán trụ và trạm hồi lực xuất hiện giữa màn hình, dùng chung nền mờ với bảng kiếm và tạm dừng game cho đến khi hộp thoại đóng.
 
 Nâng cấp trụ và trạm hồi lực cần xác nhận ở giữa màn hình. Bảng hiển thị cấp trước và sau cùng chi phí vàng, ẩn dấu cảnh báo và tạm dừng game như khi bán.
+
+## Sau review trên nhánh fix/refactor-ui
+
+- B bật/tắt bảng xây trong PREP. Bảng xây, trụ, trạm hồi lực, Thành và Chỉ huy trượt ra giữa cạnh phải.
+- V mở bảng Chỉ huy với hai hàng kỹ năng chủ động và bị động. Bảng kiếm mở giữa màn hình, tạm dừng và trả về bảng Chỉ huy khi bấm × hoặc Esc.
+- Mỗi lần bấm nâng cấp trụ hoặc trạm hồi lực áp dụng ngay một cấp nếu đủ điều kiện. Bán vẫn cần xác nhận ở giữa màn hình. Ba chỉ số dùng biểu tượng kèm số. Rê chuột để đọc tên chỉ số hoặc loại sát thương.
+- Thanh boss dưới giữa chỉ hiện tên, biểu tượng miễn nhiễm có gạch chéo và một thanh lõi với giáp phủ lên. Ngưỡng cảnh báo và cơ chế Cuồng nộ giữ nguyên.
+- Trong Hazard Trial, bảng trên giữa hiện tên phòng và số đợt; nút Rời tháp ở dưới. Phần thưởng hiện khi rời phòng.
+- Một nút tốc độ trong khung tài nguyên chuyển vòng x1, x2, x3. Máu thấp hiển thị cạnh thanh HP; chọn ô đổ nát để xem giá xây lại.
+- Tooltip quân hiển thị mục tiêu trống khi trụ vừa bị phá và quân chưa chọn mục tiêu mới.

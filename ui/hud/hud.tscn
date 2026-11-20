@@ -29,7 +29,7 @@
 [ext_resource type="PackedScene" uid="uid://cy7wcfr5ks16g" path="res://ui/screens/boss_intro.tscn" id="20_bintro"]
 [ext_resource type="PackedScene" uid="uid://cv3e0y5kcjs2v" path="res://ui/hud/parts/xp_bar.tscn" id="21_xpbar"]
 [ext_resource type="PackedScene" uid="uid://bu7riqj51mrjy" path="res://ui/hud/parts/skill_bar.tscn" id="22_skillbar"]
-[ext_resource type="PackedScene" path="res://ui/panels/character_panel.tscn" id="32_character"]
+[ext_resource type="PackedScene" uid="uid://b215fb1742f" path="res://ui/panels/character_panel.tscn" id="32_character"]
 [ext_resource type="PackedScene" uid="uid://uncn858pu5rm" path="res://ui/panels/weapon_panel.tscn" id="24_wpanel"]
 [ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="27_hgate"]
 [ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
@@ -37,7 +37,7 @@
 [ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
 [ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="31_preview"]
 
-[ext_resource type="ShaderMaterial" path="res://ui/theme/modal_blur.tres" id="modal_blur"]
+[ext_resource type="ShaderMaterial" uid="uid://b6d2f92d2db" path="res://ui/theme/modal_blur.tres" id="modal_blur"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -121,9 +121,6 @@ mouse_filter = 2
 [node name="WaveCounter" parent="Root/SafeArea/Frame/TopCenter" unique_id=1849850089 instance=ExtResource("10_cxhb7")]
 layout_mode = 2
 
-[node name="BossBar" parent="Root/SafeArea/Frame/TopCenter" unique_id=615647234 instance=ExtResource("1_4d6w6")]
-layout_mode = 2
-
 [node name="TutorialHint" parent="Root/SafeArea/Frame/TopCenter" unique_id=1614868657 instance=ExtResource("30_tutorial")]
 layout_mode = 2
 
@@ -193,6 +190,17 @@ size_flags_horizontal = 0
 [node name="EmergencyRepair" parent="Root/SafeArea/Frame/BottomLeft" unique_id=311037426 instance=ExtResource("4_w75iv")]
 layout_mode = 2
 size_flags_horizontal = 0
+
+[node name="BossBar" parent="Root/SafeArea/Frame" instance=ExtResource("1_4d6w6")]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -270.0
+offset_right = 270.0
+offset_top = -136.0
+offset_bottom = -68.0
+grow_vertical = 0
 
 [node name="BottomCenter" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=704166953]
 layout_mode = 1

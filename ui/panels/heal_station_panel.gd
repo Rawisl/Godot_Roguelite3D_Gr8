@@ -118,15 +118,12 @@ func _show_upgrade(info: Dictionary) -> void:
 			UiFormat.tr_fmt(&"panel.need_gold", {"gold": info.upgrade_shortfall}) if short else "")
 
 func _on_upgrade_pressed() -> void:
-	if not _try_lock() or is_instance_valid(_transaction_dialog):
+	if _upgrade.disabled or ScreenManager.has_dialog():
 		return
 	var service := _service()
-	if service == null or not service.can_upgrade(slot_id):
-		return
-	var dialog := CONFIRM_DIALOG.instantiate()
-	dialog.setup_upgrade(service, slot_id)
-	if ScreenManager.open_dialog(dialog):
-		_transaction_dialog = dialog
+	if service != null:
+		service.upgrade(slot_id)
+	refresh()
 
 ## Selling always asks first. The dialog re-checks PREP and the station when confirmed,
 ## and closes by itself as a cancel when PREP ends.

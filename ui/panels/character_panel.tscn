@@ -1,10 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://b215fb1742f"]
 
 [ext_resource type="PackedScene" path="res://ui/panels/panel_base.tscn" id="1"]
 [ext_resource type="Script" path="res://ui/panels/character_panel.gd" id="2"]
-[ext_resource type="PackedScene" path="res://ui/hud/parts/passive_row.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://b40c66c811e" path="res://ui/hud/parts/passive_row.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://ui/hud/parts/weapon_slot.tscn" id="4"]
-
+[ext_resource type="PackedScene" uid="uid://bu7riqj51mrjy" path="res://ui/hud/parts/skill_bar.tscn" id="active"]
 
 [sub_resource type="StyleBoxFlat" id="HealthFill"]
 bg_color = Color(0.39, 0.81, 0.59, 1)
@@ -68,16 +68,21 @@ show_percentage = false
 theme_override_styles/fill = SubResource("ExperienceFill")
 mouse_filter = 2
 
-[node name="PassiveLabel" type="Label" parent="VBoxContainer" index="3"]
+[node name="ActiveLabel" type="Label" parent="VBoxContainer" index="3"]
+text = "reward.kind.active"
+
+[node name="SheetSkills" parent="VBoxContainer" index="4" instance=ExtResource("active")]
+
+[node name="PassiveLabel" type="Label" parent="VBoxContainer" index="5"]
 layout_mode = 2
 text = "reward.kind.passive"
 
-[node name="PassiveRow" parent="VBoxContainer" index="4" instance=ExtResource("3")]
+[node name="PassiveRow" parent="VBoxContainer" index="6" instance=ExtResource("3")]
 layout_mode = 2
 
-[node name="WeaponTitle" type="Label" parent="VBoxContainer" index="5"]
+[node name="WeaponTitle" type="Label" parent="VBoxContainer" index="7"]
 text = "panel.weapon.title"
 
-[node name="WeaponSlot" parent="VBoxContainer" index="6" instance=ExtResource("4")]
+[node name="WeaponSlot" parent="VBoxContainer" index="8" instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2

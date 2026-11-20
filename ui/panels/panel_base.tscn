@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bgpfww5ejjq45"]
 
-[ext_resource type="StyleBoxFlat" path="res://ui/panels/drawer_surface.tres" id="1_skin"]
+[ext_resource type="StyleBoxFlat" uid="uid://b51b90fe9b9" path="res://ui/panels/drawer_surface.tres" id="1_skin"]
 
 [node name="PanelBase" type="PanelContainer" unique_id=800506704]
 theme_override_styles/panel = ExtResource("1_skin")

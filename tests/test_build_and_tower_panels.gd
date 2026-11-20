@@ -69,9 +69,33 @@ func _run_checks() -> void:
 	await _check_blocked_preview()
 	await _check_ghost_without_range()
 	await _check_clear_rubble()
+	_check_hover_after_target_destroyed()
 	_check_tower_locked_upgrade()
 	_check_tower_tier_and_sell_lock()
 	await _check_heal_upgrade()
+
+func _check_hover_after_target_destroyed() -> void:
+	var highlight := HoverHighlight.new()
+	var enemy := Enemy.new()
+	enemy.data = EnemyData.new()
+	enemy.health = HealthComponent.new()
+	enemy.add_child(enemy.health)
+	var tower := Tower.new()
+	enemy.current_target = tower
+	highlight._tooltip = Panel.new()
+	highlight._tooltip_text = Label.new()
+	highlight._tooltip.add_child(highlight._tooltip_text)
+	add_child(highlight._tooltip)
+	highlight._tooltip.hide()
+	highlight._tooltip_target = enemy
+	tower.free()
+	highlight._process(0.0)
+	var target_line := UiFormat.tr_fmt(&"hover.enemy.target", {"target": tr(&"hover.target.none")})
+	_expect(highlight._tooltip.visible and highlight._tooltip_text.text.ends_with(target_line),
+		"hover shows no target after the targeted tower was freed")
+	highlight._tooltip.free()
+	enemy.free()
+	highlight.free()
 
 ## Build panel: a locked entry is greyed and says why, a free one stays live.
 const GHOST_BLOCKED := Color("#FF2D2D", 0.45)
@@ -145,6 +169,8 @@ func _check_tower_locked_upgrade() -> void:
 	_expect(_texts(_tower._upgrade).has(need), "tower: locked upgrade names the Commander level")
 	_show_tower(13, false, false)
 	_expect(not _tower._upgrade.disabled, "tower: open gate allows the upgrade")
+	_tower._upgrade.pressed.emit()
+	_expect(_fake.upgrades == 1 and not get_tree().paused and not ScreenManager.has_dialog(), "tower: upgrading is immediate")
 
 ## Tower panel shows the model tier with the level, and a starter tower that cannot be sold yet is grey.
 func _check_tower_tier_and_sell_lock() -> void:
@@ -161,6 +187,8 @@ func _check_tower_tier_and_sell_lock() -> void:
 func _check_heal_upgrade() -> void:
 	_show_heal(5, false)
 	_expect(not _heal._upgrade.disabled and _heal._upgrade.visible, "heal: upgrade live in PREP")
+	_heal._upgrade.pressed.emit()
+	_expect(_fake.upgrades == 2 and not get_tree().paused and not ScreenManager.has_dialog(), "heal: upgrading is immediate")
 	_expect(_heal._upgrade.tooltip_text == tr(&"panel.heal.upgrade_tip"), "heal: upgrade tooltip says only the gained store is added")
 	await get_tree().process_frame
 	var one_line := _heal._upgrade.custom_minimum_size.y

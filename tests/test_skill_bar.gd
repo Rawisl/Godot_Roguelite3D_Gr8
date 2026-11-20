@@ -167,6 +167,8 @@ func _run_checks() -> void:
 	var sheet := get_tree().root.find_child("CharacterPanel", true, false) as Control
 	_check(first.is_visible_in_tree() and not (passive[0] as SkillCell).is_visible_in_tree(), "only active skills appear during play")
 	_press_key(KEY_V)
+	var mirrored := sheet.find_child("ActiveRow", true, false)
+	_check(mirrored.get_child_count() == 3 and (mirrored.get_child(0) as SkillCell).skill == first.skill, "sheet mirrors the three active slots")
 	_check(sheet.visible and (passive[0] as SkillCell).is_visible_in_tree() and _slot().is_visible_in_tree(), "V opens passives and weapon")
 	_press_key(KEY_ESCAPE)
 	_check(not sheet.visible and first.is_visible_in_tree(), "Escape closes status, active slots stay")

@@ -8,7 +8,6 @@ signal closed
 const CONFIRM_DIALOG := preload("res://ui/screens/confirm_dialog.tscn")
 const BUTTON_LOCK_TIME := 0.15
 const REFRESH_INTERVAL := 0.2
-const METRIC := preload("res://ui/panels/stat_metric.tscn")
 const SMALL_FONT_SIZE := 21
 ## Fixed so the panel never changes height between "enough gold", "missing gold" and MAX.
 const UPGRADE_HEIGHT := 110
@@ -22,9 +21,10 @@ var _level: Label
 var _hp: Label
 var _hp_bar: ProgressBar
 var _metrics: HBoxContainer
-var _damage: SummaryRow
-var _range_metric: SummaryRow
-var _rate: SummaryRow
+var _damage_icon := preload("res://ui/hud/parts/damage_type_icon.gd").new()
+var _damage: Label
+var _range_metric: Label
+var _rate: Label
 var _upgrade: PanelButton
 var _sell: PanelButton
 
@@ -78,9 +78,13 @@ func refresh() -> void:
 	_hp_bar.max_value = maxi(1, info.max_hp)
 	_hp_bar.value = info.hp
 	_metrics.visible = lv.attack_range > 0
-	_damage.set_row(tr(&"tower.stat.damage"), str(lv.damage))
-	_range_metric.set_row(tr(&"tower.stat.range"), UiFormat.tr_fmt(&"tower.range_m", {"value": UiFormat.decimal(lv.attack_range)}))
-	_rate.set_row(tr(&"tower.stat.rate"), UiFormat.tr_fmt(&"tower.rate_s", {"value": UiFormat.decimal(lv.fire_rate)}))
+	_damage_icon.damage_type = data.damage_type
+	_damage_icon.tooltip_text = tr("damage." + str(Enums.DamageType.keys()[data.damage_type]).to_lower())
+	_damage.tooltip_text = UiFormat.tr_fmt(&"tower.stat.damage_type", {"type": _damage_icon.tooltip_text})
+	_damage_icon.tooltip_text = _damage.tooltip_text
+	_damage.text = str(lv.damage)
+	_range_metric.text = UiFormat.tr_fmt(&"tower.range_m", {"value": UiFormat.decimal(lv.attack_range)})
+	_rate.text = UiFormat.tr_fmt(&"tower.rate_s", {"value": UiFormat.decimal(lv.fire_rate)})
 
 	# Upgrade and sell exist only in PREP.
 	var in_prep := service.is_prep()
@@ -142,11 +146,9 @@ func _build_body() -> void:
 	_body.add_child(_hp_bar)
 	_metrics = HBoxContainer.new()
 	_body.add_child(_metrics)
-	_damage = METRIC.instantiate()
-	_range_metric = METRIC.instantiate()
-	_rate = METRIC.instantiate()
-	for metric in [_damage, _range_metric, _rate]:
-		_metrics.add_child(metric)
+	_damage = _metric_value(_damage_icon, &"tower.stat.damage")
+	_range_metric = _metric_value(_metric_icon(preload("res://ui/panels/stat_range.svg")), &"tower.stat.range")
+	_rate = _metric_value(_metric_icon(preload("res://ui/panels/stat_rate.svg")), &"tower.stat.rate")
 	_upgrade = PanelButton.new()
 	_upgrade.height = UPGRADE_HEIGHT
 	_upgrade.tall_height = UPGRADE_HEIGHT
@@ -157,6 +159,28 @@ func _build_body() -> void:
 	_sell.pressed.connect(_on_sell_pressed)
 	_body.add_child(_sell)
 
+func _metric_icon(texture: Texture2D) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = texture
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	return icon
+
+func _metric_value(icon: Control, key: StringName) -> Label:
+	var cell := VBoxContainer.new()
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_metrics.add_child(cell)
+	icon.custom_minimum_size = Vector2(28, 28)
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon.mouse_filter = Control.MOUSE_FILTER_PASS
+	icon.tooltip_text = tr(key)
+	cell.add_child(icon)
+	var label := _add_label(cell)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_PASS
+	label.tooltip_text = tr(key)
+	return label
+
 func _add_label(parent: Container) -> Label:
 	var label := Label.new()
 	label.add_theme_font_size_override(&"font_size", SMALL_FONT_SIZE)
@@ -164,15 +188,12 @@ func _add_label(parent: Container) -> Label:
 	return label
 
 func _on_upgrade_pressed() -> void:
-	if not _try_lock() or is_instance_valid(_transaction_dialog):
+	if _upgrade.disabled or ScreenManager.has_dialog():
 		return
 	var service := _service()
-	if service == null or not service.can_upgrade(slot_id):
-		return
-	var dialog := CONFIRM_DIALOG.instantiate()
-	dialog.setup_upgrade(service, slot_id)
-	if ScreenManager.open_dialog(dialog):
-		_transaction_dialog = dialog
+	if service != null:
+		service.upgrade(slot_id)
+	refresh()
 
 ## Selling always asks first. The dialog re-checks PREP and the tower when confirmed,
 ## and closes by itself as a cancel when PREP ends.

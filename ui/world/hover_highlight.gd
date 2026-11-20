@@ -48,8 +48,6 @@ func _on_hovered_changed(node: Node) -> void:
 
 ## Real time, so the delay is the same at x1, x2 and x3.
 func _process(_delta: float) -> void:
-	if _tooltip_target == null:
-		return
 	if not is_instance_valid(_tooltip_target) or _tooltip_target.is_dead:
 		_tooltip.visible = false
 		_tooltip_target = null
@@ -84,12 +82,8 @@ func _set_occlusion_target(target: Node3D) -> void:
 	if _occlusion != null:
 		_occlusion.set_hover_target(target)
 
-# TODO(WhoKeng): a destroyed tower or Barricade is freed by its slot at once, while the enemy keeps it in
-# current_target until its next retarget. Hovering that enemy then errors here ("previously freed"): the
-# typed Node parameter rejects the freed object before is_instance_valid runs. Take target: Object and cast
-# after the validity check, or pass null from _process when current_target is no longer valid.
-func _target_name(target: Node) -> String:
-	if target == null or not is_instance_valid(target):
+func _target_name(target: Variant) -> String:
+	if not is_instance_valid(target):
 		return tr(&"hover.target.none")
 	if target is Tower:
 		return tr((target as Tower).data.display_name)
