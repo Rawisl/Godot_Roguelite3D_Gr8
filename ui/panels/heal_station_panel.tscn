@@ -13,7 +13,7 @@ corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
 
 [node name="HealStationPanel" unique_id=800506704 instance=ExtResource("1_base")]
-custom_minimum_size = Vector2(420, 0)
+custom_minimum_size = Vector2(370, 0)
 script = ExtResource("2_heal")
 
 [node name="Body" type="VBoxContainer" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="1" unique_id=1374620518]

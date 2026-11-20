@@ -207,6 +207,11 @@ func _run_checks() -> void:
 			"row text fits: " + ((row as Control).get_node("%NameLabel") as Label).text)
 	EventBus.weapon_equipped.emit(&"swift")
 	await get_tree().process_frame
+	var swift_row := rows.back() as WeaponRow
+	var effect := swift_row.get_node("%EffectLabel") as Label
+	_check(effect.get_global_rect().end.y <= swift_row.get_global_rect().end.y + 0.5,
+		"equipped weapon description stays inside its row")
+	_check(panel.size.x <= 370.5, "weapon drawer stays compact after equipping a long name")
 	var slot_row := slot.get_node("Row") as Control
 	_check(slot_row.get_combined_minimum_size().x + 28.0 <= slot.size.x + 0.5, "longest weapon name fits the HUD slot")
 	EventBus.weapon_equipped.emit(&"frost")

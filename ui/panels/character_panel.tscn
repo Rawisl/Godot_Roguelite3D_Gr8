@@ -21,7 +21,7 @@ corner_radius_bottom_left = 4
 corner_radius_bottom_right = 4
 
 [node name="CharacterPanel" instance=ExtResource("1")]
-custom_minimum_size = Vector2(420, 0)
+custom_minimum_size = Vector2(370, 0)
 script = ExtResource("2")
 
 [node name="Level" type="Label" parent="VBoxContainer" index="1"]

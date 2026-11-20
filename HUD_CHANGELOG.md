@@ -14,3 +14,7 @@ Branch `codex/compact-combat-hud`. Các thay đổi dưới đây mô tả hành
 Các bảng ngữ cảnh và xác nhận giao dịch neo giữa cạnh phải, mặt bảng nối sát biên khung chơi. Các bảng thông tin có nút × ở đầu bảng. Bảng Thành chia riêng máu, Mithril và lượt sửa khẩn cấp, mỗi dòng căn giá trị sang phải. Lý do khóa sửa chữa dùng dòng phụ.
 
 B mở hoặc đóng bảng xây trong PREP. Chọn lại đúng ô đất, trụ, trạm hoặc Thành đang xem cũng đóng bảng. Bảng trụ hiển thị máu và ba chỉ số tấn công, chi tiết cấp kế nằm trong tooltip nâng cấp. Trạm hồi lực hiển thị kho máu bằng thanh xanh cùng tốc độ hồi và cấp trạm. Ba nút tốc độ nằm chung trong khung vàng và Mithril.
+
+Các nút thao tác dùng chung có trạng thái rê, nhấn và khóa. Nâng cấp dùng nền xanh bạc hà và mũi tên lên, bán dùng nền sẫm viền màu san hô và dấu trừ. Sửa Thành dùng dấu cộng, dọn đổ nát dùng dấu ×.
+
+Thu gọn bảy bảng sát mép phải xuống 370 đơn vị ở khung thiết kế 1920 × 1080. Danh sách kiếm cuộn dọc với tên ở dòng riêng, trạng thái và tầm đánh ở dòng kế. Hàng tự tăng chiều cao theo mô tả.

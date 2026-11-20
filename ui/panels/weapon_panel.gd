@@ -32,7 +32,6 @@ func _ready() -> void:
 	var rows := _rows.get_children()
 	for i in rows.size():
 		(rows[i] as WeaponRow).pressed.connect(_on_row_pressed.bind(i))
-	_fit_rows()
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.weapon_equipped.connect(_on_equipped)
 	EventBus.weapon_gained.connect(_on_gained)
@@ -54,21 +53,6 @@ func refresh() -> void:
 		var data := weapons[i]
 		row.show_weapon(data, _owned.has(data.id), data.id == _equipped, can_change,
 			_range_text(data), _effect_text(data))
-
-## Every row takes the width of the longest header any weapon can show (name, tag, range), once,
-## so a long name never pushes the sword or the text and the panel never resizes on a pick.
-func _fit_rows() -> void:
-	var tags := [tr(&"panel.weapon.equipped"), tr(&"panel.weapon.locked_tag")]
-	var rows := _rows.get_children()
-	var widest := 0.0
-	for i in mini(rows.size(), weapons.size()):
-		var data := weapons[i]
-		for tag in tags:
-			widest = maxf(widest, (rows[i] as WeaponRow).measure_width(tr(data.name_key), tag, _range_text(data)))
-	custom_minimum_size.x = maxf(widest, (rows[0] as Control).custom_minimum_size.x) + 72.0
-	for row in rows:
-		var control := row as Control
-		control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, widest)
 
 func _range_text(data: WeaponData) -> String:
 	var base_range := stats.sword_range if stats != null else 0.0

@@ -100,6 +100,7 @@ func _make_button(opt: Dictionary) -> Button:
 	_add_icon(row, TOWER_ICONS.get(data.id), 38)
 	var name_label := Label.new()
 	name_label.text = UiFormat.tr_fmt(&"panel.build.rebuild_name", {"name": tr(data.display_name), "level": opt.level}) if opt.rebuild else tr(data.display_name)
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name_label)
 	if b.disabled:
@@ -112,6 +113,7 @@ func _make_button(opt: Dictionary) -> Button:
 		label.add_theme_font_size_override(&"font_size", 22)
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		label.add_theme_color_override(&"font_color", Color("#e2dfd8") if b.disabled else b.get_theme_color(&"font_color", &"Button"))
+	row.minimum_size_changed.connect(func(): b.custom_minimum_size.y = maxf(52, row.get_combined_minimum_size().y + 6))
 	b.tooltip_text = warning if not warning.is_empty() else UiFormat.tr_fmt(&"panel.stats", {
 		"damage": lv.damage, "range": UiFormat.decimal(lv.attack_range),
 		"rate": UiFormat.decimal(lv.fire_rate), "hp": lv.max_hp})

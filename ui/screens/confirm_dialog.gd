@@ -70,7 +70,13 @@ func _dock_transaction() -> void:
 	var holder: CenterContainer = $Center
 	var card: PanelContainer = $Center/Panel
 	card.add_theme_stylebox_override(&"panel", preload("res://ui/panels/drawer_surface.tres"))
-	card.custom_minimum_size = Vector2(460, 180)
+	var width := 370.0
+	card.custom_minimum_size = Vector2(width, 160)
+	var margin: MarginContainer = $Center/Panel/Margin
+	for side in [&"margin_left", &"margin_right", &"margin_top", &"margin_bottom"]:
+		margin.add_theme_constant_override(side, 8)
+	for button in [_confirm_button, _cancel_button]:
+		button.custom_minimum_size.x = 128
 	holder.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
 	holder.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	holder.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -78,7 +84,7 @@ func _dock_transaction() -> void:
 	holder.offset_bottom = 165
 	var slide := create_tween().set_ignore_time_scale().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	slide.tween_method(func(right_edge: float) -> void:
-		holder.offset_left = right_edge - 460.0
+		holder.offset_left = right_edge - width
 		holder.offset_right = right_edge, 500.0, 0.0, 0.22)
 
 func cancel() -> void:

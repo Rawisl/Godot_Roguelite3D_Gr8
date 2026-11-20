@@ -749,7 +749,7 @@ Mọi vũ khí là biến thể của kiếm: dùng chung kiểu cầm, animatio
 | --- | --- | --- |
 | WPN-01 | **Dữ liệu.** Mỗi vũ khí là một WeaponData (mục 6.6): weapon_id, khóa tên, model, VFX, range_mult, effect_id và tham số hiệu ứng. Số liệu sinh từ sheet vũ khí của bảng cân bằng (BAL-04). Sát thương đòn kiếm vẫn là SLASH (DMG-01) | MVP |
 | WPN-02 | **Đầu run.** owned_weapons = \[kiếm thường], equipped_weapon = kiếm thường. Kiếm thường không mất, luôn chọn lại được | MVP |
-| WPN-03 | **Đổi vũ khí** bất cứ lúc nào trong PREP, ở cả hai chế độ, kể cả khi Pause trong PREP (như BLD-04), qua ô vũ khí trên HUD (HUD-21) hoặc panel vũ khí (PNL-15). Tức thì, miễn phí, phát weapon_equipped (EVB-43). Không đổi được ở HAZARD_TRIAL, COMBAT, BOSS_INTRO, BOSS_COMBAT, SUMMARY, REWARD_PICK. Hazard Trial dùng vũ khí đang trang bị lúc vào phòng (HZT-06) | MVP |
+| WPN-03 | **Đổi vũ khí** bất cứ lúc nào trong PREP, ở cả hai chế độ, qua ô vũ khí trong bảng Chỉ huy (HUD-21) hoặc panel vũ khí (PNL-15). Tức thì, miễn phí, phát weapon_equipped (EVB-43). Không đổi được ở HAZARD_TRIAL, COMBAT, BOSS_INTRO, BOSS_COMBAT, SUMMARY, REWARD_PICK. Hazard Trial dùng vũ khí đang trang bị lúc vào phòng (HZT-06) | MVP |
 | WPN-04 | **Phạm vi hiệu ứng.** Hiệu ứng kích hoạt ở mọi lần trúng có sát thương > 0 của đòn kiếm thường và skill chủ động (gồm tick vùng cháy Firebomb). Battle Cry và shockwave Deploy không gây sát thương nên không kích hoạt. Sát thương do chính hiệu ứng gây ra (tia Chain Lightning, tick Burn) không kích hoạt hiệu ứng lần nữa. **Sát thương hiệu ứng** = tỷ lệ của hiệu ứng × sát thương cơ bản (sword_damage qua StatBlock, không gồm hệ số đòn 3), rồi nhân dealt_mult của chỉ huy và kháng của mục tiêu theo DMG-06; tính là sát thương chỉ huy (XP-03, CMB-10) và mang damage_type của đòn kích hoạt (SLASH với kiếm, Whirlwind, Sword Wave; BLAST với Firebomb). Không áp cho quân còn spawn_grace (SPN-02) | MVP |
 | WPN-05 | **Lên boss.** Hiệu ứng có tác dụng lên boss, kể cả làm chậm của Frost (ngoại lệ của BOSS-01), trừ khi boss đang ở pha có resist(damage_type của đòn kích hoạt) = 0 (DMG-01, DMG-02). Sát thương hiệu ứng lên boss nhân resist như mọi nguồn khác. Làm chậm của Frost nhân với hệ số tốc độ Cuồng nộ (ENR-02) | MVP |
 | WPN-06 | **Frost.** Đòn trúng đặt Slow frost_slow_pct (0.20) trong frost_duration (3 s game time) lên mục tiêu. Trúng lại làm mới thời gian, không cộng dồn với chính nó. Không cooldown | MVP |
@@ -995,7 +995,7 @@ Lượng hồi thực tế bị kẹp ở commander_max_hp (khoảng 100 cộng 
 | HLT-04 | **Hành động hủy** (dùng chung cho hold và Healing): (1) di chuyển, (2) Dodge, (3) đánh thường, (4) skill chủ động hoặc Battle Cry, (5) bấm Tab, (6) nhận sát thương từ bất kỳ nguồn nào kể cả AoE và đạn, (7) bị knockback hoặc Stun, (8) rời heal_range của trạm đang hút, (9) Pause hoặc mất focus (INP-07, INP-08 xóa input đang giữ), (10) chỉ huy chết. Hủy lúc hold: heal_hold về 0. Hủy lúc Healing: HP đã hồi giữ nguyên. Sau khi bị hủy phải nhả E rồi giữ lại, không tự hold lại. Cùng frame có cả điều kiện đủ hold và một hành động hủy thì hủy thắng | MVP |
 | HLT-05 | **Healing.** Hold đủ thì vào state Healing và hồi liên tục theo HLT-06. Nhả E trong lúc Healing không dừng hồi. Healing kết thúc khi: có hành động hủy (HLT-04); commander_hp đạt commander_max_hp (tự dừng, chỉ huy vẫn đứng yên ở Idle); trạm đang hút hết kho (HLT-07), khi đó phải hold lại để hút từ trạm kế, kể cả khi còn trạm khác trong tầm | MVP |
 | HLT-06 | **Công thức hồi.** heal_rate = heal_rate_base + 5 × level skill SKL-26 (đọc qua StatBlock): 10, 15, 20, 25 HP/s. k = heal_rate / heal_drain_rate. Mỗi physics tick (game time, dt): heal = min(heal_rate × dt, commander_max_hp − commander_hp, hp_trạm × k); hp_trạm −= heal / k; commander_hp += heal (float, mục 1.4). Chỉ trừ HP trạm đúng bằng phần chỉ huy dùng được, nên khi gần đầy máu không bị hao thừa. Trạm nguồn là trạm trong heal_range gần chỉ huy nhất (hòa: slot_id nhỏ hơn), chốt lúc bắt đầu hold và giữ đến hết Healing. Kết quả giống nhau ở x1, x2, x3 | MVP |
-| HLT-07 | **Hết máu là bể trụ.** HP trạm về 0, do quân phá hoặc do bị hút cạn, thì trạm thành RUINED theo TWR-02 (ghi ruined_type = heal_station, ruined_level = cấp lúc bị phá, SLOT-08), kênh đang hút kết thúc, không rơi thưởng. Bị hút cạn: toast ALR-17. Bị quân phá: gộp vào ALR-07. Xây lại ở PREP giữ cấp theo BLD-07 (giá bằng tổng cost cấp 1 đến cấp đó), kho đầy theo max_hp của cấp đó | MVP |
+| HLT-07 | **Hết máu là bể trụ.** HP trạm về 0, do quân phá hoặc do bị hút cạn, thì trạm thành RUINED theo TWR-02 (ghi ruined_type = heal_station, ruined_level = cấp lúc bị phá, SLOT-08), kênh đang hút kết thúc, không rơi thưởng. Bị hút cạn: toast ALR-17. Bị quân phá: hiện đổ nát theo ALR-07. Xây lại ở PREP giữ cấp theo BLD-07 (giá bằng tổng cost cấp 1 đến cấp đó), kho đầy theo max_hp của cấp đó | MVP |
 | HLT-08 | **Không tự hồi, là vật tiêu hao.** HP trạm không bao giờ tự hồi: TWR-01 không áp dụng (không hồi đầy ở đầu PREP), không hồi trong COMBAT, không sửa bằng Mithril, Emergency repair không áp dụng, skill và meta không tăng HP tối đa hay tốc độ nạp kho. Nâng cấp là ngoại lệ của UPG-02: hp += max_hp(cấp mới) − max_hp(cấp cũ), không hồi đầy, để nâng cấp không thành cách nạp lại kho. HP còn lại giữ nguyên qua các wave. Cách duy nhất có kho đầy là xây lại sau khi RUINED. Bán theo SELL-05. Không dùng Trạm hồi lực ở PREP (HLT-03) để khỏi phí kho | MVP |
 | HLT-09 | **Chuẩn hóa sát thương nhận.** Mọi sát thương của quân địch và boss (kể cả AoE) lên Trạm hồi lực = ceil(raw ÷ dmg_mult(w)^e), e = heal_tower_dmg_norm_exp (0.5), w = wave_index hiện tại, tối thiểu 1, áp lúc trúng đích (PRJ-07). raw đã gồm dmg_mult(w) (SCL-05), nên ở wave 10 (dmg_mult 1.70) trạm chịu khoảng 77% sát thương thô, ở wave 20 (2.86) khoảng 59%. Hút máu (HLT-06) không phải sát thương nên không bị chuẩn hóa. Mục đích: chống "tower giấy" ở wave cao khi HP trạm không tự hồi | MVP |
 | HLT-10 | **Mục tiêu của quân.** Trạm hồi lực là TOWER_GROUND: bị Grunt (ưu tiên 3), Archer, Bulwark (ưu tiên 3 trong 8 m phía trước) và AoE nhắm theo bảng ETG như mọi tower trên ô grid, chiếm slot đánh theo max_attackers_per_tower (3). Barricade vẫn thu hút Grunt trước. Không có luật nhắm riêng | MVP |
@@ -1594,7 +1594,7 @@ Tổng chi phí các mục vĩnh viễn MVP = 610 (FORT_HP) + 560 (GOLD_PCT) + 2
 
 ### 3.10.2 Buff một wave \[Should]
 
-Toàn bộ mục 3.10.2 là \[Should] từ v1.4, gồm cả mục shop BUFF_CHARGE và màn StartSelect dùng để nạp buff. Khi chưa làm, MVP không có kho buff, không có phím V, không có panel PNL-06 và gold_pct_buff = 0.
+Toàn bộ mục 3.10.2 là \[Should] từ v1.4, gồm cả mục shop BUFF_CHARGE và màn StartSelect dùng để nạp buff. Khi chưa làm, MVP không có kho buff, không có panel PNL-06 và gold_pct_buff = 0.
 
 | **Buff** | **Tác dụng trong đúng một wave** |
 | --- | --- |
@@ -1882,15 +1882,16 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 | --- | --- |
 | Trên trái | Thanh HP Fortress (lớn, có số), HP chỉ huy (nhỏ hơn), biểu tượng Aura cạnh HP chỉ huy (HUD-17), thanh XP ngay dưới HP chỉ huy (HUD-15) |
 | Trên giữa | Số wave (kèm "/ 30" trước khi thắng, nhãn "Endless" sau khi thắng), trạng thái, đồng hồ boss, bộ đếm quân |
-| Trên phải | Gold (kèm "+xx"), ô Mithril (HUD-20), cụm nút tua nhanh x1/x2/x3 (HUD-14), nút Pause |
-| Dưới trái | Thanh kỹ năng theo chế độ: hai hàng ô skill (HUD-16) với ô vũ khí bên phải (HUD-21), dưới đó là ô Emergency repair (HUD-13); biểu tượng chế độ kèm cooldown chuyển |
-| Dưới giữa | Panel ngữ cảnh, nút Bắt đầu wave (HUD-19). Trong Hazard Trial: nút Rời tháp (HUD-22) |
-| Dưới phải | \[Should] Buff đang hoạt động và nút kích hoạt buff |
+| Trên phải | Một khung chứa Gold (kèm "+xx"), Mithril (HUD-20) và hàng nút x1/x2/x3 (HUD-14). Nút Pause ở vùng trên phải. |
+| Dưới trái | Ba ô kỹ năng chủ động (HUD-16), bên dưới là Emergency repair (HUD-13). |
+| Dưới giữa | Nút Bắt đầu wave (HUD-19) hoặc nút Rời tháp trong Hazard Trial (HUD-22). |
+| Giữa cạnh phải | Một bảng ngữ cảnh trượt sát biên để xem công trình, chỉ huy hoặc vũ khí (mục 4.1.4). |
+| Dưới phải | Chỉ báo chế độ và hồi chuyển chế độ. \[Should] Buff đang hoạt động và nút kích hoạt buff |
 | Giữa (tạm thời) | Banner cảnh báo và thông báo wave |
 
 Không có minimap.
 
-**Thanh kỹ năng:** Frontline gồm Đánh (chuột trái), Dodge (Space), Battle Cry (Q), **Skill 1-3**, Đổi chế độ (Tab), ô vũ khí đang trang bị (HUD-21). Commander gồm Emergency repair (R, hiển thị **số lượt còn lại n/3** cùng cooldown) và Đổi chế độ (Tab); **skill 1-3 hiển thị xám kèm biểu tượng khóa**. Cooldown có vòng quét kèm **số giây**.
+**Thanh kỹ năng:** Frontline gồm Đánh (chuột trái), Dodge (Space), Battle Cry (Q), **Skill 1-3**, Đổi chế độ (Tab), ô vũ khí xem trong bảng Chỉ huy (HUD-21). Commander gồm Emergency repair (R, hiển thị **số lượt còn lại n/3** cùng cooldown) và Đổi chế độ (Tab); **skill 1-3 hiển thị xám kèm biểu tượng khóa**. Cooldown có vòng quét kèm **số giây**.
 
 | **Thành phần** | **PREP** | **HAZARD\_TRIAL** | **COMBAT** | **BOSS\_INTRO** | **BOSS\_COMBAT** | **SUMMARY** | **REWARD\_PICK** |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1900,7 +1901,7 @@ Không có minimap.
 | Tháp Hazard Trial (chỉ báo) | Có | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn |
 | Nút Rời tháp, số quái còn, gold và XP tạm tính | Ẩn | Có | Ẩn | Ẩn | Ẩn | Ẩn | Ẩn |
 | Gold, Mithril | Có | Có | Có | Có | Có | Có | Tối thiểu |
-| Ô vũ khí | Có (đổi được) | Chỉ đọc | Chỉ đọc | Chỉ đọc | Chỉ đọc | Chỉ đọc | Ẩn |
+| Ô vũ khí trong bảng Chỉ huy | Đổi được | Chỉ đọc | Chỉ đọc | Ẩn | Chỉ đọc | Ẩn | Ẩn |
 | Tua tốc độ | Có | Có | Có | Khóa | Có | Khóa (về x1) | Khóa (về x1) |
 | Panel Build/Tower | Có | Ẩn | Chỉ đọc | Ẩn | Chỉ đọc | Ẩn | Ẩn |
 | Thanh HP boss | Ẩn | Có nếu nhóm có boss | Ẩn | Hiện tên | Có | Ẩn | Ẩn |
@@ -1911,7 +1912,7 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 
 | **ID** | **Luật HUD** |
 | --- | --- |
-| HUD-01 | Thanh HP Fortress đổi hình dạng dưới 30% (nhấp nháy viền, biểu tượng) |
+| HUD-01 | Khi HP Fortress chạm hoặc xuống dưới 30%, thanh HP hiện nhãn NGUY CẤP, viền sáng một lần và giữ cho đến khi hồi qua ngưỡng. Giảm chớp dùng viền tĩnh. |
 | HUD-02 | Thanh HP boss hai đoạn (giáp xám, lõi đỏ), biểu tượng kháng cạnh thanh |
 | HUD-03 | Số đếm quân = enemies_alive + len(spawn_queue) trên tổng của wave. Boss hiển thị riêng |
 | HUD-04 | Đồng hồ boss đổi màu và cỡ chữ theo mốc: T-30 vàng, T-10 đỏ cỡ lớn, kèm biểu tượng. Khi Cuồng nộ: nhãn "CUỒNG NỘ" (ENR-05) |
@@ -1925,30 +1926,34 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 | HUD-12 | F1 bật/tắt HUD (cho ảnh chụp), không ảnh hưởng gameplay |
 | HUD-13 | **Ô Emergency repair:** hiển thị n/3 bằng ba chấm kèm số, vòng quét cooldown 60 s kèm số giây. Khóa thì xám kèm lý do khi rê chuột: "Đang hồi (còn xx s)", "Hết lượt. +1 lượt khi diệt boss", "Fortress đầy HP", "Chỉ dùng ở Commander mode". Khi nhận +1 lượt: viền sáng 0.3 s và toast T3 "Emergency repair +1 (n/3)". Thông tin không chỉ dựa vào màu (UI-05) |
 | HUD-14 | **Cụm nút tua nhanh** (thay cho phím tắt): ba nút x1, x2, x3, nút đang hoạt động sáng và có viền. Bấm x2 hoặc x3 để **bật** mức đó. Bấm lại đúng nút đang bật để **tắt** (về x1). Bấm nút mức khác thì chuyển thẳng, không qua x1. Bấm x1 luôn về x1. Nút không nhận focus bàn phím nên Space, Enter không kích hoạt được (INP-04). Khi bị khóa (BOSS_INTRO, SUMMARY, REWARD_PICK, TIME-03): nút x2 và x3 xám kèm biểu tượng khóa và tooltip lý do, nút x1 sáng. Sau khi mở khóa ở PREP kế tiếp, các nút ở trạng thái tắt, người chơi bật lại nếu muốn |
-| HUD-15 \[MVP] | Thanh XP dưới thanh HP chỉ huy: số cấp, % tiến trình, số lượt chọn đang chờ. Khi lên cấp: viền sáng 0.3 s và toast T3 "Lên cấp n (+1 lượt chọn)". Hiển thị tách hai màu **kèm họa tiết** cho XP từ chỉ huy và từ tower (UI-05) |
-| HUD-16 \[MVP] | Hai hàng ô skill (3 chủ động với phím 1-3, 3 bị động) có icon, chấm level, quạt cooldown kèm số giây. Ô trống: viền nét đứt. Ở Commander mode ô chủ động xám kèm khóa |
+| HUD-15 \[MVP] | Thanh XP dưới thanh HP chỉ huy: cấp 0 hiển thị “Tân binh”, từ cấp 1 hiện số cấp, % tiến trình, số lượt chọn đang chờ. Khi lên cấp: viền sáng 0.3 s và toast T3 "Lên cấp n (+1 lượt chọn)". Hiển thị tách hai màu **kèm họa tiết** cho XP từ chỉ huy và từ tower (UI-05) |
+| HUD-16 \[MVP] | HUD hiển thị ba ô chủ động ứng với phím 1–3, icon, chấm cấp, quạt hồi chiêu và số giây. Ô trống có viền nét đứt. Ở Commander mode ô chủ động xám kèm khóa. Ba ô bị động nằm trong bảng Chỉ huy (HUD-24). |
 | HUD-17 \[MVP] | Biểu tượng Aura ở góc cạnh thanh HP chỉ huy khi Aura hoạt động, kèm tooltip "+20% sát thương tower trong 12 m" |
 | HUD-18 \[MVP] | **Trạng thái Trạm hồi lực** cạnh thanh HP chỉ huy khi có ít nhất 1 trạm: biểu tượng phím E kèm chữ trạng thái: "Sẵn sàng", "Giữ E (0.6 s)", "Đang hồi (+15 HP/s)", hoặc lý do không dùng được ("Quá xa trạm", "Đã đầy máu", "Chỉ dùng khi chiến đấu", "Trạm đã cạn", "Đang bị tấn công"), theo HUD-05. Kèm số trạm còn kho trên tổng (ví dụ 2/2). Không phụ thuộc màu (UI-05) |
 | HUD-19 \[MVP] | **Nút Bắt đầu wave** ở dưới giữa, chỉ hiện ở PREP. Bấm thì phát wave_start_requested (EVB-38) và PREP kết thúc (WAVE-11). Ở wave boss nút ghi "Bắt đầu wave boss". Xám kèm lý do khi Pause, khi có hộp thoại giao dịch, khi tutorial chưa xây xong hai trụ (TUT-15) (HUD-05). Nút không nhận focus bàn phím (INP-04). Nếu chưa dùng Hazard Trial ở wave này, nút có dòng nhắc nhỏ "Chưa vào Hazard Trial", không chặn |
 | HUD-20 \[MVP] | **Ô Mithril** cạnh gold: biểu tượng kèm số. Nhận Mithril: viền sáng 0.3 s. Ở PREP khi Fortress thiếu máu và mithril > 0, ô hiện nút nhỏ "Sửa thành" bên trái số Mithril. Bấm nút thì mở panel Fortress (PNL-04) giống như bấm vào Fortress trên bản đồ; việc sửa vẫn bấm trong panel, nút không tự trừ Mithril. Nút không nhận focus bàn phím (INP-04). Không phụ thuộc màu (UI-05) |
-| HUD-21 \[MVP] | **Ô vũ khí** cạnh thanh kỹ năng: biểu tượng vũ khí đang trang bị và tên hiệu ứng, số vũ khí đã có trên 6 (kiếm thường và 5 cây). Chuột trái vào ô ở PREP mở panel vũ khí (PNL-15). Ngoài PREP chỉ đọc kèm tooltip "Đổi vũ khí ở giai đoạn chuẩn bị". Chain Lightning hiện vòng cooldown kèm số giây (ACC-07) |
+| HUD-21 \[MVP] | **Ô vũ khí** trong bảng Chỉ huy: biểu tượng vũ khí đang trang bị và tên hiệu ứng, số vũ khí đã có trên 6 (kiếm thường và 5 cây). Chuột trái vào ô ở PREP mở panel vũ khí (PNL-15). Ngoài PREP chỉ đọc kèm tooltip "Đổi vũ khí ở giai đoạn chuẩn bị". Chain Lightning hiện vòng cooldown kèm số giây (ACC-07) |
 | HUD-22 \[MVP] | **HUD trong Hazard Trial:** nút "Rời tháp" ở dưới giữa (bấm một lần, không cần xác nhận, HZT-07), số quái còn trên 5 (con chưa xử lý xong theo HZT-16, Captain chờ nổ và Undead chờ hồi sinh vẫn tính là còn), gold và XP tạm tính, phần thưởng Mithril nếu thắng, nhãn "Chỉ số trong tháp không mang ra ngoài". Thanh HP chỉ huy hiển thị HP của bản sao. Khi kết thúc: toast kết quả (Thắng, Đã rời, Thất bại) kèm phần thưởng |
 | HUD-23 \[MVP] | **Tháp Hazard Trial** trên bản đồ ở PREP: biểu tượng trên cùng (như MSE-04), trạng thái "Sẵn sàng (E)", "Cần Frontline", "Đã dùng ở wave này" kèm biểu tượng; rê chuột hiện danh sách loại quái của nhóm (HZT-02) và phần thưởng Mithril. Ẩn ngoài PREP |
-| HUD-24 \[Should] | **Nút mũi tên ẩn/hiện kỹ năng** ngay trên hai hàng ô skill, chỉ có mũi tên, không có chữ: mũi tên xuống khi đang hiện (bấm để ẩn), mũi tên lên khi đã ẩn (bấm để hiện); tooltip ghi "Ẩn kỹ năng" hoặc "Hiện kỹ năng" (UI-05). Nút ẩn hoặc hiện cả hai hàng ô skill (HUD-16) và ô vũ khí (HUD-21), ô Emergency repair vẫn hiện. Chỉ ẩn phần hiển thị: phím 1-3 vẫn dùng skill, cooldown vẫn chạy, hiện lại thì đúng số giây còn lại. Ẩn ô vũ khí thì panel vũ khí đang mở cũng đóng. Nút không nhận focus bàn phím (INP-04), không có phím tắt. Run mới luôn hiện lại. Cooldown vẫn luôn có số khi đang hiện (ACC-07); ẩn là lựa chọn của người chơi như F1 (HUD-12) |
-| HUD-25 \[Should] | **Xem trước đợt quái ở PREP** (EN-18, mục 3.3.2): khung bên phải dưới Tháp Hazard Trial, tiêu đề "Đợt quái thứ N" (đợt boss thêm "(Boss)"), tối đa 5 loại quân kể cả boss (boss đứng đầu, rồi loại đông nhất), mỗi dòng có tên, số lượng và biểu tượng trait kèm chữ; đợt boss có rơi vũ khí ghi "Hạ boss: nhận 1 vũ khí ngẫu nhiên (còn N thanh kiếm chưa sở hữu)" (WPN-11). Bề rộng cố định để cột phải không nhảy. **Nút mũi tên** nằm bên trái khung, ẩn hoặc hiện cả khung như HUD-24: ">" khi đang hiện (bấm để đẩy khung sang phải và ẩn), "<" khi đã ẩn (bấm để hiện lại); khi ẩn chỉ còn nút "<", không còn tiêu đề hay nội dung. Tooltip "Ẩn xem trước đợt quái" hoặc "Hiện xem trước đợt quái", không nhận focus, không phím tắt. Run mới luôn hiện lại. Ẩn ngoài PREP |
+| HUD-24 | Khi HUD hiện và không có hộp thoại hoặc menu Pause, bảng Chỉ huy mở bằng V hoặc bấm thanh máu chỉ huy trong PREP, COMBAT, BOSS_COMBAT và HAZARD_TRIAL. V hoặc Esc đóng bảng. Bảng hiển thị cấp, thanh sinh lực và XP riêng kèm số, ba ô bị động và ô vũ khí. Mở bảng khi đang chiến đấu vẫn cho điều khiển nhân vật. Cài đặt Gameplay liệt kê V và B. |
+| HUD-25 \[Should] | **Xem trước đợt quái ở PREP** (EN-18, mục 3.3.2): khung bên phải dưới Tháp Hazard Trial, tiêu đề "Đợt quái thứ N" (đợt boss thêm "(Boss)"), tối đa 5 loại quân kể cả boss (boss đứng đầu, rồi loại đông nhất), mỗi dòng có tên, số lượng và biểu tượng trait kèm chữ; đợt boss có rơi vũ khí ghi "Hạ boss: nhận 1 vũ khí ngẫu nhiên (còn N thanh kiếm chưa sở hữu)" (WPN-11). Bề rộng cố định để cột phải không nhảy. **Nút mũi tên** nằm bên trái khung, ẩn hoặc hiện cả khung xem trước: ">" khi đang hiện (bấm để đẩy khung sang phải và ẩn), "<" khi đã ẩn (bấm để hiện lại); khi ẩn chỉ còn nút "<", không còn tiêu đề hay nội dung. Tooltip "Ẩn xem trước đợt quái" hoặc "Hiện xem trước đợt quái", không nhận focus, không phím tắt. Run mới luôn hiện lại. Tạm ẩn khi bảng ngữ cảnh bên phải mở. Ẩn ngoài PREP |
 
 ### 4.1.4 Panel tương tác
 
-Mọi panel mở ở dưới giữa, không che hành lang.
+Bảng Xây, Trụ, Trạm hồi lực, Thành, Chỉ huy và Vũ khí trượt từ giữa cạnh phải trong 0,22 giây, mặt bảng nối sát mép game. Mỗi lần hiện một bảng, nút × ở đầu bảng. Chọn lại ô đất hoặc công trình đang xem để đóng. Xác nhận giao dịch cũng neo ở giữa cạnh phải và giữ hai nút Hủy, Xác nhận.
+
+Các bảng này rộng 370 đơn vị ở độ phân giải thiết kế 1920 × 1080 (khoảng 247 px ở 1280 × 720). Danh sách kiếm cuộn dọc. Mỗi hàng hiển thị tên, tiếp theo là trạng thái và tầm đánh, rồi đến mô tả hiệu ứng. Mô tả dài xuống dòng và tăng chiều cao hàng. Đổi kiếm giữ nguyên chiều rộng bảng.
+
+Nút Nâng cấp dùng nền xanh bạc hà với mũi tên lên. Nút Bán có nền tối, viền san hô và dấu trừ. Sửa Thành dùng dấu cộng, Dọn đổ nát dùng dấu ×. Các nút dùng chung phản hồi rê và nhấn. Khi bị khóa, mặt nút chuyển xám và hiện lý do hoặc mức thiếu theo ngữ cảnh (HUD-05, PNL-09).
 
 | **ID** | **Panel** | **Nội dung** | **Mở khi** |
 | --- | --- | --- | --- |
-| PNL-01 | Build | Loại cho phép, giá, mô tả, chỉ số cấp 1, ghost preview kèm vòng tầm bắn. Slot RUINED: mục đầu là "Xây lại \[loại] cấp n" kèm tổng giá, hiện số thiếu nếu không đủ gold; cuối menu có nút "Dọn đổ nát" (CLR-01). Ô grid EMPTY khi grid đã đủ max_ground_buildings: các mục xây xám kèm lý do (BLD-08). Xây sẽ chặn kín đường: mục xây xám kèm lý do BLOCKS_PATH (BLD-10). Tutorial chưa xong: chỉ hai slot mặc định (BLD-11) | PREP, chọn slot hoặc ô grid |
-| PNL-02 | Tower | Loại, cấp, HP, chỉ số hiện tại và cấp kế, Nâng cấp lên cấp kế kèm giá (xám kèm "Yêu cầu chỉ huy: cấp N" khi qua ranh giới bậc mà chưa đủ, UPG-06), bậc model hiện tại (TWR-17), Bán (xám kèm "Bán được từ wave 3" với trụ có sẵn, SELL-06), priority | PREP hoặc COMBAT, chọn tower |
+| PNL-01 | Build | Mỗi dòng hiện icon, tên và giá. Tooltip nêu chỉ số cấp 1 hoặc lý do khóa. Rê chuột hiện ghost preview kèm vòng tầm bắn. Slot RUINED: mục đầu là "Xây lại \[loại] cấp n" kèm tổng giá, hiện số thiếu nếu không đủ gold; cuối menu có nút "Dọn đổ nát" (CLR-01). Ô grid EMPTY khi grid đã đủ max_ground_buildings: các mục xây xám kèm lý do (BLD-08). Xây sẽ chặn kín đường: mục xây xám kèm lý do BLOCKS_PATH (BLD-10). Tutorial chưa xong: chỉ hai slot mặc định (BLD-11) | PREP, chọn slot hoặc ô grid |
+| PNL-02 | Tower | Icon, tên, cấp và bậc, thanh HP kèm số. Trụ tấn công hiện ba cột sát thương, tầm và tốc bắn. Tooltip Nâng cấp so sánh chỉ số với cấp kế. Nâng cấp lên cấp kế kèm giá (xám kèm "Yêu cầu chỉ huy: cấp N" khi qua ranh giới bậc mà chưa đủ, UPG-06), bậc model hiện tại (TWR-17), Bán (xám kèm "Bán được từ wave 3" với trụ có sẵn, SELL-06), priority | PREP hoặc COMBAT, chọn tower |
 | PNL-03 | Commander (priority) | 2 lựa chọn (First, Nearest); \[Should] 4 lựa chọn và nút "Áp dụng cho mọi tower cùng loại" | Chọn tower ở Commander hoặc PREP |
 | PNL-04 | Fortress | HP, số Mithril đang có, nút "Sửa bằng Mithril (+20%)" (MTH-03), tooltip ghi sẵn số HP sẽ hồi và "Hồi thừa" khi thiếu dưới 20% (MTH-04). Nút xám khi Fortress đầy máu hoặc mithril = 0, kèm lý do. **Số lượt Emergency repair còn lại n/3, cooldown 60 s** và dòng gợi ý "Nhận +1 lượt khi diệt boss" khi lượt dưới 3 | PREP, chọn Fortress |
 | PNL-05 \[Should] | Wave preview | Bản đầy đủ của khung xem trước HUD-25: thêm modifier và cảnh báo boss. Ẩn hiện bằng nút ">" / "<" như HUD-25 | PREP |
-| PNL-06 | Buff \[Should] | Kho buff, chọn 1 để kích hoạt | PREP, phím V |
+| PNL-06 | Buff \[Should] | Kho buff, chọn 1 để kích hoạt | PREP, phím tắt cho buff chưa chốt |
 
 | **ID** | **Luật** |
 | --- | --- |
@@ -1959,8 +1964,8 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 | PNL-11 | Panel tự đóng khi: vào COMBAT (trừ Commander), tower thành RUINED, Esc, chọn thứ khác. Hộp thoại giao dịch đang mở của panel đó đóng cùng lúc, không thực hiện giao dịch (SCR-14) |
 | PNL-12 | Mở panel khi Pause: ở PREP cho phép mọi thao tác. Ở COMBAT, BOSS_COMBAT và HAZARD_TRIAL panel chỉ đọc, các nút đổi priority xám kèm tooltip "Không đổi được khi tạm dừng" |
 | PNL-13 | Panel Fortress (PNL-04) chỉ **hiển thị** trạng thái Emergency repair, không có nút kích hoạt (dùng bằng phím R ở Commander mode). Vì lượt khan hiếm, tooltip ở PREP gợi ý ưu tiên sửa bằng Mithril và để dành lượt cho COMBAT |
-| PNL-14 | **Panel Trạm hồi lực:** tên, cấp, thanh kho HP kèm số, dòng "Hồi cho chỉ huy: x HP/s" (theo skill SKL-26), nút Nâng cấp (tooltip nêu chỉ cộng phần kho tăng thêm, HLT-08; "MAX" ở cấp 36), nút Bán (tooltip nêu hoàn theo HP còn, SELL-05). **Không có** nút priority hay sửa (HLT-08). Khi RUINED dùng panel đổ nát chung (xây lại, dọn) |
-| PNL-15 \[MVP] | **Panel vũ khí:** danh sách owned_weapons (kiếm thường luôn có), mỗi dòng có biểu tượng, tên, tầm đánh, mô tả hiệu ứng với số liệu hiện tại; vũ khí chưa có hiện ô khóa kèm "Rơi từ boss". Chọn một dòng là trang bị ngay (WPN-03). Chỉ đổi được ở PREP; mở ở state khác thì chỉ đọc |
+| PNL-14 | **Panel Trạm hồi lực:** tên, cấp, thanh kho HP kèm số, tốc độ hồi chỉ huy và cấp trạm ở hai cột bên dưới (theo skill SKL-26), nút Nâng cấp (tooltip nêu chỉ cộng phần kho tăng thêm, HLT-08; "MAX" ở cấp 36), nút Bán (tooltip nêu hoàn theo HP còn, SELL-05). **Không có** nút priority hay sửa (HLT-08). Khi RUINED dùng panel đổ nát chung (xây lại, dọn) |
+| PNL-15 \[MVP] | **Panel vũ khí:** danh sách cuộn dọc, gồm owned_weapons (kiếm thường luôn có), mỗi dòng có biểu tượng, tên, tầm đánh, mô tả hiệu ứng với số liệu hiện tại; vũ khí chưa có hiện ô khóa kèm "Rơi từ boss". Chọn một dòng là trang bị ngay (WPN-03). Chỉ đổi được ở PREP; mở ở state khác thì chỉ đọc |
 
 ## 4.2 Input, chuột và camera trong isometric
 
@@ -1979,8 +1984,8 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 | Skill chủ động 1-3 | 1, 2, 3 | Frontline (ở REWARD_PICK: chọn thẻ bằng chuột hoặc phím 1-3 khi có focus thẻ) |
 | Đổi chế độ | Tab | Cả hai |
 | Emergency repair | R | Commander |
-| Bật/tắt xem slot và lưới ô | B | PREP |
-| Kích hoạt buff \[Should] | V | PREP |
+| Mở hoặc đóng bảng xây tại ô có vòng xây gần con trỏ nhất trong khung nhìn | B | PREP |
+| Mở hoặc đóng bảng Chỉ huy | V | PREP, COMBAT, BOSS_COMBAT, HAZARD_TRIAL |
 | Nâng cấp tower đang chọn | U | PREP |
 | Bán tower đang chọn | Delete | PREP |
 | Hiện tầm bắn mọi tower | Giữ Shift | Mọi lúc |
@@ -1992,7 +1997,7 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 
 | **ID** | **Luật input** |
 | --- | --- |
-| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời tháp không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). call_wave và relocate đã bỏ ở v2.0 |
+| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, character_status, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời tháp không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). call_wave và relocate đã bỏ ở v2.0 |
 | INP-02 | Ưu tiên khi nhiều phím cùng frame: **Dodge > Skill > Attack > Mode switch > Hồi máu (E)**; nhiều skill cùng frame thì ô số nhỏ trước. Pause và HUD xử lý độc lập |
 | INP-03 | **Esc theo chuỗi:** (1) đóng hộp thoại, (2) đóng panel, (3) hủy chế độ đặt hoặc bỏ chọn, (4) mở Pause. Mỗi lần bấm một bước |
 | INP-04 | Vô hiệu ui_focus_next, ui_focus_prev trong Run. Space trong gameplay không kích hoạt nút UI còn focus: **giải phóng focus** sau mỗi lần bấm nút UI |
@@ -2054,18 +2059,18 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 
 | **ID** | **Điều kiện** | **Tầng** | **Nội dung mẫu** |
 | --- | --- | --- | --- |
-| ALR-01 | fortress_hp chạm 30% (một lần mỗi wave) | T1 | "Thành sắp thất thủ" |
-| ALR-02 | Chỉ huy vào trạng thái máu thấp (commander_low_hp_changed, dưới commander_low_hp_warning_pct 25%), mỗi lần tụt xuống một lần | T1 | "Chỉ huy sắp gục", dòng phụ "Lùi về hoặc hồi máu ở Trạm hồi lực"; viền đỏ, nhịp tim |
+| ALR-01 | Fortress vào ngưỡng nguy cấp (HUD-01) | T1 tại thanh HP | Viền và nhãn ngay cạnh HP Thành. |
+| ALR-02 | Chỉ huy vào hoặc ra trạng thái máu thấp theo commander_low_hp_changed (25%, DEAD-07) | T1 tại thanh HP | Khi vào ngưỡng, viền sáng một lần và hiện NGUY CẤP cạnh HP chỉ huy. Khi hồi phục, ẩn cảnh báo. Giảm chớp dùng viền tĩnh. |
 | ALR-03 | Boss T-30 | T2 | "Boss sắp cuồng nộ", dòng phụ "Còn 30 giây" |
 | ALR-04 | Boss Cuồng nộ (T-0) | T1 | "Boss đã vào trạng thái cuồng nộ", dòng phụ "Nhanh hơn và đánh mạnh hơn cho tới khi bị hạ" |
 | ALR-05 | \[ĐÃ XÓA v1.8] | | |
 | ALR-06 | \[ĐÃ XÓA v1.8] | | |
-| ALR-07 | Tower vào RUINED. Tower bị phá trong tower_ruined_merge_seconds (2.5 s thời gian thực, bằng thời gian sống của toast T2, tính lại từ lần phá gần nhất) dùng chung một toast: toast đang hiện được thay nội dung và tính lại thời gian sống, không xếp thêm toast mới | T2 | Một tower: "Tháp cung cấp 2 ở W3 bị phá", dòng phụ "Xây lại: 120 vàng". Nhiều tower: "N tower bị phá", dòng phụ "Ở các ô: W1, W3" (gợi ý camera, không tự động) |
+| ALR-07 | Một hoặc nhiều tower bị phá | Tại ô xây | Công trình chuyển thành đổ nát. Người chơi chọn ô để xem giá xây lại. Bỏ toast trụ bị phá và toast gộp nhiều trụ. |
 | ALR-09 | Wave kế là boss (một lần mỗi wave, kể cả khi ra khỏi Hazard Trial về lại PREP) | T2 | "Boss ở đợt quái thứ N", dòng phụ "Kiểm tra miễn nhiễm trước khi bắt đầu" |
 | ALR-10 | FPS tụt, tự hạ tốc độ | T2 | "Đã hạ về x2 để giữ ổn định" |
 | ALR-11 | Lưu thất bại | T1 | Hộp thoại |
 | ALR-12 | \[Should] Bán, hoàn tác 3 s | T3 | "Hoàn tác (3)". Biến mất khi hoàn tác bị hủy. Tooltip "Hết hạn khi vào chiến đấu" |
-| ALR-17 | Trạm hồi lực bị hút cạn (HLT-07) | T2 | "Trạm hồi lực ở ô G3 đã cạn (xây lại 80 gold)". Trạm bị quân phá thì gộp vào ALR-07 |
+| ALR-17 | Trạm hồi lực bị hút cạn (HLT-07) | T2 | "Trạm hồi lực ở ô G3 đã cạn (xây lại 80 gold)". Trạm bị quân phá chỉ hiện đổ nát theo ALR-07 |
 | ALR-18 | Kho Trạm hồi lực dưới 20% (một lần mỗi trạm mỗi lần xây) | T3 | "Trạm hồi lực sắp cạn" (HLT-11) |
 | ALR-19 | Nhận vũ khí từ boss (WPN-11) | T2 | "Nhận vũ khí Hàn Sương Kiếm. Đổi ở giai đoạn chuẩn bị" |
 | ALR-20 | Kết thúc Hazard Trial (HZT-07) | T3 | "Thắng Hazard Trial: +1 Mithril, +34 gold, +12 XP" hoặc "Đã rời tháp: +20 gold, +6 XP" |
@@ -2206,9 +2211,9 @@ Từ v2.0 tutorial **chạy một lần theo tài khoản**: chạy ở run có 
 | ACC-04 | Tùy chọn giữ-hoặc-bật cho Shift và các phím giữ |
 | ACC-05 | Giảm rung màn hình: Bình thường, Giảm 50%, Tắt |
 | ACC-06 | Giảm nhấp nháy: tắt flash trắng, viền cảnh báo tĩnh, không nhấp nháy quá 3 lần/giây. Giới hạn 3 lần/giây áp dụng cho mọi hiệu ứng nhấp nháy ngay cả khi tùy chọn đang tắt |
-| ACC-07 | Đồng hồ và cooldown luôn có **số**, trừ khi người chơi tự ẩn phần hiển thị đó (F1 ẩn HUD theo HUD-12, nút mũi tên ẩn ô kỹ năng theo HUD-24) |
+| ACC-07 | Đồng hồ và cooldown trên giao diện đang hiển thị luôn kèm số. Hồi chiêu chủ động nằm trên HUD, hồi chiêu vũ khí nằm trong bảng Chỉ huy. F1 ẩn toàn bộ HUD. |
 | ACC-08 | Chơi được chỉ bằng chuột và phím bên trái bàn phím, không yêu cầu hai phím xa nhau cùng lúc |
-| ACC-09 | Không có thông tin quan trọng nào chỉ truyền bằng âm thanh. MVP: tiếng Stomp chuẩn bị nện đất có telegraph vòng đỏ kèm họa tiết và thanh đếm wind-up 1.0 s (UI-05); đồng hồ boss có số và nhãn CUỒNG NỘ, banner ở T-30 và T-0 (ALR-03, ALR-04, ACC-07, ENR-05); còi T1 luôn đi kèm banner và biểu tượng. \[Should] Tùy chọn Settings "Chỉ báo thị giác thay âm thanh" thêm biểu tượng hướng và viền màn hình theo loại sự kiện |
+| ACC-09 | Không có thông tin quan trọng nào chỉ truyền bằng âm thanh. MVP: tiếng Stomp chuẩn bị nện đất có telegraph vòng đỏ kèm họa tiết và thanh đếm wind-up 1.0 s (UI-05); đồng hồ boss có số và nhãn CUỒNG NỘ, banner ở T-30 và T-0 (ALR-03, ALR-04, ACC-07, ENR-05); còi T1 có chỉ báo thị giác tương ứng, gồm cảnh báo tại thanh HP cho ALR-01 và ALR-02. \[Should] Tùy chọn Settings "Chỉ báo thị giác thay âm thanh" thêm biểu tượng hướng và viền màn hình theo loại sự kiện |
 
 ## 5.3 Ngôn ngữ
 
@@ -2447,7 +2452,7 @@ Nút cân bằng ưu tiên khi chỉnh (không sửa code): tower_gate_tier2/tie
 | camera_lookahead | 2 m | \[Should] CAM-06 |
 | online_enabled / backend_url | true / để trống trong repo | ACCT-12. Không đưa khóa riêng vào repo |
 | sync_timeout / lbd_top_n | 10 s / 50 | ACCT-07, LBD-08 |
-| tower_ruined_merge_seconds / hover_info_delay | 2.5 s / 0.3 s (thời gian thực) | ALR-07, MSE-06 |
+| hover_info_delay | 0.3 s (thời gian thực) | MSE-06 |
 | lbd_min_seconds_per_wave | 15 s | LBD-06. Phải ≤ spawn_duration nhỏ nhất của mọi wave (SPN-15, BAL-05) |
 | lbd_elapsed_tolerance | 1 s | LBD-06. Sai số tổng do làm tròn frame |
 | display_name_min_len / display_name_max_len | 3 / 16 | LBD-09 |
@@ -2742,6 +2747,10 @@ Các test Overload, Retreat, ép x1 ở T-20, cảnh báo y% và retarget sau Ov
 17. Tắt hết âm thanh vẫn nhận biết đủ: telegraph Stomp (vòng đỏ có họa tiết, thanh wind-up), đồng hồ Cuồng nộ có số, nhãn CUỒNG NỘ và banner ở T-30 và T-0 (ACC-09, ALR-03, ALR-04, ENR-05).
 18. Mọi tín hiệu ở mục 6.9 tồn tại trong EventBus đúng tên và kiểu payload. HUD vẫn chạy khi chỉ nhận tín hiệu, không đọc trực tiếp node gameplay (UI-04, EVB-01 đến EVB-46; EVB-24 đã xóa ở v1.8, EVB-25 đã bỏ ở v2.0).
 
+19. Ở PREP, bấm B hai lần để mở rồi đóng bảng xây. Bấm một ô khác đổi mục tiêu. Bấm lại đúng ô, trụ, trạm hoặc Thành để đóng bảng đang xem. Ở COMBAT, bấm V rồi Esc để xem và đóng bảng Chỉ huy, nhân vật vẫn điều khiển được trong lúc xem.
+20. Kiểm tra nút nâng cấp khi đủ vàng và thiếu vàng, nút bán khi được phép và khi bị khóa. Đọc được hành động, giá và lý do khóa ở 1280×720. Bán vẫn yêu cầu xác nhận. Kiểm tra cùng trạng thái trên trạm hồi lực.
+21. Cho Chỉ huy và Thành cùng xuống ngưỡng nguy cấp rồi hồi máu riêng từng đối tượng. Mỗi thanh HP cập nhật cảnh báo độc lập. Phá nhiều trụ cùng lúc chỉ để lại đổ nát. Kiểm tra thông báo hút cạn kho trạm riêng theo ALR-17.
+
 **Emergency repair (giới hạn lượt)**
 
 1. Xuất phát ở wave 1: luôn 3/3 lượt, emg_repair_cd = 0. Run mới sau khi khôi phục run gián đoạn cũng 3/3 (STR-08, RUN-01). \[Should] Xuất phát ở mốc muộn cũng 3/3.
@@ -2809,7 +2818,7 @@ Pause, sửa bằng Mithril, trần armor, tải quét (v1.3, cập nhật v2.0)
 | HT3 | Điều kiện: không hold được ở PREP, SUMMARY, Commander mode, khi đầy máu, khi quá 3 m, khi trạm 0 HP. HUD-18 hiện đúng lý do từng trường hợp | HLT-03, HUD-18 |
 | HT4 | Công thức: chưa có SKL-26, thiếu 100 HP, 300 kho: sau 10 s chỉ huy +100, trạm −200 (k 0.5). SKL-26 level 2 (20 HP/s, k 1.0): chỉ huy +200, trạm −200 sau 10 s. Kết quả giống nhau ở x1, x2, x3 (sai lệch dưới 1 HP) | HLT-06 |
 | HT5 | Gần đầy máu: thiếu 3 HP ở k 0.5 thì trạm chỉ mất 6 HP, không hao thừa. Chỉ huy dừng ở commander_max_hp và Healing tự kết thúc | HLT-05, HLT-06 |
-| HT6 | Kho về 0 (do hút hoặc do quân đánh): trạm thành RUINED, kênh dừng, hiện ALR-17 (hút cạn) hoặc ALR-07 (bị phá). Xây lại trạm cấp 1: 80 gold, kho đầy 300 | HLT-07, BLD-07 |
+| HT6 | Kho về 0 (do hút hoặc do quân đánh): trạm thành RUINED, kênh dừng, hút cạn hiện ALR-17, bị phá chỉ hiện đổ nát theo ALR-07. Xây lại trạm cấp 1: 80 gold, kho đầy 300 | HLT-07, BLD-07 |
 | HT7 | Không tự hồi: Trạm 120 HP sang PREP vẫn 120 HP, sang wave sau vẫn 120 HP. Emergency repair và sửa Fortress bằng Mithril không đổi HP trạm | HLT-08, TWR-01 |
 | HT8 | Chuẩn hóa: ở wave 10 (dmg_mult 1.70), đòn raw 17 gây 14. Ở wave 20 (2.86), raw 40 gây 24. Hút máu không bị chuẩn hóa. Tối thiểu 1 | HLT-09 |
 | HT9 | Giới hạn: xây trạm thứ ba bị từ chối kèm lý do. Hai trạm đều RUINED vẫn chiếm chỗ. Bán hoặc dọn một trạm RUINED thì xây được. Không đặt được trên slot WALL | HLT-01, HLT-02, BLD-09 |
@@ -2855,7 +2864,7 @@ Pause, sửa bằng Mithril, trần armor, tải quét (v1.3, cập nhật v2.0)
 | # | Test | Liên quan |
 | --- | --- | --- |
 | WP1 | Đầu run chỉ có kiếm thường. Diệt Bulwark wave 5: SUMMARY hiện "Nhận vũ khí X", owned_weapons có 2 cây, không tự trang bị. Đến wave 25 có đủ 5 cây khác nhau; boss wave 30 không rơi gì. Cùng run_seed cho cùng thứ tự rơi. Thua đúng frame wave boss kết thúc: không nhận | WPN-02, WPN-11, BRW-09 |
-| WP2 | Đổi vũ khí ở PREP (cả hai chế độ, cả khi Pause): tức thì; ở COMBAT, HAZARD_TRIAL ô vũ khí chỉ đọc | WPN-03, HUD-21, PNL-15 |
+| WP2 | Đổi vũ khí ở PREP (cả hai chế độ): tức thì; ở COMBAT, HAZARD_TRIAL ô vũ khí chỉ đọc | WPN-03, HUD-21, PNL-15 |
 | WP3 | Frost: đòn trúng làm chậm 20% trong 3 s, đánh lại làm mới thời gian, không cộng dồn. Lên Bulwark pha 1 bằng kiếm (SLASH 0.6) vẫn làm chậm | WPN-06, WPN-05, BOSS-01 |
 | WP4 | Chain Lightning: 4 Grunt đứng cách nhau 1.5 m, đòn trúng con đầu thì 3 con nhận 20% sát thương cơ bản, con thứ tư không; đòn trong 5 s kế không mở chuỗi; không con nào trúng hai lần | WPN-07 |
 | WP5 | Burn: tổng 50% sát thương cơ bản trong 5 s qua 5 tick; trúng lại ở giây 3 làm mới về 5 s, không cộng dồn lượng. Tick dùng dot_remainder | WPN-08, DMG-06 |
@@ -3170,6 +3179,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 90 | **12/11: đồng bộ theo code UI panel Xây, Tháp và Trạm hồi lực tuần 10** (BLD-10, GRID-07, UPG-06, PNL-02, FRT-03, ALR-19, mục 3.5.13, 7.1 mục 18, F6): chữ lý do chặn kín đường đổi thành "Đường đi sẽ bị chặn"; chữ khóa nâng cấp đổi thành "Yêu cầu chỉ huy: cấp N"; bảng vũ khí và ví dụ ALR-19 ghi tên hiển thị tiếng Việt kèm tên hiệu ứng (Hàn Sương Kiếm, Lôi Kiếm, Xích Tiêu Kiếm, Nộ Kiếm, Truy Phong Kiếm) |
 | 91 | **16/11: bộ đòn và AI của Bulwark** (mục 3.8.2, 3.8.2.1, BOSS-06, BOSS-07, BOSS-40, BOSS-44 đến BOSS-50, HZT-14, PRJ-08, FBK-06, mục 6.6, test Boss 9 đến 13, Phụ lục C mục 68, 69): thêm Đánh thường, Stomp x3 và Combo khi đánh chỉ huy; chọn đòn theo hướng của chỉ huy và máu boss; mở khóa đòn theo lần xuất hiện; khoảng nghỉ sau đòn lớn; tâm mọi Stomp dời tới điểm chùy nện, 1.25 chiều cao phía trước. Cập nhật 17/11: chọn hành động bằng điểm số (utility) thay cho chuỗi luật, thêm hành động bỏ chỉ huy để tiến lên đập công trình khi chỉ huy đứng ngoài tầm, boss trong Hazard Trial quay nhanh gấp đôi, boss quay về phía công trình trước khi Stomp, khiêu khích không khóa cứng mục tiêu, đuổi chỉ huy không tính là kẹt (bảng thứ tự mục tiêu của Bulwark, BOSS-04, BOSS-46, BOSS-47, HZT-14, mục 6.6, test Boss 10, Phụ lục C mục 68). Trạng thái: đề xuất, chờ nhóm duyệt |
 | 92 | **16/11: đồng bộ theo code UI tuần 11** (mục 3.2.4, mục 3.3.2, ACCT-05, ALR-02, PNL-05, END-10, SCR-11, SCR-21, VC3, ENR-01, ALR-03, ALR-04, ALR-07, ALR-09, ALR-21, HUD-25, MSE-06, mục 6.3): tiêu đề RunEnd dùng "đợt quái thứ N" thay cho "wave N"; cảnh báo boss gọi "Boss" thay cho "Mech" và banner Cuồng nộ ghi "Boss đã vào trạng thái cuồng nộ"; tower bị phá trong 2.5 s (bằng thời gian sống của toast) dùng chung một toast được cập nhật số lượng (tower_ruined_merge_seconds); cảnh báo boss ở đợt kế một lần mỗi wave; thêm ALR-21 (biểu tượng theo tầng, dòng chính và dòng phụ, không dấu chấm câu); thêm HUD-25 (xem trước đợt quái ở PREP, nút ">" / "<" bên trái ẩn hiện cả khung như HUD-24); ô đếm đợt quái trong COMBAT có hai dòng riêng "Quân địch:" và "Thời gian:", tên căn phải và số căn trái để dấu hai chấm thẳng hàng; banner và toast ở giữa rộng tối đa 440 px rồi xuống dòng; hover quân hiện trait; thêm tham số tower_ruined_merge_seconds và hover_info_delay; ALR-02 dùng tín hiệu máu thấp của chỉ huy và có banner "Chỉ huy sắp gục"; xem trước wave boss ở mục 3.3.2 theo HUD-25 (tên boss, "(Boss)", vũ khí sẽ rơi), miễn nhiễm pha 1 và boss_timer chuyển sang \[Should]; PNL-05 là bản đầy đủ của HUD-25; ACCT-05 không đồng bộ trong suốt run |
+| 93 | 21/11/2026. Đồng bộ HUD và panel trong run. B/V bật tắt bảng, bảng trượt giữa cạnh phải, ba ô chủ động trên HUD, bị động và vũ khí trong bảng Chỉ huy. Cụm tốc độ chung khung tài nguyên. Cảnh báo máu ở thanh HP, bỏ toast mất trụ. Cập nhật giao diện nâng cấp, bán, sửa và dọn, mục 4.1–4.3 và ca nghiệm thu liên quan. |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 

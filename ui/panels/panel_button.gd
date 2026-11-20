@@ -1,20 +1,21 @@
 class_name PanelButton
 extends Button
-## Button whose text sits in labels, so the warning line (missing gold) can be red
-## while the main line keeps the button colour. Grows when the text wraps.
+## Shared drawer actions. Text and glyphs distinguish the action even without colour.
 
-const PADDING := 16
-const VERTICAL_PADDING := 10
-const WARNING_COLOR := Color(0.94, 0.83, 0.66)
-## Darker than WARNING_COLOR so it stays readable on the light button background.
-const DANGER_COLOR := Color(0.69, 0.12, 0.12)
+const PADDING := 12
+const VERTICAL_PADDING := 8
+const PRIMARY_TEXT := Color("#08272a")
+const SELL_TEXT := Color("#ffcab9")
+const MUTED_TEXT := Color("#cad5d7")
 
-@export var font_size := 24
+@export var font_size := 22
 @export var height := 56
 @export var tall_height := 80
-## Main line in red, for actions that lose something (selling).
+@export var glyph := "↑"
+## Sales use a secondary surface and a minus sign.
 @export var danger := false
 
+var _mark: Label
 var _lines: VBoxContainer
 var _main: Label
 var _warning: Label
@@ -24,7 +25,7 @@ func _init() -> void:
 	focus_mode = Control.FOCUS_NONE
 	_lines = VBoxContainer.new()
 	_lines.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_lines.offset_left = PADDING
+	_lines.offset_left = 42
 	_lines.offset_right = -PADDING
 	_lines.alignment = BoxContainer.ALIGNMENT_CENTER
 	_lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -35,7 +36,32 @@ func _init() -> void:
 	_lines.add_child(_warning)
 	# Wrapped labels report their real height only once they know their width.
 	_lines.minimum_size_changed.connect(_fit_height)
+	_mark = Label.new()
+	_mark.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	_mark.offset_left = PADDING
+	_mark.offset_right = 38
+	_mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mark.add_theme_font_size_override(&"font_size", 28)
+	add_child(_mark)
 	set_lines("")
+
+func _ready() -> void:
+	var fill := Color("#432e30") if danger else Color("#86d6bf")
+	var edge := Color("#db8e78") if danger else Color("#b8ebd9")
+	add_theme_stylebox_override(&"normal", _surface(fill, edge))
+	add_theme_stylebox_override(&"hover", _surface(fill.lightened(0.12), edge.lightened(0.12)))
+	add_theme_stylebox_override(&"pressed", _surface(fill.darkened(0.17), edge))
+	set_lines(_main.text, _warning.text)
+
+func _surface(fill: Color, edge: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.border_color = edge
+	box.set_border_width_all(1)
+	box.border_width_left = 3
+	box.set_corner_radius_all(5)
+	return box
 
 ## Set disabled first: the main line takes the normal or disabled button colour.
 ## An empty warning hides the second line.
@@ -43,12 +69,15 @@ func set_lines(main_text: String, warning_text: String = "") -> void:
 	_main.text = main_text
 	_warning.text = warning_text
 	_warning.visible = warning_text != ""
-	var main_color := DANGER_COLOR if danger and not disabled \
-		else Color(0.86, 0.85, 0.81) if disabled else _button_color(&"font_color")
+	var main_color := SELL_TEXT if danger else PRIMARY_TEXT
+	if disabled:
+		main_color = MUTED_TEXT
+	_mark.text = "−" if danger else glyph
+	_mark.add_theme_color_override(&"font_color", main_color)
 	_main.add_theme_color_override(&"font_color", main_color)
 	_main.add_theme_font_size_override(&"font_size", font_size)
 	_warning.add_theme_font_size_override(&"font_size", 18)
-	_warning.add_theme_color_override(&"font_color", WARNING_COLOR)
+	_warning.add_theme_color_override(&"font_color", Color("#e6c696"))
 	_fit_height()
 
 func _fit_height() -> void:
@@ -60,10 +89,3 @@ func _make_label() -> Label:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
-
-## Labels default to the light Label colour, so they borrow the Button colours from the theme.
-func _button_color(color_name: StringName) -> Color:
-	var theme := ThemeDB.get_project_theme()
-	if theme != null and theme.has_color(color_name, &"Button"):
-		return theme.get_color(color_name, &"Button")
-	return Color.WHITE
