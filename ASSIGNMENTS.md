@@ -1590,12 +1590,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM9
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model quân mới, phần 2 (Suicide Squad, Captain, Knight, Undead) và hiệu ứng FBK-14 (giáp sáng Knight, xương Undead, telegraph nổ)
 - Nghiệm thu: Bốn loại khác nhau rõ; telegraph hiện trước nổ
 - Tệp liên quan: contents/, art/
 - ID SRS: 3.7.8, FBK-14, FBK-06
 - Cần xong trước: W10-KT7
+- Ghi chú bàn giao: Models only, in `contents/assets/characters/enemy and boss/`, built on the KayKit skeletons: `suicide_squad_model.tscn` (Archer skeleton with a red outfit (`toon_cloth_tint.gdshader` tints the clothing and gear only, the bones stay white), a KayKit bomb on the back, no weapon), `captain_model.tscn` (bronze outfit with white bones, 1.1x the Squad's size, the Skeleton_Warrior helmet instead of the hood, a bigger bomb and a sword, melee clips), `knight_model.tscn` (the KayKit commander-pack Knight body with the Skeleton_Warrior skull, jaw, eyes and helmet on the same Rig_Medium, `knight/skeleton_knight.glb`, body tinted toward the skeleton palette; sword and large shield) and `undead_model.tscn` (Mage skeleton in mossy green with a scythe). Effects the unit code calls (scripts in `art/characters/`): `set_fuse(bool)` on the Squad and Captain (bomb glows red, pulse under 3/s, steady with Reduce flashing), `set_invulnerable(bool)` on the Knight (gold armour glow and a shield icon over the head) and `set_reviving(bool)` on the Undead (green bones swirling and a ground ring). The red ring before the blast is the existing telegraph: the unit sends `telegraph_started` and TelegraphFxManager draws it. Hooking the models to enemy scenes and data waits for W10-KT7. Verified by `tests/test_new_enemy_models_2.tscn` (21 checks).
 
 ##### W11-KM10
 - Người: Kim
