@@ -83,6 +83,11 @@ func _check_hover_after_target_destroyed() -> void:
 	var tower := Tower.new()
 	enemy.current_target = tower
 	highlight._tooltip = Panel.new()
+	highlight._name_label = Label.new()
+	highlight._health_label = Label.new()
+	highlight._health_bar = ProgressBar.new()
+	for control in [highlight._name_label, highlight._health_label, highlight._health_bar]:
+		highlight._tooltip.add_child(control)
 	highlight._tooltip_text = Label.new()
 	highlight._tooltip.add_child(highlight._tooltip_text)
 	add_child(highlight._tooltip)

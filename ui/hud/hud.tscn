@@ -55,6 +55,20 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
+[sub_resource type="StyleBoxFlat" id="HoverHealthTrack"]
+bg_color = Color(0.20, 0.09, 0.04, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_left = 2
+corner_radius_bottom_right = 2
+
+[sub_resource type="StyleBoxFlat" id="HoverHealthFill"]
+bg_color = Color(0.91, 0.76, 0.35, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_left = 2
+corner_radius_bottom_right = 2
+
 [node name="Hud" type="CanvasLayer" unique_id=1623823647]
 layer = 10
 script = ExtResource("1_5uuaq")
@@ -360,10 +374,43 @@ script = ExtResource("17_olkg6")
 
 [node name="EnemyTooltip" type="PanelContainer" parent="." unique_id=1596665316]
 unique_name_in_owner = true
-offset_right = 40.0
-offset_bottom = 40.0
+visible = false
+texture_filter = 2
+custom_minimum_size = Vector2(225, 0)
+theme_type_variation = &"DrawerPanel"
 mouse_filter = 2
 
-[node name="TooltipText" type="Label" parent="EnemyTooltip" unique_id=1732002832]
+[node name="Rows" type="VBoxContainer" parent="EnemyTooltip"]
+theme_override_constants/separation = 5
+mouse_filter = 2
+
+[node name="Heading" type="HBoxContainer" parent="EnemyTooltip/Rows"]
+theme_override_constants/separation = 18
+mouse_filter = 2
+
+[node name="HoverName" type="Label" parent="EnemyTooltip/Rows/Heading"]
 unique_name_in_owner = true
-layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.9098, 0.7608, 0.3529, 1)
+mouse_filter = 2
+
+[node name="HoverHealth" type="Label" parent="EnemyTooltip/Rows/Heading"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.9176, 0.8353, 1)
+mouse_filter = 2
+
+[node name="HoverHealthBar" type="ProgressBar" parent="EnemyTooltip/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 5)
+show_percentage = false
+theme_override_styles/background = SubResource("HoverHealthTrack")
+theme_override_styles/fill = SubResource("HoverHealthFill")
+mouse_filter = 2
+
+[node name="TooltipText" type="Label" parent="EnemyTooltip/Rows" unique_id=1732002832]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.9176, 0.8353, 1)
+mouse_filter = 2

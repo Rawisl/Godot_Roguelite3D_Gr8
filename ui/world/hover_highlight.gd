@@ -17,6 +17,9 @@ var _occlusion: OcclusionManager = null
 @onready var _selection: SelectionController = %SelectionController
 @onready var _ring: RangeRing = %HoverRing
 @onready var _tooltip: Control = %EnemyTooltip
+@onready var _name_label: Label = %HoverName
+@onready var _health_label: Label = %HoverHealth
+@onready var _health_bar: ProgressBar = %HoverHealthBar
 @onready var _tooltip_text: Label = %TooltipText
 @onready var _bars: EnemyBarLayer = %EnemyBarLayer
 
@@ -55,10 +58,21 @@ func _process(_delta: float) -> void:
 	if TimeManager.real_time < _tooltip_at:
 		return
 	var e := _tooltip_target
-	_tooltip_text.text = UiFormat.tr_fmt(&"hover.enemy.hp", {
-		"name": tr(e.data.display_name_key), "hp": e.health.hp, "max": e.health.max_hp}) \
-		+ "\n" + UiFormat.tr_fmt(&"hover.enemy.target", {"target": _target_name(e.current_target)})
-	_tooltip.position = _tooltip.get_viewport().get_mouse_position() + TOOLTIP_OFFSET
+	_name_label.text = tr(e.data.display_name_key)
+	_health_label.text = UiFormat.tr_fmt(&"panel.tower.hp", {"value": e.health.hp, "max": e.health.max_hp})
+	_health_bar.max_value = maxi(e.health.max_hp, 1)
+	_health_bar.value = e.health.hp
+	_tooltip_text.text = UiFormat.tr_fmt(&"hover.enemy.target", {"target": _target_name(e.current_target)})
+	_tooltip.reset_size()
+	var viewport := _tooltip.get_viewport()
+	var mouse := viewport.get_mouse_position()
+	var bounds := viewport.get_visible_rect().grow(-8.0)
+	var pos := mouse + TOOLTIP_OFFSET
+	if pos.x + _tooltip.size.x > bounds.end.x:
+		pos.x = mouse.x - TOOLTIP_OFFSET.x - _tooltip.size.x
+	if pos.y + _tooltip.size.y > bounds.end.y:
+		pos.y = mouse.y - TOOLTIP_OFFSET.y - _tooltip.size.y
+	_tooltip.position = pos.clamp(bounds.position, (bounds.end - _tooltip.size).max(bounds.position))
 	_tooltip.visible = true
 
 func _add_outline(root: Node) -> void:
