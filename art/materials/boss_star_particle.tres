@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://doliohnaeaicy"]
+
+[ext_resource type="Shader" path="res://art/shaders/vfx_star_sparkle.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 3
+shader = ExtResource("1_shader")
+shader_parameter/core_color = null
+shader_parameter/ink_color = null
+shader_parameter/particle_life = true
+shader_parameter/points = 6
+shader_parameter/size = 0.1
+shader_parameter/inner_radius = null
+shader_parameter/spike_sharpness = null
+shader_parameter/ink_share = null
+shader_parameter/spin = null

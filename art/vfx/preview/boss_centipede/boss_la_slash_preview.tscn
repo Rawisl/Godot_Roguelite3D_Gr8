@@ -1,0 +1,1346 @@
+[gd_scene format=3 uid="uid://drtrnk26axvfs"]
+
+[ext_resource type="PackedScene" uid="uid://bu0t4kdfx53p" path="res://art/vfx/preview/boss_centipede/centipede_la.glb" id="1_boss"]
+[ext_resource type="PackedScene" uid="uid://pbuvkjao7gyj" path="res://art/vfx/preview/boss_centipede/slash_la1_arc.glb" id="2_arc1"]
+[ext_resource type="PackedScene" uid="uid://c6dx1xx4e3t1a" path="res://art/vfx/preview/boss_centipede/slash_la2_arc.glb" id="2_arc2"]
+[ext_resource type="PackedScene" uid="uid://cjhoh65xh1jyl" path="res://art/vfx/preview/boss_centipede/slash_la3_arc.glb" id="2_arc3"]
+[ext_resource type="PackedScene" uid="uid://dp0f1df6niifh" path="res://art/vfx/preview/boss_centipede/slash_combo_arc.glb" id="2_arc_combo"]
+[ext_resource type="Material" uid="uid://cxjogvjfmgi3v" path="res://art/materials/boss_slash_crescent.tres" id="3_slash"]
+[ext_resource type="Material" uid="uid://lffgr1ygypm3" path="res://art/materials/boss_blade_glow_ink.tres" id="4_glow"]
+[ext_resource type="Material" uid="uid://doliohnaeaicy" path="res://art/materials/boss_star_particle.tres" id="5_star"]
+[ext_resource type="PackedScene" uid="uid://11ryx7e6yatd" path="res://art/vfx/preview/boss_centipede/blade_l.glb" id="6_blade_l"]
+[ext_resource type="PackedScene" uid="uid://cmqspxxoc4u6d" path="res://art/vfx/preview/boss_centipede/blade_r.glb" id="6_blade_r"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("Sky_mat")
+
+[sub_resource type="Environment" id="Env_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 3
+
+[sub_resource type="StandardMaterial3D" id="Floor_mat"]
+albedo_color = Color(0.22, 0.21, 0.2, 1)
+
+[sub_resource type="PlaneMesh" id="Floor_mesh"]
+material = SubResource("Floor_mat")
+size = Vector2(12, 12)
+
+[sub_resource type="QuadMesh" id="Quad_1"]
+
+[sub_resource type="Animation" id="Anim_combo"]
+resource_name = "combo_vfx"
+length = 5.35
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Boss/AnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("light_attack_combo"),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Boss:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = false
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.8, 1, 1.5333, 1.9333, 3, 3.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0.36), Vector3(0, 0, 0.36), Vector3(0, 0, 1.08), Vector3(0, 0, 1.08), Vector3(0, 0, 1.8)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_01:instance_shader_parameters/progress")
+tracks/2/interp = 1
+tracks/2/loop_wrap = false
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.4),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_01:instance_shader_parameters/crack")
+tracks/3/interp = 1
+tracks/3/loop_wrap = false
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.4533, 0.5533),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_01:instance_shader_parameters/shatter")
+tracks/4/interp = 1
+tracks/4/loop_wrap = false
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.5533, 0.9833),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_01:instance_shader_parameters/opacity")
+tracks/5/interp = 1
+tracks/5/loop_wrap = false
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.25, 1.0333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_02:instance_shader_parameters/progress")
+tracks/6/interp = 1
+tracks/6/loop_wrap = false
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 0.65, 0.8),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_02:instance_shader_parameters/crack")
+tracks/7/interp = 1
+tracks/7/loop_wrap = false
+tracks/7/keys = {
+"times": PackedFloat32Array(0, 0.8533, 0.9533),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/8/type = "value"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_02:instance_shader_parameters/shatter")
+tracks/8/interp = 1
+tracks/8/loop_wrap = false
+tracks/8/keys = {
+"times": PackedFloat32Array(0, 0.9533, 1.3833),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/9/type = "value"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_02:instance_shader_parameters/opacity")
+tracks/9/interp = 1
+tracks/9/loop_wrap = false
+tracks/9/keys = {
+"times": PackedFloat32Array(0, 0.65, 1.4333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/10/type = "value"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_03:instance_shader_parameters/progress")
+tracks/10/interp = 1
+tracks/10/loop_wrap = false
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 1.1667, 1.2667),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/11/type = "value"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_03:instance_shader_parameters/crack")
+tracks/11/interp = 1
+tracks/11/loop_wrap = false
+tracks/11/keys = {
+"times": PackedFloat32Array(0, 1.32, 1.42),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/12/type = "value"
+tracks/12/imported = false
+tracks/12/enabled = true
+tracks/12/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_03:instance_shader_parameters/shatter")
+tracks/12/interp = 1
+tracks/12/loop_wrap = false
+tracks/12/keys = {
+"times": PackedFloat32Array(0, 1.42, 1.85),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/13/type = "value"
+tracks/13/imported = false
+tracks/13/enabled = true
+tracks/13/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_03:instance_shader_parameters/opacity")
+tracks/13/interp = 1
+tracks/13/loop_wrap = false
+tracks/13/keys = {
+"times": PackedFloat32Array(0, 1.1667, 1.9),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/14/type = "value"
+tracks/14/imported = false
+tracks/14/enabled = true
+tracks/14/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_04:instance_shader_parameters/progress")
+tracks/14/interp = 1
+tracks/14/loop_wrap = false
+tracks/14/keys = {
+"times": PackedFloat32Array(0, 1.4333, 1.5333),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/15/type = "value"
+tracks/15/imported = false
+tracks/15/enabled = true
+tracks/15/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_04:instance_shader_parameters/crack")
+tracks/15/interp = 1
+tracks/15/loop_wrap = false
+tracks/15/keys = {
+"times": PackedFloat32Array(0, 1.5866, 1.6866),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/16/type = "value"
+tracks/16/imported = false
+tracks/16/enabled = true
+tracks/16/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_04:instance_shader_parameters/shatter")
+tracks/16/interp = 1
+tracks/16/loop_wrap = false
+tracks/16/keys = {
+"times": PackedFloat32Array(0, 1.6866, 2.1166),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/17/type = "value"
+tracks/17/imported = false
+tracks/17/enabled = true
+tracks/17/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_04:instance_shader_parameters/opacity")
+tracks/17/interp = 1
+tracks/17/loop_wrap = false
+tracks/17/keys = {
+"times": PackedFloat32Array(0, 1.4333, 2.1666),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/18/type = "value"
+tracks/18/imported = false
+tracks/18/enabled = true
+tracks/18/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_05:instance_shader_parameters/progress")
+tracks/18/interp = 1
+tracks/18/loop_wrap = false
+tracks/18/keys = {
+"times": PackedFloat32Array(0, 2.1112, 2.2),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/19/type = "value"
+tracks/19/imported = false
+tracks/19/enabled = true
+tracks/19/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_05:instance_shader_parameters/crack")
+tracks/19/interp = 1
+tracks/19/loop_wrap = false
+tracks/19/keys = {
+"times": PackedFloat32Array(0, 2.2533, 2.3533),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/20/type = "value"
+tracks/20/imported = false
+tracks/20/enabled = true
+tracks/20/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_05:instance_shader_parameters/shatter")
+tracks/20/interp = 1
+tracks/20/loop_wrap = false
+tracks/20/keys = {
+"times": PackedFloat32Array(0, 2.3533, 2.7833),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/21/type = "value"
+tracks/21/imported = false
+tracks/21/enabled = true
+tracks/21/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_05:instance_shader_parameters/opacity")
+tracks/21/interp = 1
+tracks/21/loop_wrap = false
+tracks/21/keys = {
+"times": PackedFloat32Array(0, 2.1112, 2.8333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/22/type = "value"
+tracks/22/imported = false
+tracks/22/enabled = true
+tracks/22/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_06:instance_shader_parameters/progress")
+tracks/22/interp = 1
+tracks/22/loop_wrap = false
+tracks/22/keys = {
+"times": PackedFloat32Array(0, 2.3778, 2.4667),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/23/type = "value"
+tracks/23/imported = false
+tracks/23/enabled = true
+tracks/23/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_06:instance_shader_parameters/crack")
+tracks/23/interp = 1
+tracks/23/loop_wrap = false
+tracks/23/keys = {
+"times": PackedFloat32Array(0, 2.52, 2.62),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/24/type = "value"
+tracks/24/imported = false
+tracks/24/enabled = true
+tracks/24/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_06:instance_shader_parameters/shatter")
+tracks/24/interp = 1
+tracks/24/loop_wrap = false
+tracks/24/keys = {
+"times": PackedFloat32Array(0, 2.62, 3.05),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/25/type = "value"
+tracks/25/imported = false
+tracks/25/enabled = true
+tracks/25/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_06:instance_shader_parameters/opacity")
+tracks/25/interp = 1
+tracks/25/loop_wrap = false
+tracks/25/keys = {
+"times": PackedFloat32Array(0, 2.3778, 3.1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/26/type = "value"
+tracks/26/imported = false
+tracks/26/enabled = true
+tracks/26/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_07:instance_shader_parameters/progress")
+tracks/26/interp = 1
+tracks/26/loop_wrap = false
+tracks/26/keys = {
+"times": PackedFloat32Array(0, 2.6548, 2.749),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/27/type = "value"
+tracks/27/imported = false
+tracks/27/enabled = true
+tracks/27/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_07:instance_shader_parameters/crack")
+tracks/27/interp = 1
+tracks/27/loop_wrap = false
+tracks/27/keys = {
+"times": PackedFloat32Array(0, 2.8023, 2.9023),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/28/type = "value"
+tracks/28/imported = false
+tracks/28/enabled = true
+tracks/28/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_07:instance_shader_parameters/shatter")
+tracks/28/interp = 1
+tracks/28/loop_wrap = false
+tracks/28/keys = {
+"times": PackedFloat32Array(0, 2.9023, 3.3323),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/29/type = "value"
+tracks/29/imported = false
+tracks/29/enabled = true
+tracks/29/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_07:instance_shader_parameters/opacity")
+tracks/29/interp = 1
+tracks/29/loop_wrap = false
+tracks/29/keys = {
+"times": PackedFloat32Array(0, 2.6548, 3.3823),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/30/type = "value"
+tracks/30/imported = false
+tracks/30/enabled = true
+tracks/30/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_08:instance_shader_parameters/progress")
+tracks/30/interp = 1
+tracks/30/loop_wrap = false
+tracks/30/keys = {
+"times": PackedFloat32Array(0, 2.9058, 3),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/31/type = "value"
+tracks/31/imported = false
+tracks/31/enabled = true
+tracks/31/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_08:instance_shader_parameters/crack")
+tracks/31/interp = 1
+tracks/31/loop_wrap = false
+tracks/31/keys = {
+"times": PackedFloat32Array(0, 3.0533, 3.1533),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/32/type = "value"
+tracks/32/imported = false
+tracks/32/enabled = true
+tracks/32/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_08:instance_shader_parameters/shatter")
+tracks/32/interp = 1
+tracks/32/loop_wrap = false
+tracks/32/keys = {
+"times": PackedFloat32Array(0, 3.1533, 3.5833),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/33/type = "value"
+tracks/33/imported = false
+tracks/33/enabled = true
+tracks/33/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_08:instance_shader_parameters/opacity")
+tracks/33/interp = 1
+tracks/33/loop_wrap = false
+tracks/33/keys = {
+"times": PackedFloat32Array(0, 2.9058, 3.6333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/34/type = "value"
+tracks/34/imported = false
+tracks/34/enabled = true
+tracks/34/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_09:instance_shader_parameters/progress")
+tracks/34/interp = 1
+tracks/34/loop_wrap = false
+tracks/34/keys = {
+"times": PackedFloat32Array(0, 3.5667, 3.6667),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/35/type = "value"
+tracks/35/imported = false
+tracks/35/enabled = true
+tracks/35/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_09:instance_shader_parameters/crack")
+tracks/35/interp = 1
+tracks/35/loop_wrap = false
+tracks/35/keys = {
+"times": PackedFloat32Array(0, 3.72, 3.82),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/36/type = "value"
+tracks/36/imported = false
+tracks/36/enabled = true
+tracks/36/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_09:instance_shader_parameters/shatter")
+tracks/36/interp = 1
+tracks/36/loop_wrap = false
+tracks/36/keys = {
+"times": PackedFloat32Array(0, 3.82, 4.25),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/37/type = "value"
+tracks/37/imported = false
+tracks/37/enabled = true
+tracks/37/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_09:instance_shader_parameters/opacity")
+tracks/37/interp = 1
+tracks/37/loop_wrap = false
+tracks/37/keys = {
+"times": PackedFloat32Array(0, 3.5667, 4.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/38/type = "value"
+tracks/38/imported = false
+tracks/38/enabled = true
+tracks/38/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_10:instance_shader_parameters/progress")
+tracks/38/interp = 1
+tracks/38/loop_wrap = false
+tracks/38/keys = {
+"times": PackedFloat32Array(0, 3.8333, 3.9333),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/39/type = "value"
+tracks/39/imported = false
+tracks/39/enabled = true
+tracks/39/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_10:instance_shader_parameters/crack")
+tracks/39/interp = 1
+tracks/39/loop_wrap = false
+tracks/39/keys = {
+"times": PackedFloat32Array(0, 3.9866, 4.0866),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/40/type = "value"
+tracks/40/imported = false
+tracks/40/enabled = true
+tracks/40/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_10:instance_shader_parameters/shatter")
+tracks/40/interp = 1
+tracks/40/loop_wrap = false
+tracks/40/keys = {
+"times": PackedFloat32Array(0, 4.0866, 4.5166),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/41/type = "value"
+tracks/41/imported = false
+tracks/41/enabled = true
+tracks/41/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_10:instance_shader_parameters/opacity")
+tracks/41/interp = 1
+tracks/41/loop_wrap = false
+tracks/41/keys = {
+"times": PackedFloat32Array(0, 3.8333, 4.5666),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/42/type = "value"
+tracks/42/imported = false
+tracks/42/enabled = true
+tracks/42/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_L:instance_shader_parameters/progress")
+tracks/42/interp = 1
+tracks/42/loop_wrap = false
+tracks/42/keys = {
+"times": PackedFloat32Array(0, 4.4833, 4.6667),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/43/type = "value"
+tracks/43/imported = false
+tracks/43/enabled = true
+tracks/43/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_L:instance_shader_parameters/crack")
+tracks/43/interp = 1
+tracks/43/loop_wrap = false
+tracks/43/keys = {
+"times": PackedFloat32Array(0, 4.72, 4.82),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/44/type = "value"
+tracks/44/imported = false
+tracks/44/enabled = true
+tracks/44/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_L:instance_shader_parameters/shatter")
+tracks/44/interp = 1
+tracks/44/loop_wrap = false
+tracks/44/keys = {
+"times": PackedFloat32Array(0, 4.82, 5.25),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/45/type = "value"
+tracks/45/imported = false
+tracks/45/enabled = true
+tracks/45/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_L:instance_shader_parameters/opacity")
+tracks/45/interp = 1
+tracks/45/loop_wrap = false
+tracks/45/keys = {
+"times": PackedFloat32Array(0, 4.4833, 5.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/46/type = "value"
+tracks/46/imported = false
+tracks/46/enabled = true
+tracks/46/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_R:instance_shader_parameters/progress")
+tracks/46/interp = 1
+tracks/46/loop_wrap = false
+tracks/46/keys = {
+"times": PackedFloat32Array(0, 4.4833, 4.6667),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/47/type = "value"
+tracks/47/imported = false
+tracks/47/enabled = true
+tracks/47/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_R:instance_shader_parameters/crack")
+tracks/47/interp = 1
+tracks/47/loop_wrap = false
+tracks/47/keys = {
+"times": PackedFloat32Array(0, 4.72, 4.82),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/48/type = "value"
+tracks/48/imported = false
+tracks/48/enabled = true
+tracks/48/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_R:instance_shader_parameters/shatter")
+tracks/48/interp = 1
+tracks/48/loop_wrap = false
+tracks/48/keys = {
+"times": PackedFloat32Array(0, 4.82, 5.25),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/49/type = "value"
+tracks/49/imported = false
+tracks/49/enabled = true
+tracks/49/path = NodePath("Boss/SlashCombo/VFX_SlashCombo_11_R:instance_shader_parameters/opacity")
+tracks/49/interp = 1
+tracks/49/loop_wrap = false
+tracks/49/keys = {
+"times": PackedFloat32Array(0, 4.4833, 5.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/50/type = "value"
+tracks/50/imported = false
+tracks/50/enabled = true
+tracks/50/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/BladeGlow/VFX_BladeR:instance_shader_parameters/glow")
+tracks/50/interp = 1
+tracks/50/loop_wrap = false
+tracks/50/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.25, 0.29, 1, 1.1, 1.1667, 1.1933, 1.9333, 2.0445, 2.1112, 2.1378, 2.4667, 2.5882, 2.6548, 2.6815, 3.4, 3.5, 3.5667, 3.5933, 4.0833, 4.3833, 4.4833, 4.5233),
+"transitions": PackedFloat32Array(0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1),
+"update": 0,
+"values": [0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
+}
+tracks/51/type = "value"
+tracks/51/imported = false
+tracks/51/enabled = true
+tracks/51/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/StarParticles:emitting")
+tracks/51/interp = 1
+tracks/51/loop_wrap = false
+tracks/51/keys = {
+"times": PackedFloat32Array(0, 0.25, 1, 1.1667, 1.9333, 2.1112, 2.4667, 2.6548, 3.4, 3.5667, 4.0833, 4.4833),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [true, false, true, false, true, false, true, false, true, false, true, false]
+}
+tracks/52/type = "value"
+tracks/52/imported = false
+tracks/52/enabled = true
+tracks/52/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/BladeGlow/VFX_BladeL:instance_shader_parameters/glow")
+tracks/52/interp = 1
+tracks/52/loop_wrap = false
+tracks/52/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.55, 0.65, 0.69, 1.2667, 1.3667, 1.4333, 1.46, 2.2, 2.3112, 2.3778, 2.4045, 2.749, 2.8392, 2.9058, 2.9325, 3.6667, 3.7667, 3.8333, 3.86, 4.0833, 4.3833, 4.4833, 4.5233),
+"transitions": PackedFloat32Array(1, 0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1, 0.5, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
+}
+tracks/53/type = "value"
+tracks/53/imported = false
+tracks/53/enabled = true
+tracks/53/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/StarParticles:emitting")
+tracks/53/interp = 1
+tracks/53/loop_wrap = false
+tracks/53/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.65, 1.2667, 1.4333, 2.2, 2.3778, 2.749, 2.9058, 3.6667, 3.8333, 4.0833, 4.4833),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [false, true, false, true, false, true, false, true, false, true, false, true, false]
+}
+tracks/54/type = "value"
+tracks/54/imported = false
+tracks/54/enabled = true
+tracks/54/path = NodePath("Camera3D:position")
+tracks/54/interp = 1
+tracks/54/loop_wrap = false
+tracks/54/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector3(4.706, 14.712, 15.17)]
+}
+
+[sub_resource type="Animation" id="Anim_la1"]
+resource_name = "la1_vfx"
+length = 1.9
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Boss/AnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("light_attack_1"),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/BladeGlow/VFX_BladeR:instance_shader_parameters/glow")
+tracks/1/interp = 1
+tracks/1/loop_wrap = false
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.12, 0.45, 0.58, 0.64),
+"transitions": PackedFloat32Array(1, 0.5, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0, 1.0, 0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/StarParticles:emitting")
+tracks/2/interp = 1
+tracks/2/loop_wrap = false
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Boss/SlashLA1/VFX_SlashLA1:instance_shader_parameters/progress")
+tracks/3/interp = 1
+tracks/3/loop_wrap = false
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.6, 0.8167),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Boss/SlashLA1/VFX_SlashLA1:instance_shader_parameters/crack")
+tracks/4/interp = 1
+tracks/4/loop_wrap = false
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.87, 0.97),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Boss/SlashLA1/VFX_SlashLA1:instance_shader_parameters/shatter")
+tracks/5/interp = 1
+tracks/5/loop_wrap = false
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.97, 1.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Boss/SlashLA1/VFX_SlashLA1:instance_shader_parameters/opacity")
+tracks/6/interp = 1
+tracks/6/loop_wrap = false
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 0.6, 1.45),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Boss:position")
+tracks/7/interp = 1
+tracks/7/loop_wrap = false
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/8/type = "value"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Camera3D:position")
+tracks/8/interp = 1
+tracks/8/loop_wrap = false
+tracks/8/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector3(4.706, 14.712, 13.47)]
+}
+
+[sub_resource type="Animation" id="Anim_la2"]
+resource_name = "la2_vfx"
+length = 1.9
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Boss/AnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("light_attack_2"),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/BladeGlow/VFX_BladeL:instance_shader_parameters/glow")
+tracks/1/interp = 1
+tracks/1/loop_wrap = false
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.12, 0.45, 0.58, 0.64),
+"transitions": PackedFloat32Array(1, 0.5, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0, 1.0, 0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/StarParticles:emitting")
+tracks/2/interp = 1
+tracks/2/loop_wrap = false
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Boss/SlashLA2/VFX_SlashLA2:instance_shader_parameters/progress")
+tracks/3/interp = 1
+tracks/3/loop_wrap = false
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.6, 0.8167),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Boss/SlashLA2/VFX_SlashLA2:instance_shader_parameters/crack")
+tracks/4/interp = 1
+tracks/4/loop_wrap = false
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.87, 0.97),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Boss/SlashLA2/VFX_SlashLA2:instance_shader_parameters/shatter")
+tracks/5/interp = 1
+tracks/5/loop_wrap = false
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.97, 1.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Boss/SlashLA2/VFX_SlashLA2:instance_shader_parameters/opacity")
+tracks/6/interp = 1
+tracks/6/loop_wrap = false
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 0.6, 1.45),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Boss:position")
+tracks/7/interp = 1
+tracks/7/loop_wrap = false
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/8/type = "value"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Camera3D:position")
+tracks/8/interp = 1
+tracks/8/loop_wrap = false
+tracks/8/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector3(4.706, 14.712, 13.47)]
+}
+
+[sub_resource type="Animation" id="Anim_la3"]
+resource_name = "la3_vfx"
+length = 1.9
+tracks/0/type = "animation"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Boss/AnimationPlayer")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"clips": PackedStringArray("light_attack_3"),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/BladeGlow/VFX_BladeL:instance_shader_parameters/glow")
+tracks/1/interp = 1
+tracks/1/loop_wrap = false
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.12, 0.45, 0.58, 0.64),
+"transitions": PackedFloat32Array(1, 0.5, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0, 1.0, 0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/StarParticles:emitting")
+tracks/2/interp = 1
+tracks/2/loop_wrap = false
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/BladeGlow/VFX_BladeR:instance_shader_parameters/glow")
+tracks/3/interp = 1
+tracks/3/loop_wrap = false
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.12, 0.45, 0.58, 0.64),
+"transitions": PackedFloat32Array(1, 0.5, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0, 1.0, 0.0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/StarParticles:emitting")
+tracks/4/interp = 1
+tracks/4/loop_wrap = false
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_L:instance_shader_parameters/progress")
+tracks/5/interp = 1
+tracks/5/loop_wrap = false
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.6, 0.8167),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_L:instance_shader_parameters/crack")
+tracks/6/interp = 1
+tracks/6/loop_wrap = false
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 0.87, 0.97),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_L:instance_shader_parameters/shatter")
+tracks/7/interp = 1
+tracks/7/loop_wrap = false
+tracks/7/keys = {
+"times": PackedFloat32Array(0, 0.97, 1.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/8/type = "value"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_L:instance_shader_parameters/opacity")
+tracks/8/interp = 1
+tracks/8/loop_wrap = false
+tracks/8/keys = {
+"times": PackedFloat32Array(0, 0.6, 1.45),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/9/type = "value"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_R:instance_shader_parameters/progress")
+tracks/9/interp = 1
+tracks/9/loop_wrap = false
+tracks/9/keys = {
+"times": PackedFloat32Array(0, 0.6, 0.8167),
+"transitions": PackedFloat32Array(1, 0.7, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/10/type = "value"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_R:instance_shader_parameters/crack")
+tracks/10/interp = 1
+tracks/10/loop_wrap = false
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 0.87, 0.97),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/11/type = "value"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_R:instance_shader_parameters/shatter")
+tracks/11/interp = 1
+tracks/11/loop_wrap = false
+tracks/11/keys = {
+"times": PackedFloat32Array(0, 0.97, 1.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 1.0]
+}
+tracks/12/type = "value"
+tracks/12/imported = false
+tracks/12/enabled = true
+tracks/12/path = NodePath("Boss/SlashLA3/VFX_SlashLA3_R:instance_shader_parameters/opacity")
+tracks/12/interp = 1
+tracks/12/loop_wrap = false
+tracks/12/keys = {
+"times": PackedFloat32Array(0, 0.6, 1.45),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0.0, 1.0, 0.0]
+}
+tracks/13/type = "value"
+tracks/13/imported = false
+tracks/13/enabled = true
+tracks/13/path = NodePath("Boss:position")
+tracks/13/interp = 1
+tracks/13/loop_wrap = false
+tracks/13/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/14/type = "value"
+tracks/14/imported = false
+tracks/14/enabled = true
+tracks/14/path = NodePath("Camera3D:position")
+tracks/14/interp = 1
+tracks/14/loop_wrap = false
+tracks/14/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector3(4.706, 14.712, 13.47)]
+}
+
+[sub_resource type="AnimationLibrary" id="Lib_1"]
+_data = {
+&"combo_vfx": SubResource("Anim_combo"),
+&"la1_vfx": SubResource("Anim_la1"),
+&"la2_vfx": SubResource("Anim_la2"),
+&"la3_vfx": SubResource("Anim_la3")
+}
+
+[node name="BossLaSlashPreview" type="Node3D" unique_id=1317836147]
+
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=1866533184]
+environment = SubResource("Env_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1590443909]
+transform = Transform3D(0.926673, 0.2786682, -0.25223216, 0.11164967, 0.43669602, 0.89265394, 0.35890308, -0.8553599, 0.37356114, 0, 12, 0)
+light_energy = 0.9
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1675882450]
+transform = Transform3D(0.93969256, -0.24184471, 0.24184467, 0, 0.70710665, 0.70710677, -0.34202006, -0.664463, 0.6644629, 4.706, 14.712, 13.47)
+projection = 1
+current = true
+size = 3.5
+
+[node name="Floor" type="MeshInstance3D" parent="." unique_id=228763268]
+mesh = SubResource("Floor_mesh")
+
+[node name="Boss" parent="." unique_id=1083883713 instance=ExtResource("1_boss")]
+
+[node name="ScytheR" type="BoneAttachment3D" parent="Boss/SkeletalCentipede_Rig/Skeleton3D" parent_id_path=PackedInt32Array(1083883713, 1426019194) index="1" unique_id=219645022]
+transform = Transform3D(0.8871536, -0.26549715, -0.37745208, -0.37745172, -0.88804126, -0.26251104, -0.2654972, 0.37535757, -0.88804126, -0.4350001, 0.51999986, 0.72)
+bone_name = "Scythe.R"
+bone_idx = 64
+
+[node name="BladeGlow" parent="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR" unique_id=1836428440 instance=ExtResource("6_blade_r")]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+
+[node name="VFX_BladeR" parent="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/BladeGlow" index="0" unique_id=1142684226]
+material_override = ExtResource("4_glow")
+cast_shadow = 0
+instance_shader_parameters/glow = 0.0
+
+[node name="StarParticles" type="CPUParticles3D" parent="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR" unique_id=1366166076]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33, 0)
+material_override = ExtResource("5_star")
+cast_shadow = 0
+emitting = false
+amount = 16
+lifetime = 0.55
+mesh = SubResource("Quad_1")
+emission_shape = 3
+emission_box_extents = Vector3(0.03, 0.26, 0.03)
+direction = Vector3(0, 0, 1)
+spread = 180.0
+gravity = Vector3(0, 0.4, 0)
+initial_velocity_min = 0.3
+initial_velocity_max = 0.7
+damping_min = 0.5
+damping_max = 1.0
+angle_max = 360.0
+scale_amount_min = 0.7
+scale_amount_max = 1.4
+
+[node name="ScytheL" type="BoneAttachment3D" parent="Boss/SkeletalCentipede_Rig/Skeleton3D" parent_id_path=PackedInt32Array(1083883713, 1426019194) index="2" unique_id=1301231528]
+transform = Transform3D(0.8871536, 0.26549715, 0.37745208, 0.37745172, -0.88804126, -0.26251104, 0.2654972, 0.37535757, -0.88804126, 0.4350001, 0.51999986, 0.72)
+bone_name = "Scythe.L"
+bone_idx = 60
+
+[node name="BladeGlow" parent="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL" unique_id=878932055 instance=ExtResource("6_blade_l")]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+
+[node name="VFX_BladeL" parent="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/BladeGlow" index="0" unique_id=974254320]
+material_override = ExtResource("4_glow")
+cast_shadow = 0
+instance_shader_parameters/glow = 0.0
+
+[node name="StarParticles" type="CPUParticles3D" parent="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL" unique_id=45807888]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33, 0)
+material_override = ExtResource("5_star")
+cast_shadow = 0
+emitting = false
+amount = 16
+lifetime = 0.55
+mesh = SubResource("Quad_1")
+emission_shape = 3
+emission_box_extents = Vector3(0.03, 0.26, 0.03)
+direction = Vector3(0, 0, 1)
+spread = 180.0
+gravity = Vector3(0, 0.4, 0)
+initial_velocity_min = 0.3
+initial_velocity_max = 0.7
+damping_min = 0.5
+damping_max = 1.0
+angle_max = 360.0
+scale_amount_min = 0.7
+scale_amount_max = 1.4
+
+[node name="SlashLA1" parent="Boss" unique_id=204421370 instance=ExtResource("2_arc1")]
+
+[node name="VFX_SlashLA1" parent="Boss/SlashLA1" index="0" unique_id=392326989]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="SlashLA2" parent="Boss" unique_id=1337304828 instance=ExtResource("2_arc2")]
+
+[node name="VFX_SlashLA2" parent="Boss/SlashLA2" index="0" unique_id=312406235]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="SlashLA3" parent="Boss" unique_id=1096963520 instance=ExtResource("2_arc3")]
+
+[node name="VFX_SlashLA3_L" parent="Boss/SlashLA3" index="0" unique_id=1501720943]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashLA3_R" parent="Boss/SlashLA3" index="1" unique_id=1459241053]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="SlashCombo" parent="Boss" unique_id=1444796322 instance=ExtResource("2_arc_combo")]
+
+[node name="VFX_SlashCombo_01" parent="Boss/SlashCombo" index="0" unique_id=943311308]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_02" parent="Boss/SlashCombo" index="1" unique_id=1376142356]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_03" parent="Boss/SlashCombo" index="2" unique_id=1000294457]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_04" parent="Boss/SlashCombo" index="3" unique_id=1502439670]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_05" parent="Boss/SlashCombo" index="4" unique_id=851181522]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_06" parent="Boss/SlashCombo" index="5" unique_id=950901103]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_07" parent="Boss/SlashCombo" index="6" unique_id=284791229]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_08" parent="Boss/SlashCombo" index="7" unique_id=1624112505]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_09" parent="Boss/SlashCombo" index="8" unique_id=184383406]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_10" parent="Boss/SlashCombo" index="9" unique_id=1361388482]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_11_L" parent="Boss/SlashCombo" index="10" unique_id=448487343]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VFX_SlashCombo_11_R" parent="Boss/SlashCombo" index="11" unique_id=1658073443]
+material_override = ExtResource("3_slash")
+cast_shadow = 0
+instance_shader_parameters/crack = 0.0
+instance_shader_parameters/opacity = 0.0
+instance_shader_parameters/progress = 0.0
+instance_shader_parameters/shatter = 0.0
+
+[node name="VfxPlayer" type="AnimationPlayer" parent="." unique_id=1583834449]
+libraries/ = SubResource("Lib_1")
+autoplay = &"la1_vfx"
+next/combo_vfx = &"la1_vfx"
+next/la1_vfx = &"la2_vfx"
+next/la2_vfx = &"la3_vfx"
+next/la3_vfx = &"combo_vfx"
+
+[editable path="Boss"]
+[editable path="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheR/BladeGlow"]
+[editable path="Boss/SkeletalCentipede_Rig/Skeleton3D/ScytheL/BladeGlow"]
+[editable path="Boss/SlashLA1"]
+[editable path="Boss/SlashLA2"]
+[editable path="Boss/SlashLA3"]
+[editable path="Boss/SlashCombo"]
