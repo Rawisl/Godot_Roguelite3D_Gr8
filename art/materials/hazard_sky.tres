@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://ceklssvi14q54"]
+
+[ext_resource type="Shader" uid="uid://c8145e1psil03" path="res://art/shaders/hazard_sky.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://dw54o7qpwcsci" path="res://contents/assets/environment/hazard_room/hazard_backdrop.png" id="2_image"]
+
+[resource]
+resource_name = "hazard_sky"
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/sky_image = ExtResource("2_image")
+shader_parameter/brightness = 0.9
+shader_parameter/rim_angle = 100.0
+shader_parameter/image_center = Vector2(0.5, 0.5)
+shader_parameter/horizon_blend = 0.1
+shader_parameter/horizon_color = Color(0.337, 0.298, 0.722, 1)
+shader_parameter/zenith_color = Color(0.165, 0.086, 0.376, 1)
+shader_parameter/zenith_angle = 45.0
+shader_parameter/cloud_band_height = 15.0

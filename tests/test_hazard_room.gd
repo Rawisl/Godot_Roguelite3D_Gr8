@@ -2,7 +2,8 @@ extends Node
 ## Automated checks for the Hazard Trial room and tower on the real corridor level: groups and
 ## markers, the navmesh from every spawn pad to the middle (normal and large agent), the room
 ## cut off from the corridor, the tower on the click layer and picked from the PREP camera, and
-## the sun turning to the room light and back. Not shipped. Run with F6 or headless; prints a
+## the sun turning to the room light and back, and the sky sphere shown only in the room, hiding
+## the corridor and holding the whole island. Not shipped. Run with F6 or headless; prints a
 ## summary and quits with 1 on a failure.
 
 const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
@@ -27,6 +28,7 @@ func _ready() -> void:
 	_test_room_navmesh()
 	await _test_portal_click()
 	await _test_room_light()
+	_test_room_sky()
 
 	print("[test] done: %d passed, %d failed" % [_pass, _fail])
 	get_tree().quit(1 if _fail > 0 else 0)
@@ -133,6 +135,120 @@ func _test_room_light() -> void:
 	await get_tree().create_timer(room.fade_time + 0.2, true, false, true).timeout
 	_check("leaving brings back the level's own light, even after a quick re-entry",
 		sun.light_color.is_equal_approx(before_color) and is_equal_approx(sun.light_energy, before_energy))
+
+
+## Runs after the light test, which leaves the room.
+func _test_room_sky() -> void:
+	var room := _room()
+	if room == null:
+		return
+	_check("the room has no flat backdrop any more", room.get_node_or_null("Backdrop") == null)
+	var sky := room.get_node_or_null("SkySphere") as MeshInstance3D
+	var sphere := sky.mesh as SphereMesh if sky != null else null
+	_check("the room has a SkySphere mesh", sphere != null)
+	if sphere == null:
+		return
+	_check("the sky sphere is 60 m around the camera", is_equal_approx(sphere.radius, 60.0) and is_equal_approx(sphere.height, 120.0))
+	var mat := sphere.material as ShaderMaterial
+	_check("the sky has a zenith colour and a cloud band",
+		mat != null and mat.get_shader_parameter(&"zenith_color") != null
+		and mat.get_shader_parameter(&"cloud_band_height") != null
+		and float(mat.get_shader_parameter(&"rim_angle")) > 90.0)
+	var picture := mat.get_shader_parameter(&"sky_image") as Texture2D if mat != null else null
+	_check("the sky uses the hazard sky shader and the vortex picture",
+		mat != null and mat.shader != null and mat.shader.resource_path == "res://art/shaders/hazard_sky.gdshader"
+		and picture != null and picture.resource_path == "res://contents/assets/environment/hazard_room/hazard_backdrop.png")
+	_check("the sky casts no shadow", sky.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	_check("the sky is hidden in the corridor", not sky.visible)
+	EventBus.hazard_trial_entered.emit(5, [])
+	_check("entering shows the sky", sky.visible)
+	var chase := _level.get_node_or_null("CameraRig/ChaseCamera") as Camera3D
+	var rig := _level.get_node_or_null("CameraRig") as CameraRig
+	_check("the level rig is in the chase view in the room",
+		rig != null and rig.is_in_hazard_trial() and chase != null and get_viewport().get_camera_3d() == chase)
+	var reach := _sky_reach(room)
+	_check("the whole island sits inside the sky from anywhere the camera can stand",
+		_island_inside_sky(room, sky, reach, sphere.radius))
+	_check("the corridor stays behind the sky from anywhere the camera can stand",
+		_corridor_behind_sky(room, reach.x, sphere.radius))
+	EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
+	_check("leaving hides the sky", not sky.visible)
+	_check("the chase camera reaches past the sky", room.chase_far > sphere.radius)
+	_check("the room keeps the agreed chase defaults",
+		is_equal_approx(room.chase_distance, 9.0) and is_equal_approx(room.chase_pitch_deg, -45.0)
+		and is_equal_approx(room.chase_fov, 60.0) and is_equal_approx(room.chase_smoothing, 0.12)
+		and is_equal_approx(room.chase_pitch_min_deg, -70.0) and is_equal_approx(room.chase_pitch_max_deg, 30.0)
+		and is_equal_approx(room.chase_pivot_height, 1.4) and is_equal_approx(room.chase_aim_tilt_deg, 10.0)
+		and is_equal_approx(room.chase_distance_near, 6.0) and is_equal_approx(room.chase_far_pitch_deg, -15.0)
+		and is_equal_approx(room.chase_distance_up, 3.0) and is_equal_approx(room.chase_min_height, 0.5)
+		and is_equal_approx(room.chase_shoulder_offset, 1.0) and is_equal_approx(room.chase_zoom_min, 0.35)
+		and is_equal_approx(room.chase_zoom_step, 0.1) and is_equal_approx(room.chase_zoom_smoothing, 0.08))
+	_check("the level rig has a ChaseCamera that is off in the corridor",
+		chase != null and get_viewport().get_camera_3d() != chase)
+	_check("the entry pitch is inside the mouse limits",
+		room.chase_pitch_min_deg <= room.chase_pitch_deg and room.chase_pitch_deg <= room.chase_pitch_max_deg)
+	_check("the far pitch is inside the mouse limits",
+		room.chase_pitch_min_deg <= room.chase_far_pitch_deg and room.chase_far_pitch_deg <= room.chase_pitch_max_deg)
+
+
+## Worst case reach of the chase camera around the island, measured on the level's rig at every
+## pitch with the wheel zoomed all the way out: x is how far it can stand from the room's middle
+## on the ground, y is its highest height above the room's floor. Each is a maximum of its own
+## (an over-estimate, which is the safe side). The rig has to be in the chase view.
+func _sky_reach(room: HazardRoom) -> Vector2:
+	var arena_radius := 15.0
+	var builder_constants: Dictionary = (load("res://levels/corridor/hazard_room_builder.gd") as Script).get_script_constant_map()
+	if builder_constants.has("ARENA_RADIUS"):
+		arena_radius = float(builder_constants["ARENA_RADIUS"])
+	else:
+		print("[test] warning: ARENA_RADIUS not readable, using 15.0")
+	var rig := _level.get_node("CameraRig") as CameraRig
+	var chase := rig.get_node("ChaseCamera") as Camera3D
+	var back := 0.0
+	var up := 0.0
+	var pitch: float = rig._chase_pitch_min
+	rig._chase_zoom = 1.0
+	while pitch <= rig._chase_pitch_max + 0.001:
+		rig._chase_pitch_deg = pitch
+		rig._place_chase()
+		var offset := chase.global_position - rig.global_position
+		back = maxf(back, Vector2(offset.x, offset.z).length())
+		up = maxf(up, chase.global_position.y - room.global_position.y)
+		pitch += 1.0
+	rig._chase_pitch_deg = room.chase_pitch_deg
+	rig._place_chase()
+	return Vector2(arena_radius + back, up)
+
+
+func _island_inside_sky(room: HazardRoom, sky: MeshInstance3D, reach: Vector2, radius: float) -> bool:
+	var to_room := room.global_transform.affine_inverse()
+	for node in room.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi == sky or mi.mesh == null:
+			continue
+		for vertex in mi.mesh.get_faces():
+			var v: Vector3 = to_room * (mi.global_transform * vertex)
+			var flat := Vector2(v.x, v.z).length() + reach.x
+			if sqrt(flat * flat + (reach.y - v.y) * (reach.y - v.y)) >= radius:
+				print("[test] island vertex outside the sky: ", mi.name, " ", v)
+				return false
+	return true
+
+
+func _corridor_behind_sky(room: HazardRoom, horizontal: float, radius: float) -> bool:
+	var middle := room.global_position
+	var rig := _level.get_node_or_null("CameraRig")
+	for node in _level.find_children("*", "GeometryInstance3D", true, false):
+		var gi := node as GeometryInstance3D
+		if room.is_ancestor_of(gi) or (rig != null and rig.is_ancestor_of(gi)):
+			continue
+		var box := gi.global_transform * gi.get_aabb()
+		var nearest := Vector2(clampf(middle.x, box.position.x, box.end.x), clampf(middle.z, box.position.z, box.end.z))
+		var dist := nearest.distance_to(Vector2(middle.x, middle.z)) - horizontal
+		if dist <= radius:
+			print("[test] corridor node inside the sky: ", gi.get_path(), " ", dist)
+			return false
+	return true
 
 
 func _check(label: String, ok: bool) -> void:

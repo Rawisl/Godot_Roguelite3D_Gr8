@@ -16,6 +16,9 @@ const COMBO_HIT3_ARC_DEG: float = 240.0
 const STRIKE_RATIO_MELEE: float = 0.38
 const STRIKE_RATIO_SPIN: float = 0.45
 const ROTATION_LERP_SPEED: float = 16.0
+## Below this dot product between the way the commander moves and the way it faces, it is moving
+## backwards: the run clip plays in reverse and a dodge is a backstep while the view is locked.
+const BACKPEDAL_DOT: float = -0.3
 
 # Animation clips
 const ANIM_IDLE: StringName = &"general/Idle_A"
@@ -37,7 +40,7 @@ const KNOCKBACK_DURATION: float = 0.25
 const POST_ACTION_DURATION: float = 0.1
 
 var aim_dir: Vector3 = Vector3.FORWARD
-## Mouse point on the ground plane, Vector3.INF until the mouse has been seen. Firebomb lands near it.
+## Mouse point on the ground plane, Vector3.INF until the mouse has been seen or while the locked view looks above the horizon. Firebomb lands near it.
 var aim_point: Vector3 = Vector3.INF
 ## Radius the sword area has in the scene; a weapon can only make it bigger.
 var _sword_area_base_radius: float = -1.0
@@ -481,8 +484,9 @@ func _start_dodge(camera: Camera3D) -> void:
 		var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
 		var forward := Vector3(-cam_basis.z.x, 0.0, -cam_basis.z.z).normalized()
 		_dodge_dir = (right * input.x + forward * (-input.y)).normalized()
-		_is_backstep_dodge = false
-		dodge_clip = ANIM_DODGE_FWD
+		# With the view locked the commander faces the camera, so dodging away from it is a backstep.
+		_is_backstep_dodge = _is_view_locked() and moves_backward(_dodge_dir, aim_dir)
+		dodge_clip = ANIM_DODGE_BACK if _is_backstep_dodge else ANIM_DODGE_FWD
 	else:
 		_dodge_dir = -aim_dir
 		_is_backstep_dodge = true
@@ -638,8 +642,7 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 			else:
 				var horizontal_vel := Vector2(velocity.x, velocity.z)
 				if horizontal_vel.length() > 0.1:
-					if _anim_player.current_animation != ANIM_RUN:
-						_anim_player.play(ANIM_RUN, 0.15)
+					_play_run(_run_clip_speed())
 				elif not is_playing_hit:
 					if _anim_player.current_animation != ANIM_IDLE:
 						_anim_player.play(ANIM_IDLE, 0.15)
@@ -665,6 +668,9 @@ func _play_idle_when_free() -> void:
 
 
 func _update_aim(camera: Camera3D) -> void:
+	if _is_view_locked():
+		_aim_along_camera(camera)
+		return
 	var viewport := get_viewport()
 	var mouse := viewport.get_mouse_position()
 
@@ -690,7 +696,73 @@ func _update_aim(camera: Camera3D) -> void:
 		aim_dir = to_target.normalized()
 
 
+## True while the cursor is captured. Only the Hazard Trial chase view captures it; the commander
+## then faces and aims the way the camera looks, like a shoulder camera.
+func _is_view_locked() -> bool:
+	return Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+
+
+## Locked view: the commander aims the way the camera faces, so attacks go where the view points.
+## aim_point is where the middle of the screen meets the ground at the commander's feet; looking
+## above the horizon leaves no such point, so it is INF and Firebomb lands the full range ahead.
+func _aim_along_camera(camera: Camera3D) -> void:
+	var forward := flat_forward(camera.global_basis)
+	if not forward.is_zero_approx():
+		aim_dir = forward
+	var centre := get_viewport().get_visible_rect().get_center()
+	var hit: Variant = Plane(Vector3.UP, global_position.y).intersects_ray(
+			camera.project_ray_origin(centre), camera.project_ray_normal(centre))
+	aim_point = hit if hit != null else Vector3.INF
+	if debug_aim_marker and hit != null:
+		debug_aim_marker.global_position = hit
+
+
+## The way the commander moves on the ground, zero while it stands still.
+func _move_facing() -> Vector3:
+	if Vector2(velocity.x, velocity.z).length() <= 0.1:
+		return Vector3.ZERO
+	return Vector3(velocity.x, 0.0, velocity.z).normalized()
+
+
+## 1 plays the run clip forwards, -1 backwards: backwards while the view is locked and the
+## commander moves away from where it faces.
+func _run_clip_speed() -> float:
+	if _is_view_locked() and moves_backward(Vector3(velocity.x, 0.0, velocity.z), aim_dir):
+		return -1.0
+	return 1.0
+
+
+## Plays the run clip at speed. Left alone when it already runs that way; turning round only
+## flips its direction, since the clip name stays the same.
+func _play_run(speed: float) -> void:
+	if _anim_player.current_animation == ANIM_RUN \
+			and signf(_anim_player.get_playing_speed()) == signf(speed):
+		return
+	_anim_player.play(ANIM_RUN, 0.15, speed)
+
+
+## True when move_dir points away from facing by more than BACKPEDAL_DOT; flat vectors, any length.
+static func moves_backward(move_dir: Vector3, facing: Vector3) -> bool:
+	var move := Vector3(move_dir.x, 0.0, move_dir.z)
+	var face := Vector3(facing.x, 0.0, facing.z)
+	if move.length_squared() < 0.0001 or face.length_squared() < 0.0001:
+		return false
+	return move.normalized().dot(face.normalized()) < BACKPEDAL_DOT
+
+
+## A camera's facing laid on the ground, zero when it looks straight up or down.
+static func flat_forward(basis: Basis) -> Vector3:
+	var f := Vector3(-basis.z.x, 0.0, -basis.z.z)
+	return f.normalized() if f.length_squared() > 0.0001 else Vector3.ZERO
+
+
 func _update_model_facing(delta: float) -> void:
+	_turn_model(delta, aim_dir if _is_view_locked() else _move_facing())
+
+
+## Turns the model for the action going on. free_dir is where it turns when no action sets the
+## facing: the way it moves, or the camera's facing while the view is locked; zero keeps it.
+func _turn_model(delta: float, free_dir: Vector3) -> void:
 	var target_dir := Vector3.ZERO
 	var snap_instantly := false
 
@@ -707,21 +779,17 @@ func _update_model_facing(delta: float) -> void:
 		target_dir = -_knockback_velocity.normalized()
 		snap_instantly = false
 	elif _post_action_timer > 0.0 and not _post_action_facing_dir.is_zero_approx():
-		var horizontal_vel := Vector2(velocity.x, velocity.z)
-		if horizontal_vel.length() > 0.1:
-			var move_dir := Vector3(velocity.x, 0.0, velocity.z).normalized()
+		if not free_dir.is_zero_approx():
 			var t := 1.0 - clampf(_post_action_timer / POST_ACTION_DURATION, 0.0, 1.0)
-			if _post_action_facing_dir.dot(move_dir) < -0.999:
-				target_dir = move_dir
+			if _post_action_facing_dir.dot(free_dir) < -0.999:
+				target_dir = free_dir
 			else:
-				target_dir = _post_action_facing_dir.slerp(move_dir, t).normalized()
+				target_dir = _post_action_facing_dir.slerp(free_dir, t).normalized()
 		else:
 			target_dir = _post_action_facing_dir
 		snap_instantly = false
 	else:
-		var horizontal_vel := Vector2(velocity.x, velocity.z)
-		if horizontal_vel.length() > 0.1:
-			target_dir = Vector3(velocity.x, 0.0, velocity.z).normalized()
+		target_dir = free_dir
 
 	if not target_dir.is_zero_approx():
 		var target_yaw := atan2(target_dir.x, target_dir.z)
