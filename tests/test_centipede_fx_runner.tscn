@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dfk58fpqbymgb"]
+
+[ext_resource type="Script" path="res://tests/test_centipede_fx_runner.gd" id="1_test"]
+
+[node name="TestCentipedeFxRunner" type="Node3D"]
+script = ExtResource("1_test")
