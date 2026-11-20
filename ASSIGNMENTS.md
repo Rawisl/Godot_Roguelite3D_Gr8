@@ -155,6 +155,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W10-NG4 | Kiệt | 10 | 2 | CŨ | TIME-06 tự hạ x2 + ALR-10 |
 | W10-MH1 | Mạnh | 10 | 4 | CŨ | Save atomic + checksum + .bak (SAV-01..06, 10..14, 19; FLOW-01, 02, 07) |
 | W10-MH10 | Mạnh | 10 | 6 | MỚI | Trụ có sẵn |
+| W10-MH11 | Mạnh | 10 | 3 | MỚI (ngoài bảng Excel) | Scene cheat chạy thử (PageUp) |
 | W10-MH2 | Mạnh | 10 | 2 | CŨ-SỬA | SAV-04 nối SUMMARY, RunEnd, shop (và nối khi tutorial_done bật) |
 | W10-MH3 | Mạnh | 10 | 3 | CŨ-SỬA | Thưởng boss BRW-01, 02, 04, 06, 07 theo WaveRewardTable (boss_gold = 100 x gold_mult(w), k... |
 | W10-MH4 | Mạnh | 10 | 3 | CŨ-SỬA | MetaShop backend (SHP-05..09, 4 mục |
@@ -969,6 +970,16 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - ID SRS: SELL-06, TWR-13, BLD-11, 3.2.1
 - Cần xong trước: W8B-KT1, W9-KM7, W10-KT1
 - Ghi chú: hai trụ có sẵn đặt qua BuildService.place_starter_towers() (RunState gọi trước PREP đầu tiên khi start_wave = 1 và tutorial đã xong); lúc tutorial chỉ hai slot mặc định có vòng sáng và xây được, đúng loại, miễn phí; khóa bán tới PREP wave 3; trụ xây lại là tower thường; RunState giữ is_starter, ruined_type, ruined_level theo slot; starter_arrow_slot đổi sang G_3_4. Runner tests/test_starter_towers_runner.tscn.
+
+##### W10-MH11
+- Người: Mạnh
+- Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI (ngoài bảng Excel)
+- Trạng thái: Xong
+- Việc: Scene chạy thử tests/cheat_main.tscn kế thừa main.tscn, panel cheat bật tắt bằng PageUp: bất tử, hồi đầy máu, thêm vàng, lên cấp, instant kill (chỉ huy x1000 sát thương), triệu hồi quân, nhảy wave; run trong scene này không ghi save, cloud hay bảng xếp hạng
+- Nghiệm thu: F6 tests/cheat_main.tscn, PageUp mở panel, từng nút chạy đúng; runner tests/test_cheat_panel_runner.tscn qua hết
+- Tệp liên quan: tests/cheat_main.tscn, tests/cheat_main.gd, tests/cheat_panel.tscn, tests/cheat_panel.gd, common/health_component.gd (cờ invulnerable), data/locale/strings.csv (debug.cheat.*)
+- Cần xong trước: không
+- Ghi chú: RunState chỉ tự bắt đầu run trong main.tscn nên scene cheat lặp lại các bước khởi động của nó; TV2 đổi các bước đó thì sửa theo.
 
 #### Khang (UI/UX & Meta), tuần 10, 34h
 
