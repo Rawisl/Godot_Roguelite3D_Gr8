@@ -57,7 +57,7 @@ func _refresh_low() -> void:
 		_blink = null
 	_low_border.modulate.a = 1.0
 	if _low and not _reduce_flash:
-		_blink = create_tween().set_loops().set_ignore_time_scale()
+		_blink = create_tween().set_ignore_time_scale()
 		_blink.tween_property(_low_border, "modulate:a", 0.2, blink_period * 0.5)
 		_blink.tween_property(_low_border, "modulate:a", 1.0, blink_period * 0.5)
 

@@ -129,7 +129,7 @@ func _run_checks() -> void:
 	for i in 4:
 		EventBus.alert_requested.emit(int(Enums.AlertTier.T2), StringName("alert.test_%d" % i), {})
 	_check(layer.visible_toast_count() == 3 and layer.waiting_count() == 1, "four toasts: three shown, one waits")
-	EventBus.alert_requested.emit(int(Enums.AlertTier.T1), &"alert.fortress_low", {})
+	EventBus.alert_requested.emit(int(Enums.AlertTier.T1), &"alert.boss_enraged", {})
 	_check(layer.is_banner_visible(), "a T1 banner shows at once even with three toasts up")
 	EventBus.alert_requested.emit(int(Enums.AlertTier.T2), &"alert.test_0", {})
 	_check(layer.waiting_count() == 1, "the same alert within 5 s is dropped")

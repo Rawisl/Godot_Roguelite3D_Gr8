@@ -10,5 +10,6 @@ grow_vertical = 2
 
 [node name="Label" type="Label" parent="." unique_id=1356250576]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+offset_left = 24.0
+offset_top = 20.0
+text = "settings.character_key"

@@ -553,3 +553,8 @@ tutorial.key.camera,Dịch camera xem toàn bản đồ
 tutorial.key.move,Di chuyển
 tutorial.key.attack,Đánh
 tutorial.key.dodge,Né
+character.title,Nhân vật
+character.hp,HP  {hp}/{max}
+character.xp,XP  {xp}/{next}
+settings.character_key,V    Bảng nhân vật
+panel.build.rebuild_name,Xây lại {name} · {level}

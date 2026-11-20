@@ -13,8 +13,8 @@ extends Control
 @onready var _fortress_panel: FortressPanel = %FortressPanel
 @onready var _heal_panel: HealStationPanel = %HealStationPanel
 @onready var _weapon_panel: WeaponPanel = %WeaponPanel
-@onready var _weapon_slot: WeaponSlot = %WeaponSlot
-@onready var _skill_dock: Control = %SkillDock
+@onready var _character: PanelContainer = %CharacterPanel
+@onready var _preview_holder: Control = %PreviewHolder
 
 var _mode: StringName = &"FRONTLINE"
 
@@ -34,8 +34,12 @@ func _ready() -> void:
 	_fortress_panel.closed.connect(close_all)
 	_weapon_panel.visible = false
 	_weapon_panel.closed.connect(close_all)
-	_weapon_slot.open_requested.connect(_show_weapons)
-	_skill_dock.shown_changed.connect(_on_skill_dock_shown)
+	_character.weapons_requested.connect(_show_weapons)
+	_character.closed.connect(close_all)
+	%CommanderStatus.details_requested.connect(_toggle_character)
+	for panel in [_character, _build_panel, _tower_panel, _heal_panel]:
+		panel.visibility_changed.connect(_update_preview)
+	EventBus.run_started.connect(close_all)
 	_selection.fortress_selected.connect(_show_fortress)
 	EventBus.slot_selected.connect(_on_slot_selected)
 	EventBus.tower_selected.connect(_on_tower_selected)
@@ -52,15 +56,29 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if TimeManager.has_pause_reason(TimeManager.REASON_USER):
 		return
+	if event.is_action_pressed(&"character_status") and _toggle_character():
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed(&"pause") and _any_open():
 		close_all()
 		get_viewport().set_input_as_handled()
+
+func _toggle_character() -> bool:
+	if not is_visible_in_tree() or ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
+		return false
+	if GameState.wave_state not in [&"PREP", &"COMBAT", &"BOSS_COMBAT", &"HAZARD_TRIAL"]:
+		return false
+	var opening := not (_character.visible or _weapon_panel.visible)
+	close_all()
+	_character.visible = opening
+	return true
 
 func close_all() -> void:
 	_hide_panels()
 	_selection.clear_selection()
 
 func _hide_panels() -> void:
+	_character.hide()
 	_build_panel.visible = false
 	_tower_panel.visible = false
 	_heal_panel.visible = false
@@ -69,7 +87,7 @@ func _hide_panels() -> void:
 	_ring.hide_ring()
 
 func _any_open() -> bool:
-	return _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible or _weapon_panel.visible
+	return _character.visible or _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible or _weapon_panel.visible
 
 func _show_build(slot_id: StringName) -> void:
 	_hide_panels()
@@ -183,7 +201,5 @@ func _show_weapons() -> void:
 	_weapon_panel.visible = true
 	_weapon_panel.open()
 
-## Hiding the skill slots takes the weapon panel away with the weapon slot.
-func _on_skill_dock_shown(shown: bool) -> void:
-	if not shown and _weapon_panel.visible:
-		close_all()
+func _update_preview() -> void:
+	_preview_holder.visible = not (_character.visible or _build_panel.visible or _tower_panel.visible or _heal_panel.visible)

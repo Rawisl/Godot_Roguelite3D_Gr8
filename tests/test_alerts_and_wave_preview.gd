@@ -104,10 +104,10 @@ func _check_commander() -> void:
 	EventBus.commander_hp_changed.emit(25, 100)
 	_expect(_alerts.is_empty(), "alerts: HP alone never raises the banner, the commander decides")
 	EventBus.commander_low_hp_changed.emit(true)
-	_expect(_keys() == [&"alert.commander_low"] and _alerts[0][0] == 1, "alerts: the commander going low raises one T1 banner")
+	_expect(_keys() == [&"alert.commander_low"] and _alerts[0][0] == 1, "alerts: the commander going low sends one T1 event")
 	EventBus.commander_low_hp_changed.emit(false)
 	_expect(_keys().size() == 1, "alerts: recovering raises nothing")
-	_expect(_layer._banner.visible, "alerts: the banner shows")
+	_expect(not _layer._banner.visible, "alerts: low HP is displayed at the health bar")
 
 func _check_boss_timer() -> void:
 	_alerts.clear()

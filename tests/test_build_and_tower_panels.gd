@@ -81,29 +81,29 @@ func _check_build_entries() -> void:
 	await _show_build(_normal_options())
 	var buttons := _buttons(_build)
 	_expect(buttons.size() == 2, "build: two entries shown")
-	_expect(not buttons[0].disabled and _texts(buttons[0]).size() == 1, "build: free entry is live, no reason line")
+	_expect(not buttons[0].disabled and _texts(buttons[0]) == PackedStringArray([tr(ARROW.display_name), "50"]), "build: free entry is live, no reason line")
 
 	await _show_build([_option(&"GROUND_FULL", 0, 0)])
 	var full := _buttons(_build)[0]
 	_expect(full.disabled, "build: ground full greys the entry")
-	_expect(_texts(full).has(UiFormat.tr_fmt(&"panel.build.ground_full", {"max": GameConfig.max_ground_buildings})),
+	_expect(full.tooltip_text == UiFormat.tr_fmt(&"panel.build.ground_full", {"max": GameConfig.max_ground_buildings}),
 		"build: ground full reason shows the cap")
 
 	await _show_build([_option(&"HEAL_LIMIT", 0, 0, HEAL)])
 	var limit := _buttons(_build)[0]
-	_expect(limit.disabled and _texts(limit).has(UiFormat.tr_fmt(&"panel.build.heal_limit", {"max": GameConfig.heal_tower_max_count})),
+	_expect(limit.disabled and limit.tooltip_text == UiFormat.tr_fmt(&"panel.build.heal_limit", {"max": GameConfig.heal_tower_max_count}),
 		"build: heal limit greys the entry with its reason")
 
 	await _show_build([_option(&"", 5, 0)])
 	var short := _buttons(_build)[0]
-	_expect(short.disabled and _texts(short).has(UiFormat.tr_fmt(&"panel.need_gold", {"gold": 5})),
+	_expect(short.disabled and short.tooltip_text == UiFormat.tr_fmt(&"panel.need_gold", {"gold": 5}),
 		"build: missing gold still shows the gold line")
 
 ## A blocked-path entry shows its reason and sends the red preview when hovered.
 func _check_blocked_preview() -> void:
 	await _show_build([_option(&"BLOCKS_PATH", 0, 0)])
 	var blocked := _buttons(_build)[0]
-	_expect(blocked.disabled and _texts(blocked).has(tr(&"panel.build.blocks_path")), "build: blocked path greys the entry")
+	_expect(blocked.disabled and blocked.tooltip_text == tr(&"panel.build.blocks_path"), "build: blocked path greys the entry")
 	var got: Array = []
 	_build.preview_requested.connect(func(_id, _type, _radius, flag): got.append(flag), CONNECT_ONE_SHOT)
 	blocked.mouse_entered.emit()
@@ -221,11 +221,9 @@ func _normal_options() -> Array[Dictionary]:
 func _option(reason: StringName, shortfall: int, gold: int, data: TowerData = ARROW, level := 1) -> Dictionary:
 	return {"data": data, "level": level, "cost": 50 + gold, "shortfall": shortfall, "rebuild": false, "locked_reason": reason}
 
-func _buttons(panel: Node) -> Array[PanelButton]:
-	var found: Array[PanelButton] = []
-	for node in panel.find_children("*", "Button", true, false):
-		if node is PanelButton and node != _build._clear:
-			found.append(node)
+func _buttons(panel: Node) -> Array[Button]:
+	var found: Array[Button] = []
+	found.assign(panel.get_node("%Options").get_children())
 	return found
 
 ## Every Label text under a button, so the checks read what the player reads.

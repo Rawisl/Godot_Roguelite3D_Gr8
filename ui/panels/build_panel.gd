@@ -6,7 +6,14 @@ signal preview_requested(slot_id: StringName, type: StringName, radius: float, b
 signal preview_cleared
 
 const BUTTON_LOCK_TIME := 0.15
-const SECTION_FONT_SIZE := 24
+const TOWER_ICONS := {
+	&"arrow": preload("res://art/icons/arrow_icon.png"),
+	&"cannon": preload("res://art/icons/cannon_icon.png"),
+	&"barricade": preload("res://art/icons/barricade_icon.png"),
+	&"heal_station": preload("res://art/icons/heal_station_icon.png"),
+}
+const LOCK_ICON := preload("res://art/icons/lock_icon.png")
+const GOLD_ICON := preload("res://art/icons/gold_icon.png")
 const BLOCKS_PATH := &"BLOCKS_PATH"
 
 var slot_id: StringName = &""
@@ -24,13 +31,15 @@ func _ready() -> void:
 	_close.pressed.connect(closed.emit)
 	_clear.pressed.connect(_on_clear_pressed)
 	EventBus.gold_changed.connect(_on_gold_changed)
-	_options.add_theme_constant_override(&"separation", 10)
+	_options.add_theme_constant_override(&"separation", 6)
+	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_title.add_theme_font_size_override(&"font_size", 30)
 
 func open(id: StringName) -> void:
 	slot_id = id
 	refresh()
 
-## New builds first, then the rebuild of a ruined slot under its own heading.
+## Offer the old tower first on ruined ground.
 func refresh() -> void:
 	preview_cleared.emit()
 	for child in _options.get_children():
@@ -46,8 +55,8 @@ func refresh() -> void:
 			rebuild.append(opt)
 		else:
 			fresh.append(opt)
-	_add_section(&"panel.build.section_new", fresh)
-	_add_section(&"panel.build.section_rebuild", rebuild)
+	for opt in rebuild + fresh:
+		_options.add_child(_make_button(opt))
 	# Clearing the rubble of a destroyed tower is free and sits at the end of the menu.
 	_clear.visible = _is_ruined(service)
 	if _clear.visible:
@@ -66,43 +75,59 @@ func _on_clear_pressed() -> void:
 		service.clear_rubble(slot_id)
 	refresh()
 
-func _add_section(heading_key: StringName, options: Array[Dictionary]) -> void:
-	if options.is_empty():
-		return
-	if _options.get_child_count() > 0:
-		_options.add_child(HSeparator.new())
-	var heading := Label.new()
-	heading.text = tr(heading_key)
-	heading.theme_type_variation = &"DimLabel"
-	heading.add_theme_font_size_override(&"font_size", SECTION_FONT_SIZE)
-	_options.add_child(heading)
-	for opt in options:
-		_options.add_child(_make_button(opt))
-
-## A greyed entry shows why it cannot be built in its second line, in place of the missing gold.
 func _make_button(opt: Dictionary) -> Button:
 	var data: TowerData = opt.data
 	var lv: TowerLevelData = data.levels[opt.level - 1]
-	var key := &"panel.build.rebuild" if opt.rebuild else &"panel.build.item"
+
 	var reason: StringName = opt.locked_reason
 	var short: bool = opt.shortfall > 0
-	var b := PanelButton.new()
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size.y = 52
 	b.disabled = short or reason != &""
 	var warning := ""
 	if reason != &"":
 		warning = _reason_text(reason)
 	elif short:
 		warning = UiFormat.tr_fmt(&"panel.need_gold", {"gold": opt.shortfall})
-	b.set_lines(
-		UiFormat.tr_fmt(key, {"name": tr(data.display_name), "level": opt.level, "gold": opt.cost}),
-		warning)
-	b.tooltip_text = _reason_text(reason) if reason == BLOCKS_PATH else UiFormat.tr_fmt(&"panel.stats", {
+	var row := HBoxContainer.new()
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 12
+	row.offset_right = -12
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override(&"separation", 10)
+	b.add_child(row)
+	_add_icon(row, TOWER_ICONS.get(data.id), 38)
+	var name_label := Label.new()
+	name_label.text = UiFormat.tr_fmt(&"panel.build.rebuild_name", {"name": tr(data.display_name), "level": opt.level}) if opt.rebuild else tr(data.display_name)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_label)
+	if b.disabled:
+		_add_icon(row, LOCK_ICON, 20)
+	_add_icon(row, GOLD_ICON, 24)
+	var price := Label.new()
+	price.text = str(opt.cost)
+	row.add_child(price)
+	for label: Label in [name_label, price]:
+		label.add_theme_font_size_override(&"font_size", 22)
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_theme_color_override(&"font_color", Color("#e2dfd8") if b.disabled else b.get_theme_color(&"font_color", &"Button"))
+	b.tooltip_text = warning if not warning.is_empty() else UiFormat.tr_fmt(&"panel.stats", {
 		"damage": lv.damage, "range": UiFormat.decimal(lv.attack_range),
 		"rate": UiFormat.decimal(lv.fire_rate), "hp": lv.max_hp})
 	b.pressed.connect(_on_build_pressed.bind(data.id, opt.level))
 	b.mouse_entered.connect(func(): preview_requested.emit(slot_id, data.id, lv.attack_range, reason == BLOCKS_PATH))
 	b.mouse_exited.connect(preview_cleared.emit)
 	return b
+
+func _add_icon(row: HBoxContainer, texture: Texture2D, width: int) -> void:
+	var image := TextureRect.new()
+	image.texture = texture
+	image.custom_minimum_size.x = width
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(image)
 
 ## Text for each reason from BuildService.get_build_options(). Unknown reasons give no text.
 func _reason_text(reason: StringName) -> String:
