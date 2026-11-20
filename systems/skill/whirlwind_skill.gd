@@ -2,7 +2,7 @@ class_name WhirlwindSkill
 extends RefCounted
 ## Whirlwind: one 360 degree sweep around the caster that hits every enemy in range.
 
-const ENEMY_GROUP: StringName = &"enemy"
+const SkillHitOrder = preload("res://systems/skill/skill_hit_order.gd")
 
 
 ## Returns how many enemies were hit. Distance is measured on the ground plane, centre to centre.
@@ -14,7 +14,7 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 	var base_damage := data.get_value(&"damage", level)
 	var radius_sq := radius * radius
 	var hits := 0
-	for node in caster.get_tree().get_nodes_in_group(ENEMY_GROUP):
+	for node in SkillHitOrder.targets(caster.get_tree(), caster, SkillHitOrder.caster_aim(caster)):
 		var enemy := node as Node3D
 		if enemy == null or not is_instance_valid(enemy) or enemy.is_queued_for_deletion():
 			continue
