@@ -31,6 +31,20 @@ func setup(title_key: StringName, body_key: StringName, params: Dictionary = {},
 	_is_transaction = is_transaction
 	_validate = validate
 
+func setup_upgrade(service: BuildService, slot_id: StringName) -> void:
+	var tower := service.find_slot(slot_id).tower
+	var level := tower.level
+	var cost := tower.data.levels[level].build_cost
+	var valid := func() -> bool:
+		if not service.can_upgrade(slot_id) or service.find_slot(slot_id).tower != tower:
+			return false
+		return tower.level == level and tower.data.levels[level].build_cost == cost
+	setup(&"dialog.upgrade.title", &"dialog.upgrade.body",
+		{"name": tr(tower.data.display_name), "level": level, "next": level + 1}, true, valid)
+	set_buttons(&"dialog.upgrade.confirm")
+	set_result(&"dialog.upgrade.cost", -cost)
+	confirmed.connect(func(): service.upgrade(slot_id))
+
 ## Custom labels, e.g. Retry and Close. An empty cancel_key leaves only the confirm button.
 func set_buttons(confirm_key: StringName, cancel_key: StringName = &"dialog.cancel") -> void:
 	_confirm_key = confirm_key
@@ -58,6 +72,7 @@ func _ready() -> void:
 	_cancel_button.text = tr(_cancel_key)
 	_cancel_button.visible = not is_notice()
 	%Glyph.warning = not is_notice()
+	%Glyph.visible = _title_key != &"dialog.upgrade.title"
 	if _title_key == &"dialog.sell.title":
 		_show_result(&"dialog.sell.refund", int(_params.get("gold", 0)))
 		_confirm_button.text = tr(&"dialog.sell.confirm")
@@ -72,10 +87,10 @@ func _ready() -> void:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
 	if _is_transaction:
-		if _title_key == &"dialog.sell.title":
+		if _title_key in [&"dialog.sell.title", &"dialog.upgrade.title"]:
 			$Backdrop.material = preload("res://ui/theme/modal_blur.tres")
-			tree_exiting.connect(TimeManager.release_pause.bind(TimeManager.REASON_SELL_CONFIRM), CONNECT_ONE_SHOT)
-			TimeManager.request_pause(TimeManager.REASON_SELL_CONFIRM)
+			tree_exiting.connect(TimeManager.release_pause.bind(TimeManager.REASON_STRUCTURE_CONFIRM), CONNECT_ONE_SHOT)
+			TimeManager.request_pause(TimeManager.REASON_STRUCTURE_CONFIRM)
 		else:
 			_dock_transaction()
 		EventBus.state_changed.connect(_on_wave_state_changed)
@@ -86,7 +101,7 @@ func _ready() -> void:
 
 func _show_result(label_key: StringName, value: int) -> void:
 	%ResultName.text = tr(label_key)
-	%Amount.text = "+%d" % value
+	%Amount.text = "%+d" % value
 	%Result.show()
 
 ## In PREP the transaction stays next to the selected structure.

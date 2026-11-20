@@ -571,3 +571,7 @@ dialog.sell.refund,Vàng thu về
 dialog.sell.confirm,Bán
 dialog.run_recovered.gain,Danh vọng nhận được
 settings.gfx.revert_countdown,Tự khôi phục sau {seconds} giây
+dialog.upgrade.title,Nâng cấp công trình?
+dialog.upgrade.body,{name} · Cấp {level} → Cấp {next}
+dialog.upgrade.confirm,Nâng cấp
+dialog.upgrade.cost,Chi phí vàng

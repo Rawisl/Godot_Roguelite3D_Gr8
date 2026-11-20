@@ -443,7 +443,7 @@ Cài đặt: RewardOfferGenerator là hàm thuần nhận RunSkillState, danh s�
 | TIME-08 | Không dùng Pause để né cooldown hay tối ưu quyết định. Ở COMBAT, BOSS_COMBAT và HAZARD_TRIAL, khi Pause mọi panel chỉ đọc: không đổi priority, không Emergency repair, không đổi chế độ, không dùng skill. PREP không bị giới hạn |
 | TIME-09 | **Nút tua nhanh:** tua chỉ điều khiển bằng cụm nút HUD (HUD-14), gọi set_time_scale(1\|2\|3). Bấm nút mức đang tắt thì bật mức đó, bấm lại đúng nút đang bật thì tắt (về x1). Hiển thị luôn theo time_scale thực, kể cả khi bị hạ tự động (TIME-06). Không đổi mức tốc độ khi đang Pause |
 | TIME-10 \[MVP] | **Ba loại đồng hồ** do TimeManager cung cấp: (a) game time, đã nhân time_scale và dừng khi Pause, cho mọi timer gameplay (TIME-07, CHAR-05), gồm heal_hold_time và nhịp hút máu của Trạm hồi lực (HLT-03, HLT-06); (b) **thời gian thực có thể pause** (không nhân time_scale, dừng khi Pause), cho bộ đếm 10 s của SUMMARY (TIME-02), đếm BOSS_INTRO, hoàn tác bán 3 s \[Should] (PNL-10); (c) **thời gian thực thuần**, không dừng khi Pause, cho animation UI, chuyển camera 0.5 s và dịch camera bằng phím, kể cả khi Pause (MSE-08, CAM-03), retarget_delay 0.3 s (CMD-01), crossfade nhạc. Mọi timer mới phải khai báo thuộc loại nào |
-| TIME-11 \[MVP] | **Pause theo tập lý do:** TimeManager giữ tập `pause_requests` với các lý do `USER` (Esc, nút Pause, mất focus cửa sổ vì INP-08 mở menu Pause), `REWARD_PICK` (RWP-01), `WEAPON_PICK` (đang chọn kiếm trong PREP, PNL-15), `SELL_CONFIRM` (xác nhận bán công trình, SELL-02) và `VICTORY` (màn thắng SCR-20, END-07). `is_paused = pause_requests không rỗng`. Thêm hoặc bỏ một lý do không ảnh hưởng lý do khác (Esc trong REWARD_PICK thêm `USER`, bỏ `USER` thì game vẫn dừng vì còn `REWARD_PICK`). `pause_changed` (EVB-19) chỉ phát khi `is_paused` thực sự đổi. Lấy lại focus không tự bỏ `USER` (INP-08). Đổi time_scale khi đang Pause bị từ chối (TIME-09) |
+| TIME-11 \[MVP] | **Pause theo tập lý do:** TimeManager giữ tập `pause_requests` với các lý do `USER` (Esc, nút Pause, mất focus cửa sổ vì INP-08 mở menu Pause), `REWARD_PICK` (RWP-01), `WEAPON_PICK` (đang chọn kiếm trong PREP, PNL-15), `STRUCTURE_CONFIRM` (xác nhận nâng cấp hoặc bán công trình, SCR-14) và `VICTORY` (màn thắng SCR-20, END-07). `is_paused = pause_requests không rỗng`. Thêm hoặc bỏ một lý do không ảnh hưởng lý do khác (Esc trong REWARD_PICK thêm `USER`, bỏ `USER` thì game vẫn dừng vì còn `REWARD_PICK`). `pause_changed` (EVB-19) chỉ phát khi `is_paused` thực sự đổi. Lấy lại focus không tự bỏ `USER` (INP-08). Đổi time_scale khi đang Pause bị từ chối (TIME-09) |
 Kiểm tra mọi hệ thống (projectile, DoT, đồng hồ boss) đúng ở x1/x2/x3 là hạng mục nghiệm thu bắt buộc của tuần 6.
 
 ## 3.5 Nhân vật chỉ huy
@@ -883,7 +883,7 @@ Ai đánh được tower: tower trên ô grid (kể cả Trạm hồi lực) và
 
 | **ID** | **Nâng cấp** |
 | --- | --- |
-| UPG-01 | Tốn gold theo bảng cấp kế (cost của cấp n + 1 trong TowerData), tức thì, mỗi lần một cấp, và phải đủ điều kiện Cấp Chỉ huy khi qua ranh giới bậc (UPG-06) |
+| UPG-01 | Tốn gold theo bảng cấp kế (cost của cấp n + 1 trong TowerData). Sau khi người chơi xác nhận, công trình tăng ngay một cấp, và phải đủ điều kiện Cấp Chỉ huy khi qua ranh giới bậc (UPG-06) |
 | UPG-02 | Giữ target_priority, HP hồi đầy theo max_hp mới. Ngoại lệ: Trạm hồi lực chỉ cộng phần max_hp tăng thêm vào kho, không hồi đầy (HLT-08) |
 | UPG-03 | Cấp tower_max_level (36): hiện "MAX" |
 | UPG-04 | Không nâng được tower RUINED |
@@ -1872,7 +1872,7 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 | **ID** | **Luật điều hướng** |
 | --- | --- |
 | SCR-13 | Back và Esc cùng tác dụng ở mọi màn ngoài Run. Esc trong Run theo INP-03 |
-| SCR-14 | Hộp thoại xác nhận dùng một mẫu chung: biểu tượng, tiêu đề, hậu quả cụ thể, nút hủy (mặc định focus), nút xác nhận. Hộp thoại giao dịch (bán, sửa bằng Mithril, hủy xây) chỉ hợp lệ trong PREP: (1) khi PREP kết thúc hoặc khi vào Hazard Trial thì tự đóng như hủy, không thực hiện giao dịch (trong lúc có hộp thoại giao dịch, nút Bắt đầu wave và Tháp Hazard Trial đã xám theo WAVE-11, HZT-01, nên ca này chỉ xảy ra do lỗi hoặc tự động); (2) bấm Xác nhận ở đúng frame chuyển state theo BLD-02 (nguyên tử: hoàn tất hoặc bị từ chối, không có trạng thái giữa); (3) kiểm tra lại state PREP và trạng thái slot ngay lúc xác nhận, không dựa vào lúc mở hộp thoại. Hộp thoại bán làm mờ hậu cảnh và dừng game trong lúc chờ quyết định. Bán, Hủy hoặc Esc đóng hộp thoại và giải phóng lý do SELL_CONFIRM. Khi bỏ cuộc hoặc thoát giữa lượt, hộp thoại hiển thị đợt, kết quả và một hàng riêng cho danh vọng sẽ nhận. Hộp thoại hệ thống không liên quan giao dịch (SET-01, Abandon, thoát) không bị ràng buộc này |
+| SCR-14 | Hộp thoại xác nhận dùng một mẫu chung: biểu tượng, tiêu đề, hậu quả cụ thể, nút hủy (mặc định focus), nút xác nhận. Hộp thoại giao dịch (bán, sửa bằng Mithril, hủy xây) chỉ hợp lệ trong PREP: (1) khi PREP kết thúc hoặc khi vào Hazard Trial thì tự đóng như hủy, không thực hiện giao dịch (trong lúc có hộp thoại giao dịch, nút Bắt đầu wave và Tháp Hazard Trial đã xám theo WAVE-11, HZT-01, nên ca này chỉ xảy ra do lỗi hoặc tự động); (2) bấm Xác nhận ở đúng frame chuyển state theo BLD-02 (nguyên tử: hoàn tất hoặc bị từ chối, không có trạng thái giữa); (3) kiểm tra lại state PREP và trạng thái slot ngay lúc xác nhận, không dựa vào lúc mở hộp thoại. Hộp thoại nâng cấp và bán làm mờ hậu cảnh và dừng game trong lúc chờ quyết định. Xác nhận hành động, Hủy hoặc Esc đóng hộp thoại và giải phóng lý do STRUCTURE_CONFIRM. Khi bỏ cuộc hoặc thoát giữa lượt, hộp thoại hiển thị đợt, kết quả và một hàng riêng cho danh vọng sẽ nhận. Hộp thoại hệ thống không liên quan giao dịch (SET-01, Abandon, thoát) không bị ràng buộc này |
 | SCR-15 | Chuyển màn fade 0.25 s (thời gian thực), khóa input trong lúc fade |
 | SCR-16 | Menu điều hướng bằng chuột, mũi tên và Enter. Focus luôn rõ. ui_focus_next (Tab) **vô hiệu trong Run** |
 
@@ -1940,7 +1940,7 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 
 ### 4.1.4 Panel tương tác
 
-Bảng Xây, Trụ, Trạm hồi lực, Thành và Chỉ huy trượt từ giữa cạnh phải trong 0,22 giây, mặt bảng nối sát mép game. Mỗi lần hiện một bảng, nút × ở đầu bảng. Chọn lại ô đất hoặc công trình đang xem để đóng. Xác nhận bán trụ hoặc trạm hồi lực hiện giữa màn hình như bảng chọn kiếm, với hai nút Hủy và Bán. Bảng bán hiển thị tên, cấp công trình và một dòng riêng cho số vàng thu về. Thông báo lượt chơi gián đoạn hiển thị số danh vọng trong một dòng riêng.
+Bảng Xây, Trụ, Trạm hồi lực, Thành và Chỉ huy trượt từ giữa cạnh phải trong 0,22 giây, mặt bảng nối sát mép game. Mỗi lần hiện một bảng, nút × ở đầu bảng. Chọn lại ô đất hoặc công trình đang xem để đóng. Xác nhận bán trụ hoặc trạm hồi lực hiện giữa màn hình như bảng chọn kiếm, với hai nút Hủy và Bán. Xác nhận nâng cấp cũng nằm giữa màn hình, hiển thị tên công trình, cấp hiện tại, cấp kế tiếp và chi phí vàng. Tiêu đề không có biểu tượng cảnh báo. Hủy hoặc Esc giữ nguyên cấp và vàng. Bảng bán hiển thị tên, cấp công trình và một dòng riêng cho số vàng thu về. Thông báo lượt chơi gián đoạn hiển thị số danh vọng trong một dòng riêng.
 
 Các bảng trượt cạnh phải rộng 370 đơn vị ở độ phân giải thiết kế 1920 × 1080 (khoảng 247 px ở 1280 × 720). Bảng chọn kiếm mở giữa màn hình, làm mờ hậu cảnh và tạm dừng trò chơi. Người chơi có thể đổi kiếm nhiều lần trong PREP. Nút × hoặc Esc đóng bảng kiếm, bỏ lý do tạm dừng WEAPON_PICK và hiện lại bảng Chỉ huy với kiếm vừa trang bị. Bấm V hoặc Esc lần nữa để đóng bảng Chỉ huy.
 
@@ -2748,7 +2748,7 @@ Các test Overload, Retreat, ép x1 ở T-20, cảnh báo y% và retarget sau Ov
 18. Mọi tín hiệu ở mục 6.9 tồn tại trong EventBus đúng tên và kiểu payload. HUD vẫn chạy khi chỉ nhận tín hiệu, không đọc trực tiếp node gameplay (UI-04, EVB-01 đến EVB-46; EVB-24 đã xóa ở v1.8, EVB-25 đã bỏ ở v2.0).
 
 19. Ở PREP, bấm B hai lần để mở rồi đóng bảng xây. Bấm một ô khác đổi mục tiêu. Bấm lại đúng ô, trụ, trạm hoặc Thành để đóng bảng đang xem. Ở COMBAT, bấm V rồi Esc để xem và đóng bảng Chỉ huy, nhân vật vẫn điều khiển được trong lúc xem.
-20. Kiểm tra nút nâng cấp khi đủ vàng và thiếu vàng, nút bán khi được phép và khi bị khóa. Đọc được hành động, giá và lý do khóa ở 1280×720. Bán vẫn yêu cầu xác nhận. Kiểm tra cùng trạng thái trên trạm hồi lực.
+20. Kiểm tra nút nâng cấp khi đủ vàng và thiếu vàng, nút bán khi được phép và khi bị khóa. Đọc được hành động, giá và lý do khóa ở 1280×720. Nâng cấp và bán đều yêu cầu xác nhận. Kiểm tra cùng trạng thái trên trạm hồi lực.
 21. Cho Chỉ huy và Thành cùng xuống ngưỡng nguy cấp rồi hồi máu riêng từng đối tượng. Mỗi thanh HP cập nhật cảnh báo độc lập. Phá nhiều trụ cùng lúc chỉ để lại đổ nát. Kiểm tra thông báo hút cạn kho trạm riêng theo ALR-17.
 
 **Emergency repair (giới hạn lượt)**

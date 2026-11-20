@@ -16,7 +16,7 @@ const UPGRADE_HEIGHT := 110
 var slot_id: StringName = &""
 var _locked := false
 var _next_refresh := 0.0
-var _sell_dialog: Control = null
+var _transaction_dialog: Control = null
 
 var _level: Label
 var _hp: Label
@@ -44,14 +44,14 @@ func _ready() -> void:
 	EventBus.pause_changed.connect(_on_any_change)
 	EventBus.mode_changed.connect(_on_any_change)
 
-## A sell dialog never outlives the panel or the tower it was opened for.
+## A transaction dialog never outlives the panel or the tower it was opened for.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible:
-		_cancel_sell_dialog()
+		_cancel_transaction_dialog()
 
 func open(id: StringName) -> void:
 	if id != slot_id:
-		_cancel_sell_dialog()
+		_cancel_transaction_dialog()
 	slot_id = id
 	refresh()
 
@@ -164,17 +164,20 @@ func _add_label(parent: Container) -> Label:
 	return label
 
 func _on_upgrade_pressed() -> void:
-	if not _try_lock():
+	if not _try_lock() or is_instance_valid(_transaction_dialog):
 		return
 	var service := _service()
-	if service != null:
-		service.upgrade(slot_id)
-	refresh()
+	if service == null or not service.can_upgrade(slot_id):
+		return
+	var dialog := CONFIRM_DIALOG.instantiate()
+	dialog.setup_upgrade(service, slot_id)
+	if ScreenManager.open_dialog(dialog):
+		_transaction_dialog = dialog
 
 ## Selling always asks first. The dialog re-checks PREP and the tower when confirmed,
 ## and closes by itself as a cancel when PREP ends.
 func _on_sell_pressed() -> void:
-	if not _try_lock() or is_instance_valid(_sell_dialog):
+	if not _try_lock() or is_instance_valid(_transaction_dialog):
 		return
 	var service := _service()
 	if service == null:
@@ -189,17 +192,17 @@ func _on_sell_pressed() -> void:
 		true, func() -> bool: return service.is_prep() and not service.get_tower_info(id).is_empty())
 	dialog.confirmed.connect(func(): service.sell(id))
 	if ScreenManager.open_dialog(dialog):
-		_sell_dialog = dialog
+		_transaction_dialog = dialog
 	else:
 		dialog.queue_free()
 
-func _cancel_sell_dialog() -> void:
-	if is_instance_valid(_sell_dialog):
-		_sell_dialog.cancel()
-	_sell_dialog = null
+func _cancel_transaction_dialog() -> void:
+	if is_instance_valid(_transaction_dialog):
+		_transaction_dialog.cancel()
+	_transaction_dialog = null
 
 func _on_any_change(_value: Variant) -> void:
-	if visible:
+	if is_visible_in_tree():
 		refresh()
 
 func _try_lock() -> bool:

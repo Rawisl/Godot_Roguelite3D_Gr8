@@ -24,3 +24,5 @@ Bảng chọn vũ khí chuyển ra giữa màn hình với sáu ô kiếm, làm 
 Sau khi đóng bảng kiếm bằng × hoặc Esc, bảng Chỉ huy hiện lại với kiếm đang dùng. Hộp thoại bỏ cuộc và thoát lượt chơi tách danh vọng thành hàng riêng. Xác nhận thay đổi hiển thị có thanh đếm ngược.
 
 Xác nhận bán trụ và trạm hồi lực xuất hiện giữa màn hình, dùng chung nền mờ với bảng kiếm và tạm dừng game cho đến khi hộp thoại đóng.
+
+Nâng cấp trụ và trạm hồi lực cần xác nhận ở giữa màn hình. Bảng hiển thị cấp trước và sau cùng chi phí vàng, ẩn dấu cảnh báo và tạm dừng game như khi bán.
