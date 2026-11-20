@@ -113,6 +113,8 @@ func _reason_text(reason: StringName) -> String:
 			return UiFormat.tr_fmt(&"panel.build.heal_limit", {"max": GameConfig.heal_tower_max_count})
 		&"BLOCKS_PATH":
 			return tr(&"panel.build.blocks_path")
+		&"TUTORIAL":
+			return tr(&"panel.build.tutorial")
 	return ""
 
 func _on_build_pressed(type: StringName, level: int) -> void:

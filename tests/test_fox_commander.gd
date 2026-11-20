@@ -63,6 +63,30 @@ func _run_checks(knight: Node3D) -> void:
 	_check("fox faces +Z like the knight (sword tip z %.2f)" % tip, tip > 1.0)
 	model.free()
 
+	# Slash trails: reduced flashing hides all three through the shader's opacity, then they come back.
+	# The saved settings on this machine may already have it on, so each check sets it first.
+	var reduce_before: bool = GameState.get_setting(&"reduce_flash", false) == true
+	var trails := _commander.find_child("FoxSlashTrails", true, false)
+	var ribbons: Array[Node] = trails.find_children("*", "GeometryInstance3D", true, false) if trails != null else []
+	_check("model has the 3 slash trails", ribbons.size() == 3)
+	EventBus.settings_changed.emit(&"reduce_flash", true)
+	_check("reduced flashing hides every trail", _trail_opacities(ribbons) == [0.0, 0.0, 0.0])
+	EventBus.settings_changed.emit(&"reduce_flash", false)
+	_check("trails come back when reduced flashing is turned off", _trail_opacities(ribbons) == [1.0, 1.0, 1.0])
+	EventBus.settings_changed.emit(&"reduce_flash", true)
+	var hidden_model := FOX.instantiate() as Node3D
+	add_child(hidden_model)
+	var hidden_ribbons := hidden_model.find_child("FoxSlashTrails", true, false).find_children("*", "GeometryInstance3D", true, false)
+	_check("a model spawned with reduced flashing on starts hidden", _trail_opacities(hidden_ribbons) == [0.0, 0.0, 0.0])
+	hidden_model.free()
+	EventBus.settings_changed.emit(&"reduce_flash", false)
+	var shown_model := FOX.instantiate() as Node3D
+	add_child(shown_model)
+	var shown_ribbons := shown_model.find_child("FoxSlashTrails", true, false).find_children("*", "GeometryInstance3D", true, false)
+	_check("a model spawned with reduced flashing off shows its trails", _trail_opacities(shown_ribbons) == [1.0, 1.0, 1.0])
+	shown_model.free()
+	EventBus.settings_changed.emit(&"reduce_flash", reduce_before)
+
 	# First combo hit through commander.gd.
 	var hand_slot := sword.get_parent() as Node3D
 	var before := hand_slot.global_position
@@ -92,6 +116,13 @@ func _process(_delta: float) -> void:
 	if _commander != null and _cam != null:
 		_cam.global_position = _commander.global_position + Vector3(0, 9, 8)
 		_cam.look_at(_commander.global_position + Vector3.UP)
+
+
+func _trail_opacities(ribbons: Array[Node]) -> Array:
+	var out := []
+	for r in ribbons:
+		out.append(float((r as GeometryInstance3D).get_instance_shader_parameter(&"opacity")))
+	return out
 
 
 func _bounds(root: Node, skip: String) -> AABB:
