@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b144rtrroxuu7"]
+
+[ext_resource type="Script" path="res://tests/test_roll_speed_lines.gd" id="1_lines"]
+
+[node name="TestRollSpeedLines" type="Node3D"]
+script = ExtResource("1_lines")
