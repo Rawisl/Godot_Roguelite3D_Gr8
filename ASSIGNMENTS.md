@@ -1147,18 +1147,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG2
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí)
 - Nghiệm thu: Skill, projectile, boss clock, Cuồng nộ, hiệu ứng vũ khí đúng ở x1/x2/x3
 - Cần xong trước: W10-NG3
+- Ghi chú W11: TimeManager, boss timer, skill, projectile damage and Hazard effect runners passed. Full gameplay verification at all three speeds is pending.
 
 ##### W11-NG3
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Chạy lại test Combat, Skill, Boss (7.1, F1..F15, CM1..CM8, HT1..HT14); sửa lỗi
 - Nghiệm thu: Không lỗi console
 - Cần xong trước: W10-NG1
+- Ghi chú W11: Automated combat, skill, status, and heal regressions passed. The full manual SRS scenario pass is pending.
 
 ##### W11-NG5
 - Người: Ngọc
@@ -1179,12 +1181,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG7
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Hiệu ứng vũ khí: Frost (Slow 20%/3 s), Burn (tổng 50% dmg gốc/5 s), Chain Lightning (3 mục tiêu, 20%, bán kính 2 m, chain_cd 5 s dùng chung); kích hoạt cả với tick Firebomb và skill chủ động; sát thương hiệu ứng mang damage_type của đòn, tính hit_by_commander, không tự kích hoạt lại
 - Nghiệm thu: WP3, WP4, WP5, WP8 đạt; Frost làm chậm Bulwark pha 1; hiệu ứng bị trần 10% trong Hazard Trial (HZ3)
 - Tệp liên quan: entities/commander/commander.gd, systems/skill/skill_runner.gd, systems/skill/whirlwind_skill.gd
 - ID SRS: WPN-04..08
 - Cần xong trước: W9-NG5, W10-NG9, W10-NG10
+- Ghi chú W11: The runner covers weapon procs inside and outside Hazard, Chain target order, room isolation, and cooldown restoration after swapping weapons. Full gameplay verification is pending. Kim (@kimvux) owns final icons and VFX.
 
 ##### W11-NG8
 - Người: Ngọc
