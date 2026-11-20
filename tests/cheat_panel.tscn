@@ -1,0 +1,83 @@
+[gd_scene format=3 uid="uid://dm4dwcfqrn816"]
+
+[ext_resource type="Script" path="res://tests/cheat_panel.gd" id="1_panel"]
+
+[node name="CheatPanel" type="CanvasLayer"]
+process_mode = 3
+layer = 100
+visible = false
+script = ExtResource("1_panel")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 16.0
+offset_top = -180.0
+offset_right = 320.0
+offset_bottom = 180.0
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Box" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InvincibleCheck" type="CheckButton" parent="Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HealButton" type="Button" parent="Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GoldButton" type="Button" parent="Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LevelButton" type="Button" parent="Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InstantKillCheck" type="CheckButton" parent="Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SummonRow" type="HBoxContainer" parent="Panel/Box"]
+layout_mode = 2
+
+[node name="SummonOption" type="OptionButton" parent="Panel/Box/SummonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SummonButton" type="Button" parent="Panel/Box/SummonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="JumpRow" type="HBoxContainer" parent="Panel/Box"]
+layout_mode = 2
+
+[node name="JumpLabel" type="Label" parent="Panel/Box/JumpRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="JumpSpin" type="SpinBox" parent="Panel/Box/JumpRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 999.0
+value = 1.0
+
+[node name="JumpButton" type="Button" parent="Panel/Box/JumpRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Hint" type="Label" parent="Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
