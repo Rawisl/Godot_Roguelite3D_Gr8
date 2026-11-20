@@ -75,6 +75,7 @@ enemy.grunt,Lính bộ
 enemy.archer,Cung thủ
 enemy.brute,Lực sĩ
 enemy.bulwark,Bulwark
+enemy.skeletal_centipede,Skeletal Centipede
 panel.build.section_new,Xây mới
 panel.build.section_rebuild,Xây lại
 fbk.resist,RESIST

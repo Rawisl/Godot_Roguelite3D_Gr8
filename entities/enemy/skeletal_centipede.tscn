@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://ev5jfmprkyvj"]
+
+[ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://dfhngr548e66u" path="res://entities/enemy/skeletal_centipede.gd" id="2_script"]
+[ext_resource type="Resource" uid="uid://d4bsu15pbr3do" path="res://data/bosses/skeletal_centipede_boss.tres" id="3_data"]
+[ext_resource type="PackedScene" uid="uid://bjcrny6gylcvh" path="res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede.glb" id="4_model"]
+[ext_resource type="PackedScene" uid="uid://4dradi67q1d0" path="res://art/vfx/centipede_fx.tscn" id="5_fx"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(1.1, 0.9, 1.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hurt"]
+size = Vector3(1.1, 0.9, 1.8)
+
+[node name="SkeletalCentipede" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+data = ExtResource("3_data")
+
+[node name="CollisionShape3D" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("BoxShape3D_body")
+
+[node name="SkeletalCentipedeModel" parent="Model" index="0" instance=ExtResource("4_model")]
+
+[node name="CentipedeFx" parent="Model" index="1" instance=ExtResource("5_fx")]
+
+[node name="CollisionShape3D" parent="HurtBox" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("BoxShape3D_hurt")

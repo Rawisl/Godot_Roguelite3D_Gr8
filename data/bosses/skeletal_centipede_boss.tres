@@ -1,0 +1,134 @@
+[gd_resource type="Resource" script_class="CentipedeBossData" format=3 uid="uid://d4bsu15pbr3do"]
+
+[ext_resource type="Script" uid="uid://8yi5wrdm30pf" path="res://common/centipede_boss_data.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+model_scale = 1.6
+body_box_size = Vector3(1.1, 0.9, 1.8)
+body_box_center = Vector3(0, 0.45, 0)
+roll_ring_center = Vector3(0, 0, 0.375)
+walk_anim_base_speed = 0.16
+walk_anim_max_scale = 6.0
+turn_clip_min_deg = 45.0
+structure_face_tolerance_deg = 10.0
+turn_half_clip_deg = 135.0
+melee_reach_margin = 0.6
+death_duration = 2.0
+death_sink_depth = 0.9
+death_tilt_deg = 12.0
+fx_core_bone = &"Torso_Upper"
+fx_core_offset = Vector3(0, 0.1, 0.3)
+fx_vent_bones = Array[StringName]([&"Shoulder.L", &"Shoulder.R"])
+fx_vent_offset = Vector3(0, 0.15, -0.1)
+fx_core_fallback = Vector3(0, 0.6, 0.7)
+fx_vent_fallback = Vector3(0, 1, 0.3)
+slash_range = 1.7
+slash_arc_deg = 120.0
+slash_center_deg = 12.0
+slash_hit_window = Vector2(0.6, 0.8167)
+la_damage = 14
+la3_damage = 22
+la3_knockback = 1.0
+la3_arc_deg = 150.0
+combo_range = 1.7
+combo_arc_deg = 120.0
+combo_finisher_arc_deg = 150.0
+combo_hit_damage = 4
+combo_finisher_damage = 12
+combo_finisher_knockback = 1.0
+combo_hit_windows = PackedVector2Array(0.25, 0.4, 0.65, 0.8, 1.1667, 1.2667, 1.4333, 1.5333, 2.1112, 2.2, 2.3778, 2.4667, 2.6548, 2.749, 2.9058, 3, 3.5667, 3.6667, 3.8333, 3.9333, 4.4833, 4.6667)
+combo_move_windows = PackedVector2Array(0.8167, 1.0167, 1.55, 1.95, 3.0167, 3.4167)
+combo_move_speed = 0.6
+combo_cooldown = 8.0
+spit_freeze_time = 0.65
+spit_stream_start = 0.6
+spit_stream_duration = 3.0
+spit_stream_tick = 0.3
+spit_stream_reach = 3.9
+spit_stream_half_angle_deg = 20.0
+spit_stream_tick_damage = 3
+spit_min_reach = 1.8
+spit_max_reach = 4.8
+spit_telegraph_radius = 2.0
+spit_cooldown = 9.0
+spit_apex_fallback = 0.8
+spit_cone_tip_radius = 0.3
+spit_telegraph_along = 0.6
+spit_unlock_appearance = 1
+pool_spawn_time = 1.05
+pool_offset = Vector3(0, 0.012, 0.8237)
+pool_length = 4.3
+pool_cut_fraction = 0.25
+pool_half_angle_deg = 32.0
+pool_tick_damage = 4
+pool_tick_interval = 0.5
+pool_lifetime = 5.0
+pool_spread_time = 2.0
+pool_fade_time = 0.5
+roll_speed = 6.58
+roll_hit_radius = 0.9
+roll_damage = 30
+roll_knockback = 4.0
+roll_max_distance = 16.0
+roll_min_distance = 7.0
+roll_full_distance = 9.0
+roll_turn_rate_deg = 50.0
+roll_lean_max_deg = 15.0
+roll_end_slide_time = 0.45
+roll_blocked_ratio = 0.4
+roll_blocked_time = 0.15
+roll_cooldown = 10.0
+roll_unlock_appearance = 2
+weight_slash = 1.0
+weight_centipede_combo = 1.0
+weight_spit = 0.9
+weight_roll = 1.2
+armor_hp = 1000
+core_hp = 800
+transition_duration = 2.5
+phase2_speed_mult = 1.2
+phase2_attack_rate_mult = 1.3
+resist_table_phase1 = {
+0: 0.0,
+1: 1.0,
+2: 0.6,
+3: 1.0,
+4: 0.0,
+5: 1.0
+}
+boss_timer = 90.0
+boss_gold = 100
+boss_prestige = 15
+ai_front_arc_deg = 120.0
+ai_turn_rate_deg = 120.0
+commander_leash = 10.0
+attack_recovery = 0.5
+heavy_attack_recovery = 1.5
+combo_unlock_appearance = 3
+combo_hp_threshold = 0.5
+hazard_appearance_offset = 1
+hazard_turn_rate_mult = 2.0
+ai_think_interval = 0.3
+tie_margin = 0.1
+stickiness = 1.15
+weight_chase = 0.5
+weight_face = 0.5
+weight_push = 1.5
+push_base = 0.2
+push_after = 2.5
+push_ramp = 1.5
+reach_reset_time = 1.0
+push_commit_time = 4.0
+id = &"skeletal_centipede"
+display_name_key = "enemy.skeletal_centipede"
+base_hp = 1800
+attack_interval = 2.4
+attack_range = 1.4
+move_speed = 1.8
+anim_walk = &"walk"
+knockback_immune = true
+aggro_range = 4.0
+agent_radius = 1.6
+target_rules = Array[StringName]([&"PLAYER", &"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
+xp_value = 30
