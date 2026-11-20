@@ -16,6 +16,7 @@ extends Control
 @onready var _character: PanelContainer = %CharacterPanel
 @onready var _preview_holder: Control = %PreviewHolder
 
+var _slide: Tween
 var _mode: StringName = &"FRONTLINE"
 
 func _ready() -> void:
@@ -37,8 +38,8 @@ func _ready() -> void:
 	_character.weapons_requested.connect(_show_weapons)
 	_character.closed.connect(close_all)
 	%CommanderStatus.details_requested.connect(_toggle_character)
-	for panel in [_character, _build_panel, _tower_panel, _heal_panel]:
-		panel.visibility_changed.connect(_update_preview)
+	for panel in [_character, _build_panel, _tower_panel, _heal_panel, _weapon_panel, _fortress_panel]:
+		panel.visibility_changed.connect(_on_drawer_visibility.bind(panel))
 	EventBus.run_started.connect(close_all)
 	_selection.fortress_selected.connect(_show_fortress)
 	EventBus.slot_selected.connect(_on_slot_selected)
@@ -201,5 +202,15 @@ func _show_weapons() -> void:
 	_weapon_panel.visible = true
 	_weapon_panel.open()
 
-func _update_preview() -> void:
-	_preview_holder.visible = not (_character.visible or _build_panel.visible or _tower_panel.visible or _heal_panel.visible)
+func _on_drawer_visibility(panel: Control) -> void:
+	if not is_inside_tree():
+		return
+	_preview_holder.visible = not _any_open()
+	if not panel.visible:
+		return
+	if _slide:
+		_slide.kill()
+	var motion: Control = %DrawerMotion
+	motion.position.x = maxf(panel.size.x, panel.get_combined_minimum_size().x) + 80.0
+	_slide = create_tween().set_ignore_time_scale().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_slide.tween_property(motion, "position:x", 0.0, 0.22)

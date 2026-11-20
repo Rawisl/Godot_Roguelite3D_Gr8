@@ -57,11 +57,28 @@ func _ready() -> void:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
 	if _is_transaction:
+		_dock_transaction()
 		EventBus.state_changed.connect(_on_wave_state_changed)
 	if is_notice():
 		_confirm_button.grab_focus()
 	else:
 		_cancel_button.grab_focus()
+
+## In PREP the transaction stays next to the selected structure.
+func _dock_transaction() -> void:
+	$Backdrop.hide()
+	var holder: CenterContainer = $Center
+	var card: PanelContainer = $Center/Panel
+	card.custom_minimum_size = Vector2(460, 180)
+	holder.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	holder.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	holder.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	holder.offset_top = -400
+	holder.offset_bottom = -108
+	var slide := create_tween().set_ignore_time_scale().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	slide.tween_method(func(right_edge: float) -> void:
+		holder.offset_left = right_edge - 460.0
+		holder.offset_right = right_edge, 500.0, -56.0, 0.22)
 
 func cancel() -> void:
 	if _closed:

@@ -1,0 +1,12 @@
+# Ghi chú bản thử HUD cho lần cập nhật SRS
+
+Branch `codex/compact-combat-hud`. Các thay đổi dưới đây mô tả hành vi của bản thử.
+
+| Phần | Hành vi trong bản thử | Đối chiếu SRS v2.0 |
+| --- | --- | --- |
+| Xây trụ | Trong PREP, B chọn ô có vòng xây gần con trỏ nhất trong khung hình và mở danh sách. Bấm trực tiếp vào ô cũng mở danh sách. Người chơi chọn loại trụ mới thực hiện giao dịch. Mỗi dòng hiện icon, tên và giá. Rê chuột để xem chỉ số hoặc lý do khóa. | INP-01, mục 4.1.3, PNL-01 |
+| Bảng ngữ cảnh | Xây, trụ, trạm hồi lực, Thành, nhân vật và vũ khí dùng chung vị trí sát mép phải với chuyển động trượt 0,22 giây. Khung xem trước đợt quái tạm nhường chỗ khi mở bảng. Danh sách vũ khí cuộn dọc. Hộp xác nhận giao dịch trong PREP cũng mở bên phải. | Mục 4.1.3, HUD-25, PNL-01 tới PNL-04, PNL-14, PNL-15 |
+| Chỉ huy | V hoặc bấm thanh máu chỉ huy để mở. Sinh lực và kinh nghiệm có thanh riêng kèm số. Cấp khởi đầu 0 hiển thị “Tân binh” trong bảng và trên HUD. Từ cấp 1 hiển thị số cấp thực. Đường cong XP và HP vẫn lấy từ gameplay. | HUD-15, INP-01 |
+| Kỹ năng và vũ khí | HUD có ba ô chủ động với phím và hồi chiêu. Kỹ năng bị động và ô trang bị nằm trong bảng nhân vật. Đổi vũ khí trong PREP. Bỏ mũi tên thu gọn. V và B được liệt kê trong Cài đặt → Gameplay. | HUD-16, HUD-21, HUD-24, ACC-07 |
+| Máu thấp | Chỉ huy và Thành báo ngay cạnh thanh HP bằng viền và nhãn nguy cấp. | ALR-01, ALR-02, HUD-01 |
+| Trụ bị phá | Bỏ thông báo nổi cho một trụ và thông báo gộp nhiều trụ. Ô đổ nát vẫn cho xem giá xây lại khi chọn. | ALR-07, PNL-01 |

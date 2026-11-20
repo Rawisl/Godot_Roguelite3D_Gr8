@@ -5,33 +5,99 @@
 [ext_resource type="PackedScene" path="res://ui/hud/parts/passive_row.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://ui/hud/parts/weapon_slot.tscn" id="4"]
 
+[ext_resource type="Texture2D" path="res://art/icons/frontline_mode_with_border_icon.png" id="5"]
+
+[sub_resource type="StyleBoxFlat" id="HealthFill"]
+bg_color = Color(0.39, 0.81, 0.59, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="ExperienceFill"]
+bg_color = Color(0.94, 0.76, 0.34, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
 [node name="CharacterPanel" instance=ExtResource("1")]
 custom_minimum_size = Vector2(420, 0)
 script = ExtResource("2")
 
-[node name="Stats" type="HBoxContainer" parent="VBoxContainer" index="1"]
+[node name="Header" type="HBoxContainer" parent="VBoxContainer" index="1"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 14
 
-[node name="Level" type="Label" parent="VBoxContainer/Stats"]
+[node name="Crest" type="TextureRect" parent="VBoxContainer/Header"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+texture = ExtResource("5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Rank" type="VBoxContainer" parent="VBoxContainer/Header"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Name" type="Label" parent="VBoxContainer/Header/Rank"]
+theme_override_font_sizes/font_size = 30
+text = "hud.commander"
+
+[node name="Level" type="Label" parent="VBoxContainer/Header/Rank"]
 unique_name_in_owner = true
-layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.78, 0.41, 1)
+theme_override_font_sizes/font_size = 20
 
-[node name="Health" type="Label" parent="VBoxContainer/Stats"]
+[node name="Stats" type="VBoxContainer" parent="VBoxContainer" index="2"]
+theme_override_constants/separation = 5
+
+[node name="HealthRow" type="HBoxContainer" parent="VBoxContainer/Stats"]
+
+[node name="Caption" type="Label" parent="VBoxContainer/Stats/HealthRow"]
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "character.health"
+
+[node name="Health" type="Label" parent="VBoxContainer/Stats/HealthRow"]
 unique_name_in_owner = true
-layout_mode = 2
+theme_override_font_sizes/font_size = 20
 
-[node name="Experience" type="Label" parent="VBoxContainer/Stats"]
+[node name="HealthBar" type="ProgressBar" parent="VBoxContainer/Stats"]
 unique_name_in_owner = true
-layout_mode = 2
+custom_minimum_size = Vector2(0, 9)
+show_percentage = false
+theme_override_styles/fill = SubResource("HealthFill")
+mouse_filter = 2
 
-[node name="PassiveLabel" type="Label" parent="VBoxContainer" index="2"]
+[node name="ExperienceRow" type="HBoxContainer" parent="VBoxContainer/Stats"]
+
+[node name="Caption" type="Label" parent="VBoxContainer/Stats/ExperienceRow"]
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "character.experience"
+
+[node name="Experience" type="Label" parent="VBoxContainer/Stats/ExperienceRow"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 20
+
+[node name="ExperienceBar" type="ProgressBar" parent="VBoxContainer/Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 9)
+show_percentage = false
+theme_override_styles/fill = SubResource("ExperienceFill")
+mouse_filter = 2
+
+[node name="PassiveLabel" type="Label" parent="VBoxContainer" index="3"]
 layout_mode = 2
 text = "reward.kind.passive"
 
-[node name="PassiveRow" parent="VBoxContainer" index="3" instance=ExtResource("3")]
+[node name="PassiveRow" parent="VBoxContainer" index="4" instance=ExtResource("3")]
 layout_mode = 2
 
-[node name="WeaponSlot" parent="VBoxContainer" index="4" instance=ExtResource("4")]
+[node name="WeaponTitle" type="Label" parent="VBoxContainer" index="5"]
+text = "panel.weapon.title"
+
+[node name="WeaponSlot" parent="VBoxContainer" index="6" instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2

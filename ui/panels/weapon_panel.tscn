@@ -23,27 +23,33 @@ theme_type_variation = &"HudHint"
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 
-[node name="Rows" type="GridContainer" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="2" unique_id=1739205003]
+[node name="Scroll" type="ScrollContainer" parent="VBoxContainer" index="2"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 360)
+horizontal_scroll_mode = 0
+
+[node name="Rows" type="GridContainer" parent="VBoxContainer/Scroll" unique_id=1739205003]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 2
+columns = 1
+size_flags_horizontal = 3
 
-[node name="Row1" parent="VBoxContainer/Rows" unique_id=1739205004 instance=ExtResource("3_row")]
+[node name="Row1" parent="VBoxContainer/Scroll/Rows" unique_id=1739205004 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row2" parent="VBoxContainer/Rows" unique_id=1739205005 instance=ExtResource("3_row")]
+[node name="Row2" parent="VBoxContainer/Scroll/Rows" unique_id=1739205005 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row3" parent="VBoxContainer/Rows" unique_id=1739205006 instance=ExtResource("3_row")]
+[node name="Row3" parent="VBoxContainer/Scroll/Rows" unique_id=1739205006 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row4" parent="VBoxContainer/Rows" unique_id=1739205007 instance=ExtResource("3_row")]
+[node name="Row4" parent="VBoxContainer/Scroll/Rows" unique_id=1739205007 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row5" parent="VBoxContainer/Rows" unique_id=1739205008 instance=ExtResource("3_row")]
+[node name="Row5" parent="VBoxContainer/Scroll/Rows" unique_id=1739205008 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row6" parent="VBoxContainer/Rows" unique_id=1739205009 instance=ExtResource("3_row")]
+[node name="Row6" parent="VBoxContainer/Scroll/Rows" unique_id=1739205009 instance=ExtResource("3_row")]
 layout_mode = 2

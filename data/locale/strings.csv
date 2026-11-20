@@ -558,3 +558,7 @@ character.hp,HP  {hp}/{max}
 character.xp,XP  {xp}/{next}
 settings.character_key,V    Bảng nhân vật
 panel.build.rebuild_name,Xây lại {name} · {level}
+character.recruit,Tân binh
+character.health,Sinh lực
+character.experience,Kinh nghiệm
+settings.build_key,B    Mở bảng xây trụ

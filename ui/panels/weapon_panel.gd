@@ -65,6 +65,7 @@ func _fit_rows() -> void:
 		var data := weapons[i]
 		for tag in tags:
 			widest = maxf(widest, (rows[i] as WeaponRow).measure_width(tr(data.name_key), tag, _range_text(data)))
+	custom_minimum_size.x = maxf(widest, (rows[0] as Control).custom_minimum_size.x) + 72.0
 	for row in rows:
 		var control := row as Control
 		control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, widest)

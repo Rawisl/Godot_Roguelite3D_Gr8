@@ -4,7 +4,7 @@ signal closed
 signal weapons_requested
 
 func _ready() -> void:
-	%Title.text = tr(&"character.title")
+	%Title.hide()
 	%CloseButton.text = tr(&"panel.close")
 	%CloseButton.focus_mode = Control.FOCUS_NONE
 	%CloseButton.pressed.connect(closed.emit)
@@ -13,8 +13,12 @@ func _ready() -> void:
 	EventBus.xp_changed.connect(_on_xp_changed)
 
 func _on_hp_changed(hp: int, maximum: int) -> void:
-	%Health.text = UiFormat.tr_fmt(&"character.hp", {"hp": hp, "max": maximum})
+	%Health.text = UiFormat.tr_fmt(&"hud.ratio", {"value": hp, "max": maximum})
+	%HealthBar.max_value = maximum
+	%HealthBar.value = hp
 
 func _on_xp_changed(xp: float, level: int, to_next: float, _pending: int) -> void:
-	%Level.text = UiFormat.tr_fmt(&"hud.xp.level", {"level": level})
-	%Experience.text = UiFormat.tr_fmt(&"character.xp", {"xp": floori(xp), "next": ceili(to_next)})
+	%Level.text = tr(&"character.recruit") if level == 0 else UiFormat.tr_fmt(&"hud.xp.level", {"level": level})
+	%Experience.text = UiFormat.tr_fmt(&"hud.ratio", {"value": floori(xp), "max": ceili(to_next)})
+	%ExperienceBar.max_value = to_next
+	%ExperienceBar.value = xp

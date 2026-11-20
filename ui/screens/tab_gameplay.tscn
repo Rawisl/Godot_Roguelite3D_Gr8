@@ -13,3 +13,8 @@ layout_mode = 0
 offset_left = 24.0
 offset_top = 20.0
 text = "settings.character_key"
+
+[node name="BuildKey" type="Label" parent="."]
+offset_left = 24.0
+offset_top = 58.0
+text = "settings.build_key"
