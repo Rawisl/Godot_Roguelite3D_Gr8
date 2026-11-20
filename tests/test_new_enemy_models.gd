@@ -59,8 +59,9 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var rplayer := rider.find_child("AnimationPlayer", true, false) as AnimationPlayer
-	_check("the Rider's player has only the sitting and melee clips",
-		rplayer != null and Array(rplayer.get_animation_library_list()).all(func(l: StringName) -> bool: return l in [&"simulation", &"melee"]))
+	_check("the Rider's player has only the sitting, melee and its own death clips",
+		rplayer != null and Array(rplayer.get_animation_library_list()).all(func(l: StringName) -> bool: return l in [&"simulation", &"melee", &""])
+		and not rplayer.has_animation(&"general/Idle_B"))
 	_check("the Rider sits", rplayer.current_animation == "simulation/Sit_Chair_Idle")
 	_check("the Rider holds a sword", rider.find_child("Sword", true, false) != null)
 	var rskel := rider.find_child("Skeleton3D", true, false) as Skeleton3D
@@ -68,7 +69,7 @@ func _ready() -> void:
 	print("[rider] hips at %s" % hip)
 	_check("the Rider's hips sit on the saddle (%.2f m up, z %.2f)" % [hip.y, hip.z], absf(hip.y - 0.92 * 1.544) < 0.15 and absf(hip.z + 0.25 * 1.544) < 0.15)
 	var horse_player := rider.get_node("Mount/Horse").find_child("AnimationPlayer", true, false) as AnimationPlayer
-	_check("the horse has its own rig with two clips, Walk and Run", horse_player != null and Array(horse_player.get_animation_list()) == ["Run", "Walk"])
+	_check("the horse has its own rig with Walk, Run and Fall", horse_player != null and Array(horse_player.get_animation_list()) == ["Fall", "Run", "Walk"])
 	_check("the unit finds the rider's player, not the horse's", rider.find_child("AnimationPlayer", true, false) == rplayer)
 	_check("standing still the horse does not walk", not horse_player.is_playing())
 	# Drive the model at a set speed with a fixed step, the same however fast the test runs.
@@ -87,6 +88,74 @@ func _ready() -> void:
 	_check("slowing well down goes back to the Walk", rider.call(&"get_gait") == &"Walk")
 	drive.call(0.0, 0.8)
 	_check("stopping stops the horse and it stands still", not horse_player.is_playing() and rider.call(&"get_gait") == &"")
+	# Death: the rider slumps on the saddle and the horse kneels forward.
+	var death := rplayer.get_animation(&"Death_B") if rplayer.has_animation(&"Death_B") else null
+	var bad_tracks := 0
+	if death != null:
+		for i in death.get_track_count():
+			var bone := String(death.track_get_path(i)).get_slice(":", 1)
+			if (death.track_get_type(i) == Animation.TYPE_POSITION_3D and bone in ["hips", "root"]) or bone.begins_with("upperleg") or bone.begins_with("lowerleg"):
+				bad_tracks += 1
+	_check("the rider has a seated Death_B (no hip movement, no leg tracks)", death != null and bad_tracks == 0)
+	var seat := (rskel.global_transform * rskel.get_bone_global_pose(rskel.find_bone("hips"))).origin
+	var seat_y := seat.y
+	rplayer.play(&"Death_B")
+	for i in 30:
+		rider.call(&"_process", 0.05)
+		rplayer.advance(0.05)
+		horse_player.advance(0.05)
+	_check("the rider's death makes the horse kneel (Fall)", rider.call(&"is_dead") and horse_player.assigned_animation == "Fall")
+	var dead_hip := (rskel.global_transform * rskel.get_bone_global_pose(rskel.find_bone("hips"))).origin
+	print("[rider] seated hips %.2f, after the fall %.2f" % [seat_y, dead_hip.y])
+	_check("the rider stays on the kneeling horse (hips lower but well off the ground)", dead_hip.y < seat_y - 0.05 and dead_hip.y > 0.6)
+	# Against the same death with no slide: the slide only moves the rider back along the saddle.
+	var still: Node3D = (load(D + "rider/rider_model.tscn") as PackedScene).instantiate()
+	still.set(&"death_slide_back", 0.0)
+	add_child(still)
+	await get_tree().process_frame
+	var still_player := still.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	var still_horse := still.get_node("Mount/Horse").find_child("AnimationPlayer", true, false) as AnimationPlayer
+	var still_skel := still.find_child("Skeleton3D", true, false) as Skeleton3D
+	still_player.play(&"Death_B")
+	for i in 30:
+		still.call(&"_process", 0.05)
+		still_player.advance(0.05)
+		still_horse.advance(0.05)
+	var still_hip := (still_skel.global_transform * still_skel.get_bone_global_pose(still_skel.find_bone("hips"))).origin
+	var mine := dead_hip - rider.global_position
+	var theirs := still_hip - still.global_position
+	var slid := Vector2(theirs.z - mine.z, theirs.y - mine.y).length()
+	_check("the dying rider slides back on the saddle (%.2f m further than without the slide)" % slid, mine.z < theirs.z and slid > 0.15 and slid < 0.35)
+	still.free()
+	# Let the death play to the end: just before the rider slumps, horse and rider tip to the right.
+	for i in 24:
+		rider.call(&"_process", 0.05)
+		rplayer.advance(0.05)
+		horse_player.advance(0.05)
+	var tip := float(rider.call(&"get_tip_degrees"))
+	var end_hip := (rskel.global_transform * rskel.get_bone_global_pose(rskel.find_bone("hips"))).origin - rider.global_position
+	print("[rider] tipped %.0f deg, rider hips at %s" % [tip, end_hip])
+	var rider_up := (rider.get_node("Mount/Rider") as Node3D).global_basis.y.normalized()
+	_check("the horse tips over to its right (-X)", tip > 70.0)
+	_check("the rider comes off upright: it does not turn with the horse", rider_up.dot(Vector3.UP) > 0.97)
+	_check("the rider lands on the ground beside the horse, to its right", end_hip.x < -0.9 and end_hip.y < 0.6 and end_hip.y > -0.1)
+	# The fallen horse's back, near the rider (same z band), must stop short of the rider's hips.
+	var horse_reach := INF
+	var hm := rider.find_child("RiderHorseFlat", true, false) as MeshInstance3D
+	var hverts: PackedVector3Array = hm.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	for v in hverts:
+		var w := hm.global_transform * v - rider.global_position
+		if absf(w.z - end_hip.z) < 0.5:
+			horse_reach = minf(horse_reach, w.x)
+	_check("the rider lands clear of the fallen horse (horse reaches %.2f, hips at %.2f)" % [horse_reach, end_hip.x], end_hip.x < horse_reach - 0.4)
+	var horse_mesh := rider.find_child("RiderHorseFlat", true, false) as MeshInstance3D
+	var low := INF
+	if horse_mesh != null:
+		var verts: PackedVector3Array = horse_mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		for v in verts:
+			low = minf(low, (horse_mesh.global_transform * v).y)
+	_check("the fallen horse does not sink into the ground (lowest %.2f m)" % low, low > -0.35)
+	_check("the rider does not sit back up after dying", rplayer.current_animation == "Death_B" or not rplayer.is_playing())
 	rider.free()
 
 	print("[test] done: %d passed, %d failed" % [_pass, _fail])
