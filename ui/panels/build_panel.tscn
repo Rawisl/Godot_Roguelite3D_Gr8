@@ -17,5 +17,5 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 script = ExtResource("3_button")
-glyph = "×"
+glyph_key = &"panel.glyph.cross"
 metadata/_custom_type_script = "uid://bxyhqnpa4du2p"

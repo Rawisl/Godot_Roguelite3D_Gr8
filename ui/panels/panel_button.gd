@@ -11,7 +11,7 @@ const MUTED_TEXT := Color("#cad5d7")
 @export var font_size := 24
 @export var height := 56
 @export var tall_height := 80
-@export var glyph := "↑"
+@export var glyph_key: StringName = &"panel.glyph.upgrade"
 ## Sales use a secondary surface and a minus sign.
 @export var danger := false
 
@@ -73,7 +73,7 @@ func set_lines(main_text: String, warning_text: String = "") -> void:
 	var main_color := SELL_TEXT if danger else PRIMARY_TEXT
 	if disabled:
 		main_color = MUTED_TEXT
-	_mark.text = "−" if danger else glyph
+	_mark.text = tr(&"panel.glyph.sell" if danger else glyph_key)
 	_mark.add_theme_color_override(&"font_color", main_color)
 	_main.add_theme_color_override(&"font_color", main_color)
 	_main.add_theme_font_size_override(&"font_size", font_size)

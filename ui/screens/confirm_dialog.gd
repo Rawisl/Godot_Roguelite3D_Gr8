@@ -101,7 +101,7 @@ func _ready() -> void:
 
 func _show_result(label_key: StringName, value: int) -> void:
 	%ResultName.text = tr(label_key)
-	%Amount.text = "%+d" % value
+	%Amount.text = tr(&"dialog.result.signed_value") % value
 	%Result.show()
 
 ## In PREP the transaction stays next to the selected structure.
