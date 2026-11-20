@@ -5,13 +5,13 @@ extends Button
 
 const PADDING := 16
 const VERTICAL_PADDING := 10
-const WARNING_COLOR := Color(1.0, 0.1765, 0.1765)
+const WARNING_COLOR := Color(0.94, 0.83, 0.66)
 ## Darker than WARNING_COLOR so it stays readable on the light button background.
 const DANGER_COLOR := Color(0.69, 0.12, 0.12)
 
-@export var font_size := 30
-@export var height := 72
-@export var tall_height := 110
+@export var font_size := 24
+@export var height := 56
+@export var tall_height := 80
 ## Main line in red, for actions that lose something (selling).
 @export var danger := false
 
@@ -20,6 +20,7 @@ var _main: Label
 var _warning: Label
 
 func _init() -> void:
+	add_theme_stylebox_override(&"disabled", preload("res://ui/panels/drawer_action_disabled.tres"))
 	focus_mode = Control.FOCUS_NONE
 	_lines = VBoxContainer.new()
 	_lines.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -43,10 +44,10 @@ func set_lines(main_text: String, warning_text: String = "") -> void:
 	_warning.text = warning_text
 	_warning.visible = warning_text != ""
 	var main_color := DANGER_COLOR if danger and not disabled \
-		else _button_color(&"font_disabled_color" if disabled else &"font_color")
+		else Color(0.86, 0.85, 0.81) if disabled else _button_color(&"font_color")
 	_main.add_theme_color_override(&"font_color", main_color)
 	_main.add_theme_font_size_override(&"font_size", font_size)
-	_warning.add_theme_font_size_override(&"font_size", font_size)
+	_warning.add_theme_font_size_override(&"font_size", 18)
 	_warning.add_theme_color_override(&"font_color", WARNING_COLOR)
 	_fit_height()
 

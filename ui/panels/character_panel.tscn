@@ -5,7 +5,6 @@
 [ext_resource type="PackedScene" path="res://ui/hud/parts/passive_row.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://ui/hud/parts/weapon_slot.tscn" id="4"]
 
-[ext_resource type="Texture2D" path="res://art/icons/frontline_mode_with_border_icon.png" id="5"]
 
 [sub_resource type="StyleBoxFlat" id="HealthFill"]
 bg_color = Color(0.39, 0.81, 0.59, 1)
@@ -25,26 +24,7 @@ corner_radius_bottom_right = 4
 custom_minimum_size = Vector2(420, 0)
 script = ExtResource("2")
 
-[node name="Header" type="HBoxContainer" parent="VBoxContainer" index="1"]
-layout_mode = 2
-theme_override_constants/separation = 14
-
-[node name="Crest" type="TextureRect" parent="VBoxContainer/Header"]
-custom_minimum_size = Vector2(58, 58)
-layout_mode = 2
-texture = ExtResource("5")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Rank" type="VBoxContainer" parent="VBoxContainer/Header"]
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="Name" type="Label" parent="VBoxContainer/Header/Rank"]
-theme_override_font_sizes/font_size = 30
-text = "hud.commander"
-
-[node name="Level" type="Label" parent="VBoxContainer/Header/Rank"]
+[node name="Level" type="Label" parent="VBoxContainer" index="1"]
 unique_name_in_owner = true
 theme_override_colors/font_color = Color(0.94, 0.78, 0.41, 1)
 theme_override_font_sizes/font_size = 20

@@ -8,8 +8,8 @@ signal closed
 const CONFIRM_DIALOG := preload("res://ui/screens/confirm_dialog.tscn")
 const BUTTON_LOCK_TIME := 0.15
 const REFRESH_INTERVAL := 0.2
-const FONT_SIZE := 30
-const SMALL_FONT_SIZE := 24
+const FONT_SIZE := 25
+const SMALL_FONT_SIZE := 21
 ## Fixed so the panel never changes height between "enough gold", "missing gold" and MAX.
 const UPGRADE_HEIGHT := 110
 
@@ -30,7 +30,7 @@ var _sell: PanelButton
 @onready var _priority: PriorityPanel = %PriorityPanel
 
 func _ready() -> void:
-	_close.text = tr(&"panel.close")
+
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_build_body()

@@ -31,7 +31,7 @@ var _in_prep := false
 
 func _ready() -> void:
 	_heal_rate = commander_stats.heal_rate_base
-	_close.text = tr(&"panel.close")
+
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_upgrade.focus_mode = Control.FOCUS_NONE

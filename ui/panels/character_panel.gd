@@ -4,8 +4,10 @@ signal closed
 signal weapons_requested
 
 func _ready() -> void:
-	%Title.hide()
-	%CloseButton.text = tr(&"panel.close")
+	%Title.text = tr(&"hud.commander")
+	%TitleIcon.texture = preload("res://art/icons/frontline_mode_with_border_icon.png")
+	%TitleIcon.show()
+
 	%CloseButton.focus_mode = Control.FOCUS_NONE
 	%CloseButton.pressed.connect(closed.emit)
 	%WeaponSlot.open_requested.connect(weapons_requested.emit)

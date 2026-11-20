@@ -25,7 +25,7 @@ var _locked := false
 
 func _ready() -> void:
 	_title.text = tr(&"panel.weapon.title")
-	_close.text = tr(&"panel.close")
+
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_hint.text = tr(&"hud.weapon.prep_only")

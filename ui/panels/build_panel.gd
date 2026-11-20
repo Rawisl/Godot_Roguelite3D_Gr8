@@ -26,7 +26,7 @@ var _locked := false
 
 func _ready() -> void:
 	_title.text = tr(&"panel.build.title")
-	_close.text = tr(&"panel.close")
+
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_clear.pressed.connect(_on_clear_pressed)

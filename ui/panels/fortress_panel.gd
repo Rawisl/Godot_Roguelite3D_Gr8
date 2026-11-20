@@ -29,7 +29,9 @@ var _locked := false
 func _ready() -> void:
 	_charges = GameConfig.emg_repair_charges_start
 	_title.text = tr(&"hud.fortress")
-	_close.text = tr(&"panel.close")
+	%TitleIcon.texture = preload("res://art/icons/fortress_icon.png")
+	%TitleIcon.show()
+
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_emg_hint.text = tr(&"panel.fortress.emg_hint")
@@ -51,10 +53,10 @@ func _process(_delta: float) -> void:
 		_refresh_emergency()
 
 func refresh() -> void:
-	_hp_label.text = UiFormat.tr_fmt(&"panel.tower.hp", {"value": _hp, "max": _max_hp})
+	_hp_label.text = UiFormat.tr_fmt(&"hud.ratio", {"value": _hp, "max": _max_hp})
 	_hp_bar.max_value = maxi(1, _max_hp)
 	_hp_bar.value = _hp
-	_mithril_label.text = UiFormat.tr_fmt(&"panel.fortress.mithril", {"value": _mithril})
+	_mithril_label.text = str(_mithril)
 	_refresh_repair()
 	_refresh_emergency()
 
@@ -90,7 +92,7 @@ func _refresh_repair() -> void:
 
 func _refresh_emergency() -> void:
 	var max_charges := GameConfig.emg_repair_charges_max
-	_emg_label.text = UiFormat.tr_fmt(&"panel.fortress.emg", {"value": _charges, "max": max_charges})
+	_emg_label.text = UiFormat.tr_fmt(&"hud.ratio", {"value": _charges, "max": max_charges})
 	var left := _cd_until - TimeManager.game_time
 	_emg_cd.visible = left > 0.0
 	_emg_cd.text = UiFormat.tr_fmt(&"panel.fortress.emg_cd", {"sec": ceili(left)})
