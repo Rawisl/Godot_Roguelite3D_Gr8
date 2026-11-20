@@ -13,7 +13,11 @@ extends Node
 const CORE_BONE := &"chest"
 ## Core position in front of the chest, in skeleton space (before the model's 0.75 scale).
 const CORE_OFFSET := Vector3(0.0, 0.05, 0.85)
+## Core position on the boss itself when the model has no such bone.
+const CORE_FALLBACK := Vector3(0.0, 2.1, 0.55)
 const SHOULDER_BONES: Array[StringName] = [&"upperarm.l", &"upperarm.r"]
+const VENT_OFFSET := Vector3(0.0, 0.25, -0.2)
+const VENT_FALLBACK := Vector3(0.0, 2.6, -0.2)
 
 @export_group("Core")
 @export var core_radius: float = 0.3
@@ -188,7 +192,8 @@ func _ensure_rig() -> bool:
 	var skeleton := _boss.find_children("*", "Skeleton3D", true, false)
 	var sk := skeleton[0] as Skeleton3D if not skeleton.is_empty() else null
 
-	var core_root := _attach(sk, CORE_BONE, CORE_OFFSET, Vector3(0, 2.1, 0.55))
+	var anchors := _get_anchors()
+	var core_root := _attach(sk, anchors.core_bone, anchors.core_offset, anchors.core_fallback)
 	core_root.name = "BossCoreFx"
 	var core := MeshInstance3D.new()
 	core.name = "Core"
@@ -214,8 +219,8 @@ func _ensure_rig() -> bool:
 	core_root.add_child(break_steam)
 
 	var vents: Array[CPUParticles3D] = []
-	for bone in SHOULDER_BONES:
-		var at := _attach(sk, bone, Vector3(0, 0.25, -0.2), Vector3(0, 2.6, -0.2))
+	for bone: StringName in anchors.vent_bones:
+		var at := _attach(sk, bone, anchors.vent_offset, anchors.vent_fallback)
 		at.name = "BossVentFx_%s" % bone.replace(".", "_")
 		var vent := _make_steam(vent_steam_count, false)
 		at.add_child(vent)
@@ -226,6 +231,18 @@ func _ensure_rig() -> bool:
 		"plates": plates, "break_steam": break_steam, "vents": vents,
 	}
 	return true
+
+
+## Where the core and the vents sit. A boss that has get_fx_anchors() supplies its own
+## {core_bone, core_offset, core_fallback, vent_bones, vent_offset, vent_fallback}; any other
+## boss gets the Bulwark's.
+func _get_anchors() -> Dictionary:
+	if _boss.has_method(&"get_fx_anchors"):
+		return _boss.call(&"get_fx_anchors")
+	return {
+		"core_bone": CORE_BONE, "core_offset": CORE_OFFSET, "core_fallback": CORE_FALLBACK,
+		"vent_bones": SHOULDER_BONES, "vent_offset": VENT_OFFSET, "vent_fallback": VENT_FALLBACK,
+	}
 
 
 ## A node that follows the bone, offset in skeleton space; without a skeleton, a fixed
