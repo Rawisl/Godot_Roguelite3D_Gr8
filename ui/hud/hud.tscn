@@ -154,7 +154,7 @@ layout_mode = 2
 [node name="MithrilLabel" parent="Root/SafeArea/Frame/TopRight/ResourceBox/Rows" unique_id=1582047736 instance=ExtResource("19_mthl")]
 layout_mode = 2
 
-[node name="SpeedButtons" parent="Root/SafeArea/Frame/TopRight" unique_id=1199262953 instance=ExtResource("9_aixkq")]
+[node name="SpeedButtons" parent="Root/SafeArea/Frame/TopRight/ResourceBox/Rows" unique_id=1199262953 instance=ExtResource("9_aixkq")]
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 8

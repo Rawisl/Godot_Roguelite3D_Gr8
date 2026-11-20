@@ -12,3 +12,5 @@ Branch `codex/compact-combat-hud`. Các thay đổi dưới đây mô tả hành
 | Trụ bị phá | Bỏ thông báo nổi cho một trụ và thông báo gộp nhiều trụ. Ô đổ nát vẫn cho xem giá xây lại khi chọn. | ALR-07, PNL-01 |
 
 Các bảng ngữ cảnh và xác nhận giao dịch neo giữa cạnh phải, mặt bảng nối sát biên khung chơi. Các bảng thông tin có nút × ở đầu bảng. Bảng Thành chia riêng máu, Mithril và lượt sửa khẩn cấp, mỗi dòng căn giá trị sang phải. Lý do khóa sửa chữa dùng dòng phụ.
+
+B mở hoặc đóng bảng xây trong PREP. Chọn lại đúng ô đất, trụ, trạm hoặc Thành đang xem cũng đóng bảng. Bảng trụ hiển thị máu và ba chỉ số tấn công, chi tiết cấp kế nằm trong tooltip nâng cấp. Trạm hồi lực hiển thị kho máu bằng thanh xanh cùng tốc độ hồi và cấp trạm. Ba nút tốc độ nằm chung trong khung vàng và Mithril.

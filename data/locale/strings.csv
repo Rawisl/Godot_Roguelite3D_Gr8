@@ -562,3 +562,8 @@ character.recruit,Tân binh
 character.health,Sinh lực
 character.experience,Kinh nghiệm
 settings.build_key,B    Mở bảng xây trụ
+tower.stat.damage,Sát thương
+tower.stat.range,Tầm bắn
+tower.stat.rate,Tốc bắn
+tower.range_m,{value} m
+tower.rate_s,{value}/s

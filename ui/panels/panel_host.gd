@@ -57,6 +57,15 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if TimeManager.has_pause_reason(TimeManager.REASON_USER):
 		return
+	if event.is_action_pressed(&"build_toggle") and is_visible_in_tree() and not ScreenManager.has_dialog():
+		var service := _service()
+		if service != null and service.is_prep():
+			if _build_panel.visible:
+				close_all()
+			else:
+				_selection.open_build_at_cursor()
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed(&"character_status") and _toggle_character():
 		get_viewport().set_input_as_handled()
 		return
@@ -116,9 +125,15 @@ func _on_slot_selected(slot_id: StringName) -> void:
 	var service := _service()
 	if service == null or not service.is_prep() or _selection.selected_slot != slot_id:
 		return
+	if _build_panel.visible and _build_panel.slot_id == slot_id:
+		close_all()
+		return
 	_show_build(slot_id)
 
 func _on_tower_selected(slot_id: StringName) -> void:
+	if _tower_or_heal_open(slot_id):
+		close_all()
+		return
 	_show_selected_tower(slot_id)
 
 ## The panel stays open after a transaction: building switches to the new tower.
@@ -169,6 +184,9 @@ func _service() -> BuildService:
 	return get_tree().get_first_node_in_group(&"build_service") as BuildService
 
 func _show_fortress() -> void:
+	if _fortress_panel.visible:
+		close_all()
+		return
 	_hide_panels()
 	_fortress_panel.visible = true
 	_fortress_panel.open()

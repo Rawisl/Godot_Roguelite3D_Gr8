@@ -31,6 +31,8 @@ var _in_prep := false
 
 func _ready() -> void:
 	_heal_rate = commander_stats.heal_rate_base
+	%TitleIcon.texture = preload("res://art/icons/heal_station_icon.png")
+	%TitleIcon.show()
 
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)

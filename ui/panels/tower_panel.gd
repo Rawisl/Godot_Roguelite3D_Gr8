@@ -8,7 +8,7 @@ signal closed
 const CONFIRM_DIALOG := preload("res://ui/screens/confirm_dialog.tscn")
 const BUTTON_LOCK_TIME := 0.15
 const REFRESH_INTERVAL := 0.2
-const FONT_SIZE := 25
+const METRIC := preload("res://ui/panels/stat_metric.tscn")
 const SMALL_FONT_SIZE := 21
 ## Fixed so the panel never changes height between "enough gold", "missing gold" and MAX.
 const UPGRADE_HEIGHT := 110
@@ -20,7 +20,11 @@ var _sell_dialog: Control = null
 
 var _level: Label
 var _hp: Label
-var _stats: Label
+var _hp_bar: ProgressBar
+var _metrics: HBoxContainer
+var _damage: SummaryRow
+var _range_metric: SummaryRow
+var _rate: SummaryRow
 var _upgrade: PanelButton
 var _sell: PanelButton
 
@@ -69,7 +73,14 @@ func refresh() -> void:
 	_title.text = tr(data.display_name)
 	_level.text = UiFormat.tr_fmt(&"panel.tower.level_tier", {"level": info.level, "tier": UiFormat.model_tier(info.level)})
 	_hp.text = UiFormat.tr_fmt(&"panel.tower.hp", {"value": info.hp, "max": info.max_hp})
-	_stats.text = _stats_text(lv, next)
+	%TitleIcon.texture = BuildPanel.TOWER_ICONS.get(data.id)
+	%TitleIcon.visible = %TitleIcon.texture != null
+	_hp_bar.max_value = maxi(1, info.max_hp)
+	_hp_bar.value = info.hp
+	_metrics.visible = lv.attack_range > 0
+	_damage.set_row(tr(&"tower.stat.damage"), str(lv.damage))
+	_range_metric.set_row(tr(&"tower.stat.range"), UiFormat.tr_fmt(&"tower.range_m", {"value": UiFormat.decimal(lv.attack_range)}))
+	_rate.set_row(tr(&"tower.stat.rate"), UiFormat.tr_fmt(&"tower.rate_s", {"value": UiFormat.decimal(lv.fire_rate)}))
 
 	# Upgrade and sell exist only in PREP.
 	var in_prep := service.is_prep()
@@ -91,6 +102,8 @@ func refresh() -> void:
 		_upgrade.set_lines(
 			UiFormat.tr_fmt(&"panel.tower.upgrade", {"gold": info.upgrade_cost}),
 			UiFormat.tr_fmt(&"panel.need_gold", {"gold": info.upgrade_shortfall}) if short else "")
+	var details := _stats_text(lv, next)
+	_upgrade.tooltip_text = details if _upgrade.tooltip_text.is_empty() else _upgrade.tooltip_text + "\n" + details
 	var sell_locked := _sell_locked_until(service, slot_id)
 	_sell.disabled = sell_locked > 0
 	if sell_locked > 0:
@@ -118,9 +131,22 @@ func _stats_text(cur: TowerLevelData, next: TowerLevelData) -> String:
 
 func _build_body() -> void:
 	_body.add_theme_constant_override(&"separation", 8)
-	_level = _add_label(FONT_SIZE)
-	_hp = _add_label(FONT_SIZE)
-	_stats = _add_label(SMALL_FONT_SIZE)
+	var line := HBoxContainer.new()
+	_body.add_child(line)
+	_level = _add_label(line)
+	_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hp = _add_label(line)
+	_hp_bar = ProgressBar.new()
+	_hp_bar.show_percentage = false
+	_hp_bar.custom_minimum_size.y = 8
+	_body.add_child(_hp_bar)
+	_metrics = HBoxContainer.new()
+	_body.add_child(_metrics)
+	_damage = METRIC.instantiate()
+	_range_metric = METRIC.instantiate()
+	_rate = METRIC.instantiate()
+	for metric in [_damage, _range_metric, _rate]:
+		_metrics.add_child(metric)
 	_upgrade = PanelButton.new()
 	_upgrade.height = UPGRADE_HEIGHT
 	_upgrade.tall_height = UPGRADE_HEIGHT
@@ -131,11 +157,10 @@ func _build_body() -> void:
 	_sell.pressed.connect(_on_sell_pressed)
 	_body.add_child(_sell)
 
-func _add_label(font_size: int) -> Label:
+func _add_label(parent: Container) -> Label:
 	var label := Label.new()
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.add_theme_font_size_override(&"font_size", font_size)
-	_body.add_child(label)
+	label.add_theme_font_size_override(&"font_size", SMALL_FONT_SIZE)
+	parent.add_child(label)
 	return label
 
 func _on_upgrade_pressed() -> void:

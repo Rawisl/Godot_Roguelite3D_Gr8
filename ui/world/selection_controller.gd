@@ -52,13 +52,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"cancel") and selected_slot != &"":
 		clear_selection()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"build_toggle") and _is_prep():
-		if ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
-			return
-		_open_build_at_cursor()
-		get_viewport().set_input_as_handled()
 
-func _open_build_at_cursor() -> void:
+func open_build_at_cursor() -> void:
 	_set_rings_visible(true)
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:

@@ -141,7 +141,7 @@ func _check_clear_rubble() -> void:
 func _check_tower_locked_upgrade() -> void:
 	_show_tower(13, true, false)
 	var need := UiFormat.tr_fmt(&"panel.need_commander_level", {"level": GameConfig.tower_gate_tier2})
-	_expect(_tower._upgrade.disabled and _tower._upgrade.tooltip_text == need, "tower: locked upgrade is grey with the level")
+	_expect(_tower._upgrade.disabled and _tower._upgrade.tooltip_text.begins_with(need), "tower: locked upgrade is grey with the level")
 	_expect(_texts(_tower._upgrade).has(need), "tower: locked upgrade names the Commander level")
 	_show_tower(13, false, false)
 	_expect(not _tower._upgrade.disabled, "tower: open gate allows the upgrade")
