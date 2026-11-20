@@ -1,14 +1,18 @@
 extends Node3D
-## Visual check of the Rider's horse gaits: one Rider moving along a ground with lines, a side
-## camera that follows it, and the gait it plays shown on screen. Not shipped. F6 only; headless
+## Visual check of the Rider's horse gaits: one Rider moving along a ground with lines, seen in
+## two views side by side that follow it (left: from behind on the left, for the legs and the
+## rider's back; right: from the front on the left, for the head and the rider's face), with the
+## gait it plays shown on screen. Not shipped. F6 only; headless
 ## it runs a short smoke check and quits.
 ## Keys: 1 walk (2 m/s), 2 gallop (5.5 m/s), 3 stop, Left / Right speed -/+ 0.5 m/s,
-## A auto (walk, gallop, stop in turn), S slow motion x0.25 to see each step.
+## A auto (walk, gallop, stop in turn), S slow motion x0.25 to see each step,
+## D kill it (the horse kneels, the rider slumps on the saddle), R a new Rider.
 
 const RIDER := preload("res://contents/assets/characters/enemy and boss/rider/rider_model.tscn")
 
 var _rider: Node3D
 var _cam: Camera3D
+var _front_cam: Camera3D
 var _label: Label
 var _speed := 0.0
 var _auto := false
@@ -34,11 +38,16 @@ func _ready() -> void:
 
 
 func _build_stage() -> void:
-	_cam = Camera3D.new()
-	_cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	_cam.size = 5.0
-	add_child(_cam)
-	_cam.current = true
+	# Two views of the same world, side by side.
+	var views := HBoxContainer.new()
+	views.set_anchors_preset(Control.PRESET_FULL_RECT)
+	views.add_theme_constant_override(&"separation", 4)
+	var back_layer := CanvasLayer.new()
+	back_layer.layer = -1
+	add_child(back_layer)
+	back_layer.add_child(views)
+	_cam = _view_camera(views)
+	_front_cam = _view_camera(views)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-50, 40, 0)
 	sun.shadow_enabled = true
@@ -79,6 +88,24 @@ func _build_stage() -> void:
 	layer.add_child(_label)
 
 
+## A half-screen view of this scene's world with its own orthographic camera.
+func _view_camera(parent: Control) -> Camera3D:
+	var box := SubViewportContainer.new()
+	box.stretch = true
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(box)
+	var view := SubViewport.new()
+	view.world_3d = get_world_3d()
+	box.add_child(view)
+	var cam := Camera3D.new()
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.size = 5.5
+	view.add_child(cam)
+	cam.current = true
+	return cam
+
+
 func _set_speed(value: float) -> void:
 	_speed = clampf(value, 0.0, 8.0)
 
@@ -93,11 +120,13 @@ func _process(delta: float) -> void:
 			_set_speed([2.0, 5.5, 0.0][_auto_step])
 			_auto_left = 3.0
 	_rider.position.z += _speed * delta
-	# Side view from the left of the horse, following it.
-	_cam.look_at_from_position(_rider.position + Vector3(-9, 1.6, 0), _rider.position + Vector3(0, 1.1, 0))
-	var gait: StringName = _rider.call(&"get_gait")
+	# From the left, a little above and behind, following it: the legs and the rider's back both show.
+	_cam.look_at_from_position(_rider.position + Vector3(-7.5, 5.0, -3.5), _rider.position + Vector3(0, 1.2, 0))
+	# From the left, a little above and in front: the head and the rider's face.
+	_front_cam.look_at_from_position(_rider.position + Vector3(-7.5, 5.0, 4.5), _rider.position + Vector3(0, 1.5, 0.6))
+	var gait: StringName = &"dead" if _rider.call(&"is_dead") else _rider.call(&"get_gait")
 	_label.text = "\n".join([
-		"1 walk   2 gallop   3 stop   Left/Right speed   A auto: %s   S slow motion: %s" % ["on" if _auto else "off", "on" if _slow else "off"],
+		"1 walk   2 gallop   3 stop   Left/Right speed   A auto: %s   S slow motion: %s   D die   R new Rider" % ["on" if _auto else "off", "on" if _slow else "off"],
 		"speed %.1f m/s   horse: %s" % [_speed, "standing" if gait == &"" else String(gait)],
 	])
 
@@ -123,6 +152,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_A:
 			_auto = not _auto
 			_auto_left = 0.0
+		KEY_D:
+			_auto = false
+			_set_speed(0.0)
+			var player := _rider.find_child("AnimationPlayer", true, false) as AnimationPlayer
+			if player.has_animation(&"Death_B"):
+				player.play(&"Death_B")
+		KEY_R:
+			var at := _rider.position
+			_rider.queue_free()
+			_rider = RIDER.instantiate()
+			_rider.position = at
+			add_child(_rider)
+			_set_speed(0.0)
 		KEY_S:
 			_slow = not _slow
 			Engine.time_scale = 0.25 if _slow else 1.0
