@@ -138,12 +138,12 @@ func _check_pause() -> void:
 	_pause.show_run_info({"wave_index": 12, "run_elapsed": 125.0, "prestige_gain": 48, "victory_reached": false})
 	_expect(_pause._run_info.text == UiFormat.tr_fmt(&"menu.paused_info", {"wave": 12, "time": "02:05"}), "pause: shows the wave and the time")
 	_pause._abandon.pressed.emit()
-	_expect(_dialog_has(UiFormat.tr_fmt(&"dialog.abandon.body_run", {"wave": 12, "gain": 48})), "pause: Abandon names the wave and the prestige")
+	_expect(_dialog_has(UiFormat.tr_fmt(&"dialog.abandon.body_run", {"wave": 12})) and _dialog_has("+48"), "pause: Abandon names the wave and the prestige")
 	ScreenManager.close_top_dialog()
 	await get_tree().process_frame
 	_pause.show_run_info({"wave_index": 33, "run_elapsed": 125.0, "prestige_gain": 90, "victory_reached": true})
 	_pause._quit.pressed.emit()
-	_expect(_dialog_has(UiFormat.tr_fmt(&"dialog.quit_run.body_survived", {"wave": 33, "gain": 90})), "pause: Quit after the victory says survived")
+	_expect(_dialog_has(UiFormat.tr_fmt(&"dialog.quit_run.body_survived", {"wave": 33})) and _dialog_has("+90"), "pause: Quit after the victory says survived")
 	ScreenManager.close_top_dialog()
 	await get_tree().process_frame
 

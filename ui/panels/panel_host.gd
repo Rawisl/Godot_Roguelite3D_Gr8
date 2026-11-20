@@ -34,7 +34,7 @@ func _ready() -> void:
 	_fortress_panel.visible = false
 	_fortress_panel.closed.connect(close_all)
 	_weapon_panel.hide()
-	_weapon_panel.closed.connect(close_all)
+	_weapon_panel.closed.connect(_return_to_character)
 	_weapon_panel.tree_exiting.connect(_release_weapon_pause)
 	_character.weapons_requested.connect(_show_weapons)
 	_character.closed.connect(close_all)
@@ -78,10 +78,14 @@ func _input(event: InputEvent) -> void:
 	if not _weapon_panel.visible or ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
 		return
 	if event is InputEventKey and event.is_action_pressed(&"pause"):
-		close_all()
+		_return_to_character()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey:
 		get_viewport().set_input_as_handled()
+
+func _return_to_character() -> void:
+	_hide_panels()
+	_character.show()
 
 func _release_weapon_pause() -> void:
 	if _weapon_panel.visible:

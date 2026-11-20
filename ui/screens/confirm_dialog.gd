@@ -14,6 +14,8 @@ var _is_transaction: bool = false
 var _validate: Callable = Callable()
 var _confirm_key: StringName = &"dialog.confirm"
 var _cancel_key: StringName = &"dialog.cancel"
+var _result_key: StringName
+var _result_value: int
 var _closed: bool = false
 
 @onready var _title: Label = %Title
@@ -39,6 +41,10 @@ func setup_notice(title_key: StringName, body_key: StringName, params: Dictionar
 	setup(title_key, body_key, params)
 	set_buttons(&"dialog.ok", &"")
 
+func set_result(label_key: StringName, value: int) -> void:
+	_result_key = label_key
+	_result_value = value
+
 func is_notice() -> bool:
 	return _cancel_key == &""
 
@@ -58,6 +64,8 @@ func _ready() -> void:
 	elif _title_key == &"dialog.run_recovered.title":
 		_show_result(&"dialog.run_recovered.gain", int(_params.get("value", 0)))
 		_body.hide()
+	elif _result_key != &"":
+		_show_result(_result_key, _result_value)
 	_cancel_button.pressed.connect(cancel)
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	for button: Button in [_cancel_button, _confirm_button]:

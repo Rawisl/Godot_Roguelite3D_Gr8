@@ -445,10 +445,10 @@ summary.fortress_hint_hazard,Thành sắp sập: vào Hazard Trial để nhận 
 hud.fortress_hint,Sửa Fortress bằng Mithril trước khi bắt đầu đợt quái.
 hud.fortress_hint_hazard,Chưa có Mithril: vào Hazard Trial để nhận Mithril sửa Fortress.
 menu.paused_info,Đợt quái {wave} · {time}
-dialog.abandon.body_run,Bạn dừng ở đợt {wave} và nhận {gain} danh vọng. Lượt chơi sẽ được tính là thất bại.
-dialog.abandon.body_survived,Lượt chơi kết thúc và tính là sống sót đến đợt quái {wave}. Bạn nhận {gain} danh vọng.
-dialog.quit_run.body_run,Bạn dừng ở đợt {wave} và nhận {gain} danh vọng. Lượt chơi sẽ được tính là thất bại trước khi thoát.
-dialog.quit_run.body_survived,Bạn đã sống sót đến đợt {wave}. Bạn sẽ nhận {gain} danh vọng trước khi thoát.
+dialog.abandon.body_run,Lượt chơi sẽ kết thúc ở đợt {wave} và được tính là thất bại.
+dialog.abandon.body_survived,Kết quả sẽ ghi nhận bạn đã sống sót đến đợt {wave}.
+dialog.quit_run.body_run,Lượt chơi sẽ được tính là thất bại ở đợt {wave} trước khi thoát.
+dialog.quit_run.body_survived,"Trước khi thoát, game sẽ ghi nhận bạn đã sống sót đến đợt {wave}."
 settings.gfx.window_mode,Chế độ cửa sổ:
 settings.gfx.windowed,Cửa sổ
 settings.gfx.fullscreen,Toàn màn hình
@@ -458,7 +458,7 @@ settings.gfx.vsync,Đồng bộ dọc (VSync)
 settings.gfx.max_fps,Giới hạn FPS:
 settings.gfx.fps,{value} FPS
 settings.gfx.fps_none,Không giới hạn
-settings.gfx.keep_question,Giữ thay đổi? Tự quay lại sau {seconds} giây
+settings.gfx.keep_question,Giữ thiết lập hiển thị mới?
 settings.gfx.keep,Giữ
 settings.gfx.revert,Quay lại
 settings.gfx.preset,Chất lượng đồ họa:
@@ -570,3 +570,4 @@ tower.rate_s,{value}/s
 dialog.sell.refund,Vàng thu về
 dialog.sell.confirm,Bán
 dialog.run_recovered.gain,Danh vọng nhận được
+settings.gfx.revert_countdown,Tự khôi phục sau {seconds} giây
