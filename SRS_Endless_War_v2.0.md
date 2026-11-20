@@ -2544,7 +2544,7 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-08 | commander_hp_changed(new_hp: int, max_hp: int, delta: int) | Player & Combat. Nghe: UI, cảnh báo ALR |
 | EVB-09 | commander_mode_changed(new_mode: StringName) | Player & Combat. Nghe: UI, camera, Audio |
 | EVB-10 | commander_died(cause: StringName) | Player & Combat. Phát đúng một lần (DEAD-10). cause MVP: `ENEMY_DAMAGE`. Nghe: RunState (END-01) |
-| EVB-11 | skill_cooldown_changed(skill_id: StringName, remaining: float, total: float) | Player & Combat. skill_id: battle_cry, dodge, mode_switch, emg_repair, skill_1, skill_2, skill_3. Nghe: UI |
+| EVB-11 | skill_cooldown_changed(skill_id: StringName, remaining: float, total: float) | Player & Combat. skill_id: battle_cry, dodge, mode_switch, emg_repair, skill_1, skill_2, skill_3, chain_lightning. Nghe: UI |
 | EVB-12 | emg_repair_changed(charges: int, cooldown_left: float) | Player & Combat. Nghe: UI (HUD-13) |
 | EVB-13 | slot_changed(slot_id: StringName, slot_state: StringName, tower_type: StringName, level: int) | Tower & Build. Nghe: UI, panel Tower, Art |
 | EVB-14 | target_priority_changed(slot_id: StringName, priority: StringName) | Tower & Build. Nghe: panel Tower |

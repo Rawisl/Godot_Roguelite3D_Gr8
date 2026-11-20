@@ -4,7 +4,7 @@ extends RefCounted
 ## caster and runs range metres forward, width metres across. A barricade or a wall in the way
 ## shortens the rectangle, and so does the edge of the spawn zone. The flying slash is only a visual and is drawn by the VFX.
 
-const ENEMY_GROUP: StringName = &"enemy"
+const SkillHitOrder = preload("res://systems/skill/skill_hit_order.gd")
 const WORLD_MASK := 1
 ## Height of the blocker ray above the caster's feet.
 const RAY_HEIGHT := 0.6
@@ -24,7 +24,7 @@ static func cast(caster: Node3D, data: SkillData, level: int, damage_mult: float
 	var reach := clear_distance(caster, dir, data.get_value(&"range", level))
 	reach = minf(reach, spawn_zone_distance(caster, dir, reach))
 	var hits := 0
-	for node in caster.get_tree().get_nodes_in_group(ENEMY_GROUP):
+	for node in SkillHitOrder.targets(caster.get_tree(), caster, dir):
 		var enemy := node as Node3D
 		if enemy == null or not is_instance_valid(enemy) or enemy.is_queued_for_deletion():
 			continue

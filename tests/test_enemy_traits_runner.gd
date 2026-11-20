@@ -40,9 +40,11 @@ func test_defaults_off() -> void:
 			and blank.invuln_duration == 0.0 and not blank.is_charger and blank.revive_count == 0,
 			"A new EnemyData has every trait off")
 	assert_true(blank.traits.is_empty(), "No trait ids without flags")
-	for id in [&"grunt", &"archer", &"brute"]:
+	for id in [&"grunt", &"archer"]:
 		var data := EnemyTraits.data_of(id)
-		assert_true(data != null and data.traits.is_empty(), "%s has no trait yet" % id)
+		assert_true(data != null and data.traits.is_empty(), "%s has no trait" % id)
+	var brute := EnemyTraits.data_of(&"brute")
+	assert_true(brute != null and brute.traits == [&"charge"], "The Brute charges and shows only that trait")
 
 
 func test_trait_ids() -> void:

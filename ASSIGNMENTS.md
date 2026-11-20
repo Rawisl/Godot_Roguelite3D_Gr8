@@ -1147,18 +1147,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG2
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí)
 - Nghiệm thu: Skill, projectile, boss clock, Cuồng nộ, hiệu ứng vũ khí đúng ở x1/x2/x3
 - Cần xong trước: W10-NG3
+- Ghi chú W11: TimeManager, boss timer, skill, projectile damage and Hazard effect runners passed. Full gameplay verification at all three speeds is pending.
 
 ##### W11-NG3
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Chạy lại test Combat, Skill, Boss (7.1, F1..F15, CM1..CM8, HT1..HT14); sửa lỗi
 - Nghiệm thu: Không lỗi console
 - Cần xong trước: W10-NG1
+- Ghi chú W11: Automated combat, skill, status, and heal regressions passed. The full manual SRS scenario pass is pending.
 
 ##### W11-NG5
 - Người: Ngọc
@@ -1179,22 +1181,24 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG7
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Hiệu ứng vũ khí: Frost (Slow 20%/3 s), Burn (tổng 50% dmg gốc/5 s), Chain Lightning (3 mục tiêu, 20%, bán kính 2 m, chain_cd 5 s dùng chung); kích hoạt cả với tick Firebomb và skill chủ động; sát thương hiệu ứng mang damage_type của đòn, tính hit_by_commander, không tự kích hoạt lại
 - Nghiệm thu: WP3, WP4, WP5, WP8 đạt; Frost làm chậm Bulwark pha 1; hiệu ứng bị trần 10% trong Hazard Trial (HZ3)
 - Tệp liên quan: entities/commander/commander.gd, systems/skill/skill_runner.gd, systems/skill/whirlwind_skill.gd
 - ID SRS: WPN-04..08
 - Cần xong trước: W9-NG5, W10-NG9, W10-NG10
+- Ghi chú W11: The runner covers weapon procs inside and outside Hazard, Chain target order, room isolation, and cooldown restoration after swapping weapons. Full gameplay verification is pending. Kim (@kimvux) owns final icons and VFX.
 
 ##### W11-NG8
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Brute sửa: is_charger, mục tiêu cố định FORTRESS, miễn khiêu khích và Battle Cry, va mỗi công trình một lần rồi đi vòng, va chỉ huy hất văng (tối đa 1 lần/2 s, Dodge và Deploying miễn)
 - Nghiệm thu: NE5 đạt
 - Tệp liên quan: entities/enemy/brute.gd, data/enemies/brute.tres
 - ID SRS: EN-25
 - Cần xong trước: W10-KT7
+- Ghi chú W11: The corridor runner verifies physical contacts with a Barricade and a tower, one hit per building, a return to the lane, and arrival at a Fortress melee slot. It also verifies recycle, sword provocation immunity, and Commander contact and melee rules in Hazard. Mạnh can carry the initial impact damage of 25 and knockback of 2 into the final workbook.
 
 ##### W11-NG9
 - Người: Ngọc
@@ -1587,12 +1591,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM9
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model quân mới, phần 2 (Suicide Squad, Captain, Knight, Undead) và hiệu ứng FBK-14 (giáp sáng Knight, xương Undead, telegraph nổ)
 - Nghiệm thu: Bốn loại khác nhau rõ; telegraph hiện trước nổ
 - Tệp liên quan: contents/, art/
 - ID SRS: 3.7.8, FBK-14, FBK-06
 - Cần xong trước: W10-KT7
+- Ghi chú bàn giao: Models only, in `contents/assets/characters/enemy and boss/`, built on the KayKit skeletons: `suicide_squad_model.tscn` (Archer skeleton with a red outfit (`toon_cloth_tint.gdshader` tints the clothing and gear only, the bones stay white), a KayKit bomb on the back, no weapon), `captain_model.tscn` (bronze outfit with white bones, 1.1x the Squad's size, the Skeleton_Warrior helmet instead of the hood, a bigger bomb and a sword, melee clips), `knight_model.tscn` (the KayKit commander-pack Knight body with the Skeleton_Warrior skull, jaw, eyes and helmet on the same Rig_Medium, `knight/skeleton_knight.glb`, body tinted toward the skeleton palette; sword and large shield) and `undead_model.tscn` (Mage skeleton in mossy green with a scythe). Effects the unit code calls (scripts in `art/characters/`): `set_fuse(bool)` on the Squad and Captain (bomb glows red, pulse under 3/s, steady with Reduce flashing), `set_invulnerable(bool)` on the Knight (gold armour glow and a shield icon over the head) and `set_reviving(bool)` on the Undead (green bones swirling and a ground ring). The red ring before the blast is the existing telegraph: the unit sends `telegraph_started` and TelegraphFxManager draws it. Hooking the models to enemy scenes and data waits for W10-KT7. Verified by `tests/test_new_enemy_models_2.tscn` (21 checks).
 
 ##### W11-KM10
 - Người: Kim
