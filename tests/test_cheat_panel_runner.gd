@@ -2,11 +2,13 @@ extends Node
 ## Runner for the cheat scene:
 ## - HealthComponent ignores damage while its invulnerable flag is set
 ## - the cheat scene starts one run by itself, never writes the save, and restores it on exit
-## - PageUp toggles the panel; the summon list holds the plain enemies only
+## - PageUp toggles the panel; the summon list holds the plain enemies and the listed bosses
 ## - gold, level, wave jump, summon, kill, invincibility and heal act on the real systems
+## - a summoned boss tells the boss bar its id and announces its spawn
 ## The save runs on an in-memory repository, so the player's save is never touched.
 
 const GRUNT_PATH := "res://entities/enemy/grunt.tscn"
+const CENTIPEDE_PATH := "res://entities/enemy/skeletal_centipede.tscn"
 
 var passes: int = 0
 var fails: int = 0
@@ -20,6 +22,7 @@ var _rs: RunState
 var _run_started_count := 0
 var _level_up_count := 0
 var _spawned: Array = []
+var _boss_events: Array = []
 var _hc_damaged := 0
 var _hc_hp_changed := 0
 var _hc_died := 0
@@ -198,8 +201,9 @@ func test_panel_and_input() -> void:
 		and paths.has("res://entities/enemy/brute.tscn")
 		and not paths.has("res://entities/enemy/enemy.tscn")
 		and not paths.has("res://entities/enemy/bulwark.tscn")
+		and paths.has(CENTIPEDE_PATH)
 		and _panel.summon_option.item_count == scenes.size() and labels_ok,
-		"test_c6_summon_list_plain_enemies_only")
+		"test_c6_summon_list_plain_enemies_and_listed_bosses")
 	var focus_free := true
 	for control in _panel.get_clickable_controls():
 		if control.focus_mode != Control.FOCUS_NONE:
@@ -318,6 +322,25 @@ func test_combat_cheats() -> void:
 
 	var healed: int = _panel.heal_all()
 	assert_true(healed >= 1 and fortress.health.hp == fortress.health.max_hp, "test_f7_heal_all")
+
+	var alive_before_boss := _wm.enemies_alive
+	_boss_events.clear()
+	EventBus.boss_intro_started.connect(_catch_boss_intro)
+	EventBus.boss_spawned.connect(_catch_boss_spawned)
+	var boss := _panel.summon(load(CENTIPEDE_PATH) as PackedScene) as Enemy
+	EventBus.boss_intro_started.disconnect(_catch_boss_intro)
+	EventBus.boss_spawned.disconnect(_catch_boss_spawned)
+	assert_true(boss is SkeletalCentipede and boss.is_inside_tree() and boss.spawn_wave == 3
+		and _wm.enemies_alive == alive_before_boss + 1
+		and _boss_events == [&"skeletal_centipede", &"spawned"], "test_f8_summon_centipede_boss")
+
+
+func _catch_boss_intro(boss_id: StringName) -> void:
+	_boss_events.append(boss_id)
+
+
+func _catch_boss_spawned() -> void:
+	_boss_events.append(&"spawned")
 
 
 func test_leave_scene() -> void:

@@ -9,6 +9,8 @@ extends CanvasLayer
 @export var invincible_refresh_interval: float = 0.5
 ## Damage of commander sword hits and skills is multiplied by this while instant kill is on.
 @export var instant_kill_mult: float = 1000.0
+## Bosses the summon list offers next to the plain enemies, by BossData id.
+@export var summon_boss_ids: Array[StringName] = [&"skeletal_centipede"]
 
 const ENEMY_DIR := "res://entities/enemy/"
 const BASE_ENEMY_SCENE := "enemy.tscn"
@@ -164,6 +166,10 @@ func summon(scene: PackedScene) -> Node:
 	var wave := wm.current_wave
 	var cfg: ScaleConfig = wm.scale_config if wm.scale_config != null else ScaleConfig.new()
 	enemy.apply_wave_scale(cfg.get_hp_mult(wave), cfg.get_dmg_mult(wave), cfg.get_speed_mult(wave), wave, cfg)
+	var boss_data := enemy.data as BossData
+	# The boss id first, so the boss bar names this boss instead of the first one it knows.
+	if boss_data != null:
+		EventBus.boss_intro_started.emit(boss_data.id)
 	if wm.enemy_container != null and is_instance_valid(wm.enemy_container):
 		wm.enemy_container.add_child(enemy)
 	else:
@@ -172,6 +178,9 @@ func summon(scene: PackedScene) -> Node:
 	wm.total_wave_enemies += 1
 	EventBus.enemy_spawned.emit(enemy)
 	EventBus.enemy_count_changed.emit(wm.enemies_alive, wm.spawn_queue.size(), wm.total_wave_enemies)
+	# Lets the boss bar and the boss effects attach to it, as for a boss the wave spawns.
+	if boss_data != null:
+		EventBus.boss_spawned.emit()
 	return enemy
 
 
@@ -316,7 +325,8 @@ func _invincible_targets() -> Array[Node]:
 	return targets
 
 
-## Spawnable enemy scenes, sorted by file name; bosses and the base scene are left out.
+## Spawnable enemy scenes, sorted by file name; the base scene and bosses outside
+## summon_boss_ids are left out.
 func _build_summon_list() -> void:
 	var files: Array[String] = []
 	for file in ResourceLoader.list_directory(ENEMY_DIR):
@@ -329,7 +339,10 @@ func _build_summon_list() -> void:
 			continue
 		var inst := scene.instantiate()
 		var enemy := inst as Enemy
-		if enemy == null or enemy.data == null or enemy.data is BossData:
+		if enemy == null or enemy.data == null:
+			inst.free()
+			continue
+		if enemy.data is BossData and not summon_boss_ids.has(enemy.data.id):
 			inst.free()
 			continue
 		var label := tr(enemy.data.display_name_key)
