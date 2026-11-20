@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_base"]
+[ext_resource type="Resource" path="res://data/enemies/rider.tres" id="2_data"]
+[ext_resource type="PackedScene" uid="uid://dgpph0mvodhty" path="res://contents/assets/characters/enemy and boss/rider/rider_model.tscn" id="3_model"]
+
+[node name="EnemyBase" unique_id=829913656 instance=ExtResource("1_base")]
+data = ExtResource("2_data")
+
+[node name="RiderModel" parent="Model" parent_id_path=PackedInt32Array(1049866202) index="0" unique_id=664745782 instance=ExtResource("3_model")]

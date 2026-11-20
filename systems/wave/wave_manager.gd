@@ -23,6 +23,8 @@ var _fallback_run_seed: int = 0
 @export var grunt_scene: PackedScene = preload("res://entities/enemy/grunt.tscn")
 @export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
 @export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
+@export var sniper_scene: PackedScene = preload("res://entities/enemy/sniper.tscn")
+@export var rider_scene: PackedScene = preload("res://entities/enemy/rider.tscn")
 @export var bulwark_scene: PackedScene = preload("res://entities/enemy/bulwark.tscn")
 @export var boss_data: BossData = preload("res://data/bosses/bulwark_boss.tres")
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
@@ -300,6 +302,10 @@ func _get_scene_for_enemy_id(enemy_id: StringName) -> PackedScene:
 			return archer_scene
 		&"brute":
 			return brute_scene
+		&"sniper":
+			return sniper_scene
+		&"rider":
+			return rider_scene
 		_:
 			return grunt_scene
 

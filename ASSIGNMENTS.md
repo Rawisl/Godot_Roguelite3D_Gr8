@@ -872,13 +872,14 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT8
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sniper và Rider: dữ liệu, scene, hành vi (Sniper tầm hơn Arrow cấp 1, dừng bắn như Archer; Rider chạy nhanh)
 - Nghiệm thu: Sniper bắn từ ngoài tầm Arrow cấp 1; Rider cận chiến như Grunt
 - Tệp liên quan: entities/enemy/ (mới sniper.*, rider.*), data/enemies/
 - ID SRS: EN-19, EN-21
 - Cần xong trước: W10-KT7
 
+- Ghi chú bàn giao: Sniper and Rider rows added to the enemies sheet of balance.xlsx (only that sheet's XML changed; the build_cost Power Query and the other sheets are untouched, which openpyxl would not keep) and generated into data/enemies/sniper.tres and rider.tres. Sniper: ranged PIERCE, attack_range 17 against 14 for the level 1 Arrow, Archer targets, uses the Archer script so it stops and shoots. Rider: melee SLASH like the Grunt with the Grunt's targets, move_speed 6 against 3.5. The numbers are first values for Mạnh to balance. Scenes entities/enemy/sniper.tscn and rider.tscn use Kim's sniper_model and rider/rider_model from W10-KM11; the Rider's anim_walk is the seated simulation/Sit_Chair_Idle clip, as the model note asks. WaveManager maps both ids to their scenes; neither is in a wave yet: the WaveScript rows come with the wave script work. Names in strings.csv (Khang). Runner `tests/test_sniper_rider_runner.tscn`.
 ##### W10-KT9
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
