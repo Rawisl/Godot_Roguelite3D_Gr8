@@ -16,7 +16,7 @@ loading.tip.1,Sửa Fortress trong lúc chuẩn bị để giữ máu thành
 dialog.abandon.title,Bỏ cuộc?
 dialog.abandon.body,Lượt chơi sẽ kết thúc ngay và được tính là bỏ cuộc.
 dialog.quit_run.title,Thoát game?
-dialog.quit_run.body,Lượt chơi hiện tại sẽ được tính là bỏ cuộc rồi thoát game.
+dialog.quit_run.body,"Nếu thoát bây giờ, lượt chơi này sẽ được tính là bỏ cuộc."
 run_end.play_again,Chơi lại
 run_end.main_menu,Về menu chính
 run_end.type.fortress_destroyed,Fortress bị phá hủy
@@ -57,7 +57,7 @@ tower.barricade,Rào chắn
 tower.heal_station,Trạm hồi lực
 panel.tower.level,Cấp {level}
 panel.tower.hp,Máu {value}/{max}
-panel.tower.upgrade,Nâng cấp - {gold} vàng
+panel.tower.upgrade,Nâng cấp · {gold} vàng
 panel.tower.sell,Bán (+{gold} vàng)
 panel.tower.next,Cấp kế: Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {hp}
 panel.tower.priority,Ưu tiên bắn
@@ -67,7 +67,7 @@ panel.priority.nearest,Gần nhất
 panel.priority.paused,Không đổi được khi tạm dừng
 panel.tower.next_max,Cấp kế: đã đạt cấp tối đa
 dialog.sell.title,Bán công trình?
-dialog.sell.body,Bán {name} cấp {level} và nhận lại {gold} vàng. Không hoàn tác được.
+dialog.sell.body,"{name} · Cấp {level}\nSau khi bán, bạn không thể hoàn tác."
 hover.enemy.hp,{name} · Máu {hp}/{max}
 hover.enemy.target,Mục tiêu: {target}
 hover.target.none,Không có
@@ -81,8 +81,8 @@ fbk.resist,RESIST
 fbk.immune,IMMUNE
 dialog.ok,Đã hiểu
 dialog.save_failed.title,Lưu thất bại
-dialog.run_recovered.title,Phiên chơi bị gián đoạn
-dialog.run_recovered.body,Phiên chơi trước bị gián đoạn. Đã quy đổi {value} danh vọng.
+dialog.run_recovered.title,Lượt chơi bị gián đoạn
+dialog.run_recovered.body,Đã quy đổi {value} danh vọng.
 hud.speed.x1,x1
 hud.speed.x2,x2
 hud.speed.x3,x3
@@ -222,7 +222,7 @@ menu.account_signed_in,Tài khoản: {name}
 menu.account_offline,Đang ngoại tuyến. Tiến trình vẫn được lưu trên máy này.
 menu.account_expired,Phiên đăng nhập đã hết hạn. Đang chơi bằng tài khoản khách.
 dialog.sign_out.title,Đăng xuất?
-dialog.sign_out.body,Đăng xuất khỏi tài khoản {name}. Bạn sẽ chơi tiếp bằng tài khoản khách.
+dialog.sign_out.body,Bạn sẽ rời tài khoản {name} và tiếp tục chơi với tư cách khách.
 dialog.sign_out.confirm,Đăng xuất
 login.error.display_name_taken,Tên hiển thị đã có người dùng. Hãy chọn tên khác!
 login.error.email_not_authorized,Máy chủ chưa gửi được email tới địa chỉ này. Hãy báo nhóm phát triển!
@@ -236,7 +236,7 @@ panel.heal.level,Cấp
 panel.build.blocks_path,Đường đi sẽ bị chặn
 panel.build.clear_rubble,Dọn đổ nát
 panel.tower.level_tier,Cấp {level} · Bậc {tier}
-panel.tower.sell_locked,Bán được từ wave {wave}
+panel.tower.sell_locked,Mở bán từ đợt {wave}
 panel.heal.level_value,{level}/{max} · Bậc {tier}
 panel.heal.upgrade_tip,Nâng cấp chỉ cộng thêm phần kho tăng thêm
 panel.heal.broken,Đã hỏng
@@ -265,7 +265,7 @@ reward.slot.empty,Trống
 reward.empty,Không còn thẻ nào để chọn
 reward.skip,Bỏ qua
 reward.skip.title,Bỏ qua lượt chọn?
-reward.skip.body,"Bỏ qua sẽ mất lượt chọn này, không được bù vàng."
+reward.skip.body,Bạn sẽ mất lượt chọn này và không nhận được vàng bù.
 reward.slot.tip,"{name}
 Cấp {level}/{max}"
 hud.state.reward_pick,Chọn thưởng
@@ -445,10 +445,10 @@ summary.fortress_hint_hazard,Thành sắp sập: vào Hazard Trial để nhận 
 hud.fortress_hint,Sửa Fortress bằng Mithril trước khi bắt đầu đợt quái.
 hud.fortress_hint_hazard,Chưa có Mithril: vào Hazard Trial để nhận Mithril sửa Fortress.
 menu.paused_info,Đợt quái {wave} · {time}
-dialog.abandon.body_run,Lượt chơi kết thúc ở đợt quái {wave} và tính là thất bại. Bạn nhận {gain} danh vọng.
+dialog.abandon.body_run,Bạn dừng ở đợt {wave} và nhận {gain} danh vọng. Lượt chơi sẽ được tính là thất bại.
 dialog.abandon.body_survived,Lượt chơi kết thúc và tính là sống sót đến đợt quái {wave}. Bạn nhận {gain} danh vọng.
-dialog.quit_run.body_run,"Lượt chơi kết thúc ở đợt quái {wave}, tính là thất bại, rồi thoát game. Bạn nhận {gain} danh vọng."
-dialog.quit_run.body_survived,Lượt chơi tính là sống sót đến đợt quái {wave} rồi thoát game. Bạn nhận {gain} danh vọng.
+dialog.quit_run.body_run,Bạn dừng ở đợt {wave} và nhận {gain} danh vọng. Lượt chơi sẽ được tính là thất bại trước khi thoát.
+dialog.quit_run.body_survived,Bạn đã sống sót đến đợt {wave}. Bạn sẽ nhận {gain} danh vọng trước khi thoát.
 settings.gfx.window_mode,Chế độ cửa sổ:
 settings.gfx.windowed,Cửa sổ
 settings.gfx.fullscreen,Toàn màn hình
@@ -487,27 +487,27 @@ dialog.close,Đóng
 dialog.save_failed.retry,Thử lại
 dialog.save_corrupt.title,Dữ liệu lưu bị hỏng
 dialog.save_corrupt.new,Tạo save mới
-dialog.sync_upload.line_empty,Tài khoản này chưa có profile
+dialog.sync_upload.line_empty,Tài khoản này chưa có profile.
 dialog.sync_upload.line_take,Tải tiến trình trên máy này lên:
 dialog.sync_upload.row_balance,Danh vọng:
 dialog.sync_upload.row_wave,Kỷ lục đợt quái:
 dialog.sync_upload.row_runs,Lượt chơi:
-dialog.sync_other_device.line,Tài khoản có tiến trình mới hơn từ máy khác
-dialog.sync_other_device.note,(Bản trên máy này được giữ ở save.conflict.bak)
-dialog.save_corrupt.line1,Không đọc được dữ liệu lưu
-dialog.save_corrupt.line2,Game đang chạy với tiến trình mới và chưa ghi gì
-dialog.save_corrupt.note,(Tạo save mới sẽ cất bản hỏng thành .corrupt rồi bắt đầu lại)
-dialog.save_failed.line1,Không ghi được dữ liệu lưu
-dialog.save_failed.line2,Hãy kiểm tra dung lượng ổ đĩa và quyền ghi
-dialog.save_failed.note,(Tiến trình vẫn còn trong game và được ghi lại khi bấm Thử lại)
+dialog.sync_other_device.line,Tài khoản có tiến trình mới hơn từ máy khác.
+dialog.sync_other_device.note,Bản trên máy này được giữ ở save.conflict.bak.
+dialog.save_corrupt.line1,Không đọc được dữ liệu lưu.
+dialog.save_corrupt.line2,Game đang chạy với tiến trình mới và chưa ghi gì.
+dialog.save_corrupt.note,Tạo save mới sẽ cất bản hỏng thành .corrupt rồi bắt đầu lại.
+dialog.save_failed.line1,Không ghi được dữ liệu lưu.
+dialog.save_failed.line2,Hãy kiểm tra dung lượng ổ đĩa và quyền ghi.
+dialog.save_failed.note,Tiến trình vẫn còn trong game và được ghi lại khi bấm Thử lại.
 dialog.save_blocked.title,Chưa lưu được
-dialog.save_blocked.line1,Dữ liệu lưu trên máy đang bị khóa ghi
-dialog.save_blocked.line2,Game vẫn chơi bình thường nhưng tiến trình mới chưa được ghi
-dialog.save_blocked.note,(Save được tạo bởi bản game mới hơn hoặc không đọc được nên được giữ nguyên)
+dialog.save_blocked.line1,Dữ liệu lưu trên máy đang bị khóa ghi.
+dialog.save_blocked.line2,Game vẫn chơi bình thường nhưng tiến trình mới chưa được ghi.
+dialog.save_blocked.note,Save được tạo bởi bản game mới hơn hoặc không đọc được nên được giữ nguyên.
 dialog.save_too_new.title,Bản lưu từ phiên bản game mới hơn
-dialog.save_too_new.line1,Hãy cập nhật game để chơi tiếp tiến trình này
-dialog.save_too_new.line2,Game đang chạy với tiến trình mới và chưa ghi gì
-dialog.save_too_new.note,"(Bản lưu được giữ nguyên, không bị ghi đè)"
+dialog.save_too_new.line1,Hãy cập nhật game để chơi tiếp tiến trình này.
+dialog.save_too_new.line2,Game đang chạy với tiến trình mới và chưa ghi gì.
+dialog.save_too_new.note,"Bản lưu được giữ nguyên, không bị ghi đè."
 tutorial.title,Hướng dẫn
 tutorial.step,Bước {n}/{total}
 tutorial.remind,(Nhắc lại)
@@ -567,3 +567,6 @@ tower.stat.range,Tầm bắn
 tower.stat.rate,Tốc bắn
 tower.range_m,{value} m
 tower.rate_s,{value}/s
+dialog.sell.refund,Vàng thu về
+dialog.sell.confirm,Bán
+dialog.run_recovered.gain,Danh vọng nhận được

@@ -18,3 +18,5 @@ B mở hoặc đóng bảng xây trong PREP. Chọn lại đúng ô đất, tr�
 Các nút thao tác dùng chung có trạng thái rê, nhấn và khóa. Nâng cấp dùng nền xanh bạc hà và mũi tên lên, bán dùng nền sẫm viền màu san hô và dấu trừ. Sửa Thành dùng dấu cộng, dọn đổ nát dùng dấu ×.
 
 Thu gọn bảy bảng sát mép phải xuống 370 đơn vị ở khung thiết kế 1920 × 1080. Danh sách kiếm cuộn dọc với tên ở dòng riêng, trạng thái và tầm đánh ở dòng kế. Hàng tự tăng chiều cao theo mô tả.
+
+Bảng chọn vũ khí chuyển ra giữa màn hình với sáu ô kiếm, làm mờ hậu cảnh và tạm dừng game. Trong PREP có thể trang bị liên tục trước khi thoát bằng × hoặc Esc. Xác nhận bán và thông báo lượt chơi gián đoạn tách số vàng, danh vọng thành hàng riêng. Nút nâng cấp và bán dùng phông đậm hỗ trợ tiếng Việt.

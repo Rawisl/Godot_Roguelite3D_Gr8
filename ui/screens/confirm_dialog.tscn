@@ -2,6 +2,17 @@
 
 [ext_resource type="Script" uid="uid://c6j0alsjo1dst" path="res://ui/screens/confirm_dialog.gd" id="1_bcfhv"]
 
+[ext_resource type="Script" path="res://ui/screens/notice_glyph.gd" id="2_mark"]
+
+[sub_resource type="StyleBoxFlat" id="ResultSurface"]
+bg_color = Color(0.13, 0.18, 0.20, 1)
+content_margin_left = 14.0
+content_margin_right = 14.0
+content_margin_top = 9.0
+content_margin_bottom = 9.0
+border_width_left = 3
+border_color = Color(0.78, 0.64, 0.39, 1)
+
 [node name="ConfirmDialog" type="Control" unique_id=293811443]
 texture_filter = 2
 layout_mode = 3
@@ -31,7 +42,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Center" unique_id=933321407]
-custom_minimum_size = Vector2(800, 240)
+custom_minimum_size = Vector2(640, 0)
 layout_mode = 2
 theme_type_variation = &"DialogPanel"
 
@@ -44,17 +55,46 @@ theme_override_constants/margin_bottom = 32
 
 [node name="Content" type="VBoxContainer" parent="Center/Panel/Margin" unique_id=1331133397]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 16
 
-[node name="Title" type="Label" parent="Center/Panel/Margin/Content" unique_id=1982944810]
+[node name="Heading" type="HBoxContainer" parent="Center/Panel/Margin/Content"]
+theme_override_constants/separation = 12
+
+[node name="Glyph" type="Control" parent="Center/Panel/Margin/Content/Heading"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+size_flags_vertical = 4
+script = ExtResource("2_mark")
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/Content/Heading" unique_id=1982944810]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 30
+size_flags_horizontal = 3
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.96, 0.84, 0.59, 1)
 
 [node name="Body" type="Label" parent="Center/Panel/Margin/Content" unique_id=2025588901]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
+
+[node name="Result" type="PanelContainer" parent="Center/Panel/Margin/Content"]
+visible = false
+unique_name_in_owner = true
+theme_override_styles/panel = SubResource("ResultSurface")
+
+[node name="ResultRow" type="HBoxContainer" parent="Center/Panel/Margin/Content/Result"]
+
+[node name="ResultName" type="Label" parent="Center/Panel/Margin/Content/Result/ResultRow"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+
+[node name="Amount" type="Label" parent="Center/Panel/Margin/Content/Result/ResultRow"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(0.98, 0.85, 0.55, 1)
 
 [node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/Content" unique_id=1482136529]
 layout_mode = 2

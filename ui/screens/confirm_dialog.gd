@@ -47,10 +47,17 @@ func is_transaction() -> bool:
 
 func _ready() -> void:
 	_title.text = tr(_title_key)
-	_body.text = tr(_body_key).format(_params)
+	_body.text = tr(_body_key).replace("\\n", "\n").format(_params)
 	_confirm_button.text = tr(_confirm_key)
 	_cancel_button.text = tr(_cancel_key)
 	_cancel_button.visible = not is_notice()
+	%Glyph.warning = not is_notice()
+	if _title_key == &"dialog.sell.title":
+		_show_result(&"dialog.sell.refund", int(_params.get("gold", 0)))
+		_confirm_button.text = tr(&"dialog.sell.confirm")
+	elif _title_key == &"dialog.run_recovered.title":
+		_show_result(&"dialog.run_recovered.gain", int(_params.get("value", 0)))
+		_body.hide()
 	_cancel_button.pressed.connect(cancel)
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	for button: Button in [_cancel_button, _confirm_button]:
@@ -63,6 +70,11 @@ func _ready() -> void:
 		_confirm_button.grab_focus()
 	else:
 		_cancel_button.grab_focus()
+
+func _show_result(label_key: StringName, value: int) -> void:
+	%ResultName.text = tr(label_key)
+	%Amount.text = "+%d" % value
+	%Result.show()
 
 ## In PREP the transaction stays next to the selected structure.
 func _dock_transaction() -> void:

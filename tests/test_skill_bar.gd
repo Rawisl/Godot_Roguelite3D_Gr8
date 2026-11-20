@@ -211,11 +211,16 @@ func _run_checks() -> void:
 	var effect := swift_row.get_node("%EffectLabel") as Label
 	_check(effect.get_global_rect().end.y <= swift_row.get_global_rect().end.y + 0.5,
 		"equipped weapon description stays inside its row")
-	_check(panel.size.x <= 370.5, "weapon drawer stays compact after equipping a long name")
+	_check(panel.size.x >= 800 and get_tree().paused, "weapon picker opens as a paused modal")
 	var slot_row := slot.get_node("Row") as Control
 	_check(slot_row.get_combined_minimum_size().x + 28.0 <= slot.size.x + 0.5, "longest weapon name fits the HUD slot")
 	EventBus.weapon_equipped.emit(&"frost")
 
+	_press_key(KEY_B)
+	_check(panel.visible and get_tree().paused, "build shortcut leaves the picker open")
+	(panel.get_node("%CloseButton") as Button).pressed.emit()
+	_check(not panel.visible and not get_tree().paused, "close button dismisses the picker and resumes play")
+	slot.pressed.emit()
 	EventBus.state_changed.emit(&"COMBAT")
 	_check(not panel.visible, "leaving PREP closes the panel")
 	_check(slot.disabled and slot.tooltip_text == tr(&"hud.weapon.prep_only"), "COMBAT: slot read only with the reason")
@@ -228,8 +233,6 @@ func _run_checks() -> void:
 
 	_gain_next_weapon()
 	slot.pressed.emit()
-	# Past the 0.15 s button lock of the Frost pick.
-	await TimeManager.wait_real(0.2)
 	chain_row.pressed.emit()
 	EventBus.skill_cooldown_changed.emit(&"chain_lightning", 5.0, 5.0)
 	# process_frame comes before _process, so wait one more for the ring to redraw.
@@ -239,7 +242,12 @@ func _run_checks() -> void:
 	_check(_run_state.equipped_weapon == &"chain_lightning" and sweep.ratio > 0.9, "Chain Lightning: cooldown ring runs")
 	slot.pressed.emit()
 	_press_key(KEY_V)
-	_check(not panel.visible, "V closes weapons")
+	_check(panel.visible, "V leaves the weapon picker open")
+	base_row.pressed.emit()
+	frost_row.pressed.emit()
+	_check(panel.visible and _run_state.equipped_weapon == &"frost", "repeated picks equip immediately")
+	_press_key(KEY_ESCAPE)
+	_check(not panel.visible and not get_tree().paused, "Esc closes the picker and resumes play")
 
 	EventBus.run_started.emit()
 	_check(first.is_visible_in_tree() and not sheet.visible, "new run shows only active slots")

@@ -37,6 +37,16 @@
 [ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
 [ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="31_preview"]
 
+[sub_resource type="Shader" id="WeaponBlur"]
+code = "shader_type canvas_item;
+uniform sampler2D scene : hint_screen_texture, repeat_disable, filter_linear_mipmap;
+void fragment() {
+    COLOR = vec4(textureLod(scene, SCREEN_UV, 2.6).rgb * vec3(0.48, 0.52, 0.58), 1.0);
+}"
+
+[sub_resource type="ShaderMaterial" id="WeaponBlurMaterial"]
+shader = SubResource("WeaponBlur")
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
 content_margin_top = 10.0
@@ -257,13 +267,6 @@ layout_mode = 2
 custom_minimum_size = Vector2(370, 0)
 size_flags_horizontal = 8
 
-[node name="WeaponPanel" parent="Root/DrawerMotion/Dock" unique_id=1739205105 instance=ExtResource("24_wpanel")]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-custom_minimum_size = Vector2(370, 0)
-size_flags_horizontal = 8
-
 [node name="BuildPanel" parent="Root/DrawerMotion/Dock" unique_id=1099369015 instance=ExtResource("8_6gxmt")]
 unique_name_in_owner = true
 visible = false
@@ -317,6 +320,27 @@ layout_mode = 1
 
 [node name="OffscreenIndicators" parent="Root" unique_id=352408765 instance=ExtResource("8_gfles")]
 layout_mode = 1
+
+[node name="WeaponOverlay" type="Control" parent="Root"]
+unique_name_in_owner = true
+visible = false
+process_mode = 3
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Blur" type="ColorRect" parent="Root/WeaponOverlay"]
+material = SubResource("WeaponBlurMaterial")
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="Root/WeaponOverlay"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="WeaponPanel" parent="Root/WeaponOverlay/Center" unique_id=1739205105 instance=ExtResource("24_wpanel")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="SelectionController" type="Node" parent="." unique_id=79485306]
 unique_name_in_owner = true

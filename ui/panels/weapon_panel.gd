@@ -7,7 +7,6 @@ extends PanelContainer
 signal closed
 
 const PREP := &"PREP"
-const BUTTON_LOCK_TIME := 0.15
 
 ## Every weapon a run can own, in the order of the rows.
 @export var weapons: Array[WeaponData] = []
@@ -16,7 +15,6 @@ const BUTTON_LOCK_TIME := 0.15
 
 var _owned: Array[StringName] = [RunState.BASE_WEAPON]
 var _equipped: StringName = RunState.BASE_WEAPON
-var _locked := false
 
 @onready var _title: Label = %Title
 @onready var _close: Button = %CloseButton
@@ -90,7 +88,7 @@ func _sync_from_run() -> void:
 
 func _on_row_pressed(index: int) -> void:
 	var data := weapons[index]
-	if _try_lock() and _is_prep() and _owned.has(data.id) and data.id != _equipped:
+	if _is_prep() and _owned.has(data.id) and data.id != _equipped:
 		var rs := _run_state()
 		if rs != null:
 			rs.equip_weapon(data.id)
@@ -118,14 +116,3 @@ func _on_gained(weapon_id: StringName) -> void:
 func _on_state_changed(_new_state: StringName) -> void:
 	if visible:
 		refresh()
-
-func _try_lock() -> bool:
-	if _locked:
-		return false
-	_locked = true
-	_unlock_later()
-	return true
-
-func _unlock_later() -> void:
-	await TimeManager.wait_real(BUTTON_LOCK_TIME)
-	_locked = false

@@ -33,12 +33,13 @@ func _ready() -> void:
 	_selection.selection_cleared.connect(close_all)
 	_fortress_panel.visible = false
 	_fortress_panel.closed.connect(close_all)
-	_weapon_panel.visible = false
+	_weapon_panel.hide()
 	_weapon_panel.closed.connect(close_all)
+	_weapon_panel.tree_exiting.connect(_release_weapon_pause)
 	_character.weapons_requested.connect(_show_weapons)
 	_character.closed.connect(close_all)
 	%CommanderStatus.details_requested.connect(_toggle_character)
-	for panel in [_character, _build_panel, _tower_panel, _heal_panel, _weapon_panel, _fortress_panel]:
+	for panel in [_character, _build_panel, _tower_panel, _heal_panel, _fortress_panel]:
 		panel.visibility_changed.connect(_on_drawer_visibility.bind(panel))
 	EventBus.run_started.connect(close_all)
 	_selection.fortress_selected.connect(_show_fortress)
@@ -73,6 +74,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		close_all()
 		get_viewport().set_input_as_handled()
 
+func _input(event: InputEvent) -> void:
+	if not _weapon_panel.visible or ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
+		return
+	if event is InputEventKey and event.is_action_pressed(&"pause"):
+		close_all()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey:
+		get_viewport().set_input_as_handled()
+
+func _release_weapon_pause() -> void:
+	if _weapon_panel.visible:
+		TimeManager.release_pause(TimeManager.REASON_WEAPON_PICK)
+
 func _toggle_character() -> bool:
 	if not is_visible_in_tree() or ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
 		return false
@@ -93,7 +107,11 @@ func _hide_panels() -> void:
 	_tower_panel.visible = false
 	_heal_panel.visible = false
 	_fortress_panel.visible = false
-	_weapon_panel.visible = false
+	if _weapon_panel.visible:
+		_weapon_panel.hide()
+		%WeaponOverlay.hide()
+		TimeManager.release_pause(TimeManager.REASON_WEAPON_PICK)
+		_preview_holder.show()
 	_ring.hide_ring()
 
 func _any_open() -> bool:
@@ -215,8 +233,13 @@ func _show_heal_station(slot_id: StringName) -> void:
 
 ## Opened from the weapon slot. Clearing the selection first closes a tower or slot panel.
 func _show_weapons() -> void:
+	if _weapon_panel.visible:
+		return
 	_selection.clear_selection()
 	_hide_panels()
+	%WeaponOverlay.show()
+	_preview_holder.hide()
+	TimeManager.request_pause(TimeManager.REASON_WEAPON_PICK)
 	_weapon_panel.visible = true
 	_weapon_panel.open()
 

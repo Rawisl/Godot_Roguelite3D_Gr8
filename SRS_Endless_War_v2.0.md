@@ -1940,9 +1940,9 @@ Game dừng ở REWARD_PICK (RWP-01) và ở màn thắng (SCR-20).
 
 ### 4.1.4 Panel tương tác
 
-Bảng Xây, Trụ, Trạm hồi lực, Thành, Chỉ huy và Vũ khí trượt từ giữa cạnh phải trong 0,22 giây, mặt bảng nối sát mép game. Mỗi lần hiện một bảng, nút × ở đầu bảng. Chọn lại ô đất hoặc công trình đang xem để đóng. Xác nhận giao dịch cũng neo ở giữa cạnh phải và giữ hai nút Hủy, Xác nhận.
+Bảng Xây, Trụ, Trạm hồi lực, Thành và Chỉ huy trượt từ giữa cạnh phải trong 0,22 giây, mặt bảng nối sát mép game. Mỗi lần hiện một bảng, nút × ở đầu bảng. Chọn lại ô đất hoặc công trình đang xem để đóng. Xác nhận giao dịch cũng neo ở giữa cạnh phải với hai nút Hủy và Bán. Bảng bán hiển thị tên, cấp công trình và một dòng riêng cho số vàng thu về. Thông báo lượt chơi gián đoạn hiển thị số danh vọng trong một dòng riêng.
 
-Các bảng này rộng 370 đơn vị ở độ phân giải thiết kế 1920 × 1080 (khoảng 247 px ở 1280 × 720). Danh sách kiếm cuộn dọc. Mỗi hàng hiển thị tên, tiếp theo là trạng thái và tầm đánh, rồi đến mô tả hiệu ứng. Mô tả dài xuống dòng và tăng chiều cao hàng. Đổi kiếm giữ nguyên chiều rộng bảng.
+Các bảng này rộng 370 đơn vị ở độ phân giải thiết kế 1920 × 1080 (khoảng 247 px ở 1280 × 720). Bảng chọn kiếm mở giữa màn hình, làm mờ hậu cảnh và tạm dừng trò chơi. Người chơi có thể đổi kiếm nhiều lần trong PREP. Nút × hoặc Esc đóng bảng và trả lại quyền điều khiển.
 
 Nút Nâng cấp dùng nền xanh bạc hà với mũi tên lên. Nút Bán có nền tối, viền san hô và dấu trừ. Sửa Thành dùng dấu cộng, Dọn đổ nát dùng dấu ×. Các nút dùng chung phản hồi rê và nhấn. Khi bị khóa, mặt nút chuyển xám và hiện lý do hoặc mức thiếu theo ngữ cảnh (HUD-05, PNL-09).
 
@@ -1965,7 +1965,7 @@ Nút Nâng cấp dùng nền xanh bạc hà với mũi tên lên. Nút Bán có 
 | PNL-12 | Mở panel khi Pause: ở PREP cho phép mọi thao tác. Ở COMBAT, BOSS_COMBAT và HAZARD_TRIAL panel chỉ đọc, các nút đổi priority xám kèm tooltip "Không đổi được khi tạm dừng" |
 | PNL-13 | Panel Fortress (PNL-04) chỉ **hiển thị** trạng thái Emergency repair, không có nút kích hoạt (dùng bằng phím R ở Commander mode). Vì lượt khan hiếm, tooltip ở PREP gợi ý ưu tiên sửa bằng Mithril và để dành lượt cho COMBAT |
 | PNL-14 | **Panel Trạm hồi lực:** tên, cấp, thanh kho HP kèm số, tốc độ hồi chỉ huy và cấp trạm ở hai cột bên dưới (theo skill SKL-26), nút Nâng cấp (tooltip nêu chỉ cộng phần kho tăng thêm, HLT-08; "MAX" ở cấp 36), nút Bán (tooltip nêu hoàn theo HP còn, SELL-05). **Không có** nút priority hay sửa (HLT-08). Khi RUINED dùng panel đổ nát chung (xây lại, dọn) |
-| PNL-15 \[MVP] | **Panel vũ khí:** danh sách cuộn dọc, gồm owned_weapons (kiếm thường luôn có), mỗi dòng có biểu tượng, tên, tầm đánh, mô tả hiệu ứng với số liệu hiện tại; vũ khí chưa có hiện ô khóa kèm "Rơi từ boss". Chọn một dòng là trang bị ngay (WPN-03). Chỉ đổi được ở PREP; mở ở state khác thì chỉ đọc |
+| PNL-15 \[MVP] | **Panel vũ khí:** bảng giữa màn hình với lưới hai cột, gồm owned_weapons (kiếm thường luôn có), mỗi dòng có biểu tượng, tên, tầm đánh, mô tả hiệu ứng với số liệu hiện tại; vũ khí chưa có hiện ô khóa kèm "Rơi từ boss". Chọn một ô để trang bị ngay. Có thể chọn tiếp cho đến khi đóng bằng × hoặc Esc (WPN-03). Chỉ đổi được ở PREP; mở ở state khác thì chỉ đọc |
 
 ## 4.2 Input, chuột và camera trong isometric
 

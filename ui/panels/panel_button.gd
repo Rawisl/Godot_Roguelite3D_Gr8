@@ -8,7 +8,7 @@ const PRIMARY_TEXT := Color("#08272a")
 const SELL_TEXT := Color("#ffcab9")
 const MUTED_TEXT := Color("#cad5d7")
 
-@export var font_size := 22
+@export var font_size := 24
 @export var height := 56
 @export var tall_height := 80
 @export var glyph := "↑"
@@ -21,6 +21,7 @@ var _main: Label
 var _warning: Label
 
 func _init() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	add_theme_stylebox_override(&"disabled", preload("res://ui/panels/drawer_action_disabled.tres"))
 	focus_mode = Control.FOCUS_NONE
 	_lines = VBoxContainer.new()
@@ -86,6 +87,7 @@ func _fit_height() -> void:
 
 func _make_label() -> Label:
 	var label := Label.new()
+	label.add_theme_font_override(&"font", preload("res://ui/theme/fonts/BeVietnamPro-SemiBold.ttf"))
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
