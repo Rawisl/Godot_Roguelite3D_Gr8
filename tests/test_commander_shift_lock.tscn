@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://8j7nv7fs1673"]
+
+[ext_resource type="Script" uid="uid://du22n4j2v3k8k" path="res://tests/test_commander_shift_lock.gd" id="1_runner"]
+
+[node name="TestCommanderShiftLock" type="Node" unique_id=1406797848]
+script = ExtResource("1_runner")

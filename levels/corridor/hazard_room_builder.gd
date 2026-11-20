@@ -19,7 +19,7 @@ const MAT_ROCK := "res://art/materials/env_rock.tres"
 const MAT_DIRT := "res://art/materials/env_dirt.tres"
 const MAT_PAD := "res://art/materials/hazard_pad.tres"
 const MAT_GLOW := "res://art/materials/hazard_glow.tres"
-const MAT_BACKDROP := "res://art/materials/hazard_backdrop.tres"
+const MAT_SKY := "res://art/materials/hazard_sky.tres"
 
 ## Walkable floor radius: 30 m across inside the rim wall.
 const ARENA_RADIUS := 15.0
@@ -46,17 +46,15 @@ const RIM_HEIGHT_BACK := 1.0
 const PAD_WALL_HEIGHT := 1.3
 ## Walls block movement up to this height, whatever their look.
 const COLLISION_HEIGHT := 3.0
-## Fixed camera: focus a little towards the pads so the whole room is centred on screen.
+## Where the chase camera looks while there is no commander, and the corridor camera's
+## orthographic size in the room.
 const CAMERA_FOCUS := Vector3(0, 0, -2.3)
 const CAMERA_SIZE := 31.0
 
-## Painted sky on a flat quad behind the island, facing the fixed camera (pitch -45, and the level
-## turns the room by the camera yaw). With an orthographic camera its distance does not change its
-## size; it only has to sit behind everything. 2:1 like the image; 70 m still covers a 21:9 screen
-## (about 69 m wide at camera size 31).
-const BACKDROP_DISTANCE := 60.0
-const BACKDROP_SIZE := Vector2(70.0, 35.0)
-const CAMERA_BACK := Vector3(0.0, 0.70710678, 0.70710678)
+## Sky around the island: a sphere the sky shader keeps centred on the camera. It sits between the
+## farthest cloud ring (about 57 m from the camera at worst) and the corridor (65 m or more), so the
+## corridor never shows past the island; HazardRoom.chase_far has to reach past it.
+const SKY_RADIUS := 60.0
 
 ## Faint cloud rings below the island: inner radius, outer radius, height. Small enough that their
 ## sides and back stay on screen in the fixed room frame; the fronts fall below the screen.
@@ -492,14 +490,15 @@ func _build_scene() -> void:
 		ring.position.y = CLOUD_RINGS[i].z
 		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-	var backdrop := _add(root, root, MeshInstance3D.new(), "Backdrop") as MeshInstance3D
-	var quad := QuadMesh.new()
-	quad.size = BACKDROP_SIZE
-	quad.material = load(MAT_BACKDROP)
-	backdrop.mesh = quad
-	backdrop.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	backdrop.position = CAMERA_FOCUS - CAMERA_BACK * BACKDROP_DISTANCE
-	backdrop.rotation_degrees.x = -45.0
+	var sky := _add(root, root, MeshInstance3D.new(), "SkySphere") as MeshInstance3D
+	sky.unique_name_in_owner = true
+	var sphere := SphereMesh.new()
+	sphere.radius = SKY_RADIUS
+	sphere.height = SKY_RADIUS * 2.0
+	sphere.material = load(MAT_SKY)
+	sky.mesh = sphere
+	sky.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sky.visible = false
 
 	var commander := _add(root, root, Marker3D.new(), "CommanderSpawn") as Marker3D
 	commander.unique_name_in_owner = true

@@ -4,8 +4,18 @@ extends Node3D
 ## let the move keys pan it. Runs on TimeManager's real-time clock, so it ignores the game
 ## speed and keeps working while paused. The boss intro pan is the exception: it runs on game
 ## time, so it holds still while paused and lasts as long as the intro itself.
-## In the Hazard Trial the camera cuts to the room's fixed frame: no follow, no panning, C does
-## nothing; leaving cuts back to the PREP frame. Every frame change is sent on
+## In the Hazard Trial the view cuts to ChaseCamera, a perspective camera the rig builds itself.
+## It stands behind the commander and over its right shoulder (chase_shoulder_offset), starting at
+## the corridor camera's yaw (numbers on the HazardRoom), and follows the commander smoothly on
+## real time; the move keys and C do not move it. The mouse turns it: while the room has the
+## cursor, the cursor is captured and mouse motion turns the yaw and the pitch (within the room's
+## limits, and it can look up past the horizon); the wheel zooms in, never farther than the normal
+## distance. The camera orbits a pivot just above the commander and looks a few degrees above it,
+## so the commander stays a little below the middle of the screen, marked by a crosshair, which
+## points at the ground in front of the commander, and the commander's aim follows it. Looking up
+## brings the camera nearer so it stays above chase_min_height over the floor. The cursor comes
+## back while the game is paused, a dialog is open or free_cursor_key is held. Leaving cuts back
+## to the PREP frame on the corridor camera. Every frame change is sent on
 ## EventBus.camera_frame_changed.
 
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_down", &"move_left", &"move_right"]
@@ -48,6 +58,16 @@ const FRAME_HAZARD_TRIAL := &"HAZARD_TRIAL"
 ## Where the boss appears. Empty = the node in group "boss_spawn_point", then the spawn zone.
 @export var boss_spawn_point: Node3D
 
+@export_group("Hazard aim")
+## Degrees the chase camera turns per screen pixel of mouse motion.
+@export var mouse_sensitivity: float = 0.15
+## Held, it gives the cursor back in the room, for the Leave button.
+@export var free_cursor_key: Key = KEY_ALT
+@export var crosshair_color := Color(1, 1, 1, 0.85)
+## Length of each arm of the crosshair and its thickness, in pixels of the 1920x1080 screen.
+@export var crosshair_size: float = 16.0
+@export var crosshair_thickness: float = 2.0
+
 var _home: Vector3
 var _velocity: Vector3 = Vector3.ZERO
 var _commander_mode: bool = false
@@ -74,6 +94,32 @@ var _intro_left: float = 0.0
 var _last_game_time: float = 0.0
 var _hazard: bool = false
 var _frame: StringName = &""
+var _chase: Camera3D
+## True while ChaseCamera is the view in the Hazard Trial room.
+var _chase_on: bool = false
+var _room: HazardRoom
+var _chase_yaw: float = 0.0
+var _chase_pitch_deg: float = 0.0
+var _chase_distance: float = 0.0
+var _chase_distance_near: float = 0.0
+var _chase_pivot_height: float = 0.0
+var _chase_smoothing: float = 0.0
+var _chase_pitch_min: float = 0.0
+var _chase_pitch_max: float = 0.0
+var _chase_aim_tilt_deg: float = 0.0
+var _chase_far_pitch: float = 0.0
+var _chase_distance_up: float = 0.0
+var _chase_min_height: float = 0.0
+var _chase_shoulder: float = 0.0
+var _chase_zoom_min: float = 1.0
+var _chase_zoom_step: float = 0.0
+var _chase_zoom_smoothing: float = 0.0
+## Share of the normal chase distance the wheel has zoomed to, and where it is going.
+var _chase_zoom: float = 1.0
+var _chase_zoom_target: float = 1.0
+## True while the rig holds the cursor captured.
+var _captured: bool = false
+var _crosshair: CanvasLayer
 
 
 func _ready() -> void:
@@ -82,6 +128,8 @@ func _ready() -> void:
 	process_physics_priority = 100
 	_home = position
 	_camera = find_child("*", true, false) as Camera3D
+	_make_chase_camera()
+	_make_crosshair()
 	_last_real_time = TimeManager.real_time
 	_last_game_time = TimeManager.game_time
 	# Settings changed in the menus before this run started.
@@ -105,6 +153,14 @@ func _notification(what: int) -> void:
 		_clear_held()
 
 
+## Never leaves the cursor captured behind, for example when the run scene is freed.
+func _exit_tree() -> void:
+	if not _captured:
+		return
+	_captured = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
 ## Panning is off in Frontline and while the boss intro, a reward pick or a dialog owns input.
 func is_panning_enabled() -> bool:
 	if _hazard or _context() == CONTEXT_FRONTLINE or ScreenManager.has_dialog():
@@ -122,9 +178,14 @@ func is_in_boss_intro() -> bool:
 	return _intro
 
 
-## True while the camera holds the Hazard Trial room frame.
+## True from entering the Hazard Trial room until leaving it.
 func is_in_hazard_trial() -> bool:
 	return _hazard
+
+
+## True while the rig holds the cursor captured for the chase view.
+func is_cursor_captured() -> bool:
+	return _captured
 
 
 ## The frame sent last on camera_frame_changed: FRONTLINE, OVERVIEW, BOSS_INTRO or HAZARD_TRIAL.
@@ -155,9 +216,30 @@ func add_shake(intensity: float) -> void:
 
 
 func get_shake_offset() -> Vector2:
-	if _camera == null:
+	var cam := _view_camera()
+	if cam == null:
 		return Vector2.ZERO
-	return Vector2(_camera.h_offset, _camera.v_offset)
+	return Vector2(cam.h_offset, cam.v_offset)
+
+
+## Mouse motion turns the chase view and the wheel zooms it while the cursor is captured. Read in
+## _input so a GUI control in the middle of the screen cannot swallow it.
+func _input(event: InputEvent) -> void:
+	if not _captured:
+		return
+	var motion := event as InputEventMouseMotion
+	if motion != null:
+		_turn_chase(motion.screen_relative)
+		return
+	var button := event as InputEventMouseButton
+	if button == null or not button.pressed:
+		return
+	# Touchpads send part notches through factor; a plain wheel sends 0 or 1.
+	var notches := button.factor if button.factor > 0.0 else 1.0
+	if button.button_index == MOUSE_BUTTON_WHEEL_UP:
+		_zoom_chase(-notches)
+	elif button.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		_zoom_chase(notches)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -184,6 +266,7 @@ func get_default_focus() -> Vector3:
 
 
 func _process(_delta: float) -> void:
+	_update_cursor()
 	var real_delta := _real_delta()
 	var game_delta := _game_delta()
 	_update_shake(real_delta)
@@ -215,10 +298,14 @@ func _physics_process(_delta: float) -> void:
 	_follow(get_physics_process_delta_time() / maxf(Engine.time_scale, 0.001))
 
 
-## Frontline follow. It must step with the commander's physics ticks: sampling the
-## commander once per rendered frame mixes two clocks and makes it shake on screen.
+## Frontline follow, and the chase view in the Hazard Trial room. It must step with the
+## commander's physics ticks: sampling the commander once per rendered frame mixes two clocks
+## and makes it shake on screen.
 func _follow(real_delta: float) -> void:
-	if _intro or _hazard or _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
+	if _hazard:
+		_follow_chase(real_delta)
+		return
+	if _intro or _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
 		return
 	var weight := 1.0 - exp(-real_delta / maxf(follow_smoothing, 0.001))
 	position = _clamped(position.lerp(get_default_focus(), weight))
@@ -282,26 +369,33 @@ func _update_size(real_delta: float) -> void:
 
 
 ## Moves the view through the camera's h_offset and v_offset, so the focus, the follow and the
-## glides never see the shake. Squared trauma keeps small hits subtle.
+## glides never see the shake. Squared trauma keeps small hits subtle. It acts on the camera
+## that shows the game now.
 func _update_shake(real_delta: float) -> void:
-	if _camera == null:
+	var cam := _view_camera()
+	if cam == null:
 		return
 	if _trauma <= 0.0:
-		if _camera.h_offset != 0.0 or _camera.v_offset != 0.0:
-			_camera.h_offset = 0.0
-			_camera.v_offset = 0.0
+		if cam.h_offset != 0.0 or cam.v_offset != 0.0:
+			cam.h_offset = 0.0
+			cam.v_offset = 0.0
 		return
 	_trauma = maxf(_trauma - shake_decay * real_delta, 0.0)
 	_shake_time += real_delta
 	var amount := shake_max_offset * shake_scale * _trauma * _trauma
 	var phase := _shake_time * TAU * shake_frequency
-	_camera.h_offset = amount * (0.6 * sin(phase) + 0.4 * sin(phase * 2.3 + 1.7))
-	_camera.v_offset = amount * (0.6 * sin(phase * 1.3 + 0.5) + 0.4 * sin(phase * 2.9 + 2.9))
+	cam.h_offset = amount * (0.6 * sin(phase) + 0.4 * sin(phase * 2.3 + 1.7))
+	cam.v_offset = amount * (0.6 * sin(phase * 1.3 + 0.5) + 0.4 * sin(phase * 2.9 + 2.9))
 
 
+## Clears the offset of both cameras, since the view may be about to switch between them.
 func _stop_shake() -> void:
 	_trauma = 0.0
-	_update_shake(0.0)
+	for cam: Camera3D in [_camera, _chase]:
+		if cam == null:
+			continue
+		cam.h_offset = 0.0
+		cam.v_offset = 0.0
 
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
@@ -433,9 +527,12 @@ func _on_state_changed(new_state: StringName) -> void:
 
 
 ## The wave side sends hazard_trial_entered and the HAZARD_TRIAL state; either one switches the
-## frame, and the second does nothing.
+## frame, and the second one only puts the chase view back on the commander.
 func _on_hazard_trial_entered(_wave_index: int, _enemy_types: Array) -> void:
 	_enter_hazard()
+	# The wave side moves the commander into the room right before this signal, after the
+	# HAZARD_TRIAL state that may have cut in first, so the view jumps onto it here.
+	_snap_chase()
 
 
 func _on_hazard_trial_exited(_result: StringName, _kills: int, _gold: int, _xp: float, _mithril: int) -> void:
@@ -443,9 +540,10 @@ func _on_hazard_trial_exited(_result: StringName, _kills: int, _gold: int, _xp: 
 		_leave_hazard(true)
 
 
-## Cuts to the room's fixed frame: the room is far from the corridor, so a glide would
-## fly over the void. The room is the node in group "hazard_room" (HazardRoom), which gives the
-## focus and the orthographic size.
+## Cuts to the room: a hard cut, since the room is far from the corridor and a glide would fly
+## over the void. The room is the node in group "hazard_room" (HazardRoom); it gives the chase
+## camera settings, the fallback focus (CameraFrame) and the orthographic size kept on the
+## corridor camera.
 func _enter_hazard() -> void:
 	if _hazard:
 		return
@@ -457,21 +555,217 @@ func _enter_hazard() -> void:
 	_clear_held()
 	# A hard cut of 100 m: shake left from the corridor would jolt the new frame.
 	_stop_shake()
-	var room := get_tree().get_first_node_in_group(&"hazard_room") if is_inside_tree() else null
-	if room != null and room.has_method(&"get_camera_focus"):
-		var focus: Vector3 = room.call(&"get_camera_focus")
-		position = Vector3(focus.x, _home.y, focus.z)
-		var room_size = room.get(&"camera_size")
-		if _camera != null and room_size != null and float(room_size) > 0.0:
-			_camera.size = float(room_size)
-	else:
+	_room = null
+	if is_inside_tree():
+		_room = get_tree().get_first_node_in_group(&"hazard_room") as HazardRoom
+	if _room == null:
 		push_warning("CameraRig: no hazard_room in the level, the camera stays where it is")
+		_update_frame()
+		return
+	var focus := _room.get_camera_focus()
+	position = Vector3(focus.x, _home.y, focus.z)
+	if _camera != null and _room.camera_size > 0.0:
+		_camera.size = _room.camera_size
+	_start_chase()
 	_update_frame()
+
+
+## Reads the room's chase settings once and makes ChaseCamera the view.
+func _start_chase() -> void:
+	if _chase == null:
+		return
+	_chase_yaw = _camera.global_rotation.y if _camera != null else global_rotation.y
+	_chase_pitch_min = minf(_room.chase_pitch_min_deg, _room.chase_pitch_max_deg)
+	_chase_pitch_max = maxf(_room.chase_pitch_min_deg, _room.chase_pitch_max_deg)
+	_chase_pitch_deg = clampf(_room.chase_pitch_deg, _chase_pitch_min, _chase_pitch_max)
+	_chase_far_pitch = clampf(_room.chase_far_pitch_deg, _chase_pitch_min, _chase_pitch_max)
+	_chase_distance_up = _room.chase_distance_up
+	_chase_min_height = _room.chase_min_height
+	_chase_shoulder = _room.chase_shoulder_offset
+	_chase_zoom_min = clampf(_room.chase_zoom_min, 0.05, 1.0)
+	_chase_zoom_step = _room.chase_zoom_step
+	_chase_zoom_smoothing = _room.chase_zoom_smoothing
+	_chase_zoom = 1.0
+	_chase_zoom_target = 1.0
+	_chase_aim_tilt_deg = _room.chase_aim_tilt_deg
+	_chase_distance =_room.chase_distance
+	_chase_distance_near = _room.chase_distance_near
+	_chase_pivot_height = _room.chase_pivot_height
+	_chase_smoothing = _room.chase_smoothing
+	_chase.fov = _room.chase_fov
+	_chase.far = _room.chase_far
+	_chase_on = true
+	_snap_chase()
+	_chase.current = true
+	_update_cursor()
+
+
+## Puts the chase view on the commander at once, or on CameraFrame while there is none.
+func _snap_chase() -> void:
+	if not _chase_on:
+		return
+	position = _chase_focus()
+	_place_chase()
+
+
+## Smooth follow of the commander in the room, on real seconds.
+func _follow_chase(real_delta: float) -> void:
+	if not _chase_on:
+		return
+	var weight := 1.0 - exp(-real_delta / maxf(_chase_smoothing, 0.001))
+	position = position.lerp(_chase_focus(), weight)
+	var zoom_weight := 1.0 - exp(-real_delta / maxf(_chase_zoom_smoothing, 0.001))
+	_chase_zoom = lerpf(_chase_zoom, _chase_zoom_target, zoom_weight)
+	_place_chase()
+
+
+## The commander on the camera's ground plane, else the room's CameraFrame, else where the rig is.
+func _chase_focus() -> Vector3:
+	var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
+	if commander != null:
+		return Vector3(commander.global_position.x, _home.y, commander.global_position.z)
+	if is_instance_valid(_room):
+		var focus := _room.get_camera_focus()
+		return Vector3(focus.x, _home.y, focus.z)
+	return position
+
+
+## Orbits a pivot chase_pivot_height above the focus: the camera stands on the sphere around it
+## at the chase pitch (distance in _chase_orbit_distance) and chase_shoulder_offset to the right of
+## it. It looks chase_aim_tilt_deg above the pivot, so the commander sits that far below the
+## middle of the screen at every pitch, and the middle of the screen lands on the ground ahead of
+## the commander.
+func _place_chase() -> void:
+	var pivot := global_position + Vector3.UP * _chase_pivot_height
+	var orbit := Basis.from_euler(Vector3(deg_to_rad(_chase_pitch_deg), _chase_yaw, 0.0))
+	var view := Basis.from_euler(
+			Vector3(deg_to_rad(_chase_pitch_deg + _chase_aim_tilt_deg), _chase_yaw, 0.0))
+	_chase.global_transform = Transform3D(view,
+			pivot + orbit.z * _chase_orbit_distance() + orbit.x * _chase_shoulder)
+
+
+## Metres from the pivot to the camera at the current pitch and zoom: chase_distance_near at the
+## lowest pitch, chase_distance at the far pitch, chase_distance_up at the highest, times the zoom.
+## Looking up puts the camera below the pivot; it then comes nearer so it stays chase_min_height
+## above the floor.
+func _chase_orbit_distance() -> float:
+	var d := _chase_distance
+	if _chase_pitch_deg < _chase_far_pitch:
+		d = lerpf(_chase_distance, _chase_distance_near, _span_ratio(_chase_far_pitch, _chase_pitch_min))
+	elif _chase_pitch_deg > _chase_far_pitch:
+		d = lerpf(_chase_distance, _chase_distance_up, _span_ratio(_chase_far_pitch, _chase_pitch_max))
+	d *= _chase_zoom
+	var drop := sin(deg_to_rad(_chase_pitch_deg))
+	if drop > 0.0:
+		d = minf(d, maxf(_chase_pivot_height - _chase_min_height, 0.0) / drop)
+	return d
+
+
+## How far the chase pitch has gone from start towards end, 0..1; 0 when the two are the same.
+func _span_ratio(start: float, end: float) -> float:
+	if is_equal_approx(start, end):
+		return 0.0
+	return clampf(inverse_lerp(start, end, _chase_pitch_deg), 0.0, 1.0)
+
+
+## Turns the chase view by a mouse motion in screen pixels: right turns right, up looks up.
+func _turn_chase(screen_motion: Vector2) -> void:
+	if not _chase_on:
+		return
+	_chase_yaw = wrapf(_chase_yaw - deg_to_rad(screen_motion.x * mouse_sensitivity), -PI, PI)
+	_chase_pitch_deg = clampf(_chase_pitch_deg - screen_motion.y * mouse_sensitivity,
+			_chase_pitch_min, _chase_pitch_max)
+	_place_chase()
+
+
+## Zooms the chase view by wheel notches: negative comes nearer. It never goes past the normal
+## distance, so the camera cannot leave the sky. Glides there unless reduced motion is on.
+func _zoom_chase(notches: float) -> void:
+	if not _chase_on:
+		return
+	_chase_zoom_target = clampf(_chase_zoom_target + notches * _chase_zoom_step, _chase_zoom_min, 1.0)
+	if reduced_motion:
+		_chase_zoom = _chase_zoom_target
+		_place_chase()
+
+
+## The room keeps the cursor captured unless the game is paused, a dialog is open or
+## free_cursor_key is held, so the pause menu, dialogs and the Leave button can be clicked.
+func _wants_captured_cursor() -> bool:
+	if not _chase_on:
+		return false
+	if TimeManager.is_paused or ScreenManager.has_dialog():
+		return false
+	return not Input.is_physical_key_pressed(free_cursor_key)
+
+
+## Captures or frees the cursor when the wanted state changes. Only the state this rig set is
+## undone, so the rig never fights other code over the mouse mode outside the room.
+func _update_cursor() -> void:
+	var want := _wants_captured_cursor()
+	if want == _captured:
+		return
+	_captured = want
+	if _crosshair != null:
+		_crosshair.visible = want
+	if not want:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		return
+	# Start from the middle, where the aim ray is taken.
+	var viewport := get_viewport()
+	viewport.warp_mouse(viewport.get_visible_rect().size * 0.5)
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+## A small cross in the middle of the screen, shown while the cursor is captured.
+func _make_crosshair() -> void:
+	_crosshair = CanvasLayer.new()
+	_crosshair.name = "Crosshair"
+	_crosshair.visible = false
+	add_child(_crosshair)
+	_add_crosshair_bar(Vector2(crosshair_size, crosshair_thickness))
+	_add_crosshair_bar(Vector2(crosshair_thickness, crosshair_size))
+
+
+func _add_crosshair_bar(bar_size: Vector2) -> void:
+	var bar := ColorRect.new()
+	bar.color = crosshair_color
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.set_anchors_preset(Control.PRESET_CENTER)
+	bar.offset_left = -bar_size.x * 0.5
+	bar.offset_right = bar_size.x * 0.5
+	bar.offset_top = -bar_size.y * 0.5
+	bar.offset_bottom = bar_size.y * 0.5
+	_crosshair.add_child(bar)
+
+
+## Hands the view back to the corridor camera.
+func _stop_chase() -> void:
+	_room = null
+	if not _chase_on:
+		return
+	_chase_on = false
+	_update_cursor()
+	if _camera != null:
+		_camera.current = true
+
+
+## The camera that shows the game now: ChaseCamera in the room, the corridor camera otherwise.
+func _view_camera() -> Camera3D:
+	return _chase if _chase_on else _camera
+
+
+## The Hazard Trial view, built here so every rig has one. Off until the room.
+func _make_chase_camera() -> void:
+	_chase = Camera3D.new()
+	_chase.name = "ChaseCamera"
+	_chase.projection = Camera3D.PROJECTION_PERSPECTIVE
+	add_child(_chase)
 
 
 ## Cuts out of the room. Back to PREP: the default PREP frame, the middle of the corridor at
 ## the overview size, whatever the mode (a pan made before entering is not restored). Into any
-## other state: that state's default frame.
+## other state: that state's default frame. Either way the view goes back to the corridor camera.
 func _leave_hazard(to_prep: bool) -> void:
 	_hazard = false
 	if to_prep:
@@ -481,6 +775,7 @@ func _leave_hazard(to_prep: bool) -> void:
 	_size_left = 0.0
 	_clear_held()
 	_stop_shake()
+	_stop_chase()
 	position = _prep_focus() if to_prep else get_default_focus()
 	if _camera != null and bounds != null:
 		_camera.size = bounds.camera_size_overview if to_prep else _target_size()
@@ -530,3 +825,4 @@ func _on_pause_changed(paused: bool) -> void:
 	_clear_held()
 	if paused:
 		_stop_shake()
+	_update_cursor()
