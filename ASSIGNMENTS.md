@@ -1192,12 +1192,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG8
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Brute sửa: is_charger, mục tiêu cố định FORTRESS, miễn khiêu khích và Battle Cry, va mỗi công trình một lần rồi đi vòng, va chỉ huy hất văng (tối đa 1 lần/2 s, Dodge và Deploying miễn)
 - Nghiệm thu: NE5 đạt
 - Tệp liên quan: entities/enemy/brute.gd, data/enemies/brute.tres
 - ID SRS: EN-25
 - Cần xong trước: W10-KT7
+- Ghi chú W11: The corridor runner verifies physical contacts with a Barricade and a tower, one hit per building, a return to the lane, and arrival at a Fortress melee slot. It also verifies recycle, sword provocation immunity, and Commander contact and melee rules in Hazard. Mạnh can carry the initial impact damage of 25 and knockback of 2 into the final workbook.
 
 ##### W11-NG9
 - Người: Ngọc

@@ -877,7 +877,7 @@ func _execute_sword_strike(combo_step: int) -> void:
 			hit_dir
 		)
 
-		if "provoked_by_player" in target_node:
+		if not target_node is Enemy and "provoked_by_player" in target_node:
 			target_node.set("provoked_by_player", true)
 
 		if target_node.has_method("take_damage"):

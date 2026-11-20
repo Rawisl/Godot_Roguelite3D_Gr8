@@ -31,6 +31,8 @@ const FALL_HEIGHT: float = -10.0
 const NAVMESH_SNAP_DISTANCE: float = 0.3
 ## Where a unit sent back goes when no wave manager is there to pick a spawn zone point.
 const FALLBACK_SPAWN_POINT := Vector3(14.0, 0.0, 0.0)
+## Commander bodies occupy physics layer 2.
+const CHARGE_COMMANDER_MASK: int = 1 << 1
 
 ## Units removed by the stuck ladder since the game started, for the exported error log.
 static var stuck_cull_count: int = 0
@@ -113,6 +115,11 @@ var breaking_through: bool = false
 ## A unit of the Hazard Trial room: it goes for the commander only, pays nothing on its own
 ## (the room counts the kill) and is never sent back or removed by the stuck ladder.
 var in_hazard_room: bool = false
+var _charge_impacts: Dictionary[int, bool] = {}
+var _charge_hit_ready_at: float = 0.0
+var _charge_detour_until: float = -INF
+var _following_charge_lane: bool = false
+var _charge_query: PhysicsShapeQueryParameters3D
 var _stuck_clock: float = 0.0
 var _stuck_window: float = 0.0
 var _stuck_anchor: float = INF
@@ -159,6 +166,7 @@ static var _lane_ref_length: float = 0.0
  
 @onready var health: HealthComponent = %Health
 @onready var nav: NavigationAgent3D = %NavAgent
+@onready var _body_shape := get_node_or_null(^"CollisionShape3D") as CollisionShape3D
 
 var hit_by_commander: bool:
 	get:
@@ -362,6 +370,9 @@ func recycle() -> bool:
 		point = wm.call(&"random_spawn_zone_point")
 	global_position = point
 	velocity = Vector3.ZERO
+	_charge_detour_until = -INF
+	_following_charge_lane = false
+	_has_safe_velocity = false
 	breaking_through = false
 	_reset_stuck_tracking()
 	stuck_tier = 0
@@ -496,7 +507,7 @@ func _has_navmesh() -> bool:
 ## attacks the nearest ground tower or Barricade to open a way, and goes back to its usual
 ## targets once a path to the Fortress exists again.
 func _check_blocked_path() -> void:
-	if not _has_navmesh() or is_frenzied:
+	if not _has_navmesh() or is_frenzied or _is_charger():
 		return
 	if breaking_through:
 		if _fortress_reachable():
@@ -672,10 +683,74 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
  
 	_update_timers(delta)
+	_following_charge_lane = false
 	_update_state(delta)
 	_update_stuck_ladder(delta)
 	_apply_avoidance(delta)
+	var charging := _is_charger() and not spawn_grace and Vector2(velocity.x, velocity.z).length_squared() > 0.001
 	move_and_slide()
+	if charging:
+		_check_charge_contacts()
+
+
+func _is_charger() -> bool:
+	return data != null and data.is_charger
+
+
+func _check_charge_contacts() -> void:
+	if not in_hazard_room:
+		for index in get_slide_collision_count():
+			var tower := get_slide_collision(index).get_collider() as Tower
+			if tower != null:
+				_hit_charge_tower(tower)
+
+	if TimeManager.game_time < _charge_hit_ready_at:
+		return
+	if not is_inside_tree() or not is_instance_valid(_body_shape) or _body_shape.shape == null:
+		return
+	var world := get_world_3d()
+	if world == null or world.direct_space_state == null:
+		return
+	if _charge_query == null:
+		_charge_query = PhysicsShapeQueryParameters3D.new()
+		_charge_query.collision_mask = CHARGE_COMMANDER_MASK
+	_charge_query.shape = _body_shape.shape
+	_charge_query.transform = _body_shape.global_transform
+	for result in world.direct_space_state.intersect_shape(_charge_query):
+		var commander := result.get("collider") as Node3D
+		if commander != null and commander.is_in_group(&"commander"):
+			_hit_charge_commander(commander)
+
+
+func _hit_charge_tower(tower: Tower) -> void:
+	if not is_instance_valid(tower) or tower.is_queued_for_deletion() or tower.is_in_group(&"tower_wall"):
+		return
+	if tower.health == null or tower.health.hp <= 0:
+		return
+	var lane := _get_lane()
+	if lane != null:
+		var tower_offset := lane.curve.get_closest_offset(lane.to_local(tower.global_position))
+		_charge_detour_until = maxf(_charge_detour_until, tower_offset + data.attack_range)
+	var id := tower.get_instance_id()
+	if _charge_impacts.has(id):
+		return
+	_charge_impacts[id] = true
+	tower.take_damage(DamageInfo.new(data.impact_damage, data.damage_type, self))
+
+
+func _hit_charge_commander(commander: Node3D) -> void:
+	if TimeManager.game_time < _charge_hit_ready_at or not is_instance_valid(commander) or not commander.has_method(&"take_damage"):
+		return
+	if commander.is_queued_for_deletion() or bool(commander.get(&"is_dead")) or bool(commander.get(&"is_commander_mode")):
+		return
+	if bool(commander.get(&"is_dodging")) or bool(commander.get(&"is_deploying")):
+		return
+	_charge_hit_ready_at = TimeManager.game_time + GameConfig.charge_commander_cooldown
+	var hit_direction := commander.global_position - global_position
+	hit_direction.y = 0.0
+	hit_direction = hit_direction.normalized() if not hit_direction.is_zero_approx() else Vector3.FORWARD
+	var damage := scaled_damage if scaled_damage > 0 else data.base_damage
+	commander.take_damage(DamageInfo.new(damage, data.damage_type, self, data.impact_knockback, hit_direction))
  
 ## Slows the unit by pct (0.2 = 20% slower) for duration game seconds. A new hit only refreshes
 ## the slow, it never adds up. Refused for dead or spawning units and when the hit's damage type
@@ -953,12 +1028,14 @@ func _execute_melee_strike() -> void:
 	var max_reach := (data.attack_range if data else 1.5) + 0.6
 	if dist > max_reach:
 		return
- 
+
 	if current_target.has_method("take_damage"):
 		var dmg: int = scaled_damage if scaled_damage > 0 else (data.base_damage if data else 6)
 		var dmg_type := data.damage_type if data else Enums.DamageType.SLASH
 		var hit_dir := diff.normalized() if diff.length_squared() > 0.001 else Vector3.FORWARD
 		var kb_force: float = data.knockback_force if data != null else 0.0
+		if _is_charger() and current_target.is_in_group(&"commander"):
+			kb_force = 0.0
 		var info := DamageInfo.new(dmg, dmg_type, self, kb_force, hit_dir)
 		current_target.take_damage(info)
  
@@ -997,6 +1074,15 @@ func _update_navigation_movement(_delta: float) -> void:
 	var direct_diff := target_dest - global_position
 	direct_diff.y = 0.0
 	var dist_to_dest := direct_diff.length()
+	if _is_charger() and not in_hazard_room and dist_to_dest > data.attack_range * 2.0:
+		var lane := _get_lane()
+		if lane != null:
+			var offset := lane.curve.get_closest_offset(lane.to_local(global_position))
+			var ahead := minf(offset + data.agent_radius, lane.curve.get_baked_length())
+			if offset >= _charge_detour_until and ahead > offset:
+				_following_charge_lane = true
+				_move_towards_direction(lane.to_global(lane.curve.sample_baked(ahead)) - global_position)
+				return
  
 	# Stop if navigation agent finished and enemy reached the target distance
 	if nav.is_navigation_finished() and dist_to_dest <= nav.target_desired_distance:
@@ -1217,7 +1303,7 @@ func _find_closest_valid_tower_any() -> Node3D:
 	return closest
  
 func _find_best_target() -> void:
-	if in_hazard_room:
+	if in_hazard_room or _is_charger():
 		_find_default_target()
 		return
 	if current_state == Enums.EnemyState.FRENZY:
@@ -1519,6 +1605,12 @@ func _is_skipped_full_target(t: Node3D) -> bool:
 func _apply_avoidance(delta: float) -> void:
 	if not nav.avoidance_enabled:
 		return
+	if _following_charge_lane:
+		# Straight charges must reach the physical collider before taking a detour.
+		nav.velocity = Vector3.ZERO
+		_has_safe_velocity = false
+		_stall_time = 0.0
+		return
 	var walking := (current_state == Enums.EnemyState.ADVANCE
 		or current_state == Enums.EnemyState.CHASE
 		or current_state == Enums.EnemyState.FRENZY
@@ -1570,7 +1662,7 @@ func _on_velocity_computed(safe_velocity: Vector3) -> void:
 
 
 func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
-	if is_dead or spawn_grace or is_in_spawn_zone:
+	if is_dead or spawn_grace or is_in_spawn_zone or _is_charger():
 		return
 	if commander_node == null or not is_instance_valid(commander_node):
 		return
@@ -1611,7 +1703,7 @@ func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.
 	if info == null:
 		return 0
  
-	if info.source != null and is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
+	if not _is_charger() and is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
 		provoked_by_player = true
 		provoked_timer = GameConfig.aggro_duration
 
