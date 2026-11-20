@@ -72,7 +72,12 @@ func _ready() -> void:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
 	if _is_transaction:
-		_dock_transaction()
+		if _title_key == &"dialog.sell.title":
+			$Backdrop.material = preload("res://ui/theme/modal_blur.tres")
+			tree_exiting.connect(TimeManager.release_pause.bind(TimeManager.REASON_SELL_CONFIRM), CONNECT_ONE_SHOT)
+			TimeManager.request_pause(TimeManager.REASON_SELL_CONFIRM)
+		else:
+			_dock_transaction()
 		EventBus.state_changed.connect(_on_wave_state_changed)
 	if is_notice():
 		_confirm_button.grab_focus()

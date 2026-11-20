@@ -22,3 +22,5 @@ Thu gọn bảy bảng sát mép phải xuống 370 đơn vị ở khung thiết
 Bảng chọn vũ khí chuyển ra giữa màn hình với sáu ô kiếm, làm mờ hậu cảnh và tạm dừng game. Trong PREP có thể trang bị liên tục trước khi thoát bằng × hoặc Esc. Xác nhận bán và thông báo lượt chơi gián đoạn tách số vàng, danh vọng thành hàng riêng. Nút nâng cấp và bán dùng phông đậm hỗ trợ tiếng Việt.
 
 Sau khi đóng bảng kiếm bằng × hoặc Esc, bảng Chỉ huy hiện lại với kiếm đang dùng. Hộp thoại bỏ cuộc và thoát lượt chơi tách danh vọng thành hàng riêng. Xác nhận thay đổi hiển thị có thanh đếm ngược.
+
+Xác nhận bán trụ và trạm hồi lực xuất hiện giữa màn hình, dùng chung nền mờ với bảng kiếm và tạm dừng game cho đến khi hộp thoại đóng.

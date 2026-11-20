@@ -37,15 +37,7 @@
 [ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
 [ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="31_preview"]
 
-[sub_resource type="Shader" id="WeaponBlur"]
-code = "shader_type canvas_item;
-uniform sampler2D scene : hint_screen_texture, repeat_disable, filter_linear_mipmap;
-void fragment() {
-    COLOR = vec4(textureLod(scene, SCREEN_UV, 2.6).rgb * vec3(0.48, 0.52, 0.58), 1.0);
-}"
-
-[sub_resource type="ShaderMaterial" id="WeaponBlurMaterial"]
-shader = SubResource("WeaponBlur")
+[ext_resource type="ShaderMaterial" path="res://ui/theme/modal_blur.tres" id="modal_blur"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -329,7 +321,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Blur" type="ColorRect" parent="Root/WeaponOverlay"]
-material = SubResource("WeaponBlurMaterial")
+material = ExtResource("modal_blur")
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
