@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://ettkf1p4u8pc"]
+
+[ext_resource type="Shader" path="res://art/shaders/boss_blade_glow.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 2
+shader = ExtResource("1_shader")
+shader_parameter/color = Color(0.627, 0.251, 1, 1)
+shader_parameter/veil = 0.12
+shader_parameter/rim = 0.12
+shader_parameter/inflate = 0.02
+shader_parameter/pulse_amount = 0.004
+shader_parameter/pulse_speed = 9.0
