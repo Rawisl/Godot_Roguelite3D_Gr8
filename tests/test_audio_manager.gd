@@ -233,7 +233,7 @@ func _run_music() -> void:
 	_am._on_app_state_changed(GameState.AppState.RUN_END, GameState.AppState.RUN)
 	_check("RunEnd after the victory wave plays the endless sting", _am._sting.stream == lib.endless_end_sting)
 	GameState.last_run_summary = saved_summary
-	EventBus.run_victory.emit(30)
+	EventBus.run_victory.emit(30, {})
 	_check("the victory screen plays the victory sting, PREP music after", _am._sting.stream == lib.victory_sting and _am._after_sting == lib.prep)
 	_am._on_wave_state_changed(&"PREP")
 	_check("a new state cancels the track waiting for the sting", _am._after_sting == null and _am.current_music() == lib.prep)

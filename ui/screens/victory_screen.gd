@@ -25,9 +25,8 @@ func _ready() -> void:
 	EventBus.run_victory.connect(_on_run_victory)
 	EventBus.run_started.connect(hide)
 
-# TODO(Rawisl): send the run stats with run_victory so the screen does not read them through GameState.run_snapshot().
-func _on_run_victory(wave_index: int) -> void:
-	show_stats(wave_index, GameState.run_snapshot())
+func _on_run_victory(wave_index: int, stats: Dictionary) -> void:
+	show_stats(wave_index, stats)
 
 ## Kept apart from the signal so the test scene can draw it without a run.
 func show_stats(wave_index: int, stats: Dictionary) -> void:

@@ -474,23 +474,30 @@ func test_wave_victory_and_reward_pick_flow() -> void:
 	var wm := WaveManager.new()
 	wm.auto_advance_summary = false
 	wm.enable_victory_screen = true
-	wm.current_wave = GameConfig.victory_wave
+	var run_state := RunState.new()
+	run_state.wave_index = GameConfig.victory_wave
+	add_child(run_state)
 	add_child(wm)
 
 	var victory_record := {"wave": -1}
-	var on_victory := func(w: int): victory_record["wave"] = w
+	var on_victory := func(w: int, _stats: Dictionary): victory_record["wave"] = w
 	EventBus.run_victory.connect(on_victory)
 
 	var tracker: Node = wm.get("_xp_tracker")
 	tracker.set("pending_picks", 1)
 
-	wm.wave_state = Enums.WaveState.SUMMARY
+	wm.wave_state = Enums.WaveState.BOSS_COMBAT
+	wm._end_combat_to_summary()
+	assert_true(run_state.victory_reached and run_state.waves_cleared == GameConfig.victory_wave,
+		"Clearing the victory wave records victory before leaving SUMMARY")
 	wm.advance_from_summary()
 
 	# 1. Victory screen triggered, game paused with REASON_VICTORY
 	assert_true(victory_record["wave"] == GameConfig.victory_wave, "run_victory emitted with victory_wave (30)")
 	assert_true(TimeManager.has_pause_reason(TimeManager.REASON_VICTORY), "Simulation paused under REASON_VICTORY")
 	assert_true(wm.wave_state == Enums.WaveState.SUMMARY, "FSM remains in SUMMARY awaiting victory continue")
+	wm.advance_from_summary()
+	assert_true(wm.wave_state == Enums.WaveState.SUMMARY, "An extra summary advance cannot skip the victory screen")
 
 	# 2. Player clicks Continue from victory screen
 	EventBus.victory_continue_requested.emit()
@@ -507,3 +514,4 @@ func test_wave_victory_and_reward_pick_flow() -> void:
 
 	EventBus.run_victory.disconnect(on_victory)
 	wm.free()
+	run_state.free()

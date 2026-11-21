@@ -2576,7 +2576,7 @@ Danh mục này là nguồn chuẩn cho tên và payload tín hiệu của autol
 | EVB-41 | hazard_trial_exited(result: StringName, kills: int, gold: int, xp: float, mithril: int) | Enemy & Wave (HazardTrial). result thuộc WON, LEFT, DIED. Phát sau khi RunState đã cộng thưởng. Nghe: UI (toast ALR-20, HUD-23), camera, Audio |
 | EVB-42 | weapon_gained(weapon_id: StringName) | RunState. Nghe: UI (SummaryPanel, ALR-19, HUD-21) |
 | EVB-43 | weapon_equipped(weapon_id: StringName) | Player & Combat. Nghe: UI (HUD-21, PNL-15), Art (model, VFX) |
-| EVB-44 | run_victory(wave_index: int) | RunState. Phát một lần mỗi run, ở bước mở màn thắng của WAVE-13 (sau khi SummaryPanel đóng, END-07). Nghe: UI (mở SCR-20), Audio, Save |
+| EVB-44 | run_victory(wave_index: int, stats: Dictionary) | WaveManager. Phát một lần khi mở SCR-20 sau SummaryPanel, kèm snapshot của RunState và danh sách vũ khí. Nghe: UI và Audio |
 | EVB-45 | tutorial_completed() | UI/UX & Meta (tutorial). Phát khi ghi tutorial_done = true (TUT-08, TUT-15). Nghe: Save, SyncService |
 | EVB-46 | victory_continue_requested() | UI/UX & Meta (màn thắng SCR-20). Phát khi bấm "Chơi tiếp", một lần. Nghe: Enemy & Wave (bỏ lý do Pause VICTORY, đi tiếp WAVE-13: REWARD_PICK nếu pending_picks > 0, ngược lại PREP của wave victory_wave + 1) |
 | EVB-47 | xp_gained(amount: float, from_commander: bool) | XpTracker. Phát mỗi lần quân chết cho XP, ngay trước xp_changed; from_commander theo cờ hit_by_commander (XP-01). Nghe: UI (HUD-15, tách phần XP từ chỉ huy và từ tower) |
