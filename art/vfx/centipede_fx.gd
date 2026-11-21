@@ -28,15 +28,15 @@ const _SLASH_UNIFORMS: Array[StringName] = [&"progress", &"opacity", &"crack", &
 var _body_mesh: MeshInstance3D
 
 @onready var _vfx_player: AnimationPlayer = $VfxPlayer
-@onready var _eyes: Array[MeshInstance3D] = [$Head/EyeL, $Head/EyeR]
-@onready var _eye_halos: Array[MeshInstance3D] = [$Head/EyeL/Halo, $Head/EyeR/Halo]
-@onready var _eye_sparks: Array[CPUParticles3D] = [$Head/EyeL/Sparks, $Head/EyeR/Sparks]
-@onready var _star_particles: Array[CPUParticles3D] = [$ScytheR/StarParticles, $ScytheL/StarParticles]
-@onready var _blades: Array[MeshInstance3D] = [$ScytheR/BladeGlow/VFX_BladeR, $ScytheL/BladeGlow/VFX_BladeL]
+@onready var _eyes: Array[MeshInstance3D] = [%EyeL, %EyeR]
+@onready var _eye_halos: Array[MeshInstance3D] = [%HaloL, %HaloR]
+@onready var _eye_sparks: Array[CPUParticles3D] = [%SparksL, %SparksR]
+@onready var _star_particles: Array[CPUParticles3D] = [%StarParticlesR, %StarParticlesL]
+@onready var _blades: Array[MeshInstance3D] = [%BladeGlowR.get_node("VFX_BladeR"), %BladeGlowL.get_node("VFX_BladeL")]
 @onready var _speed_lines: MeshInstance3D = $RollSpeedLines
-@onready var _spit_emitter: Node3D = $Head/SpitEmitter
+@onready var _spit_emitter: Node3D = %SpitEmitter
 @onready var _spit_particles: Array[CPUParticles3D] = [
-	$Head/SpitEmitter/Core, $Head/SpitEmitter/Drops, $Head/SpitEmitter/Smoke]
+	%Core, %Drops, %Smoke]
 
 
 ## Points every bone attachment at the model's skeleton and puts the glow overlay on the body

@@ -1317,7 +1317,7 @@ func test_tc20_roar_lead_in() -> void:
 
 func _eye_glows(boss: SkeletalCentipede) -> Array[float]:
 	var fx := boss._fx
-	var nodes: Array[Node] = [fx.get_node("Head/EyeL"), fx.get_node("Head/EyeR"), fx.get_node("Head/EyeL/Halo"), fx.get_node("Head/EyeR/Halo")]
+	var nodes: Array[Node] = [fx.get_node("Head/EyeL"), fx.get_node("Head/EyeR"), fx.get_node("Head/EyeL/HaloL"), fx.get_node("Head/EyeR/HaloR")]
 	var glows: Array[float] = []
 	for node in nodes:
 		glows.append((node as GeometryInstance3D).get_instance_shader_parameter(&"glow") as float)

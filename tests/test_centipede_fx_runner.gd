@@ -167,7 +167,7 @@ func test_roll_switches() -> void:
 	fx.set_eye_glow(0.7)
 	assert_true(is_equal_approx(_uniform(fx.get_node("Head/EyeL"), &"glow"), 0.7) and is_equal_approx(_uniform(fx.get_node("Head/EyeR"), &"glow"), 0.7), "tc5 eye glow reaches both eyes")
 	fx.set_eye_sparks(true)
-	assert_true((fx.get_node("Head/EyeL/Sparks") as CPUParticles3D).emitting and (fx.get_node("Head/EyeR/Sparks") as CPUParticles3D).emitting, "tc5 eye sparks switch on")
+	assert_true((fx.get_node("Head/EyeL/SparksL") as CPUParticles3D).emitting and (fx.get_node("Head/EyeR/SparksR") as CPUParticles3D).emitting, "tc5 eye sparks switch on")
 	fx.set_speed_lines(0.5)
 	assert_true(is_equal_approx(_uniform(fx.get_node("RollSpeedLines"), &"intensity"), 0.5), "tc5 speed line intensity is set")
 	fx.set_body_glow(0.4)
@@ -189,9 +189,9 @@ func test_stop_all_clears() -> void:
 	fx.stop_all()
 	var player := fx.get_node("VfxPlayer") as AnimationPlayer
 	assert_true(not player.is_playing() and is_zero_approx(_uniform(fx.get_node("SlashLA3/VFX_SlashLA3_L"), &"opacity")), "tc6 stop_all stops the trail clip and hides the trail")
-	var quiet := not (fx.get_node("Head/EyeL/Sparks") as CPUParticles3D).emitting \
+	var quiet := not (fx.get_node("Head/EyeL/SparksL") as CPUParticles3D).emitting \
 			and not (fx.get_node("Head/SpitEmitter/Core") as CPUParticles3D).emitting \
-			and not (fx.get_node("ScytheR/StarParticles") as CPUParticles3D).emitting
+			and not (fx.get_node("ScytheR/StarParticlesR") as CPUParticles3D).emitting
 	assert_true(quiet, "tc6 stop_all silences sparks, spit and stars")
 	assert_true(is_zero_approx(_uniform(rig.mesh, &"glow")) and is_zero_approx(_uniform(fx.get_node("Head/EyeL"), &"glow")), "tc6 stop_all clears the glows")
 	_free_rig(rig)
@@ -220,8 +220,8 @@ func test_eye_halo() -> void:
 	var rig := _make_rig(3.0)
 	var fx := rig.fx as CentipedeFx
 	await get_tree().process_frame
-	var halo_l := fx.get_node("Head/EyeL/Halo") as MeshInstance3D
-	var halo_r := fx.get_node("Head/EyeR/Halo") as MeshInstance3D
+	var halo_l := fx.get_node("Head/EyeL/HaloL") as MeshInstance3D
+	var halo_r := fx.get_node("Head/EyeR/HaloR") as MeshInstance3D
 	var world_size := (halo_l.mesh as QuadMesh).size.x * halo_l.global_transform.basis.x.length()
 	assert_true(world_size >= 0.3, "tc7 the halo is at least 0.3 m wide at scale 3 (%.2f m)" % world_size)
 	fx.set_eye_glow(0.8)
