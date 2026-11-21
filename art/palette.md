@@ -255,7 +255,7 @@ Màu loại thẻ (khung, dải nhãn; chủ động và bị động trùng mà
 | boss_roll_body | `#A040FF` (`veil` và `rim` 0,12) | Lớp sáng tím trong suốt phủ cả thân khi boss bung ra (`boss_roll_body_glow.tres`), không viền |
 | boss_roll_line | `#FFFFFF` (alpha 0,8) | Nét tốc độ phía sau boss khi lăn (`boss_roll_speed_lines.tres`), không viền |
 | boss_spit_core_hot | `#E4FF8A` | Ánh sáng nhạt ở đầu luồng phun độc (đầu color ramp lõi, `hot_color` trong `boss_spit_*.tres`) |
-| boss_spit_core | `#3DCC1F` → `#1F8C14` | Lõi axit của luồng phun độc (color ramp node `Core` trong `boss_spit_preview.tscn`), có ánh `#8CFF2E` ngay sau miệng |
+| boss_spit_core | `#3DCC1F` → `#1F8C14` | Lõi axit của luồng phun độc (color ramp node `Head/SpitEmitter/Core` trong `art/vfx/centipede_fx.tscn`), có ánh `#8CFF2E` ngay sau miệng |
 | boss_spit_drop | `#5BD62A` | Giọt độc văng ra (color ramp node `Drops`) |
 | boss_spit_smoke | `#2FB7A0` → `#1F6F5C` | Khói xanh ngọc bám theo luồng (color ramp node `Smoke`) |
 | boss_spit_pool_core | `#1F8C14` (alpha 0,85) | Thân bãi độc trên sàn (`boss_spit_pool.tres`) |

@@ -27,6 +27,9 @@ const CLIP_COMBO: StringName = &"light_attack_combo"
 const CLIP_SPIT: StringName = &"poison_spit"
 const CLIP_ROLL_LOOP: StringName = &"roll_loop"
 const CLIP_ROLL_END: StringName = &"roll_end"
+## Clips that repeat. Set here rather than in the model's import settings, which Godot would
+## otherwise rewrite with every default option of each clip.
+const LOOPED_CLIPS: Array[StringName] = [CLIP_WALK, CLIP_ROLL_LOOP]
 ## Dash clips, not exported yet; the first one that exists is played (the model's own or the extra library's).
 const CLIPS_DASH_LEFT: Array[StringName] = [&"dash_left", &"roll_extra/dash_left"]
 const CLIPS_DASH_RIGHT: Array[StringName] = [&"dash_right", &"roll_extra/dash_right"]
@@ -184,6 +187,9 @@ func _setup_anim_player() -> void:
 	super._setup_anim_player()
 	if anim_player == null or cdata == null:
 		return
+	for clip_name in LOOPED_CLIPS:
+		if anim_player.has_animation(clip_name):
+			anim_player.get_animation(clip_name).loop_mode = Animation.LOOP_LINEAR
 	if not anim_player.has_animation_library(&"roll_extra"):
 		anim_player.add_animation_library(&"roll_extra", ROLL_EXTRA_LIBRARY)
 	if not anim_player.has_animation_library(LIBRARY_RUNTIME):

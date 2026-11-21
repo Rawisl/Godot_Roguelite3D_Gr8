@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://dacb3qoymaicw" path="res://entities/enemy/enemy.tscn" id="1_base"]
 [ext_resource type="Script" uid="uid://dfhngr548e66u" path="res://entities/enemy/skeletal_centipede.gd" id="2_script"]
 [ext_resource type="Resource" uid="uid://d4bsu15pbr3do" path="res://data/bosses/skeletal_centipede_boss.tres" id="3_data"]
-[ext_resource type="PackedScene" uid="uid://bjcrny6gylcvh" path="res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede.glb" id="4_model"]
+[ext_resource type="PackedScene" uid="uid://birykeqg7msv3" path="res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede.glb" id="4_model"]
 [ext_resource type="PackedScene" uid="uid://4dradi67q1d0" path="res://art/vfx/centipede_fx.tscn" id="5_fx"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
