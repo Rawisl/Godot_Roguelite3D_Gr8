@@ -141,6 +141,7 @@ func _run() -> void:
 	await _test_event_bus_order(summary)
 	await _test_unexpected_responses(summary)
 	await _test_main_run_start()
+	await _test_run_loading_and_run_end()
 
 
 func _test_account_api(local: Dictionary) -> void:
@@ -296,6 +297,52 @@ func _test_main_run_start() -> void:
 	get_tree().current_scene = original_scene
 	SaveManager.set_repository(original_repository)
 	SaveManager.load_save()
+
+
+func _test_run_loading_and_run_end() -> void:
+	var original_repository := SaveManager.repository
+	var original_online := GameConfig.online_enabled
+	var repository := MemorySaveRepository.new()
+	SaveManager.set_repository(repository)
+	SaveManager.load_save()
+	GameConfig.online_enabled = false
+	_auth.user_id = "account-a"
+	_auth.calls.clear()
+	_auth.use_real_saves = true
+	get_tree().set_current_scene(null)
+	GameState.current = GameState.AppState.MAIN_MENU
+	GameState.change_state(GameState.AppState.RUN_LOADING)
+	var loaded := await _wait_for_scene("res://main.tscn")
+	_check(loaded, "RunLoading opens the production run scene")
+	if loaded:
+		var state := get_tree().get_first_node_in_group(&"run_state") as RunState
+		_check(repository.stored["data"]["run_flag"]["run_in_progress"], "RunLoading writes the run flag")
+		state.set_process(false)
+		for step in [[&"PREP", 42.0], [&"COMBAT", 8.0], [&"HAZARD_TRIAL", 26.0], [&"BOSS_INTRO", 4.0], [&"BOSS_COMBAT", 9.0]]:
+			state._on_state_changed(step[0])
+			state._process(step[1])
+		state.waves_cleared = 1
+		state.end_run(&"ABANDONED")
+		var ended := await _wait_for_scene("res://ui/screens/run_end.tscn")
+		_check(ended and GameState.last_run_summary.get("run_elapsed") == 17.0,
+			"RunEnd reports elapsed game time from combat only")
+		_check(not repository.stored["data"]["run_flag"]["run_in_progress"], "RunEnd saves locally")
+		_check(_auth.calls.size() == 1 and _auth.calls[0]["body"].get("run_elapsed") == 17.0,
+			"The saved run is submitted once with its elapsed time")
+	_auth.use_real_saves = false
+	GameConfig.online_enabled = original_online
+	SaveManager.set_repository(original_repository)
+	SaveManager.load_save()
+
+
+func _wait_for_scene(path: String) -> bool:
+	for frame in 1200:
+		await get_tree().process_frame
+		var scene := get_tree().current_scene
+		if scene != null and scene.scene_file_path == path and not ScreenManager.is_fading():
+			return true
+		OS.delay_msec(1)
+	return false
 
 
 func _queue_run_end(end_type: StringName, summary: Dictionary) -> void:
