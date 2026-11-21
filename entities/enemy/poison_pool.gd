@@ -1,11 +1,11 @@
 class_name PoisonPool
 extends Node3D
 
-## Poison left on the floor by the centipede's spit: a flat fan that spreads out, hurts the commander
+## Poison left on the floor by the centipede's spit: a flat disc that spreads out, hurts the commander
 ## and structures standing in it every tick, and fades away. It lives in the world, not under the
 ## boss, so it stays when the boss dies; it then fades at once and stops hurting.
-## The node is scaled with the boss's model, so the mesh and the hit area stay one shape: the
-## hit test works in the pool's own space at scale 1.
+## The disc's radius is in metres and does not follow the boss's model scale; the node stays at
+## scale 1, so the mesh and the hit test are one shape.
 
 const GROUPS: Array[StringName] = [&"commander", &"tower", &"barricade", &"fortress"]
 
@@ -20,21 +20,19 @@ var _dying: bool = false
 @onready var _mesh: PoisonPoolMesh = $Mesh
 
 
-## Call before the pool is added to the tree; the pool takes its size from the boss's model scale.
+## Call before the pool is added to the tree.
 func setup(source: Node3D, tick_damage: int, data: CentipedeBossData) -> void:
 	_source = source
 	_tick_damage = tick_damage
 	_data = data
 	_life_left = data.pool_lifetime
-	scale = Vector3.ONE * data.model_scale
 
 
 func _ready() -> void:
 	if _data == null:
 		return
-	_mesh.length = _data.pool_length
-	_mesh.cut_fraction = _data.pool_cut_fraction
-	_mesh.half_angle_deg = _data.pool_half_angle_deg
+	_mesh.disc = true
+	_mesh.length = _data.pool_radius
 	_update_look()
 
 
@@ -58,23 +56,12 @@ func _physics_process(delta: float) -> void:
 		_hurt_targets()
 
 
-## True when a body of radius pad centred at world_pos touches the fan.
+## True when a body of radius pad centred at world_pos touches the disc.
 func contains_point(world_pos: Vector3, pad: float = 0.0) -> bool:
 	if _data == null:
 		return false
 	var local := to_local(world_pos)
-	var flat := Vector2(local.x, local.z)
-	var local_pad := pad / maxf(0.001, scale.x)
-	var near := _data.pool_length * _data.pool_cut_fraction
-	var dist := flat.length()
-	if dist < near - local_pad or dist > _data.pool_length + local_pad:
-		return false
-	var half := deg_to_rad(_data.pool_half_angle_deg)
-	if absf(atan2(flat.x, flat.y)) <= half:
-		return true
-	# Outside the cone: still touching when within pad of the nearer edge.
-	var edge := Vector2(signf(flat.x) * sin(half), cos(half))
-	return flat.dot(edge) > 0.0 and absf(flat.cross(edge)) <= local_pad
+	return Vector2(local.x, local.z).length() <= _data.pool_radius + pad
 
 
 func _source_alive() -> bool:

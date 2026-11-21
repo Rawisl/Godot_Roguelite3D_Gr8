@@ -8,8 +8,8 @@ extends Node3D
 ##   on the floor = teleport). It never dies.
 ## - Without structures the boss always fights the commander. With "Towers + Fortress" on it also
 ##   picks between the commander and the structures along the lane (-X).
-## - Cyan: the front cone the AI reads. Yellow: slash sector, spit cone, pool fan and roll circle
-##   of the boss, plus the two dash steps (green = worth taking, red = blocked or toward the spawn).
+## - Cyan: the front cone the AI reads. Yellow: slash sector, spit cone, pool circle and roll circle
+##   of the boss, plus the three dash steps (green = worth taking, red = blocked or toward the spawn).
 ##   Every move is logged, the scores behind the last pick are shown.
 ## - Scale sets the boss's model scale (3.0 to 4.5) at the next spawn.
 
@@ -338,14 +338,14 @@ func _log(text: String) -> void:
 func _on_move_started(move: StringName, clip: StringName, duration: float) -> void:
 	_picks[move] = int(_picks.get(move, 0)) + 1
 	if move == SkeletalCentipede.MOVE_DASH:
-		_log("dash %s (%s, %.2fs)" % [_dash_side_name(), clip.get_file(), duration])
+		_log("dash %s (%s, %.2fs)" % [_dash_name(), clip.get_file(), duration])
 		return
 	_log("%s (%s, %.2fs)" % [move, clip.get_file(), duration])
 
 
-## Which way the dash that just started goes, from the AI's pick.
-func _dash_side_name() -> String:
-	return "left" if _boss.last_decision == CentipedeBrain.DASH_LEFT else "right"
+## Which way the dash that just started goes (left, right or front), from the AI's pick.
+func _dash_name() -> String:
+	return String(_boss.last_decision).trim_prefix("dash_")
 
 
 func _on_move_hit(move: StringName, window: int, targets: Array) -> void:
@@ -371,14 +371,15 @@ func _update_info() -> void:
 	var pick_parts: PackedStringArray = []
 	for move: StringName in _picks:
 		pick_parts.append("%s %d" % [move, _picks[move]])
-	_info_label.text = "BOSS  wave %d | appearance %d | %s%s | state %s | HP %d%% (armor %d, core %d)\nScores: %s -> %s | out of reach %.1fs | commander %.1f m, %s\nCooldowns: combo %.1f spit %.1f roll %.1f charge %.1f dash %.1f | dash buff %.1f | picks: %s\nCOMMANDER damage taken %d | target %s" % [
+	_info_label.text = "BOSS  wave %d | appearance %d | %s%s | state %s | HP %d%% (armor %d, core %d)\nScores: %s -> %s | out of reach %.1fs | commander %.1f m, %s\nCooldowns: combo %.1f spit %.1f roll+charge roll %.1f dash %.1f front dash %.1f | dash buff %.1f | recent turns %d | picks: %s\nCOMMANDER damage taken %d | target %s" % [
 		b.spawn_wave, b.get_appearance(), b._get_phase_name(), " ENRAGED" if b.is_enraged else "",
 		Enums.EnemyState.keys()[b.current_state], int(round(b.get_hp_fraction() * 100.0)),
 		b.current_armor_hp, b.current_core_hp, " ".join(score_parts),
 		b.last_decision if b.last_decision != &"" else &"-", b.t_away, to_cmd.length(),
 		"IN FRONT" if b.is_in_front(_commander) else "FLANK/BEHIND", b.combo_cooldown_left,
-		b.spit_cooldown_left, b.roll_cooldown_left, b.charge_roll_cooldown_left, b.dash_cooldown_left,
-		b.dash_buff_left, ", ".join(pick_parts) if not pick_parts.is_empty() else "-",
+		b.spit_cooldown_left, b.roll_cooldown_left, b.dash_cooldown_left,
+		b.dash_front_cooldown_left,
+		b.dash_buff_left, b.recent_turn_count(), ", ".join(pick_parts) if not pick_parts.is_empty() else "-",
 		_commander.total_damage, b.current_target.name if b.current_target != null and is_instance_valid(b.current_target) else "-"]
 
 
@@ -397,52 +398,30 @@ func _draw_debug() -> void:
 		_add_sector(origin, fwd, 6.0, d.ai_front_arc_deg, COLOR_FRONT)
 		_add_sector(origin, fwd, d.body(d.slash_range), d.slash_arc_deg, COLOR_HITBOX)
 		var apex := _boss.get_spit_apex()
-		_add_sector(apex, fwd, d.body(d.spit_stream_reach), d.spit_stream_half_angle_deg * 2.0, COLOR_HITBOX)
+		_add_sector(apex, fwd, _boss._spit_stream_reach(apex), d.spit_stream_half_angle_deg * 2.0, COLOR_HITBOX)
 		_add_circle(_boss.to_global(d.body_v3(d.roll_ring_center)), d.body(d.roll_hit_radius), COLOR_HITBOX)
-		for side: float in [1.0, -1.0]:
-			_add_dash_arrow(side)
+		_add_circle(_boss._pool_center_world(), d.pool_radius, COLOR_HITBOX)
+		for action: StringName in [CentipedeBrain.DASH_LEFT, CentipedeBrain.DASH_RIGHT, CentipedeBrain.DASH_FRONT]:
+			_add_dash_arrow(action)
 	for child in get_children():
-		if child is PoisonPool:
-			_add_fan(child as PoisonPool)
+		if child is PoisonPool and _boss_alive():
+			_add_circle(child.global_position, _boss.cdata.pool_radius, COLOR_HITBOX)
 	_drawer.surface_add_vertex(Vector3.ZERO)  # a surface needs at least one vertex pair
 	_drawer.surface_add_vertex(Vector3.ZERO)
 	_drawer.surface_end()
 
 
-## The step a dash to that side would take; its colour runs from red (no score) to green (full score).
-func _add_dash_arrow(side: float) -> void:
-	var d := _boss.cdata
-	var direction := _boss._dash_direction(side)
-	var share := _boss._dash_side_share(direction)
+## The step a dash would take; its colour runs from red (no score) to green (full score).
+func _add_dash_arrow(action: StringName) -> void:
+	var direction := _boss._combo_forward() if action == CentipedeBrain.DASH_FRONT else _boss._dash_direction(action)
+	var share := _boss._dash_front_share() if action == CentipedeBrain.DASH_FRONT else _boss._dash_side_share(action)
 	var color := COLOR_DASH_POOR.lerp(COLOR_DASH_WORTH, share)
 	var from := _boss.global_position
-	var to := from + direction * d.body(d.dash_distance)
+	var to := from + _boss.dash_travel(action)
 	_add_line(from, to, color)
 	var back := -direction * DASH_ARROW_HEAD
 	_add_line(to, to + back.rotated(Vector3.UP, deg_to_rad(25.0)), color)
 	_add_line(to, to + back.rotated(Vector3.UP, deg_to_rad(-25.0)), color)
-
-
-## Outline of the pool's hit area: the cut fan, in the pool's own (scaled) space.
-func _add_fan(pool: PoisonPool) -> void:
-	if not _boss_alive():
-		return
-	var d := _boss.cdata
-	var half := deg_to_rad(d.pool_half_angle_deg)
-	var near := d.pool_length * d.pool_cut_fraction
-	var segments := 16
-	var prev_far := pool.to_global(Vector3(sin(-half), 0.0, cos(-half)) * d.pool_length)
-	var prev_near := pool.to_global(Vector3(sin(-half), 0.0, cos(-half)) * near)
-	_add_line(prev_near, prev_far, COLOR_HITBOX)
-	for i in range(1, segments + 1):
-		var a := lerpf(-half, half, float(i) / segments)
-		var far := pool.to_global(Vector3(sin(a), 0.0, cos(a)) * d.pool_length)
-		var inner := pool.to_global(Vector3(sin(a), 0.0, cos(a)) * near)
-		_add_line(prev_far, far, COLOR_HITBOX)
-		_add_line(prev_near, inner, COLOR_HITBOX)
-		prev_far = far
-		prev_near = inner
-	_add_line(prev_near, prev_far, COLOR_HITBOX)
 
 
 func _add_sector(origin: Vector3, forward: Vector3, reach: float, arc_deg: float, color: Color) -> void:

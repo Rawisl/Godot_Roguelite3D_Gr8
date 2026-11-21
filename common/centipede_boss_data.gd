@@ -1,5 +1,6 @@
 class_name CentipedeBossData
 extends BossData
+# TODO(kiezroth): when the centipede gets a core model of its own, set fx_show_core back to true (script default and skeletal_centipede_boss.tres) so the armor break lights its core again.
 
 ## Skeletal Centipede: model scale, move numbers and AI weights on top of the shared boss fields.
 ## Every distance, speed and size marked "(body)" is the value at model_scale 1. The boss reads
@@ -10,16 +11,19 @@ extends BossData
 @export_group("Model")
 ## One number that sizes the model, its collision, its hitboxes and its clip-driven speeds.
 @export_range(3.0, 4.5, 0.05) var model_scale: float = 3.0
-## (body) Collision and hurt box of the torso.
+## (body) Collision box of the torso.
 @export var body_box_size: Vector3 = Vector3(1.1, 0.9, 1.8)
 @export var body_box_center: Vector3 = Vector3(0.0, 0.45, 0.0)
+## (body) Box that takes hits (the sword, towers, shots). It reaches further ahead than the torso, so
+## a commander facing the boss lands its swings and the scythes are covered while they swing.
+@export var hurt_box_size: Vector3 = Vector3(1.1, 0.9, 2.0)
+@export var hurt_box_center: Vector3 = Vector3(0.0, 0.45, 0.1)
 ## (body) Centre of the roll's hit circle, in the boss's own space.
 @export var roll_ring_center: Vector3 = Vector3(0.0, 0.0, 0.375)
 
 @export_group("Engagement")
 ## (body) The boss minds a commander this close, and one that hit it recently within the leash.
-## Kept at or above roll_full_distance so every ranged move can score without the commander
-## having to strike first.
+## Wide enough that the ranged moves can score without the commander having to strike first.
 @export var engage_range: float = 5.5
 @export var engage_leash: float = 7.0
 
@@ -32,6 +36,9 @@ extends BossData
 ## (body) Ground speed at which the walk clip plays at its own speed.
 @export var walk_anim_base_speed: float = 0.16
 @export var walk_anim_max_scale: float = 6.0
+## (body) Distance from the body's axis the feet travel while it turns in place; sets how fast the
+## walk clip plays for a given turning speed.
+@export var turn_step_radius: float = 0.5
 ## Between moves, a commander further off the facing than this gets a turn clip, not a slow turn.
 @export var turn_clip_min_deg: float = 45.0
 ## Facing a structure this closely, the boss swings even if it is not dead on.
@@ -56,6 +63,10 @@ extends BossData
 ## (body) Used when a bone is missing.
 @export var fx_core_fallback: Vector3 = Vector3(0.0, 0.6, 0.7)
 @export var fx_vent_fallback: Vector3 = Vector3(0.0, 1.0, 0.3)
+## Whether the armor break lights the electric core on this boss.
+@export var fx_show_core: bool = false
+## Share of the spit particles' authored speed, so the stream lands in the pool.
+@export var fx_spit_speed_scale: float = 0.6
 
 @export_group("Slash")
 ## (body) Sector in front of the boss. A commander on the right half gets the first swing, on the
@@ -69,6 +80,8 @@ extends BossData
 @export var la3_damage: int = 22
 @export var la3_knockback: float = 1.0
 @export var la3_arc_deg: float = 150.0
+## Seconds before the heavy third swing can be picked again; meanwhile a commander dead ahead gets the side swing.
+@export var la3_cooldown: float = 4.0
 
 @export_group("Combo")
 ## (body)
@@ -85,11 +98,28 @@ extends BossData
 	Vector2(0.25, 0.4), Vector2(0.65, 0.8), Vector2(1.1667, 1.2667), Vector2(1.4333, 1.5333),
 	Vector2(2.1112, 2.2), Vector2(2.3778, 2.4667), Vector2(2.6548, 2.749), Vector2(2.9058, 3.0),
 	Vector2(3.5667, 3.6667), Vector2(3.8333, 3.9333), Vector2(4.4833, 4.6667)])
-## Clip seconds in which the boss steps forward (start, end), at combo_move_speed.
+## Spans of the combo clip (start, end; clip seconds) in which the boss stops the clip to take a
+## step instead: the clip holds at start, the walk plays for combo_step_time, then the clip goes on
+## from end. None of them may overlap a hit window.
 @export var combo_move_windows: PackedVector2Array = PackedVector2Array([
 	Vector2(0.8167, 1.0167), Vector2(1.55, 1.95), Vector2(3.0167, 3.4167)])
-## (body) Metres per clip second.
-@export var combo_move_speed: float = 0.6
+## (body) Metres per clip second while stepping.
+@export var combo_move_speed: float = 0.75
+## Clip seconds each step lasts.
+@export var combo_step_time: float = 0.8
+## Degrees per clip second the boss turns toward its target while stepping.
+@export var combo_step_turn_rate_deg: float = 120.0
+## (body) A step stops once the gap to the target is down to this.
+@export var combo_step_stop_gap: float = 1.0
+## Degrees. A step that would end early (target near, or the way blocked) goes on turning in place
+## until the face is within this of the target.
+@export var combo_step_face_tolerance_deg: float = 10.0
+## (body) A gap to the target wider than this cancels the combo, unless a hit window is open.
+@export var combo_cancel_distance: float = 2.6
+## Clip seconds of the pull-back to rest when the combo is cancelled.
+@export var combo_cancel_time: float = 0.25
+## Game seconds of rest after a cancelled combo, before the next move.
+@export var combo_cancel_recovery: float = 0.05
 @export var combo_cooldown: float = 8.0
 
 @export_group("Spit")
@@ -98,31 +128,23 @@ extends BossData
 @export var spit_stream_start: float = 0.6
 @export var spit_stream_duration: float = 3.0
 @export var spit_stream_tick: float = 0.3
-## (body) The stream is a cone on the floor: its tip is under the mouth.
-@export var spit_stream_reach: float = 3.9
+## The stream is a cone on the floor: its tip is under the mouth and it reaches the far edge of the pool.
 @export var spit_stream_half_angle_deg: float = 20.0
 @export var spit_stream_tick_damage: int = 3
-## (body) Distance from the boss in which the AI picks the spit.
-@export var spit_min_reach: float = 1.8
-@export var spit_max_reach: float = 4.8
-## (body) Radius of the warning ring.
-@export var spit_telegraph_radius: float = 2.0
-@export var spit_cooldown: float = 9.0
+@export var spit_cooldown: float = 30.0
 ## (body) Where the stream starts, ahead of the boss, when the effect is not there to say.
 @export var spit_apex_fallback: float = 0.8
 ## (body) A target this close to the stream's tip is always inside the cone.
 @export var spit_cone_tip_radius: float = 0.3
-## Share of the pool's length, past its offset, where the warning ring is centred.
-@export var spit_telegraph_along: float = 0.6
 @export var spit_unlock_appearance: int = 1
 
 @export_group("Poison Pool")
 @export var pool_spawn_time: float = 1.05
-## (body) Where the pool starts, in the boss's own space.
-@export var pool_offset: Vector3 = Vector3(0.0, 0.012, 0.8237)
-@export var pool_length: float = 4.3
-@export var pool_cut_fraction: float = 0.25
-@export var pool_half_angle_deg: float = 32.0
+## (body) Centre of the circular pool, in the boss's own space: where the stream lands.
+@export var pool_center: Vector3 = Vector3(0.0, 0.012, 2.87)
+## Metres, not scaled: the pool is the same size at every model scale. The AI spits when the
+## commander stands inside it.
+@export var pool_radius: float = 3.0
 @export var pool_tick_damage: int = 4
 @export var pool_tick_interval: float = 0.5
 @export var pool_lifetime: float = 5.0
@@ -139,11 +161,8 @@ extends BossData
 @export var roll_hit_radius: float = 0.9
 @export var roll_damage: int = 30
 @export var roll_knockback: float = 4.0
-## (body) The roll starts only when the commander is further than the minimum and scores its full
-## weight from the full distance on.
+## (body)
 @export var roll_max_distance: float = 7.0
-@export var roll_min_distance: float = 4.0
-@export var roll_full_distance: float = 5.0
 @export var roll_turn_rate_deg: float = 50.0
 @export var roll_lean_max_deg: float = 15.0
 ## Seconds the roll takes to slow to a stop in its end clip.
@@ -151,7 +170,8 @@ extends BossData
 ## The roll ends when it covers less than this share of its expected distance for roll_blocked_time.
 @export var roll_blocked_ratio: float = 0.4
 @export var roll_blocked_time: float = 0.15
-@export var roll_cooldown: float = 10.0
+## Shared with the charge roll.
+@export var roll_cooldown: float = 30.0
 @export var roll_unlock_appearance: int = 2
 
 @export_group("Charge Roll")
@@ -165,20 +185,21 @@ extends BossData
 @export var charge_roll_damage: int = 26
 ## Seconds the roll goes straight on after it hit the commander before it ends.
 @export var charge_roll_after_hit_time: float = 0.5
-## (body)
-@export var charge_roll_min_distance: float = 2.5
-@export var charge_roll_full_distance: float = 3.5
-@export var charge_roll_cooldown: float = 16.0
 @export var charge_roll_unlock_appearance: int = 3
 
 @export_group("Dash")
-## (body) Sideways step, taken in dash_time clip seconds, then dash_recovery of rest.
-@export var dash_distance: float = 1.5
-@export var dash_time: float = 0.5
-@export var dash_recovery: float = 0.2
+## Share of the dash clip's own sideways travel (2.0 body) the boss covers; the leap is airborne, so a shorter one keeps the feet in place.
+@export var dash_travel_scale: float = 0.6
+## Seconds of rest after the dash ends.
+@export var dash_recovery: float = 0.05
+## Seconds of the leap clip kept after the root has stopped travelling: the feet touch down, then the dash ends.
+@export var dash_land_time: float = 0.1
+## Degrees per second (of the leap clip) the boss turns toward the commander while airborne; the leap's path stays the one set at take-off.
+@export var dash_air_turn_rate_deg: float = 300.0
 ## (body) A commander this close (and fighting the boss) makes the dash worth taking.
 @export var dash_trigger_reach: float = 2.6
-@export var dash_cooldown: float = 7.0
+## Shared by the left and the right dash.
+@export var dash_cooldown: float = 20.0
 @export var dash_unlock_appearance: int = 2
 ## Score share of the side that leads toward where the boss came from; the Fortress side is 1.
 @export var dash_spawn_side_share: float = 0.2
@@ -192,6 +213,33 @@ extends BossData
 @export var dash_buff_roll_mult: float = 1.15
 ## During the buff the boss turns back to the commander once it is off the facing by more than this.
 @export var dash_face_min_deg: float = 15.0
+## The forward dash has a cooldown of its own.
+@export var dash_front_cooldown: float = 20.0
+## Share of a side dash's score while the commander is in front of the boss, and while it is anywhere else.
+@export var dash_side_front_mult: float = 0.5
+@export var dash_side_off_front_mult: float = 3.0
+## Share of the chase score when the chase leads straight away from the Fortress; toward it the share is 1.
+@export var chase_off_fortress_share: float = 0.3
+## Dot product (flat unit vectors, commander direction against Fortress direction) over which that share runs.
+@export var chase_fortress_band: float = 0.5
+## Share of a side dash's score when it leaps toward the commander; the side away from it counts fully.
+@export var dash_toward_share: float = 0.5
+## Sine of the commander's bearing over which that share runs (a commander dead behind scores the middle of the two).
+@export var dash_away_band: float = 0.3
+## (body) The forward dash is picked when the commander's gap is between these: after the leap the
+## commander is out of the torso but still inside the slash.
+@export var dash_front_min_distance: float = 2.1
+@export var dash_front_max_distance: float = 2.9
+
+@export_group("Turn Pressure")
+## A boss that keeps turning to face the commander gets its roll weighted up: the turn clips of this
+## many game seconds are counted.
+@export var turn_roll_window: float = 10.0
+## The roll's weight and distance gate start to rise above this count and are full at turn_roll_full_turns.
+@export var turn_roll_min_turns: int = 1
+@export var turn_roll_full_turns: int = 3
+## Roll weight multiplier at full pressure.
+@export var turn_roll_max_mult: float = 2.5
 
 @export_group("Centipede AI")
 @export var weight_slash: float = 1.2
@@ -202,6 +250,9 @@ extends BossData
 @export var weight_roll: float = 1.2
 @export var weight_charge_roll: float = 1.0
 @export var weight_dash: float = 0.6
+@export var weight_dash_front: float = 1.5
+## Share of the combo weight (on top of the HP rule) while the forward dash cools down.
+@export var combo_dash_front_cooldown_mult: float = 1.2
 
 
 func body(value: float) -> float:
