@@ -9,7 +9,7 @@ render_mode unshaded, blend_mix, cull_disabled, shadows_disabled, depth_draw_nev
 
 // boss_roll_line in art/palette.md. Alpha is the opacity of a line at full intensity.
 uniform vec4 color : source_color = vec4(1.0, 1.0, 1.0, 0.8);
-// Width of a line in metres.
+// Width of a line in metres at model scale 1; it is multiplied by the model's scale.
 uniform float line_width = 0.012;
 // How far a line slides backwards over one loop, in metres, and loops per second.
 uniform float slide_amount = 0.35;
@@ -41,7 +41,9 @@ void vertex() {
 	if (length(side) < 0.05) {
 		side = vec3(0.0, 1.0, 0.0);
 	}
-	pos += normalize(side) * UV.y * line_width * 0.5;
+	// The boss is scaled up, so the width follows the model scale to stay as thick as the body.
+	float model_scale = length(MODEL_MATRIX[0].xyz);
+	pos += normalize(side) * UV.y * line_width * model_scale * 0.5;
 	VERTEX = pos;
 
 	float flicker = 1.0 - flicker_amount * (0.5 + 0.5 * sin((TIME * flicker_speed + rand * 7.0) * TAU));

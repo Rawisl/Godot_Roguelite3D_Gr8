@@ -158,7 +158,7 @@ func _apply_core() -> void:
 	if _rig.is_empty() or not is_instance_valid(_rig.core):
 		return
 	var lit := _enraged or _phase == &"TRANSITION" or _phase == &"EXPOSED"
-	(_rig.core as Node3D).visible = lit
+	(_rig.core as Node3D).visible = lit and _rig.show_core
 	var color := enraged_color if _enraged else exposed_color
 	var mat := _rig.core_material as StandardMaterial3D
 	mat.albedo_color = color
@@ -227,15 +227,16 @@ func _ensure_rig() -> bool:
 		vents.append(vent)
 
 	_rig = {
-		"core": core, "core_material": core_mat, "light": light,
+		"core": core, "core_material": core_mat, "light": light, "show_core": bool(anchors.get("show_core", true)),
 		"plates": plates, "break_steam": break_steam, "vents": vents,
 	}
 	return true
 
 
 ## Where the core and the vents sit. A boss that has get_fx_anchors() supplies its own
-## {core_bone, core_offset, core_fallback, vent_bones, vent_offset, vent_fallback}; any other
-## boss gets the Bulwark's.
+## {core_bone, core_offset, core_fallback, vent_bones, vent_offset, vent_fallback, show_core};
+## show_core is optional (true when missing) and false keeps the core sphere and its light dark
+## while plates, steam, alerts and vents still play. Any other boss gets the Bulwark's.
 func _get_anchors() -> Dictionary:
 	if _boss.has_method(&"get_fx_anchors"):
 		return _boss.call(&"get_fx_anchors")

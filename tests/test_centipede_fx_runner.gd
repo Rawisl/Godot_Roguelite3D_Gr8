@@ -4,7 +4,7 @@ extends Node3D
 ## attachments follow the skeleton, the roll and spit switches work, particle physics follow the
 ## model scale, and BossFxManager reads a boss's own anchors while the Bulwark keeps its own.
 
-const MODEL_SCENE: PackedScene = preload("res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede.glb")
+const MODEL_SCENE: PackedScene = preload("res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede_model.tscn")
 const FX_SCENE: PackedScene = preload("res://art/vfx/centipede_fx.tscn")
 const LIBRARY: AnimationLibrary = preload("res://art/vfx/centipede_fx_library.tres")
 const BULWARK_MODEL: PackedScene = preload("res://contents/assets/characters/enemy and boss/boss_bulwark_model.tscn")
@@ -25,6 +25,14 @@ class FakeCentipede extends Node3D:
 		}
 
 
+## Boss stand-in whose anchors ask for no core sphere.
+class FakeCorelessBoss extends FakeCentipede:
+	func get_fx_anchors() -> Dictionary:
+		var anchors := super()
+		anchors["show_core"] = false
+		return anchors
+
+
 func _ready() -> void:
 	print("\n=======================================================")
 	print("              CENTIPEDE FX VERIFICATION                ")
@@ -36,9 +44,13 @@ func _ready() -> void:
 	await test_spit_switch()
 	await test_roll_switches()
 	await test_stop_all_clears()
+	await test_hold_resume_slash()
 	await test_particles_follow_scale()
+	await test_spit_speed_scale()
+	await test_pool_mesh_disc()
 	await test_fx_manager_reads_anchors()
 	await test_fx_manager_keeps_bulwark()
+	await test_fx_manager_hides_core()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -184,6 +196,23 @@ func test_stop_all_clears() -> void:
 	await get_tree().process_frame
 
 
+func test_hold_resume_slash() -> void:
+	var rig := _make_rig()
+	var fx := rig.fx as CentipedeFx
+	var player := fx.get_node("VfxPlayer") as AnimationPlayer
+	fx.play_slash(&"combo_vfx", 1.0)
+	player.advance(0.3)
+	var held_at := player.current_animation_position
+	fx.hold_slash()
+	assert_true(not player.is_playing() and player.assigned_animation == &"combo_vfx" and is_equal_approx(player.current_animation_position, held_at),
+			"tc7 hold_slash freezes the trail clip where it is")
+	fx.resume_slash(1.2, 2.0)
+	assert_true(player.is_playing() and absf(player.current_animation_position - 1.2) < 0.01 and is_equal_approx(player.get_playing_speed(), 2.0),
+			"tc7 resume_slash carries the clip on from the given time at the given speed")
+	_free_rig(rig)
+	await get_tree().process_frame
+
+
 ## Spit particles at model scale 1 and 2: the cloud is twice as big in the world, and the
 ## authored gravity is kept instead of compounded by repeated calls.
 func test_particles_follow_scale() -> void:
@@ -221,6 +250,59 @@ func test_particles_follow_scale() -> void:
 	assert_true(cores[1].gravity.is_equal_approx(authored), "tc7 apply_scale(1) restores the authored gravity")
 	for rig in rigs:
 		_free_rig(rig)
+	await get_tree().process_frame
+
+
+func test_spit_speed_scale() -> void:
+	var rig := _make_rig()
+	var fx := rig.fx as CentipedeFx
+	var parts: Array[CPUParticles3D] = []
+	for nm in ["Core", "Drops", "Smoke"]:
+		parts.append(fx.get_node("Head/SpitEmitter/" + nm) as CPUParticles3D)
+	var authored: Array[Vector2] = []
+	for p in parts:
+		authored.append(Vector2(p.initial_velocity_min, p.initial_velocity_max))
+	fx.set_spit_speed_scale(0.6)
+	fx.set_spit_speed_scale(0.6)
+	var scaled := true
+	for i in parts.size():
+		scaled = scaled and is_equal_approx(parts[i].initial_velocity_min, authored[i].x * 0.6) \
+				and is_equal_approx(parts[i].initial_velocity_max, authored[i].y * 0.6)
+	assert_true(scaled, "tc11 set_spit_speed_scale(0.6) gives min and max speed of all three spit particles 0.6 of the authored value, also when called twice")
+	fx.apply_scale(3.0)
+	var kept := true
+	for i in parts.size():
+		kept = kept and is_equal_approx(parts[i].initial_velocity_min, authored[i].x * 0.6) \
+				and is_equal_approx(parts[i].initial_velocity_max, authored[i].y * 0.6)
+	assert_true(kept, "tc11 apply_scale afterwards leaves the speeds alone")
+	fx.set_spit_speed_scale(1.0)
+	assert_true(is_equal_approx(parts[0].initial_velocity_max, authored[0].y), "tc11 scale 1 restores the authored speed")
+	_free_rig(rig)
+	await get_tree().process_frame
+
+
+func test_pool_mesh_disc() -> void:
+	var pool := PoisonPoolMesh.new()
+	pool.disc = true
+	pool.length = 3.0
+	var mesh := pool.build_mesh()
+	var arrays := mesh.surface_get_arrays(0)
+	var verts := arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array
+	var uvs := arrays[Mesh.ARRAY_TEX_UV] as PackedVector2Array
+	var inside := true
+	var rim := false
+	var centre := false
+	var flat_v := true
+	for i in verts.size():
+		var r := Vector2(verts[i].x, verts[i].z).length()
+		inside = inside and r <= 3.0 + 1e-4
+		rim = rim or absf(r - 3.0) < 1e-4
+		centre = centre or r < 1e-4
+		flat_v = flat_v and is_equal_approx(uvs[i].y, 0.5)
+		flat_v = flat_v and absf(uvs[i].x - (0.5 + 0.5 * r / 3.0)) < 1e-4
+	assert_true(inside and rim and centre, "tc12 the disc mesh stays within radius length, reaches it and has a centre vertex")
+	assert_true(flat_v, "tc12 disc UV.y is 0.5 and UV.x grows with the radius")
+	pool.free()
 	await get_tree().process_frame
 
 
@@ -262,6 +344,37 @@ func test_fx_manager_keeps_bulwark() -> void:
 	for vent: CPUParticles3D in rig.vents:
 		vent_bones.append(_attached_bone(vent.get_parent()))
 	assert_true(vent_bones == ["upperarm.l", "upperarm.r"], "tc9 and the vents on the upper arms (%s)" % [vent_bones])
+	EventBus.boss_phase_changed.emit(&"EXPOSED")
+	assert_true(mgr.is_core_lit() and mgr.get_core_light() > 0.0, "tc9 the Bulwark core and its light still light up when exposed")
+	mgr.free()
+	boss.free()
+	await get_tree().process_frame
+
+
+func test_fx_manager_hides_core() -> void:
+	var boss := FakeCorelessBoss.new()
+	boss.add_to_group(&"boss")
+	boss.add_child(MODEL_SCENE.instantiate())
+	add_child(boss)
+	var mgr := BossFxManager.new()
+	add_child(mgr)
+	var alerts: Array[StringName] = []
+	var on_alert := func(_tier: int, key: StringName, _args: Dictionary) -> void: alerts.append(key)
+	EventBus.alert_requested.connect(on_alert)
+	EventBus.boss_spawned.emit()
+	var rig := mgr.get_rig()
+	EventBus.boss_phase_changed.emit(&"TRANSITION")
+	assert_true(not mgr.is_core_lit(), "tc10 a boss with show_core false gets no visible core on the armour break")
+	assert_true(mgr.get_core_light() == 0.0, "tc10 and no core light")
+	assert_true((rig.plates as CPUParticles3D).emitting and (rig.break_steam as CPUParticles3D).emitting, "tc10 the plates and break steam still burst")
+	assert_true(alerts.has(&"alert.boss_core_exposed"), "tc10 the exposed alert still fires")
+	EventBus.boss_enraged.emit()
+	var vents_on: bool = not rig.vents.is_empty()
+	for vent: CPUParticles3D in rig.vents:
+		vents_on = vents_on and vent.emitting
+	assert_true(vents_on, "tc10 the vents still start on enrage")
+	assert_true(not mgr.is_core_lit(), "tc10 and the core stays dark once enraged")
+	EventBus.alert_requested.disconnect(on_alert)
 	mgr.free()
 	boss.free()
 	await get_tree().process_frame

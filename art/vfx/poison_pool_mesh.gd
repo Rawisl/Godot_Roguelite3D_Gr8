@@ -9,7 +9,16 @@ extends MeshInstance3D
 ## breaks the fan up into puddles; drive its "spread" and "opacity" instance uniforms.
 ##
 ## UV.x is 0 on the cut edge and 1 on the far arc; UV.y runs 0..1 across the fan.
+##
+## With disc on the mesh is a full circle of radius length around the node origin instead:
+## UV.x = 0.5 + 0.5 * r / length (0.5 at the centre, 1 on the rim) and UV.y = 0.5 everywhere,
+## so the shader's edge fade (min of the UV distances to 0 and 1) only softens the rim.
 
+## Full circle instead of the fan; cut_fraction and half_angle_deg are ignored.
+@export var disc := false:
+	set(value):
+		disc = value
+		_rebuild()
 ## Distance from the tip to the far arc, in metres.
 @export var length := 3.9:
 	set(value):
@@ -44,8 +53,8 @@ func build_mesh() -> ArrayMesh:
 	var uvs := PackedVector2Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
-	var r0 := length * cut_fraction
-	var half := deg_to_rad(half_angle_deg)
+	var r0 := 0.0 if disc else length * cut_fraction
+	var half := PI if disc else deg_to_rad(half_angle_deg)
 	for i in radial_segments + 1:
 		var u := float(i) / radial_segments
 		var r := lerpf(r0, length, u)
@@ -53,7 +62,7 @@ func build_mesh() -> ArrayMesh:
 			var v := float(j) / angle_segments
 			var a := lerpf(-half, half, v)
 			verts.append(Vector3(sin(a) * r, 0.0, cos(a) * r))
-			uvs.append(Vector2(u, v))
+			uvs.append(Vector2(0.5 + 0.5 * u, 0.5) if disc else Vector2(u, v))
 			normals.append(Vector3.UP)
 	var row := angle_segments + 1
 	for i in radial_segments:

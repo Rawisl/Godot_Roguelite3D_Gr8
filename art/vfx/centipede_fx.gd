@@ -61,6 +61,20 @@ func play_slash(anim: StringName, speed: float = 1.0) -> void:
 	_vfx_player.play(anim, -1.0, speed)
 
 
+## Freezes the running trail clip where it is (trail and blade glow keep their state).
+func hold_slash() -> void:
+	_vfx_player.pause()
+
+
+## Carries on the held trail clip from at_time (its own seconds) at the given speed.
+func resume_slash(at_time: float, speed: float = 1.0) -> void:
+	var anim := _vfx_player.assigned_animation
+	if anim == &"":
+		return
+	_vfx_player.play(anim, -1.0, speed)
+	_vfx_player.seek(at_time, true)
+
+
 ## Stops every effect: trails, blade glow, sparks, eyes, speed lines, body glow and the spit.
 func stop_all() -> void:
 	_vfx_player.stop()
@@ -119,6 +133,19 @@ func apply_scale(s: float) -> void:
 		p.damping_max = (p.get_meta(&"authored_damping_max") as float) * s
 		p.linear_accel_min = (p.get_meta(&"authored_linear_accel_min") as float) * s
 		p.linear_accel_max = (p.get_meta(&"authored_linear_accel_max") as float) * s
+
+
+## Scales the start speed of the three spit particles (Core, Drops, Smoke) to k times their
+## authored speed, so the stream lands where the boss wants it. It is a world-space share on
+## top of the model scale. The authored speeds are kept the first time, so calling it again
+## does not compound.
+func set_spit_speed_scale(k: float) -> void:
+	for p in _spit_particles:
+		if not p.has_meta(&"authored_velocity_min"):
+			p.set_meta(&"authored_velocity_min", p.initial_velocity_min)
+			p.set_meta(&"authored_velocity_max", p.initial_velocity_max)
+		p.initial_velocity_min = (p.get_meta(&"authored_velocity_min") as float) * k
+		p.initial_velocity_max = (p.get_meta(&"authored_velocity_max") as float) * k
 
 
 func _reset_slash_trails() -> void:
