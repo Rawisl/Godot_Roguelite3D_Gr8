@@ -20,7 +20,7 @@ uniform float stretch_amount : hint_range(0.0, 1.0) = 0.4;
 uniform float flicker_amount : hint_range(0.0, 1.0) = 0.3;
 uniform float flicker_speed = 11.0;
 
-// Per-instance, driven over time by the roll (AnimationPlayer for now).
+// Per-instance, set by CentipedeFx.set_speed_lines from the boss roll speed.
 instance uniform float intensity : hint_range(0.0, 1.0) = 1.0;
 
 varying float v_fade;

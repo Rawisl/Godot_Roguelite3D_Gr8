@@ -28,7 +28,7 @@ uniform float bubble_speed = 1.4;
 // How far the pools shrink while fading out (raises the noise threshold).
 uniform float fade_shrink : hint_range(0.0, 1.0) = 0.35;
 
-// Per-instance, driven over time by the spit (AnimationPlayer for now).
+// Per-instance, set by PoisonPool as the pool spreads and fades.
 instance uniform float spread : hint_range(0.0, 1.0) = 1.0;
 instance uniform float opacity : hint_range(0.0, 1.0) = 1.0;
 

@@ -11,7 +11,7 @@ uniform vec4 color : source_color = vec4(1.0, 0.165, 0.165, 0.6);
 // How fast the opacity falls off from the centre to the silhouette (higher: smaller core).
 uniform float core_falloff : hint_range(0.1, 8.0) = 1.5;
 
-// Per-instance, driven over time by the roll (AnimationPlayer for now).
+// Per-instance, set by CentipedeFx.set_eye_glow while the boss roars (spit, combo, roll).
 instance uniform float glow : hint_range(0.0, 1.0) = 1.0;
 
 void fragment() {
