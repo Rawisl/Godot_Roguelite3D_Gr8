@@ -129,7 +129,7 @@ func _run_checks() -> void:
 	for i in 4:
 		EventBus.alert_requested.emit(int(Enums.AlertTier.T2), StringName("alert.test_%d" % i), {})
 	_check(layer.visible_toast_count() == 3 and layer.waiting_count() == 1, "four toasts: three shown, one waits")
-	EventBus.alert_requested.emit(int(Enums.AlertTier.T1), &"alert.fortress_low", {})
+	EventBus.alert_requested.emit(int(Enums.AlertTier.T1), &"alert.boss_enraged", {})
 	_check(layer.is_banner_visible(), "a T1 banner shows at once even with three toasts up")
 	EventBus.alert_requested.emit(int(Enums.AlertTier.T2), &"alert.test_0", {})
 	_check(layer.waiting_count() == 1, "the same alert within 5 s is dropped")
@@ -187,17 +187,20 @@ func _run_checks() -> void:
 	_check(not fortress_panel.visible, "entering closes the open panel")
 	var room := _find("HazardHud") as HazardHud
 	_check(room.visible and not gate.visible and not start.visible, "in the room: room HUD shown, marker and Start wave hidden")
-	_check((room.get_node("%Enemies") as Label).text == UiFormat.tr_fmt(&"hud.hazard.enemies", {"value": 5, "max": 5}), "enemies left 5/5")
-	_check((room.get_node("%Reward") as Label).visible, "the Mithril for a win shows")
+	var counter := _find("WaveCounter")
+	_check(counter.get_node("%TrialHeader").is_visible_in_tree(), "room title appears at the top")
+	_check(counter.get_node("%TrialWave").text == UiFormat.tr_fmt(&"hud.wave_value", {"wave": _wave}), "trial uses the entered wave")
 	_check(_find("FortressBar").modulate.a < 1.0, "the Fortress bar fades in the room")
 	_check((_find("CommanderStatus").get_node("%Title") as Label).text == tr(&"hud.commander_room"), "the commander HP is the room copy's")
 	var speed := _find("SpeedButtons")
 	var x3 := speed.find_children("*", "Button", true, false).back() as Button
-	_check(not x3.disabled, "x2 and x3 work in the room")
+	_check(not x3.disabled, "speed can be cycled in the room")
+	for level in [2, 3, 1]:
+		x3.pressed.emit()
+		_check(TimeManager.get_time_scale() == level, "cycle speed to x%d" % level)
 	_enemy_done()
 	_enemy_done()
-	_check((room.get_node("%Enemies") as Label).text == UiFormat.tr_fmt(&"hud.hazard.enemies", {"value": 3, "max": 5}), "two done: 3/5 left")
-	_check((room.get_node("%Loot") as Label).text.contains("14"), "gold earned so far shows")
+	_check(not room.has_node("InfoBox"), "trial has no second information box")
 	EventBus.pause_changed.emit(true)
 	var leave := room.get_node("%LeaveButton") as Button
 	_check(leave.disabled, "Leave is grey while paused")

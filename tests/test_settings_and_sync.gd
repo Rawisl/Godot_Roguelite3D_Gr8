@@ -424,7 +424,7 @@ func _check_notice_layout() -> void:
 	var first_row := rows[0].get_child(0).get_children()
 	_expect((first_row[0] as Label).text == tr(&"dialog.sync_upload.row_balance") and (first_row[1] as Label).text == "120"
 		and (rows[2] as Control).visible, "notice: each uploaded value is its own row")
-	_expect(not (lines[0] as Label).text.ends_with("."), "notice: the lines end without a full stop")
+	_expect((lines[0] as Label).text.ends_with(".") and (lines[1] as Label).text.ends_with(":"), "notice: full sentence and introduction to values use their own punctuation")
 	dialog.cancel()
 	await get_tree().process_frame
 	ScreenManager.close_all_dialogs()

@@ -5,7 +5,7 @@ extends Node
 ## 1: fill the skill slots. 2: start the skill cooldowns. 3: switch Frontline / Commander.
 ## 4: commander kill XP. 5: tower-only kill XP. A: Aura on / off. W: gain the next weapon.
 ## O: click the weapon slot. S: switch PREP / COMBAT. C: Chain Lightning cooldown.
-## H: hide / show the skill slots. R: new run.
+## V: open / close character status. R: new run.
 
 const SKILL_IDS: Array[StringName] = [&"whirlwind", &"sword_wave", &"firebomb"]
 const WEAPON_IDS: Array[StringName] = [&"frost", &"chain_lightning", &"burn", &"rampage", &"swift"]
@@ -58,8 +58,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			EventBus.state_changed.emit(&"PREP" if _prep else &"COMBAT")
 		KEY_C:
 			EventBus.skill_cooldown_changed.emit(&"chain_lightning", 5.0, 5.0)
-		KEY_H:
-			(get_tree().root.find_child("SkillToggle", true, false) as Button).pressed.emit()
 		KEY_R:
 			_new_run()
 
@@ -166,19 +164,15 @@ func _run_checks() -> void:
 	EventBus.aura_changed.emit(false)
 	_check(not aura.visible, "Aura icon hides")
 
-	var toggle := get_tree().root.find_child("SkillToggle", true, false) as Button
-	var skill_row := get_tree().root.find_child("SkillRow", true, false) as Control
-	var arrow := get_tree().root.find_child("SkillToggleArrow", true, false) as ArrowGlyph
-	_check(skill_row.visible and not arrow.pointing_up and toggle.text == "", "skill slots shown at start, arrow points down, no text")
-	_check(toggle.tooltip_text.begins_with(tr(&"hud.skill.hide")), "the tooltip says the arrow hides the slots")
-	EventBus.skill_cooldown_changed.emit(&"skill_1", 6.0, 6.0)
-	toggle.pressed.emit()
-	_check(not skill_row.visible and arrow.pointing_up, "Hide: skill slots and weapon slot hidden, arrow points up")
-	_check(toggle.tooltip_text.begins_with(tr(&"hud.skill.show")), "the tooltip says the arrow shows them again")
-	_check(toggle.visible and get_tree().root.find_child("EmergencyRepair", true, false).visible, "Hide: the button and Emergency repair stay")
-	_check(first.cooldown_left() > 5.0, "hidden slots keep the cooldown running")
-	toggle.pressed.emit()
-	_check(skill_row.visible and first.cooldown_left() > 5.0, "Show: slots back with the seconds left")
+	var sheet := get_tree().root.find_child("CharacterPanel", true, false) as Control
+	_check(first.is_visible_in_tree() and not (passive[0] as SkillCell).is_visible_in_tree(), "only active skills appear during play")
+	_press_key(KEY_V)
+	var mirrored := sheet.find_child("ActiveRow", true, false)
+	_check(mirrored.get_child_count() == 3 and (mirrored.get_child(0) as SkillCell).skill == first.skill, "sheet mirrors the three active slots")
+	_check(sheet.visible and (passive[0] as SkillCell).is_visible_in_tree() and _slot().is_visible_in_tree(), "V opens passives and weapon")
+	_press_key(KEY_ESCAPE)
+	_check(not sheet.visible and first.is_visible_in_tree(), "Escape closes status, active slots stay")
+	_press_key(KEY_V)
 
 	var slot := _slot()
 	var count := slot.get_node("%CountLabel") as Label
@@ -215,10 +209,20 @@ func _run_checks() -> void:
 			"row text fits: " + ((row as Control).get_node("%NameLabel") as Label).text)
 	EventBus.weapon_equipped.emit(&"swift")
 	await get_tree().process_frame
+	var swift_row := rows.back() as WeaponRow
+	var effect := swift_row.get_node("%EffectLabel") as Label
+	_check(effect.get_global_rect().end.y <= swift_row.get_global_rect().end.y + 0.5,
+		"equipped weapon description stays inside its row")
+	_check(panel.size.x >= 800 and get_tree().paused, "weapon picker opens as a paused modal")
 	var slot_row := slot.get_node("Row") as Control
 	_check(slot_row.get_combined_minimum_size().x + 28.0 <= slot.size.x + 0.5, "longest weapon name fits the HUD slot")
 	EventBus.weapon_equipped.emit(&"frost")
 
+	_press_key(KEY_B)
+	_check(panel.visible and get_tree().paused, "build shortcut leaves the picker open")
+	(panel.get_node("%CloseButton") as Button).pressed.emit()
+	_check(not panel.visible and sheet.visible and not get_tree().paused, "close button returns to the character sheet and resumes play")
+	slot.pressed.emit()
 	EventBus.state_changed.emit(&"COMBAT")
 	_check(not panel.visible, "leaving PREP closes the panel")
 	_check(slot.disabled and slot.tooltip_text == tr(&"hud.weapon.prep_only"), "COMBAT: slot read only with the reason")
@@ -231,8 +235,6 @@ func _run_checks() -> void:
 
 	_gain_next_weapon()
 	slot.pressed.emit()
-	# Past the 0.15 s button lock of the Frost pick.
-	await TimeManager.wait_real(0.2)
 	chain_row.pressed.emit()
 	EventBus.skill_cooldown_changed.emit(&"chain_lightning", 5.0, 5.0)
 	# process_frame comes before _process, so wait one more for the ring to redraw.
@@ -241,11 +243,18 @@ func _run_checks() -> void:
 	var sweep := slot.get_node("%Sweep") as CooldownSweep
 	_check(_run_state.equipped_weapon == &"chain_lightning" and sweep.ratio > 0.9, "Chain Lightning: cooldown ring runs")
 	slot.pressed.emit()
-	toggle.pressed.emit()
-	_check(not panel.visible, "hiding the skill slots closes the weapon panel")
+	_press_key(KEY_V)
+	_check(panel.visible, "V leaves the weapon picker open")
+	base_row.pressed.emit()
+	frost_row.pressed.emit()
+	_check(panel.visible and _run_state.equipped_weapon == &"frost", "repeated picks equip immediately")
+	_press_key(KEY_ESCAPE)
+	_check(not panel.visible and sheet.visible and not get_tree().paused, "Esc returns to the character sheet and resumes play")
+	_press_key(KEY_ESCAPE)
+	_check(not sheet.visible, "second Esc closes the character sheet")
 
 	EventBus.run_started.emit()
-	_check(skill_row.visible, "new run shows the skill slots again")
+	_check(first.is_visible_in_tree() and not sheet.visible, "new run shows only active slots")
 	_check(first.skill == null and count.text == UiFormat.tr_fmt(&"hud.weapon.count", {"value": 1, "max": 6}), "new run clears slots and weapons")
 	(get_tree().root.find_child("PanelHost", true, false) as PanelHost).close_all()
 	print("test_skill_bar: %d passed, %d failed" % [_passed, _failed])
@@ -257,3 +266,10 @@ func _check(ok: bool, label: String) -> void:
 	else:
 		_failed += 1
 		print("  [FAIL] ", label)
+
+
+func _press_key(code: Key) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = code
+	event.pressed = true
+	get_viewport().push_input(event)

@@ -1,7 +1,7 @@
 class_name NoticeDialog
 extends Control
 ## A system notice laid out for reading at a glance: a coloured mark and title for the tone, short
-## lines without trailing punctuation, the numbers in name and value rows, and a small note for
+## sentences, the numbers in name and value rows, and a small note for
 ## the detail. Same signals and Esc handling as the shared confirm dialog, so ScreenManager queues
 ## it the same way. Every line and row is placed in the scene; unused ones stay hidden.
 

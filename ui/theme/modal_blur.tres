@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cksir6f6ci11x"]
+
+[sub_resource type="Shader" id="WeaponBlur"]
+code = "shader_type canvas_item;
+uniform sampler2D scene : hint_screen_texture, repeat_disable, filter_linear_mipmap;
+void fragment() {
+    COLOR = vec4(textureLod(scene, SCREEN_UV, 2.6).rgb * vec3(0.48, 0.52, 0.58), 1.0);
+}"
+
+[resource]
+shader = SubResource("WeaponBlur")

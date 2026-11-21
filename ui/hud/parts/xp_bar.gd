@@ -66,7 +66,7 @@ func _fit_parts(xp: float) -> void:
 		_commander_xp += xp - known
 
 func _show() -> void:
-	_level_label.text = UiFormat.tr_fmt(&"hud.xp.level", {"level": _level})
+	_level_label.text = tr(&"character.recruit") if _level == 0 else UiFormat.tr_fmt(&"hud.xp.level", {"level": _level})
 	var share := _xp / _to_next if _to_next > 0.0 else 0.0
 	_percent.text = UiFormat.tr_fmt(&"hud.xp.percent", {"value": floori(clampf(share, 0.0, 1.0) * 100.0)})
 	_pending_label.visible = _pending > 0

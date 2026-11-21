@@ -29,15 +29,15 @@
 [ext_resource type="PackedScene" uid="uid://cy7wcfr5ks16g" path="res://ui/screens/boss_intro.tscn" id="20_bintro"]
 [ext_resource type="PackedScene" uid="uid://cv3e0y5kcjs2v" path="res://ui/hud/parts/xp_bar.tscn" id="21_xpbar"]
 [ext_resource type="PackedScene" uid="uid://bu7riqj51mrjy" path="res://ui/hud/parts/skill_bar.tscn" id="22_skillbar"]
-[ext_resource type="PackedScene" uid="uid://bvesa0b5qpxv8" path="res://ui/hud/parts/weapon_slot.tscn" id="23_wslot"]
+[ext_resource type="PackedScene" uid="uid://b1p0j2k7t5q3" path="res://ui/panels/character_panel.tscn" id="32_character"]
 [ext_resource type="PackedScene" uid="uid://uncn858pu5rm" path="res://ui/panels/weapon_panel.tscn" id="24_wpanel"]
-[ext_resource type="Script" uid="uid://dalxj2llscqp" path="res://ui/hud/parts/skill_dock.gd" id="25_dock"]
-[ext_resource type="Script" uid="uid://cbk5vw2hro2sa" path="res://ui/hud/parts/arrow_glyph.gd" id="26_arrow"]
 [ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="27_hgate"]
 [ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
 [ext_resource type="PackedScene" uid="uid://c3jq3i3ok6u3s" path="res://ui/screens/victory_screen.tscn" id="29_victory"]
 [ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
 [ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="31_preview"]
+
+[ext_resource type="ShaderMaterial" uid="uid://cksir6f6ci11x" path="res://ui/theme/modal_blur.tres" id="modal_blur"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0
@@ -55,55 +55,19 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dock_normal"]
-content_margin_left = 12.0
-content_margin_top = 4.0
-content_margin_right = 12.0
-content_margin_bottom = 4.0
-bg_color = Color(0.1098, 0.1216, 0.149, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2784, 0.302, 0.3529, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="HoverHealthTrack"]
+bg_color = Color(0.20, 0.09, 0.04, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_left = 2
+corner_radius_bottom_right = 2
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dock_pressed"]
-content_margin_left = 12.0
-content_margin_top = 4.0
-content_margin_right = 12.0
-content_margin_bottom = 4.0
-bg_color = Color(0.1647, 0.1843, 0.2275, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9098, 0.7608, 0.3529, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dock_hover"]
-content_margin_left = 12.0
-content_margin_top = 4.0
-content_margin_right = 12.0
-content_margin_bottom = 4.0
-bg_color = Color(0.1098, 0.1216, 0.149, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.9098, 0.7608, 0.3529, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dock_focus"]
+[sub_resource type="StyleBoxFlat" id="HoverHealthFill"]
+bg_color = Color(0.91, 0.76, 0.35, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_left = 2
+corner_radius_bottom_right = 2
 
 [node name="Hud" type="CanvasLayer" unique_id=1623823647]
 layer = 10
@@ -148,6 +112,7 @@ theme_override_constants/separation = 8
 layout_mode = 2
 
 [node name="CommanderStatus" parent="Root/SafeArea/Frame/TopLeft" unique_id=602541407 instance=ExtResource("3_e0nub")]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="XpBar" parent="Root/SafeArea/Frame/TopLeft" unique_id=1739205101 instance=ExtResource("21_xpbar")]
@@ -168,9 +133,6 @@ grow_horizontal = 2
 mouse_filter = 2
 
 [node name="WaveCounter" parent="Root/SafeArea/Frame/TopCenter" unique_id=1849850089 instance=ExtResource("10_cxhb7")]
-layout_mode = 2
-
-[node name="BossBar" parent="Root/SafeArea/Frame/TopCenter" unique_id=615647234 instance=ExtResource("1_4d6w6")]
 layout_mode = 2
 
 [node name="TutorialHint" parent="Root/SafeArea/Frame/TopCenter" unique_id=1614868657 instance=ExtResource("30_tutorial")]
@@ -205,7 +167,7 @@ layout_mode = 2
 [node name="MithrilLabel" parent="Root/SafeArea/Frame/TopRight/ResourceBox/Rows" unique_id=1582047736 instance=ExtResource("19_mthl")]
 layout_mode = 2
 
-[node name="SpeedButtons" parent="Root/SafeArea/Frame/TopRight" unique_id=1199262953 instance=ExtResource("9_aixkq")]
+[node name="SpeedButtons" parent="Root/SafeArea/Frame/TopRight/ResourceBox/Rows" unique_id=1199262953 instance=ExtResource("9_aixkq")]
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 8
@@ -215,7 +177,12 @@ custom_minimum_size = Vector2(0, 130)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="WavePreview" parent="Root/SafeArea/Frame/TopRight" unique_id=682810540 instance=ExtResource("31_preview")]
+[node name="PreviewHolder" type="VBoxContainer" parent="Root/SafeArea/Frame/TopRight"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+
+[node name="WavePreview" parent="Root/SafeArea/Frame/TopRight/PreviewHolder" unique_id=682810540 instance=ExtResource("31_preview")]
 layout_mode = 2
 size_flags_horizontal = 8
 
@@ -230,56 +197,24 @@ offset_right = 40.0
 grow_vertical = 0
 mouse_filter = 2
 
-[node name="SkillDock" type="VBoxContainer" parent="Root/SafeArea/Frame/BottomLeft" unique_id=1739205401]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 6
-script = ExtResource("25_dock")
-
-[node name="SkillToggle" type="Button" parent="Root/SafeArea/Frame/BottomLeft/SkillDock" unique_id=1739205402]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 32)
+[node name="SkillBar" parent="Root/SafeArea/Frame/BottomLeft" instance=ExtResource("22_skillbar")]
 layout_mode = 2
 size_flags_horizontal = 0
-focus_mode = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_dock_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_dock_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_dock_hover")
-theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_dock_pressed")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_focus")
-
-[node name="SkillToggleArrow" type="Control" parent="Root/SafeArea/Frame/BottomLeft/SkillDock/SkillToggle" unique_id=1739205403]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 6.0
-offset_right = -12.0
-offset_bottom = -6.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("26_arrow")
-
-[node name="SkillRow" type="HBoxContainer" parent="Root/SafeArea/Frame/BottomLeft/SkillDock" unique_id=1739205102]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 12
-
-[node name="SkillBar" parent="Root/SafeArea/Frame/BottomLeft/SkillDock/SkillRow" unique_id=1739205103 instance=ExtResource("22_skillbar")]
-layout_mode = 2
-
-[node name="WeaponSlot" parent="Root/SafeArea/Frame/BottomLeft/SkillDock/SkillRow" unique_id=1739205104 instance=ExtResource("23_wslot")]
-unique_name_in_owner = true
-layout_mode = 2
 
 [node name="EmergencyRepair" parent="Root/SafeArea/Frame/BottomLeft" unique_id=311037426 instance=ExtResource("4_w75iv")]
 layout_mode = 2
 size_flags_horizontal = 0
+
+[node name="BossBar" parent="Root/SafeArea/Frame" instance=ExtResource("1_4d6w6")]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -270.0
+offset_right = 270.0
+offset_top = -136.0
+offset_bottom = -68.0
+grow_vertical = 0
 
 [node name="BottomCenter" type="VBoxContainer" parent="Root/SafeArea/Frame" unique_id=704166953]
 layout_mode = 1
@@ -302,62 +237,6 @@ custom_minimum_size = Vector2(460, 0)
 layout_mode = 2
 script = ExtResource("7_3mxrk")
 
-[node name="FortressPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=800506704 instance=ExtResource("10_m6r7j")]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -483.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="BuildPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=1099369015 instance=ExtResource("8_6gxmt")]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -165.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="TowerPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=993852717 instance=ExtResource("9_6gxmt")]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -165.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="HealStationPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=1111587049 instance=ExtResource("14_fs87q")]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -165.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="WeaponPanel" parent="Root/SafeArea/Frame/BottomCenter/PanelHost" unique_id=1739205105 instance=ExtResource("24_wpanel")]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -542.0
-grow_horizontal = 2
-grow_vertical = 0
-
 [node name="StartWaveButton" parent="Root/SafeArea/Frame/BottomCenter" unique_id=1260135002 instance=ExtResource("12_uyo40")]
 layout_mode = 2
 
@@ -378,6 +257,54 @@ grow_vertical = 0
 mouse_filter = 2
 
 [node name="ModeIndicator" parent="Root/SafeArea/Frame/BottomRight" unique_id=56844471 instance=ExtResource("14_sm7np")]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="DrawerMotion" type="Control" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Dock" type="VBoxContainer" parent="Root/DrawerMotion"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+alignment = 1
+mouse_filter = 2
+
+[node name="FortressPanel" parent="Root/DrawerMotion/Dock" unique_id=800506704 instance=ExtResource("10_m6r7j")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(370, 0)
+size_flags_horizontal = 8
+
+[node name="BuildPanel" parent="Root/DrawerMotion/Dock" unique_id=1099369015 instance=ExtResource("8_6gxmt")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(370, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="TowerPanel" parent="Root/DrawerMotion/Dock" unique_id=993852717 instance=ExtResource("9_6gxmt")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(370, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="HealStationPanel" parent="Root/DrawerMotion/Dock" unique_id=1111587049 instance=ExtResource("14_fs87q")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(370, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="CharacterPanel" parent="Root/DrawerMotion/Dock" instance=ExtResource("32_character")]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 size_flags_horizontal = 8
 
@@ -408,6 +335,27 @@ layout_mode = 1
 [node name="OffscreenIndicators" parent="Root" unique_id=352408765 instance=ExtResource("8_gfles")]
 layout_mode = 1
 
+[node name="WeaponOverlay" type="Control" parent="Root"]
+unique_name_in_owner = true
+visible = false
+process_mode = 3
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Blur" type="ColorRect" parent="Root/WeaponOverlay"]
+material = ExtResource("modal_blur")
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="Root/WeaponOverlay"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="WeaponPanel" parent="Root/WeaponOverlay/Center" unique_id=1739205105 instance=ExtResource("24_wpanel")]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="SelectionController" type="Node" parent="." unique_id=79485306]
 unique_name_in_owner = true
 script = ExtResource("14_olkg6")
@@ -426,10 +374,43 @@ script = ExtResource("17_olkg6")
 
 [node name="EnemyTooltip" type="PanelContainer" parent="." unique_id=1596665316]
 unique_name_in_owner = true
-offset_right = 40.0
-offset_bottom = 40.0
+visible = false
+texture_filter = 2
+custom_minimum_size = Vector2(225, 0)
+theme_type_variation = &"DrawerPanel"
 mouse_filter = 2
 
-[node name="TooltipText" type="Label" parent="EnemyTooltip" unique_id=1732002832]
+[node name="Rows" type="VBoxContainer" parent="EnemyTooltip"]
+theme_override_constants/separation = 5
+mouse_filter = 2
+
+[node name="Heading" type="HBoxContainer" parent="EnemyTooltip/Rows"]
+theme_override_constants/separation = 18
+mouse_filter = 2
+
+[node name="HoverName" type="Label" parent="EnemyTooltip/Rows/Heading"]
 unique_name_in_owner = true
-layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.9098, 0.7608, 0.3529, 1)
+mouse_filter = 2
+
+[node name="HoverHealth" type="Label" parent="EnemyTooltip/Rows/Heading"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.9176, 0.8353, 1)
+mouse_filter = 2
+
+[node name="HoverHealthBar" type="ProgressBar" parent="EnemyTooltip/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 5)
+show_percentage = false
+theme_override_styles/background = SubResource("HoverHealthTrack")
+theme_override_styles/fill = SubResource("HoverHealthFill")
+mouse_filter = 2
+
+[node name="TooltipText" type="Label" parent="EnemyTooltip/Rows" unique_id=1732002832]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.9176, 0.8353, 1)
+mouse_filter = 2
