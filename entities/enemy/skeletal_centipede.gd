@@ -1,6 +1,7 @@
 class_name SkeletalCentipede
 extends BossEnemy
 # TODO(Ender-Via): when bosses rotate by appearance, let WaveManager and the Hazard Trial pick this scene and its BossData instead of the fixed Bulwark.
+# TODO(kiezroth): when the dash_left and dash_right clips are exported from Blender, check dash_time and dash_distance against their length and travel, and drop the walk-clip stand-in in _play_dash_clip.
 
 ## Skeletal Centipede: a long, low boss that slashes with its scythes, spits a poison stream that
 ## leaves a pool, and rolls over the commander from a distance. It shares the boss rules (armor
@@ -9,7 +10,10 @@ extends BossEnemy
 ## from _update_state, so hit times never depend on where the animation happens to be. Between
 ## moves the boss waits out a recovery in the ATTACK state, then asks CentipedeBrain what to do.
 ## Every size, distance and speed in the data is read through the data's body() so one model_scale
-## value resizes the whole boss.
+## value resizes the whole boss; only the roll speed caps are in metres per second of the lane.
+## Spit and Combo open with the roar, as a lead-in of the move itself. The Charge Roll is the roll
+## frame (roar, start, loop, end) that homes in on the commander for a time instead of a distance.
+## The Dash is a short sideways step with no clip of its own yet; it buffs the next moves.
 
 const POOL_SCENE: PackedScene = preload("res://entities/enemy/poison_pool.tscn")
 const ROLL_EXTRA_LIBRARY: AnimationLibrary = preload("res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede_roll_extra.res")
@@ -23,6 +27,9 @@ const CLIP_COMBO: StringName = &"light_attack_combo"
 const CLIP_SPIT: StringName = &"poison_spit"
 const CLIP_ROLL_LOOP: StringName = &"roll_loop"
 const CLIP_ROLL_END: StringName = &"roll_end"
+## Dash clips, not exported yet; the first one that exists is played (the model's own or the extra library's).
+const CLIPS_DASH_LEFT: Array[StringName] = [&"dash_left", &"roll_extra/dash_left"]
+const CLIPS_DASH_RIGHT: Array[StringName] = [&"dash_right", &"roll_extra/dash_right"]
 ## Clips of the extra library added at _ready (the roar and the roll's wind-up).
 const CLIP_ROAR: StringName = &"roll_extra/roar"
 const CLIP_ROLL_START: StringName = &"roll_extra/roll_start"
@@ -44,6 +51,8 @@ const MOVE_SLASH: StringName = &"slash"
 const MOVE_COMBO: StringName = &"combo"
 const MOVE_SPIT: StringName = &"spit"
 const MOVE_ROLL: StringName = &"roll"
+const MOVE_CHARGE_ROLL: StringName = &"charge_roll"
+const MOVE_DASH: StringName = &"dash"
 const MOVE_TURN: StringName = &"turn"
 
 const VFX_SLASH_1: StringName = &"la1_vfx"
@@ -63,6 +72,9 @@ const ROLL_HIT_SPEED_SHARE: float = 0.5
 const ROLL_START_STILL_TIME: float = 0.2
 ## The speed-up and recovery share used when the data is missing; keeps stripped test scenes alive.
 const FALLBACK_CLIP_LENGTH: float = 1.0
+## How close the nav agent walks to a structure's attack point; the boss stops earlier, as soon as
+## its swing reaches (see _structure_in_strike_reach).
+const STRUCTURE_NAV_ARRIVE: float = 0.5
 
 signal move_started(move: StringName, clip: StringName, duration: float)
 ## One hit window of a move closed; targets holds every node it damaged (empty on a whiff).
@@ -87,6 +99,10 @@ class HitWindow extends RefCounted:
 var combo_cooldown_left: float = 0.0
 var spit_cooldown_left: float = 0.0
 var roll_cooldown_left: float = 0.0
+var charge_roll_cooldown_left: float = 0.0
+var dash_cooldown_left: float = 0.0
+## Game seconds left of the buff a dash gives the next moves.
+var dash_buff_left: float = 0.0
 ## Last move the boss started.
 var last_chosen_move: StringName = &""
 
@@ -98,6 +114,9 @@ var _pending_move: StringName = &""
 var _recovery_left: float = 0.0
 var _windows: Array[HitWindow] = []
 var _structure_move: bool = false
+## Clip seconds of the roar still to run before the move's own clip starts (Spit and Combo).
+var _roar_left: float = 0.0
+var _roar_main_clip: StringName = &""
 
 var _turn_start_yaw: float = 0.0
 var _turn_yaw_delta: float = 0.0
@@ -116,6 +135,18 @@ var _roll_end_speed: float = 0.0
 var _roll_distance: float = 0.0
 var _roll_blocked_time: float = 0.0
 var _roll_hit: Array[Node3D] = []
+## True while the running roll is the Charge Roll (it bends harder and runs for a time).
+var _roll_charge: bool = false
+## Game seconds the loop has run (the Charge Roll ends on this).
+var _roll_loop_time: float = 0.0
+## Seconds the Charge Roll still goes straight on after it hit the commander; -1 until it did.
+var _roll_after_hit_left: float = -1.0
+
+var _dash_dir: Vector3 = Vector3.ZERO
+var _dash_side: float = 0.0
+## Distance the dash's easing has asked for so far.
+var _dash_commanded: float = 0.0
+var _dash_blocked_time: float = 0.0
 
 var _dying: bool = false
 var _death_left: float = 0.0
@@ -143,8 +174,10 @@ func _ready() -> void:
 	if _fx != null and _skeleton != null:
 		_fx.bind(_skeleton, _body_mesh)
 		_fx.apply_scale(cdata.model_scale)
-	if cdata.roll_min_distance < cdata.body(cdata.spit_max_reach) - 1.0:
+	if cdata.roll_min_distance < cdata.spit_max_reach - 1.0:
 		push_warning("SkeletalCentipede: roll_min_distance is inside the spit's reach, the roll will crowd out the spit")
+	if cdata.engage_range < cdata.roll_full_distance:
+		push_warning("SkeletalCentipede: engage_range is short of roll_full_distance, the roll will not reach its full score unprovoked")
 
 
 func _setup_anim_player() -> void:
@@ -268,6 +301,15 @@ func _release_melee_slot() -> void:
 		nav.target_desired_distance = get_attack_range()
 
 
+## The boss minds the commander within its own reach: both ranges are in body units.
+func _engage_range() -> float:
+	return cdata.body(cdata.engage_range) if cdata != null else super._engage_range()
+
+
+func _engage_leash() -> float:
+	return cdata.body(cdata.engage_leash) if cdata != null else super._engage_leash()
+
+
 ## Where the boss's electric core and vents sit; BossFxManager reads it. Fallbacks are in the
 ## boss's space, so they follow the model scale.
 func get_fx_anchors() -> Dictionary:
@@ -288,6 +330,9 @@ func _process(delta: float) -> void:
 	combo_cooldown_left = maxf(0.0, combo_cooldown_left - delta)
 	spit_cooldown_left = maxf(0.0, spit_cooldown_left - delta)
 	roll_cooldown_left = maxf(0.0, roll_cooldown_left - delta)
+	charge_roll_cooldown_left = maxf(0.0, charge_roll_cooldown_left - delta)
+	dash_cooldown_left = maxf(0.0, dash_cooldown_left - delta)
+	dash_buff_left = maxf(0.0, dash_buff_left - delta)
 	if push_commit_left > 0.0:
 		push_commit_left = maxf(0.0, push_commit_left - delta)
 	_update_t_away(delta)
@@ -306,6 +351,7 @@ func _update_state(delta: float) -> void:
 		return
 	if current_state in [Enums.EnemyState.ADVANCE, Enums.EnemyState.CHASE, Enums.EnemyState.WAIT] \
 			and current_phase != Enums.BossPhase.TRANSITION:
+		_sync_nav_arrive()
 		_think_timer -= delta
 		if _think_timer <= 0.0:
 			_think_timer = cdata.ai_think_interval
@@ -317,10 +363,22 @@ func _update_state(delta: float) -> void:
 	super._update_state(delta)
 
 
+## Walks a structure's way up to its attack point, and stops short of it only when the swing
+## reaches; a commander is walked up to the (scaled) attack range.
+func _sync_nav_arrive() -> void:
+	if nav == null:
+		return
+	var on_structure := current_target != null and is_instance_valid(current_target) and not _is_commander(current_target)
+	nav.target_desired_distance = STRUCTURE_NAV_ARRIVE if on_structure else get_attack_range()
+
+
 ## Enemy's own CHASE check reads the raw attack range; the boss's is scaled with its model.
+## A structure counts as in range when the swing reaches it, the same measure the swing hits by.
 func _target_in_attack_range() -> bool:
 	if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 		return false
+	if not _is_commander(current_target):
+		return _structure_in_strike_reach(current_target)
 	var diff := _get_attack_point(current_target) - global_position
 	diff.y = 0.0
 	return diff.length() <= get_attack_range()
@@ -352,7 +410,8 @@ func _play_attack_anim() -> void:
 ## Starts what the AI picked, from the ATTACK state.
 func _act_in_attack(action: StringName) -> void:
 	match action:
-		CentipedeBrain.SLASH, CentipedeBrain.COMBO, CentipedeBrain.SPIT, CentipedeBrain.ROLL:
+		CentipedeBrain.SLASH, CentipedeBrain.COMBO, CentipedeBrain.SPIT, CentipedeBrain.ROLL, \
+				CentipedeBrain.CHARGE_ROLL, CentipedeBrain.DASH_LEFT, CentipedeBrain.DASH_RIGHT:
 			_retarget_commander()
 			_start_move(action)
 		CentipedeBrain.PUSH:
@@ -388,14 +447,24 @@ func _start_move(move: StringName) -> void:
 		MOVE_ROLL:
 			roll_cooldown_left = cdata.roll_cooldown
 			_begin_roll()
+		MOVE_CHARGE_ROLL:
+			charge_roll_cooldown_left = cdata.charge_roll_cooldown
+			_begin_charge_roll()
+		CentipedeBrain.DASH_LEFT:
+			_begin_dash(1.0)
+		CentipedeBrain.DASH_RIGHT:
+			_begin_dash(-1.0)
 
 
-## Structures only get the heavy swing, and only once the boss faces them.
+## Structures only get the heavy swing, once the boss faces them and the swing reaches them.
 func _attack_structure() -> void:
 	if current_target == null or not is_instance_valid(current_target):
 		_wait_and_turn()
 		return
-	var off_deg := absf(rad_to_deg(_yaw_to(current_target)))
+	if not _structure_in_strike_reach(current_target):
+		change_state(Enums.EnemyState.CHASE)
+		return
+	var off_deg := absf(rad_to_deg(_yaw_to_point(_structure_aim_point(current_target))))
 	if off_deg > cdata.structure_face_tolerance_deg:
 		_face_target()
 		return
@@ -403,12 +472,39 @@ func _attack_structure() -> void:
 	_begin_slash(CLIP_SLASH_3)
 
 
+## True when the swing reaches the structure: the gap to the nearest point of its collider is
+## inside a share of the slash's reach, so the walk-up never has to stop beyond it.
+func _structure_in_strike_reach(target: Node3D) -> bool:
+	return _flat_gap(target, global_position) <= cdata.body(cdata.slash_range) * cdata.structure_reach_share
+
+
+## The point of a structure the boss faces and swings at: the nearest point of its collider.
+func _structure_aim_point(target: Node3D) -> Vector3:
+	return _closest_point_on_target(target, global_position)
+
+
+## Where the boss looks to face a target: the commander itself, a structure's nearest point.
+func _aim_point(target: Node3D) -> Vector3:
+	return target.global_position if _is_commander(target) else _structure_aim_point(target)
+
+
+## Between moves the boss turns toward the point it swings at, not the centre of a big structure.
+func _turn_toward_target(delta: float) -> void:
+	if current_target == null or not is_instance_valid(current_target) or _is_commander(current_target):
+		super._turn_toward_target(delta)
+		return
+	var look_dir := _structure_aim_point(current_target) - global_position
+	look_dir.y = 0.0
+	if look_dir.length_squared() > 0.001:
+		rotation.y = _turn_limited(rotation.y, atan2(look_dir.x, look_dir.z), delta)
+
+
 ## Turns toward the target: a turn clip for a wide angle, the slow turn between checks otherwise.
 func _face_target() -> void:
 	if current_target == null or not is_instance_valid(current_target):
 		_wait_and_turn()
 		return
-	var delta_yaw := _yaw_to(current_target)
+	var delta_yaw := _yaw_to_point(_aim_point(current_target))
 	if absf(rad_to_deg(delta_yaw)) >= cdata.turn_clip_min_deg:
 		last_chosen_move = MOVE_TURN
 		_begin_turn(delta_yaw)
@@ -423,7 +519,12 @@ func _wait_and_turn() -> void:
 
 ## Signed yaw between the boss's facing and the target (positive turns toward +X).
 func _yaw_to(target: Node3D) -> float:
-	var look := target.global_position - global_position
+	return _yaw_to_point(target.global_position)
+
+
+## Signed yaw between the boss's facing and a point.
+func _yaw_to_point(point: Vector3) -> float:
+	var look := point - global_position
 	look.y = 0.0
 	if look.length_squared() < 0.001:
 		return 0.0
@@ -495,9 +596,14 @@ func build_situation() -> CentipedeBrain.Situation:
 	s.combo_unlocked = appearance >= cdata.combo_unlock_appearance
 	s.spit_unlocked = appearance >= cdata.spit_unlock_appearance
 	s.roll_unlocked = appearance >= cdata.roll_unlock_appearance
+	s.charge_roll_unlocked = appearance >= cdata.charge_roll_unlock_appearance
+	s.dash_unlocked = appearance >= cdata.dash_unlock_appearance
 	s.combo_ready = combo_cooldown_left <= 0.0
 	s.spit_ready = spit_cooldown_left <= 0.0
 	s.roll_ready = roll_cooldown_left <= 0.0
+	s.charge_roll_ready = charge_roll_cooldown_left <= 0.0
+	s.dash_ready = dash_cooldown_left <= 0.0
+	s.dash_buff = dash_buff_left > 0.0
 	var cmd := _get_valid_commander()
 	if cmd == null or is_dead or spawn_grace:
 		return s
@@ -505,8 +611,49 @@ func build_situation() -> CentipedeBrain.Situation:
 	s.in_front = is_in_front(cmd)
 	s.in_slash = _in_slash_hitbox(cmd, cdata.body(cdata.slash_range), cdata.slash_arc_deg)
 	s.distance = _flat_gap(cmd, global_position)
+	s.off_angle_deg = absf(rad_to_deg(_yaw_to(cmd)))
 	s.in_spit_reach = _in_spit_band(cmd)
+	_set_dash_shares(s)
 	return s
+
+
+## Fills in what each side of the dash is worth. Only worked out when a dash could be picked.
+func _set_dash_shares(s: CentipedeBrain.Situation) -> void:
+	if not (s.engaged and s.dash_unlocked and s.dash_ready):
+		return
+	if s.distance > cdata.body(cdata.dash_trigger_reach):
+		return
+	s.dash_left_share = _dash_side_share(_dash_direction(1.0))
+	s.dash_right_share = _dash_side_share(_dash_direction(-1.0))
+
+
+## Flat unit vector of a dash: side +1 is the boss's left (its local +X), -1 its right.
+func _dash_direction(side: float) -> Vector3:
+	var local_x := global_transform.basis.x
+	local_x.y = 0.0
+	return local_x.normalized() * side
+
+
+## 0 when the dash is blocked or would leave the navmesh, otherwise how much that side is worth:
+## the Fortress side counts fully, the side toward where the boss came from only a share.
+func _dash_side_share(direction: Vector3) -> float:
+	var motion := direction * cdata.body(cdata.dash_distance)
+	if test_move(global_transform, motion) or _leaves_navmesh(global_position + motion):
+		return 0.0
+	var fortress := _get_valid_fortress()
+	if fortress == null or in_hazard_trial:
+		return 1.0
+	var toward_fortress := _flat_direction_to(fortress.global_position)
+	var spawn := get_tree().get_first_node_in_group(&"boss_spawn_point") as Node3D
+	var toward_spawn := -toward_fortress if spawn == null else _flat_direction_to(spawn.global_position)
+	var lean := UtilityBrain.ramp(direction.dot(toward_fortress - toward_spawn), -cdata.dash_side_dot_band, cdata.dash_side_dot_band)
+	return lerpf(cdata.dash_spawn_side_share, 1.0, lean)
+
+
+func _flat_direction_to(point: Vector3) -> Vector3:
+	var offset := point - global_position
+	offset.y = 0.0
+	return offset.normalized()
 
 
 ## The utility AI's pick right now. Also remembers the scores for debugging.
@@ -542,13 +689,31 @@ func _in_spit_band(target: Node3D) -> bool:
 # --- Running a move ----------------------------------------------------------------------------
 
 func _begin_move(move: StringName, clip: StringName, duration: float) -> void:
+	_reset_move(move, duration)
+	_play_clip(clip, 0.1, _move_clip_speed)
+	move_started.emit(move, clip, duration / _move_clip_speed)
+
+
+## A move that opens with the roar: the move's own clock and clip start when the roar is over, so
+## its hit times stay where the data puts them. The move is announced as the roar plus the move.
+func _begin_roared_move(move: StringName, clip: StringName, duration: float) -> void:
+	_reset_move(move, duration)
+	var roar := _clip_length(CLIP_ROAR)
+	_roar_left = roar
+	_roar_main_clip = clip
+	_play_clip(CLIP_ROAR, 0.1, _move_clip_speed)
+	move_started.emit(move, CLIP_ROAR, (roar + duration) / _move_clip_speed)
+
+
+func _reset_move(move: StringName, duration: float) -> void:
 	_move = move
 	_move_time = 0.0
 	_move_duration = duration
 	_windows.clear()
+	_roar_left = 0.0
 	_move_clip_speed = _combo_speed()
-	_play_clip(clip, 0.1, _move_clip_speed)
-	move_started.emit(move, clip, duration / _move_clip_speed)
+	velocity.x = 0.0
+	velocity.z = 0.0
 
 
 ## Plays clip from its start; the animation player does not restart a clip that is playing.
@@ -581,6 +746,10 @@ func _tick_move(delta: float) -> void:
 		_retarget_now()
 		return
 	var step := delta * _move_clip_speed
+	if _roar_left > 0.0:
+		step = _tick_roar_lead_in(step)
+		if _roar_left > 0.0:
+			return
 	var previous_time := _move_time
 	_move_time += step
 	match _move:
@@ -591,13 +760,34 @@ func _tick_move(delta: float) -> void:
 			_tick_windows()
 		MOVE_SPIT:
 			_tick_spit()
-		MOVE_ROLL:
+		MOVE_ROLL, MOVE_CHARGE_ROLL:
 			_tick_roll(delta, step)
 			return
+		MOVE_DASH:
+			_tick_dash(delta)
 		MOVE_TURN:
 			_tick_turn()
 	if _move_time >= _move_duration:
 		_finish_move()
+
+
+## Runs the roar that opens Spit and Combo: the boss stands still and its eyes warn. Returns the
+## part of step left over once the roar is done, which goes to the move itself.
+func _tick_roar_lead_in(step: float) -> float:
+	var roar := _clip_length(CLIP_ROAR)
+	_roar_left -= step
+	_tick_roar_fx(roar - maxf(_roar_left, 0.0))
+	if _roar_left > 0.0:
+		return 0.0
+	var left_over := -_roar_left
+	_roar_left = 0.0
+	if _fx != null:
+		_fx.set_eye_glow(0.0)
+		_fx.set_eye_sparks(false)
+		if _move == MOVE_COMBO:
+			_fx.play_slash(VFX_COMBO, _move_clip_speed)
+	_play_clip(_roar_main_clip, 0.1, _move_clip_speed)
+	return left_over
 
 
 func _finish_move() -> void:
@@ -612,6 +802,9 @@ func _finish_move() -> void:
 		_fx.stop_all()
 	_set_ribs_close(0.0)
 	_set_lean(0.0)
+	if finished == MOVE_DASH:
+		_snap_to_navmesh()
+		dash_buff_left = cdata.dash_buff_time
 	move_finished.emit(finished)
 	_recovery_left = _recovery_after(finished, was_structure_move, real_duration)
 
@@ -622,6 +815,8 @@ func _recovery_after(finished: StringName, on_structure: bool, real_duration: fl
 	match finished:
 		MOVE_TURN:
 			return 0.0
+		MOVE_DASH:
+			return cdata.dash_recovery / speed
 		MOVE_SLASH:
 			if on_structure:
 				return maxf(cdata.attack_recovery / speed, _get_attack_interval() - real_duration)
@@ -636,6 +831,8 @@ func _clear_move_state() -> void:
 	_structure_move = false
 	_roll_phase = RollPhase.NONE
 	_roll_hit.clear()
+	_roll_charge = false
+	_roar_left = 0.0
 	_spit_emitting = false
 
 
@@ -669,7 +866,10 @@ func _play_locomotion_anim() -> void:
 
 
 func _locks_movement() -> bool:
-	return is_in_attack_state() and _move != MOVE_ROLL and _move != MOVE_COMBO
+	if _roar_left > 0.0:
+		return true
+	return is_in_attack_state() and _move != MOVE_ROLL and _move != MOVE_CHARGE_ROLL \
+			and _move != MOVE_COMBO and _move != MOVE_DASH
 
 
 func _set_ribs_close(value: float) -> void:
@@ -798,7 +998,7 @@ func _slash_vfx(clip: StringName) -> StringName:
 # --- Combo -------------------------------------------------------------------------------------
 
 func _begin_combo() -> void:
-	_begin_move(MOVE_COMBO, CLIP_COMBO, _clip_length(CLIP_COMBO))
+	_begin_roared_move(MOVE_COMBO, CLIP_COMBO, _clip_length(CLIP_COMBO))
 	var spans := cdata.combo_hit_windows
 	for i in spans.size():
 		var finisher := i == spans.size() - 1
@@ -806,8 +1006,7 @@ func _begin_combo() -> void:
 		var knockback := cdata.combo_finisher_knockback if finisher else 0.0
 		var arc := cdata.combo_finisher_arc_deg if finisher else cdata.combo_arc_deg
 		_windows.append(_new_window(spans[i], damage, knockback, cdata.body(cdata.combo_range), arc))
-	if _fx != null:
-		_fx.play_slash(VFX_COMBO, _move_clip_speed)
+	# The slash trails start with the combo's own clip, once the roar is over (see _tick_roar_lead_in).
 
 
 ## The boss steps forward during the move's advance windows, without leaving the floor's colliders.
@@ -825,10 +1024,11 @@ func _tick_combo(previous_time: float) -> void:
 func _begin_spit() -> void:
 	_spit_pool_spawned = false
 	_spit_next_tick = cdata.spit_stream_start + cdata.spit_stream_tick
-	_begin_move(MOVE_SPIT, CLIP_SPIT, _clip_length(CLIP_SPIT) + cdata.spit_stream_duration)
+	_begin_roared_move(MOVE_SPIT, CLIP_SPIT, _clip_length(CLIP_SPIT) + cdata.spit_stream_duration)
 	var pool_center := global_position + _combo_forward() * cdata.body(cdata.pool_offset.z + cdata.pool_length * cdata.spit_telegraph_along)
+	# The warning starts with the roar, so it runs for the roar and then the time to the pool.
 	EventBus.telegraph_started.emit(&"poison", pool_center, cdata.body(cdata.spit_telegraph_radius),
-			cdata.pool_spawn_time / _move_clip_speed)
+			(_clip_length(CLIP_ROAR) + cdata.pool_spawn_time) / _move_clip_speed)
 
 
 func _tick_spit() -> void:
@@ -890,13 +1090,39 @@ func _spawn_pool() -> void:
 # --- Roll --------------------------------------------------------------------------------------
 
 func _begin_roll() -> void:
+	_roll_charge = false
+	_start_roll_frame(MOVE_ROLL)
+
+
+## The roll that homes in: same frame as the roll, with its own speed, turn rate, damage and end.
+func _begin_charge_roll() -> void:
+	_roll_charge = true
+	_start_roll_frame(MOVE_CHARGE_ROLL)
+
+
+func _start_roll_frame(move: StringName) -> void:
 	_roll_phase = RollPhase.ROAR
 	_roll_phase_time = 0.0
+	_roll_loop_time = 0.0
+	_roll_after_hit_left = -1.0
 	_roll_speed = 0.0
 	_roll_distance = 0.0
 	_roll_blocked_time = 0.0
 	_roll_hit.clear()
-	_begin_move(MOVE_ROLL, CLIP_ROAR, _clip_length(CLIP_ROAR))
+	_begin_move(move, CLIP_ROAR, _clip_length(CLIP_ROAR))
+
+
+## Fastest ground speed of the running roll, in metres per second of the lane.
+func _roll_cap() -> float:
+	return cdata.charge_roll_speed_cap if _roll_charge else cdata.roll_speed_cap
+
+
+func _roll_turn_rate_rad() -> float:
+	return deg_to_rad(cdata.charge_roll_turn_rate_deg if _roll_charge else cdata.roll_turn_rate_deg)
+
+
+func _roll_damage() -> int:
+	return cdata.charge_roll_damage if _roll_charge else cdata.roll_damage
 
 
 func _enter_roll_phase(phase: RollPhase) -> void:
@@ -914,16 +1140,19 @@ func _enter_roll_phase(phase: RollPhase) -> void:
 			_play_clip(CLIP_ROLL_END, 0.1, _move_clip_speed)
 
 
-## Top ground speed of the roll right now.
+## Top ground speed of the roll right now: the clip's own speed, held down to the lane's cap (a
+## big boss would otherwise cross the lane in a blink). The clip plays slower by the difference.
 func _roll_full_speed() -> float:
-	return cdata.body(cdata.roll_speed) * speed_multiplier * get_slow_factor()
+	return minf(cdata.body(cdata.roll_speed), _roll_cap()) * speed_multiplier * get_slow_factor()
 
 
 func _tick_roll(delta: float, step: float) -> void:
 	_roll_phase_time += step
+	if (_roll_phase == RollPhase.START or _roll_phase == RollPhase.LOOP) and _after_hit_run_over(delta):
+		_enter_roll_phase(RollPhase.END)
 	match _roll_phase:
 		RollPhase.ROAR:
-			_tick_roar()
+			_tick_roar_fx(_roll_phase_time)
 			if _roll_phase_time >= _clip_length(CLIP_ROAR):
 				_enter_roll_phase(RollPhase.START)
 		RollPhase.START:
@@ -932,10 +1161,11 @@ func _tick_roll(delta: float, step: float) -> void:
 			if _roll_phase_time >= _clip_length(CLIP_ROLL_START):
 				_enter_roll_phase(RollPhase.LOOP)
 		RollPhase.LOOP:
+			_roll_loop_time += delta
 			_roll_speed = _roll_full_speed()
 			_roll_travel(delta, true)
 			_set_roll_clip_speed()
-			if _roll_covers_max_distance():
+			if _roll_loop_over():
 				_enter_roll_phase(RollPhase.END)
 		RollPhase.END:
 			var slide := maxf(0.001, cdata.roll_end_slide_time)
@@ -949,12 +1179,12 @@ func _tick_roll(delta: float, step: float) -> void:
 		_fx.set_speed_lines(clampf(share, 0.0, 1.0))
 
 
-## The eyes light up and spark during the roar: the warning before the roll.
-func _tick_roar() -> void:
+## The eyes light up and spark during the roar (time_in_roar seconds in): the warning before a move.
+func _tick_roar_fx(time_in_roar: float) -> void:
 	if _fx == null:
 		return
-	_fx.set_eye_glow(clampf(_roll_phase_time / maxf(0.001, _fx.eye_glow_rise_time), 0.0, 1.0))
-	_fx.set_eye_sparks(_roll_phase_time >= _fx.eye_sparks_delay)
+	_fx.set_eye_glow(clampf(time_in_roar / maxf(0.001, _fx.eye_glow_rise_time), 0.0, 1.0))
+	_fx.set_eye_sparks(time_in_roar >= _fx.eye_sparks_delay)
 
 
 ## Stands still for the first moments of the start clip, then eases up to full speed.
@@ -970,10 +1200,17 @@ func _set_roll_clip_speed() -> void:
 		anim_player.speed_scale = _roll_speed / maxf(0.001, cdata.body(cdata.roll_speed))
 
 
+## The Charge Roll runs for a time, then ends; the roll runs for a distance.
+func _roll_loop_over() -> bool:
+	if _roll_charge:
+		return _roll_loop_time >= cdata.charge_roll_loop_time
+	return _roll_covers_max_distance()
+
+
 ## The roll ends when the distance it still slides is all that is left of the maximum.
 func _roll_covers_max_distance() -> bool:
 	var slide := _roll_speed * cdata.roll_end_slide_time * 0.5
-	return _roll_distance + slide >= cdata.roll_max_distance
+	return _roll_distance + slide >= cdata.body(cdata.roll_max_distance)
 
 
 func _roll_travel(delta: float, steer: bool) -> void:
@@ -1016,13 +1253,14 @@ func _track_roll_block(moved: float, wanted: float, delta: float) -> void:
 		_enter_roll_phase(RollPhase.END)
 
 
-## Bends the roll toward the commander at roll_turn_rate_deg and leans the body into the turn.
+## Bends the roll toward the commander at the roll's turn rate and leans the body into the turn.
+## A Charge Roll that has landed its hit goes straight on.
 func _steer_roll(delta: float) -> void:
 	var target := current_target
-	if target == null or not is_instance_valid(target):
+	if target == null or not is_instance_valid(target) or _roll_after_hit_left >= 0.0:
 		_set_lean_toward(0.0, delta)
 		return
-	var max_step := deg_to_rad(cdata.roll_turn_rate_deg) * delta
+	var max_step := _roll_turn_rate_rad() * delta
 	var step := clampf(_yaw_to(target), -max_step, max_step)
 	rotation.y += step
 	var share := step / maxf(0.0001, max_step)
@@ -1046,13 +1284,29 @@ func _roll_hits() -> void:
 		if _get_distance_to_target(target, center) - _target_body_radius(target) > radius:
 			continue
 		if target.is_in_group(&"commander"):
-			if _strike_target(target, cdata.roll_damage, cdata.roll_knockback, Enums.DamageType.BLAST, _roll_throw_direction(target)):
+			if _strike_target(target, _roll_damage(), cdata.roll_knockback, Enums.DamageType.BLAST, _roll_throw_direction(target)):
 				_roll_hit.append(target)
+				_start_after_hit_run()
 			continue
 		_roll_hit.append(target)
-		_strike_target(target, cdata.roll_damage, 0.0, Enums.DamageType.BLAST)
+		_strike_target(target, _roll_damage(), 0.0, Enums.DamageType.BLAST)
 		if _roll_phase != RollPhase.END:
 			_enter_roll_phase(RollPhase.END)
+
+
+## The Charge Roll stops bending after it hit the commander and ends shortly after.
+func _start_after_hit_run() -> void:
+	if not _roll_charge or _roll_after_hit_left >= 0.0:
+		return
+	_roll_after_hit_left = cdata.charge_roll_after_hit_time
+
+
+## Counts the Charge Roll's run after its hit down; true once it is over.
+func _after_hit_run_over(delta: float) -> bool:
+	if _roll_after_hit_left < 0.0:
+		return false
+	_roll_after_hit_left = maxf(0.0, _roll_after_hit_left - delta)
+	return _roll_after_hit_left <= 0.0
 
 
 ## Sideways, out of the roll's path.
@@ -1084,6 +1338,74 @@ func _tick_end_glow() -> void:
 func _finish_roll() -> void:
 	_snap_to_navmesh()
 	_finish_move()
+
+
+# --- Dash --------------------------------------------------------------------------------------
+
+## A short sideways step; side is +1 for the boss's left and -1 for its right. Afterwards the next
+## moves are weighted up for dash_buff_time (see CentipedeBrain).
+func _begin_dash(side: float) -> void:
+	last_chosen_move = MOVE_DASH
+	dash_cooldown_left = cdata.dash_cooldown
+	_dash_side = side
+	_dash_dir = _dash_direction(side)
+	_dash_commanded = 0.0
+	_dash_blocked_time = 0.0
+	_reset_move(MOVE_DASH, cdata.dash_time)
+	var clip := _play_dash_clip(side)
+	move_started.emit(MOVE_DASH, clip, cdata.dash_time / _move_clip_speed)
+
+
+## Plays the dash clip when the model has one, otherwise stands in with the walk clip at its top
+## speed and leans the body into the step. Returns the clip that plays.
+func _play_dash_clip(side: float) -> StringName:
+	var clip := _first_existing_clip(CLIPS_DASH_LEFT if side > 0.0 else CLIPS_DASH_RIGHT)
+	if clip != &"":
+		_play_clip(clip, 0.1, _clip_length(clip) / maxf(0.001, cdata.dash_time) * _move_clip_speed)
+		return clip
+	_play_clip(CLIP_WALK, 0.1, cdata.walk_anim_max_scale)
+	return CLIP_WALK
+
+
+func _first_existing_clip(candidates: Array[StringName]) -> StringName:
+	if anim_player == null:
+		return &""
+	for clip in candidates:
+		if anim_player.has_animation(clip):
+			return clip
+	return &""
+
+
+## Eases out over dash_time: the step covers the distance by the time the move ends. A dash that
+## runs off the navmesh or into something ends early.
+func _tick_dash(delta: float) -> void:
+	var progress := clampf(_move_time / maxf(0.001, cdata.dash_time), 0.0, 1.0)
+	var commanded := cdata.body(cdata.dash_distance) * (1.0 - (1.0 - progress) * (1.0 - progress))
+	var wanted := commanded - _dash_commanded
+	_dash_commanded = commanded
+	_lean_into_dash(delta)
+	if wanted <= 0.0:
+		return
+	var motion := _dash_dir * wanted
+	if _leaves_navmesh(global_position + motion):
+		_move_time = _move_duration
+		return
+	var before := global_position
+	move_and_collide(motion)
+	var moved := Vector2(global_position.x - before.x, global_position.z - before.z).length()
+	if moved >= wanted * cdata.roll_blocked_ratio:
+		_dash_blocked_time = 0.0
+		return
+	_dash_blocked_time += delta
+	if _dash_blocked_time >= cdata.roll_blocked_time:
+		_move_time = _move_duration
+
+
+## Without a dash clip the body tips toward the step so it reads as a move.
+func _lean_into_dash(delta: float) -> void:
+	if anim_player == null or anim_player.current_animation != String(CLIP_WALK):
+		return
+	_set_lean_toward(-_dash_side * deg_to_rad(cdata.roll_lean_max_deg), delta)
 
 
 # --- Turn --------------------------------------------------------------------------------------

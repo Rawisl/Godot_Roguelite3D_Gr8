@@ -37,9 +37,30 @@ static func pick(actions: Array[StringName], scores: Dictionary, tie_margin: flo
 			total += score
 	if close.size() == 1:
 		return close[0]
+	return _draw(close, scores, total, roll)
+
+
+## One of the actions that score, drawn in proportion to their scores (no margin). Roll is only
+## called when two or more score. Returns &"" when none does.
+static func weighted(actions: Array[StringName], scores: Dictionary, roll: Callable) -> StringName:
+	var scoring: Array[StringName] = []
+	var total := 0.0
+	for action: StringName in actions:
+		var score := float(scores.get(action, 0.0))
+		if score > 0.0:
+			scoring.append(action)
+			total += score
+	if scoring.is_empty():
+		return &""
+	if scoring.size() == 1:
+		return scoring[0]
+	return _draw(scoring, scores, total, roll)
+
+
+static func _draw(candidates: Array[StringName], scores: Dictionary, total: float, roll: Callable) -> StringName:
 	var r: float = float(roll.call()) * total
-	for action in close:
+	for action in candidates:
 		r -= float(scores[action])
 		if r < 0.0:
 			return action
-	return close[close.size() - 1]
+	return candidates[candidates.size() - 1]

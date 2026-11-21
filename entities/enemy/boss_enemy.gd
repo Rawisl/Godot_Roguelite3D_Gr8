@@ -323,17 +323,26 @@ func _is_engaged(cmd: Node3D) -> bool:
 		return false
 	if in_hazard_trial:
 		return true
-	var boss_data := data as BossData
 	var offset := cmd.global_position - global_position
 	offset.y = 0.0
 	var dist := offset.length()
-	var aggro: float = data.aggro_range if data != null else 4.0
-	if dist <= aggro:
+	if dist <= _engage_range():
 		return true
 	# Bosses ignore Battle Cry, so a taunt only comes from scripted fights (the AI test arena).
 	if taunted_by_player and dist <= GameConfig.leash_distance:
 		return true
-	return provoked_by_player and boss_data != null and dist <= boss_data.commander_leash
+	return provoked_by_player and dist <= _engage_leash()
+
+
+## Distance within which the boss minds the commander on its own; a boss may size it to its body.
+func _engage_range() -> float:
+	return data.aggro_range if data != null else 4.0
+
+
+## Distance within which the boss keeps minding a commander that hit it recently.
+func _engage_leash() -> float:
+	var boss_data := data as BossData
+	return boss_data.commander_leash if boss_data != null else 0.0
 
 
 ## Counts while the commander keeps out of reach. It starts only once the boss minds the commander

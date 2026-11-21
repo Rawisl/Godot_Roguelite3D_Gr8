@@ -4,17 +4,25 @@ extends RefCounted
 ## Utility scoring for the Skeletal Centipede: what to do next when fighting near the commander.
 ## Pure functions over a Situation snapshot, so the scoring is testable without a scene. The boss
 ## only acts on the pick at a decision point (never in the middle of a move).
+## Distances in the Situation are metres; the data's distance bands are body units and are read
+## through the data's body().
 
 const SLASH: StringName = &"slash"
 const COMBO: StringName = &"combo"
 const SPIT: StringName = &"spit"
 const ROLL: StringName = &"roll"
+const CHARGE_ROLL: StringName = &"charge_roll"
+const DASH_LEFT: StringName = &"dash_left"
+const DASH_RIGHT: StringName = &"dash_right"
 const CHASE: StringName = &"chase"
 const FACE: StringName = &"face"
 const PUSH: StringName = &"push"
 
 ## Fixed order, so a tie roll is the same for the same seed.
-const ACTIONS: Array[StringName] = [SLASH, COMBO, SPIT, ROLL, CHASE, FACE, PUSH]
+const ACTIONS: Array[StringName] = [SLASH, COMBO, SPIT, ROLL, CHARGE_ROLL, DASH_LEFT, DASH_RIGHT, CHASE, FACE, PUSH]
+## Moves that compete as one entry: the best of a group stands for it, then the group is split by score.
+const MELEE_GROUP: Array[StringName] = [SLASH, COMBO]
+const DASH_GROUP: Array[StringName] = [DASH_LEFT, DASH_RIGHT]
 
 
 ## What the boss knows about the fight at one decision point.
@@ -27,6 +35,8 @@ class Situation extends RefCounted:
 	var in_spit_reach: bool = false
 	## Flat distance to the nearest point of the commander, in metres.
 	var distance: float = 0.0
+	## How far the boss's facing is off the commander, in degrees (0 to 180).
+	var off_angle_deg: float = 0.0
 	## Seconds the commander has stayed where the boss cannot hit it.
 	var t_away: float = 0.0
 	var hp_fraction: float = 1.0
@@ -36,8 +46,17 @@ class Situation extends RefCounted:
 	var combo_ready: bool = false
 	var roll_unlocked: bool = false
 	var roll_ready: bool = false
+	var charge_roll_unlocked: bool = false
+	var charge_roll_ready: bool = false
 	var spit_unlocked: bool = false
 	var spit_ready: bool = false
+	var dash_unlocked: bool = false
+	var dash_ready: bool = false
+	## 0 to 1 per side: how much that side is worth (toward the Fortress) and whether it is free.
+	var dash_left_share: float = 0.0
+	var dash_right_share: float = 0.0
+	## The boss dashed a moment ago: Face, Spit and the rolls are weighted up.
+	var dash_buff: bool = false
 	## The boss pushed on recently and ignores the commander for now.
 	var push_committed: bool = false
 	## The boss is currently pushing on rather than fighting the commander.
@@ -56,16 +75,30 @@ static func _b(cond: bool) -> float:
 static func score_all(s: Situation, d: CentipedeBossData) -> Dictionary:
 	var fight := _b(s.engaged and not s.push_committed)
 	var front := _b(s.in_front)
+	var in_slash := _b(s.in_slash)
+	var buff_face := d.dash_buff_face_mult if s.dash_buff else 1.0
+	var buff_spit := d.dash_buff_spit_mult if s.dash_buff else 1.0
+	var buff_charge := d.dash_buff_charge_roll_mult if s.dash_buff else 1.0
+	var buff_roll := d.dash_buff_roll_mult if s.dash_buff else 1.0
+	# After a dash the boss only turns back once it is clearly off the commander.
+	var needs_face := s.off_angle_deg > d.dash_face_min_deg if s.dash_buff else not s.in_front
+	var dash_base := d.weight_dash * fight * _b(s.dash_unlocked) * _b(s.dash_ready) \
+			* _b(s.distance <= d.body(d.dash_trigger_reach))
 	var scores := {
-		SLASH: d.weight_slash * fight * front * _b(s.in_slash),
-		COMBO: d.weight_centipede_combo * fight * front * _b(s.in_slash) * _b(s.combo_unlocked)
-				* _b(s.combo_ready) * _b(s.hp_fraction < d.combo_hp_threshold),
-		SPIT: d.weight_spit * fight * front * _b(not s.in_slash) * _b(s.in_spit_reach)
+		SLASH: d.weight_slash * fight * front * in_slash,
+		COMBO: d.weight_centipede_combo * fight * front * in_slash * _b(s.combo_unlocked)
+				* _b(s.combo_ready) * (1.0 if s.hp_fraction < d.combo_hp_threshold else d.combo_high_hp_mult),
+		SPIT: d.weight_spit * buff_spit * fight * front * _b(not s.in_slash) * _b(s.in_spit_reach)
 				* _b(s.spit_unlocked) * _b(s.spit_ready),
-		ROLL: d.weight_roll * fight * front * _b(not s.in_slash) * _b(s.roll_unlocked) * _b(s.roll_ready)
-				* UtilityBrain.ramp(s.distance, d.roll_min_distance, d.roll_full_distance),
+		ROLL: d.weight_roll * buff_roll * fight * front * _b(not s.in_slash) * _b(s.roll_unlocked) * _b(s.roll_ready)
+				* UtilityBrain.ramp(s.distance, d.body(d.roll_min_distance), d.body(d.roll_full_distance)),
+		CHARGE_ROLL: d.weight_charge_roll * buff_charge * fight * _b(not s.in_slash) * _b(s.charge_roll_unlocked)
+				* _b(s.charge_roll_ready)
+				* UtilityBrain.ramp(s.distance, d.body(d.charge_roll_min_distance), d.body(d.charge_roll_full_distance)),
+		DASH_LEFT: dash_base * s.dash_left_share,
+		DASH_RIGHT: dash_base * s.dash_right_share,
 		CHASE: d.weight_chase * fight * front * _b(not s.in_slash),
-		FACE: d.weight_face * fight * _b(not s.in_front),
+		FACE: d.weight_face * buff_face * fight * _b(needs_face),
 		PUSH: d.weight_push * _b(s.has_objective)
 				* (d.push_base + (1.0 - d.push_base) * UtilityBrain.ramp(s.t_away, d.push_after, d.push_after + d.push_ramp)),
 	}
@@ -75,11 +108,30 @@ static func score_all(s: Situation, d: CentipedeBossData) -> Dictionary:
 	return scores
 
 
-## The best action. Actions within tie_margin of the best are rolled in proportion to their
-## scores; roll is only called then, so a clear choice does not use up the random stream.
+## The best action. The melee moves and the two dashes each compete as one entry (their best
+## score); actions within tie_margin of the best are rolled in proportion to their scores, and the
+## winning group is then split by the scores of its members. roll is only called when a draw is
+## needed, so a clear choice does not use up the random stream.
 ## Returns &"" when nothing scores (no commander to fight and nothing to push on to).
 static func pick(scores: Dictionary, d: CentipedeBossData, roll: Callable) -> StringName:
-	return UtilityBrain.pick(ACTIONS, scores, d.tie_margin, roll)
+	var top := scores.duplicate()
+	_merge_group(top, MELEE_GROUP)
+	_merge_group(top, DASH_GROUP)
+	var choice := UtilityBrain.pick(ACTIONS, top, d.tie_margin, roll)
+	if choice == MELEE_GROUP[0]:
+		return UtilityBrain.weighted(MELEE_GROUP, scores, roll)
+	if choice == DASH_GROUP[0]:
+		return UtilityBrain.weighted(DASH_GROUP, scores, roll)
+	return choice
+
+
+## The group's first action takes the best score of the group and the others drop out.
+static func _merge_group(top: Dictionary, group: Array[StringName]) -> void:
+	var best := 0.0
+	for action: StringName in group:
+		best = maxf(best, float(top.get(action, 0.0)))
+		top[action] = 0.0
+	top[group[0]] = best
 
 
 static func decide(s: Situation, d: CentipedeBossData, roll: Callable) -> StringName:

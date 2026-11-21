@@ -4,17 +4,29 @@ extends BossData
 ## Skeletal Centipede: model scale, move numbers and AI weights on top of the shared boss fields.
 ## Every distance, speed and size marked "(body)" is the value at model_scale 1. The boss reads
 ## them through body() so a bigger or smaller model keeps the same proportions; times, damage and
-## the lane-bound distances (aggro, leash, roll distances) are not scaled.
+## the speed caps (which are set by the size of the lane, not of the boss) are not scaled.
 ## The stomp and triple stomp fields of BossData are not used by this boss.
 
 @export_group("Model")
 ## One number that sizes the model, its collision, its hitboxes and its clip-driven speeds.
-@export_range(0.5, 3.0, 0.05) var model_scale: float = 1.6
+@export_range(3.0, 4.5, 0.05) var model_scale: float = 3.0
 ## (body) Collision and hurt box of the torso.
 @export var body_box_size: Vector3 = Vector3(1.1, 0.9, 1.8)
 @export var body_box_center: Vector3 = Vector3(0.0, 0.45, 0.0)
 ## (body) Centre of the roll's hit circle, in the boss's own space.
 @export var roll_ring_center: Vector3 = Vector3(0.0, 0.0, 0.375)
+
+@export_group("Engagement")
+## (body) The boss minds a commander this close, and one that hit it recently within the leash.
+## Kept at or above roll_full_distance so every ranged move can score without the commander
+## having to strike first.
+@export var engage_range: float = 5.5
+@export var engage_leash: float = 7.0
+
+@export_group("Structures")
+## Share of the slash reach (body) at which the boss starts hitting a structure: the walk-up stops
+## closer than the slash can reach, so a swing never falls short.
+@export var structure_reach_share: float = 0.8
 
 @export_group("Locomotion")
 ## (body) Ground speed at which the walk clip plays at its own speed.
@@ -118,16 +130,20 @@ extends BossData
 @export var pool_fade_time: float = 0.5
 
 @export_group("Roll")
-## (body) Metres per second once the roll is up to speed; matches the roll clip.
+## (body) Ground speed at which the roll clip plays at its own speed (1x). The roll itself runs at
+## the smaller of this and roll_speed_cap; the clip slows down by the difference.
 @export var roll_speed: float = 6.58
+## Metres per second, not scaled: the fastest the roll goes at any model scale.
+@export var roll_speed_cap: float = 11.0
 ## (body)
 @export var roll_hit_radius: float = 0.9
 @export var roll_damage: int = 30
 @export var roll_knockback: float = 4.0
-## Lane distances, not scaled: the roll starts only when the commander is further than the minimum.
-@export var roll_max_distance: float = 16.0
-@export var roll_min_distance: float = 7.0
-@export var roll_full_distance: float = 10.0
+## (body) The roll starts only when the commander is further than the minimum and scores its full
+## weight from the full distance on.
+@export var roll_max_distance: float = 7.0
+@export var roll_min_distance: float = 4.0
+@export var roll_full_distance: float = 5.0
 @export var roll_turn_rate_deg: float = 50.0
 @export var roll_lean_max_deg: float = 15.0
 ## Seconds the roll takes to slow to a stop in its end clip.
@@ -138,11 +154,54 @@ extends BossData
 @export var roll_cooldown: float = 10.0
 @export var roll_unlock_appearance: int = 2
 
+@export_group("Charge Roll")
+## A roll that homes in on the commander: slower than the plain roll, bends harder, runs for a time
+## instead of a distance and stops shortly after it lands a hit. Needs no front-facing commander.
+## Metres per second, not scaled.
+@export var charge_roll_speed_cap: float = 9.0
+## Seconds of game time the roll's loop runs.
+@export var charge_roll_loop_time: float = 4.5
+@export var charge_roll_turn_rate_deg: float = 70.0
+@export var charge_roll_damage: int = 26
+## Seconds the roll goes straight on after it hit the commander before it ends.
+@export var charge_roll_after_hit_time: float = 0.5
+## (body)
+@export var charge_roll_min_distance: float = 2.5
+@export var charge_roll_full_distance: float = 3.5
+@export var charge_roll_cooldown: float = 16.0
+@export var charge_roll_unlock_appearance: int = 3
+
+@export_group("Dash")
+## (body) Sideways step, taken in dash_time clip seconds, then dash_recovery of rest.
+@export var dash_distance: float = 1.5
+@export var dash_time: float = 0.5
+@export var dash_recovery: float = 0.2
+## (body) A commander this close (and fighting the boss) makes the dash worth taking.
+@export var dash_trigger_reach: float = 2.6
+@export var dash_cooldown: float = 7.0
+@export var dash_unlock_appearance: int = 2
+## Score share of the side that leads toward where the boss came from; the Fortress side is 1.
+@export var dash_spawn_side_share: float = 0.2
+## Side dot product (flat unit vectors) over which the share runs from the spawn side to the Fortress side.
+@export var dash_side_dot_band: float = 0.5
+## Seconds after a dash in which the moves below are weighted up.
+@export var dash_buff_time: float = 3.0
+@export var dash_buff_face_mult: float = 4.0
+@export var dash_buff_spit_mult: float = 2.0
+@export var dash_buff_charge_roll_mult: float = 1.6
+@export var dash_buff_roll_mult: float = 1.15
+## During the buff the boss turns back to the commander once it is off the facing by more than this.
+@export var dash_face_min_deg: float = 15.0
+
 @export_group("Centipede AI")
-@export var weight_slash: float = 1.0
+@export var weight_slash: float = 1.2
 @export var weight_centipede_combo: float = 1.0
+## Share of the combo weight above the HP threshold.
+@export var combo_high_hp_mult: float = 0.25
 @export var weight_spit: float = 0.9
 @export var weight_roll: float = 1.2
+@export var weight_charge_roll: float = 1.0
+@export var weight_dash: float = 0.6
 
 
 func body(value: float) -> float:
