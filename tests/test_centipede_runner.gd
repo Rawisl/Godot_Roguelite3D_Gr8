@@ -60,6 +60,7 @@ func _ready() -> void:
 	test_tc21_charge_roll()
 	test_tc26_shared_roll_cooldown()
 	test_tc25_turn_pressure()
+	test_eye_glow_in_roar()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -1312,6 +1313,43 @@ func test_tc20_roar_lead_in() -> void:
 	_run_combo(combo_boss)
 	assert_true(front.hits.size() == 11, "All eleven hits still land after the roar (%d)" % front.hits.size())
 	_free_all([front, combo_boss])
+
+
+func _eye_glows(boss: SkeletalCentipede) -> Array[float]:
+	var fx := boss._fx
+	var nodes: Array[Node] = [fx.get_node("Head/EyeL"), fx.get_node("Head/EyeR"), fx.get_node("Head/EyeL/Halo"), fx.get_node("Head/EyeR/Halo")]
+	var glows: Array[float] = []
+	for node in nodes:
+		glows.append((node as GeometryInstance3D).get_instance_shader_parameter(&"glow") as float)
+	return glows
+
+
+func test_eye_glow_in_roar() -> void:
+	print("
+[TC27] Eye glow in the roar")
+	for move: StringName in [ROLL, SPIT, COMBO]:
+		var boss := _make_boss()
+		var cmd := _make_commander(Vector3(0.0, 0.0, 6.0))
+		_start(boss, cmd, move)
+		var rise := boss._fx.eye_glow_rise_time
+		_step(boss, rise + 0.05)
+		var glows := _eye_glows(boss)
+		assert_true(glows.all(func(g: float) -> bool: return g >= 0.9), "%s: mid roar both eyes and both halos glow (%s)" % [move, glows])
+		var head := boss._skeleton.global_transform * boss._skeleton.get_bone_global_pose(boss._skeleton.find_bone("Head"))
+		var eye := (boss._fx.get_node("Head/EyeL") as Node3D).global_position
+		var limit := 0.3 * boss.cdata.model_scale
+		assert_true(eye.distance_to(head.origin) < limit, "%s: the eye sits on the Head bone (%.2f m, limit %.2f)" % [move, eye.distance_to(head.origin), limit])
+		if move == ROLL:
+			var guard := 0
+			while boss._roll_phase == SkeletalCentipede.RollPhase.ROAR and guard < 400:
+				_step(boss, STEP)
+				guard += 1
+			assert_true(boss._roll_phase == SkeletalCentipede.RollPhase.START, "Roll: the roar hands over to the start phase")
+		else:
+			_step(boss, _roar(boss))
+		glows = _eye_glows(boss)
+		assert_true(glows.all(func(g: float) -> bool: return is_zero_approx(g)), "%s: once the roar is over the eyes and halos are dark (%s)" % [move, glows])
+		_free_all([cmd, boss])
 
 
 func test_tc21_charge_roll() -> void:

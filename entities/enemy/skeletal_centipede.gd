@@ -1487,6 +1487,7 @@ func _enter_roll_phase(phase: RollPhase) -> void:
 		RollPhase.START:
 			_play_clip(CLIP_ROLL_START, 0.1, _move_clip_speed)
 			if _fx != null:
+				_fx.set_eye_glow(0.0)
 				_fx.set_eye_sparks(false)
 		RollPhase.LOOP:
 			_play_clip(CLIP_ROLL_LOOP, 0.1, 1.0)
