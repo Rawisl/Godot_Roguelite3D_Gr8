@@ -95,9 +95,10 @@ func _check_victory() -> void:
 	_victory._continue.pressed.emit()
 	_victory._continue.pressed.emit()
 	_expect(_continue_count == 1 and not _victory.visible, "victory: Continue is sent once and the screen closes")
-	EventBus.run_victory.emit(30)
+	EventBus.run_victory.emit(30, _victory_stats())
 	await get_tree().process_frame
 	_expect(_victory.visible, "victory: run_victory opens the screen")
+	_expect(_victory._weapons.visible, "victory: the signal carries the owned weapons")
 	_victory._continue.pressed.emit()
 
 func _check_summary() -> void:

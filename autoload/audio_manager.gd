@@ -374,7 +374,7 @@ func _on_commander_low_hp_changed(is_low: bool) -> void:
 	if is_low:
 		play(&"low_hp_heartbeat")
 
-func _on_run_victory(_wave_index: int) -> void:
+func _on_run_victory(_wave_index: int, _stats: Dictionary) -> void:
 	if music != null:
 		play_sting(music.victory_sting, music.prep)
 
