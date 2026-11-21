@@ -9,7 +9,9 @@ extends Node3D
 ## - Without structures the boss always fights the commander. With "Towers + Fortress" on it also
 ##   picks between the commander and the structures along the lane (-X).
 ## - Cyan: the front cone the AI reads. Yellow: slash sector, spit cone, pool fan and roll circle
-##   of the boss. Every move is logged, the scores behind the last pick are shown.
+##   of the boss, plus the two dash steps (green = worth taking, red = blocked or toward the spawn).
+##   Every move is logged, the scores behind the last pick are shown.
+## - Scale sets the boss's model scale (3.0 to 4.5) at the next spawn.
 
 const BOSS_SCENE: PackedScene = preload("res://entities/enemy/skeletal_centipede.tscn")
 const COMMANDER_MODEL: PackedScene = preload("res://contents/assets/characters/fox_commander/fox_commander_model.tscn")
@@ -28,6 +30,9 @@ const DRAW_Y: float = 0.05
 const COLOR_HITBOX := Color(1.0, 0.85, 0.2)
 const COLOR_BODY := Color(0.3, 1.0, 0.7)
 const COLOR_FRONT := Color(0.3, 0.85, 1.0, 0.8)
+const COLOR_DASH_WORTH := Color(0.4, 1.0, 0.4)
+const COLOR_DASH_POOR := Color(1.0, 0.35, 0.3)
+const DASH_ARROW_HEAD: float = 0.8
 const COLOR_TOWER := Color(0.45, 0.55, 0.8)
 const COLOR_FORTRESS := Color(0.75, 0.65, 0.45)
 const TOWER_SPOTS: Array[Vector3] = [Vector3(-6.0, 0.0, -14.0), Vector3(-12.0, 0.0, -6.0), Vector3(-18.0, 0.0, -14.0)]
@@ -52,6 +57,7 @@ var _picks: Dictionary = {}
 var _wave_spin: SpinBox = null
 var _hp_slider: HSlider = null
 var _seed_spin: SpinBox = null
+var _scale_spin: SpinBox = null
 var _structures_check: CheckBox = null
 var _info_label: Label = null
 var _log_label: Label = null
@@ -138,6 +144,10 @@ func _spawn_boss() -> void:
 	_boss = BOSS_SCENE.instantiate() as SkeletalCentipede
 	_boss.name = "SkeletalCentipede"
 	_boss.position = BOSS_SPAWN
+	# The scene's data is shared, so the boss gets its own copy at the chosen scale.
+	var boss_data := _boss.data.duplicate() as CentipedeBossData
+	boss_data.model_scale = _scale_spin.value
+	_boss.data = boss_data
 	# Same scaling call as WaveManager._spawn_boss.
 	_boss.apply_wave_scale(SCALE_CONFIG.get_hp_mult(wave), SCALE_CONFIG.get_dmg_mult(wave),
 			SCALE_CONFIG.get_speed_mult(wave), wave, SCALE_CONFIG)
@@ -327,7 +337,15 @@ func _log(text: String) -> void:
 
 func _on_move_started(move: StringName, clip: StringName, duration: float) -> void:
 	_picks[move] = int(_picks.get(move, 0)) + 1
+	if move == SkeletalCentipede.MOVE_DASH:
+		_log("dash %s (%s, %.2fs)" % [_dash_side_name(), clip.get_file(), duration])
+		return
 	_log("%s (%s, %.2fs)" % [move, clip.get_file(), duration])
+
+
+## Which way the dash that just started goes, from the AI's pick.
+func _dash_side_name() -> String:
+	return "left" if _boss.last_decision == CentipedeBrain.DASH_LEFT else "right"
 
 
 func _on_move_hit(move: StringName, window: int, targets: Array) -> void:
@@ -353,13 +371,14 @@ func _update_info() -> void:
 	var pick_parts: PackedStringArray = []
 	for move: StringName in _picks:
 		pick_parts.append("%s %d" % [move, _picks[move]])
-	_info_label.text = "BOSS  wave %d | appearance %d | %s%s | state %s | HP %d%% (armor %d, core %d)\nScores: %s -> %s | out of reach %.1fs | commander %.1f m, %s\nCooldowns: combo %.1f spit %.1f roll %.1f | picks: %s\nCOMMANDER damage taken %d | target %s" % [
+	_info_label.text = "BOSS  wave %d | appearance %d | %s%s | state %s | HP %d%% (armor %d, core %d)\nScores: %s -> %s | out of reach %.1fs | commander %.1f m, %s\nCooldowns: combo %.1f spit %.1f roll %.1f charge %.1f dash %.1f | dash buff %.1f | picks: %s\nCOMMANDER damage taken %d | target %s" % [
 		b.spawn_wave, b.get_appearance(), b._get_phase_name(), " ENRAGED" if b.is_enraged else "",
 		Enums.EnemyState.keys()[b.current_state], int(round(b.get_hp_fraction() * 100.0)),
 		b.current_armor_hp, b.current_core_hp, " ".join(score_parts),
 		b.last_decision if b.last_decision != &"" else &"-", b.t_away, to_cmd.length(),
 		"IN FRONT" if b.is_in_front(_commander) else "FLANK/BEHIND", b.combo_cooldown_left,
-		b.spit_cooldown_left, b.roll_cooldown_left, ", ".join(pick_parts) if not pick_parts.is_empty() else "-",
+		b.spit_cooldown_left, b.roll_cooldown_left, b.charge_roll_cooldown_left, b.dash_cooldown_left,
+		b.dash_buff_left, ", ".join(pick_parts) if not pick_parts.is_empty() else "-",
 		_commander.total_damage, b.current_target.name if b.current_target != null and is_instance_valid(b.current_target) else "-"]
 
 
@@ -380,12 +399,28 @@ func _draw_debug() -> void:
 		var apex := _boss.get_spit_apex()
 		_add_sector(apex, fwd, d.body(d.spit_stream_reach), d.spit_stream_half_angle_deg * 2.0, COLOR_HITBOX)
 		_add_circle(_boss.to_global(d.body_v3(d.roll_ring_center)), d.body(d.roll_hit_radius), COLOR_HITBOX)
+		for side: float in [1.0, -1.0]:
+			_add_dash_arrow(side)
 	for child in get_children():
 		if child is PoisonPool:
 			_add_fan(child as PoisonPool)
 	_drawer.surface_add_vertex(Vector3.ZERO)  # a surface needs at least one vertex pair
 	_drawer.surface_add_vertex(Vector3.ZERO)
 	_drawer.surface_end()
+
+
+## The step a dash to that side would take; its colour runs from red (no score) to green (full score).
+func _add_dash_arrow(side: float) -> void:
+	var d := _boss.cdata
+	var direction := _boss._dash_direction(side)
+	var share := _boss._dash_side_share(direction)
+	var color := COLOR_DASH_POOR.lerp(COLOR_DASH_WORTH, share)
+	var from := _boss.global_position
+	var to := from + direction * d.body(d.dash_distance)
+	_add_line(from, to, color)
+	var back := -direction * DASH_ARROW_HEAD
+	_add_line(to, to + back.rotated(Vector3.UP, deg_to_rad(25.0)), color)
+	_add_line(to, to + back.rotated(Vector3.UP, deg_to_rad(-25.0)), color)
 
 
 ## Outline of the pool's hit area: the cut fan, in the pool's own (scaled) space.
@@ -462,6 +497,13 @@ func _build_ui() -> void:
 	_wave_spin.max_value = 40
 	_wave_spin.value = 15
 	wave_row.add_child(_wave_spin)
+	wave_row.add_child(_small_label("Scale"))
+	_scale_spin = SpinBox.new()
+	_scale_spin.min_value = 3.0
+	_scale_spin.max_value = 4.5
+	_scale_spin.step = 0.25
+	_scale_spin.value = 3.0
+	wave_row.add_child(_scale_spin)
 	wave_row.add_child(_small_label("Seed"))
 	_seed_spin = SpinBox.new()
 	_seed_spin.min_value = 0

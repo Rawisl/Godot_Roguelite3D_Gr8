@@ -3,7 +3,8 @@ extends Node3D
 ## Skeletal Centipede: AI scoring, every move's hit times and shapes, the armor phases, death,
 ## the HUD hookup and the model scale. The boss's own clocks are stepped by hand (process and
 ## physics off), so results do not depend on frame timing. Distances are written at model scale 1
-## and multiplied by the scale of the data under test.
+## and multiplied by the scale of the data under test. The structure case runs the boss's physics
+## by hand against real colliders. Spit and Combo open with the roar, so their times add its length.
 
 const BOSS_SCENE: PackedScene = preload("res://entities/enemy/skeletal_centipede.tscn")
 const BOSS_DATA: CentipedeBossData = preload("res://data/bosses/skeletal_centipede_boss.tres")
@@ -15,6 +16,8 @@ const SLASH: StringName = SkeletalCentipede.MOVE_SLASH
 const COMBO: StringName = SkeletalCentipede.MOVE_COMBO
 const SPIT: StringName = SkeletalCentipede.MOVE_SPIT
 const ROLL: StringName = SkeletalCentipede.MOVE_ROLL
+const CHARGE_ROLL: StringName = SkeletalCentipede.MOVE_CHARGE_ROLL
+const DASH: StringName = SkeletalCentipede.MOVE_DASH
 
 var passes: int = 0
 var fails: int = 0
@@ -25,6 +28,10 @@ func _ready() -> void:
 	print("            SKELETAL CENTIPEDE VERIFICATION            ")
 	print("=======================================================")
 
+	# The two cases that wait for physics frames run first: a boss freed before its own navigation
+	# setup has run makes the engine log an error, and the cases below free hundreds of them.
+	await test_tc22_dash()
+	await test_tc23_structures()
 	test_tc1_brain_scores()
 	test_tc2_brain_deterministic()
 	test_tc3_setup()
@@ -43,6 +50,9 @@ func _ready() -> void:
 	test_tc16_default_scale()
 	test_tc17_scale_is_proportional()
 	test_tc18_particles_follow_scale()
+	test_tc19_brain_v2()
+	test_tc20_roar_lead_in()
+	test_tc21_charge_roll()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -96,9 +106,12 @@ func _make_structure(pos: Vector3, group: StringName = &"tower") -> MockStructur
 func _scaled_data(model_scale: float) -> CentipedeBossData:
 	var scaled := BOSS_DATA.duplicate() as CentipedeBossData
 	scaled.model_scale = model_scale
-	# Keep the roll's start distance clear of the spit's reach at any scale under test.
-	scaled.roll_min_distance = 12.0 * model_scale
 	return scaled
+
+
+## Length of the roar that opens Spit and Combo, in clip seconds (speed 1).
+func _roar(boss: SkeletalCentipede) -> float:
+	return boss._clip_length(SkeletalCentipede.CLIP_ROAR)
 
 
 ## Runs the boss's process and state clocks for seconds of game time.
@@ -158,16 +171,22 @@ func _pick(s: CentipedeBrain.Situation) -> StringName:
 func test_tc1_brain_scores() -> void:
 	print("\n[TC1] Brain scores")
 	assert_true(_pick(_situation({"in_slash": true})) == CentipedeBrain.SLASH, "In front inside the slash: SLASH")
-	assert_true(_pick(_situation({"in_spit_reach": true, "distance": 3.0})) == CentipedeBrain.SPIT, "In the spit's band, spit ready: SPIT")
-	assert_true(_pick(_situation({"in_spit_reach": true, "distance": 3.0, "spit_ready": false})) == CentipedeBrain.CHASE, "Spit cooling down: CHASE")
-	assert_true(_pick(_situation({"distance": 11.0})) == CentipedeBrain.ROLL, "Far away, roll unlocked: ROLL")
-	assert_true(_pick(_situation({"distance": 11.0, "roll_unlocked": false})) == CentipedeBrain.CHASE, "Far away, roll locked: CHASE")
+	var d := BOSS_DATA
+	assert_true(_pick(_situation({"in_spit_reach": true, "distance": d.body(3.0)})) == CentipedeBrain.SPIT, "In the spit's band, spit ready: SPIT")
+	assert_true(_pick(_situation({"in_spit_reach": true, "distance": d.body(3.0), "spit_ready": false})) == CentipedeBrain.CHASE, "Spit cooling down: CHASE")
+	assert_true(_pick(_situation({"distance": d.body(5.2)})) == CentipedeBrain.ROLL, "Far away, roll unlocked: ROLL")
+	assert_true(_pick(_situation({"distance": d.body(5.2), "roll_unlocked": false})) == CentipedeBrain.CHASE, "Far away, roll locked: CHASE")
+	var behind := CentipedeBrain.score_all(_situation({"in_front": false, "distance": d.body(3.5), "charge_roll_unlocked": true, "charge_roll_ready": true}), d)
+	assert_true(float(behind[CentipedeBrain.CHARGE_ROLL]) > 0.0, "The charge roll scores for a commander behind the boss")
+	var close := CentipedeBrain.score_all(_situation({"in_slash": true, "distance": d.body(1.0), "charge_roll_unlocked": true, "charge_roll_ready": true}), d)
+	assert_true(is_zero_approx(float(close[CentipedeBrain.CHARGE_ROLL])), "Inside the slash the charge roll scores nothing")
 	assert_true(_pick(_situation({"in_front": false})) == CentipedeBrain.FACE, "Commander at the flank or behind: FACE")
 	assert_true(_pick(_situation({"in_front": false, "has_objective": true, "t_away": 4.0})) == CentipedeBrain.PUSH, "Out of reach for 4 s with a structure: PUSH")
 	var low_hp := CentipedeBrain.score_all(_situation({"in_slash": true, "hp_fraction": 0.4}), BOSS_DATA)
 	assert_true(float(low_hp[CentipedeBrain.COMBO]) > 0.0, "Below half HP the combo scores")
 	var full_hp := CentipedeBrain.score_all(_situation({"in_slash": true, "hp_fraction": 0.9}), BOSS_DATA)
-	assert_true(is_zero_approx(float(full_hp[CentipedeBrain.COMBO])), "At half HP or more the combo scores nothing")
+	assert_true(is_equal_approx(float(full_hp[CentipedeBrain.COMBO]), d.weight_centipede_combo * d.combo_high_hp_mult * d.stickiness),
+			"At half HP or more the combo still scores, at a fraction of its weight")
 	var locked := CentipedeBrain.score_all(_situation({"in_slash": true, "hp_fraction": 0.4, "combo_unlocked": false}), BOSS_DATA)
 	assert_true(is_zero_approx(float(locked[CentipedeBrain.COMBO])), "Combo locked: no score")
 
@@ -177,12 +196,21 @@ func test_tc1_brain_scores() -> void:
 	boss.current_target = cmd
 	boss.provoked_by_player = true
 	assert_true(boss.choose_attack() == CentipedeBrain.SPIT, "Boss with the commander 3 body-metres ahead: SPIT")
+	# The combo and the dash are put on cooldown so the pick is a clear one.
+	boss.combo_cooldown_left = 99.0
+	boss.dash_cooldown_left = 99.0
 	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(1.2))
 	assert_true(boss.choose_attack() == CentipedeBrain.SLASH, "Commander inside the slash: SLASH")
-	cmd.global_position = Vector3(0.0, 0.0, 9.0)
-	assert_true(boss.choose_attack() == CentipedeBrain.ROLL, "Commander 9 m ahead: ROLL")
+	boss.charge_roll_cooldown_left = 99.0
+	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(5.2))
+	assert_true(boss.choose_attack() == CentipedeBrain.ROLL, "Commander 5.2 body-metres ahead and provoked: ROLL")
 	assert_true(is_equal_approx(float(boss.last_scores[CentipedeBrain.ROLL]), BOSS_DATA.weight_roll * BOSS_DATA.stickiness),
-			"At 9 m, inside the engaged range, the roll scores its full weight")
+			"At 5.2 body-metres the roll scores its full weight")
+	boss.provoked_by_player = false
+	assert_true(boss.build_situation().engaged, "Not hit yet, but inside the engage range: the boss still fights")
+	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(BOSS_DATA.engage_range + 0.3))
+	assert_true(not boss.build_situation().engaged, "Past the engage range and not hit: not engaged")
+	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(5.2))
 	boss.spawn_wave = 5
 	assert_true(boss.choose_attack() == CentipedeBrain.CHASE, "First appearance has no roll: CHASE")
 	cmd.global_position = Vector3(0.0, 0.0, -2.0)
@@ -208,10 +236,13 @@ func test_tc2_brain_deterministic() -> void:
 	var count_roll := func() -> float:
 		calls[0] += 1
 		return 0.5
-	CentipedeBrain.decide(_situation({"in_slash": true}), BOSS_DATA, count_roll)
+	CentipedeBrain.decide(_situation({"in_slash": true, "combo_unlocked": false}), BOSS_DATA, count_roll)
 	assert_true(calls[0] == 0, "A clear choice never calls the roll")
 	CentipedeBrain.decide(tie, BOSS_DATA, count_roll)
 	assert_true(calls[0] == 1, "A tie calls the roll once")
+	calls[0] = 0
+	CentipedeBrain.decide(_situation({"in_slash": true, "hp_fraction": 0.9}), BOSS_DATA, count_roll)
+	assert_true(calls[0] == 1, "A low-scoring combo next to the slash calls the roll once")
 
 
 func test_tc3_setup() -> void:
@@ -244,6 +275,7 @@ func test_tc4_slash() -> void:
 	var cmd := _make_commander(Vector3(0.0, 0.0, d.body(1.2)))
 	var clips: Array[StringName] = []
 	boss.move_started.connect(func(_move: StringName, clip: StringName, _dur: float) -> void: clips.append(clip))
+	boss.combo_cooldown_left = 99.0
 	boss.current_target = cmd
 	boss.change_state(Enums.EnemyState.ATTACK)
 	assert_true(boss.last_chosen_move == SLASH, "AI picks the slash for a commander 1.2 ahead")
@@ -307,7 +339,7 @@ func test_tc5_combo() -> void:
 		if targets.has(cmd):
 			windows_hit[0] += 1)
 	_start(boss, cmd, COMBO)
-	_step(boss, 5.3)
+	_step(boss, _roar(boss) + 5.3)
 	var total := 0
 	for info in cmd.hits:
 		total += info.amount
@@ -359,7 +391,7 @@ func test_tc6_spit_stream() -> void:
 	cmd.global_position = apex + Vector3(0.0, 0.0, d.body(2.5))
 	var yaw_changed := false
 	var t := 0.0
-	while boss._move == SPIT and t < 6.0:
+	while boss._move == SPIT and t < 9.0:
 		_step(boss, STEP)
 		t += STEP
 		if absf(boss.rotation.y) > 0.0001:
@@ -370,7 +402,8 @@ func test_tc6_spit_stream() -> void:
 			ticks += 1
 	assert_true(ticks >= 9 and ticks <= 11, "Commander in the cone takes 10 DoT ticks (%d)" % ticks)
 	assert_true(not yaw_changed, "The boss does not turn during the spit")
-	assert_true(t > 4.0 and t < 4.5, "The move lasts the clip plus the held stream (%.2f s)" % t)
+	var roar := _roar(boss)
+	assert_true(t > roar + 4.0 and t < roar + 4.5, "The move lasts the roar, the clip and the held stream (%.2f s)" % t)
 	assert_true(boss.spit_cooldown_left > 0.0, "Spit went on cooldown")
 	for pool in _pools():
 		pool.free()
@@ -379,7 +412,7 @@ func test_tc6_spit_stream() -> void:
 	var outside := _make_commander(Vector3(5.0, 0.0, 1.0))
 	_start(boss, outside, SPIT)
 	outside.global_position = boss.get_spit_apex() + Vector3(d.body(3.0), 0.0, d.body(1.0))
-	_step(boss, 4.5)
+	_step(boss, _roar(boss) + 4.5)
 	assert_true(outside.hits.is_empty(), "A commander outside the cone takes nothing")
 	_free_all([outside, boss])
 
@@ -390,7 +423,7 @@ func test_tc7_spit_pool() -> void:
 	var boss := _make_boss()
 	var cmd := _make_commander(Vector3(40.0, 0.0, 40.0))
 	_start(boss, cmd, SPIT)
-	_step(boss, d.pool_spawn_time - 0.1)
+	_step(boss, _roar(boss) + d.pool_spawn_time - 0.1)
 	assert_true(_pools().is_empty(), "No pool before its spawn time")
 	_step(boss, 0.2)
 	var origin := boss.to_global(d.body_v3(d.pool_offset))
@@ -452,7 +485,8 @@ func test_tc8_roll() -> void:
 	var before := boss.global_position
 	_step(boss, 20.0 * STEP)
 	var speed := boss.global_position.distance_to(before) / (20.0 * STEP)
-	assert_true(absf(speed - d.body(d.roll_speed)) < d.body(d.roll_speed) * 0.1, "Loop speed is roll_speed (%.2f m/s)" % speed)
+	var top_speed := minf(d.body(d.roll_speed), d.roll_speed_cap)
+	assert_true(absf(speed - top_speed) < top_speed * 0.1, "Loop speed is roll_speed held down to its cap (%.2f m/s)" % speed)
 	var guard := 0
 	while boss._move == ROLL and guard < 1200:
 		_step(boss, STEP)
@@ -460,7 +494,7 @@ func test_tc8_roll() -> void:
 	assert_true(cmd.hits.size() == 1, "The roll hits the commander once")
 	assert_true(cmd.hits[0].amount == d.roll_damage and cmd.hits[0].damage_type == Enums.DamageType.BLAST, "Roll damage is roll_damage BLAST")
 	assert_true(cmd.hits[0].knockback_force > 0.0, "The roll throws the commander back")
-	assert_true(boss.global_position.length() <= d.roll_max_distance + 0.5, "The roll stops within its maximum distance (%.2f m)" % boss.global_position.length())
+	assert_true(boss.global_position.length() <= d.body(d.roll_max_distance) + 0.5, "The roll stops within its maximum distance (%.2f m)" % boss.global_position.length())
 	assert_true(boss.roll_cooldown_left > 0.0, "Roll went on cooldown")
 	_free_all([cmd, boss])
 
@@ -502,6 +536,7 @@ func test_tc9_turn() -> void:
 	var cmd := _make_commander(Vector3(0.0, 0.0, -3.0))
 	var clips: Array[StringName] = []
 	boss.move_started.connect(func(_move: StringName, clip: StringName, _dur: float) -> void: clips.append(clip))
+	boss.dash_cooldown_left = 99.0
 	boss.current_target = cmd
 	boss.change_state(Enums.EnemyState.ATTACK)
 	assert_true(clips == [SkeletalCentipede.CLIP_TURN_180], "A commander behind gets the half turn clip")
@@ -526,7 +561,7 @@ func test_tc10_armor_phase() -> void:
 	var cmd := _make_commander(Vector3(40.0, 0.0, 40.0))
 	var particles := boss.get_node("Model/CentipedeFx/Head/SpitEmitter/Core") as CPUParticles3D
 	_start(boss, cmd, SPIT)
-	_step(boss, 2.0)
+	_step(boss, _roar(boss) + 1.0)
 	assert_true(particles.emitting, "The stream's particles run while it spits")
 	var mesh := boss.find_child("SkeletalCentipede_Mesh", true, false) as MeshInstance3D
 	mesh.set_blend_shape_value(0, 0.7)
@@ -550,7 +585,7 @@ func test_tc10_armor_phase() -> void:
 	var combo_boss := _make_boss()
 	var front := _make_commander(Vector3(0.0, 0.0, d.body(1.2)))
 	_start(combo_boss, front, COMBO)
-	_step(combo_boss, 0.5)
+	_step(combo_boss, _roar(combo_boss) + 0.5)
 	var hits_before := front.hits.size()
 	assert_true(hits_before > 0, "The combo has started hitting")
 	combo_boss.take_damage(DamageInfo.new(combo_boss.current_armor_hp, Enums.DamageType.TRUE))
@@ -650,7 +685,7 @@ func test_tc15_chains_stay_survivable() -> void:
 	var d := BOSS_DATA
 	var cmd := _make_commander(Vector3(0.0, 0.0, d.body(1.2)))
 	_start(boss, cmd, COMBO)
-	_step(boss, 5.3)
+	_step(boss, _roar(boss) + 5.3)
 	var combo_total := _damage_sum(cmd)
 	print("  combo total: %d" % combo_total)
 	assert_true(combo_total > 0 and combo_total < 100, "The whole combo stays under 100")
@@ -658,7 +693,7 @@ func test_tc15_chains_stay_survivable() -> void:
 	cmd.hits.clear()
 	_start(boss, cmd, SPIT)
 	cmd.global_position = boss.get_spit_apex() + Vector3(0.0, 0.0, d.body(2.5))
-	_step(boss, 4.5)
+	_step(boss, _roar(boss) + 4.5)
 	var stream_total := _damage_sum(cmd)
 	print("  spit stream total: %d" % stream_total)
 	assert_true(stream_total > 0 and stream_total < 100, "The whole stream stays under 100")
@@ -673,6 +708,17 @@ func test_tc15_chains_stay_survivable() -> void:
 	var pool_total := _damage_sum(cmd)
 	print("  pool total: %d" % pool_total)
 	assert_true(pool_total > 0 and pool_total < 100, "The whole pool stays under 100")
+
+	cmd.hits.clear()
+	cmd.global_position = Vector3(0.0, 0.0, d.body(5.0))
+	_start(boss, cmd, CHARGE_ROLL)
+	var guard := 0
+	while boss._move == CHARGE_ROLL and guard < 1500:
+		_step(boss, STEP)
+		guard += 1
+	var charge_total := _damage_sum(cmd)
+	print("  charge roll total: %d" % charge_total)
+	assert_true(charge_total > 0 and charge_total < 100, "A charge roll stays under 100")
 	_free_all([cmd, boss])
 
 
@@ -686,19 +732,27 @@ func _damage_sum(cmd: MockCommander) -> int:
 func test_tc16_default_scale() -> void:
 	print("\n[TC16] Default scale")
 	var d := BOSS_DATA
-	assert_true(is_equal_approx(d.model_scale, 1.6), "The data's model scale is 1.6")
+	assert_true(is_equal_approx(d.model_scale, 3.0), "The data's model scale is 3.0")
+	var hint := {}
+	for property in d.get_property_list():
+		if property["name"] == "model_scale":
+			hint = property
+	var range_parts := String(hint.get("hint_string", "")).split(",")
+	assert_true(int(hint.get("hint", 0)) == PROPERTY_HINT_RANGE and range_parts.size() >= 2
+			and is_equal_approx(float(range_parts[0]), 3.0) and is_equal_approx(float(range_parts[1]), 4.5),
+			"The model scale is limited to 3.0 to 4.5 in the editor")
 	var a := _make_boss()
 	var b := _make_boss()
 	var model := a.get_node("Model") as Node3D
-	assert_true(model.scale.is_equal_approx(Vector3.ONE * 1.6), "The model is scaled 1.6")
+	assert_true(model.scale.is_equal_approx(Vector3.ONE * 3.0), "The model is scaled 3.0")
 	var body_shape := a.get_node("CollisionShape3D") as CollisionShape3D
-	assert_true((body_shape.shape as BoxShape3D).size.is_equal_approx(d.body_box_size * 1.6), "The body box is the data's box times the scale")
+	assert_true((body_shape.shape as BoxShape3D).size.is_equal_approx(d.body_box_size * 3.0), "The body box is the data's box times the scale")
 	var hurt_shape := a.get_node("HurtBox/CollisionShape3D") as CollisionShape3D
-	assert_true((hurt_shape.shape as BoxShape3D).size.is_equal_approx(d.body_box_size * 1.6), "The hurt box is scaled too")
+	assert_true((hurt_shape.shape as BoxShape3D).size.is_equal_approx(d.body_box_size * 3.0), "The hurt box is scaled too")
 	var other_shape := b.get_node("CollisionShape3D") as CollisionShape3D
 	assert_true(body_shape.shape != other_shape.shape, "Two bosses do not share a shape")
-	assert_true(a.nav.radius >= 1.6, "The agent radius stays at least 1.6")
-	assert_true(is_equal_approx(a.get_attack_range(), 1.4 * 1.6) and is_equal_approx(a.nav.target_desired_distance, 1.4 * 1.6),
+	assert_true(is_equal_approx(a.nav.radius, 2.7), "The agent radius follows the body (2.7)")
+	assert_true(is_equal_approx(a.get_attack_range(), 1.4 * 3.0) and is_equal_approx(a.nav.target_desired_distance, 1.4 * 3.0),
 			"The attack range is scaled")
 	_free_all([a, b])
 
@@ -706,11 +760,20 @@ func test_tc16_default_scale() -> void:
 func test_tc17_scale_is_proportional() -> void:
 	print("\n[TC17] Scale is proportional")
 	var roll_speeds: Array[float] = []
+	var roll_clip_speeds: Array[float] = []
 	var combo_steps: Array[float] = []
 	var walk_speeds: Array[float] = []
-	for model_scale: float in [1.0, 2.0]:
+	for model_scale: float in [3.0, 4.5]:
 		var d := _scaled_data(model_scale)
-		var tag := "scale %.0f" % model_scale
+		var tag := "scale %.1f" % model_scale
+		var sized := _make_boss(d)
+		var sized_box := (sized.get_node("CollisionShape3D") as CollisionShape3D).shape as BoxShape3D
+		var sized_hurt := (sized.get_node("HurtBox/CollisionShape3D") as CollisionShape3D).shape as BoxShape3D
+		assert_true(sized_box.size.is_equal_approx(d.body_box_size * model_scale) and sized_hurt.size.is_equal_approx(d.body_box_size * model_scale),
+				"%s: body box and hurt box follow the scale" % tag)
+		assert_true(is_equal_approx(sized.nav.radius, maxf(d.agent_radius, d.body(d.body_box_size.z * 0.5))), "%s: agent radius follows the body" % tag)
+		assert_true(is_equal_approx(sized.get_attack_range(), d.body(d.attack_range)), "%s: walk-up range follows the scale" % tag)
+		_free_all([sized])
 		for case in [[0.9, 1], [1.1, 0]]:
 			var boss := _make_boss(d)
 			var cmd := _make_commander(Vector3(0.0, 0.0, d.body(d.slash_range) * case[0]))
@@ -738,12 +801,13 @@ func test_tc17_scale_is_proportional() -> void:
 		var from := roller.global_position
 		_step(roller, 10.0 * STEP)
 		roll_speeds.append(roller.global_position.distance_to(from) / (10.0 * STEP))
+		roll_clip_speeds.append(roller.anim_player.speed_scale)
 		_free_all([far, roller])
 
 		var stepper := _make_boss(d)
 		var behind := _make_commander(Vector3(0.0, 0.0, -50.0))
 		_start(stepper, behind, COMBO)
-		_step(stepper, 5.3)
+		_step(stepper, _roar(stepper) + 5.3)
 		combo_steps.append(stepper.global_position.z)
 		_free_all([behind, stepper])
 
@@ -762,9 +826,11 @@ func test_tc17_scale_is_proportional() -> void:
 		walker._play_locomotion_anim()
 		walk_speeds.append(walker.anim_player.speed_scale)
 		_free_all([walker])
-	assert_true(absf(roll_speeds[1] / roll_speeds[0] - 2.0) < 0.1, "Roll speed doubles with the scale (%.2f to %.2f)" % [roll_speeds[0], roll_speeds[1]])
-	assert_true(absf(combo_steps[1] / combo_steps[0] - 2.0) < 0.1, "The combo's advance doubles with the scale (%.2f to %.2f)" % [combo_steps[0], combo_steps[1]])
-	assert_true(absf(walk_speeds[1] / walk_speeds[0] - 0.5) < 0.025, "At the same ground speed the walk clip plays half as fast at double scale")
+	assert_true(absf(roll_speeds[1] / roll_speeds[0] - 1.0) < 0.05, "Roll speed is the same at both scales (%.2f to %.2f)" % [roll_speeds[0], roll_speeds[1]])
+	assert_true(absf(roll_clip_speeds[1] / roll_clip_speeds[0] - 1.0 / 1.5) < 0.05 * (1.0 / 1.5),
+			"The roll clip plays slower on the bigger boss (%.2f to %.2f)" % [roll_clip_speeds[0], roll_clip_speeds[1]])
+	assert_true(absf(combo_steps[1] / combo_steps[0] - 1.5) < 0.075, "The combo's advance grows with the scale (%.2f to %.2f)" % [combo_steps[0], combo_steps[1]])
+	assert_true(absf(walk_speeds[1] / walk_speeds[0] - 1.0 / 1.5) < 0.03, "At the same ground speed the walk clip plays slower at the bigger scale")
 
 
 func test_tc18_particles_follow_scale() -> void:
@@ -779,6 +845,274 @@ func test_tc18_particles_follow_scale() -> void:
 	assert_true(core_two.gravity.is_equal_approx(core_one.gravity * 2.0), "Applying the scale again does not compound")
 	# The cloud's size cannot be captured headless; the effect runner covers the particle physics.
 	_free_all([one, two])
+
+
+func test_tc19_brain_v2() -> void:
+	print("\n[TC19] Brain v2: groups, dash and the buff")
+	var d := BOSS_DATA
+	var never := func() -> float: return 0.0
+	assert_true(is_equal_approx(d.tie_margin, 0.2), "The tie margin is 0.2")
+
+	var high := _situation({"in_slash": true, "hp_fraction": 0.9})
+	var scores := CentipedeBrain.score_all(high, d)
+	assert_true(is_equal_approx(float(scores[CentipedeBrain.COMBO]), d.weight_centipede_combo * d.combo_high_hp_mult * d.stickiness),
+			"Above half HP the combo scores its weight times combo_high_hp_mult")
+	assert_true(CentipedeBrain.decide(high, d, never) == CentipedeBrain.SLASH, "A roll of 0.0 inside the melee group picks the slash")
+	assert_true(CentipedeBrain.decide(high, d, func() -> float: return 0.99) == CentipedeBrain.COMBO, "A roll of 0.99 inside the melee group picks the combo")
+
+	var dash_side := {CentipedeBrain.DASH_LEFT: 0.6, CentipedeBrain.DASH_RIGHT: 0.12}
+	assert_true(CentipedeBrain.pick(dash_side, d, never) == CentipedeBrain.DASH_LEFT, "Dash shares 1.0 / 0.2, roll 0.0: DASH_LEFT")
+	assert_true(CentipedeBrain.pick(dash_side, d, func() -> float: return 0.95) == CentipedeBrain.DASH_RIGHT, "Dash shares 1.0 / 0.2, roll 0.95: DASH_RIGHT")
+	var dash_open := {"dash_unlocked": true, "dash_ready": true, "distance": d.body(2.0), "dash_left_share": 1.0, "dash_right_share": 0.0}
+	var one_side := CentipedeBrain.score_all(_situation(dash_open), d)
+	assert_true(float(one_side[CentipedeBrain.DASH_LEFT]) > 0.0 and is_zero_approx(float(one_side[CentipedeBrain.DASH_RIGHT])), "A side with no room scores nothing")
+	dash_open["distance"] = d.body(d.dash_trigger_reach + 0.5)
+	var far := CentipedeBrain.score_all(_situation(dash_open), d)
+	assert_true(is_zero_approx(float(far[CentipedeBrain.DASH_LEFT])), "Past the dash's trigger reach it scores nothing")
+
+	var buffed := CentipedeBrain.score_all(_situation({"dash_buff": true, "in_spit_reach": true, "distance": d.body(5.2),
+			"charge_roll_unlocked": true, "charge_roll_ready": true, "off_angle_deg": 25.0}), d)
+	var face := float(buffed[CentipedeBrain.FACE])
+	var spit := float(buffed[CentipedeBrain.SPIT])
+	var charge := float(buffed[CentipedeBrain.CHARGE_ROLL])
+	var roll := float(buffed[CentipedeBrain.ROLL])
+	assert_true(face > spit and spit > charge and charge > roll and roll > 0.0,
+			"After a dash the weights run Face > Spit > Charge Roll > Roll (%.2f, %.2f, %.2f, %.2f)" % [face, spit, charge, roll])
+	var aligned := CentipedeBrain.score_all(_situation({"dash_buff": true, "off_angle_deg": 10.0}), d)
+	assert_true(is_zero_approx(float(aligned[CentipedeBrain.FACE])), "After a dash the boss does not turn for 10 degrees")
+	var plain := CentipedeBrain.score_all(_situation({"in_front": false}), d)
+	assert_true(float(plain[CentipedeBrain.FACE]) > 0.0, "Without the buff a commander out of the front cone still gets a FACE")
+
+
+func test_tc20_roar_lead_in() -> void:
+	print("\n[TC20] Roar before Spit and Combo")
+	var d := BOSS_DATA
+	var boss := _make_boss()
+	var cmd := _make_commander(Vector3(0.0, 0.0, 1.0))
+	var clips: Array[StringName] = []
+	boss.move_started.connect(func(_move: StringName, clip: StringName, _dur: float) -> void: clips.append(clip))
+	var warnings: Array[float] = []
+	var on_telegraph := func(_kind: StringName, _position: Vector3, _radius: float, duration: float) -> void: warnings.append(duration)
+	EventBus.telegraph_started.connect(on_telegraph)
+	_start(boss, cmd, SPIT)
+	EventBus.telegraph_started.disconnect(on_telegraph)
+	var roar := _roar(boss)
+	cmd.global_position = boss.get_spit_apex() + Vector3(0.0, 0.0, d.body(2.5))
+	assert_true(clips == [SkeletalCentipede.CLIP_ROAR], "The spit is announced with the roar clip")
+	assert_true(warnings.size() == 1 and is_equal_approx(warnings[0], roar + d.pool_spawn_time),
+			"The warning runs the roar plus the time to the pool (%s)" % [warnings])
+	var start := boss.global_position
+	var yaw := boss.rotation.y
+	_step(boss, roar - 0.1)
+	assert_true(boss.global_position == start and is_equal_approx(boss.rotation.y, yaw), "The boss stands still and keeps its facing during the roar")
+	assert_true(cmd.hits.is_empty() and not boss._spit_emitting, "No stream during the roar")
+	_step(boss, 0.1 + d.spit_stream_start + d.spit_stream_tick - 0.05)
+	assert_true(cmd.hits.is_empty(), "The first tick comes only after the roar and the stream's start")
+	_step(boss, 0.1)
+	assert_true(cmd.hits.size() == 1, "The stream ticks once its start time is past")
+	_step(boss, 6.0)
+	for pool in _pools():
+		pool.free()
+	_free_all([cmd, boss])
+
+	var combo_boss := _make_boss()
+	var front := _make_commander(Vector3(0.0, 0.0, d.body(1.2)))
+	_start(combo_boss, front, COMBO)
+	_step(combo_boss, _roar(combo_boss) + 0.2)
+	assert_true(front.hits.is_empty(), "The combo's first hit waits for the roar")
+	_step(combo_boss, 6.0)
+	assert_true(front.hits.size() == 11, "All eleven hits still land after the roar (%d)" % front.hits.size())
+	_free_all([front, combo_boss])
+
+
+func test_tc21_charge_roll() -> void:
+	print("\n[TC21] Charge roll")
+	var d := BOSS_DATA
+	var boss := _make_boss()
+	var cmd := _make_commander(Vector3(0.0, 0.0, -9.0))
+	cmd.is_dodging = true
+	_start(boss, cmd, CHARGE_ROLL)
+	_step(boss, _roar(boss) - 0.1)
+	assert_true(boss.global_position.length() < 0.001 and absf(boss.rotation.y) < 0.0001, "The roar keeps the boss still and facing the way it did")
+	var max_turn := deg_to_rad(d.charge_roll_turn_rate_deg) * STEP + deg_to_rad(0.01)
+	var worst_turn := 0.0
+	var fastest := 0.0
+	var loop_frames := 0
+	var off_at_start := -1.0
+	var off_after_2s := -1.0
+	var guard := 0
+	while boss._move == CHARGE_ROLL and guard < 2000:
+		var yaw := boss.rotation.y
+		var before := boss.global_position
+		if boss._roll_phase == SkeletalCentipede.RollPhase.LOOP:
+			if loop_frames == 0:
+				off_at_start = absf(boss._yaw_to(cmd))
+			if loop_frames == 120:
+				off_after_2s = absf(boss._yaw_to(cmd))
+			loop_frames += 1
+		_step(boss, STEP)
+		worst_turn = maxf(worst_turn, absf(angle_difference(yaw, boss.rotation.y)))
+		fastest = maxf(fastest, before.distance_to(boss.global_position) / STEP)
+		guard += 1
+	assert_true(loop_frames * STEP >= d.charge_roll_loop_time - STEP, "The loop runs for its time even when nothing is hit (%.2f s)" % (loop_frames * STEP))
+	assert_true(worst_turn <= max_turn, "The roll bends no faster than charge_roll_turn_rate_deg (%.4f of %.4f rad per step)" % [worst_turn, max_turn])
+	assert_true(fastest <= d.charge_roll_speed_cap * 1.05, "The roll stays under its speed cap (%.2f m/s)" % fastest)
+	assert_true(off_at_start > 0.0 and off_after_2s >= 0.0 and off_after_2s < off_at_start,
+			"The roll turns toward the commander (%.0f to %.0f degrees off)" % [rad_to_deg(off_at_start), rad_to_deg(off_after_2s)])
+	assert_true(cmd.hits.is_empty() and boss.charge_roll_cooldown_left > 0.0, "A dodging commander is not hit and the roll went on cooldown")
+	_free_all([cmd, boss])
+
+	var hit_boss := _make_boss()
+	var target := _make_commander(Vector3(0.0, 0.0, 14.0))
+	_start(hit_boss, target, CHARGE_ROLL)
+	var frame := 0
+	var hit_frame := -1
+	var end_frame := -1
+	while hit_boss._move == CHARGE_ROLL and frame < 2000:
+		_step(hit_boss, STEP)
+		frame += 1
+		if hit_frame < 0 and not target.hits.is_empty():
+			hit_frame = frame
+		if end_frame < 0 and hit_boss._roll_phase == SkeletalCentipede.RollPhase.END:
+			end_frame = frame
+	assert_true(target.hits.size() == 1, "The charge roll hits the commander once")
+	assert_true(target.hits[0].amount == hit_boss._scale_attack_damage(d.charge_roll_damage) and target.hits[0].damage_type == Enums.DamageType.BLAST
+			and target.hits[0].knockback_force > 0.0, "It deals charge_roll_damage BLAST with knockback")
+	assert_true(end_frame >= 0 and (end_frame - hit_frame) * STEP <= d.charge_roll_after_hit_time + 2.0 * STEP,
+			"The roll ends shortly after the hit (%d frames)" % (end_frame - hit_frame))
+	_free_all([target, hit_boss])
+
+	var tower_boss := _make_boss()
+	var far := _make_commander(Vector3(0.0, 0.0, 40.0))
+	var tower := _make_structure(Vector3(0.0, 0.0, 6.0))
+	_start(tower_boss, far, CHARGE_ROLL)
+	guard = 0
+	while tower.hits.is_empty() and guard < 1200:
+		_step(tower_boss, STEP)
+		guard += 1
+	assert_true(tower.hits.size() == 1 and tower.hits[0].amount == d.charge_roll_damage, "A tower in the way takes charge_roll_damage")
+	assert_true(tower_boss._roll_phase == SkeletalCentipede.RollPhase.END, "The charge roll goes into its end clip the moment it hits a tower")
+	_step(tower_boss, 2.0)
+	assert_true(tower.hits.size() == 1, "The tower is hit only once")
+	_free_all([far, tower, tower_boss])
+
+
+func test_tc22_dash() -> void:
+	print("\n[TC22] Dash")
+	var d := BOSS_DATA
+	var boss := _make_boss()
+	var fortress := _make_structure(Vector3(30.0, 0.0, 0.0), &"fortress")
+	var spawn := _make_structure(Vector3(-30.0, 0.0, 0.0), &"boss_spawn_point")
+	var cmd := _make_commander(Vector3(0.0, 0.0, d.body(2.0)))
+	boss.current_target = cmd
+	var situation := boss.build_situation()
+	assert_true(is_equal_approx(situation.dash_left_share, 1.0), "The side toward the Fortress is worth 1.0 (%.2f)" % situation.dash_left_share)
+	assert_true(absf(situation.dash_right_share - d.dash_spawn_side_share) < 0.01, "The side toward the spawn is worth the spawn share (%.2f)" % situation.dash_right_share)
+
+	var clips: Array[StringName] = []
+	boss.move_started.connect(func(_move: StringName, clip: StringName, _dur: float) -> void: clips.append(clip))
+	_start(boss, cmd, CentipedeBrain.DASH_LEFT)
+	var played := String(boss.anim_player.current_animation) if boss.anim_player != null else ""
+	var frames := 0
+	while boss._move == DASH and frames < 300:
+		boss._update_state(STEP)
+		frames += 1
+	var travel := d.body(d.dash_distance)
+	assert_true(absf(boss.global_position.x - travel) <= travel * 0.05, "A dash to the left moves dash_distance along +X (%.2f of %.2f m)" % [boss.global_position.x, travel])
+	assert_true(absf(boss.global_position.z) < 0.001 and absf(boss.rotation.y) < 0.0001, "The dash does not move forward or turn")
+	assert_true(absi(frames - int(round(d.dash_time / STEP))) <= 1, "The dash takes dash_time (%d frames)" % frames)
+	assert_true(is_equal_approx(boss.dash_buff_left, d.dash_buff_time), "The dash starts the buff")
+	assert_true(boss.dash_cooldown_left > 0.0 and boss.last_chosen_move == DASH, "The dash went on cooldown")
+	assert_true(clips.size() == 1 and clips[0] in [&"dash_left", &"roll_extra/dash_left", SkeletalCentipede.CLIP_WALK],
+			"The dash plays its clip, or the walk clip while there is none (%s)" % clips)
+	assert_true(played in ["dash_left", "roll_extra/dash_left", String(SkeletalCentipede.CLIP_WALK)], "The animation player runs that clip (%s)" % played)
+	boss.global_position = Vector3.ZERO
+	boss.dash_cooldown_left = 0.0
+	var wall := _make_solid(Vector3(d.body(d.body_box_size.x * 0.5) + 2.0, 2.0, 0.0), Vector3(0.5, 4.0, 10.0), &"")
+	await _settle()
+	var walled := boss.build_situation()
+	assert_true(is_zero_approx(walled.dash_left_share), "A wall in the dash's path leaves that side no score")
+	assert_true(walled.dash_right_share > 0.0, "The other side keeps its score")
+	_free_all([cmd, boss, fortress, spawn, wall])
+
+
+func test_tc23_structures() -> void:
+	print("\n[TC23] Structures are always inside the swing's reach")
+	for model_scale: float in [3.0, 4.5]:
+		for kind: StringName in [&"tower", &"fortress"]:
+			await _structure_case(model_scale, kind)
+
+
+## Three physics frames: the physics server sees the new bodies, and the boss's own navigation
+## setup (a deferred call that then waits for a frame) is done before the boss is freed.
+func _settle() -> void:
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+
+## One boss walks up to a tower or the Fortress on a floor and is stepped for seconds of game time.
+func _structure_case(model_scale: float, kind: StringName) -> void:
+	var tag := "scale %.1f, %s" % [model_scale, kind]
+	var d := _scaled_data(model_scale)
+	var nodes: Array = []
+	nodes.append(_make_solid(Vector3(0.0, -0.5, 0.0), Vector3(200.0, 1.0, 200.0), &""))
+	var target: MockSolid
+	if kind == &"tower":
+		target = _make_solid(Vector3(-9.0, 1.5, 1.5), Vector3(2.0, 3.0, 2.0), &"tower")
+		target.set_meta(&"is_wall", false)
+	else:
+		target = _make_solid(Vector3(-20.0, 2.0, 0.0), Vector3(5.0, 4.0, 16.0), &"fortress")
+		var melee_point := Marker3D.new()
+		melee_point.add_to_group(&"boss_melee_point")
+		add_child(melee_point)
+		melee_point.global_position = Vector3(-15.5, 0.0, 0.0)
+		nodes.append(melee_point)
+	nodes.append(target)
+	# Enemies share a per-frame cache of the towers; no frame passes between cases here.
+	Enemy.invalidate_node_cache()
+	var boss := _make_boss(d)
+	boss.rotation.y = -PI / 2.0
+	# The boss steers itself: the avoidance server does not step while this test steps by hand.
+	boss.nav.avoidance_enabled = false
+	nodes.append(boss)
+	await _settle()
+	var swings := {"total": 0, "missed": 0}
+	boss.move_hit.connect(func(move: StringName, _window: int, targets: Array) -> void:
+		if move != SLASH or not boss._structure_move:
+			return
+		swings["total"] += 1
+		if not targets.has(boss.current_target):
+			swings["missed"] += 1)
+	boss.change_state(Enums.EnemyState.ADVANCE)
+	var seconds := 12.0 if kind == &"tower" else 20.0
+	var t := 0.0
+	while t < seconds:
+		boss._process(STEP)
+		boss._physics_process(STEP)
+		t += STEP
+	var needed := 1 if kind == &"tower" else 2
+	assert_true(target.hits.size() >= needed, "%s: the boss lands %d or more swings on it in %.0f s (%d)" % [tag, needed, seconds, target.hits.size()])
+	assert_true(swings["total"] >= 1 and swings["missed"] == 0, "%s: no swing at the structure falls short (%d of %d missed)" % [tag, swings["missed"], swings["total"]])
+	if kind == &"fortress":
+		assert_true(boss.global_position.x > -17.4, "%s: the boss does not get into the Fortress (x = %.2f)" % [tag, boss.global_position.x])
+	_free_all(nodes)
+
+
+## A static box that counts the hits it takes; group "" leaves it out of every group.
+func _make_solid(pos: Vector3, size: Vector3, group: StringName) -> MockSolid:
+	var solid := MockSolid.new()
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	solid.add_child(shape)
+	if group != &"":
+		solid.add_to_group(group)
+	add_child(solid)
+	solid.global_position = pos
+	return solid
 
 
 class MockCommander extends Node3D:
@@ -801,6 +1135,14 @@ class MockStructure extends Node3D:
 
 	func _init(group: StringName) -> void:
 		add_to_group(group)
+
+	func take_damage(info: DamageInfo) -> void:
+		hits.append(info)
+
+
+## A static box (a tower, the Fortress or a wall) that counts the hits it takes.
+class MockSolid extends StaticBody3D:
+	var hits: Array[DamageInfo] = []
 
 	func take_damage(info: DamageInfo) -> void:
 		hits.append(info)
