@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://pbuvkjao7gyj"
-path="res://.godot/imported/slash_la1_arc.glb-b421227bd82b5ae7cf93958c5eb4f100.scn"
+uid="uid://c6dx1xx4e3t1a"
+path="res://.godot/imported/slash_la2_arc.glb-e5d1c6707dd9d5aacf7cfce2e71b7544.scn"
 
 [deps]
 
-source_file="res://art/vfx/preview/boss_centipede/slash_la1_arc.glb"
-dest_files=["res://.godot/imported/slash_la1_arc.glb-b421227bd82b5ae7cf93958c5eb4f100.scn"]
+source_file="res://art/vfx/boss_centipede/slash_la2_arc.glb"
+dest_files=["res://.godot/imported/slash_la2_arc.glb-e5d1c6707dd9d5aacf7cfce2e71b7544.scn"]
 
 [params]
 

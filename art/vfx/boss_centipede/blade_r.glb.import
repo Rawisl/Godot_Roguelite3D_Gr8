@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://11ryx7e6yatd"
-path="res://.godot/imported/blade_l.glb-ae57207d989cd7f22182e08057880229.scn"
+uid="uid://cmqspxxoc4u6d"
+path="res://.godot/imported/blade_r.glb-15d6c6c5935c40d0cd01fef19615fcef.scn"
 
 [deps]
 
-source_file="res://art/vfx/preview/boss_centipede/blade_l.glb"
-dest_files=["res://.godot/imported/blade_l.glb-ae57207d989cd7f22182e08057880229.scn"]
+source_file="res://art/vfx/boss_centipede/blade_r.glb"
+dest_files=["res://.godot/imported/blade_r.glb-15d6c6c5935c40d0cd01fef19615fcef.scn"]
 
 [params]
 

@@ -59,6 +59,12 @@ func _ready() -> void:
 	_rebuild()
 
 
+# The mesh is rebuilt from the exports in _ready, so a scene never needs to save a copy of it.
+func _validate_property(property: Dictionary) -> void:
+	if property.name == "mesh":
+		property.usage &= ~PROPERTY_USAGE_STORAGE
+
+
 func build_mesh() -> ArrayMesh:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = random_seed

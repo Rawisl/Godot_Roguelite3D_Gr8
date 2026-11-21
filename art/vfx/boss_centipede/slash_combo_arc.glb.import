@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://dp0f1df6niifh"
-path="res://.godot/imported/slash_combo_arc.glb-ee0075caa77f1450b03f94f1699c73c8.scn"
+path="res://.godot/imported/slash_combo_arc.glb-738d2a08a86afecd19f5693e13dc01d1.scn"
 
 [deps]
 
-source_file="res://art/vfx/preview/boss_centipede/slash_combo_arc.glb"
-dest_files=["res://.godot/imported/slash_combo_arc.glb-ee0075caa77f1450b03f94f1699c73c8.scn"]
+source_file="res://art/vfx/boss_centipede/slash_combo_arc.glb"
+dest_files=["res://.godot/imported/slash_combo_arc.glb-738d2a08a86afecd19f5693e13dc01d1.scn"]
 
 [params]
 
