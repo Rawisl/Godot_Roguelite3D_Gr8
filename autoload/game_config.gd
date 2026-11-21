@@ -85,6 +85,7 @@ extends Node
 @export var retarget_interval: float = 0.4
 @export var path_update_interval: float = 0.3
 @export var aggro_duration: float = 4.0
+@export var charge_commander_cooldown: float = 2.0
 @export var leash_distance: float = 25.0
 @export var max_aggro_melee: int = 8
 @export var bat_max_per_target: int = 6

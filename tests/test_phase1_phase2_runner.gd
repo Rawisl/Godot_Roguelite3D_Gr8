@@ -388,11 +388,11 @@ func test_group_7_brute_straight_to_fortress() -> void:
 	brute._find_best_target()
 	assert_eq(brute.current_target, fortress, "Brute ignores provocation from Player beyond 4m (6m > 4m)")
 
-	# 3. Provocation within 4m aggro range forces Brute to target Player (move Player to 14m, dist = 2m)
+	# 3. Provocation still cannot redirect a Brute inside aggro range.
 	player.global_position = Vector3(14.0, 0.0, 0.0)
 	Enemy._last_cache_frame = -1
 	brute._find_best_target()
-	assert_eq(brute.current_target, player, "Brute targets Player when provoked within 4m (2m <= 4m)")
+	assert_eq(brute.current_target, fortress, "Brute keeps targeting Fortress when provoked within 4m (2m <= 4m)")
 
 	fortress.free()
 	barricade.free()

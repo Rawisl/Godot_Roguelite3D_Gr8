@@ -73,6 +73,8 @@ hover.enemy.target,Mục tiêu: {target}
 hover.target.none,Không có
 enemy.grunt,Lính bộ
 enemy.archer,Cung thủ
+enemy.sniper,Xạ thủ
+enemy.rider,Kỵ binh
 enemy.brute,Lực sĩ
 enemy.bulwark,Bulwark
 panel.build.section_new,Xây mới
