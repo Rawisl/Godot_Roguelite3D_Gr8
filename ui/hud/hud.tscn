@@ -29,7 +29,7 @@
 [ext_resource type="PackedScene" uid="uid://cy7wcfr5ks16g" path="res://ui/screens/boss_intro.tscn" id="20_bintro"]
 [ext_resource type="PackedScene" uid="uid://cv3e0y5kcjs2v" path="res://ui/hud/parts/xp_bar.tscn" id="21_xpbar"]
 [ext_resource type="PackedScene" uid="uid://bu7riqj51mrjy" path="res://ui/hud/parts/skill_bar.tscn" id="22_skillbar"]
-[ext_resource type="PackedScene" uid="uid://b215fb1742f" path="res://ui/panels/character_panel.tscn" id="32_character"]
+[ext_resource type="PackedScene" uid="uid://b1p0j2k7t5q3" path="res://ui/panels/character_panel.tscn" id="32_character"]
 [ext_resource type="PackedScene" uid="uid://uncn858pu5rm" path="res://ui/panels/weapon_panel.tscn" id="24_wpanel"]
 [ext_resource type="PackedScene" uid="uid://c554a7i0s23p5" path="res://ui/hud/parts/hazard_gate.tscn" id="27_hgate"]
 [ext_resource type="PackedScene" uid="uid://ddxvk6mn5gqjs" path="res://ui/hud/parts/hazard_hud.tscn" id="28_hhud"]
@@ -37,7 +37,7 @@
 [ext_resource type="PackedScene" uid="uid://cfrxnqetkxddw" path="res://ui/hud/parts/tutorial_hint.tscn" id="30_tutorial"]
 [ext_resource type="PackedScene" uid="uid://dvkgn5hpjf1gi" path="res://ui/hud/parts/wave_preview.tscn" id="31_preview"]
 
-[ext_resource type="ShaderMaterial" uid="uid://b6d2f92d2db" path="res://ui/theme/modal_blur.tres" id="modal_blur"]
+[ext_resource type="ShaderMaterial" uid="uid://cksir6f6ci11x" path="res://ui/theme/modal_blur.tres" id="modal_blur"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resbox"]
 content_margin_left = 16.0

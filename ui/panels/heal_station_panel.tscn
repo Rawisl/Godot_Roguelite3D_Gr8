@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://bgpfww5ejjq45" path="res://ui/panels/panel_base.tscn" id="1_base"]
 [ext_resource type="Script" uid="uid://cftt6orruawrb" path="res://ui/panels/heal_station_panel.gd" id="2_heal"]
 [ext_resource type="Script" uid="uid://bxyhqnpa4du2p" path="res://ui/panels/panel_button.gd" id="3_button"]
-[ext_resource type="PackedScene" uid="uid://b10c0a17481" path="res://ui/panels/stat_metric.tscn" id="4_row"]
+[ext_resource type="PackedScene" uid="uid://cdo0vbi6h62vr" path="res://ui/panels/stat_metric.tscn" id="4_row"]
 
 [sub_resource type="StyleBoxFlat" id="HealFill"]
 bg_color = Color(0.39, 0.81, 0.64, 1)

@@ -283,9 +283,7 @@ panel.fortress.repair_mithril_tip,Hồi {hp} máu thành
 panel.fortress.repair_overheal,"Hồi thừa: thành chỉ thiếu {hp} máu"
 panel.fortress.need_mithril,"Cần Mithril, thắng Hazard Trial để nhận"
 panel.fortress.prep_only,Chỉ sửa được lúc chuẩn bị
-hud.boss.hp,Giáp {armor}/{armor_max} · Lõi {core}/{core_max}
 hud.boss.immune,Miễn nhiễm: {types}
-hud.boss.enraged,CUỒNG NỘ
 damage.pierce,Xuyên
 damage.blast,Nổ
 damage.slash,Chém
@@ -342,9 +340,6 @@ hud.hazard.frontline,Cần Frontline
 hud.hazard.used,Đã dùng ở wave này
 hud.hazard.group,Nhóm quái: {types}
 hud.hazard.reward,Thắng: +{mithril} Mithril
-hud.hazard.enemies,Quái còn {value}/{max}
-hud.hazard.loot,Tạm tính: +{gold} vàng · +{xp} XP
-hud.hazard.note,Chỉ số trong tháp không mang ra ngoài
 hud.hazard.leave,Rời tháp
 hud.commander_room,Chỉ huy (trong tháp)
 hud.start_wave.hazard_hint,Chưa vào Hazard Trial

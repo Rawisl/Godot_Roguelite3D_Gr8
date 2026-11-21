@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" format=3 uid="uid://b6d2f92d2db"]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cksir6f6ci11x"]
 
 [sub_resource type="Shader" id="WeaponBlur"]
 code = "shader_type canvas_item;

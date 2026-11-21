@@ -1,8 +1,8 @@
-[gd_scene format=3 uid="uid://b215fb1742f"]
+[gd_scene format=3 uid="uid://b1p0j2k7t5q3"]
 
 [ext_resource type="PackedScene" path="res://ui/panels/panel_base.tscn" id="1"]
 [ext_resource type="Script" path="res://ui/panels/character_panel.gd" id="2"]
-[ext_resource type="PackedScene" uid="uid://b40c66c811e" path="res://ui/hud/parts/passive_row.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://b7gd50blmpq8e" path="res://ui/hud/parts/passive_row.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://ui/hud/parts/weapon_slot.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://bu7riqj51mrjy" path="res://ui/hud/parts/skill_bar.tscn" id="active"]
 
