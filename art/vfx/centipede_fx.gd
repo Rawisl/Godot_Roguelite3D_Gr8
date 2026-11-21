@@ -9,6 +9,8 @@ extends Node3D
 ## Everything is local to the Model, so a scaled Model scales the trails and bones for free.
 ## Particles simulate in world space, so apply_scale() fixes what the parent scale does not:
 ## gravity, damping and linear acceleration.
+# TODO(kiezroth): when the boss steps between combo hits, let the held slash trail play out to its
+# end instead of freezing mid-effect, so hold_slash() and resume_slash() no longer cut a trail short.
 
 ## Seconds the eyes take to go from dark to full glow during the roar.
 @export var eye_glow_rise_time: float = 0.8
