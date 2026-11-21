@@ -1,7 +1,7 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://lffgr1ygypm3"]
 
-[ext_resource type="Shader" path="res://art/shaders/boss_blade_glow.gdshader" id="1_shader"]
-[ext_resource type="Material" path="res://art/materials/boss_blade_glow_core.tres" id="2_core"]
+[ext_resource type="Shader" uid="uid://cf5sp0ijlnbnq" path="res://art/shaders/boss_blade_glow.gdshader" id="1_shader"]
+[ext_resource type="Material" uid="uid://df3ajutvsxt1a" path="res://art/materials/boss_blade_glow_core.tres" id="2_core"]
 
 [resource]
 render_priority = 1
@@ -9,6 +9,7 @@ next_pass = ExtResource("2_core")
 shader = ExtResource("1_shader")
 shader_parameter/color = Color(0.02, 0.02, 0.02, 1)
 shader_parameter/veil = 0.0
+shader_parameter/rim = 1.0
 shader_parameter/inflate = 0.045
-shader_parameter/pulse_amount = null
-shader_parameter/pulse_speed = null
+shader_parameter/pulse_amount = 0.006
+shader_parameter/pulse_speed = 9.0

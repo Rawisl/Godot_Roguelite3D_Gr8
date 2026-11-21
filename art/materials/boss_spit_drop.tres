@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://c6avim63n2l3g"]
 
-[ext_resource type="Shader" path="res://art/shaders/vfx_soft_blob_mix.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://do2fh3wdwt7o6" path="res://art/shaders/vfx_soft_blob_mix.gdshader" id="1_shader"]
 
 [resource]
 render_priority = 2

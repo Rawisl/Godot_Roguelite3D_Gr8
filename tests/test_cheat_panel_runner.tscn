@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dpvtjrm8hwowk"]
 
-[ext_resource type="Script" path="res://tests/test_cheat_panel_runner.gd" id="1_runner"]
+[ext_resource type="Script" uid="uid://b622srw7wy7jq" path="res://tests/test_cheat_panel_runner.gd" id="1_runner"]
 
-[node name="TestCheatPanelRunner" type="Node"]
+[node name="TestCheatPanelRunner" type="Node" unique_id=142579367]
 script = ExtResource("1_runner")

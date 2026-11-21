@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://m1fksucc1ufy"]
 
-[ext_resource type="Shader" path="res://art/shaders/boss_roll_eye_glow.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://yp8yiqlixcg5" path="res://art/shaders/boss_roll_eye_glow.gdshader" id="1_shader"]
 
 [resource]
 render_priority = 2

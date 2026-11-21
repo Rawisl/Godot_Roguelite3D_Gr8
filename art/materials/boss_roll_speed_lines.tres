@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://l6rgtnetnirk"]
 
-[ext_resource type="Shader" path="res://art/shaders/boss_roll_speed_lines.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://dni0ndtwccg7p" path="res://art/shaders/boss_roll_speed_lines.gdshader" id="1_shader"]
 
 [resource]
 render_priority = 1

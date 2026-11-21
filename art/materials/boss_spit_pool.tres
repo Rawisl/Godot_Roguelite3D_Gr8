@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://bmwxg1tt7lwfp"]
 
-[ext_resource type="Shader" path="res://art/shaders/boss_poison_pool.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://c0mms5fsgnhvg" path="res://art/shaders/boss_poison_pool.gdshader" id="1_shader"]
 
 [resource]
 render_priority = 0

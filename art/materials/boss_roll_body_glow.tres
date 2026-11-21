@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://ettkf1p4u8pc"]
 
-[ext_resource type="Shader" path="res://art/shaders/boss_blade_glow.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://cf5sp0ijlnbnq" path="res://art/shaders/boss_blade_glow.gdshader" id="1_shader"]
 
 [resource]
 render_priority = 2
