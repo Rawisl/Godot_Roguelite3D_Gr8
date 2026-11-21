@@ -33,10 +33,18 @@ Mở `tests/test_auth_service.tscn` trong Godot rồi nhấn F6. Test đăng ký
 ## Quy ước
 
 - Mọi thay đổi cấu trúc bảng thêm vào file SQL mới (`002_...sql`), không sửa file đã chạy trên demo.
-- Gói Free không có backup tự động, nên SQL trong thư mục này là nguồn để dựng lại.
+- Gói Free dùng bản sao lưu thủ công. SQL trong repo dùng để dựng schema; lưu bản dump dữ liệu dev và demo ngoài repo, có kiểm soát truy cập.
 - Gói Free tạm dừng sau 1 tuần không hoạt động. Trước buổi demo mở dashboard và bấm Restore project.
 
 ## Leaderboard and account save API
+
+### Demo preparation
+
+1. Check Database, Egress, and Auth usage for both projects in the Supabase dashboard. Confirm demo is active.
+2. Export a logical backup using the Supabase CLI backup and restore workflow, including application data and the Auth records required by their user IDs. Keep the dump in team-controlled storage. Verify a restore on an isolated local instance by checking accounts, saves, and leaderboard rows.
+3. In a disposable checkout set `GameConfig.online_enabled = false` for the offline demo. Launch with a fresh profile and play through RunEnd. Repeat on the online build with the network disconnected and confirm local progress persists.
+
+Client integration uses `AccountApi.pull_save()`, `AccountApi.push_save()`, `AuthService.fetch_leaderboard()` and the existing save-gated submission service. Sync pauses until RunEnd when requested mid-run. On a tied revision from another device with different data, sync backs up local progress and applies cloud progress. A backup failure leaves the two saves in place.
 
 Apply `005_leaderboard_tolerance.sql`, `006_saves.sql`, then
 `007_validate_online_data.sql` on **both dev and demo**. These migrations are

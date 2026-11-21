@@ -1166,18 +1166,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG5
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Backend ổn định: kiểm tra giới hạn gói miễn phí, sao lưu dữ liệu, tài liệu API một trang, bản demo offline (ACCT-12)
 - Nghiệm thu: Tài liệu API đủ cho Khang và Mạnh tự gọi; tắt mạng vẫn chơi trọn vẹn
 - Cần xong trước: W10-NG6
+- Ghi chú W11: API and offline demo preparation are documented in the backend README. The live dev/demo quota check, protected backups and restore verification remain open.
 
 ##### W11-NG6
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Hỗ trợ tích hợp client của Khang và Mạnh, sửa lỗi API trong ngày
 - Nghiệm thu: Lỗi tích hợp được sửa trong ngày
 - Cần xong trước: W10-NG6
+- Ghi chú W11: Sync integration was verified with local doubles. Same-day support for Khang and Mạnh continues when live integration issues arrive.
 
 ##### W11-NG7
 - Người: Ngọc
@@ -1225,10 +1227,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH5
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Chính sách xung đột đơn giản: bản có revision cao hơn thắng, báo cho người chơi; device_id (ACCT-06 rút gọn)
 - Nghiệm thu: Hai máy lệch revision: lấy bản cao hơn, không mất dữ liệu
 - Cần xong trước: W10-NG5
+- Ghi chú W11: Sync keeps the higher revision, backs up divergent saves and uses the cloud on a tied revision from another device. Existing and new settings/sync cases pass, including a failed backup.
 
 ##### W11-MH6
 - Người: Ngọc
