@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://koxp0prgt586"]
+
+[ext_resource type="Shader" uid="uid://do2fh3wdwt7o6" path="res://art/shaders/vfx_soft_blob_mix.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 1
+shader = ExtResource("1_shader")
+shader_parameter/size = 0.9
+shader_parameter/softness = 1.0
+shader_parameter/noise_amount = 0.35
+shader_parameter/hot_core = 0.0
+shader_parameter/hot_color = Color(0.894, 1, 0.541, 1)
+shader_parameter/cut_fraction = 0.0

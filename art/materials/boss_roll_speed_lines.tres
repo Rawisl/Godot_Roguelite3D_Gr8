@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://l6rgtnetnirk"]
+
+[ext_resource type="Shader" uid="uid://dni0ndtwccg7p" path="res://art/shaders/boss_roll_speed_lines.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 1
+shader = ExtResource("1_shader")
+shader_parameter/color = Color(1, 1, 1, 0.8)
+shader_parameter/line_width = 0.012
+shader_parameter/slide_amount = 0.35
+shader_parameter/slide_speed = 2.2
+shader_parameter/stretch_amount = 0.4
+shader_parameter/flicker_amount = 0.3
+shader_parameter/flicker_speed = 11.0

@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bmwxg1tt7lwfp"]
+
+[ext_resource type="Shader" uid="uid://c0mms5fsgnhvg" path="res://art/shaders/boss_poison_pool.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/core_color = Color(0.122, 0.549, 0.078, 0.85)
+shader_parameter/rim_color = Color(0.549, 1, 0.18, 0.95)
+shader_parameter/bubble_color = Color(0.894, 1, 0.541, 1)
+shader_parameter/noise_scale = 2.8
+shader_parameter/coverage = 0.5
+shader_parameter/rim_width = 0.06
+shader_parameter/border_fade = 0.15
+shader_parameter/seed_level = 0.78
+shader_parameter/bubble_density = 7.0
+shader_parameter/bubble_speed = 1.4
+shader_parameter/fade_shrink = 0.35

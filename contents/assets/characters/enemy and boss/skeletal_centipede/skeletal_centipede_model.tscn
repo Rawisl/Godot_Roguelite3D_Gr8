@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://btwnlpexrux1f"]
+
+[ext_resource type="PackedScene" uid="uid://birykeqg7msv3" path="res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede.glb" id="1_glb"]
+
+[node name="SkeletalCentipedeModel" type="Node3D"]
+
+[node name="skeletal_centipede" parent="." instance=ExtResource("1_glb")]

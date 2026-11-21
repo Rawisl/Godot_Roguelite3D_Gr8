@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bwcqdne6ueqxl"]
+
+[ext_resource type="Shader" uid="uid://cdm3t6q5nv5i2" path="res://art/shaders/boss_roll_eye_halo.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 3
+shader = ExtResource("1_shader")
+shader_parameter/color = Color(1, 0.55, 0.12, 0.8)
+shader_parameter/falloff = 1.6
