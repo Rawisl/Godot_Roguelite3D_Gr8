@@ -27,6 +27,7 @@ var _body_mesh: MeshInstance3D
 
 @onready var _vfx_player: AnimationPlayer = $VfxPlayer
 @onready var _eyes: Array[MeshInstance3D] = [$Head/EyeL, $Head/EyeR]
+@onready var _eye_halos: Array[MeshInstance3D] = [$Head/EyeL/Halo, $Head/EyeR/Halo]
 @onready var _eye_sparks: Array[CPUParticles3D] = [$Head/EyeL/Sparks, $Head/EyeR/Sparks]
 @onready var _star_particles: Array[CPUParticles3D] = [$ScytheR/StarParticles, $ScytheL/StarParticles]
 @onready var _blades: Array[MeshInstance3D] = [$ScytheR/BladeGlow/VFX_BladeR, $ScytheL/BladeGlow/VFX_BladeL]
@@ -86,9 +87,12 @@ func stop_all() -> void:
 	set_spit_emitting(false)
 
 
+## Lights the eye spheres and the halos drawn over them (0 dark, 1 full).
 func set_eye_glow(value: float) -> void:
 	for eye in _eyes:
 		eye.set_instance_shader_parameter(&"glow", value)
+	for halo in _eye_halos:
+		halo.set_instance_shader_parameter(&"glow", value)
 
 
 func set_eye_sparks(on: bool) -> void:

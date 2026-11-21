@@ -17,6 +17,7 @@
 [ext_resource type="Material" uid="uid://koxp0prgt586" path="res://art/materials/boss_spit_smoke.tres" id="15_pkhei"]
 [ext_resource type="Material" uid="uid://l6rgtnetnirk" path="res://art/materials/boss_roll_speed_lines.tres" id="16_8ehhr"]
 [ext_resource type="Script" uid="uid://baeeicmlkefgj" path="res://art/vfx/roll_speed_lines.gd" id="17_umcsb"]
+[ext_resource type="Material" uid="uid://bwcqdne6ueqxl" path="res://art/materials/boss_roll_eye_halo.tres" id="19_halo"]
 [ext_resource type="AnimationLibrary" uid="uid://bbe6ifq8ujyj6" path="res://art/vfx/centipede_fx_library.tres" id="18_42olr"]
 
 [sub_resource type="QuadMesh" id="Quad_1"]
@@ -26,6 +27,9 @@ radius = 0.028
 height = 0.056
 radial_segments = 16
 rings = 8
+
+[sub_resource type="QuadMesh" id="Eye_halo_mesh"]
+size = Vector2(0.12, 0.12)
 
 [sub_resource type="QuadMesh" id="Eye_spark_mesh"]
 size = Vector2(0.016, 0.016)
@@ -285,6 +289,12 @@ cast_shadow = 0
 instance_shader_parameters/glow = 0.0
 mesh = SubResource("Eye_mesh")
 
+[node name="Halo" type="MeshInstance3D" parent="Head/EyeL"]
+material_override = ExtResource("19_halo")
+cast_shadow = 0
+instance_shader_parameters/glow = 0.0
+mesh = SubResource("Eye_halo_mesh")
+
 [node name="Sparks" type="CPUParticles3D" parent="Head/EyeL" unique_id=646988842]
 material_override = ExtResource("12_xyoex")
 cast_shadow = 0
@@ -312,6 +322,12 @@ material_override = ExtResource("11_w5qh7")
 cast_shadow = 0
 instance_shader_parameters/glow = 0.0
 mesh = SubResource("Eye_mesh")
+
+[node name="Halo" type="MeshInstance3D" parent="Head/EyeR"]
+material_override = ExtResource("19_halo")
+cast_shadow = 0
+instance_shader_parameters/glow = 0.0
+mesh = SubResource("Eye_halo_mesh")
 
 [node name="Sparks" type="CPUParticles3D" parent="Head/EyeR" unique_id=12492230]
 material_override = ExtResource("12_xyoex")

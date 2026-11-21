@@ -251,6 +251,7 @@ Màu loại thẻ (khung, dải nhãn; chủ động và bị động trùng mà
 | boss_slash_band | `#B8B8B8` | Dải xám ở mép trong của vệt chém |
 | boss_slash_ink | `#050505` | Viền mực của vệt, vết nứt, viền lớp sáng trên lưỡi (`boss_blade_glow_ink.tres`) và viền hạt sao |
 | boss_roll_eye | `#FF2A2A` (alpha 0,45, cộng sáng) | Mắt sáng đỏ khi boss cuộn lại (`boss_roll_eye_glow.tres`), không viền |
+| boss_roll_eye_halo | `#FF8C1F` (alpha 0,8, cộng sáng) | Quầng cam sáng sau mỗi mắt khi boss gầm, luôn quay về camera, hiện xuyên đầu để thấy được ở camera game (`boss_roll_eye_halo.tres`, chỉnh `falloff` cho độ mềm, kích thước ở `Halo` trong `centipede_fx.tscn`) |
 | boss_roll_eye_spark | `#8C0005` | Hạt đỏ đậm bay ra từ mắt khi mắt sáng (`boss_roll_eye_particle.tres`) |
 | boss_roll_body | `#A040FF` (`veil` và `rim` 0,12) | Lớp sáng tím trong suốt phủ cả thân khi boss bung ra (`boss_roll_body_glow.tres`), không viền |
 | boss_roll_line | `#FFFFFF` (alpha 0,8) | Nét tốc độ phía sau boss khi lăn (`boss_roll_speed_lines.tres`), không viền |

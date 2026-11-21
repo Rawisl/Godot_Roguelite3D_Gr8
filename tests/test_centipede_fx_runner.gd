@@ -44,6 +44,8 @@ func _ready() -> void:
 	await test_spit_switch()
 	await test_roll_switches()
 	await test_stop_all_clears()
+	await test_bone_attachments_match_skeleton()
+	await test_eye_halo()
 	await test_hold_resume_slash()
 	await test_particles_follow_scale()
 	await test_spit_speed_scale()
@@ -192,6 +194,40 @@ func test_stop_all_clears() -> void:
 			and not (fx.get_node("ScytheR/StarParticles") as CPUParticles3D).emitting
 	assert_true(quiet, "tc6 stop_all silences sparks, spit and stars")
 	assert_true(is_zero_approx(_uniform(rig.mesh, &"glow")) and is_zero_approx(_uniform(fx.get_node("Head/EyeL"), &"glow")), "tc6 stop_all clears the glows")
+	_free_rig(rig)
+	await get_tree().process_frame
+
+
+func test_bone_attachments_match_skeleton() -> void:
+	var rig := _make_rig()
+	var fx := rig.fx as CentipedeFx
+	var skeleton := rig.skeleton as Skeleton3D
+	var bad := 0
+	var count := 0
+	for node in fx.find_children("*", "BoneAttachment3D", true, false):
+		var attachment := node as BoneAttachment3D
+		count += 1
+		var idx := skeleton.find_bone(attachment.bone_name)
+		if idx < 0 or attachment.bone_idx != idx or attachment.get_skeleton() != skeleton:
+			bad += 1
+			push_error("attachment %s: bone_idx %d, skeleton bone %d" % [attachment.name, attachment.bone_idx, idx])
+	assert_true(count >= 3 and bad == 0, "tc7 every bone attachment is on the bone of its name (%d of %d off)" % [bad, count])
+	_free_rig(rig)
+	await get_tree().process_frame
+
+
+func test_eye_halo() -> void:
+	var rig := _make_rig(3.0)
+	var fx := rig.fx as CentipedeFx
+	await get_tree().process_frame
+	var halo_l := fx.get_node("Head/EyeL/Halo") as MeshInstance3D
+	var halo_r := fx.get_node("Head/EyeR/Halo") as MeshInstance3D
+	var world_size := (halo_l.mesh as QuadMesh).size.x * halo_l.global_transform.basis.x.length()
+	assert_true(world_size >= 0.3, "tc7 the halo is at least 0.3 m wide at scale 3 (%.2f m)" % world_size)
+	fx.set_eye_glow(0.8)
+	assert_true(is_equal_approx(_uniform(halo_l, &"glow"), 0.8) and is_equal_approx(_uniform(halo_r, &"glow"), 0.8), "tc7 eye glow reaches both halos")
+	fx.stop_all()
+	assert_true(is_zero_approx(_uniform(halo_l, &"glow")) and is_zero_approx(_uniform(halo_r, &"glow")), "tc7 stop_all darkens both halos")
 	_free_rig(rig)
 	await get_tree().process_frame
 
