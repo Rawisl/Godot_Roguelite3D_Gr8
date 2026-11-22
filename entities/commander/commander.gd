@@ -281,6 +281,9 @@ func _physics_process(delta: float) -> void:
 			_anim_player.play(ANIM_IDLE, 0.2)
 		return
 
+	# A turn and a command can arrive in the same tick. Lock the strike or skill to this
+	# camera direction before the command snapshots aim_dir and aim_point.
+	_update_aim(camera)
 	var command := _cmd_input.next_command(_command_busy_left)
 	if is_recalling() and ((command != &"" and command != &"mode_switch") or is_trying_to_move()):
 		_mode_switch.interrupt_recall()

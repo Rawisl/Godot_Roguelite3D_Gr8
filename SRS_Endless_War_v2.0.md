@@ -7,7 +7,7 @@
 | Mã tài liệu | SRS-EW-2.0 |
 | Phiên bản | 2.0. Dựa trên v1.9, áp các thay đổi đã chốt trong bản xem trước `preview_srs_v2.0_hazard.md` (chốt 05/11). Sáu thay đổi lớn: (1) PREP không đếm ngược, người chơi tự bấm bắt đầu wave, bỏ gọi wave sớm và phím G; trong PREP được vào Hazard Trial một lần mỗi wave (HZT), thắng phòng được Mithril, dùng để sửa Fortress thay cho gold (MTH). (2) Vũ khí là biến thể của kiếm với 5 hiệu ứng, boss wave 5 đến 25 chắc chắn rơi một cây chưa có (WPN). (3) Xây ít chỗ hơn: 3 slot WALL và tối đa 3 công trình trên ô grid (tổng 6), lưới đất phủ cả bề ngang hành lang, bỏ no_build_lane, thêm luật cấm chặn kín đường (GRID-07); tower có cấp 1-36, đổi model ở cấp 13 và 25; bỏ di chuyển tower (MOV). (4) Mỗi run bắt đầu với 0 gold và hai trụ có sẵn (Arrow, Cannon); tutorial chạy một lần theo tài khoản. (5) Có màn thắng khi qua wave `victory_wave` (30), sau đó chơi tiếp endless. (6) Thêm 7 loại quân mới, sửa Brute, tắt va chạm giữa quân, mỗi wave tối đa 5 loại kể cả boss. Số liệu cân bằng lấy từ bảng Excel và công cụ dịch sang `.tres` (BAL). Mã bị bỏ ghi ở Phụ lục E. Bản này tự đứng được, không cần đọc kèm v1.9 |
 | Ngày phát hành | 05/11/2026 |
-| Nền tảng phát triển | Godot 4.x, 3D, camera orthographic isometric |
+| Nền tảng phát triển | Godot 4.x, 3D; camera orthographic isometric ở hành lang, perspective góc nhìn thứ ba trong Hazard Trial |
 | Đội ngũ, thời gian | 5 người, 13 tuần: Tuần 1-12 làm tính năng (đóng băng toàn bộ tính năng 6/12), Tuần 13 (7-14/12) chỉ test, sửa lỗi, báo cáo và nộp bài (đóng băng bản nộp 14/12), 15-16/12 dự phòng, 17/12 diễn tập (mục 7.3). Tuần 1-8 đã hoàn thành theo v1.9, phần v2.0 áp dụng từ Tuần 9 |
 | Trạng thái | **Thiết kế đã duyệt:** Đã duyệt toàn bộ yêu cầu v2.0 ở mục 3 đến 7.2 cùng các quyết định Phụ lục C mục 38 đến 66 ngày 05/11. **Chưa chốt:** lịch v2.0 (mục 7.3) và phân vai v2.0 (Phụ lục B), chờ bảng phân công cập nhật. Mọi con số là giá trị khởi điểm. Số liệu cân bằng (nhân vật, tower, skill, vũ khí, quân theo wave, thưởng theo wave) chỉnh trong bảng cân bằng (mục 6.10), các tham số khác chỉnh qua Resource/GameConfig khi playtest. Chỗ v2.0 tự đặt thêm ngoài bản xem trước ghi ở Phụ lục C mục 38 đến 66 |
 
@@ -142,7 +142,7 @@ Mục 3 và 4: yêu cầu chức năng và giao diện, mỗi mục con gồm m�
 
 | **Hạng mục** | **Nội dung** |
 | --- | --- |
-| Góc nhìn | Camera orthographic isometric cố định, nhìn ngang từ trái sang phải. Fortress ở cực trái, điểm spawn ở cực phải, map là hành lang ngang |
+| Góc nhìn | Hành lang dùng camera orthographic isometric cố định góc, nhìn ngang từ trái sang phải; Hazard Trial dùng camera góc nhìn thứ ba bám vai (CAM-16). Fortress ở cực trái, điểm spawn ở cực phải |
 | Map | 1 map duy nhất. Tính ngẫu nhiên nằm ở nội dung wave, không ở địa hình. Người chơi học bố cục slot và tối ưu qua các run |
 | Điểm khác biệt | Người chơi tự chọn ra trận trực tiếp (rủi ro cao, thưởng cao) hoặc điều phối từ trên thành (an toàn, phụ thuộc bố trí) |
 | Trụ cột | Một vòng lặp chiều sâu: Chuẩn bị (kèm Hazard Trial tùy chọn), Chiến đấu, Tổng kết, Wave kế. Mọi thứ khác là mở rộng |
@@ -189,7 +189,7 @@ Windows PC (mục tiêu chính), Godot 4.x, bàn phím và chuột. Gamepad là 
 | Asset | Ưu tiên low-poly có sẵn (Kenney, Quaternius), thống nhất palette và shader toon/flat. Mỗi loại tower cần 3 model theo bậc (TWR-17), mỗi vũ khí một model |
 | Dữ liệu | Toàn bộ chỉ số trong Resource hoặc CSV, không hard-code. Số liệu cân bằng sinh từ bảng Excel bằng script Python (mục 6.10) |
 | Git | Mỗi người sở hữu scene riêng, tách dữ liệu bằng Resource, tránh xung đột .tscn |
-| Camera | Góc camera cố định (pitch, yaw), chỉ đổi vị trí và size. Frontline bám nhân vật và zoom gần, không dịch bằng chuột. Commander và PREP dịch bằng WASD, có clamp (CAM). Cuộn chuột zoom và kéo chuột là \[Could] |
+| Camera | Hành lang giữ góc pitch, yaw cố định: Frontline bám nhân vật và zoom gần, Commander và PREP dịch bằng WASD có clamp. Hazard Trial dùng góc nhìn thứ ba bám vai, điều khiển bằng chuột (CAM-16). Zoom và kéo chuột ở hành lang là [Could] |
 
 ## 2.6 Giả định và phụ thuộc
 
@@ -517,8 +517,8 @@ Any -> Dead
 
 ### 3.5.3 Frontline
 
-- **Di chuyển:** WASD theo trục màn hình, chuẩn hóa vector chéo. Chỉ ở COMBAT, BOSS_COMBAT và HAZARD_TRIAL. Ở PREP WASD dịch camera (CAM-02).
-- **Aim:** chuột, raycast xuống mặt phẳng ngang tại độ cao chân chỉ huy (MSE-01). Ray không trúng thì giữ hướng cũ.
+- **Di chuyển:** WASD theo trục màn hình trong COMBAT và BOSS_COMBAT; trong HAZARD_TRIAL theo trục camera (CAM-17). Chuẩn hóa vector chéo. Ở PREP WASD dịch camera (CAM-02).
+- **Aim:** ngoài Hazard Trial, raycast chuột xuống mặt phẳng ngang tại chân chỉ huy (MSE-01); ray không trúng thì giữ hướng cũ. Trong Hazard Trial, hướng đánh theo camera và điểm ngắm theo tâm màn hình (CAM-17, CAM-18).
 - **Đánh thường:** combo 3 đòn, đòn 3 có knockback nhẹ 1.5 m (Brute và boss miễn). Nối đòn theo CHAR-07: không bấm trong combo_window thì combo về đòn 1. Mỗi đòn trúng tối đa sword_max_targets mục tiêu (CMB-09). Tầm và hiệu ứng theo vũ khí đang trang bị (mục 3.5.13).
 - **Dodge:** theo hướng di chuyển. Đứng yên thì lùi về sau hướng aim.
 - **Battle Cry (Q):** taunt mọi quân trong bán kính 6 m trong 4 s, chỉ huy nhận -30% sát thương trong thời gian đó. Cooldown 12 s. Dùng để tank và kéo aggro.
@@ -1823,7 +1823,7 @@ Hazard Trial là phòng thử thách tùy chọn trong PREP. Người chơi đá
 | HZT-08 | **Phần thưởng.** Gold (GLD-10) và XP (XP-06) tính theo số con đã giết (quân tự nổ không tính, HZT-16), cộng khi rời phòng với mọi kết quả. WON cộng thêm mithril_reward(w) Mithril (MTH-02). Gold và XP tạm tính hiện trên HUD trong phòng (HUD-22) | MVP |
 | HZT-09 | **Không vào lại.** Sau khi rời phòng với bất kỳ kết quả nào, Tháp khóa đến PREP của wave sau. Tháp hiện trạng thái "Đã dùng ở wave này" | MVP |
 | HZT-10 | **Hành động trong phòng.** Như Frontline ở COMBAT: di chuyển, đánh, Dodge, Battle Cry, skill chủ động. Không xây, nâng, bán, sửa, đổi vũ khí, đổi priority; Tab bị khóa (mục 3.5.5); không có Emergency repair; không có Trạm hồi lực (HLT-13). Tua x1/x2/x3 dùng như COMBAT; vào và ra phòng không đổi mức tua | MVP |
-| HZT-11 | **Camera.** Camera cố định khung phòng, không bám nhân vật, không dịch bằng phím; WASD di chuyển nhân vật (CAM-16) | MVP |
+| HZT-11 | **Camera.** Trong phòng dùng góc nhìn thứ ba bám vai chỉ huy: chuột xoay, cuộn chuột zoom vào, giữ Alt để hiện con trỏ bấm nút Rời tháp. WASD di chuyển theo trục camera; C không có tác dụng (CAM-16 đến CAM-18) | MVP |
 | HZT-12 | **Pause, thoát.** Pause được (TIME-02); ở Pause mọi panel chỉ đọc (TIME-08). Abandon hay Quit trong phòng chốt run như thường (FLOW-04), phần thưởng phòng chưa rời thì mất. Crash trong phòng xử lý theo FLOW-03 | MVP |
 | HZT-13 | **Ngoài phòng.** Trong lúc ở phòng, bản đồ chính không có quân, Fortress và tower không đổi. Không có cách nào sinh quân thật trước khi bấm Bắt đầu wave | MVP |
 | HZT-14 | **AI trong phòng.** Mục tiêu duy nhất của quái là chỉ huy (không có tower, Barricade, Fortress trong phòng). Sniper, Archer bắn chỉ huy; Suicide Squad lao vào chỉ huy rồi nổ; Brute ủi về phía chỉ huy (EN-25); Assassin hiện mờ như ngoài (EN-20). Battle Cry vẫn taunt quân thường. Boss dùng bảng mục tiêu riêng với PLAYER là lựa chọn duy nhất, chọn đòn theo BOSS-46 với bộ đòn lùi một lần xuất hiện (BOSS-48), không có hành động Tiến lên, quay nhanh hơn theo hazard_turn_rate_mult (BOSS-47) | MVP |
@@ -1968,7 +1968,10 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 
 | **Hành động** | **Phím** | **Ngữ cảnh** |
 | --- | --- | --- |
-| Di chuyển | W A S D | Frontline, COMBAT, BOSS_COMBAT và HAZARD_TRIAL (theo trục màn hình) |
+| Di chuyển | W A S D | Frontline, COMBAT, BOSS_COMBAT theo trục màn hình; HAZARD_TRIAL theo trục camera (CAM-17) |
+| Xoay camera | Di chuột | HAZARD_TRIAL khi con trỏ bị khóa (CAM-16) |
+| Zoom vào | Cuộn chuột | HAZARD_TRIAL; không zoom ra quá khoảng cách mặc định (CAM-16) |
+| Hiện con trỏ | Giữ Alt | HAZARD_TRIAL để bấm nút HUD; góc ngắm vẫn theo camera (CAM-17) |
 | Dịch camera | W A S D | Commander mode và PREP (CAM-02). Cùng phím, khác ngữ cảnh |
 | Hồi máu ở Trạm hồi lực | E (giữ) | Frontline, COMBAT, đứng yên trong tầm trạm (HLT-03) |
 | Vào Hazard Trial | E (bấm) hoặc chuột trái vào Tháp | PREP, Frontline (HZT-01). Cùng phím E với hồi máu nhưng khác ngữ cảnh |
@@ -1992,7 +1995,7 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 
 | **ID** | **Luật input** |
 | --- | --- |
-| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời tháp không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). call_wave và relocate đã bỏ ở v2.0 |
+| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời tháp không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). Giữ Alt để hiện con trỏ trong Hazard Trial đọc theo phím vật lý, không qua InputMap (CAM-16). call_wave và relocate đã bỏ ở v2.0 |
 | INP-02 | Ưu tiên khi nhiều phím cùng frame: **Dodge > Skill > Attack > Mode switch > Hồi máu (E)**; nhiều skill cùng frame thì ô số nhỏ trước. Pause và HUD xử lý độc lập |
 | INP-03 | **Esc theo chuỗi:** (1) đóng hộp thoại, (2) đóng panel, (3) hủy chế độ đặt hoặc bỏ chọn, (4) mở Pause. Mỗi lần bấm một bước |
 | INP-04 | Vô hiệu ui_focus_next, ui_focus_prev trong Run. Space trong gameplay không kích hoạt nút UI còn focus: **giải phóng focus** sau mỗi lần bấm nút UI |
@@ -2005,11 +2008,11 @@ Mọi panel mở ở dưới giữa, không che hành lang.
 
 ### 4.2.2 Chuột và camera
 
-Camera orthographic, camera_pitch -45, camera_yaw 20 (giá trị khởi điểm, đọc qua Camera3D).
+Ngoài Hazard Trial, camera orthographic với camera_pitch -45, camera_yaw 20 (giá trị khởi điểm, đọc qua Camera3D). Trong Hazard Trial dùng Camera3D perspective riêng (CAM-16).
 
 | **ID** | **Đặc tả** |
 | --- | --- |
-| MSE-01 | **Aim:** raycast qua con trỏ xuống mặt phẳng ngang tại độ cao chân chỉ huy. Không trúng thì giữ hướng cũ |
+| MSE-01 | **Aim:** ngoài Hazard Trial, raycast qua con trỏ xuống mặt phẳng ngang tại độ cao chân chỉ huy; không trúng thì giữ hướng cũ. Trong Hazard Trial dùng tia qua tâm màn hình (CAM-18) |
 | MSE-02 | **Chọn công trình, slot:** physics picking trên tầng pickable (collider lớn hơn mesh 20%; collider ô grid theo GRID-05), không phụ thuộc mesh bị mờ |
 | MSE-03 | Thứ tự chọn: UI > tower > Fortress > slot trống > quân địch (chỉ hover) > mặt đất |
 | MSE-04 | Biểu tượng slot và ô grid vẽ **trên cùng** (billboard, tắt depth test) ở PREP nên slot sau tường vẫn bấm được |
@@ -2018,11 +2021,11 @@ Camera orthographic, camera_pitch -45, camera_yaw 20 (giá trị khởi điểm,
 | MSE-07 | \[Should] Con trỏ đổi hình theo ngữ cảnh (mặc định, chọn được, cấm, mục tiêu). Kích thước theo UI scale. MVP: con trỏ hệ thống mặc định |
 | MSE-08 | Camera Frontline bám chỉ huy có smoothing, zoom gần, kẹp trong camera_bounds. Commander và PREP dùng khung overview, dịch bằng phím (CAM-02). Chuyển camera 0.5 s **thời gian thực** (CAM-05) |
 | MSE-09 | \[Could] Kéo chuột giữa dịch camera |
-| MSE-10 | Con trỏ ra ngoài cửa sổ: giữ hướng aim cuối. Tùy chọn khóa con trỏ (mặc định tắt) |
+| MSE-10 | Con trỏ ra ngoài cửa sổ: giữ hướng aim cuối. Tùy chọn khóa con trỏ mặc định tắt ở hành lang; Hazard Trial tự khóa con trỏ, trừ khi giữ Alt, Pause hoặc mở hộp thoại (CAM-16) |
 
 ### 4.2.3 Camera
 
-Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc camera (pitch, yaw) không đổi, chỉ đổi vị trí điểm focus và size (độ lớn khung nhìn). Mọi giá trị số là khởi điểm, chốt ở tuần 1 cùng góc camera (Phụ lục C).
+Ngoài Hazard Trial, các chế độ dùng Camera3D orthographic chung: góc pitch, yaw không đổi, chỉ đổi vị trí focus và size. Hazard Trial dùng Camera3D perspective riêng và bộ điều khiển orbit có thể tái sử dụng ở scene khác (CAM-16). Mọi giá trị số là khởi điểm, chốt ở tuần 1 cùng góc camera (Phụ lục C).
 
 | **ID** | **Đặc tả** | **Tag** |
 | --- | --- | --- |
@@ -2034,13 +2037,16 @@ Camera là một Camera3D orthographic dùng chung cho mọi chế độ. Góc c
 | CAM-06 | \\[Should] **Look-ahead.** Ở Frontline focus lệch tối đa camera_lookahead (2 m) về phía con trỏ để thấy xa hơn hướng đang đánh. Tắt được trong Settings | SHOULD |
 | CAM-07 | **Không nhớ vị trí dịch.** Mỗi lần vào Commander hoặc vào PREP, camera đặt về focus mặc định: Commander lấy vị trí chỉ huy kẹp trong camera_bounds, PREP lấy giữa hành lang. Không lưu vị trí dịch qua lần chuyển hay qua wave | MVP |
 | CAM-08 | **Về giữa.** Phím C (camera_recenter) đưa focus về mặc định của CAM-07 trong 0.3 s thời gian thực. Chỉ ở Commander mode và PREP | MVP |
-| CAM-09 | **Không zoom tay.** Cuộn chuột không đổi size và kéo chuột không dịch camera ở MVP. \\[Could] Zoom bằng cuộn chuột và kéo chuột giữa (MSE-09). Nếu làm, size phải kẹp trong khoảng [camera_size_frontline, camera_size_overview] | COULD |
+| CAM-09 | **Zoom tay.** Ngoài Hazard Trial, cuộn chuột không đổi size và kéo chuột không dịch camera ở MVP. Trong Hazard Trial cuộn chuột zoom vào theo CAM-16. \[Could] Zoom bằng cuộn chuột và kéo chuột giữa ở hành lang (MSE-09), size kẹp trong [camera_size_frontline, camera_size_overview] | COULD |
 | CAM-10 | **Phím WASD theo ngữ cảnh.** Đổi ngữ cảnh (Tab, đổi state) xóa input đang giữ (INP-07) để không bị trôi nhân vật hay trôi camera. Trong các state khóa input (BOSS_INTRO, REWARD_PICK, hộp thoại) WASD không làm gì | MVP |
 | CAM-11 | **BOSS_INTRO.** Camera tự lia tới boss trong 4 s game time (BOSS-17) bất kể chế độ, khóa dịch tay. Hết intro camera về khung của state kế tiếp theo CAM-05 | MVP |
-| CAM-12 | **Picking và aim theo camera hiện tại.** Raycast chuột (MSE-01, MSE-02) luôn dùng camera đang hoạt động ở frame đó, nên dịch camera không làm sai chọn slot hay hướng đánh. Xuyên thấu (MSE-05) áp theo chỉ huy, không theo focus camera | MVP |
+| CAM-12 | **Picking và aim theo camera hiện tại.** Ngoài Hazard Trial, raycast chuột (MSE-01, MSE-02) dùng camera đang hoạt động trong frame đó, nên dịch camera không làm sai chọn slot hay hướng đánh. Trong Hazard Trial, aim dùng tia qua tâm camera (CAM-18). Xuyên thấu (MSE-05) áp theo chỉ huy, không theo focus camera | MVP |
 | CAM-13 | **Rung màn hình** (FBK-03) cộng vào vị trí camera sau khi kẹp, biên độ có trần, không đưa camera ra ngoài camera_bounds quá 0.3 m | MVP |
 | CAM-14 | **Chiếu sáng và bóng.** Camera Frontline thấy ít vùng hơn nên tắt render, animation và âm thanh vị trí của quân ngoài khung theo LOD (\\[Should], mục 3.7) nhưng **không** giảm logic AI hay tấn công | SHOULD |
-| CAM-16 \[MVP] | **Hazard Trial.** Vào phòng: camera cắt (hoặc chuyển 0.5 s theo CAM-05) sang khung cố định của hazard_room do Level đặt, size đủ thấy cả phòng; không bám nhân vật, không dịch bằng phím, C không làm gì. WASD di chuyển nhân vật. Rời tháp: về khung PREP mặc định (CAM-07). Phát camera_frame_changed với frame HAZARD_TRIAL (EVB-35) | MVP |
+| CAM-16 \[MVP] | **Camera Hazard Trial.** Vào phòng: cắt sang Camera3D perspective riêng, FOV mặc định 60°, bám pivot cao 1.4 m trên chân chỉ huy, lệch vai phải 1 m và ngẩng tầm ngắm 10°. Yaw khởi đầu theo camera hành lang, pitch -45°; chuột bị khóa và ẩn, di chuột xoay yaw tự do và pitch kẹp [-70°, +30°]. Khoảng cách mặc định 9 m ở pitch -15°, nội suy về 6 m khi nhìn xuống -70° và 3 m khi nhìn lên +30°; camera luôn cao hơn sàn ít nhất 0.5 m. Cuộn chuột zoom vào từng nấc 10%, tối thiểu 35%, tối đa 100%, làm mượt 0.08 s thời gian thực; bật Giảm chuyển động thì đổi ngay. Tâm ngắm nhỏ ở giữa màn hình khi khóa chuột. Giữ Alt, Pause hoặc mở hộp thoại thì hiện con trỏ và ngừng xoay nhưng camera vẫn bám chỉ huy. Không dịch camera bằng WASD, C không tác dụng. Các thông số nằm ở hazard_room và được đưa cho bộ điều khiển orbit dùng chung. Rời phòng: hiện con trỏ, cắt về khung PREP mặc định (CAM-07), phát camera_frame_changed với frame HAZARD_TRIAL khi vào phòng (EVB-35) | MVP |
+| CAM-17 \[MVP] | **Chỉ huy theo camera trong Hazard Trial.** Khi góc nhìn thứ ba đang bật, kể cả khi giữ Alt và con trỏ hiện, chỉ huy quay theo hướng ngang của camera, không theo con trỏ. W tiến theo camera, A/D đi ngang, S lùi với hoạt ảnh chạy ngược; Dodge lùi dùng hoạt ảnh né lùi. Đòn đánh và skill lấy hướng camera tại frame ra đòn. Trạng thái này lấy từ camera_frame_changed, độc lập với mouse_mode. Ngoài phòng dùng điều khiển cũ | MVP |
+| CAM-18 \[MVP] | **Điểm ngắm trong Hazard Trial.** Tính aim_point từ tia qua tâm màn hình cắt mặt phẳng ngang ở chân chỉ huy. Khi camera hướng lên trên và tia không cắt mặt phẳng, aim_point = INF; Firebomb rơi tại tầm tối đa theo hướng camera. Khi giữ Alt, hướng và điểm ngắm vẫn theo camera, không theo vị trí con trỏ; nhân vật di chuyển thì điểm ngắm được tính lại | MVP |
+| CAM-19 \[MVP] | **Nền phòng Hazard Trial.** Khối cầu bán kính 60 m bám theo camera, dùng shader unshaded, chỉ hiển thị trong phòng. Nửa dưới tạo vòng mây quanh camera, nửa trên tạo các dải mây mờ dần lên đỉnh. Vật liệu đặt ở art/materials/hazard_sky.tres | MVP |
 | CAM-15 | **Settings.** \\[Should] Tốc độ dịch camera (0.5x đến 2x), bật tắt edge-pan, bật tắt look-ahead. MVP dùng giá trị mặc định | SHOULD |
 
 
@@ -2522,7 +2528,7 @@ Bảng giá trị đầy đủ nằm ở mục đã trỏ. Bảng này chỉ ghi
 | --- | --- | --- |
 | RunConfig | start_wave, starting_gold, start_mult (MVP cố định, chỉ đổi khi có \[Should] chọn wave khởi đầu), run_seed và các giá trị gốc đã cộng meta: fortress_max_hp, commander_max_hp, emg_repair_heal_pct, gold_pct_meta | Tạo ở RunLoading, bất biến suốt run (APL-01). emg_repair_heal_pct = emg_repair_base_heal_pct + 0.03 × cấp EMG_REPAIR |
 | RunState | Theo bảng 3.2.2, gồm emg_repair_charges, emg_repair_cd, wave_index, gold, mithril, owned_weapons, equipped_weapon, chain_cd, hazard_used, hazard_session, victory_reached, is_starter theo slot, ruined_type và ruined_level theo slot (slot WALL và ô grid), xp, commander_level, pending_picks, active_slots, passive_slots, stat_stacks, rerolls_left, reward_rng, boss_enraged, thống kê run... | Không ghi xuống đĩa giữa run (RUN-01) Thêm heal_phase, heal_hold, heal_station_built (3.2.2) và HP kho của từng Trạm hồi lực theo slot. |
-| Dữ liệu trong scene (Marker3D, Area3D) | spawn_zone 12 m đầu hành lang, return_zone bán kính 5 m, 3 slot WALL, node GroundGrid (sinh ô grid từ GridData), command_post, deploy_point, boss_melee_point (BOSS-40), lane_curve (TWR-16), hazard_portal (Tháp Hazard Trial gần Fortress, HZT-01), hazard_room (khu vực phòng: điểm xuất hiện chỉ huy, các điểm sinh quái, khung camera cố định, CAM-16) | Cố định theo level, người làm Level sở hữu |
+| Dữ liệu trong scene (Marker3D, Area3D) | spawn_zone 12 m đầu hành lang, return_zone bán kính 5 m, 3 slot WALL, node GroundGrid (sinh ô grid từ GridData), command_post, deploy_point, boss_melee_point (BOSS-40), lane_curve (TWR-16), hazard_portal (Tháp Hazard Trial gần Fortress, HZT-01), hazard_room (khu vực phòng: điểm xuất hiện chỉ huy, các điểm sinh quái, thông số camera góc nhìn thứ ba và nền khối cầu, CAM-16, CAM-19) | Cố định theo level, người làm Level sở hữu |
 
 ## 6.8 Cấu trúc save
 
@@ -2843,7 +2849,7 @@ Pause, sửa bằng Mithril, trần armor, tải quét (v1.3, cập nhật v2.0)
 | HZ4 | Chỉ số một chiều: vào phòng với 70/100 HP, mất 50 HP trong phòng, rời phòng thì HP ngoài vẫn 70; cooldown và hiệu ứng trong phòng không mang ra. Lên skill hay đổi vũ khí ở PREP rồi mới vào thì phòng dùng bản mới | HZT-06, WPN-03 |
 | HZ5 | Thắng phòng: giết đủ 5 con thì +mithril_reward(w) Mithril (mặc định 1), gold và XP của 5 con cộng khi ra; toast ALR-20. Rời tháp sau khi giết 2 con: gold và XP của 2 con, 0 Mithril. Chết trong phòng: không phát commander_died, run không kết thúc, giữ gold và XP của số đã giết, 0 Mithril | HZT-07, HZT-08, DEAD-11, MTH-02, GLD-10, XP-06 |
 | HZ6 | Không đụng wave thật: giết 5 con trong phòng, wave thật vẫn có đủ số quân của WaveScript; prestige_pending không đổi; run_kills không đổi. Boss trong phòng chết: có boss_gold, không +1 Emergency repair, không rơi vũ khí | HZT-04, BRW-09 |
-| HZ7 | Trong phòng: Tab không làm gì, không xây hay đổi vũ khí, camera cố định khung phòng, WASD di chuyển nhân vật; Esc mở Pause không rời phòng. Ra phòng không hồi 35% lần nữa, tower không hồi đầy lần nữa | HZT-10, HZT-11, CAM-16, mục 3.3.1 |
+| HZ7 | Trong phòng Tab không làm gì, không xây hay đổi vũ khí; chuột xoay góc nhìn thứ ba, pitch kẹp [-70°, +30°], cuộn chuột chỉ zoom vào đến 35%, camera không xuống dưới sàn. Chỉ huy ngắm theo camera kể cả khi giữ Alt để bấm Rời tháp; nhìn lên trời rồi tung Firebomb thì rơi ở tầm tối đa. Esc mở Pause, không rời phòng. Rời phòng hiện con trỏ, trở về khung PREP; không hồi thêm 35% máu hay hồi đầy tower lần nữa | HZT-10, HZT-11, CAM-16, CAM-17, CAM-18, mục 3.3.1 |
 | HZ8 | XP trong phòng đủ lên cấp: thanh XP chỉ tăng khi rời phòng; lượt chọn mới chờ tới REWARD_PICK sau SUMMARY của wave đó | XP-06, RWP-01 |
 | HZ9 | Quân tự nổ: con cuối là Suicide Squad tự nổ vào chỉ huy, bản sao còn HP: kết quả WON, +mithril_reward(w), gold và XP chỉ của 4 con đã giết, kills = 4 ở hazard_trial_exited. Nhóm 5 Suicide Squad đều tự nổ, chỉ huy còn sống: WON, 0 gold, 0 XP, vẫn +Mithril | HZT-07, HZT-16, EN-22, MTH-02 |
 | HZ10 | Cùng frame: con cuối bị diệt (hoặc tự nổ) đúng frame HP bản sao về 0: kết quả DIED, 0 Mithril, giữ gold và XP của số con đã giết, hazard_trial_exited phát đúng một lần với result DIED. Bấm Rời tháp đúng frame con cuối bị diệt: kết quả WON | HZT-07, HZT-16, DEAD-11 |
@@ -3030,7 +3036,7 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 | **#** | **Vấn đề** | **Đề xuất** |
 | --- | --- | --- |
 | 38 | Hazard Trial nằm ở đâu trong wave FSM | State riêng HAZARD_TRIAL: PREP sang HAZARD_TRIAL rồi về PREP cùng wave; ra phòng không chạy lại hồi 35% và hồi tower đầu PREP (mục 3.3.1) |
-| 39 | Ở PREP nhân vật đứng yên (CAM-02) nên không đi tới Tháp được | Vào bằng phím E (action riêng hazard_enter) hoặc bấm chuột vào cổng; phòng là khu vực riêng hazard_room trong level, camera cố định khung phòng (HZT-01, HZT-11, CAM-16) |
+| 39 | Ở PREP nhân vật đứng yên (CAM-02) nên không đi tới Tháp được | Vào bằng phím E (action riêng hazard_enter) hoặc bấm chuột vào cổng; phòng là khu vực riêng hazard_room trong level, camera góc nhìn thứ ba trong phòng (HZT-01, HZT-11, CAM-16, mục 70) |
 | 40 | Bản sao chỉ số gồm những gì | Chép cả cooldown hiện tại; trạng thái ngoài đóng băng trong lúc ở phòng; tua x1/x2/x3 dùng như COMBAT (HZT-06, HZT-10) |
 | 41 | Cách chọn 5 quái và AI trong phòng | Mỗi loại ít nhất 1, phần còn lại rút theo tỷ lệ số lượng trong wave, RNG riêng; quái trong phòng chỉ nhắm chỉ huy (HZT-02, HZT-14) |
 | 42 | Boss trong phòng | Không BOSS_INTRO, không boss_timer và Cuồng nộ; có boss_gold và XP boss; không uy tín, không +1 Emergency repair, không rơi vũ khí, không tính kill (HZT-03, HZT-04) |
@@ -3071,6 +3077,11 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 | --- | --- | --- |
 | 68 | Bulwark chỉ có Stomp nên trận đánh với chỉ huy Frontline đơn điệu; nhưng game là thủ thành và chỉ huy chết là hết run (COMMANDER_DIED), nên không thể làm boss kiểu soulsborne | Thêm Đánh thường, Stomp x3 và Combo, chỉ dùng khi đánh chỉ huy (mục 3.8.2.1); công trình và Fortress vẫn chỉ nhận Stomp. Giữ độ khó vừa phải bằng: hạ sát thương các chuỗi, khoảng nghỉ 1.75 s sau đòn lớn, mở khóa đòn theo lần xuất hiện, khóa di chuyển và hướng quay khi tung đòn (BOSS-47). Từ 17/11 chọn hành động bằng điểm số (BOSS-46) thay cho chuỗi luật, vì mỗi lỗi tìm được (chém vào khoảng trống sau lưng, thả diều ngay ngoài tầm, bị vòng sau lưng mà không bao giờ trúng) lại phải thêm một luật vá. Chỉ huy đứng ngoài tầm thì boss bỏ đi phá công trình, nên vòng sau lưng chém không còn miễn phí: muốn giữ boss lại phải ra trước mặt. Còn mở: sát thương boss nhân dmg_mult(w) (wave 25 khoảng ×3.9) trong khi HP chỉ huy chỉ tăng qua thẻ stat, nên BOSS-50 mới bảo đảm ở wave 5; cần đo số lần chỉ huy chết trong trận boss ở playtest (W11-KM4) rồi chỉnh trong BossData |
 | 69 | Vòng Stomp đặt quanh tâm boss không khớp chỗ chùy nện trong animation | Tâm Stomp cách 1.25 chiều cao model về phía trước, chốt lúc telegraph hiện (BOSS-45). Hệ quả: đứng sát boss không trúng Stomp; BOSS-40 vẫn đúng vì boss đứng cách tường 1.6 đến 2.0 m và quay mặt vào tường |
+### Camera Hazard Trial 22/11
+
+| **#** | **Vấn đề** | **Quyết định** |
+| --- | --- | --- |
+| 70 | Camera cố định khung phòng khó theo dõi quái quanh chỉ huy trong phòng nhỏ | Hazard Trial chuyển sang góc nhìn thứ ba khóa chuột bám vai (CAM-16 đến CAM-19), còn hành lang giữ camera orthographic |
 
 ## Phụ lục D. Nhật ký đồng bộ (so với các bản soạn Phần 1-7)
 
@@ -3170,6 +3181,8 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 90 | **12/11: đồng bộ theo code UI panel Xây, Tháp và Trạm hồi lực tuần 10** (BLD-10, GRID-07, UPG-06, PNL-02, FRT-03, ALR-19, mục 3.5.13, 7.1 mục 18, F6): chữ lý do chặn kín đường đổi thành "Đường đi sẽ bị chặn"; chữ khóa nâng cấp đổi thành "Yêu cầu chỉ huy: cấp N"; bảng vũ khí và ví dụ ALR-19 ghi tên hiển thị tiếng Việt kèm tên hiệu ứng (Hàn Sương Kiếm, Lôi Kiếm, Xích Tiêu Kiếm, Nộ Kiếm, Truy Phong Kiếm) |
 | 91 | **16/11: bộ đòn và AI của Bulwark** (mục 3.8.2, 3.8.2.1, BOSS-06, BOSS-07, BOSS-40, BOSS-44 đến BOSS-50, HZT-14, PRJ-08, FBK-06, mục 6.6, test Boss 9 đến 13, Phụ lục C mục 68, 69): thêm Đánh thường, Stomp x3 và Combo khi đánh chỉ huy; chọn đòn theo hướng của chỉ huy và máu boss; mở khóa đòn theo lần xuất hiện; khoảng nghỉ sau đòn lớn; tâm mọi Stomp dời tới điểm chùy nện, 1.25 chiều cao phía trước. Cập nhật 17/11: chọn hành động bằng điểm số (utility) thay cho chuỗi luật, thêm hành động bỏ chỉ huy để tiến lên đập công trình khi chỉ huy đứng ngoài tầm, boss trong Hazard Trial quay nhanh gấp đôi, boss quay về phía công trình trước khi Stomp, khiêu khích không khóa cứng mục tiêu, đuổi chỉ huy không tính là kẹt (bảng thứ tự mục tiêu của Bulwark, BOSS-04, BOSS-46, BOSS-47, HZT-14, mục 6.6, test Boss 10, Phụ lục C mục 68). Trạng thái: đề xuất, chờ nhóm duyệt |
 | 92 | **16/11: đồng bộ theo code UI tuần 11** (mục 3.2.4, mục 3.3.2, ACCT-05, ALR-02, PNL-05, END-10, SCR-11, SCR-21, VC3, ENR-01, ALR-03, ALR-04, ALR-07, ALR-09, ALR-21, HUD-25, MSE-06, mục 6.3): tiêu đề RunEnd dùng "đợt quái thứ N" thay cho "wave N"; cảnh báo boss gọi "Boss" thay cho "Mech" và banner Cuồng nộ ghi "Boss đã vào trạng thái cuồng nộ"; tower bị phá trong 2.5 s (bằng thời gian sống của toast) dùng chung một toast được cập nhật số lượng (tower_ruined_merge_seconds); cảnh báo boss ở đợt kế một lần mỗi wave; thêm ALR-21 (biểu tượng theo tầng, dòng chính và dòng phụ, không dấu chấm câu); thêm HUD-25 (xem trước đợt quái ở PREP, nút ">" / "<" bên trái ẩn hiện cả khung như HUD-24); ô đếm đợt quái trong COMBAT có hai dòng riêng "Quân địch:" và "Thời gian:", tên căn phải và số căn trái để dấu hai chấm thẳng hàng; banner và toast ở giữa rộng tối đa 440 px rồi xuống dòng; hover quân hiện trait; thêm tham số tower_ruined_merge_seconds và hover_info_delay; ALR-02 dùng tín hiệu máu thấp của chỉ huy và có banner "Chỉ huy sắp gục"; xem trước wave boss ở mục 3.3.2 theo HUD-25 (tên boss, "(Boss)", vũ khí sẽ rơi), miễn nhiễm pha 1 và boss_timer chuyển sang \[Should]; PNL-05 là bản đầy đủ của HUD-25; ACCT-05 không đồng bộ trong suốt run |
+
+| 93 | **22/11: cập nhật camera Hazard Trial** (HZT-11, CAM-09, CAM-16 đến CAM-19, MSE-01, MSE-10, HZ7, Phụ lục C mục 39 và 70): góc nhìn thứ ba bám vai, chuột xoay, cuộn chuột zoom vào, giữ Alt để bấm HUD; chỉ huy quay và di chuyển theo camera; aim theo tâm màn hình, nền phòng là khối cầu 60 m |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 

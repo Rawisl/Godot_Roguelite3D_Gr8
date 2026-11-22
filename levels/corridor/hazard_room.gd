@@ -114,6 +114,20 @@ func get_camera_focus() -> Vector3:
 	return _camera_frame.global_position
 
 
+## Profile for the reusable chase orbit; the room remains the editor-facing source of its values.
+func get_chase_settings() -> Dictionary:
+	return {
+		"pitch": chase_pitch_deg, "pitch_min": chase_pitch_min_deg,
+		"pitch_max": chase_pitch_max_deg, "far_pitch": chase_far_pitch_deg,
+		"distance": chase_distance, "distance_near": chase_distance_near,
+		"distance_up": chase_distance_up, "pivot_height": chase_pivot_height,
+		"min_height": chase_min_height, "shoulder": chase_shoulder_offset,
+		"aim_tilt": chase_aim_tilt_deg, "follow_smoothing": chase_smoothing,
+		"zoom_min": chase_zoom_min, "zoom_step": chase_zoom_step,
+		"zoom_smoothing": chase_zoom_smoothing, "fov": chase_fov, "far": chase_far
+	}
+
+
 ## True while the room light is on.
 func is_ambience_on() -> bool:
 	return _inside

@@ -98,25 +98,7 @@ var _chase: Camera3D
 ## True while ChaseCamera is the view in the Hazard Trial room.
 var _chase_on: bool = false
 var _room: HazardRoom
-var _chase_yaw: float = 0.0
-var _chase_pitch_deg: float = 0.0
-var _chase_distance: float = 0.0
-var _chase_distance_near: float = 0.0
-var _chase_pivot_height: float = 0.0
-var _chase_smoothing: float = 0.0
-var _chase_pitch_min: float = 0.0
-var _chase_pitch_max: float = 0.0
-var _chase_aim_tilt_deg: float = 0.0
-var _chase_far_pitch: float = 0.0
-var _chase_distance_up: float = 0.0
-var _chase_min_height: float = 0.0
-var _chase_shoulder: float = 0.0
-var _chase_zoom_min: float = 1.0
-var _chase_zoom_step: float = 0.0
-var _chase_zoom_smoothing: float = 0.0
-## Share of the normal chase distance the wheel has zoomed to, and where it is going.
-var _chase_zoom: float = 1.0
-var _chase_zoom_target: float = 1.0
+var _orbit := ChaseCameraOrbit.new()
 ## True while the rig holds the cursor captured.
 var _captured: bool = false
 var _crosshair: CanvasLayer
@@ -574,26 +556,8 @@ func _enter_hazard() -> void:
 func _start_chase() -> void:
 	if _chase == null:
 		return
-	_chase_yaw = _camera.global_rotation.y if _camera != null else global_rotation.y
-	_chase_pitch_min = minf(_room.chase_pitch_min_deg, _room.chase_pitch_max_deg)
-	_chase_pitch_max = maxf(_room.chase_pitch_min_deg, _room.chase_pitch_max_deg)
-	_chase_pitch_deg = clampf(_room.chase_pitch_deg, _chase_pitch_min, _chase_pitch_max)
-	_chase_far_pitch = clampf(_room.chase_far_pitch_deg, _chase_pitch_min, _chase_pitch_max)
-	_chase_distance_up = _room.chase_distance_up
-	_chase_min_height = _room.chase_min_height
-	_chase_shoulder = _room.chase_shoulder_offset
-	_chase_zoom_min = clampf(_room.chase_zoom_min, 0.05, 1.0)
-	_chase_zoom_step = _room.chase_zoom_step
-	_chase_zoom_smoothing = _room.chase_zoom_smoothing
-	_chase_zoom = 1.0
-	_chase_zoom_target = 1.0
-	_chase_aim_tilt_deg = _room.chase_aim_tilt_deg
-	_chase_distance =_room.chase_distance
-	_chase_distance_near = _room.chase_distance_near
-	_chase_pivot_height = _room.chase_pivot_height
-	_chase_smoothing = _room.chase_smoothing
-	_chase.fov = _room.chase_fov
-	_chase.far = _room.chase_far
+	_orbit.configure(_chase, _room.get_chase_settings(),
+			_camera.global_rotation.y if _camera != null else global_rotation.y)
 	_chase_on = true
 	_snap_chase()
 	_chase.current = true
@@ -605,18 +569,15 @@ func _snap_chase() -> void:
 	if not _chase_on:
 		return
 	position = _chase_focus()
-	_place_chase()
+	_orbit.place(global_position)
 
 
 ## Smooth follow of the commander in the room, on real seconds.
 func _follow_chase(real_delta: float) -> void:
 	if not _chase_on:
 		return
-	var weight := 1.0 - exp(-real_delta / maxf(_chase_smoothing, 0.001))
-	position = position.lerp(_chase_focus(), weight)
-	var zoom_weight := 1.0 - exp(-real_delta / maxf(_chase_zoom_smoothing, 0.001))
-	_chase_zoom = lerpf(_chase_zoom, _chase_zoom_target, zoom_weight)
-	_place_chase()
+	position = _orbit.follow(position, _chase_focus(), real_delta)
+	_orbit.advance(real_delta, global_position)
 
 
 ## The commander on the camera's ground plane, else the room's CameraFrame, else where the rig is.
@@ -630,52 +591,11 @@ func _chase_focus() -> Vector3:
 	return position
 
 
-## Orbits a pivot chase_pivot_height above the focus: the camera stands on the sphere around it
-## at the chase pitch (distance in _chase_orbit_distance) and chase_shoulder_offset to the right of
-## it. It looks chase_aim_tilt_deg above the pivot, so the commander sits that far below the
-## middle of the screen at every pitch, and the middle of the screen lands on the ground ahead of
-## the commander.
-func _place_chase() -> void:
-	var pivot := global_position + Vector3.UP * _chase_pivot_height
-	var orbit := Basis.from_euler(Vector3(deg_to_rad(_chase_pitch_deg), _chase_yaw, 0.0))
-	var view := Basis.from_euler(
-			Vector3(deg_to_rad(_chase_pitch_deg + _chase_aim_tilt_deg), _chase_yaw, 0.0))
-	_chase.global_transform = Transform3D(view,
-			pivot + orbit.z * _chase_orbit_distance() + orbit.x * _chase_shoulder)
-
-
-## Metres from the pivot to the camera at the current pitch and zoom: chase_distance_near at the
-## lowest pitch, chase_distance at the far pitch, chase_distance_up at the highest, times the zoom.
-## Looking up puts the camera below the pivot; it then comes nearer so it stays chase_min_height
-## above the floor.
-func _chase_orbit_distance() -> float:
-	var d := _chase_distance
-	if _chase_pitch_deg < _chase_far_pitch:
-		d = lerpf(_chase_distance, _chase_distance_near, _span_ratio(_chase_far_pitch, _chase_pitch_min))
-	elif _chase_pitch_deg > _chase_far_pitch:
-		d = lerpf(_chase_distance, _chase_distance_up, _span_ratio(_chase_far_pitch, _chase_pitch_max))
-	d *= _chase_zoom
-	var drop := sin(deg_to_rad(_chase_pitch_deg))
-	if drop > 0.0:
-		d = minf(d, maxf(_chase_pivot_height - _chase_min_height, 0.0) / drop)
-	return d
-
-
-## How far the chase pitch has gone from start towards end, 0..1; 0 when the two are the same.
-func _span_ratio(start: float, end: float) -> float:
-	if is_equal_approx(start, end):
-		return 0.0
-	return clampf(inverse_lerp(start, end, _chase_pitch_deg), 0.0, 1.0)
-
-
 ## Turns the chase view by a mouse motion in screen pixels: right turns right, up looks up.
 func _turn_chase(screen_motion: Vector2) -> void:
 	if not _chase_on:
 		return
-	_chase_yaw = wrapf(_chase_yaw - deg_to_rad(screen_motion.x * mouse_sensitivity), -PI, PI)
-	_chase_pitch_deg = clampf(_chase_pitch_deg - screen_motion.y * mouse_sensitivity,
-			_chase_pitch_min, _chase_pitch_max)
-	_place_chase()
+	_orbit.turn(screen_motion, mouse_sensitivity, global_position)
 
 
 ## Zooms the chase view by wheel notches: negative comes nearer. It never goes past the normal
@@ -683,10 +603,7 @@ func _turn_chase(screen_motion: Vector2) -> void:
 func _zoom_chase(notches: float) -> void:
 	if not _chase_on:
 		return
-	_chase_zoom_target = clampf(_chase_zoom_target + notches * _chase_zoom_step, _chase_zoom_min, 1.0)
-	if reduced_motion:
-		_chase_zoom = _chase_zoom_target
-		_place_chase()
+	_orbit.change_zoom(notches, reduced_motion, global_position)
 
 
 ## The room keeps the cursor captured unless the game is paused, a dialog is open or
