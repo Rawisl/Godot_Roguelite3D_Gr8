@@ -13,6 +13,8 @@ var hp: int:
 	set(value):
 		_precise_hp = float(value)
 var hit_by_commander: bool = false
+## While true, take_damage changes nothing and returns 0. Set by the cheat panel of the test scene.
+var invulnerable: bool = false
 ## Fractional DoT damage carried between ticks.
 var dot_remainder: float = 0.0
 var _precise_hp: float = 0.0
@@ -24,6 +26,8 @@ func _ready() -> void:
 
 ## Accepts either an int amount or a DamageInfo instance for backward compatibility.
 func take_damage(damage_input: Variant, damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
+	if invulnerable:
+		return 0
 	if hp <= 0:
 		return 0
 	var amount: int = 0

@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="CentipedeBossData" format=3 uid="uid://d4bsu15pbr3do"]
+
+[ext_resource type="Script" uid="uid://8yi5wrdm30pf" path="res://common/centipede_boss_data.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+combo_hit_windows = PackedVector2Array(0.25, 0.4, 0.65, 0.8, 1.1667, 1.2667, 1.4333, 1.5333, 2.1112, 2.2, 2.3778, 2.4667, 2.6548, 2.749, 2.9058, 3, 3.5667, 3.6667, 3.8333, 3.9333, 4.4833, 4.6667)
+combo_move_windows = PackedVector2Array(0.8167, 1.0167, 1.55, 1.95, 3.0167, 3.4167)
+armor_hp = 1000
+core_hp = 800
+resist_table_phase1 = {
+0: 0.0,
+1: 1.0,
+2: 0.6,
+3: 1.0,
+4: 0.0,
+5: 1.0
+}
+ai_turn_rate_deg = 120.0
+commander_leash = 10.0
+attack_recovery = 0.5
+heavy_attack_recovery = 1.5
+tie_margin = 0.2
+id = &"skeletal_centipede"
+display_name_key = "enemy.skeletal_centipede"
+base_hp = 1800
+attack_interval = 2.4
+attack_range = 1.4
+move_speed = 1.8
+anim_walk = &"walk"
+knockback_immune = true
+aggro_range = 4.0
+agent_radius = 1.6
+target_rules = Array[StringName]([&"PLAYER", &"BARRICADE", &"TOWER_GROUND", &"FORTRESS"])
+xp_value = 30

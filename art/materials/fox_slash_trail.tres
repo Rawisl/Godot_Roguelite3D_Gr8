@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://bo332emqpupra"]
 
-[ext_resource type="Shader" path="res://art/shaders/fox_slash_trail.gdshader" id="1_trail"]
+[ext_resource type="Shader" uid="uid://c6f76t28cx6v1" path="res://art/shaders/fox_slash_trail.gdshader" id="1_trail"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_streak"]
 noise_type = 3

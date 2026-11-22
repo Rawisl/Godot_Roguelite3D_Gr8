@@ -829,7 +829,9 @@ func _execute_sword_strike(combo_step: int) -> void:
 		if body == self or not body.has_method("take_damage"):
 			continue
 
-		var to_target := body.global_position - global_position
+		# A large target says which of its points the sword measures to; others are measured to their centre.
+		var aim_point: Vector3 = body.get_hit_point(global_position) if body.has_method(&"get_hit_point") else body.global_position
+		var to_target := aim_point - global_position
 		to_target.y = 0.0
 		var dist := to_target.length()
 
