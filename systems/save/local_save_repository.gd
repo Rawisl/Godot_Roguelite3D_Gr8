@@ -42,12 +42,19 @@ func conflict_path() -> String:
 	return path.get_base_dir().path_join(CONFLICT_FILE)
 
 func save_conflict_copy(envelope: Dictionary) -> Error:
-	var file := FileAccess.open(conflict_path(), FileAccess.WRITE)
+	var destination := conflict_path()
+	var temporary := destination + ".tmp"
+	var file := FileAccess.open(temporary, FileAccess.WRITE)
 	if file == null:
 		return FileAccess.get_open_error()
 	file.store_string(JSON.stringify(envelope, "	"))
+	var error := file.get_error()
 	file.close()
-	return OK
+	if error == OK:
+		error = _rename(temporary, destination)
+	if error != OK:
+		DirAccess.remove_absolute(temporary)
+	return error
 
 func has_data() -> bool:
 	return FileAccess.file_exists(path)
