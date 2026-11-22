@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://bpfyuuuckkvmt"]
+
+[ext_resource type="Script" uid="uid://c7sfk06lupe5g" path="res://entities/enemy/poison_pool.gd" id="1_pool"]
+[ext_resource type="Script" uid="uid://bair6jjnv74vd" path="res://art/vfx/poison_pool_mesh.gd" id="2_mesh"]
+[ext_resource type="Material" uid="uid://bmwxg1tt7lwfp" path="res://art/materials/boss_spit_pool.tres" id="3_mat"]
+
+[node name="PoisonPool" type="Node3D"]
+script = ExtResource("1_pool")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+material_override = ExtResource("3_mat")
+instance_shader_parameters/spread = 0.0
+instance_shader_parameters/opacity = 0.0
+script = ExtResource("2_mesh")
+length = 3.0
+angle_segments = 48
+disc = true
+half_angle_deg = 32.0

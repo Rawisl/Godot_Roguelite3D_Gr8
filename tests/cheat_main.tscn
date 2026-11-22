@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://1wgmowqwuawo"]
 
-[ext_resource type="PackedScene" path="res://main.tscn" id="1_main"]
-[ext_resource type="Script" path="res://tests/cheat_main.gd" id="2_cheat_main"]
-[ext_resource type="PackedScene" path="res://tests/cheat_panel.tscn" id="3_cheat_panel"]
+[ext_resource type="PackedScene" uid="uid://og55jctucxje" path="res://main.tscn" id="1_main"]
+[ext_resource type="Script" uid="uid://dph0b82wq32fm" path="res://tests/cheat_main.gd" id="2_cheat_main"]
+[ext_resource type="PackedScene" uid="uid://dm4dwcfqrn816" path="res://tests/cheat_panel.tscn" id="3_cheat_panel"]
 
-[node name="Main" instance=ExtResource("1_main")]
+[node name="Main" unique_id=595182351 instance=ExtResource("1_main")]
 script = ExtResource("2_cheat_main")
 
-[node name="CheatPanel" parent="." instance=ExtResource("3_cheat_panel")]
+[node name="CheatPanel" parent="." index="3" unique_id=1269747378 instance=ExtResource("3_cheat_panel")]
