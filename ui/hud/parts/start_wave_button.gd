@@ -27,7 +27,6 @@ func _ready() -> void:
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.wave_started.connect(_on_wave_started)
-	# TODO(Ender-Via): send wave_preview_ready in PREP, so the boss label follows the wave script.
 	EventBus.wave_preview_ready.connect(_on_wave_preview_ready)
 	EventBus.pause_changed.connect(_on_pause_changed)
 	EventBus.hazard_trial_exited.connect(_on_hazard_exited)

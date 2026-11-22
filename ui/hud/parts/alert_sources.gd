@@ -80,7 +80,6 @@ func _on_wave_preview_ready(wave_index: int, _composition: Dictionary, is_boss: 
 		_boss_next = is_boss
 
 ## Told once when the PREP before a boss wave starts.
-# TODO(Ender-Via): send wave_preview_ready at the start of PREP; until then the boss wave comes from boss_wave_interval.
 func _on_state_changed(new_state: StringName) -> void:
 	if new_state != &"PREP":
 		return

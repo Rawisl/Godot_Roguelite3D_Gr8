@@ -40,7 +40,8 @@ extends Resource
 @export var xp_value: int = 1
 
 @export_group("Traits")
-# TODO(Ender-Via): implement stealth targeting, explosions, temporary invulnerability and revival in enemy behavior.
+## Every trait is off by default, so a unit without them behaves as before.
+# TODO(Ender-Via): make Enemy act on is_stealth, invuln_*, revive_* and explode_* when the Assassin, Knight, Undead and Suicide Squad land; read the flags here, never the unit id.
 @export var is_stealth: bool = false
 @export var stealth_opacity: float = 1.0
 @export var explode_on_contact: bool = false
@@ -56,6 +57,22 @@ extends Resource
 @export var revive_count: int = 0
 @export var revive_delay: float = 0.0
 @export var revive_dmg_mult: float = 1.0
+
+## Trait ids shown to the player (EnemyTraits.ALL), from the flags above, in that order.
+var traits: Array[StringName]:
+	get:
+		var result: Array[StringName] = []
+		if is_stealth:
+			result.append(&"stealth")
+		if explode_on_contact or explode_on_death:
+			result.append(&"explode")
+		if invuln_duration > 0.0 and invuln_hp_threshold > 0.0:
+			result.append(&"undying")
+		if revive_count > 0:
+			result.append(&"revive")
+		if is_charger:
+			result.append(&"charge")
+		return result
 
 # Backward-compatibility aliases
 var max_hp: int:

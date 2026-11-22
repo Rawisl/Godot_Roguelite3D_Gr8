@@ -2,6 +2,7 @@ extends Node
 ## Runner for the cheat scene:
 ## - HealthComponent ignores damage while its invulnerable flag is set
 ## - the cheat scene starts one run by itself, never writes the save, and restores it on exit
+## - account sync answers offline inside the scene and gets its real api back on exit
 ## - PageUp toggles the panel; the summon list holds the plain enemies and the listed bosses
 ## - gold, level, wave jump, summon, kill, invincibility and heal act on the real systems
 ## - a summoned boss tells the boss bar its id and announces its spawn
@@ -13,6 +14,7 @@ const CENTIPEDE_PATH := "res://entities/enemy/skeletal_centipede.tscn"
 var passes: int = 0
 var fails: int = 0
 var _real_repo: SaveRepository
+var _real_sync_api: Variant
 var _memory: MemorySaveRepository
 var _prev_state: GameState.AppState
 var _cheat: Node
@@ -54,6 +56,7 @@ func _ready() -> void:
 	SaveManager.load_save()
 	SaveManager.mark_tutorial_done()
 	_prev_state = GameState.current
+	_real_sync_api = SyncService.api
 
 	test_health_invulnerable()
 
@@ -72,6 +75,7 @@ func _ready() -> void:
 	_rs = get_tree().get_first_node_in_group(&"run_state") as RunState
 
 	test_startup()
+	await test_sync_offline()
 	test_panel_and_input()
 	test_gold_and_level()
 	test_jump_and_phase_gating()
@@ -175,6 +179,16 @@ func test_startup() -> void:
 	var in_progress: bool = _memory.stored.get("data", {}).get("run_flag", {}).get("run_in_progress", false)
 	assert_true(not SaveManager.can_write and not in_progress, "test_b4_save_is_not_written")
 	assert_true(not get_tree().get_nodes_in_group(&"tower").is_empty(), "test_b5_starter_towers_exist")
+
+
+func test_sync_offline() -> void:
+	print("\n[GROUP B2] Account sync inside the scene")
+	var api: Variant = SyncService.api
+	assert_true(api != _real_sync_api, "test_b6_sync_api_swapped")
+	var pull: Dictionary = await api.pull_save()
+	var push: Dictionary = await api.push_save(5, "device", SaveManager.data)
+	assert_true(not pull.get("ok", true) and pull.get("error") == AuthService.ERR_OFFLINE
+		and not push.get("ok", true) and not push.get("conflict", true), "test_b7_sync_never_pulls_or_pushes")
 
 
 func test_panel_and_input() -> void:
@@ -346,3 +360,4 @@ func _catch_boss_spawned() -> void:
 func test_leave_scene() -> void:
 	print("\n[GROUP G] Leaving the scene")
 	assert_true(SaveManager.can_write, "test_g1_can_write_restored")
+	assert_true(SyncService.api == _real_sync_api, "test_g1b_sync_api_restored")

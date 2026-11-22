@@ -862,24 +862,25 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT7
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Đang làm
+- Trạng thái: Xong
 - Việc: EnemyData thêm trait (is_stealth, explode_*, invuln_*, is_charger/impact_*, revive_*) và WaveScript Resource; hàm tra kịch bản theo wave
 - Nghiệm thu: Mọi trường mặc định 'tắt'; code xử lý theo trait, không rẽ nhánh theo tên loại
 - Tệp liên quan: common/enemy_data.gd, entities/enemy/enemy.gd, mới: common/wave_script.gd
 - ID SRS: 3.7.1, EN-27, SPN-13
 - Cần xong trước: W9-KT5
-- Ghi chú bàn giao: Đã có WaveScript và 15 export trait trong EnemyData; generator đã sinh các cột trait vào bốn EnemyData hiện có. TODO(endervia): implement trait-driven enemy behavior for stealth, explosions, invulnerability, charge impacts and revival; verify the matching runtime behavior before completing this task. TODO tại common/enemy_data.gd
+- Ghi chú bàn giao: WaveScript, the 15 trait exports in EnemyData and the generated trait columns were already in. EnemyData now has `traits` (stealth, explode, undying, revive, charge, in the HUD order) built from the flags, so EnemyTraits reads real data; every flag is off by default and grunt, archer and brute have none. Each PREP sends wave_preview_ready (before PREP itself, and once more after the first PREP so the HUD gets it) with `WaveManager.get_wave_plan()`: exactly the units queued for the wave plus the boss on a boss wave, so the preview follows the WaveScript once the spawner reads it. What each trait does (stealth, Knight, Undead, explosions, the Brute charge) is W11-KT7, W11-KT8 and W11-KT9 (TODO in enemy_data.gd). Runner `tests/test_enemy_traits_runner.tscn`.
 
 ##### W10-KT8
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sniper và Rider: dữ liệu, scene, hành vi (Sniper tầm hơn Arrow cấp 1, dừng bắn như Archer; Rider chạy nhanh)
 - Nghiệm thu: Sniper bắn từ ngoài tầm Arrow cấp 1; Rider cận chiến như Grunt
 - Tệp liên quan: entities/enemy/ (mới sniper.*, rider.*), data/enemies/
 - ID SRS: EN-19, EN-21
 - Cần xong trước: W10-KT7
 
+- Ghi chú bàn giao: Sniper and Rider rows added to the enemies sheet of balance.xlsx (only that sheet's XML changed; the build_cost Power Query and the other sheets are untouched, which openpyxl would not keep) and generated into data/enemies/sniper.tres and rider.tres. Sniper: ranged PIERCE, attack_range 17 against 14 for the level 1 Arrow, Archer targets, uses the Archer script so it stops and shoots. Rider: melee SLASH like the Grunt with the Grunt's targets, move_speed 6 against 3.5. The numbers are first values for Mạnh to balance. Scenes entities/enemy/sniper.tscn and rider.tscn use Kim's sniper_model and rider/rider_model from W10-KM11; the Rider's anim_walk is the seated simulation/Sit_Chair_Idle clip, as the model note asks. WaveManager maps both ids to their scenes; neither is in a wave yet: the WaveScript rows come with the wave script work. Names in strings.csv (Khang). Runner `tests/test_sniper_rider_runner.tscn`.
 ##### W10-KT9
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
