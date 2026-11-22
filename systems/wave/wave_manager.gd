@@ -161,6 +161,8 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if _waiting_victory_continue:
+		TimeManager.release_pause(TimeManager.REASON_VICTORY)
 	if EventBus.wave_start_requested.is_connected(_on_wave_start_requested):
 		EventBus.wave_start_requested.disconnect(_on_wave_start_requested)
 	if EventBus.enemy_died.is_connected(_on_enemy_died):
@@ -850,6 +852,8 @@ func _end_combat_to_summary() -> void:
 	var rs := _get_run_state()
 	if rs != null:
 		rs.waves_cleared = current_wave
+		if current_wave == GameConfig.victory_wave:
+			rs.victory_reached = true
 	var weapon_gained: StringName = _grant_boss_weapon(rs)
 
 	# Save progress before the summary shows; a failed write does not hold the summary back
@@ -929,17 +933,19 @@ func _grant_boss_weapon(rs: RunState) -> StringName:
 
 
 func advance_from_summary() -> void:
-	if wave_state != Enums.WaveState.SUMMARY:
+	if wave_state != Enums.WaveState.SUMMARY or _waiting_victory_continue or _is_run_lost:
 		return
 
 	_cleanup_projectiles()
 
-	if current_wave == GameConfig.victory_wave and not _victory_handled:
+	var rs := _get_run_state()
+	if current_wave == GameConfig.victory_wave and not _victory_handled and (rs == null or rs.victory_reached):
 		_victory_handled = true
-		EventBus.run_victory.emit(current_wave)
 		if enable_victory_screen:
 			_waiting_victory_continue = true
 			TimeManager.request_pause(TimeManager.REASON_VICTORY)
+		EventBus.run_victory.emit(current_wave, GameState.run_snapshot())
+		if enable_victory_screen:
 			return
 
 	_advance_past_summary_and_rewards()

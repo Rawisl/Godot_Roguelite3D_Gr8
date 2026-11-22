@@ -1217,12 +1217,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG9
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Thắng ở victory_wave và endless: victory_reached, run_result, thua đè thắng, thứ tự WAVE-13 (SUMMARY -> màn thắng -> REWARD_PICK -> PREP), lý do Pause VICTORY ở TimeManager, run_victory và victory_continue_requested, Abandon sau thắng là SURVIVED, scale từ wave 31
 - Nghiệm thu: VC1..VC5 đạt; không thêm uy tín hay danh vọng khi thắng
 - Tệp liên quan: systems/wave/wave_manager.gd (advance_from_summary ~637), autoload/time_manager.gd:18-20 (REASONS), autoload/game_state.gd
 - ID SRS: END-07..10, WAVE-13, TIME-11, EVB-44, EVB-46, SCL-06
 - Cần xong trước: W9-KT3, W10-KT2, W11-KH6
+- Ghi chú W11: Victory is recorded on entering SUMMARY. The screen receives the RunState snapshot and ignores repeat advance requests. Kiệt (@Ender-Via) owns the gameplay switch from WaveScript to ScaleConfig; verify VC4 with that change.
 
 ##### W11-NG10
 - Người: Ngọc
@@ -1247,11 +1248,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH6
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tích hợp và hồi quy hook đã có ở W10-NG6 với RunLoading/RunEnd hoàn chỉnh: xác nhận start_run(), run_elapsed, lưu cục bộ trước gửi, và loại trừ lượt khôi phục (LBD-02, 03, 05); không tạo hook nộp điểm thứ hai
 - Nghiệm thu: Khách, lượt khôi phục, start_wave > 1 không gửi điểm; run_elapsed theo RUN-02
 - Cần xong trước: W10-KT1, W10-KT2, W10-NG6
 - Ghi chú bàn giao: Submission hook and retry queue were delivered by W10-NG6. RunState.start_run() now announces direct main launches once and saves the start flag; RunLoading must call it after init_from_config(). This task remains open for end-to-end verification with completed RunEnd and interrupted-run recovery.
+- Ghi chú W11: The leaderboard runner drives RunLoading and the real RunEnd scene with a fake transport and verifies the saved result is submitted once with combat-only elapsed time. Existing cases verify ineligible runs and recovery.
 
 ##### W11-MH7
 - Người: Ngọc
