@@ -241,6 +241,28 @@ Màu loại thẻ (khung, dải nhãn; chủ động và bị động trùng mà
 | fbk_commander | `#E04545` | Sát thương chỉ huy nhận |
 | fbk_heal | `#9CFF6A` | Số hồi máu "+n" |
 
+## Boss Skeletal Centipede (VFX)
+
+Đòn chém lưỡi liềm vẽ kiểu mực trắng đen: thân trắng, dải xám ở mép trong, viền mực đen. Màu đặt trong uniform của shader, chỉnh ở material.
+
+| Tên | Hex | Dùng cho |
+|---|---|---|
+| boss_slash_core | `#FFFFFF` | Thân vệt chém, lớp sáng trên lưỡi, hạt sao `*` (`boss_slash_crescent.tres`, `boss_blade_glow_core.tres`, `boss_star_particle.tres`) |
+| boss_slash_band | `#B8B8B8` | Dải xám ở mép trong của vệt chém |
+| boss_slash_ink | `#050505` | Viền mực của vệt, vết nứt, viền lớp sáng trên lưỡi (`boss_blade_glow_ink.tres`) và viền hạt sao |
+| boss_roll_eye | `#FF2A2A` (alpha 0,45, cộng sáng) | Mắt sáng đỏ khi boss cuộn lại (`boss_roll_eye_glow.tres`), không viền |
+| boss_roll_eye_halo | `#FF8C1F` (alpha 0,8, cộng sáng) | Quầng cam sáng sau mỗi mắt khi boss gầm, luôn quay về camera, hiện xuyên đầu để thấy được ở camera game (`boss_roll_eye_halo.tres`, chỉnh `falloff` cho độ mềm, kích thước ở `Halo` trong `centipede_fx.tscn`) |
+| boss_roll_eye_spark | `#8C0005` | Hạt đỏ đậm bay ra từ mắt khi mắt sáng (`boss_roll_eye_particle.tres`) |
+| boss_roll_body | `#A040FF` (`veil` và `rim` 0,12) | Lớp sáng tím trong suốt phủ cả thân khi boss bung ra (`boss_roll_body_glow.tres`), không viền |
+| boss_roll_line | `#FFFFFF` (alpha 0,8) | Nét tốc độ phía sau boss khi lăn (`boss_roll_speed_lines.tres`), không viền |
+| boss_spit_core_hot | `#E4FF8A` | Ánh sáng nhạt ở đầu luồng phun độc (đầu color ramp lõi, `hot_color` trong `boss_spit_*.tres`) |
+| boss_spit_core | `#3DCC1F` → `#1F8C14` | Lõi axit của luồng phun độc (color ramp node `Head/SpitEmitter/Core` trong `art/vfx/centipede_fx.tscn`), có ánh `#8CFF2E` ngay sau miệng |
+| boss_spit_drop | `#5BD62A` | Giọt độc văng ra (color ramp node `Drops`) |
+| boss_spit_smoke | `#2FB7A0` → `#1F6F5C` | Khói xanh ngọc bám theo luồng (color ramp node `Smoke`) |
+| boss_spit_pool_core | `#1F8C14` (alpha 0,85) | Thân bãi độc trên sàn (`boss_spit_pool.tres`) |
+| boss_spit_pool_rim | `#8CFF2E` (alpha 0,95) | Mép sáng quanh mỗi vũng độc |
+| boss_spit_pool_bubble | `#E4FF8A` | Bọt sủi trong bãi độc |
+
 ## Fox Commander (VFX)
 
 Vệt chém trắng theo lưỡi kiếm của 3 đòn combo (dải dựng sẵn từ Blender, `art/vfx/fox_commander/fox_slash_trails.tscn`). Màu đặt trong uniform của shader `fox_slash_trail.gdshader`, chỉnh ở `art/materials/fox_slash_trail.tres`. Khi bật "Giảm nhấp nháy", vệt bị ẩn hẳn (độ đục về 0 qua `fox_slash_trails.gd`), không đổi màu.
