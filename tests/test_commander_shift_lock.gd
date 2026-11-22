@@ -1,7 +1,6 @@
 extends Node
-## Tests how the Commander faces, runs, dodges and aims while the chase camera holds the mouse
-## (locked view). Headless cannot capture the mouse, so the locked behaviour is reached through
-## the helper functions with explicit arguments instead of through _is_view_locked.
+## Tests how the Commander faces, runs, dodges and aims in the Hazard Trial chase frame.
+## Frame changes exercise the lock even when the cursor stays visible in headless runs.
 
 const CommanderScript := preload("res://entities/commander/commander.gd")
 
@@ -41,7 +40,12 @@ func _ready() -> void:
 	test_k16_aim_along_camera_looking_up()
 	test_k17_firebomb_without_aim_point()
 	test_k18_unlocked_update_aim_keeps_mouse_branch()
-	test_k19_headless_is_not_locked()
+	test_k19_without_hazard_frame_is_not_locked()
+	test_k20_hazard_frame_locks_with_visible_cursor()
+	test_k21_free_cursor_keeps_camera_aim()
+	test_k22_leaving_restores_mouse_aim()
+	test_k23_locked_strafe_uses_camera_facing()
+	EventBus.camera_frame_changed.emit(&"OVERVIEW")
 	_camera.free()
 	_commander.free()
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -251,12 +255,57 @@ func test_k17_firebomb_without_aim_point() -> void:
 
 
 func test_k18_unlocked_update_aim_keeps_mouse_branch() -> void:
+	EventBus.camera_frame_changed.emit(&"OVERVIEW")
 	_place_camera(Vector3(0.0, 4.0, 4.0), 0.0, -35.0)
 	_commander.aim_point = Vector3(1.0, 2.0, 3.0)
 	_commander._update_aim(_camera)
 	assert_true(_commander.aim_point.is_finite(), "K18 unlocked, the aim does not take the locked branch")
 
 
-func test_k19_headless_is_not_locked() -> void:
-	# Headless cannot capture the mouse; the locked cases above call the helpers directly.
-	assert_true(not _commander._is_view_locked(), "K19 headless run is not a locked view")
+func test_k19_without_hazard_frame_is_not_locked() -> void:
+	assert_true(not _commander._is_view_locked(), "K19 before the Hazard Trial frame the view is not locked")
+
+
+func test_k20_hazard_frame_locks_with_visible_cursor() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	EventBus.camera_frame_changed.emit(&"HAZARD_TRIAL")
+	assert_true(_commander._is_view_locked() and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE,
+			"K20 the Hazard Trial frame stays locked with a visible cursor")
+
+
+func test_k21_free_cursor_keeps_camera_aim() -> void:
+	_commander.global_position = Vector3.ZERO
+	_place_camera(Vector3(1.0, 4.0, 4.0), 25.0, -35.0)
+	_commander._update_aim(_camera)
+	var direction: Vector3 = _commander.aim_dir
+	var point: Vector3 = _commander.aim_point
+	get_viewport().warp_mouse(get_viewport().get_visible_rect().size * 0.9)
+	_commander._update_aim(_camera)
+	assert_true(point.is_finite() and _commander.aim_dir.is_equal_approx(direction)
+			and direction.dot(CommanderScript.flat_forward(_camera.global_basis)) > 0.9999
+			and _commander.aim_point.is_equal_approx(point),
+			"K21 moving the free cursor leaves the camera aim and ground point unchanged")
+
+
+func test_k22_leaving_restores_mouse_aim() -> void:
+	EventBus.camera_frame_changed.emit(&"OVERVIEW")
+	_place_camera(Vector3(1.0, 1.0, 4.0), 25.0, 20.0)
+	_commander.aim_point = Vector3(1.0, 2.0, 3.0)
+	_commander._update_aim(_camera)
+	assert_true(not _commander._is_view_locked() and _commander.aim_point.is_finite(),
+			"K22 leaving the room restores the mouse ray branch")
+
+
+func test_k23_locked_strafe_uses_camera_facing() -> void:
+	_reset_actions()
+	_place_camera(Vector3(0.0, 4.0, 4.0), 40.0, -35.0)
+	EventBus.camera_frame_changed.emit(&"HAZARD_TRIAL")
+	var aim := CommanderScript.flat_forward(_camera.global_basis)
+	var right := Vector3(_camera.global_basis.x.x, 0.0, _camera.global_basis.x.z).normalized()
+	_commander.aim_dir = aim
+	_commander.velocity = right * 6.0
+	_commander._aim_pivot.rotation.y = 0.0
+	for i in 60:
+		_commander._update_model_facing(0.016)
+	assert_true(_yaw_close(aim, 1.0), "K23 strafing with the cursor free still faces the camera")
+	_reset_actions()

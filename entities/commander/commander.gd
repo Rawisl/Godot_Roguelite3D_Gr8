@@ -99,6 +99,8 @@ var _spawn_position: Vector3
 var _wave_state: StringName = &""
 var _prev_wave_state: StringName = &""
 var _is_low_hp: bool = false
+## True while the camera is in the Hazard Trial frame.
+var _view_locked: bool = false
 
 ## Every gameplay read of a commander stat goes through this block.
 var stat_block: StatBlock
@@ -129,6 +131,7 @@ func _ready() -> void:
 	_setup_hazard_trial_state()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
+	EventBus.camera_frame_changed.connect(_on_camera_frame_changed)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	EventBus.commander_enemy_killed.connect(_on_enemy_killed)
 	_sync_wave_state()
@@ -696,10 +699,15 @@ func _update_aim(camera: Camera3D) -> void:
 		aim_dir = to_target.normalized()
 
 
-## True while the cursor is captured. Only the Hazard Trial chase view captures it; the commander
-## then faces and aims the way the camera looks, like a shoulder camera.
+## True while the camera is in the Hazard Trial chase frame, even when the cursor is free.
 func _is_view_locked() -> bool:
-	return Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	return _view_locked
+
+
+## The Hazard Trial chase view locks facing and aim to the camera, whether or not the
+## cursor is captured, so holding Alt to reach the Leave button does not turn the commander.
+func _on_camera_frame_changed(frame: StringName) -> void:
+	_view_locked = frame == &"HAZARD_TRIAL"
 
 
 ## Locked view: the commander aims the way the camera faces, so attacks go where the view points.
