@@ -20,6 +20,9 @@ extends BossEnemy
 ## window is open.
 ## The commander's sword measures to the nearest point of the hurt box (see get_hit_point), which
 ## reaches ahead of the torso, so a swing from the front lands.
+## A boss chasing the commander that a tower or Barricade holds back for blocked_retarget_time turns
+## on that structure and stays at it until it breaks, blocked_lock_time runs out, or the commander
+## comes into reach. No move carries the body onto a structure: a step that lifts it is undone.
 
 const POOL_SCENE: PackedScene = preload("res://entities/enemy/poison_pool.tscn")
 const ROLL_EXTRA_LIBRARY: AnimationLibrary = preload("res://contents/assets/characters/enemy and boss/skeletal_centipede/skeletal_centipede_roll_extra.res")
@@ -85,6 +88,12 @@ const TURN_RECHECK_TIME: float = 0.1
 const TURN_STEP_EPSILON: float = 0.0005
 ## A collision whose normal is steeper than this is a wall (the dash stops), a flatter one is floor.
 const DASH_WALL_NORMAL_Y: float = 0.7
+## A sideways step that lifts the body more than this (metres) pushed it up onto something and is undone.
+const BODY_RISE_TOLERANCE: float = 0.05
+## After a dash or roll the body higher than this above the navmesh (metres) is put back on it.
+const LANDING_HEIGHT_TOLERANCE: float = 0.5
+## The overlap test of the body's box is lifted by this (metres) so the floor under it does not count.
+const OVERLAP_FLOOR_CLEARANCE: float = 0.1
 ## Seconds of clip per sample of a turn clip's yaw table.
 const YAW_SAMPLE_STEP: float = 1.0 / 60.0
 ## Speed at which the roll's lean follows its target, per second.
@@ -132,6 +141,12 @@ var dash_front_cooldown_left: float = 0.0
 var dash_buff_left: float = 0.0
 ## Last move the boss started.
 var last_chosen_move: StringName = &""
+
+## Seconds in a row a structure held the boss back while it chased the commander.
+var _chase_blocked_time: float = 0.0
+## The structure the boss turned on after being held back, and the seconds it stays on it.
+var _locked_structure: Node3D = null
+var _structure_lock_left: float = 0.0
 
 var _move: StringName = &""
 var _move_time: float = 0.0
@@ -416,7 +431,97 @@ func _process(delta: float) -> void:
 	dash_buff_left = maxf(0.0, dash_buff_left - delta)
 	if push_commit_left > 0.0:
 		push_commit_left = maxf(0.0, push_commit_left - delta)
+	_structure_lock_left = maxf(0.0, _structure_lock_left - delta)
 	_update_t_away(delta)
+
+
+func _physics_process(delta: float) -> void:
+	var before := global_position
+	super._physics_process(delta)
+	_track_chase_block(before, delta)
+
+
+# --- Held back by a structure ------------------------------------------------------------------
+
+## While chasing the commander, adds up the time a tower or Barricade holds the boss back (it
+## touches one and barely moves) and turns on that structure once it passed blocked_retarget_time.
+## The shared stuck ladder skips a commander chase, so this is the boss's own way out.
+func _track_chase_block(before: Vector3, delta: float) -> void:
+	if is_dead or in_hazard_trial or current_phase == Enums.BossPhase.TRANSITION:
+		_chase_blocked_time = 0.0
+		return
+	if current_state != Enums.EnemyState.CHASE or not _is_commander(current_target) or _locked_structure != null:
+		_chase_blocked_time = 0.0
+		return
+	var moved := Vector2(global_position.x - before.x, global_position.z - before.z).length()
+	if moved >= _walk_speed() * delta * cdata.blocked_speed_share:
+		_chase_blocked_time = 0.0
+		return
+	var blocker := _touched_blocker()
+	# A frame without contact neither adds nor clears, so a boss that slides off and on still counts.
+	if blocker == null:
+		return
+	_chase_blocked_time += delta
+	if _chase_blocked_time >= cdata.blocked_retarget_time:
+		_lock_onto_structure(blocker)
+
+
+func _walk_speed() -> float:
+	return data.move_speed * speed_multiplier * get_slow_factor()
+
+
+## The first structure the last slide ran into that the boss may attack to clear its way.
+func _touched_blocker() -> Node3D:
+	for index in get_slide_collision_count():
+		var collider := get_slide_collision(index).get_collider() as Node3D
+		if collider != null and _is_blocking_structure(collider):
+			return collider
+	return null
+
+
+## A tower or Barricade on the ground (not the Fortress, not a wall tower) that can still be hit.
+func _is_blocking_structure(node: Node3D) -> bool:
+	if not node.is_in_group(&"tower") and not node.is_in_group(&"barricade"):
+		return false
+	if node.is_in_group(&"fortress") or _is_wall_tower(node):
+		return false
+	return _is_target_valid(node)
+
+
+func _lock_onto_structure(structure: Node3D) -> void:
+	_locked_structure = structure
+	_structure_lock_left = cdata.blocked_lock_time
+	_chase_blocked_time = 0.0
+	set_target(structure)
+
+
+func _release_structure_lock() -> void:
+	_locked_structure = null
+	_structure_lock_left = 0.0
+
+
+## True while the boss stays on the structure it turned on. Lets go when the structure is gone or
+## broken, the time is up, or the commander stands in reach.
+func _structure_lock_holds() -> bool:
+	if _locked_structure == null:
+		return false
+	if not is_instance_valid(_locked_structure) or not _is_target_valid(_locked_structure):
+		_release_structure_lock()
+		return false
+	if _structure_lock_left <= 0.0:
+		_release_structure_lock()
+		return false
+	var cmd := _get_valid_commander()
+	if cmd != null and _commander_in_slash_reach(cmd):
+		_release_structure_lock()
+		return false
+	return true
+
+
+## True when the commander stands in front, inside the slash. The spit pool does not count: a
+## commander behind the structure is often in it, and the lock would never hold.
+func _commander_in_slash_reach(cmd: Node3D) -> bool:
+	return is_in_front(cmd) and _in_slash_hitbox(cmd, cdata.body(cdata.slash_range), cdata.slash_arc_deg)
 
 
 # --- Walking and deciding ----------------------------------------------------------------------
@@ -519,6 +624,9 @@ func _play_attack_anim() -> void:
 
 ## Starts what the AI picked, from the ATTACK state.
 func _act_in_attack(action: StringName) -> void:
+	if _structure_lock_holds():
+		_attack_structure()
+		return
 	match action:
 		CentipedeBrain.SLASH, CentipedeBrain.COMBO, CentipedeBrain.SPIT, CentipedeBrain.ROLL, \
 				CentipedeBrain.CHARGE_ROLL, CentipedeBrain.DASH_LEFT, CentipedeBrain.DASH_RIGHT, CentipedeBrain.DASH_FRONT:
@@ -642,6 +750,8 @@ func _yaw_to_point(point: Vector3) -> float:
 
 ## Between moves in CHASE, ADVANCE or WAIT: acts on the AI's pick. True when it changed state.
 func _act_while_moving() -> bool:
+	if _structure_lock_holds():
+		return false
 	var action := choose_attack()
 	if action == &"":
 		return false
@@ -670,6 +780,9 @@ func _act_while_moving() -> bool:
 func _find_best_target() -> void:
 	if current_state == Enums.EnemyState.FRENZY:
 		super._find_best_target()
+		return
+	if _structure_lock_holds():
+		set_target(_locked_structure)
 		return
 	var action := choose_attack()
 	if CentipedeBrain.is_commander_action(action):
@@ -1051,7 +1164,7 @@ func _finish_move() -> void:
 	_set_ribs_close(0.0)
 	_set_lean(0.0)
 	if finished == MOVE_DASH:
-		_snap_to_navmesh()
+		_land_on_navmesh()
 		if _dash_action != CentipedeBrain.DASH_FRONT:
 			dash_buff_left = cdata.dash_buff_time
 	move_finished.emit(finished)
@@ -1319,8 +1432,7 @@ func _step_forward(step: float) -> bool:
 	var motion := _combo_forward() * cdata.body(cdata.combo_move_speed) * step
 	if _leaves_navmesh(global_position + motion):
 		return faced
-	var hit := move_and_collide(motion)
-	if hit != null and absf(hit.get_normal().y) < DASH_WALL_NORMAL_Y:
+	if _move_body(motion):
 		return faced
 	return faced and _flat_gap(current_target, global_position) <= stop_gap
 
@@ -1587,7 +1699,7 @@ func _roll_travel(delta: float, steer: bool) -> void:
 		_enter_roll_phase(RollPhase.END)
 		return
 	var before := global_position
-	move_and_collide(motion)
+	_move_body(motion)
 	var moved := Vector2(global_position.x - before.x, global_position.z - before.z).length()
 	_roll_distance += moved
 	_track_roll_block(moved, wanted, delta)
@@ -1697,7 +1809,7 @@ func _tick_end_glow() -> void:
 
 
 func _finish_roll() -> void:
-	_snap_to_navmesh()
+	_land_on_navmesh()
 	_finish_move()
 
 
@@ -1728,8 +1840,9 @@ func _begin_dash(action: StringName) -> void:
 
 
 ## Stands still through the wind-up, then moves the body by the leap clip's own travel, so the
-## pose and the body stay together. A wall, a structure or the navmesh's edge stops the body for
-## good; the clip still plays to its end. A forward leap also stops short of the commander.
+## pose and the body stay together. A wall, a structure (whatever the contact normal) or the
+## navmesh's edge stops the body for good; the clip still plays to its end. A step that would lift
+## the body is undone (see _move_body). A forward leap also stops short of the commander.
 func _tick_dash(step: float) -> void:
 	if _move_time < _dash_charge_length:
 		return
@@ -1748,18 +1861,72 @@ func _tick_dash(step: float) -> void:
 	if _leaves_navmesh(global_position + motion) or _dash_would_overlap_commander(motion):
 		_dash_stopped = true
 		return
-	var hit := move_and_collide(motion)
-	if hit != null and absf(hit.get_normal().y) < DASH_WALL_NORMAL_Y:
+	if _move_body(motion):
 		_dash_stopped = true
 
 
-## Turns the face toward the commander while airborne; the path keeps the take-off basis.
+## Turns the face toward the commander while airborne; the path keeps the take-off basis. A turn
+## that would put the body into something else is skipped, since the physics would shove it out upward.
 func _turn_in_air(step: float) -> void:
 	var cmd := _get_valid_commander()
 	if cmd == null:
 		return
 	var max_turn := deg_to_rad(cdata.dash_air_turn_rate_deg) * step
-	rotation.y += clampf(_yaw_to_point(cmd.global_position), -max_turn, max_turn)
+	var turn := clampf(_yaw_to_point(cmd.global_position), -max_turn, max_turn)
+	if _body_overlaps(global_transform.rotated_local(Vector3.UP, turn)):
+		return
+	rotation.y += turn
+
+
+## Moves the body by motion for a move that carries it (dash, combo step, roll). True when
+## something holds it: a structure, whatever the side it touches, or a wall. A step that lifts the
+## body is undone, because the body was pushed up onto a lower obstacle instead of stopped by it.
+func _move_body(motion: Vector3) -> bool:
+	var before := global_position
+	var hit := move_and_collide(motion)
+	if global_position.y > before.y + BODY_RISE_TOLERANCE:
+		global_position = before
+		return true
+	if hit == null:
+		return false
+	if _is_structure_body(hit.get_collider()):
+		return true
+	return absf(hit.get_normal().y) < DASH_WALL_NORMAL_Y
+
+
+## A tower, a Barricade or the Fortress: the body never climbs onto any of them.
+func _is_structure_body(node: Object) -> bool:
+	var structure := node as Node
+	if structure == null:
+		return false
+	return structure.is_in_group(&"tower") or structure.is_in_group(&"barricade") or structure.is_in_group(&"fortress")
+
+
+## True when the body's box, placed at xform, overlaps anything of the boss's mask (other than the floor under it).
+func _body_overlaps(xform: Transform3D) -> bool:
+	if _body_shape == null or _body_shape.shape == null or not is_inside_tree():
+		return false
+	var params := PhysicsShapeQueryParameters3D.new()
+	params.shape = _body_shape.shape
+	params.transform = xform * _body_shape.transform
+	params.transform.origin.y += OVERLAP_FLOOR_CLEARANCE
+	params.collision_mask = collision_mask
+	params.exclude = [get_rid()]
+	params.collide_with_areas = false
+	return not get_world_3d().direct_space_state.intersect_shape(params, 1).is_empty()
+
+
+## After a dash or roll: when the body ended higher than the navmesh surface, or off it, puts it
+## back on the navmesh's nearest point (height included).
+func _land_on_navmesh() -> void:
+	if not _has_navmesh():
+		return
+	var closest := NavigationServer3D.map_get_closest_point(nav.get_navigation_map(), global_position)
+	var flat_gap := Vector2(closest.x - global_position.x, closest.z - global_position.z).length()
+	if flat_gap <= NAVMESH_SNAP_DISTANCE and global_position.y - closest.y <= LANDING_HEIGHT_TOLERANCE:
+		return
+	global_position = closest
+	velocity = Vector3.ZERO
 
 
 ## A forward leap must not carry the boss onto the commander (the boss's mask does not hold it back).
