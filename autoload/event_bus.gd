@@ -12,7 +12,7 @@ signal wave_preview_ready(wave_index: int, composition: Dictionary, is_boss: boo
 signal wave_start_requested  # UI -> Wave: the Start wave button ends PREP
 signal wave_summary_ready(summary: Dictionary)  # emitted AFTER save completes
 signal summary_continue_requested  # UI -> Wave: press Continue or after 10s countdown in SUMMARY
-signal run_victory(wave_index: int)  # RunState -> UI, Audio, Save: opened the victory screen after victory_wave
+signal run_victory(wave_index: int, stats: Dictionary)
 signal victory_continue_requested  # UI -> Wave: the player clicked Continue on the victory screen
 signal fortress_destroyed
 signal fortress_hp_changed(new_hp: int, max_hp: int, delta: int)  # delta < 0 on HP loss

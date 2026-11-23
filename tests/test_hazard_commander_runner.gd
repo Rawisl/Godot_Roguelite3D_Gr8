@@ -30,6 +30,7 @@ func _ready() -> void:
 	test_cap_retries_without_valid_enemies()
 	test_lazy_cap_and_boss()
 	await test_damage_sources()
+	test_weapon_effects_outside_hazard()
 	test_cleanup()
 	_commander.free()
 	_run_state.free()
@@ -115,7 +116,14 @@ func test_snapshot_and_locks() -> void:
 	_run_state.equipped_weapon = &"swift"
 	_commander._apply_weapon(&"swift")
 	_run_state.chain_cd = 0.0
+	var restored_chain: Array[Vector2] = []
+	var capture := func(id: StringName, remaining: float, total: float) -> void:
+		if id == &"chain_lightning":
+			restored_chain.append(Vector2(remaining, total))
+	EventBus.skill_cooldown_changed.connect(capture)
 	_leave()
+	EventBus.skill_cooldown_changed.disconnect(capture)
+	assert_true(restored_chain == [Vector2(3.0, 5.0)], "room exit refreshes the shared cooldown with another weapon equipped")
 	assert_true(health.hp == 70 and health.max_hp == 100 and health.dot_remainder == 0.25, "70/100 HP and DoT remainder restored without PREP heal")
 	assert_true(_commander.stat_block.export_state() == stats, "deep StatBlock snapshot survives room mutations")
 	assert_true(_commander.skill_runner.export_state() == skills, "skill slots, levels and cooldowns restored")
@@ -189,7 +197,9 @@ func test_lazy_cap_and_boss() -> void:
 	boss.current_armor_hp = 1200
 	boss.health.max_hp = 2100
 	boss.health.hp = 2100
+	_commander._apply_weapon(&"frost")
 	assert_true(boss.take_damage(DamageInfo.new(500, Enums.DamageType.TRUE, _commander)) == 90, "boss cap uses 900 core HP, excluding 1200 armor")
+	assert_true(is_equal_approx(boss.get_slow_factor(), 0.8), "Frost slows the armored boss")
 	_leave()
 	boss.free()
 
@@ -220,14 +230,18 @@ func test_damage_sources() -> void:
 	assert_true(zone != null, "Firebomb creates a zone")
 	if zone != null:
 		zone.set_physics_process(false)
+		_commander._apply_weapon(&"frost")
 		before = enemy.health.hp
 		zone.tick(1.0)
 		assert_true(before - enemy.health.hp == 50, "Firebomb tick is capped")
+		assert_true(is_equal_approx(enemy.get_slow_factor(), 0.8), "Firebomb ticks proc Frost")
 		zone.free()
 	before = enemy.health.hp
-	enemy.apply_burn(400.0, 5.0, Enums.DamageType.SLASH, _commander)
+	_commander._apply_weapon(&"burn")
+	enemy.take_damage(DamageInfo.new(1, Enums.DamageType.BLAST, _commander))
 	enemy._tick_status(1.0)
-	assert_true(before - enemy.health.hp == 50, "Burn tick is capped")
+	assert_true(before - enemy.health.hp == 51 and enemy.burn_damage_type == Enums.DamageType.BLAST,
+		"Burn inherits the triggering type and its tick is capped")
 	_commander._apply_weapon(&"chain_lightning")
 	_run_state.chain_cd = 0.0
 	var second := _enemy()
@@ -236,10 +250,18 @@ func test_damage_sources() -> void:
 	third.position = Vector3(2.2, 0.0, -0.5)
 	var fourth := _enemy()
 	fourth.position = Vector3(3.2, 0.0, 0.0)
+	enemy.in_hazard_room = true
+	second.in_hazard_room = true
+	third.in_hazard_room = true
+	fourth.in_hazard_room = true
+	var outsider := _enemy()
+	outsider.position = Vector3(1.3, 0.0, 0.0)
 	before = enemy.health.hp
 	enemy.take_damage(DamageInfo.new(1, Enums.DamageType.SLASH, _commander))
 	assert_true(before - enemy.health.hp == 51 and _run_state.chain_cd > 0.0, "triggered Chain Lightning bolt is capped separately from its initiating hit")
 	assert_true(second.health.hp == 450 and third.health.hp == 450 and fourth.health.hp == 500, "chain visits three distinct targets with deterministic ties and caps each bolt")
+	assert_true(outsider.health.hp == 500, "chain cannot jump across the room boundary")
+	outsider.free()
 	before = second.health.hp
 	second.take_damage(DamageInfo.new(1, Enums.DamageType.SLASH, _commander))
 	assert_true(before - second.health.hp == 1, "chain shares its cooldown across targets and does not recurse")
@@ -259,6 +281,94 @@ func test_damage_sources() -> void:
 	assert_true(enemy.take_damage(DamageInfo.new(80, Enums.DamageType.TRUE, _commander)) == 80, "damage is uncapped after leaving")
 	_commander.stat_block.clear_source(&"cap_test")
 	enemy.free()
+
+
+func test_weapon_effects_outside_hazard() -> void:
+	_commander.global_position = Vector3.ZERO
+	_commander.aim_dir = Vector3.RIGHT
+	var slash := DamageInfo.new(20, Enums.DamageType.SLASH, _commander)
+	var boss := _enemy(true) as Bulwark
+	_commander._apply_weapon(&"frost")
+	boss.take_damage(slash)
+	boss._tick_status(2.0)
+	boss.take_damage(slash)
+	assert_true(is_equal_approx(boss.get_slow_factor(), 0.8) and is_equal_approx(boss.slow_timer, 3.0),
+		"an armored boss receives and refreshes Frost from SLASH hits")
+	boss._tick_status(3.0)
+	boss.take_damage(DamageInfo.new(20, Enums.DamageType.PIERCE, _commander))
+	assert_true(boss.slow_timer == 0.0, "an immune hit does not start Frost")
+	boss.free()
+
+	_commander._apply_weapon(&"burn")
+	var burning := _enemy()
+	var burn_hits: Array[DamageInfo] = []
+	burning.health.damaged.connect(func(_amount: int, info: DamageInfo) -> void:
+		if info.is_weapon_effect:
+			burn_hits.append(info))
+	burning.take_damage(DamageInfo.new(1, Enums.DamageType.BLAST, _commander))
+	var starting_hp := burning.health.hp
+	burning._tick_status(5.0)
+	var base: float = _commander.stat_block.get_base(&"sword_damage") + _commander.stat_block.get_add_total(&"sword_damage")
+	assert_true(starting_hp - burning.health.hp == floori(base * 0.5 * _commander.get_sword_dealt_mult()),
+		"Burn deals half the base sword damage over five seconds")
+	assert_true(not burn_hits.is_empty() and burn_hits.all(func(info: DamageInfo) -> bool:
+		return info.damage_type == Enums.DamageType.BLAST and info.hit_by_commander) and burning.burn_timer == 0.0,
+		"Burn preserves the triggering type and credit without refreshing itself")
+	burning.take_damage(slash)
+	burning._tick_status(3.0)
+	var per_tick := burning.burn_per_tick
+	burning.take_damage(slash)
+	assert_true(burning.burn_timer == 5.0 and burning.burn_per_tick == per_tick, "Burn refreshes without stacking")
+	burning.free()
+
+	_commander._apply_weapon(&"chain_lightning")
+	var farther := _enemy()
+	farther.position = Vector3(2.0, 0.0, 0.0)
+	var nearer := _enemy()
+	nearer.position = Vector3(1.0, 0.0, 0.0)
+	var targets: Array[Enemy] = [farther, nearer]
+	var chain_hits: Array[Enemy] = []
+	for target in targets:
+		target.health.damaged.connect(func(_amount: int, info: DamageInfo) -> void:
+			if info.is_weapon_effect:
+				chain_hits.append(target))
+	_run_state.chain_cd = 0.0
+	WhirlwindSkill.cast(_commander, preload("res://data/skills/whirlwind.tres"), 1)
+	assert_true(chain_hits == [nearer, farther], "Whirlwind starts the chain at the nearer enemy regardless of tree order")
+	chain_hits.clear()
+	_run_state.chain_cd = 0.0
+	SwordWaveSkill.cast(_commander, preload("res://data/skills/sword_wave.tres"), 1, 1.0, Vector3.RIGHT)
+	assert_true(chain_hits == [nearer, farther], "Sword Wave starts the chain at the nearer enemy")
+	chain_hits.clear()
+	_run_state.chain_cd = 0.0
+	var zone := FirebombZone.new()
+	zone.setup(_commander, preload("res://data/skills/firebomb.tres"), 1, 1.0)
+	add_child(zone)
+	zone.position = farther.position
+	zone.tick(1.0)
+	assert_true(chain_hits == [nearer, farther], "Firebomb ranks chain targets from the caster")
+	chain_hits.clear()
+	zone.tick(1.0)
+	assert_true(chain_hits.is_empty(), "another Firebomb tick cannot start a chain during cooldown")
+	zone.free()
+	for target in targets:
+		target.free()
+
+	var line: Array[Enemy] = []
+	for index in 4:
+		var target := _enemy()
+		target.position = Vector3(index * 1.5, 0.0, 0.0)
+		line.append(target)
+	_run_state.chain_cd = 0.0
+	line[0].take_damage(DamageInfo.new(1, Enums.DamageType.BLAST, _commander))
+	var bolt := maxi(1, roundi(base * 0.2 * _commander.get_sword_dealt_mult()))
+	assert_true(line[0].health.hp == 499 - bolt and line[1].health.hp == 500 - bolt
+		and line[2].health.hp == 500 - bolt and line[3].health.hp == 500,
+		"Chain hits exactly three distinct enemies for one fifth of base sword damage")
+	assert_true(line[1].health.hit_by_commander and line[2].health.hit_by_commander,
+		"Chain jumps grant commander credit")
+	for target in line:
+		target.free()
 
 
 func test_cleanup() -> void:

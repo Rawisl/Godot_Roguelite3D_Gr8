@@ -6,6 +6,7 @@ extends Resource
 @export var name_key: StringName  # locale key, UI calls tr(name_key)
 @export var model: PackedScene
 @export var vfx: PackedScene
+@export var icon: Texture2D
 ## Multiplies the sword range of the base sword. 1.0 = unchanged.
 @export var range_mult: float = 1.0
 ## What the weapon does on a hit: none, slow, chain, burn, rampage or swift.

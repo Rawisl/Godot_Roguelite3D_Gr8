@@ -5,7 +5,6 @@ extends Node
 ## and the next run end or purchase tries again with the latest data. Never runs during a run, so
 ## the run being played keeps the profile and meta it started with; a sync asked for then goes out
 ## when the run ends.
-# TODO(Rawisl): swap the rule in _resolve() for the agreed conflict policy (now: the higher revision wins, and when the other copy came from another machine it is kept in save.conflict.bak with a notice). Equal revisions from two machines are treated as synced, so a run played on each before syncing is lost on the next write.
 # TODO(Rawisl): when the cloud save carries a save_version, refuse to apply or push over a copy newer than SaveManager.SAVE_VERSION in _resolve(), so a newer game's progress is never replaced from this machine.
 
 ## A sync started or finished, for the Account tab's Sync now button.
@@ -80,22 +79,33 @@ func _resolve(pull: Dictionary) -> void:
 	var device := SaveManager.get_device_id()
 	var cloud_revision := int(pull.get("revision", 0))
 	var cloud_device := String(pull.get("device_id", ""))
+	var cloud_data: Dictionary = pull.get("data", {})
+	var other_device := not cloud_device.is_empty() and cloud_device != device
+	var tied_conflict := cloud_revision == local_revision and other_device and SaveManager.has_sync_changes(cloud_data)
 	if cloud_revision == 0:
 		await _fill_empty_account()
-	elif cloud_revision > local_revision:
-		if local_revision > 0 and cloud_device != device:
-			SaveManager.keep_conflict_copy(SaveManager.data, local_revision, device)
-			show_other_device_notice()
-		if SaveManager.apply_synced(pull.get("data", {}), cloud_revision) == OK:
+	elif cloud_revision > local_revision or tied_conflict:
+		var preserve_local := local_revision > 0 and other_device
+		if preserve_local and not _keep_conflict_copy(SaveManager.data, local_revision, device):
+			return
+		if SaveManager.apply_synced(cloud_data, cloud_revision) == OK:
 			_set_state(SYNCED)
+			if preserve_local:
+				show_other_device_notice()
 		else:
 			_set_state(ERROR, tr(&"sync.detail.local_write"))
 	elif local_revision > cloud_revision:
-		if cloud_device != "" and cloud_device != device:
-			SaveManager.keep_conflict_copy(pull.get("data", {}), cloud_revision, cloud_device)
+		if other_device and not _keep_conflict_copy(cloud_data, cloud_revision, cloud_device):
+			return
 		await _push()
 	else:
 		_set_state(SYNCED)
+
+func _keep_conflict_copy(data: Dictionary, revision: int, device: String) -> bool:
+	if SaveManager.keep_conflict_copy(data, revision, device) == OK:
+		return true
+	_set_state(ERROR, tr(&"sync.detail.local_write"))
+	return false
 
 ## An account with no save yet: a machine with progress asks before uploading it.
 func _fill_empty_account() -> void:

@@ -1,0 +1,29 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cxjogvjfmgi3v"]
+
+[ext_resource type="Shader" uid="uid://bsw86jwy7gpqn" path="res://art/shaders/boss_slash_crescent.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 1
+shader = ExtResource("1_shader")
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/band_color = Color(0.72, 0.72, 0.72, 1)
+shader_parameter/ink_color = Color(0.02, 0.02, 0.02, 1)
+shader_parameter/mesh_width = 0.54
+shader_parameter/ribbon_width = 0.6
+shader_parameter/ribbon_pad = 0.6
+shader_parameter/arc_length = 1.69
+shader_parameter/tail_length = 1.0
+shader_parameter/max_thickness = 0.5
+shader_parameter/outer_margin = 0.08
+shader_parameter/head_taper = 0.14
+shader_parameter/tail_power = 1.5
+shader_parameter/band_start = 0.68
+shader_parameter/ink_outer = 0.06
+shader_parameter/ink_inner = 0.02
+shader_parameter/shard_size = 0.2
+shader_parameter/shard_jitter = 0.35
+shader_parameter/crack_width = 0.16
+shader_parameter/shard_shrink = 0.45
+shader_parameter/burst_distance = 1.4
+shader_parameter/burst_spread = 1.0
+shader_parameter/shard_life = 0.4

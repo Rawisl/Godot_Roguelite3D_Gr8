@@ -97,7 +97,7 @@ var _config: RunConfig = null
 ## Reads the run config before any other node of the run scene is ready, so the wave manager,
 ## the gold and the commander start from the values of this run.
 func _enter_tree() -> void:
-	if not _configured and _is_in_run_scene():
+	if not _configured and _is_in_run_scene() and SaveManager.repository != null:
 		init_from_config(RunLoader.take())
 
 

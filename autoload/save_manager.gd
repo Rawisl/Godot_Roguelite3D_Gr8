@@ -304,17 +304,30 @@ func get_device_id() -> String:
 		_envelope_extras["device_id"] = _new_device_id()
 	return String(_envelope_extras["device_id"])
 
-## Takes profile, meta and flags from the account and writes them at the cloud revision, so both
-## sides match. run_flag stays local: a run in progress is never synced.
-func apply_synced(synced: Dictionary, revision: int) -> Error:
+func has_sync_changes(synced: Dictionary) -> bool:
+	return AccountApi.data_for_sync(data) != AccountApi.data_for_sync(_with_synced_sections(synced))
+
+func _with_synced_sections(synced: Dictionary) -> Dictionary:
+	var candidate := data.duplicate(true)
 	for section in AccountApi.data_for_sync({}):
 		var value: Variant = synced.get(section)
 		if value is Dictionary:
-			data[section] = _merge_defaults(value, DEFAULT_DATA[section])
-	_clamp_values(data)
+			candidate[section] = _merge_defaults(value, DEFAULT_DATA[section])
+	_clamp_values(candidate)
+	return candidate
+
+## Writes the account's profile, meta and flags at the cloud revision. The run flag stays local.
+func apply_synced(synced: Dictionary, revision: int) -> Error:
+	var previous_data := data
+	var previous_extras := _envelope_extras.duplicate(true)
+	data = _with_synced_sections(synced)
 	# _write() adds one.
 	_envelope_extras["revision"] = maxi(revision - 1, 0)
 	var error := save_now()
+	if error != OK:
+		data = previous_data
+		_envelope_extras = previous_extras
+		return error
 	save_loaded.emit()
 	EventBus.prestige_balance_changed.emit(int(get_section(PROFILE)["prestige_balance"]))
 	return error

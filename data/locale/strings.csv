@@ -73,8 +73,11 @@ hover.enemy.target,Mục tiêu: {target}
 hover.target.none,Không có
 enemy.grunt,Lính bộ
 enemy.archer,Cung thủ
+enemy.sniper,Xạ thủ
+enemy.rider,Kỵ binh
 enemy.brute,Lực sĩ
 enemy.bulwark,Bulwark
+enemy.skeletal_centipede,Skeletal Centipede
 panel.build.section_new,Xây mới
 panel.build.section_rebuild,Xây lại
 fbk.resist,RESIST
@@ -553,3 +556,16 @@ tutorial.key.camera,Dịch camera xem toàn bản đồ
 tutorial.key.move,Di chuyển
 tutorial.key.attack,Đánh
 tutorial.key.dodge,Né
+debug.cheat.title,Cheat (PageUp)
+debug.cheat.invincible,Bất tử
+debug.cheat.heal_full,Hồi đầy máu
+debug.cheat.add_gold,+{value} vàng
+debug.cheat.add_level,+1 cấp
+debug.cheat.instant_kill,Instant kill (chỉ huy x1000 sát thương)
+debug.cheat.summon,Triệu hồi
+debug.cheat.jump_label,Nhảy tới đợt
+debug.cheat.jump_wave,Đi
+debug.cheat.hint_prep,Triệu hồi chỉ dùng lúc đang đánh
+debug.cheat.hint_combat,Nhảy đợt chỉ dùng ở PREP: hạ hết quân rồi chờ PREP
+debug.cheat.hint_other,Chờ PREP để nhảy đợt
+debug.cheat.hint_ended,Run đã kết thúc

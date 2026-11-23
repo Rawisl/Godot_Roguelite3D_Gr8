@@ -49,13 +49,11 @@ static func is_commander_action(action: StringName) -> bool:
 
 ## 0 at or below from, 1 at or above to, linear in between.
 static func ramp(x: float, from: float, to: float) -> float:
-	if to <= from:
-		return 1.0 if x >= from else 0.0
-	return clampf((x - from) / (to - from), 0.0, 1.0)
+	return UtilityBrain.ramp(x, from, to)
 
 
 static func _b(cond: bool) -> float:
-	return 1.0 if cond else 0.0
+	return UtilityBrain.gate(cond)
 
 
 ## Score of every action (0 = not possible right now).
@@ -85,27 +83,7 @@ static func score_all(s: Situation, d: BossData) -> Dictionary:
 ## scores; roll is only called then, so a clear choice does not use up the random stream.
 ## Returns &"" when nothing scores (no commander to fight and nothing to push on to).
 static func pick(scores: Dictionary, d: BossData, roll: Callable) -> StringName:
-	var best_score := 0.0
-	for action: StringName in ACTIONS:
-		best_score = maxf(best_score, float(scores.get(action, 0.0)))
-	if best_score <= 0.0:
-		return &""
-	var floor_score := best_score * (1.0 - d.tie_margin)
-	var close: Array[StringName] = []
-	var total := 0.0
-	for action: StringName in ACTIONS:
-		var score := float(scores.get(action, 0.0))
-		if score > 0.0 and score >= floor_score:
-			close.append(action)
-			total += score
-	if close.size() == 1:
-		return close[0]
-	var r: float = float(roll.call()) * total
-	for action in close:
-		r -= float(scores[action])
-		if r < 0.0:
-			return action
-	return close[close.size() - 1]
+	return UtilityBrain.pick(ACTIONS, scores, d.tie_margin, roll)
 
 
 static func decide(s: Situation, d: BossData, roll: Callable) -> StringName:

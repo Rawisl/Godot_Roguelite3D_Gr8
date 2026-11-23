@@ -23,6 +23,8 @@ var _fallback_run_seed: int = 0
 @export var grunt_scene: PackedScene = preload("res://entities/enemy/grunt.tscn")
 @export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
 @export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
+@export var sniper_scene: PackedScene = preload("res://entities/enemy/sniper.tscn")
+@export var rider_scene: PackedScene = preload("res://entities/enemy/rider.tscn")
 @export var bulwark_scene: PackedScene = preload("res://entities/enemy/bulwark.tscn")
 @export var boss_data: BossData = preload("res://data/bosses/bulwark_boss.tres")
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
@@ -112,6 +114,8 @@ var _prestige_pending: int:
 		if rs != null:
 			rs.prestige_pending = value
 var _kills_by_type: Dictionary = {}
+## Enemy id -> count of the spawn queue built for the coming wave.
+var _queue_plan: Dictionary = {}
 
 const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
 const BOSS_TIMER_SCRIPT := preload("res://systems/wave/boss_timer.gd")
@@ -152,9 +156,13 @@ func _ready() -> void:
 	EventBus.victory_continue_requested.connect(_on_victory_continue_requested)
 	_setup_container.call_deferred()
 	start_prep()
+	# The HUD is not ready yet on the first PREP; tell it again once it is.
+	_send_wave_preview.call_deferred()
 
 
 func _exit_tree() -> void:
+	if _waiting_victory_continue:
+		TimeManager.release_pause(TimeManager.REASON_VICTORY)
 	if EventBus.wave_start_requested.is_connected(_on_wave_start_requested):
 		EventBus.wave_start_requested.disconnect(_on_wave_start_requested)
 	if EventBus.enemy_died.is_connected(_on_enemy_died):
@@ -296,6 +304,10 @@ func _get_scene_for_enemy_id(enemy_id: StringName) -> PackedScene:
 			return archer_scene
 		&"brute":
 			return brute_scene
+		&"sniper":
+			return sniper_scene
+		&"rider":
+			return rider_scene
 		_:
 			return grunt_scene
 
@@ -321,6 +333,8 @@ func start_prep() -> void:
 		rs.hazard_used = false
 
 	wave_fsm_state_changed.emit(wave_state, old_state)
+	# Before PREP is announced, so the PREP alerts already know whether a boss is coming.
+	_send_wave_preview()
 	EventBus.state_changed.emit(&"PREP")
 	if hazard_trial != null:
 		# Deferred: on the first PREP the HUD gate is not ready yet when the wave manager is.
@@ -577,11 +591,28 @@ func _build_spawn_queue_for_wave(wave_num: int) -> void:
 	_wave_rng.seed = hash([run_seed, wave_num])
 
 	var composition := generate_wave_composition(wave_num, run_seed)
+	_queue_plan.clear()
 	for item in composition:
 		var scene := item.scene as PackedScene
 		if scene != null:
 			spawn_queue.append(scene)
 			_spawn_delays.append(float(item.delay))
+			var id: StringName = item.get("id", &"")
+			_queue_plan[id] = int(_queue_plan.get(id, 0)) + 1
+
+
+func _send_wave_preview() -> void:
+	EventBus.wave_preview_ready.emit(current_wave, get_wave_plan(), is_boss_wave(current_wave))
+
+
+## What the wave brings, by enemy id: the queue just built, plus the boss on a boss wave. The
+## preview shows exactly what will spawn.
+func get_wave_plan() -> Dictionary:
+	var plan := {}
+	if is_boss_wave(current_wave):
+		plan[boss_data.id if boss_data != null else &"bulwark"] = 1
+	plan.merge(_queue_plan)
+	return plan
 
 
 func _physics_process(delta: float) -> void:
@@ -821,6 +852,8 @@ func _end_combat_to_summary() -> void:
 	var rs := _get_run_state()
 	if rs != null:
 		rs.waves_cleared = current_wave
+		if current_wave == GameConfig.victory_wave:
+			rs.victory_reached = true
 	var weapon_gained: StringName = _grant_boss_weapon(rs)
 
 	# Save progress before the summary shows; a failed write does not hold the summary back
@@ -900,17 +933,19 @@ func _grant_boss_weapon(rs: RunState) -> StringName:
 
 
 func advance_from_summary() -> void:
-	if wave_state != Enums.WaveState.SUMMARY:
+	if wave_state != Enums.WaveState.SUMMARY or _waiting_victory_continue or _is_run_lost:
 		return
 
 	_cleanup_projectiles()
 
-	if current_wave == GameConfig.victory_wave and not _victory_handled:
+	var rs := _get_run_state()
+	if current_wave == GameConfig.victory_wave and not _victory_handled and (rs == null or rs.victory_reached):
 		_victory_handled = true
-		EventBus.run_victory.emit(current_wave)
 		if enable_victory_screen:
 			_waiting_victory_continue = true
 			TimeManager.request_pause(TimeManager.REASON_VICTORY)
+		EventBus.run_victory.emit(current_wave, GameState.run_snapshot())
+		if enable_victory_screen:
 			return
 
 	_advance_past_summary_and_rewards()

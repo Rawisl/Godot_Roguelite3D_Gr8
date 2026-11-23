@@ -155,6 +155,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W10-NG4 | Kiệt | 10 | 2 | CŨ | TIME-06 tự hạ x2 + ALR-10 |
 | W10-MH1 | Mạnh | 10 | 4 | CŨ | Save atomic + checksum + .bak (SAV-01..06, 10..14, 19; FLOW-01, 02, 07) |
 | W10-MH10 | Mạnh | 10 | 6 | MỚI | Trụ có sẵn |
+| W10-MH11 | Mạnh | 10 | 3 | MỚI (ngoài bảng Excel) | Scene cheat chạy thử (PageUp) |
 | W10-MH2 | Mạnh | 10 | 2 | CŨ-SỬA | SAV-04 nối SUMMARY, RunEnd, shop (và nối khi tutorial_done bật) |
 | W10-MH3 | Mạnh | 10 | 3 | CŨ-SỬA | Thưởng boss BRW-01, 02, 04, 06, 07 theo WaveRewardTable (boss_gold = 100 x gold_mult(w), k... |
 | W10-MH4 | Mạnh | 10 | 3 | CŨ-SỬA | MetaShop backend (SHP-05..09, 4 mục |
@@ -861,24 +862,25 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W10-KT7
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Đang làm
+- Trạng thái: Xong
 - Việc: EnemyData thêm trait (is_stealth, explode_*, invuln_*, is_charger/impact_*, revive_*) và WaveScript Resource; hàm tra kịch bản theo wave
 - Nghiệm thu: Mọi trường mặc định 'tắt'; code xử lý theo trait, không rẽ nhánh theo tên loại
 - Tệp liên quan: common/enemy_data.gd, entities/enemy/enemy.gd, mới: common/wave_script.gd
 - ID SRS: 3.7.1, EN-27, SPN-13
 - Cần xong trước: W9-KT5
-- Ghi chú bàn giao: Đã có WaveScript và 15 export trait trong EnemyData; generator đã sinh các cột trait vào bốn EnemyData hiện có. TODO(endervia): implement trait-driven enemy behavior for stealth, explosions, invulnerability, charge impacts and revival; verify the matching runtime behavior before completing this task. TODO tại common/enemy_data.gd
+- Ghi chú bàn giao: WaveScript, the 15 trait exports in EnemyData and the generated trait columns were already in. EnemyData now has `traits` (stealth, explode, undying, revive, charge, in the HUD order) built from the flags, so EnemyTraits reads real data; every flag is off by default and grunt, archer and brute have none. Each PREP sends wave_preview_ready (before PREP itself, and once more after the first PREP so the HUD gets it) with `WaveManager.get_wave_plan()`: exactly the units queued for the wave plus the boss on a boss wave, so the preview follows the WaveScript once the spawner reads it. What each trait does (stealth, Knight, Undead, explosions, the Brute charge) is W11-KT7, W11-KT8 and W11-KT9 (TODO in enemy_data.gd). Runner `tests/test_enemy_traits_runner.tscn`.
 
 ##### W10-KT8
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Sniper và Rider: dữ liệu, scene, hành vi (Sniper tầm hơn Arrow cấp 1, dừng bắn như Archer; Rider chạy nhanh)
 - Nghiệm thu: Sniper bắn từ ngoài tầm Arrow cấp 1; Rider cận chiến như Grunt
 - Tệp liên quan: entities/enemy/ (mới sniper.*, rider.*), data/enemies/
 - ID SRS: EN-19, EN-21
 - Cần xong trước: W10-KT7
 
+- Ghi chú bàn giao: Sniper and Rider rows added to the enemies sheet of balance.xlsx (only that sheet's XML changed; the build_cost Power Query and the other sheets are untouched, which openpyxl would not keep) and generated into data/enemies/sniper.tres and rider.tres. Sniper: ranged PIERCE, attack_range 17 against 14 for the level 1 Arrow, Archer targets, uses the Archer script so it stops and shoots. Rider: melee SLASH like the Grunt with the Grunt's targets, move_speed 6 against 3.5. The numbers are first values for Mạnh to balance. Scenes entities/enemy/sniper.tscn and rider.tscn use Kim's sniper_model and rider/rider_model from W10-KM11; the Rider's anim_walk is the seated simulation/Sit_Chair_Idle clip, as the model note asks. WaveManager maps both ids to their scenes; neither is in a wave yet: the WaveScript rows come with the wave script work. Names in strings.csv (Khang). Runner `tests/test_sniper_rider_runner.tscn`.
 ##### W10-KT9
 - Người: Kiệt
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
@@ -969,6 +971,16 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - ID SRS: SELL-06, TWR-13, BLD-11, 3.2.1
 - Cần xong trước: W8B-KT1, W9-KM7, W10-KT1
 - Ghi chú: hai trụ có sẵn đặt qua BuildService.place_starter_towers() (RunState gọi trước PREP đầu tiên khi start_wave = 1 và tutorial đã xong); lúc tutorial chỉ hai slot mặc định có vòng sáng và xây được, đúng loại, miễn phí; khóa bán tới PREP wave 3; trụ xây lại là tower thường; RunState giữ is_starter, ruined_type, ruined_level theo slot; starter_arrow_slot đổi sang G_3_4. Runner tests/test_starter_towers_runner.tscn.
+
+##### W10-MH11
+- Người: Mạnh
+- Tuần: 10 | Giờ ước tính: 3 | Nguồn: MỚI (ngoài bảng Excel)
+- Trạng thái: Xong
+- Việc: Scene chạy thử tests/cheat_main.tscn kế thừa main.tscn, panel cheat bật tắt bằng PageUp: bất tử, hồi đầy máu, thêm vàng, lên cấp, instant kill (chỉ huy x1000 sát thương), triệu hồi quân, nhảy wave; run trong scene này không ghi save, cloud hay bảng xếp hạng
+- Nghiệm thu: F6 tests/cheat_main.tscn, PageUp mở panel, từng nút chạy đúng; runner tests/test_cheat_panel_runner.tscn qua hết
+- Tệp liên quan: tests/cheat_main.tscn, tests/cheat_main.gd, tests/cheat_panel.tscn, tests/cheat_panel.gd, common/health_component.gd (cờ invulnerable), data/locale/strings.csv (debug.cheat.*)
+- Cần xong trước: không
+- Ghi chú: RunState chỉ tự bắt đầu run trong main.tscn nên scene cheat lặp lại các bước khởi động của nó; TV2 đổi các bước đó thì sửa theo.
 
 #### Khang (UI/UX & Meta), tuần 10, 34h
 
@@ -1147,64 +1159,71 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG2
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí)
 - Nghiệm thu: Skill, projectile, boss clock, Cuồng nộ, hiệu ứng vũ khí đúng ở x1/x2/x3
 - Cần xong trước: W10-NG3
+- Ghi chú W11: TimeManager, boss timer, skill, projectile damage and Hazard effect runners passed. Full gameplay verification at all three speeds is pending.
 
 ##### W11-NG3
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 5 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Chạy lại test Combat, Skill, Boss (7.1, F1..F15, CM1..CM8, HT1..HT14); sửa lỗi
 - Nghiệm thu: Không lỗi console
 - Cần xong trước: W10-NG1
+- Ghi chú W11: Automated combat, skill, status, and heal regressions passed. The full manual SRS scenario pass is pending.
 
 ##### W11-NG5
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Backend ổn định: kiểm tra giới hạn gói miễn phí, sao lưu dữ liệu, tài liệu API một trang, bản demo offline (ACCT-12)
 - Nghiệm thu: Tài liệu API đủ cho Khang và Mạnh tự gọi; tắt mạng vẫn chơi trọn vẹn
 - Cần xong trước: W10-NG6
+- Ghi chú W11: API and offline demo preparation are documented in the backend README. The live dev/demo quota check, protected backups and restore verification remain open.
 
 ##### W11-NG6
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Hỗ trợ tích hợp client của Khang và Mạnh, sửa lỗi API trong ngày
 - Nghiệm thu: Lỗi tích hợp được sửa trong ngày
 - Cần xong trước: W10-NG6
+- Ghi chú W11: Sync integration was verified with local doubles. Same-day support for Khang and Mạnh continues when live integration issues arrive.
 
 ##### W11-NG7
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Hiệu ứng vũ khí: Frost (Slow 20%/3 s), Burn (tổng 50% dmg gốc/5 s), Chain Lightning (3 mục tiêu, 20%, bán kính 2 m, chain_cd 5 s dùng chung); kích hoạt cả với tick Firebomb và skill chủ động; sát thương hiệu ứng mang damage_type của đòn, tính hit_by_commander, không tự kích hoạt lại
 - Nghiệm thu: WP3, WP4, WP5, WP8 đạt; Frost làm chậm Bulwark pha 1; hiệu ứng bị trần 10% trong Hazard Trial (HZ3)
 - Tệp liên quan: entities/commander/commander.gd, systems/skill/skill_runner.gd, systems/skill/whirlwind_skill.gd
 - ID SRS: WPN-04..08
 - Cần xong trước: W9-NG5, W10-NG9, W10-NG10
+- Ghi chú W11: The runner covers weapon procs inside and outside Hazard, Chain target order, room isolation, and cooldown restoration after swapping weapons. Full gameplay verification is pending. Kim (@kimvux) owns final icons and VFX.
 
 ##### W11-NG8
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Brute sửa: is_charger, mục tiêu cố định FORTRESS, miễn khiêu khích và Battle Cry, va mỗi công trình một lần rồi đi vòng, va chỉ huy hất văng (tối đa 1 lần/2 s, Dodge và Deploying miễn)
 - Nghiệm thu: NE5 đạt
 - Tệp liên quan: entities/enemy/brute.gd, data/enemies/brute.tres
 - ID SRS: EN-25
 - Cần xong trước: W10-KT7
+- Ghi chú W11: The corridor runner verifies physical contacts with a Barricade and a tower, one hit per building, a return to the lane, and arrival at a Fortress melee slot. It also verifies recycle, sword provocation immunity, and Commander contact and melee rules in Hazard. Mạnh can carry the initial impact damage of 25 and knockback of 2 into the final workbook.
 
 ##### W11-NG9
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Thắng ở victory_wave và endless: victory_reached, run_result, thua đè thắng, thứ tự WAVE-13 (SUMMARY -> màn thắng -> REWARD_PICK -> PREP), lý do Pause VICTORY ở TimeManager, run_victory và victory_continue_requested, Abandon sau thắng là SURVIVED, scale từ wave 31
 - Nghiệm thu: VC1..VC5 đạt; không thêm uy tín hay danh vọng khi thắng
 - Tệp liên quan: systems/wave/wave_manager.gd (advance_from_summary ~637), autoload/time_manager.gd:18-20 (REASONS), autoload/game_state.gd
 - ID SRS: END-07..10, WAVE-13, TIME-11, EVB-44, EVB-46, SCL-06
 - Cần xong trước: W9-KT3, W10-KT2, W11-KH6
+- Ghi chú W11: Victory is recorded on entering SUMMARY. The screen receives the RunState snapshot and ignores repeat advance requests. Kiệt (@Ender-Via) owns the gameplay switch from WaveScript to ScaleConfig; verify VC4 with that change.
 
 ##### W11-NG10
 - Người: Ngọc
@@ -1220,19 +1239,21 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH5
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Chính sách xung đột đơn giản: bản có revision cao hơn thắng, báo cho người chơi; device_id (ACCT-06 rút gọn)
 - Nghiệm thu: Hai máy lệch revision: lấy bản cao hơn, không mất dữ liệu
 - Cần xong trước: W10-NG5
+- Ghi chú W11: Sync keeps the higher revision, backs up divergent saves and uses the cloud on a tied revision from another device. Existing and new settings/sync cases pass, including a failed backup.
 
 ##### W11-MH6
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tích hợp và hồi quy hook đã có ở W10-NG6 với RunLoading/RunEnd hoàn chỉnh: xác nhận start_run(), run_elapsed, lưu cục bộ trước gửi, và loại trừ lượt khôi phục (LBD-02, 03, 05); không tạo hook nộp điểm thứ hai
 - Nghiệm thu: Khách, lượt khôi phục, start_wave > 1 không gửi điểm; run_elapsed theo RUN-02
 - Cần xong trước: W10-KT1, W10-KT2, W10-NG6
 - Ghi chú bàn giao: Submission hook and retry queue were delivered by W10-NG6. RunState.start_run() now announces direct main launches once and saves the start flag; RunLoading must call it after init_from_config(). This task remains open for end-to-end verification with completed RunEnd and interrupted-run recovery.
+- Ghi chú W11: The leaderboard runner drives RunLoading and the real RunEnd scene with a fake transport and verifies the saved result is submitted once with combat-only elapsed time. Existing cases verify ineligible runs and recovery.
 
 ##### W11-MH7
 - Người: Ngọc
@@ -1587,12 +1608,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM9
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model quân mới, phần 2 (Suicide Squad, Captain, Knight, Undead) và hiệu ứng FBK-14 (giáp sáng Knight, xương Undead, telegraph nổ)
 - Nghiệm thu: Bốn loại khác nhau rõ; telegraph hiện trước nổ
 - Tệp liên quan: contents/, art/
 - ID SRS: 3.7.8, FBK-14, FBK-06
 - Cần xong trước: W10-KT7
+- Ghi chú bàn giao: Models only, in `contents/assets/characters/enemy and boss/`, built on the KayKit skeletons: `suicide_squad_model.tscn` (Archer skeleton with a red outfit (`toon_cloth_tint.gdshader` tints the clothing and gear only, the bones stay white), a KayKit bomb on the back, no weapon), `captain_model.tscn` (bronze outfit with white bones, 1.1x the Squad's size, the Skeleton_Warrior helmet instead of the hood, a bigger bomb and a sword, melee clips), `knight_model.tscn` (the KayKit commander-pack Knight body with the Skeleton_Warrior skull, jaw, eyes and helmet on the same Rig_Medium, `knight/skeleton_knight.glb`, body tinted toward the skeleton palette; sword and large shield) and `undead_model.tscn` (Mage skeleton in mossy green with a scythe). Effects the unit code calls (scripts in `art/characters/`): `set_fuse(bool)` on the Squad and Captain (bomb glows red, pulse under 3/s, steady with Reduce flashing), `set_invulnerable(bool)` on the Knight (gold armour glow and a shield icon over the head) and `set_reviving(bool)` on the Undead (green bones swirling and a ground ring). The red ring before the blast is the existing telegraph: the unit sends `telegraph_started` and TelegraphFxManager draws it. Hooking the models to enemy scenes and data waits for W10-KT7. Verified by `tests/test_new_enemy_models_2.tscn` (21 checks).
 
 ##### W11-KM10
 - Người: Kim
