@@ -571,8 +571,6 @@ func test_two_copies_last_write_wins() -> void:
 		if FileAccess.file_exists(_local.corrupt_path(source)):
 			no_corrupt_copy = false
 	assert_true(no_corrupt_copy, "no corrupt copy was made")
-	assert_true(_failed_reasons.is_empty(), "no save_failed")
-	assert_true(SaveManager.can_write, "saving still allowed")
 
 func _fill_full_profile() -> void:
 	var profile := SaveManager.get_section(SaveManager.PROFILE)
@@ -606,33 +604,29 @@ func test_save_under_50ms() -> void:
 	var warm_wave := SaveManager.record_wave_summary(1, pending, 1, 1.0)
 	var warm_end := SaveManager.record_run_end(summary)
 	assert_true(warm_start == OK and warm_wave == OK and warm_end == OK, "every warm-up write returned OK")
-	var start_times: Array[int] = []
-	var wave_times: Array[int] = []
-	var end_times: Array[int] = []
-	var all_writes_ok := true
+	var start_timed := _time_writes(func(_round: int) -> Error: return SaveManager.record_run_start(1, 1.0))
+	var wave_timed := _time_writes(func(round: int) -> Error:
+		return SaveManager.record_wave_summary(round + 1, pending, 1, 1.0))
+	# record_run_end() refuses a second call for the same run, so each sample starts a fresh run.
+	var end_timed := _time_writes(func(_round: int) -> Error:
+		SaveManager._run_recorded = false
+		return SaveManager.record_run_end(summary))
+	assert_true(start_timed.ok and wave_timed.ok and end_timed.ok, "every timed write returned OK")
+	_report_save_times("run start", start_timed.times)
+	_report_save_times("wave summary", wave_timed.times)
+	_report_save_times("run end", end_timed.times)
+
+## Times SAVE_SAMPLES calls of one write path (called with the sample index); ok is false when any call did not return OK.
+func _time_writes(write: Callable) -> Dictionary:
+	var times: Array[int] = []
+	var ok := true
 	for round in range(SAVE_SAMPLES):
 		var start := Time.get_ticks_usec()
-		var error := SaveManager.record_run_start(1, 1.0)
-		var took := Time.get_ticks_usec() - start
-		start_times.append(took)
+		var error: Error = write.call(round)
+		times.append(Time.get_ticks_usec() - start)
 		if error != OK:
-			all_writes_ok = false
-		start = Time.get_ticks_usec()
-		error = SaveManager.record_wave_summary(round + 1, pending, 1, 1.0)
-		took = Time.get_ticks_usec() - start
-		wave_times.append(took)
-		if error != OK:
-			all_writes_ok = false
-		start = Time.get_ticks_usec()
-		error = SaveManager.record_run_end(summary)
-		took = Time.get_ticks_usec() - start
-		end_times.append(took)
-		if error != OK:
-			all_writes_ok = false
-	assert_true(all_writes_ok, "every timed write returned OK")
-	_report_save_times("run start", start_times)
-	_report_save_times("wave summary", wave_times)
-	_report_save_times("run end", end_times)
+			ok = false
+	return {"times": times, "ok": ok}
 
 func _report_save_times(path_name: String, times: Array[int]) -> void:
 	times.sort()

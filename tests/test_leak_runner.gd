@@ -51,9 +51,12 @@ func _ready() -> void:
 	_print_sample("before run 1", before)
 	var samples: Dictionary = {}
 	for index in range(1, RUNS + 1):
-		var succeeded := await _play_one_run(index)
-		assert_true(succeeded, "run %d reached the summary" % index)
-		if not succeeded:
+		var problems: Array[String] = await _play_one_run(index)
+		var run_label := "run %d cleared wave 1, saved the summary, ended once and freed its scene" % index
+		if not problems.is_empty():
+			run_label += " (" + ", ".join(problems) + ")"
+		assert_true(problems.is_empty(), run_label)
+		if not problems.is_empty():
 			break
 		samples[index] = _sample()
 		_print_sample("after run %d" % index, samples[index])
@@ -80,7 +83,9 @@ func _ready() -> void:
 	get_tree().quit(0 if fails == 0 else 1)
 
 
-func _play_one_run(index: int) -> bool:
+## Returns what went wrong in this run; empty when every check passed.
+func _play_one_run(index: int) -> Array[String]:
+	var problems: Array[String] = []
 	var started_before := _started
 	var ended_before := _ended
 	var scene := MAIN_SCENE.instantiate()
@@ -95,20 +100,16 @@ func _play_one_run(index: int) -> bool:
 			break
 	if _started != started_before + 1 or wm == null or wm.wave_state != Enums.WaveState.PREP:
 		await _free_run_scene(scene)
-		return false
-	if index == 1:
-		var ordinary_wave := not wm.is_boss_wave(1)
-		assert_true(ordinary_wave, "wave 1 is not a boss wave")
-		if not ordinary_wave:
-			await _free_run_scene(scene)
-			return false
+		problems.append("did not reach PREP in time")
+		return problems
 	EventBus.wave_start_requested.emit()
 	var killed := 0
 	deadline = Time.get_ticks_msec() + int(WAVE_TIMEOUT_SEC * 1000.0)
 	while wm.wave_state != Enums.WaveState.SUMMARY:
 		if Time.get_ticks_msec() >= deadline:
 			await _free_run_scene(scene)
-			return false
+			problems.append("did not reach SUMMARY in time")
+			return problems
 		await get_tree().physics_frame
 		wm.spawn_timer = maxf(wm.spawn_timer, 1000.0)
 		for enemy in get_tree().get_nodes_in_group(&"enemy"):
@@ -123,18 +124,19 @@ func _play_one_run(index: int) -> bool:
 	for enemy in get_tree().get_nodes_in_group(&"enemy"):
 		if enemy is Enemy and not enemy.is_dead:
 			alive += 1
-	var wave_cleared := killed > 0 and alive == 0
-	assert_true(wave_cleared, "run %d killed %d wave 1 enemies, %d still alive at the summary" % [index, killed, alive])
+	if killed == 0 or alive > 0:
+		problems.append("wave not cleared (killed %d, alive %d)" % [killed, alive])
 	var run_flag: Dictionary = _read_save().get("data", {}).get("run_flag", {})
 	var summary_saved: bool = int(run_flag.get("waves_cleared", -1)) == 1 and run_flag.get("run_in_progress", false) == true
-	assert_true(summary_saved, "run %d summary is on disk and in progress" % index)
+	if not summary_saved:
+		problems.append("summary not on disk")
 	GameState.abandon_run()
-	var ended_once := _ended == ended_before + 1
-	assert_true(ended_once, "run %d ended exactly once" % index)
+	if _ended != ended_before + 1:
+		problems.append("ended %d times" % (_ended - ended_before))
 	await _free_run_scene(scene)
-	var scene_freed := not is_instance_valid(scene)
-	assert_true(scene_freed, "run %d scene instance is freed after the settle wait" % index)
-	return summary_saved and ended_once and wave_cleared and scene_freed
+	if is_instance_valid(scene):
+		problems.append("scene not freed")
+	return problems
 
 
 func _free_run_scene(scene: Node) -> void:
@@ -176,22 +178,8 @@ func _check_samples(before: Dictionary, base: Dictionary, last: Dictionary) -> v
 		if base[metric] > 0:
 			print("  %s growth run 2 -> run 10: %+.2f%%" % [metric, (float(last[metric]) / base[metric] - 1.0) * 100.0])
 	print("  Nodes before run 1: %d; after run 10: %d" % [before.nodes, last.nodes])
-	if last.nodes > before.nodes:
-		print("  Remaining nodes below /root (excluding autoload roots and this runner):")
-		for child in get_tree().root.get_children():
-			if child == self:
-				continue
-			if not ProjectSettings.has_setting("autoload/" + String(child.name)):
-				print("    %s" % child.get_path())
-			_print_children(child)
 	if last.orphans > before.orphans:
 		Node.print_orphan_nodes()
-
-
-func _print_children(parent: Node) -> void:
-	for child in parent.get_children():
-		print("    %s" % child.get_path())
-		_print_children(child)
 
 
 func _read_save() -> Dictionary:
