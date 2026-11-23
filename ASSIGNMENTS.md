@@ -1385,10 +1385,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH3
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Test ACP-05 (rò rỉ), ACP-06 (save < 50 ms), hồi quy economy và save
 - Nghiệm thu: Sau 10 run bộ nhớ tăng <= 5%
 - Cần xong trước: W10-MH6
+- Ghi chú: 10 run liên tiếp (tests/test_leak_runner.tscn): bộ nhớ +0,21%, object +0,00%, node +0,00% so với run 2, không còn node mồ côi (chạy 3 lần giống nhau); ghi save với profile đầy qua record_run_start, record_wave_summary, record_run_end chậm nhất 30,6 ms (20 lần mỗi đường). Thêm ca thua giữa wave và ca hai bản game ghi xen kẽ. Đo lại ở W12-MH1 khi kịch bản wave mới vào game.
 
 ##### W11-MH4
 - Người: Mạnh
