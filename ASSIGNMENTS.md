@@ -1356,13 +1356,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH11
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 7 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kịch bản wave 1-30 trong sheet waves (loại quân, số lượng, hộ tống, spawn_duration, hệ số), wave 1-2 chỉ Grunt, wave boss đúng một boss và >= 1 hộ tống, số liệu 7 loại quân mới và 5 vũ khí
 - Nghiệm thu: Runner BAL pass; người mới thua wave 8-12 theo ước lượng thô (SCL-04); mỗi loại quân mới có đủ gold, uy tín, XP gốc (RWD-05)
 - Tệp liên quan: balance/balance.xlsx (sheet waves, enemies, weapons)
 - ID SRS: SPN-08, SCL-04, 3.7.8, 3.5.13
 - Cần xong trước: W10-KT7, W10-KT8, W8B-MH1
-- Ghi chú bàn giao: Schema trait và generator đã sẵn sàng; runner hiện không cố định tổng số entry. TODO(kieroth): populate the seven new enemy archetypes and final wave composition after enemy traits and scenes are ready; regenerate resources and run the BAL checks after updating wave composition. Workbook chưa sửa trong phần công cụ này
+- Ghi chú: Sheet enemies có số cho mười loại quân (giữ Sniper và Rider từ W10-KT8); wave 1-30 theo danh sách đã chốt, Bulwark ở 5/15/25 và Skeletal Centipede ở 10/20/30. Wave boss có một boss và hộ tống khoảng nửa ngân sách. Generator nhận lớp con BossData. Năm EnemyData mới có UID và số liệu nhưng chưa có scene riêng; spawner còn rơi về Grunt và dùng Bulwark tới khi W11-KT7/KT8 và W11-KT9 tích hợp (@Ender-Via). Ước lượng người mới gãy ở wave 12, cần chạy lại ở W12-MH1. Runner BAL trên nhánh `week11/wave-script-1-30`: 783 PASSED, 0 FAILED (hash commit ghi trong PR để W11-NG10 đối chiếu). Simulator dùng `--boss-ids bulwark,skeletal_centipede`; từ wave 31 gợi ý weight Rider 3, Sniper/Assassin/Suicide Squad/Undead 2, Captain/Knight 1.
 
 ##### W11-MH1
 - Người: Mạnh

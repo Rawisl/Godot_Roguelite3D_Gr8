@@ -5,6 +5,7 @@ extends Node
 ## Supports queue-based spawning, spawn_zone placement, spawn_grace,
 ## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
 # TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
+# TODO(Ender-Via): when the spawner reads the WaveScript, spawn the boss its boss row names (bulwark on waves 5, 15, 25, skeletal_centipede on 10, 20, 30) with that boss's scene and BossData instead of always the Bulwark, and use the same id for the boss intro and get_wave_plan().
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
