@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://c7bwkkmdvjq33"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" path="res://common/enemy_data.gd" id="1_ahk76"]
+
+[resource]
+script = ExtResource("1_ahk76")
+id = &"assassin"
+display_name_key = "enemy.assassin"
+base_hp = 25
+base_damage = 12
+attack_interval = 0.8
+attack_range = 1.5
+move_speed = 4
+damage_type = 2
+knockback_force = 0
+projectile_speed = 20
+spawn_cost = 3
+is_flying = false
+is_ranged = false
+knockback_immune = false
+aggro_range = 10
+gold_reward = 10
+prestige_reward = 3
+xp_value = 3
+is_stealth = true
+stealth_opacity = 0.5
+explode_on_contact = false
+explode_on_death = false
+explode_radius = 0
+explode_damage = 0
+explode_windup = 0
+invuln_hp_threshold = 0
+invuln_duration = 0
+is_charger = false
+impact_damage = 0
+impact_knockback = 0
+revive_count = 0
+revive_delay = 0
+revive_dmg_mult = 1
