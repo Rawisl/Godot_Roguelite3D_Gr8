@@ -74,7 +74,6 @@ func _show() -> void:
 	_name.text = tr(data.name_key) if data != null else ""
 	_effect.text = tr(StringName("weapon.effect." + str(data.effect_id))) if data != null else ""
 	_count.text = UiFormat.tr_fmt(&"hud.weapon.count", {"value": _owned.size(), "max": weapons.size()})
-	# TODO(kimvux): assign each weapon's icon and VFX when its assets are available.
 	_icon.texture = data.icon if data != null else null
 	_icon.visible = _icon.texture != null
 	# The drawn sword keeps the spot until the weapon has its own icon.
