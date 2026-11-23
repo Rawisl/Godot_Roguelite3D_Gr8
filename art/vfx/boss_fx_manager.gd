@@ -195,6 +195,7 @@ func _ensure_rig() -> bool:
 	var anchors := _get_anchors()
 	var core_root := _attach(sk, anchors.core_bone, anchors.core_offset, anchors.core_fallback)
 	core_root.name = "BossCoreFx"
+	core_root.add_to_group(HitReactionManager.NO_FLASH_GROUP)
 	var core := MeshInstance3D.new()
 	core.name = "Core"
 	var sphere := SphereMesh.new()
@@ -222,6 +223,7 @@ func _ensure_rig() -> bool:
 	for bone: StringName in anchors.vent_bones:
 		var at := _attach(sk, bone, anchors.vent_offset, anchors.vent_fallback)
 		at.name = "BossVentFx_%s" % bone.replace(".", "_")
+		at.add_to_group(HitReactionManager.NO_FLASH_GROUP)
 		var vent := _make_steam(vent_steam_count, false)
 		at.add_child(vent)
 		vents.append(vent)

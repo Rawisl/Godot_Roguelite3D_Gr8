@@ -39,6 +39,11 @@ var _body_mesh: MeshInstance3D
 	%Core, %Drops, %Smoke]
 
 
+func _ready() -> void:
+	# The hit flash skips this whole subtree, so the effects do not turn white with the body.
+	add_to_group(HitReactionManager.NO_FLASH_GROUP)
+
+
 ## Points every bone attachment at the model's skeleton and puts the glow overlay on the body
 ## mesh. Call once, after the model is in the tree.
 func bind(skeleton: Skeleton3D, body_mesh: MeshInstance3D) -> void:

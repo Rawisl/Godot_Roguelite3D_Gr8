@@ -10,6 +10,11 @@ extends Node
 ## Entities are found the way DamageNumberLayer finds them: every HealthComponent whose parent
 ## is in the enemy or commander group. Nothing is added to the entity scenes.
 ## Timers run on TimeManager's pausable real time: the same length at x2 and x3, held on Pause.
+## A mesh under a node in NO_FLASH_GROUP (below the entity, not counting the entity itself or its
+## ancestors) is not flashed: use it for effects attached to the entity.
+
+## Group for effect nodes attached to an entity whose meshes must not flash.
+const NO_FLASH_GROUP: StringName = &"no_hit_flash"
 
 @export var flash_material: Material = preload("res://art/materials/hit_flash.tres")
 ## Seconds the white flash stays on.
@@ -71,7 +76,7 @@ func _on_damaged(amount: int, info: DamageInfo, target: Node3D) -> void:
 	var hit: Dictionary = _hits.get(target, {})
 	if hit.is_empty():
 		hit = {"flash_until": 0.0, "freeze_until": 0.0, "last_flash": -INF, "flash_on": false, "before": {},
-			"meshes": target.find_children("*", "GeometryInstance3D", true, false),
+			"meshes": _flash_meshes(target),
 			"player": _player_of(target), "speed": 1.0}
 		_hits[target] = hit
 		target.tree_exiting.connect(_forget.bind(target), CONNECT_ONE_SHOT)
@@ -83,6 +88,25 @@ func _on_damaged(amount: int, info: DamageInfo, target: Node3D) -> void:
 		hit.flash_until = now + flash_time
 		_set_flash(hit, true)
 	set_process(true)
+
+
+## Every mesh under target except those below a node in NO_FLASH_GROUP.
+func _flash_meshes(target: Node3D) -> Array:
+	var meshes: Array = []
+	for mesh in target.find_children("*", "GeometryInstance3D", true, false):
+		if not _under_no_flash(mesh, target):
+			meshes.append(mesh)
+	return meshes
+
+
+## True when a node in NO_FLASH_GROUP sits between node and target (target itself is not checked).
+func _under_no_flash(node: Node, target: Node) -> bool:
+	var current := node
+	while current != null and current != target:
+		if current.is_in_group(NO_FLASH_GROUP):
+			return true
+		current = current.get_parent()
+	return false
 
 
 func _freeze(hit: Dictionary, now: float) -> void:
