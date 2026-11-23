@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://bqhwa8tatirh5" path="res://entities/tower/barricade.gd" id="3_bscript"]
 [ext_resource type="PackedScene" uid="uid://6ka6jtxno0f1" path="res://contents/assets/towers/barricade_tower_model.tscn" id="4_bmodel"]
 [ext_resource type="Script" uid="uid://cfhws0o80cwe8" path="res://entities/tower/barricade_melee_slots.gd" id="5_bslots"]
+[ext_resource type="Script" uid="uid://bdudpjk3cpltc" path="res://entities/tower/tier_levels_model.gd" id="6_tiers"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(0.7, 1, 1.6)
@@ -19,6 +20,9 @@ size = Vector3(0.9, 1.2, 1.8)
 [node name="Barricade" unique_id=457661571 instance=ExtResource("1_ea0mi")]
 script = ExtResource("3_bscript")
 data = ExtResource("2_cwq22")
+
+[node name="Model" parent="." index="1" unique_id=155594529]
+script = ExtResource("6_tiers")
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=668314301]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)

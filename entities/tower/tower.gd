@@ -5,6 +5,8 @@ signal destroyed(tower: Tower)
 signal shot_started(target: Node3D)
 ## The projectile leaves the muzzle now; not emitted when the shot is dropped or retried.
 signal shot_released(muzzle_pos: Vector3, target: Node3D)
+## Emitted on the first level application and whenever the model tier changes.
+signal model_tier_changed(tier: int)
 
 ## Melee attackers walk this close to their attack position before swinging (read by Enemy),
 ## so a unit does not stop short and block the way to the positions next to it.
@@ -12,6 +14,8 @@ const MELEE_ARRIVE_DISTANCE := 0.6
 
 @export var data: TowerData
 var level: int = 1
+## Tier currently shown; 0 before the first apply_level.
+var model_tier: int = 0
 ## Gold spent on this tower (build plus upgrades); preplaced towers start at 0.
 var invested_gold: int = 0
 ## Preplaced starter tower (or one built free in the tutorial): its sale is locked until
@@ -92,6 +96,51 @@ func apply_level(new_level: int) -> void:
 	# Direct writes skip HealthComponent's signal; the health bar needs the new max.
 	health.hp_changed.emit(health.hp, health.max_hp)
 	(range_shape.shape as CylinderShape3D).radius = _lv.attack_range
+	_apply_model_tier()
+
+func _apply_model_tier() -> void:
+	var tier := TowerData.model_tier(level)
+	if tier == model_tier:
+		return
+	model_tier = tier
+	_swap_tier_model(data.get_model_scene(tier))
+	model_tier_changed.emit(tier)
+
+func _swap_tier_model(scene: PackedScene) -> void:
+	if scene == null:
+		return
+	var holder := get_node_or_null(^"Model") as Node3D
+	if holder == null:
+		return
+	var current := _find_tier_model(holder)
+	if current == null:
+		return
+	if current.scene_file_path == scene.resource_path:
+		return
+	_forget_visuals_in(current)
+	var next := scene.instantiate() as Node3D
+	if next == null:
+		return
+	next.transform = current.transform
+	var index := current.get_index()
+	holder.remove_child(current)
+	current.free()
+	holder.add_child(next)
+	holder.move_child(next, index)
+
+func _find_tier_model(holder: Node3D) -> Node3D:
+	for child in holder.get_children():
+		if child is Node3D:
+			for scene in data.model_tier_scenes:
+				if scene != null and child.scene_file_path == scene.resource_path:
+					return child as Node3D
+	return null
+
+func _forget_visuals_in(root: Node) -> void:
+	if is_instance_valid(_aim_node) and root.is_ancestor_of(_aim_node):
+		_aim_node = null
+	if is_instance_valid(_muzzle_node) and root.is_ancestor_of(_muzzle_node):
+		_muzzle_node = null
 
 ## Enemy melee and projectiles call take_damage on the body they hit.
 ## HP = 0 emits destroyed, and the Slot turns RUINED.
@@ -327,10 +376,15 @@ func _release_shot() -> void:
 		_release_t = 0.0  # Retry next frame
 		return
 	_release_t = -1.0
-	var from := (_muzzle_node if _muzzle_node != null else muzzle).global_position
+	var from := _shot_origin()
 	shot_released.emit(from, _shot_target)
 	p.fire(from, _shot_target, _lv.damage, data.damage_type, data.projectile_speed, self)
 	_shot_target = null
+
+func _shot_origin() -> Vector3:
+	if is_instance_valid(_muzzle_node):
+		return _muzzle_node.global_position
+	return muzzle.global_position
 
 func _update_aim() -> void:
 	if (_aim_node == null 
