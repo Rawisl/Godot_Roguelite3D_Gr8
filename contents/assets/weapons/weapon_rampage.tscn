@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://c2g2huv37srlb"]
+
+[ext_resource type="Script" uid="uid://cavfplh5ldixj" path="res://art/vfx/weapon_blade_fx.gd" id="1_fx"]
+[ext_resource type="PackedScene" uid="uid://cmcrgfcxpdoof" path="res://contents/assets/weapons/weapon_rampage.glb" id="2_mesh"]
+
+[node name="WeaponRampage" type="Node3D"]
+script = ExtResource("1_fx")
+kind = 3
+blade_from = 0.6
+blade_to = 1.6
+color_start = Color(1, 0.35, 0.2, 1)
+color_end = Color(0.5, 0.02, 0.02, 0)
+amount = 6
+lifetime = 0.7
+particle_size = 0.07
+
+[node name="Mesh" parent="." instance=ExtResource("2_mesh")]
