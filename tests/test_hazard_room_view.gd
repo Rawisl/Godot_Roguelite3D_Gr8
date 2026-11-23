@@ -1,10 +1,11 @@
 extends Node
 ## Visual check of the Hazard Trial room on the real corridor level: the real CameraRig cutting to
-## the room's fixed frame and back to PREP, the painted backdrop, the room light and the
+## the chase view in the room and back to PREP, the sky sphere, the room light and the
 ## rocks drifting clockwise around the island.
 ## Signals are sent by hand, so it works before the Hazard Trial wave state exists. Not shipped.
 ## Keys: E enter / leave the room (hazard_trial_entered / exited), P pause, 1 / 2 / 3 game speed,
-## Up / Down rock speed. In the room the move keys and C must not move the camera.
+## Up / Down rock speed. The level has no commander, so in the room the chase view looks at
+## CameraFrame; the move keys and C must not move it.
 
 const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
 

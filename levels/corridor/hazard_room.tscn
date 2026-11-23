@@ -17,11 +17,12 @@
 [ext_resource type="ArrayMesh" uid="uid://b38focbjlaywt" path="res://contents/assets/environment/hazard_room/hazard_room_clouds_1.res" id="14_liwrq"]
 [ext_resource type="ArrayMesh" uid="uid://caio31mu81i26" path="res://contents/assets/environment/hazard_room/hazard_room_clouds_2.res" id="15_v7yfx"]
 [ext_resource type="ArrayMesh" uid="uid://byoff2na7o07t" path="res://contents/assets/environment/hazard_room/hazard_room_clouds_3.res" id="16_gnl27"]
-[ext_resource type="Material" uid="uid://da3jx5f2y18oe" path="res://art/materials/hazard_backdrop.tres" id="17_aa8ln"]
+[ext_resource type="Material" uid="uid://ceklssvi14q54" path="res://art/materials/hazard_sky.tres" id="17_sky"]
 
-[sub_resource type="QuadMesh" id="QuadMesh_3rcih"]
-material = ExtResource("17_aa8ln")
-size = Vector2(70, 35)
+[sub_resource type="SphereMesh" id="SphereMesh_sky"]
+material = ExtResource("17_sky")
+radius = 60.0
+height = 120.0
 
 [node name="HazardRoom" type="Node3D" unique_id=121629625]
 script = ExtResource("0_room")
@@ -93,10 +94,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
 cast_shadow = 0
 mesh = ExtResource("16_gnl27")
 
-[node name="Backdrop" type="MeshInstance3D" parent="." unique_id=166893983]
-transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, -42.426407, -44.726406)
+[node name="SkySphere" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+visible = false
 cast_shadow = 0
-mesh = SubResource("QuadMesh_3rcih")
+mesh = SubResource("SphereMesh_sky")
 
 [node name="CommanderSpawn" type="Marker3D" parent="." unique_id=337516567]
 unique_name_in_owner = true

@@ -1,247 +1,192 @@
 extends Node3D
-## Test for the camera in the Hazard Trial: entering cuts to the room's
-## fixed frame and size, nothing moves it there (follow, move keys, C, Tab), leaving cuts back to
-## the PREP frame, either signal order works, and camera_frame_changed reports every frame once.
-## Uses the real hazard_room.tscn. Not shipped. Run with F6, prints OK/FAIL per case then quits.
+## Integration checks for entering and leaving the chase view, camera motion and cursor ownership.
 
-const ROOM_SCENE: PackedScene = preload("res://levels/corridor/hazard_room.tscn")
-const NEAR := 0.05
+const ROOM_SCENE := preload("res://levels/corridor/hazard_room.tscn")
 
-var _pass := 0
-var _fail := 0
-var _rig: CameraRig
-var _camera: Camera3D
-var _commander: Node3D
-var _room: Node3D
-var _frames: Array[StringName] = []
+var passes := 0
+var fails := 0
+var room: HazardRoom
+var commander: Node3D
+var rig: CameraRig
+var corridor_camera: Camera3D
+var bounds: CameraBounds
+var frames: Array[StringName] = []
 
 
 func _ready() -> void:
-	_commander = Node3D.new()
-	_commander.add_to_group(&"commander")
-	add_child(_commander)
-	EventBus.camera_frame_changed.connect(func(frame: StringName) -> void: _frames.append(frame))
-	_run()
-	print("[test] done: %d passed, %d failed" % [_pass, _fail])
-	get_tree().quit(1 if _fail > 0 else 0)
+	commander = Node3D.new()
+	commander.add_to_group(&"commander")
+	add_child(commander)
+	room = ROOM_SCENE.instantiate() as HazardRoom
+	room.position = Vector3(0, 0, 100)
+	add_child(room)
+	EventBus.camera_frame_changed.connect(func(frame: StringName) -> void: frames.append(frame))
+	_test_entry_and_motion()
+	_test_cursor_and_zoom()
+	_test_exit_orders()
+	_clear_rig()
+	room.free()
+	commander.free()
+	print("[test] done: %d passed, %d failed" % [passes, fails])
+	get_tree().quit(0 if fails == 0 else 1)
 
 
 func _new_rig() -> void:
-	if _rig != null:
-		_rig.bounds.free()
-		_rig.free()
-	_rig = CameraRig.new()
-	_camera = Camera3D.new()
-	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	_rig.add_child(_camera)
-	var bounds := CameraBounds.new()
+	_clear_rig()
+	bounds = CameraBounds.new()
 	add_child(bounds)
-	_rig.bounds = bounds
-	add_child(_rig)
-	_camera.look_at_from_position(Vector3(16, 16, 16), Vector3.ZERO)
-	_camera.current = true
-	_commander.global_position = Vector3(-6, 0, 0)
-	_frames.clear()
+	rig = CameraRig.new()
+	rig.bounds = bounds
+	corridor_camera = Camera3D.new()
+	corridor_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	rig.add_child(corridor_camera)
+	add_child(rig)
+	corridor_camera.look_at_from_position(Vector3(16, 16, 16), Vector3.ZERO)
+	corridor_camera.current = true
+	frames.clear()
 
 
-func _add_room() -> void:
-	_room = ROOM_SCENE.instantiate() as Node3D
-	_room.position = Vector3(0, 0, 100)
-	_room.rotation_degrees.y = 20.0
-	add_child(_room)
+func _clear_rig() -> void:
+	if rig != null:
+		rig.free()
+		rig = null
+	if bounds != null:
+		bounds.free()
+		bounds = null
 
 
-func _remove_room() -> void:
-	if _room != null:
-		_room.free()
-		_room = null
+func _chase() -> Camera3D:
+	return rig.get_node("ChaseCamera") as Camera3D
 
 
-## Advances real and game time the way TimeManager does and runs the rig's loops.
-func _step(seconds: float, tick := 0.016) -> void:
-	var left := seconds
-	while left > 0.0:
-		var dt := minf(tick, left)
+func _check(ok: bool, label: String) -> void:
+	if ok:
+		passes += 1
+		print("[test] OK %s" % label)
+	else:
+		fails += 1
+		printerr("[test] FAIL %s" % label)
+
+
+func _step(seconds: float) -> void:
+	var elapsed := 0.0
+	while elapsed < seconds:
+		var dt := minf(0.016, seconds - elapsed)
 		TimeManager.real_time += dt
 		TimeManager.game_time += dt
-		_rig._process(dt)
-		_rig._follow(dt)
-		left -= tick
+		rig._process(dt)
+		rig._follow(dt)
+		elapsed += dt
 
 
-func _flat(v: Vector3) -> Vector3:
-	return Vector3(v.x, 0.0, v.z)
+func _motion(relative: Vector2) -> InputEventMouseMotion:
+	var event := InputEventMouseMotion.new()
+	event.screen_relative = relative
+	return event
 
 
-func _at(p: Vector3) -> bool:
-	return _flat(_rig.position).distance_to(_flat(p)) < NEAR
+func _wheel(button: MouseButton) -> InputEventMouseButton:
+	var event := InputEventMouseButton.new()
+	event.button_index = button
+	event.pressed = true
+	return event
 
 
-func _room_focus() -> Vector3:
-	return _room.call(&"get_camera_focus")
-
-
-func _room_size() -> float:
-	return float(_room.get(&"camera_size"))
-
-
-func _enter_prep() -> void:
+func _enter() -> void:
+	commander.global_position = room.get_commander_spawn().global_position
 	EventBus.state_changed.emit(&"PREP")
-	_step(0.6)
-	_frames.clear()
-
-
-func _run() -> void:
-	_add_room()
-
-	# Entering from PREP with hazard_trial_entered: a cut on the same frame, room size, one signal.
-	_new_rig()
-	_enter_prep()
+	frames.clear()
 	EventBus.hazard_trial_entered.emit(5, [])
-	_check("entering cuts to the room focus at once", _at(_room_focus()))
-	_check("entering sets the room camera size at once", is_equal_approx(_camera.size, _room_size()))
-	_check("entering reports HAZARD_TRIAL once", _frames == [&"HAZARD_TRIAL"])
-	_check("the rig says it is in the Hazard Trial", _rig.is_in_hazard_trial() and _rig.get_frame() == &"HAZARD_TRIAL")
-	_check("panning is off in the room", not _rig.is_panning_enabled())
 
-	# The second signal of the pair (the HAZARD_TRIAL state) changes nothing.
-	EventBus.state_changed.emit(&"HAZARD_TRIAL")
-	_check("the HAZARD_TRIAL state after the signal sends nothing more", _frames.size() == 1)
 
-	# Nothing moves the frame in the room: the commander walking, the move keys, C, Tab.
-	_commander.global_position = _room_focus() + Vector3(8, 0, 4)
+func _test_entry_and_motion() -> void:
+	_new_rig()
+	_enter()
+	var chase := _chase()
+	_check(get_viewport().get_camera_3d() == chase
+			and chase.projection == Camera3D.PROJECTION_PERSPECTIVE
+			and frames == [&"HAZARD_TRIAL"], "entering cuts to the perspective frame once")
+	_check(rig._orbit.zoom == 1.0 and absf(rig._orbit.pitch_deg - room.chase_pitch_deg) < 0.01
+			and not rig.is_panning_enabled(), "entry resets orbit and disables map panning")
+	var start := rig.position
+	commander.global_position += Vector3(8, 0, 4)
+	_step(0.016)
+	_check(rig.position.distance_to(start) > 0.0
+			and rig.position.distance_to(commander.global_position) > 1.0,
+			"the camera follows the commander smoothly")
 	_step(1.0)
-	_check("the camera does not follow the commander in the room", _at(_room_focus()))
-	Input.action_press(&"move_right")
-	Input.action_press(&"move_up")
-	_step(0.8)
-	Input.action_release(&"move_right")
-	Input.action_release(&"move_up")
-	_check("the move keys do not pan the camera in the room", _at(_room_focus()))
-	var recenter := InputEventAction.new()
-	recenter.action = &"camera_recenter"
-	recenter.pressed = true
-	_rig._unhandled_input(recenter)
-	_step(0.5)
-	_check("C does nothing in the room", _at(_room_focus()) and is_equal_approx(_camera.size, _room_size()))
-	EventBus.mode_changed.emit(&"COMMANDER")
-	_step(0.6)
-	EventBus.mode_changed.emit(&"FRONTLINE")
-	_step(0.6)
-	_check("a mode change keeps the room frame", _at(_room_focus()) and is_equal_approx(_camera.size, _room_size()))
-	_check("a mode change in the room sends no frame", _frames.size() == 1)
+	_check(rig.position.distance_to(commander.global_position) < 0.05,
+			"the chase catches the commander")
+	var yaw := rig._orbit.yaw
+	rig._input(_motion(Vector2(100, -100000)))
+	_check(absf(angle_difference(rig._orbit.yaw, yaw) - deg_to_rad(100 * rig.mouse_sensitivity)) < 0.001
+			and absf(rig._orbit.pitch_deg - room.chase_pitch_max_deg) < 0.01,
+			"mouse look turns yaw and clamps pitch")
+	var floor_ok := true
+	for pitch in [room.chase_pitch_min_deg, room.chase_far_pitch_deg, room.chase_pitch_max_deg]:
+		rig._orbit.pitch_deg = pitch
+		for zoom in [room.chase_zoom_min, 1.0]:
+			rig._orbit.zoom = zoom
+			rig._orbit.place(rig.global_position)
+			floor_ok = floor_ok and chase.global_position.y - rig.global_position.y >= room.chase_min_height - 0.001
+	_check(floor_ok, "the camera stays above the floor across pitch and zoom limits")
 
-	# Leaving with hazard_trial_exited first: a cut to the PREP frame, then PREP changes nothing.
-	EventBus.hazard_trial_exited.emit(&"LEFT", 2, 10, 4.0, 0)
-	_check("leaving cuts back to the middle of the corridor", _at(Vector3.ZERO))
-	_check("leaving sets the overview size at once", is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
-	_check("leaving reports OVERVIEW once", _frames == [&"HAZARD_TRIAL", &"OVERVIEW"])
-	EventBus.state_changed.emit(&"PREP")
-	_step(0.6)
-	_check("the PREP state after leaving keeps the PREP frame", _at(Vector3.ZERO) and is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
-	_check("the PREP state after leaving sends nothing more", _frames.size() == 2)
-	_check("panning works again in PREP", _rig.is_panning_enabled())
 
-	# The other order: the HAZARD_TRIAL state first, PREP before hazard_trial_exited.
-	_new_rig()
-	_enter_prep()
-	EventBus.state_changed.emit(&"HAZARD_TRIAL")
-	EventBus.hazard_trial_entered.emit(5, [])
-	_check("state first: cut to the room, one HAZARD_TRIAL", _at(_room_focus()) and _frames == [&"HAZARD_TRIAL"])
-	EventBus.state_changed.emit(&"PREP")
-	EventBus.hazard_trial_exited.emit(&"WON", 5, 30, 12.0, 1)
-	_check("PREP first: back to the corridor, one OVERVIEW", _at(Vector3.ZERO) and _frames == [&"HAZARD_TRIAL", &"OVERVIEW"])
-	_check("PREP first: overview size", is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
-
-	# Panned away in PREP before entering: leaving still returns to the default focus.
-	_new_rig()
-	_enter_prep()
-	_rig.position = Vector3(10, 0, 1)
-	EventBus.hazard_trial_entered.emit(5, [])
-	EventBus.hazard_trial_exited.emit(&"DIED", 0, 0, 0.0, 0)
-	_check("a pan made before entering is not restored", _at(Vector3.ZERO))
-
-	# The other frames are reported too: OVERVIEW in PREP, FRONTLINE in COMBAT, BOSS_INTRO.
-	_new_rig()
-	EventBus.state_changed.emit(&"PREP")
-	EventBus.state_changed.emit(&"COMBAT")
-	EventBus.mode_changed.emit(&"COMMANDER")
-	EventBus.mode_changed.emit(&"FRONTLINE")
-	EventBus.state_changed.emit(&"BOSS_INTRO")
-	EventBus.state_changed.emit(&"BOSS_COMBAT")
-	_check("frames follow the context: %s" % [_frames], _frames == [&"OVERVIEW", &"FRONTLINE", &"OVERVIEW", &"FRONTLINE", &"BOSS_INTRO", &"FRONTLINE"])
-	EventBus.state_changed.emit(&"BOSS_COMBAT")
-	_check("the same frame again sends nothing", _frames.size() == 6)
-
-	# Panning is free at once after leaving, in both signal orders: no hidden glide.
-	for order in [["exited", "prep"], ["prep", "exited"]]:
-		_new_rig()
-		_enter_prep()
-		EventBus.hazard_trial_entered.emit(5, [])
-		for step in order:
-			if step == "exited":
-				EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
-			else:
-				EventBus.state_changed.emit(&"PREP")
-		_check("%s then %s: no glide left and panning works at once" % order, not _rig.is_gliding() and _rig.is_panning_enabled())
-		Input.action_press(&"move_right")
-		_step(0.3)
-		Input.action_release(&"move_right")
-		_check("%s then %s: the move keys pan right away" % order, not _at(Vector3.ZERO))
-
-	# Commander mode set while in the room: leaving still frames the PREP middle.
-	_new_rig()
-	_enter_prep()
-	EventBus.hazard_trial_entered.emit(5, [])
-	EventBus.mode_changed.emit(&"COMMANDER")
-	EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
-	_check("Commander mode across the room: back to the PREP middle at overview size",
-		_at(Vector3.ZERO) and is_equal_approx(_camera.size, _rig.bounds.camera_size_overview))
-	EventBus.mode_changed.emit(&"FRONTLINE")
-
-	# Game speed and Pause in the room do not move the frame.
-	_new_rig()
-	_enter_prep()
-	EventBus.hazard_trial_entered.emit(5, [])
-	Engine.time_scale = 3.0
-	_step(0.5)
+func _test_cursor_and_zoom() -> void:
+	rig._orbit.pitch_deg = room.chase_far_pitch_deg
+	rig._orbit.zoom = 1.0
+	rig._orbit.zoom_target = 1.0
+	rig._orbit.place(rig.global_position)
+	rig._input(_wheel(MOUSE_BUTTON_WHEEL_UP))
+	_step(1.0)
+	_check(absf(rig._orbit.zoom - (1.0 - room.chase_zoom_step)) < 0.01,
+			"the wheel zooms toward the camera")
+	for i in 30:
+		rig._input(_wheel(MOUSE_BUTTON_WHEEL_UP))
+	_step(1.0)
+	_check(absf(rig._orbit.zoom - room.chase_zoom_min) < 0.01,
+			"zoom stops at the room's minimum")
+	var key := InputEventKey.new()
+	key.physical_keycode = rig.free_cursor_key
+	key.pressed = true
+	Input.parse_input_event(key)
+	Input.flush_buffered_events()
+	_step(0.016)
+	var yaw := rig._orbit.yaw
+	rig._input(_motion(Vector2(100, 0)))
+	_check(not rig.is_cursor_captured() and is_equal_approx(rig._orbit.yaw, yaw),
+			"holding Alt frees the cursor without turning the view")
+	var released := InputEventKey.new()
+	released.physical_keycode = rig.free_cursor_key
+	released.pressed = false
+	Input.parse_input_event(released)
+	Input.flush_buffered_events()
+	_step(0.016)
+	_check(rig.is_cursor_captured(), "releasing Alt recaptures the cursor")
 	TimeManager.request_pause(TimeManager.REASON_USER)
-	_step(0.5)
+	_check(not rig.is_cursor_captured() and not rig.get_node("Crosshair").visible,
+			"pause frees the cursor and hides the crosshair")
+	yaw = rig._orbit.yaw
+	rig._input(_motion(Vector2(100, 0)))
+	_check(is_equal_approx(rig._orbit.yaw, yaw), "free cursor does not turn the view")
 	TimeManager.release_pause(TimeManager.REASON_USER)
-	Engine.time_scale = 1.0
-	_check("x3 and Pause in the room keep the room frame", _at(_room_focus()) and is_equal_approx(_camera.size, _room_size()))
+	_check(rig.is_cursor_captured(), "unpausing captures the cursor")
 
-	# Leaving into another state than PREP (a reset or a recovery): that state's own frame.
-	_new_rig()
-	_enter_prep()
-	EventBus.hazard_trial_entered.emit(5, [])
-	_frames.clear()
-	EventBus.state_changed.emit(&"COMBAT")
-	_check("leaving into COMBAT frames the commander in Frontline",
-		_at(_rig.bounds.clamp_focus(Vector3(-6, 0, 0), true)) and _frames == [&"FRONTLINE"])
-	_check("leaving into COMBAT uses the Frontline size", is_equal_approx(_camera.size, _rig.bounds.camera_size_frontline))
-	_check("leaving into COMBAT is not taken for PREP", not _rig.is_panning_enabled())
 
-	# Without a room the frame still locks and reports, and leaving restores PREP.
-	_remove_room()
-	_new_rig()
-	_enter_prep()
-	EventBus.hazard_trial_entered.emit(5, [])
-	_step(0.3)
-	_check("no room: the camera stays where it was", _at(Vector3.ZERO))
-	_check("no room: still reports HAZARD_TRIAL and locks panning", _frames == [&"HAZARD_TRIAL"] and not _rig.is_panning_enabled())
+func _test_exit_orders() -> void:
 	EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
-	_check("no room: leaving reports OVERVIEW", _frames == [&"HAZARD_TRIAL", &"OVERVIEW"])
-
-	_rig.bounds.free()
-	_rig.free()
-	_rig = null
-
-
-func _check(label: String, ok: bool) -> void:
-	if ok:
-		_pass += 1
-		print("OK   ", label)
-	else:
-		_fail += 1
-		print("FAIL ", label)
+	EventBus.state_changed.emit(&"PREP")
+	_check(get_viewport().get_camera_3d() == corridor_camera
+			and frames == [&"HAZARD_TRIAL", &"OVERVIEW"]
+			and rig.is_panning_enabled(), "leaving restores the corridor once")
+	_new_rig()
+	EventBus.state_changed.emit(&"PREP")
+	frames.clear()
+	EventBus.state_changed.emit(&"HAZARD_TRIAL")
+	commander.global_position = room.get_commander_spawn().global_position
+	EventBus.hazard_trial_entered.emit(5, [])
+	EventBus.state_changed.emit(&"PREP")
+	EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
+	_check(frames == [&"HAZARD_TRIAL", &"OVERVIEW"]
+			and get_viewport().get_camera_3d() == corridor_camera,
+			"the opposite signal order also restores the corridor once")

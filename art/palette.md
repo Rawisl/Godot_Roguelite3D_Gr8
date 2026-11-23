@@ -78,13 +78,15 @@ Thân trạm (`contents/assets/towers/heal_station.glb`) dùng màu phẳng, m�
 
 Phòng (`levels/corridor/hazard_room.tscn`) là một đảo tròn lơ lửng: sàn `env_grass`, tường `struct_stone`, mặt dưới đảo và đá trôi `env_rock`. Tím chỉ dùng cho Hazard Trial để tháp và hốc sinh quái không lẫn với màu phe địch hay telegraph đỏ.
 
-Sau đảo là một ảnh bầu trời vẽ sẵn (`contents/assets/environment/hazard_room/hazard_backdrop.png`, tạo bằng ChatGPT) dán lên một tấm phẳng quay về phía camera, qua `art/materials/hazard_backdrop.tres`. Shader `art/shaders/hazard_backdrop.gdshader` giảm sáng cả ảnh (`brightness`) và kéo phần dưới về `hazard_backdrop_dark` (`dark_start`, `dark_end`, `dark_floor`) để mắt dồn vào đảo. Khi chỉ huy ở trong phòng, `hazard_room.gd` chuyển nắng sang `#D9C2FF` trong 0.5 s; ra phòng thì trả lại.
+Quanh đảo là bầu trời vẽ sẵn (`contents/assets/environment/hazard_room/hazard_backdrop.png`, tạo bằng ChatGPT, nhìn xoáy mây từ trên xuống) dán lên một quả cầu luôn bao quanh camera, qua `art/materials/hazard_sky.tres`. Shader `art/shaders/hazard_sky.gdshader` đặt tâm ảnh thẳng dưới camera, chân trời rơi vào vòng mây ngoài của ảnh (`rim_angle`); nửa trên là ảnh phản chiếu qua chân trời, mờ dần trong `cloud_band_height` độ, rồi chuyển từ `hazard_sky_horizon` lên `hazard_sky_zenith` (đậm hẳn ở `zenith_angle` độ); `brightness` giảm sáng cả bầu trời. Khi chỉ huy ở trong phòng, `hazard_room.gd` chuyển nắng sang `#D9C2FF` trong 0.5 s; ra phòng thì trả lại.
 
 | Tên | Hex | Dùng cho | File |
 |---|---|---|---|
 | hazard_glow | `#9B6BFF` | Vòng sáng trên hốc sinh quái, vòng và tinh thể trên tháp, đèn tháp | `art/materials/hazard_glow.tres` |
 | hazard_pad | `#6A6A80` | Nền đá của hốc sinh quái, bệ và nắp tháp (cùng `struct_slate`) | `art/materials/hazard_pad.tres` |
-| hazard_backdrop_dark | `#170D33` | Màu phần dưới ảnh nền được kéo về | `hazard_backdrop.tres` (`dark_tint`) |
+| hazard_sky_horizon | `#564CB8` | Màu chân trời phía trên dải mây và ngoài mép ảnh (trung bình vòng ngoài của ảnh) | `hazard_sky.tres` (`horizon_color`) |
+| hazard_sky_zenith | `#2A1660` | Tím đậm ở đỉnh bầu trời phòng Hazard Trial | `hazard_sky.tres` (`zenith_color`) |
+| hazard_crosshair | `#FFFFFF` (alpha 0.85) | Crosshair giữa màn hình trong phòng Hazard Trial khi chuột bị khóa | `CameraRig.crosshair_color` (`systems/camera/camera_rig.gd`) |
 | hazard_sun | `#D9C2FF` | Màu nắng trong phòng | `hazard_room.gd` (`sun_color`) |
 | env_dirt | `#A88D63` | Vòng đất chỗ chỉ huy xuất hiện | `art/materials/env_dirt.tres` |
 | env_rock | `#757575` | Mặt dưới đảo, đá trôi, móng tháp | `art/materials/env_rock.tres` |
