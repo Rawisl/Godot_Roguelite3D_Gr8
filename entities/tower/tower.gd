@@ -98,6 +98,7 @@ func apply_level(new_level: int) -> void:
 	(range_shape.shape as CylinderShape3D).radius = _lv.attack_range
 	_apply_model_tier()
 
+
 func _apply_model_tier() -> void:
 	var tier := TowerData.model_tier(level)
 	if tier == model_tier:
@@ -105,6 +106,7 @@ func _apply_model_tier() -> void:
 	model_tier = tier
 	_swap_tier_model(data.get_model_scene(tier))
 	model_tier_changed.emit(tier)
+
 
 func _swap_tier_model(scene: PackedScene) -> void:
 	if scene == null:
@@ -128,6 +130,7 @@ func _swap_tier_model(scene: PackedScene) -> void:
 	holder.add_child(next)
 	holder.move_child(next, index)
 
+
 func _find_tier_model(holder: Node3D) -> Node3D:
 	for child in holder.get_children():
 		if child is Node3D:
@@ -136,11 +139,13 @@ func _find_tier_model(holder: Node3D) -> Node3D:
 					return child as Node3D
 	return null
 
+
 func _forget_visuals_in(root: Node) -> void:
 	if is_instance_valid(_aim_node) and root.is_ancestor_of(_aim_node):
 		_aim_node = null
 	if is_instance_valid(_muzzle_node) and root.is_ancestor_of(_muzzle_node):
 		_muzzle_node = null
+
 
 ## Enemy melee and projectiles call take_damage on the body they hit.
 ## HP = 0 emits destroyed, and the Slot turns RUINED.

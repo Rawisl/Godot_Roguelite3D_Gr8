@@ -197,7 +197,11 @@ func test_swap_keeps_valid_muzzle() -> void:
 	if not fired.is_empty():
 		assert_true(fired[0].distance_to(t._muzzle_node.global_position) < 0.05,
 			"shot originates at the replacement muzzle")
-	# Let the scene tree release active projectiles with their target on quit.
+	(get_tree().get_first_node_in_group(&"projectile_pool") as ProjectilePool).release_all()
+	t.free()
+	if is_instance_valid(enemy):
+		enemy.queue_free()
+	await get_tree().process_frame
 
 func test_no_tier_polling() -> void:
 	for scene in [SCENES[0], SCENES[3]]:

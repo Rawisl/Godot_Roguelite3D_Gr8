@@ -69,8 +69,6 @@ func _ready() -> void:
 	if _tower == null:
 		return
 	_tower.model_tier_changed.connect(_show_level)
-	if _tower.model_tier > 0:
-		_show_level(_tower.model_tier)
 
 
 func _build_rig(lv: Node3D) -> Rig:
