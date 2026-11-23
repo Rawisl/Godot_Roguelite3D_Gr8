@@ -45,6 +45,7 @@ func _ready() -> void:
 	await test_enrage_effects()
 	await test_enrage_survives_phase_change()
 	await test_reset_next_wave()
+	await test_timer_and_enrage_at_each_speed()
 	_teardown()
 
 	print("=======================================================")
@@ -113,6 +114,26 @@ func _spawn_boss() -> Bulwark:
 func _wait_frames(count: int) -> void:
 	for i in count:
 		await get_tree().physics_frame
+
+
+func test_timer_and_enrage_at_each_speed() -> void:
+	const PHYSICS_STEPS := 8
+	for speed in [1, 2, 3]:
+		var boss := _spawn_boss()
+		_start_boss_wave(5)
+		TimeManager.set_time_scale(speed)
+		await get_tree().process_frame
+		await _wait_frames(1)
+		var before := _timer.time_left
+		await _wait_frames(PHYSICS_STEPS)
+		var expected := float(PHYSICS_STEPS * speed) / Engine.physics_ticks_per_second
+		assert_true(is_equal_approx(before - _timer.time_left, expected),
+			"Boss countdown uses scaled gameplay time at x%d" % speed)
+		_timer.time_left = expected * 0.5
+		await _wait_frames(PHYSICS_STEPS)
+		assert_true(_enraged_count[0] == 1 and boss.is_enraged, "Boss enrages once at x%d" % speed)
+		boss.free()
+	TimeManager.reset_time_scale()
 
 
 func test_duration() -> void:
