@@ -23,8 +23,6 @@ corner_radius_bottom_left = 10
 [node name="SkillBar" type="PanelContainer" unique_id=1739204701]
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_box")
-script = ExtResource("1_bar")
-pool = ExtResource("2_pool")
 
 [node name="Rows" type="VBoxContainer" parent="." unique_id=1739204702]
 layout_mode = 2
@@ -36,6 +34,8 @@ unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
+script = ExtResource("1_bar")
+pool = ExtResource("2_pool")
 
 [node name="ActiveCell1" parent="Rows/ActiveRow" unique_id=1739204704 instance=ExtResource("3_cell")]
 layout_mode = 2
@@ -45,24 +45,3 @@ layout_mode = 2
 
 [node name="ActiveCell3" parent="Rows/ActiveRow" unique_id=1739204706 instance=ExtResource("3_cell")]
 layout_mode = 2
-
-[node name="PassiveRow" type="HBoxContainer" parent="Rows" unique_id=1739204707]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 12
-
-[node name="PassiveCell1" parent="Rows/PassiveRow" unique_id=1739204708 instance=ExtResource("3_cell")]
-custom_minimum_size = Vector2(64, 52)
-layout_mode = 2
-show_cooldown = false
-
-[node name="PassiveCell2" parent="Rows/PassiveRow" unique_id=1739204709 instance=ExtResource("3_cell")]
-custom_minimum_size = Vector2(64, 52)
-layout_mode = 2
-show_cooldown = false
-
-[node name="PassiveCell3" parent="Rows/PassiveRow" unique_id=1739204710 instance=ExtResource("3_cell")]
-custom_minimum_size = Vector2(64, 52)
-layout_mode = 2
-show_cooldown = false

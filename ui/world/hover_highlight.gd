@@ -17,6 +17,9 @@ var _occlusion: OcclusionManager = null
 @onready var _selection: SelectionController = %SelectionController
 @onready var _ring: RangeRing = %HoverRing
 @onready var _tooltip: Control = %EnemyTooltip
+@onready var _name_label: Label = %HoverName
+@onready var _health_label: Label = %HoverHealth
+@onready var _health_bar: ProgressBar = %HoverHealthBar
 @onready var _tooltip_text: Label = %TooltipText
 @onready var _bars: EnemyBarLayer = %EnemyBarLayer
 
@@ -48,8 +51,6 @@ func _on_hovered_changed(node: Node) -> void:
 
 ## Real time, so the delay is the same at x1, x2 and x3.
 func _process(_delta: float) -> void:
-	if _tooltip_target == null:
-		return
 	if not is_instance_valid(_tooltip_target) or _tooltip_target.is_dead:
 		_tooltip.visible = false
 		_tooltip_target = null
@@ -57,10 +58,21 @@ func _process(_delta: float) -> void:
 	if TimeManager.real_time < _tooltip_at:
 		return
 	var e := _tooltip_target
-	_tooltip_text.text = UiFormat.tr_fmt(&"hover.enemy.hp", {
-		"name": tr(e.data.display_name_key), "hp": e.health.hp, "max": e.health.max_hp}) \
-		+ "\n" + UiFormat.tr_fmt(&"hover.enemy.target", {"target": _target_name(e.current_target)})
-	_tooltip.position = _tooltip.get_viewport().get_mouse_position() + TOOLTIP_OFFSET
+	_name_label.text = tr(e.data.display_name_key)
+	_health_label.text = UiFormat.tr_fmt(&"panel.tower.hp", {"value": e.health.hp, "max": e.health.max_hp})
+	_health_bar.max_value = maxi(e.health.max_hp, 1)
+	_health_bar.value = e.health.hp
+	_tooltip_text.text = UiFormat.tr_fmt(&"hover.enemy.target", {"target": _target_name(e.current_target)})
+	_tooltip.reset_size()
+	var viewport := _tooltip.get_viewport()
+	var mouse := viewport.get_mouse_position()
+	var bounds := viewport.get_visible_rect().grow(-8.0)
+	var pos := mouse + TOOLTIP_OFFSET
+	if pos.x + _tooltip.size.x > bounds.end.x:
+		pos.x = mouse.x - TOOLTIP_OFFSET.x - _tooltip.size.x
+	if pos.y + _tooltip.size.y > bounds.end.y:
+		pos.y = mouse.y - TOOLTIP_OFFSET.y - _tooltip.size.y
+	_tooltip.position = pos.clamp(bounds.position, (bounds.end - _tooltip.size).max(bounds.position))
 	_tooltip.visible = true
 
 func _add_outline(root: Node) -> void:
@@ -84,12 +96,8 @@ func _set_occlusion_target(target: Node3D) -> void:
 	if _occlusion != null:
 		_occlusion.set_hover_target(target)
 
-# TODO(WhoKeng): a destroyed tower or Barricade is freed by its slot at once, while the enemy keeps it in
-# current_target until its next retarget. Hovering that enemy then errors here ("previously freed"): the
-# typed Node parameter rejects the freed object before is_instance_valid runs. Take target: Object and cast
-# after the validity check, or pass null from _process when current_target is no longer valid.
-func _target_name(target: Node) -> String:
-	if target == null or not is_instance_valid(target):
+func _target_name(target: Variant) -> String:
+	if not is_instance_valid(target):
 		return tr(&"hover.target.none")
 	if target is Tower:
 		return tr((target as Tower).data.display_name)

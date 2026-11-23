@@ -50,6 +50,8 @@ func _hide_all() -> void:
 			toast.set_meta(&"until", 0.0)
 
 func _on_alert_requested(tier: int, key: StringName, params: Dictionary) -> void:
+	if key in [&"alert.commander_low", &"alert.fortress_low"]:
+		return
 	var now := TimeManager.real_time
 	if params.has("merge") and _merge(key, params):
 		_last_shown[key] = now
