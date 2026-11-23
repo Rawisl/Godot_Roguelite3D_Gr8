@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dwym8i2sdy5w"]
+
+[ext_resource type="Script" path="res://tests/test_leak_runner.gd" id="1_test"]
+
+[node name="TestLeakRunner" type="Node"]
+script = ExtResource("1_test")
