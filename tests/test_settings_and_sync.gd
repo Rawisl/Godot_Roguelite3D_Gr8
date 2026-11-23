@@ -203,6 +203,27 @@ func _check_sync() -> void:
 	_expect(SyncService.state == &"SYNCED" and _fake.pushes.is_empty(), "sync: pulled data is not pushed back")
 	ScreenManager.close_all_dialogs()
 
+	_fake.pull_result = {"ok": true, "revision": SaveManager.get_revision(), "device_id": "other-machine",
+		"data": {"profile": {"prestige_balance": 778}, "meta": {}, "flags": {"tutorial_done": true}}}
+	await _sync()
+	var backup: Variant = JSON.parse_string(FileAccess.get_file_as_string(CONFLICT_FILE))
+	_expect(backup is Dictionary and int(backup["data"]["profile"]["prestige_balance"]) == 777,
+		"sync: the local copy is backed up before a tied cloud revision is used")
+	_expect(int(SaveManager.get_section(&"profile")["prestige_balance"]) == 778 and _fake.pushes.is_empty(),
+		"sync: different devices with a tied revision use the cloud data")
+	await _sync()
+	_expect(JSON.parse_string(FileAccess.get_file_as_string(CONFLICT_FILE)) == backup,
+		"sync: repeating sync with identical progress preserves the conflict copy")
+	ScreenManager.close_all_dialogs()
+	var blocked_backup := ProjectSettings.globalize_path(CONFLICT_FILE)
+	DirAccess.remove_absolute(blocked_backup)
+	DirAccess.make_dir_absolute(blocked_backup)
+	_fake.pull_result["data"]["profile"]["prestige_balance"] = 779
+	await _sync()
+	_expect(int(SaveManager.get_section(&"profile")["prestige_balance"]) == 778 and SyncService.state == &"ERROR",
+		"sync: a backup failure leaves local progress in place")
+	DirAccess.remove_absolute(blocked_backup)
+
 	# This machine is ahead.
 	SaveManager.save_now()
 	_fake.pull_result = {"ok": true, "revision": SaveManager.get_revision() - 1, "device_id": SaveManager.get_device_id(), "data": {}}

@@ -2,7 +2,6 @@ class_name EnemyTraits
 extends RefCounted
 ## The traits of an enemy type and their names, shared by the wave preview, the Hazard Trial
 ## tower tooltip and the enemy hover box, so all three always say the same thing.
-# TODO(Ender-Via): add traits: Array[StringName] to EnemyData with the ids in ALL; of() already reads it, and the overrides used by the tests can go once the data has them.
 
 const STEALTH := &"stealth"
 const EXPLODE := &"explode"

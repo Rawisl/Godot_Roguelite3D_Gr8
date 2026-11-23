@@ -23,6 +23,15 @@ func _draw() -> void:
 			for i in 16:
 				burst.append(Vector2.UP.rotated(i * TAU / 16) * (9 if i % 2 == 0 else 4))
 			draw_colored_polygon(burst, Color.ORANGE)
+		Enums.DamageType.SLASH:
+			draw_colored_polygon(PackedVector2Array([Vector2(-8, 8), Vector2(-3, -1), Vector2(8, -9), Vector2(4, 0)]), Color.SILVER)
+		Enums.DamageType.TRAP:
+			draw_polyline(PackedVector2Array([Vector2(-8,-4), Vector2(-5,5), Vector2(5,5), Vector2(8,-4)]), Color.TAN, 2, true)
+			draw_line(Vector2(-3,5), Vector2(-3,-2), Color.TAN, 2, true)
+			draw_line(Vector2(3,5), Vector2(3,-2), Color.TAN, 2, true)
+		Enums.DamageType.TRUE:
+			draw_arc(Vector2.ZERO, 7, 0, TAU, 24, Color.WHITE, 2, true)
+			draw_circle(Vector2.ZERO, 2, Color.WHITE)
 	if immunity:
 		var rim := Color.LIGHT_CORAL
 		draw_arc(Vector2.ZERO, 10.5, 0, TAU, 40, rim, 1.6, true)

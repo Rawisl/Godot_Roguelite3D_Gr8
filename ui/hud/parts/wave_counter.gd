@@ -62,7 +62,6 @@ func _set_enemies_visible(value: bool) -> void:
 	_enemies_row.visible = value
 	_clear_row.visible = value
 
-# TODO(Ender-Via): send wave_preview_ready in PREP so the counter can show the upcoming wave.
 ## "Wave N / 30" up to the victory wave, then "Wave N" with the Endless tag.
 func _on_wave_started(wave_index: int) -> void:
 	_clear_seconds = 0.0

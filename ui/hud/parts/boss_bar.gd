@@ -12,6 +12,14 @@ var _max_core := 0
 
 func _ready() -> void:
 	visible = false
+	for type_name: String in Enums.DamageType.keys():
+		var icon := preload("res://ui/hud/parts/damage_type_icon.gd").new()
+		icon.name = type_name
+		icon.damage_type = Enums.DamageType[type_name]
+		icon.immunity = true
+		icon.tooltip_text = "damage." + type_name.to_lower()
+		icon.custom_minimum_size = Vector2(22, 22)
+		_resist_row.add_child(icon)
 	EventBus.boss_intro_started.connect(_on_boss_intro_started)
 	EventBus.boss_spawned.connect(_on_boss_spawned)
 	EventBus.boss_hp_changed.connect(_on_boss_hp_changed)

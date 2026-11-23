@@ -1,5 +1,5 @@
 extends MarginContainer
-## Fortress HP. At or under the low HP threshold the bar gets a blinking red border and a tag,
+## Fortress HP. At or under the low HP threshold the bar gets a red border that pulses once and a tag,
 ## so the warning does not rely on colour alone. In PREP it also says how to fix it: repair with
 ## Mithril, or win a Hazard Trial first when there is no Mithril.
 
@@ -48,7 +48,7 @@ func _on_hp_changed(hp: int, max_hp: int, _delta: int) -> void:
 		_refresh_low()
 		_refresh_hint()
 
-## Real time, so it keeps blinking on Pause. With reduced flashing the border stays solid.
+## The entry pulse uses real time during Pause. With reduced flashing the border stays solid.
 func _refresh_low() -> void:
 	_low_tag.visible = _low
 	_low_border.visible = _low

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bhvb8qtrtny26" path="res://ui/screens/boss_intro.gd" id="1_bintro"]
 [ext_resource type="Resource" uid="uid://dmtjvtt64ofto" path="res://data/bosses/bulwark_boss.tres" id="2_blwk"]
+[ext_resource type="Resource" uid="uid://d4bsu15pbr3do" path="res://data/bosses/skeletal_centipede_boss.tres" id="2_cent"]
 [ext_resource type="Texture2D" uid="uid://bs1qm0yx4mf1r" path="res://art/icons/shield_icon.png" id="3_shield"]
 [ext_resource type="Script" uid="uid://bhfhlrn5orfb" path="res://common/boss_data.gd" id="4_bdata"]
 
@@ -15,7 +16,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_bintro")
-bosses = Array[ExtResource("4_bdata")]([ExtResource("2_blwk")])
+bosses = Array[ExtResource("4_bdata")]([ExtResource("2_blwk"), ExtResource("2_cent")])
 
 [node name="Top" type="MarginContainer" parent="." unique_id=163728926]
 layout_mode = 1

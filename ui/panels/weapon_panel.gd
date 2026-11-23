@@ -24,7 +24,6 @@ var _equipped: StringName = RunState.BASE_WEAPON
 func _ready() -> void:
 	_title.text = tr(&"panel.weapon.title")
 
-	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_hint.text = tr(&"hud.weapon.prep_only")
 	var rows := _rows.get_children()
@@ -38,6 +37,32 @@ func _ready() -> void:
 func open() -> void:
 	_sync_from_run()
 	refresh()
+	for row: WeaponRow in _rows.get_children():
+		if row.visible and row.button_pressed and not row.disabled:
+			row.grab_focus()
+			return
+	_close.grab_focus()
+
+func navigate(event: InputEvent) -> void:
+	var scroll := _rows.get_parent() as ScrollContainer
+	for action in [&"ui_page_up", &"ui_page_down"]:
+		if event.is_action_pressed(action, true):
+			var direction := -1 if action == &"ui_page_up" else 1
+			scroll.scroll_vertical += direction * roundi(scroll.size.y)
+			return
+	for action in [&"ui_left", &"ui_right", &"ui_up", &"ui_down"]:
+		if not event.is_action_pressed(action, true):
+			continue
+		var owner := get_viewport().gui_get_focus_owner()
+		if owner == null or not is_ancestor_of(owner):
+			_close.grab_focus()
+			return
+		var side: Side = {&"ui_left": SIDE_LEFT, &"ui_right": SIDE_RIGHT,
+			&"ui_up": SIDE_TOP, &"ui_down": SIDE_BOTTOM}[action]
+		var next := owner.find_valid_focus_neighbor(side)
+		if next != null and is_ancestor_of(next):
+			next.grab_focus()
+		return
 
 func refresh() -> void:
 	var can_change := _is_prep()

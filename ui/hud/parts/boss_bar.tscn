@@ -2,9 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bt1ys01cdjyws" path="res://ui/hud/parts/boss_bar.gd" id="1_8sfhq"]
 [ext_resource type="Resource" uid="uid://dmtjvtt64ofto" path="res://data/bosses/bulwark_boss.tres" id="2_blwk"]
+[ext_resource type="Resource" uid="uid://d4bsu15pbr3do" path="res://data/bosses/skeletal_centipede_boss.tres" id="2_cent"]
 [ext_resource type="Script" uid="uid://bhfhlrn5orfb" path="res://common/boss_data.gd" id="5_bdata"]
-
-[ext_resource type="Script" uid="uid://dlfexsva18ca1" path="res://ui/hud/parts/damage_type_icon.gd" id="icon"]
 
 [sub_resource type="StyleBoxEmpty" id="transparent"]
 
@@ -37,7 +36,7 @@ custom_minimum_size = Vector2(540, 0)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_box")
 script = ExtResource("1_8sfhq")
-bosses = Array[ExtResource("5_bdata")]([ExtResource("2_blwk")])
+bosses = Array[ExtResource("5_bdata")]([ExtResource("2_blwk"), ExtResource("2_cent")])
 
 [node name="Body" type="VBoxContainer" parent="." unique_id=1580395716]
 layout_mode = 2
@@ -60,19 +59,6 @@ theme_override_font_sizes/font_size = 26
 unique_name_in_owner = true
 size_flags_vertical = 4
 mouse_filter = 2
-
-[node name="Pierce" type="Control" parent="Body/Header/ResistRow"]
-custom_minimum_size = Vector2(22, 22)
-tooltip_text = "damage.pierce"
-script = ExtResource("icon")
-immunity = true
-
-[node name="Magic" type="Control" parent="Body/Header/ResistRow"]
-custom_minimum_size = Vector2(22, 22)
-tooltip_text = "damage.magic"
-script = ExtResource("icon")
-immunity = true
-damage_type = 3
 
 [node name="Bars" type="Control" parent="Body"]
 unique_name_in_owner = true

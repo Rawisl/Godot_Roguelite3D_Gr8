@@ -51,13 +51,9 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
-
 [node name="WeaponRow" type="Button" unique_id=1739204901]
 custom_minimum_size = Vector2(0, 92)
 size_flags_horizontal = 3
-focus_mode = 0
-theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
 theme_override_styles/disabled_mirrored = SubResource("StyleBoxFlat_locked")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_locked")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_equipped")

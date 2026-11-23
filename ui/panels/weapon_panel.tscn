@@ -40,6 +40,7 @@ autowrap_mode = 3
 horizontal_alignment = 1
 
 [node name="Scroll" type="ScrollContainer" parent="VBoxContainer" index="2"]
+follow_focus = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 400)
 horizontal_scroll_mode = 0

@@ -6,7 +6,6 @@ extends HBoxContainer
 ## its left folds the whole panel away to the right (>) and leaves only the button (<), against the
 ## right edge under the Hazard Trial marker, to bring it back, like the skill slots; a new run shows
 ## it again. The node grows to the left, so folding keeps its right edge where it was.
-# TODO(Ender-Via): send wave_preview_ready(wave_index, {enemy_id: count}, is_boss) at the start of each PREP; nothing shows before it does.
 # TODO(kiezroth): the composition sent with wave_preview_ready should come from the WaveScript of that wave.
 
 ## Every weapon in the game, to know when none is left to drop.

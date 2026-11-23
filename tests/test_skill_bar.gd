@@ -195,7 +195,11 @@ func _run_checks() -> void:
 	_check((frost_row.get_node("%EffectLabel") as Label).text.contains("20%"), "Frost row shows its numbers from the .tres")
 	_check((frost_row.get_node("%RangeLabel") as Label).text.contains("2.2"), "Frost row shows the sword range")
 	_check((frost_row.get_node("%Placeholder") as Control).visible, "panel rows show the drawn sword next to the name")
-	frost_row.pressed.emit()
+	await get_tree().process_frame
+	_check(base_row.has_focus(), "picker focuses equipped weapon")
+	_press_key(KEY_RIGHT)
+	_check(frost_row.has_focus(), "Right focuses the next owned weapon")
+	_press_key(KEY_ENTER)
 	_check(_run_state.equipped_weapon == &"frost", "picking Frost equips it in RunState")
 	_check((slot.get_node("%NameLabel") as Label).text == tr(&"weapon.frost.name"), "slot follows weapon_equipped")
 	_check(frost_row.button_pressed and not base_row.button_pressed, "Frost row now marked as in use")
@@ -270,6 +274,10 @@ func _check(ok: bool, label: String) -> void:
 
 func _press_key(code: Key) -> void:
 	var event := InputEventKey.new()
+	event.keycode = code
 	event.physical_keycode = code
 	event.pressed = true
+	get_viewport().push_input(event)
+	event = event.duplicate()
+	event.pressed = false
 	get_viewport().push_input(event)

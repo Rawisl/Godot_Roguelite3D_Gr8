@@ -77,10 +77,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _input(event: InputEvent) -> void:
 	if not _weapon_panel.visible or ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
 		return
-	if event is InputEventKey and event.is_action_pressed(&"pause"):
+	if event.is_action_pressed(&"pause") or event.is_action_pressed(&"ui_cancel"):
 		_return_to_character()
 		get_viewport().set_input_as_handled()
-	elif event is InputEventKey:
+	elif event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		if event.is_action(&"ui_accept"):
+			return
+		_weapon_panel.navigate(event)
 		get_viewport().set_input_as_handled()
 
 func _return_to_character() -> void:

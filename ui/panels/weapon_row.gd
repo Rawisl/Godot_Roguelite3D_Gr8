@@ -12,7 +12,6 @@ extends Button
 @onready var _row: Control = $Row
 
 func _ready() -> void:
-	focus_mode = Control.FOCUS_NONE
 	_row.minimum_size_changed.connect(_fit_height)
 
 func _fit_height() -> void:
@@ -21,6 +20,7 @@ func _fit_height() -> void:
 ## can_change is false outside PREP: every row is then read only.
 func show_weapon(data: WeaponData, owned: bool, equipped: bool, can_change: bool,
 		range_text: String, effect_text: String) -> void:
+	focus_mode = Control.FOCUS_ALL if owned and can_change else Control.FOCUS_NONE
 	_name.text = tr(data.name_key)
 	var icon: Variant = data.get(&"icon")
 	_icon.texture = icon as Texture2D

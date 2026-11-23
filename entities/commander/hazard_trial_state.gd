@@ -1,6 +1,8 @@
 class_name HazardTrialState
 extends Node
 
+const CHAIN_LIGHTNING := preload("res://data/weapons/chain_lightning.tres")
+
 const COMMANDER_FIELDS: Array[StringName] = [
 	&"_dodge_cooldown_timer", &"_battle_cry_cd_timer", &"_battle_cry_active_timer",
 	&"is_dead", &"is_stunned", &"_stun_timer", &"_stun_immunity_timer",
@@ -77,6 +79,7 @@ func _on_exited(_result: StringName, _kills: int, _gold: int, _xp: float, _mithr
 		_commander._apply_weapon(saved["weapon"])
 		_commander.stat_block.import_state(saved["stats"])
 		_commander.skill_runner.import_state(saved["skills"])
+		EventBus.skill_cooldown_changed.emit(&"chain_lightning", _run_state.chain_cd, CHAIN_LIGHTNING.get_param(&"chain_cooldown"))
 		_commander._mode_switch.cooldown_left = saved["mode_cooldown"]
 		_commander.health.restore_state(saved["hp"], saved["max_hp"], saved["dot_remainder"])
 		EventBus.skill_cooldown_changed.emit(&"dodge", _commander._dodge_cooldown_timer,

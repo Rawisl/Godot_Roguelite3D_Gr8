@@ -67,7 +67,7 @@ const VOLUME_BUSES := {
 ## Real-time seconds for one track to replace another.
 @export var crossfade_time: float = 1.5
 ## Enemy ids that are bosses: a Hazard Trial group with one of them plays the boss track.
-@export var boss_enemy_ids: Array[StringName] = [&"bulwark"]
+@export var boss_enemy_ids: Array[StringName] = [&"bulwark", &"skeletal_centipede"]
 
 @export_group("Cues")
 ## Share of the Fortress max HP one hit must take to play fortress_heavy_hit.
@@ -374,7 +374,7 @@ func _on_commander_low_hp_changed(is_low: bool) -> void:
 	if is_low:
 		play(&"low_hp_heartbeat")
 
-func _on_run_victory(_wave_index: int) -> void:
+func _on_run_victory(_wave_index: int, _stats: Dictionary) -> void:
 	if music != null:
 		play_sting(music.victory_sting, music.prep)
 

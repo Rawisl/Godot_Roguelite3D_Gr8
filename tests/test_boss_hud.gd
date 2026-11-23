@@ -99,7 +99,12 @@ func _run_checks() -> void:
 	_check(armor.value == 500 and core.value == 900, "a hit on the armor lowers only the armor segment")
 
 	_check(armor.get_global_rect() == core.get_global_rect(), "armor and core occupy one track")
-	_check(resist_row.get_child(0).visible and resist_row.get_child(1).visible, "armored Bulwark shows both damage icons")
+	_check(resist_row.get_node("PIERCE").visible and resist_row.get_node("MAGIC").visible, "armored Bulwark shows both damage icons")
+	var variant := BossData.new()
+	variant.resist_table_phase1 = {Enums.DamageType.TRAP: 0.0}
+	bar.call("_show_boss", variant)
+	_check(resist_row.get_node("TRAP").visible and not resist_row.get_node("PIERCE").visible,
+		"boss-specific resistance table shows trap immunity")
 	EventBus.boss_phase_changed.emit(&"EXPOSED")
 	EventBus.boss_hp_changed.emit(0, 900, &"EXPOSED")
 	_check(not resist_row.visible, "exposed core: no immunity line")

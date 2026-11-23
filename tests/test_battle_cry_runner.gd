@@ -174,8 +174,8 @@ func test_aoe_taunt() -> void:
 	assert_true(close_archer.provoked_by_player, "Close Archer (4m) is provoked")
 	assert_true(close_archer.current_target == commander, "Close Archer targets Commander")
 
-	assert_true(close_brute.provoked_by_player, "Close Brute (5.5m) is provoked despite aggro_range 4m")
-	assert_true(close_brute.current_target == commander, "Close Brute targets Commander")
+	assert_true(not close_brute.provoked_by_player and not close_brute.taunted_by_player, "Close Brute ignores Battle Cry")
+	assert_true(close_brute.current_target != commander, "Battle Cry does not redirect a Brute")
 
 	assert_true(not far_grunt.provoked_by_player, "Far Grunt (8m) is NOT provoked")
 	assert_true(far_grunt.current_target != commander, "Far Grunt does NOT target Commander")
@@ -374,50 +374,51 @@ func test_hit_provocation_vs_taunt_aggro_range() -> void:
 	fortress.set_script(preload("res://tests/dummy_target.gd"))
 	add_child(fortress)
 
-	var brute_scene: PackedScene = load("res://entities/enemy/brute.tscn")
 	var grunt_scene: PackedScene = load("res://entities/enemy/grunt.tscn")
 
-	# 1. Test Brute (aggro_range = 4m) with commander hit provocation
-	var brute: Enemy = brute_scene.instantiate()
-	add_child(brute)
-	brute.global_position = Vector3.ZERO
-	brute.spawn_grace = false
-	brute.is_in_spawn_zone = false
+	# 1. Test short-range Grunt (aggro_range = 4m) with commander hit provocation
+	var short_range_grunt: Enemy = grunt_scene.instantiate()
+	short_range_grunt.data = short_range_grunt.data.duplicate() as EnemyData
+	short_range_grunt.data.aggro_range = 4.0
+	add_child(short_range_grunt)
+	short_range_grunt.global_position = Vector3.ZERO
+	short_range_grunt.spawn_grace = false
+	short_range_grunt.is_in_spawn_zone = false
 
 	var hit_info := DamageInfo.new(5, Enums.DamageType.SLASH, commander)
-	brute.take_damage(hit_info)
+	short_range_grunt.take_damage(hit_info)
 
-	assert_true(brute.provoked_by_player, "Hit Brute has provoked_by_player set")
-	assert_true(not brute.taunted_by_player, "Hit Brute is not taunted by Battle Cry")
+	assert_true(short_range_grunt.provoked_by_player, "Hit short-range Grunt has provoked_by_player set")
+	assert_true(not short_range_grunt.taunted_by_player, "Hit short-range Grunt is not taunted by Battle Cry")
 
-	# Within 4m aggro range -> Brute targets Commander
+	# Within 4m aggro range -> short-range Grunt targets Commander
 	commander.global_position = Vector3(3.0, 0.0, 0.0)
-	brute._find_best_target()
-	assert_true(brute.current_target == commander, "Hit Brute targets Commander within 4m aggro range (3m <= 4m)")
+	short_range_grunt._find_best_target()
+	assert_true(short_range_grunt.current_target == commander, "Hit short-range Grunt targets Commander within 4m aggro range (3m <= 4m)")
 
-	# Beyond 4m aggro range -> Brute drops Commander and targets Fortress
+	# Beyond 4m aggro range -> short-range Grunt drops Commander and targets Fortress
 	commander.global_position = Vector3(8.0, 0.0, 0.0)
-	brute._find_best_target()
-	assert_true(brute.current_target != commander, "Hit Brute drops Commander when beyond 4m aggro range (8m > 4m)")
+	short_range_grunt._find_best_target()
+	assert_true(short_range_grunt.current_target != commander, "Hit short-range Grunt drops Commander when beyond 4m aggro range (8m > 4m)")
 
 	# 2. Test Battle Cry taunt overrides aggro range up to leash distance (25m)
-	brute.apply_commander_taunt(commander, 4.0)
-	assert_true(brute.taunted_by_player, "Brute has taunted_by_player set after Battle Cry taunt")
+	short_range_grunt.apply_commander_taunt(commander, 4.0)
+	assert_true(short_range_grunt.taunted_by_player, "Battle Cry taunts the short-range Grunt")
 
-	brute._find_best_target()
-	assert_true(brute.current_target == commander, "Taunted Brute targets Commander from 8m despite 4m aggro range")
+	short_range_grunt._find_best_target()
+	assert_true(short_range_grunt.current_target == commander, "Taunted short-range Grunt targets Commander from 8m despite 4m aggro range")
 
 	# Move Commander to 15m (within 25m leash)
 	commander.global_position = Vector3(15.0, 0.0, 0.0)
-	brute._find_best_target()
-	assert_true(brute.current_target == commander, "Taunted Brute targets Commander from 15m within leash distance")
+	short_range_grunt._find_best_target()
+	assert_true(short_range_grunt.current_target == commander, "Taunted short-range Grunt targets Commander from 15m within leash distance")
 
 	# Move Commander beyond 25m leash distance
 	commander.global_position = Vector3(30.0, 0.0, 0.0)
-	brute._update_timers(0.1)
-	assert_true(not brute.taunted_by_player, "Taunted flag cleared beyond leash distance")
-	assert_true(not brute.provoked_by_player, "Provoked flag cleared beyond leash distance")
-	assert_true(brute.current_target != commander, "Brute retargets away from Commander beyond leash distance")
+	short_range_grunt._update_timers(0.1)
+	assert_true(not short_range_grunt.taunted_by_player, "Taunted flag cleared beyond leash distance")
+	assert_true(not short_range_grunt.provoked_by_player, "Provoked flag cleared beyond leash distance")
+	assert_true(short_range_grunt.current_target != commander, "The short-range Grunt retargets beyond the leash distance")
 
 	# 3. Test Grunt (aggro_range = 10m) with commander hit provocation
 	var grunt: Enemy = grunt_scene.instantiate()
@@ -440,7 +441,7 @@ func test_hit_provocation_vs_taunt_aggro_range() -> void:
 	assert_true(grunt.current_target != commander, "Hit Grunt drops Commander when beyond 10m aggro range (15m > 10m)")
 
 	commander.free()
-	brute.free()
+	short_range_grunt.free()
 	grunt.free()
 	fortress.free()
 

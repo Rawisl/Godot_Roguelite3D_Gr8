@@ -42,6 +42,7 @@ var aim_point: Vector3 = Vector3.INF
 ## Radius the sword area has in the scene; a weapon can only make it bigger.
 var _sword_area_base_radius: float = -1.0
 var _equipped_weapon_data: WeaponData
+var _weapon_run_state: RunState
 var _weapon_model: Node
 var _warned_weapon_mount := false
 var is_commander_mode: bool = false
@@ -112,6 +113,7 @@ var hazard_trial_state: HazardTrialState
 
 func _ready() -> void:
 	add_to_group(&"commander")
+	_weapon_run_state = get_tree().get_first_node_in_group(&"run_state") as RunState
 	_spawn_position = global_position
 	_debug_last_pos = global_position
 	_setup_stat_block()
@@ -311,9 +313,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_cooldowns_and_timers(delta: float) -> void:
-	var run_state := get_tree().get_first_node_in_group(&"run_state") as RunState
-	if run_state != null and run_state.chain_cd > 0.0:
-		run_state.chain_cd = maxf(0.0, run_state.chain_cd - delta)
+	if is_instance_valid(_weapon_run_state) and _weapon_run_state.chain_cd > 0.0:
+		_weapon_run_state.chain_cd = maxf(0.0, _weapon_run_state.chain_cd - delta)
 	if _hit_reaction_timer > 0.0:
 		_hit_reaction_timer = maxf(0.0, _hit_reaction_timer - delta)
 
@@ -828,7 +829,9 @@ func _execute_sword_strike(combo_step: int) -> void:
 		if body == self or not body.has_method("take_damage"):
 			continue
 
-		var to_target := body.global_position - global_position
+		# A large target says which of its points the sword measures to; others are measured to their centre.
+		var aim_point: Vector3 = body.get_hit_point(global_position) if body.has_method(&"get_hit_point") else body.global_position
+		var to_target := aim_point - global_position
 		to_target.y = 0.0
 		var dist := to_target.length()
 
@@ -876,7 +879,7 @@ func _execute_sword_strike(combo_step: int) -> void:
 			hit_dir
 		)
 
-		if "provoked_by_player" in target_node:
+		if not target_node is Enemy and "provoked_by_player" in target_node:
 			target_node.set("provoked_by_player", true)
 
 		if target_node.has_method("take_damage"):
@@ -890,21 +893,40 @@ func get_sword_dealt_mult() -> float:
 
 func on_weapon_hit(target: Enemy, info: DamageInfo) -> void:
 	var weapon := _equipped_weapon_data
-	if weapon == null or weapon.effect_id != &"chain":
+	if weapon == null:
 		return
-	var run_state := get_tree().get_first_node_in_group(&"run_state") as RunState
-	if run_state == null or run_state.chain_cd > 0.0:
+	var sword_raw := stat_block.get_base(&"sword_damage") + stat_block.get_add_total(&"sword_damage")
+	match weapon.effect_id:
+		&"slow":
+			target.apply_slow(weapon.get_param(&"frost_slow_pct"), weapon.get_param(&"frost_duration"), info.damage_type)
+		&"burn":
+			target.apply_burn(sword_raw * weapon.get_param(&"burn_total_pct"), weapon.get_param(&"burn_duration"),
+				info.damage_type, self, get_sword_dealt_mult())
+		&"chain":
+			_chain_weapon_hit(target, info.damage_type, weapon, sword_raw)
+
+
+func can_start_weapon_chain() -> bool:
+	if _equipped_weapon_data == null or _equipped_weapon_data.effect_id != &"chain":
+		return false
+	if not is_instance_valid(_weapon_run_state):
+		_weapon_run_state = get_tree().get_first_node_in_group(&"run_state") as RunState
+	return _weapon_run_state != null and _weapon_run_state.chain_cd <= 0.0
+
+
+func _chain_weapon_hit(target: Enemy, damage_type: Enums.DamageType, weapon: WeaponData, sword_raw: float) -> void:
+	if not can_start_weapon_chain():
 		return
-	run_state.chain_cd = weapon.get_param(&"chain_cooldown")
-	EventBus.skill_cooldown_changed.emit(&"chain_lightning", run_state.chain_cd, run_state.chain_cd)
-	var raw := (stat_block.get_base(&"sword_damage") + stat_block.get_add_total(&"sword_damage")) * weapon.get_param(&"chain_damage_pct")
+	_weapon_run_state.chain_cd = weapon.get_param(&"chain_cooldown")
+	EventBus.skill_cooldown_changed.emit(&"chain_lightning", _weapon_run_state.chain_cd, _weapon_run_state.chain_cd)
+	var raw := sword_raw * weapon.get_param(&"chain_damage_pct")
 	var visited: Array[Enemy] = []
 	var current := target
 	for index in int(weapon.get_param(&"chain_max_targets")):
 		if current == null:
 			break
 		visited.append(current)
-		var bolt := DamageInfo.outgoing(raw, get_sword_dealt_mult(), info.damage_type, self)
+		var bolt := DamageInfo.outgoing(raw, get_sword_dealt_mult(), damage_type, self)
 		bolt.is_weapon_effect = true
 		current.take_damage(bolt)
 		var next: Enemy = null
@@ -912,6 +934,8 @@ func on_weapon_hit(target: Enemy, info: DamageInfo) -> void:
 		for node in get_tree().get_nodes_in_group(&"enemy"):
 			var candidate := node as Enemy
 			if candidate == null or candidate in visited or candidate.is_dead or candidate.spawn_grace or candidate.is_queued_for_deletion():
+				continue
+			if candidate.in_hazard_room != target.in_hazard_room:
 				continue
 			var offset := candidate.global_position - current.global_position
 			var distance := Vector2(offset.x, offset.z).length()
