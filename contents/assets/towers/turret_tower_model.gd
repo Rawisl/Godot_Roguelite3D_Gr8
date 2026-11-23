@@ -1,8 +1,7 @@
 class_name TurretTowerModel
 extends Node3D
 ## Rigged model for the Cannon and Arrow towers that turns toward the tower's target.
-## - Shows Level1, Level2 or Level3 to match the model tier of Tower.level (TowerData.model_tier),
-##   so the mesh only changes when the level crosses a tier boundary.
+## - Shows Level1, Level2 or Level3 when the Tower reports a model tier change.
 ## - Turns yaw_bone around the vertical axis and tilts pitch_bone up or down, so the barrel or
 ##   the bolt points where the shot goes.
 ## - Puts a muzzle marker at the tip of the barrel or bolt and hands it to the Tower, so
@@ -67,8 +66,11 @@ func _ready() -> void:
 	while n != null and not n is Tower:
 		n = n.get_parent()
 	_tower = n as Tower
-	# TowerModel hands the Tower its static Muzzle in its own _ready, after this one.
-	_show_level.call_deferred()
+	if _tower == null:
+		return
+	_tower.model_tier_changed.connect(_show_level)
+	if _tower.model_tier > 0:
+		_show_level(_tower.model_tier)
 
 
 func _build_rig(lv: Node3D) -> Rig:
@@ -136,8 +138,6 @@ func _find_tip(sk: Skeleton3D) -> Vector3:
 func _process(delta: float) -> void:
 	if _tower == null:
 		return
-	if TowerData.model_tier(_tower.level) - 1 != _shown:
-		_show_level()
 	if _shown < 0 or _shown >= _rigs.size():
 		return
 	var r := _rigs[_shown]
@@ -184,10 +184,10 @@ func _pose(r: Rig) -> void:
 	sk.set_bone_pose_rotation(r.pitch, Quaternion(r.pitch_axis, -_pitch) * r.pitch_rest)
 
 
-func _show_level() -> void:
+func _show_level(tier: int) -> void:
 	if _tower == null:
 		return
-	_shown = clampi(TowerData.model_tier(_tower.level) - 1, 0, _levels.size() - 1)
+	_shown = clampi(tier - 1, 0, _levels.size() - 1)
 	for i in _levels.size():
 		_levels[i].visible = i == _shown
 	var r := _rigs[_shown]
