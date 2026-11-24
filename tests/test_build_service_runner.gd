@@ -462,6 +462,7 @@ func test_rebuild_level14_real_data() -> void:
 		var t := _slot(slot_id).tower
 		var cost: int = summed
 		assert_true(t.level == REBUILD_LEVEL, "%s: rebuilt at level %d" % [data.id, REBUILD_LEVEL])
+		assert_true(t.model_tier == TowerData.model_tier(REBUILD_LEVEL), "%s: rebuilt tower shows the tier of its level" % data.id)
 		assert_true(1000000 - _gold.gold == cost, "%s: gold spent equals the rebuild cost" % data.id)
 		assert_true(t.invested_gold == cost, "%s: invested gold equals the rebuild cost" % data.id)
 		assert_true(t.health.hp == t.health.max_hp and t.health.max_hp == data.levels[REBUILD_LEVEL - 1].max_hp, "%s: HP is full at the level 14 max" % data.id)

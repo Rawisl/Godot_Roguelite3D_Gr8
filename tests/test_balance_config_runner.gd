@@ -104,7 +104,7 @@ func test_scale_continuity(waves: WaveScript) -> void:
 		and is_equal_approx(waves.get_dmg_mult(last_wave), scale.get_dmg_mult(last_wave))
 		and is_equal_approx(waves.get_speed_mult(last_wave), scale.get_speed_mult(last_wave)),
 		"Scripted coefficients meet the endless formula at the boundary")
-	# TODO(endervia): verify WaveManager selects WaveScript through victory_wave and ScaleConfig afterwards once scripted spawning is integrated.
+	# TODO(Ender-Via): After scripted spawning lands, test the WaveManager boundary with the default and an earlier victory wave. Use distinct scripted and endless multipliers so the test detects which source gameplay uses.
 
 
 func assert_true(condition: bool, test_name: String) -> void:

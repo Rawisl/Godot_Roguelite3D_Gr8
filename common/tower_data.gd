@@ -14,6 +14,15 @@ extends Resource
 @export var release_delay: float = 0.0
 @export var splash_falloff_edge: float = 1.0
 @export var levels: Array[TowerLevelData] = []
+## Model scene per tier (1..3). Entries may repeat when one scene holds every tier.
+@export var model_tier_scenes: Array[PackedScene] = []
+
+## Missing entries use the nearest lower tier, or null when none is available.
+func get_model_scene(tier: int) -> PackedScene:
+	for i in range(mini(tier, model_tier_scenes.size()) - 1, -1, -1):
+		if model_tier_scenes[i] != null:
+			return model_tier_scenes[i]
+	return null
 
 ## Total gold to reach `level` from nothing: build + every upgrade up to it.
 func get_total_cost(level: int) -> int:
