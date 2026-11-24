@@ -168,6 +168,14 @@ static var _lane_ref_length: float = 0.0
 @onready var nav: NavigationAgent3D = %NavAgent
 @onready var _body_shape := get_node_or_null(^"CollisionShape3D") as CollisionShape3D
 
+## Undead: revives used so far, and the game seconds left lying down before the next one.
+var revives_used: int = 0
+var is_reviving: bool = false
+var _revive_timer: float = 0.0
+## Knight: the one invulnerable window was used, and the game seconds it has left.
+var invuln_used: bool = false
+var _invuln_timer: float = 0.0
+
 var hit_by_commander: bool:
 	get:
 		return health.hit_by_commander if health != null else false
@@ -295,9 +303,104 @@ func _get_lane() -> Path3D:
 	return _lane
 
 func can_be_targeted() -> bool:
-	if is_dead or spawn_grace or is_in_spawn_zone:
+	if is_dead or spawn_grace or is_in_spawn_zone or is_reviving:
 		return false
 	return true
+
+
+## Stealth units are never picked by a tower and do not count as a unit in its range. Area
+## damage (a Cannon blast aimed at another unit) still hits them.
+func is_hidden_from_towers() -> bool:
+	return data != null and data.is_stealth
+
+
+## Damage multiplier by type: 0 while the Knight is invulnerable (towers drop it, commander hits
+## show IMMUNE), else 1. Bosses override it with their phase table.
+func get_resist(_dmg_type: Enums.DamageType) -> float:
+	return 0.0 if is_invulnerable() else 1.0
+
+
+func is_invulnerable() -> bool:
+	return _invuln_timer > 0.0
+
+
+## The first time a Knight drops under invuln_hp_threshold of its max HP and is still alive, it
+## is invulnerable for invuln_duration game seconds. Once per unit; a hit from above the
+## threshold to 0 kills it.
+func _check_invuln_trigger() -> void:
+	if invuln_used or data == null or data.invuln_duration <= 0.0 or data.invuln_hp_threshold <= 0.0:
+		return
+	if health.hp <= 0 or float(health.hp) >= data.invuln_hp_threshold * float(health.max_hp):
+		return
+	invuln_used = true
+	_invuln_timer = data.invuln_duration
+	_set_model_flag(&"set_invulnerable", true)
+
+
+func _tick_invuln(delta: float) -> void:
+	if _invuln_timer <= 0.0:
+		return
+	_invuln_timer = maxf(0.0, _invuln_timer - delta)
+	if _invuln_timer <= 0.0:
+		_set_model_flag(&"set_invulnerable", false)
+
+
+## True when dropping to 0 HP lays the unit down to revive instead of killing it.
+func _will_revive() -> bool:
+	return data != null and revives_used < data.revive_count
+
+
+## Lies down for revive_delay game seconds: no rewards, no enemy_died, not targetable, no
+## attack slot, not counted as stuck. Then stands up where it lay with full HP and its hit damage
+## times revive_dmg_mult. hit_by_commander is kept.
+func _start_revive() -> void:
+	revives_used += 1
+	is_reviving = true
+	_revive_timer = data.revive_delay
+	_release_melee_slot()
+	current_target = null
+	has_target_position = false
+	is_attacking_active = false
+	velocity = Vector3.ZERO
+	_play_death_pose()
+	_set_model_flag(&"set_reviving", true)
+
+
+func _tick_revive(delta: float) -> void:
+	_revive_timer -= delta
+	if _revive_timer > 0.0:
+		return
+	is_reviving = false
+	health.hp = health.max_hp
+	health.dot_remainder = 0.0
+	health.hp_changed.emit(health.hp, health.max_hp)
+	scaled_damage = maxi(1, int(round(float(scaled_damage) * data.revive_dmg_mult)))
+	_set_model_flag(&"set_reviving", false)
+	_reset_stuck_tracking()
+	_play_locomotion_anim()
+	# FRENZY sent while it lay down still applies.
+	if is_frenzied:
+		change_state(Enums.EnemyState.FRENZY)
+		_find_default_target()
+	else:
+		_retarget_now()
+
+
+func _play_death_pose() -> void:
+	for clip in [&"general/Death_A", &"general/Death_B", &"Death_A", &"Death_B"]:
+		if anim_player != null and anim_player.has_animation(clip):
+			play_anim(clip, 1.0)
+			return
+
+
+## Calls a trait effect (set_invulnerable, set_reviving) on the model under Model, when it has one.
+func _set_model_flag(method: StringName, on: bool) -> void:
+	var model := get_node_or_null(^"Model")
+	if model == null:
+		return
+	for child in model.get_children():
+		if child.has_method(method):
+			child.call(method, on)
 
 
 func can_be_recycled() -> bool:
@@ -678,6 +781,10 @@ func change_state(new_state: Enums.EnemyState) -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
+	if is_reviving:
+		_tick_revive(delta)
+		return
+	_tick_invuln(delta)
  
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
@@ -1693,7 +1800,7 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 		_retarget_timer = 0.0
  
 func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
-	if is_dead or spawn_grace:
+	if is_dead or spawn_grace or is_reviving:
 		return 0
  
 	var info: DamageInfo = null
@@ -1786,14 +1893,21 @@ func apply_knockback(force_vector: Vector3) -> void:
 	stagger_timer = GameConfig.enemy_stagger_time
  
 func _on_health_damaged(_amount: int, info: DamageInfo) -> void:
-	if health.hp > 0 or info == null or info.damage_type == Enums.DamageType.TRUE:
+	if health.hp > 0:
+		_check_invuln_trigger()
+		return
+	# A unit about to revive is not killed yet.
+	if info == null or info.damage_type == Enums.DamageType.TRUE or _will_revive():
 		return
 	if is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
 		EventBus.commander_enemy_killed.emit(info.source)
 
 
 func _on_died() -> void:
-	if is_dead:
+	if is_dead or is_reviving:
+		return
+	if _will_revive():
+		_start_revive()
 		return
 	is_dead = true
 	_release_melee_slot()
