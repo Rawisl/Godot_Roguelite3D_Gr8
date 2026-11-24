@@ -6,15 +6,19 @@ extends "res://tests/cheat_main.gd"
 ##   --seed=N          run seed (default 1)
 ##   --mode=afk        the commander goes to Commander mode and stays there
 ##   --mode=frontline  the commander walks to the nearest unit, swings at it and uses its skills
-##                     and Battle Cry as soon as they are ready (default)
+##                     and Battle Cry as soon as they are ready; it keeps 6 m from a boss while
+##                     other units are left, then fights the boss; under half HP it retreats to Commander mode
+##                     until the next PREP (default)
 ##   --waves=N         stop after N waves are cleared (default 20)
 ##   --speed=N         time scale during combat, 1..3 (default 3)
-##   --soak            keep the Fortress and the commander alive, to check that every wave ends
+##   --soak            gold for every build and upgrade, the Fortress and the commander kept alive
+##                     and a boss that reached Enrage put down, to check that every wave ends and
+##                     how many units get stuck
 ##   --out=PATH        append the JSON line to this file too (default: print only)
 ##
-## Both bots build the same way in every PREP: one Heal station on the free ground cell
-## nearest the Fortress, Arrow towers on the wall slots, then upgrades of the lowest tower while
-## the gold lasts. The level-up cards are picked first card first. The Hazard Trial is skipped.
+## The run starts with the starter towers. Both bots build the same way in every PREP: from wave
+## 4 one Heal station on the free ground cell nearest the Fortress, Arrow and Cannon in turn on
+## the wall slots, then upgrades of the lowest tower while the gold lasts. The level-up cards are picked first card first. The Hazard Trial is skipped.
 ## A wave counts as hung when its combat lasts past the hard cap plus its spawn duration plus
 ## HANG_MARGIN game seconds; the run then stops.
 
@@ -22,6 +26,10 @@ const HANG_MARGIN := 60.0
 const FRONTLINE_REACH := 1.8
 const FRONTLINE_SPEED := 5.0
 const SKILL_REACH := 4.0
+const HEAL_FROM_WAVE := 4
+const BOSS_KEEP_AWAY := 6.0
+const RETREAT_HP_RATIO := 0.5
+const SOAK_GOLD := 100000
 
 var seed_value := 1
 var mode := &"frontline"
@@ -45,6 +53,10 @@ var _spawned_total := 0
 var _stuck_culls := 0
 var _hard_cap_culls := 0
 var _heal_built := false
+var _cannon_turn := false
+var _boss_assists := 0
+var _started := false
+var _retreats := 0
 var _heal_depleted := 0
 var _skill_casts := 0
 var _levels_at := {}
@@ -81,10 +93,13 @@ func _ready() -> void:
 
 
 func _start_run() -> void:
+	# As after the tutorial: the run starts with the starter towers. In memory only, never saved.
+	SaveManager.get_section(SaveManager.FLAGS)["tutorial_done"] = true
 	super._start_run()
 	_rs.run_seed = seed_value
 	# The first PREP queue was built before the seed was set.
 	_wm._build_spawn_queue_for_wave(_wm.current_wave)
+	_started = true
 	print("[bot] seed %d, mode %s, %d waves at x%d%s" % [seed_value, mode, max_waves, speed, ", soak" if soak else ""])
 
 
@@ -103,7 +118,7 @@ func _read_args() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if _finished or _wm == null:
+	if _finished or _wm == null or not _started or not is_inside_tree():
 		return
 	if _commander == null or not is_instance_valid(_commander):
 		_commander = get_tree().get_first_node_in_group(&"commander") as Node3D
@@ -111,6 +126,7 @@ func _physics_process(delta: float) -> void:
 		_fortress = get_tree().get_first_node_in_group(&"fortress") as Node3D
 	if soak:
 		_keep_alive()
+		_assist_enraged_boss()
 	match _wm.wave_state:
 		Enums.WaveState.PREP:
 			_play_prep()
@@ -134,10 +150,18 @@ func _play_prep() -> void:
 	if _commander == null:
 		return
 	_prep_done_for = _wm.current_wave
-	if mode == &"afk" and not bool(_commander.get(&"is_commander_mode")):
+	# AFK goes to Commander mode; Frontline goes back to the field after a retreat.
+	var in_command := bool(_commander.get(&"is_commander_mode"))
+	if (mode == &"afk") != in_command:
 		var switch: Node = _commander.get(&"_mode_switch")
 		if switch != null and not switch.is_busy():
 			switch.request()
+	if OS.has_environment("BOT_TRACE"):
+		EventBus.build_denied.connect(func(r: StringName, sh: int) -> void: print("[bot] denied ", r, " ", sh), CONNECT_ONE_SHOT)
+		print("[bot] prep ", _wm.current_wave, " gold ", (get_node(^"Gameplay/GoldManager") as GoldManager).gold)
+	if soak:
+		# Strong towers so units die the normal way; the soak checks movement, not the economy.
+		(get_node(^"Gameplay/GoldManager") as GoldManager).gold = SOAK_GOLD
 	_spend_gold()
 	_record_tower_levels()
 	_wave_row = {"wave": _wm.current_wave, "spawned": 0, "stuck_culls": 0, "hard_cap_culls": 0}
@@ -145,13 +169,17 @@ func _play_prep() -> void:
 
 
 func _spend_gold() -> void:
+	if not is_inside_tree():
+		return
 	var slots: Array[Slot] = []
 	for node in get_tree().get_nodes_in_group(&"slot"):
 		var slot := node as Slot
 		if slot != null:
 			slots.append(slot)
-	# One Heal station, on the free ground cell nearest the Fortress.
-	if not _heal_built and _fortress != null:
+	var gold := get_node(^"Gameplay/GoldManager") as GoldManager
+	# One Heal station from HEAL_FROM_WAVE, on the free ground cell nearest the Fortress, before
+	# any other spending.
+	if not _heal_built and _fortress != null and _wm.current_wave >= HEAL_FROM_WAVE 			and gold.gold >= _build.get_data(&"heal_station").get_total_cost(1):
 		var best: Slot = null
 		for slot in slots:
 			if slot.zone == Enums.SlotZone.GROUND and slot.state == Enums.SlotState.EMPTY:
@@ -159,10 +187,13 @@ func _spend_gold() -> void:
 					best = slot
 		if best != null and _build.build(best.slot_id, &"heal_station", 1):
 			_heal_built = true
-	# Arrows on the wall slots, then any rubble rebuilt.
+	# Arrow and Cannon in turn on the wall slots (the Cannon hurts the Bulwark's armoured phase),
+	# then any rubble rebuilt.
 	for slot in slots:
 		if slot.zone != Enums.SlotZone.GROUND and slot.state == Enums.SlotState.EMPTY:
-			_build.build(slot.slot_id, &"arrow", 1)
+			var type := &"cannon" if _cannon_turn else &"arrow"
+			if _build.build(slot.slot_id, type, 1):
+				_cannon_turn = not _cannon_turn
 		elif slot.state == Enums.SlotState.RUINED and slot.last_data != null:
 			_build.build(slot.slot_id, slot.last_data.id, slot.last_level)
 	# Upgrades, lowest tower first, while they go through.
@@ -182,6 +213,8 @@ func _spend_gold() -> void:
 
 
 func _record_tower_levels() -> void:
+	if not is_inside_tree():
+		return
 	var top := 0
 	for node in get_tree().get_nodes_in_group(&"tower"):
 		var tower := node as Tower
@@ -192,22 +225,49 @@ func _record_tower_levels() -> void:
 
 ## The commander walks to the nearest unit it may hit and swings at it.
 func _frontline_step(delta: float) -> void:
+	if not is_inside_tree():
+		return
 	if _commander == null or bool(_commander.get(&"is_commander_mode")) or bool(_commander.get(&"is_dead")):
+		return
+	# Low on HP: retreat to Commander mode for the rest of the wave, like a careful player.
+	var h := _commander.get(&"health") as HealthComponent
+	if h != null and h.get_health_ratio() < RETREAT_HP_RATIO:
+		var switch: Node = _commander.get(&"_mode_switch")
+		if switch != null and not switch.is_busy():
+			switch.request()
+			if bool(_commander.get(&"is_commander_mode")) or switch.is_busy():
+				_retreats += 1
 		return
 	var target: Enemy = null
 	var best := INF
+	var boss: Enemy = null
 	for node in get_tree().get_nodes_in_group(&"enemy"):
 		var e := node as Enemy
 		if e == null or not e.can_be_targeted():
+			continue
+		# The boss is fought only when no other unit is left, from outside its reach.
+		if e.is_boss():
+			boss = e
 			continue
 		var d := e.global_position.distance_squared_to(_commander.global_position)
 		if d < best:
 			best = d
 			target = e
+	var away := Vector3.ZERO
+	if boss != null:
+		away = _commander.global_position - boss.global_position
+		away.y = 0.0
+	if target == null and boss != null:
+		target = boss
+	elif boss != null and away.length() < BOSS_KEEP_AWAY:
+		_commander.global_position += away.normalized() * FRONTLINE_SPEED * delta
+		return
 	if target == null:
 		return
 	var to := target.global_position - _commander.global_position
 	to.y = 0.0
+	if target != boss and boss != null and (target.global_position - boss.global_position).length() < BOSS_KEEP_AWAY:
+		return
 	if to.length() > FRONTLINE_REACH:
 		var step := to.normalized() * FRONTLINE_SPEED * delta
 		var next: Vector3 = _commander.global_position + step
@@ -220,6 +280,18 @@ func _frontline_step(delta: float) -> void:
 		_commander.call(&"_try_battle_cry")
 	if not bool(_commander.get(&"is_attacking")) and not bool(_commander.get(&"is_using_skill")):
 		_commander.call(&"_try_attack")
+
+
+## Soak only: a boss that reached Enrage is put down, so the soak keeps checking the waves after
+## it instead of waiting on a fight the bot cannot win. Counted in boss_assists.
+func _assist_enraged_boss() -> void:
+	if not is_inside_tree():
+		return
+	for node in get_tree().get_nodes_in_group(&"boss"):
+		var boss := node as Enemy
+		if boss != null and not boss.is_dead and bool(boss.get(&"is_enraged")):
+			_boss_assists += 1
+			boss.health.take_damage(DamageInfo.new(boss.health.max_hp * 10, Enums.DamageType.TRUE))
 
 
 func _keep_alive() -> void:
@@ -291,7 +363,7 @@ func _finish(result: StringName) -> void:
 		"spawned": _spawned_total, "stuck_culls": _stuck_culls, "hard_cap_culls": _hard_cap_culls,
 		"cull_pct": 100.0 * float(_stuck_culls + _hard_cap_culls) / float(maxi(1, _spawned_total)),
 		"commander_level": _levels_at, "top_tower_level": _tower_level_at,
-		"heal_station_built": _heal_built, "heal_depleted": _heal_depleted, "skill_casts": _skill_casts,
+		"heal_station_built": _heal_built, "heal_depleted": _heal_depleted, "skill_casts": _skill_casts, "boss_assists": _boss_assists, "retreats": _retreats,
 		"hung": _waves.any(func(w: Dictionary) -> bool: return w.get("hung", false)) or result == &"WAVE_HUNG",
 		"short_waves": _waves.filter(func(w: Dictionary) -> bool: return float(w.get("combat_s", 0.0)) + 0.05 < float(w.get("min_duration", 0.0))).map(func(w: Dictionary) -> int: return int(w.wave)),
 		"waves": _waves,

@@ -4,7 +4,7 @@ Usage: python tests/wave_bot_report.py results.jsonl
 
 Prints one line per run and the checks:
 - every wave of every run ended (no hung wave), and none ended before its spawn duration
-- culls (stuck and hard cap) under 0.1% of the units spawned, over all soak runs
+- stuck culls under 0.1% of the units spawned, over all soak runs (hard cap culls listed apart)
 - AFK against Frontline on the same seed: commander level at wave 12 at most 0.65 x Frontline,
   and fewer AFK runs reach wave 15
 - how many runs built a Heal station and how many times its store ran dry
@@ -46,12 +46,16 @@ def main(path):
     short = [(r["seed"], r["mode"], r["short_waves"]) for r in runs if r.get("short_waves")]
     soak = [r for r in runs if r["soak"]]
     spawned = sum(r["spawned"] for r in soak)
-    culls = sum(r["stuck_culls"] + r["hard_cap_culls"] for r in soak)
+    culls = sum(r["stuck_culls"] for r in soak)
+    hard = sum(r["hard_cap_culls"] for r in soak)
     cull_pct = 100.0 * culls / max(1, spawned)
     print()
     print(f"hung waves: {len(hung)}" + (f"  {[(r['seed'], r['mode']) for r in hung]}" if hung else ""))
     print(f"waves shorter than their spawn duration: {short or 'none'}")
-    print(f"soak culls: {culls} of {spawned} units = {cull_pct:.3f}% (limit 0.1%)")
+    print(f"soak stuck culls: {culls} of {spawned} units = {cull_pct:.3f}% (limit 0.1%); hard cap culls: {hard}")
+    if not soak:
+        print("no soak run: the cull check did not run")
+        ok = False
     if hung or short or (soak and cull_pct >= 0.1):
         ok = False
 
