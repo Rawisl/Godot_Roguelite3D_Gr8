@@ -31,6 +31,15 @@ extends BossData
 ## Share of the slash reach (body) at which the boss starts hitting a structure: the walk-up stops
 ## closer than the slash can reach, so a swing never falls short.
 @export var structure_reach_share: float = 0.8
+## Seconds a tower or Barricade holds the boss back in a row while it chases the commander before
+## it turns on that structure.
+@export var blocked_retarget_time: float = 0.85
+## A frame where the boss touches a structure and walks less than this share of its walk speed
+## counts as held back.
+@export_range(0.0, 1.0) var blocked_speed_share: float = 0.25
+## Most seconds the boss keeps at a structure it turned on before it may go back to the commander
+## (a structure that breaks, or a commander in reach, frees it sooner).
+@export var blocked_lock_time: float = 8.0
 
 @export_group("Locomotion")
 ## (body) Ground speed at which the walk clip plays at its own speed.

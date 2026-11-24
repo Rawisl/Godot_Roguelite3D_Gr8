@@ -9,8 +9,9 @@ extends Node3D
 ## Everything is local to the Model, so a scaled Model scales the trails and bones for free.
 ## Particles simulate in world space, so apply_scale() fixes what the parent scale does not:
 ## gravity, damping and linear acceleration.
-# TODO(kiezroth): when the boss steps between combo hits, let the held slash trail play out to its
-# end instead of freezing mid-effect, so hold_slash() and resume_slash() no longer cut a trail short.
+## When the boss steps between combo hits, detach_slash() hands the trails that are still showing
+## to a ghost left in the world, which plays them out on its own, and holds the rest of the clip
+## (blade glow, stars) until resume_slash().
 
 ## Seconds the eyes take to go from dark to full glow during the roar.
 @export var eye_glow_rise_time: float = 0.8
@@ -37,6 +38,11 @@ var _body_mesh: MeshInstance3D
 @onready var _spit_emitter: Node3D = %SpitEmitter
 @onready var _spit_particles: Array[CPUParticles3D] = [
 	%Core, %Drops, %Smoke]
+
+
+func _ready() -> void:
+	# The hit flash skips this whole subtree, so the effects do not turn white with the body.
+	add_to_group(HitReactionManager.NO_FLASH_GROUP)
 
 
 ## Points every bone attachment at the model's skeleton and puts the glow overlay on the body
@@ -67,6 +73,16 @@ func play_slash(anim: StringName, speed: float = 1.0) -> void:
 ## Freezes the running trail clip where it is (trail and blade glow keep their state).
 func hold_slash() -> void:
 	_vfx_player.pause()
+
+
+## Leaves the slash trails that are still showing standing in the world where they are and lets
+## them play out to their last key on their own, then holds the clip like hold_slash(). The
+## trails on the model stay hidden until the next play_slash() or stop_all(). Returns the ghost
+## that carries the trails, or null when no trail is showing.
+func detach_slash() -> Node3D:
+	var ghost := _make_slash_ghost()
+	hold_slash()
+	return ghost
 
 
 ## Carries on the held trail clip from at_time (its own seconds) at the given speed.
@@ -154,8 +170,86 @@ func set_spit_speed_scale(k: float) -> void:
 		p.initial_velocity_max = (p.get_meta(&"authored_velocity_max") as float) * k
 
 
+## Copies the trails that are showing now (opacity above zero) into a Node3D in the current
+## scene, hides the originals, and plays their tracks on the copies from the clip's current time
+## at its current speed. The ghost frees itself when the last of those tracks has ended.
+func _make_slash_ghost() -> Node3D:
+	if not _vfx_player.is_playing() or get_tree().current_scene == null:
+		return null
+	var clip := _vfx_player.get_animation(_vfx_player.assigned_animation)
+	var now := _vfx_player.current_animation_position
+	var shown := _showing_trails(clip, now)
+	if shown.is_empty():
+		return null
+	var ghost := Node3D.new()
+	ghost.name = &"CentipedeSlashGhost"
+	get_tree().current_scene.add_child(ghost)
+	var ghost_clip := Animation.new()
+	for source: MeshInstance3D in shown:
+		var copy := source.duplicate() as MeshInstance3D
+		ghost.add_child(copy)
+		copy.global_transform = source.global_transform
+		for uniform in _SLASH_UNIFORMS:
+			copy.set_instance_shader_parameter(uniform, source.get_instance_shader_parameter(uniform))
+		source.visible = false
+		_copy_trail_tracks(clip, source, ghost_clip)
+	var player := AnimationPlayer.new()
+	var library := AnimationLibrary.new()
+	library.add_animation(&"slash", ghost_clip)
+	player.add_animation_library(&"", library)
+	ghost.add_child(player)
+	player.animation_finished.connect(func(_anim: StringName) -> void: ghost.queue_free())
+	player.play(&"slash", -1.0, _vfx_player.get_playing_speed())
+	player.seek(now, true)
+	return ghost
+
+
+## The slash trail meshes the clip drives that are lit now and still have keys ahead of at_time.
+func _showing_trails(clip: Animation, at_time: float) -> Array[MeshInstance3D]:
+	var found: Array[MeshInstance3D] = []
+	for i in clip.get_track_count():
+		var mesh := get_node_or_null(NodePath(clip.track_get_path(i).get_concatenated_names())) as MeshInstance3D
+		if mesh == null or found.has(mesh) or not mesh.name.begins_with("VFX_Slash"):
+			continue
+		var opacity: Variant = mesh.get_instance_shader_parameter(&"opacity")
+		if opacity == null or float(opacity) <= 0.0:
+			continue
+		if _trail_end(clip, mesh) <= at_time:
+			continue
+		found.append(mesh)
+	return found
+
+
+## Time of the last key among the tracks of one mesh.
+func _trail_end(clip: Animation, mesh: Node) -> float:
+	var end := 0.0
+	for i in clip.get_track_count():
+		if get_node_or_null(NodePath(clip.track_get_path(i).get_concatenated_names())) != mesh:
+			continue
+		end = maxf(end, clip.track_get_key_time(i, clip.track_get_key_count(i) - 1))
+	return end
+
+
+## Adds the tracks of one mesh to the ghost clip, aimed at the copy (a child of the ghost with the
+## same name), and stretches the ghost clip to the last key.
+func _copy_trail_tracks(clip: Animation, mesh: Node, ghost_clip: Animation) -> void:
+	for i in clip.get_track_count():
+		var path := clip.track_get_path(i)
+		if get_node_or_null(NodePath(path.get_concatenated_names())) != mesh:
+			continue
+		var track := ghost_clip.add_track(clip.track_get_type(i))
+		ghost_clip.track_set_path(track, NodePath("%s:%s" % [mesh.name, path.get_concatenated_subnames()]))
+		ghost_clip.track_set_interpolation_type(track, clip.track_get_interpolation_type(i))
+		ghost_clip.track_set_interpolation_loop_wrap(track, clip.track_get_interpolation_loop_wrap(i))
+		ghost_clip.value_track_set_update_mode(track, clip.value_track_get_update_mode(i))
+		for key in clip.track_get_key_count(i):
+			ghost_clip.track_insert_key(track, clip.track_get_key_time(i, key), clip.track_get_key_value(i, key), clip.track_get_key_transition(i, key))
+		ghost_clip.length = maxf(ghost_clip.length, clip.track_get_key_time(i, clip.track_get_key_count(i) - 1))
+
+
 func _reset_slash_trails() -> void:
 	for node in find_children("VFX_Slash*", "MeshInstance3D", true, false):
+		(node as MeshInstance3D).visible = true
 		for uniform in _SLASH_UNIFORMS:
 			(node as MeshInstance3D).set_instance_shader_parameter(uniform, 0.0)
 	for blade in _blades:
