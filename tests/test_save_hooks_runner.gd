@@ -5,6 +5,7 @@ extends Node
 ## - clearing a wave pays prestige and moves the wave's pending part into the run total
 ## - the run end adds the run to the profile once, also during combat
 ## - the run flag at run start, and the tutorial flag
+## - losing mid-wave pays no wave gold, converts its prestige buffer, and keeps the cleared-wave record
 
 var passes: int = 0
 var fails: int = 0
@@ -38,6 +39,10 @@ func _ready() -> void:
 	print("=======================================================")
 
 	var real_repo := SaveManager.repository
+	var real_data := SaveManager.data.duplicate(true)
+	var real_can_write := SaveManager.can_write
+	var real_loaded_from := SaveManager.loaded_from
+	var real_load_failure := SaveManager.load_failure
 	EventBus.save_completed.connect(_on_save_completed)
 	EventBus.save_failed.connect(_on_save_failed)
 	EventBus.prestige_balance_changed.connect(_on_balance_changed)
@@ -51,6 +56,7 @@ func _ready() -> void:
 	test_wave_clear_prestige_formula()
 	test_prestige_gain_formula()
 	test_wave1_buffer_only()
+	test_loss_mid_wave()
 	test_run_end_updates_profile()
 	test_run_end_in_combat_writes_now()
 	test_run_end_recorded_once()
@@ -73,6 +79,10 @@ func _ready() -> void:
 	SaveManager.can_write = true
 	SaveManager.set_repository(real_repo)
 	SaveManager.load_save()
+	SaveManager.data = real_data
+	SaveManager.can_write = real_can_write
+	SaveManager.loaded_from = real_loaded_from
+	SaveManager.load_failure = real_load_failure
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -269,6 +279,40 @@ func test_wave1_buffer_only() -> void:
 	var expected := WaveRewardTable.floor_gold(GameConfig.prestige_buffer_ratio * 4.0 * GameConfig.conversion_rate)
 	assert_true(int(_disk(&"profile").get("prestige_balance", -1)) == expected, "A run lost in wave 1 still converts the unfinished wave buffer")
 	rs.free()
+
+
+func test_loss_mid_wave() -> void:
+	print("\n[CASE] test_loss_mid_wave")
+	_begin()
+	var gold := GoldManager.new()
+	add_child(gold)
+	gold.reset()
+	var rs := _new_run_state()
+	var wm := _new_wave_manager(5)
+	rs.waves_cleared = 4
+	rs.prestige_pending = 30
+	var gold_before := gold.gold
+	EventBus.state_changed.emit(&"COMBAT")
+	wm.wave_state = Enums.WaveState.COMBAT
+	wm.spawn_queue.clear()
+	wm.enemies_alive = 3
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4.0, 6, false, false)
+	var buffer := rs.wave_prestige_buffer
+	EventBus.fortress_destroyed.emit()
+	rs.end_run(&"FORTRESS_DESTROYED")
+	assert_true(buffer > 0, "the kill filled the wave buffer")
+	assert_true(_summaries.is_empty(), "no summary for the lost wave")
+	assert_true(gold.gold == gold_before, "gold of the lost wave is not paid")
+	var profile := _disk(&"profile")
+	var best: Dictionary = profile.get("best_by_start", {})
+	assert_true(int(profile.get("max_wave_cleared", -1)) == 4 and int(best.get("1", -1)) == 4,
+			"waves cleared stays at 4")
+	assert_true(int(profile.get("prestige_balance", -1)) == _expected_gain(30, buffer, 1.0),
+			"the unfinished wave's buffer counts at the configured ratio")
+	assert_true(_disk(&"run_flag").get("run_in_progress", true) == false, "the run flag is cleared")
+	wm.free()
+	rs.free()
+	gold.free()
 
 
 func test_run_end_updates_profile() -> void:
