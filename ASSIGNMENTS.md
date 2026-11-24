@@ -1277,10 +1277,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KT2
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Edge case EN-05..15 (ưu tiên ca hay gặp)
 - Nghiệm thu: Không treo wave
 - Cần xong trước: W10-KT3
+- Ghi chú bàn giao: Focused on what can hang a wave or pay twice, with the new units. New: a unit still alive when PREP starts (it should not exist) is culled with reason PREP_LEFTOVER (no reward, no kill, logged like every cull, plus a warning); Hazard Trial units are left alone. Checked by `tests/test_enemy_edge_cases_runner.tscn` (14 checks): leftover removal; an Undead lying down keeps the wave in COMBAT and still counted, its second death ends it; a Suicide Squad that blew itself up ends the wave; a Captain killed last ends the wave at once (its blast still comes later); the hard cap removes a lying Undead; a Barricade broken under five Grunts makes all five pick again; a unit attacking the commander drops it when the commander leaves the field. Not covered here: healer cases (no healer in the game), TIME-06 at 70 units (W10-NG4), and a Captain blast that lands after the wave ended still hits towers.
 
 ##### W11-KT3
 - Người: Kiệt
