@@ -7,7 +7,6 @@ extends PanelContainer
 signal closed
 
 const PREP := &"PREP"
-const BUTTON_LOCK_TIME := 0.15
 
 ## Every weapon a run can own, in the order of the rows.
 @export var weapons: Array[WeaponData] = []
@@ -16,7 +15,6 @@ const BUTTON_LOCK_TIME := 0.15
 
 var _owned: Array[StringName] = [RunState.BASE_WEAPON]
 var _equipped: StringName = RunState.BASE_WEAPON
-var _locked := false
 
 @onready var _title: Label = %Title
 @onready var _close: Button = %CloseButton
@@ -25,14 +23,12 @@ var _locked := false
 
 func _ready() -> void:
 	_title.text = tr(&"panel.weapon.title")
-	_close.text = tr(&"panel.close")
-	_close.focus_mode = Control.FOCUS_NONE
+
 	_close.pressed.connect(closed.emit)
 	_hint.text = tr(&"hud.weapon.prep_only")
 	var rows := _rows.get_children()
 	for i in rows.size():
 		(rows[i] as WeaponRow).pressed.connect(_on_row_pressed.bind(i))
-	_fit_rows()
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.weapon_equipped.connect(_on_equipped)
 	EventBus.weapon_gained.connect(_on_gained)
@@ -41,6 +37,32 @@ func _ready() -> void:
 func open() -> void:
 	_sync_from_run()
 	refresh()
+	for row: WeaponRow in _rows.get_children():
+		if row.visible and row.button_pressed and not row.disabled:
+			row.grab_focus()
+			return
+	_close.grab_focus()
+
+func navigate(event: InputEvent) -> void:
+	var scroll := _rows.get_parent() as ScrollContainer
+	for action in [&"ui_page_up", &"ui_page_down"]:
+		if event.is_action_pressed(action, true):
+			var direction := -1 if action == &"ui_page_up" else 1
+			scroll.scroll_vertical += direction * roundi(scroll.size.y)
+			return
+	for action in [&"ui_left", &"ui_right", &"ui_up", &"ui_down"]:
+		if not event.is_action_pressed(action, true):
+			continue
+		var owner := get_viewport().gui_get_focus_owner()
+		if owner == null or not is_ancestor_of(owner):
+			_close.grab_focus()
+			return
+		var side: Side = {&"ui_left": SIDE_LEFT, &"ui_right": SIDE_RIGHT,
+			&"ui_up": SIDE_TOP, &"ui_down": SIDE_BOTTOM}[action]
+		var next := owner.find_valid_focus_neighbor(side)
+		if next != null and is_ancestor_of(next):
+			next.grab_focus()
+		return
 
 func refresh() -> void:
 	var can_change := _is_prep()
@@ -54,20 +76,6 @@ func refresh() -> void:
 		var data := weapons[i]
 		row.show_weapon(data, _owned.has(data.id), data.id == _equipped, can_change,
 			_range_text(data), _effect_text(data))
-
-## Every row takes the width of the longest header any weapon can show (name, tag, range), once,
-## so a long name never pushes the sword or the text and the panel never resizes on a pick.
-func _fit_rows() -> void:
-	var tags := [tr(&"panel.weapon.equipped"), tr(&"panel.weapon.locked_tag")]
-	var rows := _rows.get_children()
-	var widest := 0.0
-	for i in mini(rows.size(), weapons.size()):
-		var data := weapons[i]
-		for tag in tags:
-			widest = maxf(widest, (rows[i] as WeaponRow).measure_width(tr(data.name_key), tag, _range_text(data)))
-	for row in rows:
-		var control := row as Control
-		control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, widest)
 
 func _range_text(data: WeaponData) -> String:
 	var base_range := stats.sword_range if stats != null else 0.0
@@ -105,7 +113,7 @@ func _sync_from_run() -> void:
 
 func _on_row_pressed(index: int) -> void:
 	var data := weapons[index]
-	if _try_lock() and _is_prep() and _owned.has(data.id) and data.id != _equipped:
+	if _is_prep() and _owned.has(data.id) and data.id != _equipped:
 		var rs := _run_state()
 		if rs != null:
 			rs.equip_weapon(data.id)
@@ -133,14 +141,3 @@ func _on_gained(weapon_id: StringName) -> void:
 func _on_state_changed(_new_state: StringName) -> void:
 	if visible:
 		refresh()
-
-func _try_lock() -> bool:
-	if _locked:
-		return false
-	_locked = true
-	_unlock_later()
-	return true
-
-func _unlock_later() -> void:
-	await TimeManager.wait_real(BUTTON_LOCK_TIME)
-	_locked = false

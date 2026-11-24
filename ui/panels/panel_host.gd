@@ -13,9 +13,10 @@ extends Control
 @onready var _fortress_panel: FortressPanel = %FortressPanel
 @onready var _heal_panel: HealStationPanel = %HealStationPanel
 @onready var _weapon_panel: WeaponPanel = %WeaponPanel
-@onready var _weapon_slot: WeaponSlot = %WeaponSlot
-@onready var _skill_dock: Control = %SkillDock
+@onready var _character: PanelContainer = %CharacterPanel
+@onready var _preview_holder: Control = %PreviewHolder
 
+var _slide: Tween
 var _mode: StringName = &"FRONTLINE"
 
 func _ready() -> void:
@@ -32,10 +33,15 @@ func _ready() -> void:
 	_selection.selection_cleared.connect(close_all)
 	_fortress_panel.visible = false
 	_fortress_panel.closed.connect(close_all)
-	_weapon_panel.visible = false
-	_weapon_panel.closed.connect(close_all)
-	_weapon_slot.open_requested.connect(_show_weapons)
-	_skill_dock.shown_changed.connect(_on_skill_dock_shown)
+	_weapon_panel.hide()
+	_weapon_panel.closed.connect(_return_to_character)
+	_weapon_panel.tree_exiting.connect(_release_weapon_pause)
+	_character.weapons_requested.connect(_show_weapons)
+	_character.closed.connect(close_all)
+	%CommanderStatus.details_requested.connect(_toggle_character)
+	for panel in [_character, _build_panel, _tower_panel, _heal_panel, _fortress_panel]:
+		panel.visibility_changed.connect(_on_drawer_visibility.bind(panel))
+	EventBus.run_started.connect(close_all)
 	_selection.fortress_selected.connect(_show_fortress)
 	EventBus.slot_selected.connect(_on_slot_selected)
 	EventBus.tower_selected.connect(_on_tower_selected)
@@ -52,24 +58,71 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if TimeManager.has_pause_reason(TimeManager.REASON_USER):
 		return
+	if event.is_action_pressed(&"build_toggle") and is_visible_in_tree() and not ScreenManager.has_dialog():
+		var service := _service()
+		if service != null and service.is_prep():
+			if _build_panel.visible:
+				close_all()
+			else:
+				_selection.open_build_at_cursor()
+			get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(&"character_status") and _toggle_character():
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed(&"pause") and _any_open():
 		close_all()
 		get_viewport().set_input_as_handled()
+
+func _input(event: InputEvent) -> void:
+	if not _weapon_panel.visible or ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
+		return
+	if event.is_action_pressed(&"pause") or event.is_action_pressed(&"ui_cancel"):
+		_return_to_character()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		if event.is_action(&"ui_accept"):
+			return
+		_weapon_panel.navigate(event)
+		get_viewport().set_input_as_handled()
+
+func _return_to_character() -> void:
+	_hide_panels()
+	_character.show()
+
+func _release_weapon_pause() -> void:
+	if _weapon_panel.visible:
+		TimeManager.release_pause(TimeManager.REASON_WEAPON_PICK)
+
+func _toggle_character() -> bool:
+	if not is_visible_in_tree() or ScreenManager.has_dialog() or TimeManager.has_pause_reason(TimeManager.REASON_USER):
+		return false
+	if GameState.wave_state not in [&"PREP", &"COMBAT", &"BOSS_COMBAT", &"HAZARD_TRIAL"]:
+		return false
+	var opening := not (_character.visible or _weapon_panel.visible)
+	close_all()
+	_character.visible = opening
+	return true
 
 func close_all() -> void:
 	_hide_panels()
 	_selection.clear_selection()
 
 func _hide_panels() -> void:
+	_character.hide()
 	_build_panel.visible = false
 	_tower_panel.visible = false
 	_heal_panel.visible = false
 	_fortress_panel.visible = false
-	_weapon_panel.visible = false
+	if _weapon_panel.visible:
+		_weapon_panel.hide()
+		%WeaponOverlay.hide()
+		TimeManager.release_pause(TimeManager.REASON_WEAPON_PICK)
+		_preview_holder.show()
 	_ring.hide_ring()
 
 func _any_open() -> bool:
-	return _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible or _weapon_panel.visible
+	return _character.visible or _build_panel.visible or _tower_panel.visible or _heal_panel.visible or _fortress_panel.visible or _weapon_panel.visible
 
 func _show_build(slot_id: StringName) -> void:
 	_hide_panels()
@@ -97,9 +150,15 @@ func _on_slot_selected(slot_id: StringName) -> void:
 	var service := _service()
 	if service == null or not service.is_prep() or _selection.selected_slot != slot_id:
 		return
+	if _build_panel.visible and _build_panel.slot_id == slot_id:
+		close_all()
+		return
 	_show_build(slot_id)
 
 func _on_tower_selected(slot_id: StringName) -> void:
+	if _tower_or_heal_open(slot_id):
+		close_all()
+		return
 	_show_selected_tower(slot_id)
 
 ## The panel stays open after a transaction: building switches to the new tower.
@@ -150,6 +209,9 @@ func _service() -> BuildService:
 	return get_tree().get_first_node_in_group(&"build_service") as BuildService
 
 func _show_fortress() -> void:
+	if _fortress_panel.visible:
+		close_all()
+		return
 	_hide_panels()
 	_fortress_panel.visible = true
 	_fortress_panel.open()
@@ -178,12 +240,25 @@ func _show_heal_station(slot_id: StringName) -> void:
 
 ## Opened from the weapon slot. Clearing the selection first closes a tower or slot panel.
 func _show_weapons() -> void:
+	if _weapon_panel.visible:
+		return
 	_selection.clear_selection()
 	_hide_panels()
+	%WeaponOverlay.show()
+	_preview_holder.hide()
+	TimeManager.request_pause(TimeManager.REASON_WEAPON_PICK)
 	_weapon_panel.visible = true
 	_weapon_panel.open()
 
-## Hiding the skill slots takes the weapon panel away with the weapon slot.
-func _on_skill_dock_shown(shown: bool) -> void:
-	if not shown and _weapon_panel.visible:
-		close_all()
+func _on_drawer_visibility(panel: Control) -> void:
+	if not is_inside_tree():
+		return
+	_preview_holder.visible = not _any_open()
+	if not panel.visible:
+		return
+	if _slide:
+		_slide.kill()
+	var motion: Control = %DrawerMotion
+	motion.position.x = maxf(panel.size.x, panel.get_combined_minimum_size().x) + 80.0
+	_slide = create_tween().set_ignore_time_scale().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_slide.tween_property(motion, "position:x", 0.0, 0.22)

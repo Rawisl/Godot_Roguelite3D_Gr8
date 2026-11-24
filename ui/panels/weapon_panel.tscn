@@ -11,7 +11,22 @@
 [ext_resource type="Resource" uid="uid://brd5ep2wjb484" path="res://data/weapons/swift.tres" id="9_w5"]
 [ext_resource type="Resource" uid="uid://dsl0yhckk2q4f" path="res://data/config/commander_stats.tres" id="10_stats"]
 
+[sub_resource type="StyleBoxFlat" id="Frame"]
+bg_color = Color(0.075, 0.11, 0.14, 1)
+border_color = Color(0.78, 0.64, 0.39, 1)
+border_width_top = 3
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+content_margin_left = 24.0
+content_margin_right = 24.0
+content_margin_top = 18.0
+content_margin_bottom = 24.0
+
 [node name="WeaponPanel" unique_id=1739205001 instance=ExtResource("1_base")]
+custom_minimum_size = Vector2(820, 0)
+theme_override_styles/panel = SubResource("Frame")
 script = ExtResource("2_panel")
 weapons = Array[Resource]([ExtResource("4_w0"), ExtResource("5_w1"), ExtResource("6_w2"), ExtResource("7_w3"), ExtResource("8_w4"), ExtResource("9_w5")])
 stats = ExtResource("10_stats")
@@ -21,29 +36,37 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HudHint"
 theme_override_font_sizes/font_size = 22
+autowrap_mode = 3
 horizontal_alignment = 1
 
-[node name="Rows" type="GridContainer" parent="VBoxContainer" parent_id_path=PackedInt32Array(492078792) index="2" unique_id=1739205003]
+[node name="Scroll" type="ScrollContainer" parent="VBoxContainer" index="2"]
+follow_focus = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 400)
+horizontal_scroll_mode = 0
+
+[node name="Rows" type="GridContainer" parent="VBoxContainer/Scroll" unique_id=1739205003]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
+theme_override_constants/v_separation = 6
 columns = 2
+size_flags_horizontal = 3
 
-[node name="Row1" parent="VBoxContainer/Rows" unique_id=1739205004 instance=ExtResource("3_row")]
+[node name="Row1" parent="VBoxContainer/Scroll/Rows" unique_id=1739205004 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row2" parent="VBoxContainer/Rows" unique_id=1739205005 instance=ExtResource("3_row")]
+[node name="Row2" parent="VBoxContainer/Scroll/Rows" unique_id=1739205005 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row3" parent="VBoxContainer/Rows" unique_id=1739205006 instance=ExtResource("3_row")]
+[node name="Row3" parent="VBoxContainer/Scroll/Rows" unique_id=1739205006 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row4" parent="VBoxContainer/Rows" unique_id=1739205007 instance=ExtResource("3_row")]
+[node name="Row4" parent="VBoxContainer/Scroll/Rows" unique_id=1739205007 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row5" parent="VBoxContainer/Rows" unique_id=1739205008 instance=ExtResource("3_row")]
+[node name="Row5" parent="VBoxContainer/Scroll/Rows" unique_id=1739205008 instance=ExtResource("3_row")]
 layout_mode = 2
 
-[node name="Row6" parent="VBoxContainer/Rows" unique_id=1739205009 instance=ExtResource("3_row")]
+[node name="Row6" parent="VBoxContainer/Scroll/Rows" unique_id=1739205009 instance=ExtResource("3_row")]
 layout_mode = 2

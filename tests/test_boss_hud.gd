@@ -76,12 +76,9 @@ func _run_checks() -> void:
 	_check(bar != null and intro != null, "boss bar and intro card are in the HUD")
 	if bar == null or intro == null:
 		return
-	var timer := bar.get_node("%Timer") as Label
-	var icon := bar.get_node("%TimerIcon") as TextureRect
 	var armor := bar.get_node("%ArmorBar") as ProgressBar
 	var core := bar.get_node("%CoreBar") as ProgressBar
 	var resist_row := bar.get_node("%ResistRow") as Control
-	var header := bar.get_node("Body/Header") as Control
 
 	EventBus.state_changed.emit(&"BOSS_INTRO")
 	EventBus.boss_intro_started.emit(&"bulwark")
@@ -89,7 +86,7 @@ func _run_checks() -> void:
 	_check(intro.visible, "intro card shows in BOSS_INTRO")
 	_check((intro.get_node("%BossName") as Label).text == tr(&"enemy.bulwark"), "intro card names the boss")
 	_check((intro.get_node("%Immune") as Label).text != "", "intro card lists the armor phase immunities")
-	_check(bar.visible and timer.text == "01:30", "timer stands still at the full time in the intro")
+	_check(bar.visible and not bar.has_node("%Timer"), "compact boss bar omits the countdown")
 	_check(not (bar.get_node("%Bars") as Control).visible, "no HP bar before the boss spawns")
 
 	EventBus.state_changed.emit(&"BOSS_COMBAT")
@@ -101,23 +98,20 @@ func _run_checks() -> void:
 	EventBus.boss_hp_changed.emit(500, 900, &"ARMORED")
 	_check(armor.value == 500 and core.value == 900, "a hit on the armor lowers only the armor segment")
 
-	var header_height := header.get_combined_minimum_size().y
-	EventBus.boss_timer_changed.emit(45.0)
-	_check(not icon.visible and not timer.has_theme_color_override(&"font_color"), "45 s: plain timer, no icon")
-	EventBus.boss_timer_changed.emit(25.0)
-	_check(icon.visible and timer.get_theme_color(&"font_color") == bar.get(&"warn_color"), "25 s: warning colour and icon")
-	EventBus.boss_timer_changed.emit(8.0)
-	_check(timer.get_theme_color(&"font_color") == bar.get(&"danger_color")
-		and timer.get_theme_font_size(&"font_size") == bar.get(&"danger_font_size"), "8 s: red and larger")
-	_check(is_equal_approx(header.get_combined_minimum_size().y, header_height), "the larger timer does not grow the box")
-
+	_check(armor.get_global_rect() == core.get_global_rect(), "armor and core occupy one track")
+	_check(resist_row.get_node("PIERCE").visible and resist_row.get_node("MAGIC").visible, "armored Bulwark shows both damage icons")
+	var variant := BossData.new()
+	variant.resist_table_phase1 = {Enums.DamageType.TRAP: 0.0}
+	bar.call("_show_boss", variant)
+	_check(resist_row.get_node("TRAP").visible and not resist_row.get_node("PIERCE").visible,
+		"boss-specific resistance table shows trap immunity")
 	EventBus.boss_phase_changed.emit(&"EXPOSED")
 	EventBus.boss_hp_changed.emit(0, 900, &"EXPOSED")
 	_check(not resist_row.visible, "exposed core: no immunity line")
 	EventBus.boss_timer_changed.emit(0.0)
 	EventBus.boss_enraged.emit()
 	EventBus.boss_timer_changed.emit(0.0)
-	_check(timer.text == tr(&"hud.boss.enraged") and icon.visible, "ENRAGED tag with its icon, kept after 0")
+	_check(bar.visible and not resist_row.visible, "enrage leaves the exposed bar visible")
 	EventBus.boss_defeated.emit()
 	_check(not bar.visible, "the bar hides when the boss dies")
 	print("[test_boss_hud] %d passed, %d failed" % [_passed, _failed])

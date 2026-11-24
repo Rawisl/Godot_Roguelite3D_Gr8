@@ -22,6 +22,8 @@ const STATE_KEYS := {
 
 ## Fight time of this wave in game time, counted like the wave summary: in combat, from the first
 ## enemy on. Game time, so x2 and x3 run it faster and Pause stops it.
+var _wave_index := 1
+var _trial := false
 var _clear_seconds := 0.0
 var _fighting := false
 var _first_spawned := false
@@ -35,6 +37,7 @@ func _ready() -> void:
 	_set_enemies_visible(false)
 	EventBus.run_started.connect(_on_run_started)
 	EventBus.state_changed.connect(_on_state_changed)
+	EventBus.hazard_trial_entered.connect(_on_trial_entered)
 	EventBus.wave_started.connect(_on_wave_started)
 	EventBus.enemy_count_changed.connect(_on_enemy_count_changed)
 	EventBus.enemy_spawned.connect(func(_enemy: Node) -> void: _first_spawned = true)
@@ -47,6 +50,8 @@ func _process(_delta: float) -> void:
 	_last_game_time = now
 
 func _on_state_changed(new_state: StringName) -> void:
+	_trial = new_state == &"HAZARD_TRIAL"
+	_write_wave(_wave_index)
 	_state.text = tr(STATE_KEYS.get(new_state, &""))
 	_fighting = new_state == &"COMBAT" or new_state == &"BOSS_COMBAT"
 	_last_game_time = TimeManager.game_time
@@ -62,6 +67,18 @@ func _on_wave_started(wave_index: int) -> void:
 	_clear_seconds = 0.0
 	_first_spawned = false
 	_clear_time.text = UiFormat.time_mmss(0.0)
+	_wave_index = wave_index
+	_write_wave(wave_index)
+
+func _on_trial_entered(wave_index: int, _enemies: Array) -> void:
+	_wave_index = wave_index
+	_write_wave(wave_index)
+
+func _write_wave(wave_index: int) -> void:
+	%TrialHeader.visible = _trial
+	%WaveRow.visible = not _trial
+	%StatusRow.visible = not _trial
+	%TrialWave.text = UiFormat.tr_fmt(&"hud.wave_value", {"wave": wave_index})
 	var victory := _victory_wave()
 	var endless := victory > 0 and wave_index > victory
 	_endless.visible = endless

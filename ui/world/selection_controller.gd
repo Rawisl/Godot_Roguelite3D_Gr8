@@ -52,9 +52,27 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"cancel") and selected_slot != &"":
 		clear_selection()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"build_toggle") and _is_prep():
-		_set_rings_visible(not _rings_visible)
-		get_viewport().set_input_as_handled()
+
+func open_build_at_cursor() -> void:
+	_set_rings_visible(true)
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	var mouse := get_viewport().get_mouse_position()
+	var nearest: Slot
+	var distance := INF
+	for slot: Slot in get_tree().get_nodes_in_group(&"slot"):
+		if not slot.marker.is_visible_in_tree() or not slot.is_free() or camera.is_position_behind(slot.global_position):
+			continue
+		var screen := camera.unproject_position(slot.global_position)
+		if not get_viewport().get_visible_rect().has_point(screen):
+			continue
+		var candidate := screen.distance_squared_to(mouse)
+		if candidate < distance:
+			distance = candidate
+			nearest = slot
+	if nearest:
+		_select(nearest)
 
 ## Tower first, then slot. Several hits are read so a slot under a tower still loses to it.
 func pick_under_mouse() -> Node:
