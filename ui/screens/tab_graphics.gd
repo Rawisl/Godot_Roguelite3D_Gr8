@@ -27,7 +27,8 @@ var _see_through: OptionButton
 @onready var _fps_label: Label = %MaxFpsLabel
 @onready var _fps: OptionButton = %MaxFps
 @onready var _keep_panel: PanelContainer = %KeepPanel
-@onready var _keep_label: Label = %KeepLabel
+@onready var _countdown: Label = %Countdown
+@onready var _time_left: ProgressBar = %TimeLeft
 @onready var _keep: Button = %KeepButton
 @onready var _undo: Button = %RevertButton
 
@@ -62,7 +63,8 @@ func _process(_delta: float) -> void:
 	if left <= 0.0:
 		revert_pending()
 		return
-	_keep_label.text = UiFormat.tr_fmt(&"settings.gfx.keep_question", {"seconds": ceili(left)})
+	_time_left.value = left
+	_countdown.text = UiFormat.tr_fmt(&"settings.gfx.revert_countdown", {"seconds": ceili(left)})
 
 ## Leaving Settings without Keep counts as no answer.
 func revert_pending() -> void:
@@ -84,6 +86,7 @@ func _change_window(key: StringName, value: Variant) -> void:
 		_revert[key] = old
 	EventBus.settings_changed.emit(key, value)
 	_keep_until = TimeManager.real_time + GameConfig.settings_keep_seconds
+	_time_left.max_value = GameConfig.settings_keep_seconds
 	_keep_panel.visible = true
 	set_process(true)
 	_process(0.0)

@@ -13,6 +13,15 @@ extends Node
 var passes: int = 0
 var fails: int = 0
 
+class NavigationProbe extends Enemy:
+	var target_searches := 0
+
+	func _ready() -> void:
+		set_physics_process(false)
+
+	func _find_default_target() -> void:
+		target_searches += 1
+
 
 func _ready() -> void:
 	print("\n=======================================================")
@@ -26,6 +35,7 @@ func _ready() -> void:
 	test_dodge_mechanics()
 	test_combo_and_cleave()
 	test_health_and_damage_info()
+	await test_navigation_stops_when_enemy_leaves_tree()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -41,6 +51,27 @@ func assert_true(cond: bool, test_name: String) -> void:
 	else:
 		fails += 1
 		printerr("  [FAIL] %s" % test_name)
+
+
+func test_navigation_stops_when_enemy_leaves_tree() -> void:
+	var enemy := NavigationProbe.new()
+	var health := HealthComponent.new()
+	health.name = "Health"
+	var navigation := NavigationAgent3D.new()
+	navigation.name = "NavAgent"
+	for child in [health, navigation]:
+		enemy.add_child(child)
+		child.owner = enemy
+		child.unique_name_in_owner = true
+	add_child(enemy)
+	enemy._setup_navigation()
+	await get_tree().physics_frame
+	assert_true(enemy.target_searches == 1, "An active enemy resolves its initial target")
+	enemy._setup_navigation()
+	remove_child(enemy)
+	await get_tree().physics_frame
+	assert_true(enemy.target_searches == 1, "An enemy removed during setup never searches for a target")
+	enemy.free()
 
 
 func test_input_map() -> void:

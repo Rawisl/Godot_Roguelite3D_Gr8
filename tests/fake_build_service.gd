@@ -3,6 +3,12 @@ extends BuildService
 ## Stands in for BuildService in the panel checks. It answers only the calls the Build, Tower and
 ## Heal station panels make, with values set by the checks. Everything else is the real service.
 
+var upgrades := 0
+
+func upgrade(_slot_id: StringName) -> bool:
+	upgrades += 1
+	return true
+
 var build_options: Array[Dictionary] = []
 var tower_info: Dictionary = {}
 var prep := true

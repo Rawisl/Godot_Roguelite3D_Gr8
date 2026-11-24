@@ -3,10 +3,9 @@
 [ext_resource type="Script" uid="uid://bt1ys01cdjyws" path="res://ui/hud/parts/boss_bar.gd" id="1_8sfhq"]
 [ext_resource type="Resource" uid="uid://dmtjvtt64ofto" path="res://data/bosses/bulwark_boss.tres" id="2_blwk"]
 [ext_resource type="Resource" uid="uid://d4bsu15pbr3do" path="res://data/bosses/skeletal_centipede_boss.tres" id="2_cent"]
-[ext_resource type="Texture2D" uid="uid://bde0bkypptbu0" path="res://art/icons/boss_warn_icon.png" id="3_warn"]
-[ext_resource type="Texture2D" uid="uid://by5ddff0ymiir" path="res://art/icons/boss_enrage_icon.png" id="6_enrage"]
-[ext_resource type="Texture2D" uid="uid://bs1qm0yx4mf1r" path="res://art/icons/shield_icon.png" id="4_shield"]
 [ext_resource type="Script" uid="uid://bhfhlrn5orfb" path="res://common/boss_data.gd" id="5_bdata"]
+
+[sub_resource type="StyleBoxEmpty" id="transparent"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
 content_margin_left = 16.0
@@ -33,13 +32,11 @@ corner_radius_bottom_left = 4
 
 [node name="BossBar" type="PanelContainer" unique_id=615647234]
 visible = false
-custom_minimum_size = Vector2(640, 0)
+custom_minimum_size = Vector2(540, 0)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_box")
 script = ExtResource("1_8sfhq")
 bosses = Array[ExtResource("5_bdata")]([ExtResource("2_blwk"), ExtResource("2_cent")])
-warn_icon = ExtResource("3_warn")
-enrage_icon = ExtResource("6_enrage")
 
 [node name="Body" type="VBoxContainer" parent="." unique_id=1580395716]
 layout_mode = 2
@@ -47,7 +44,7 @@ mouse_filter = 2
 theme_override_constants/separation = 6
 
 [node name="Header" type="HBoxContainer" parent="Body" unique_id=1960063032]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
@@ -55,80 +52,32 @@ theme_override_constants/separation = 8
 [node name="BossName" type="Label" parent="Body/Header" unique_id=1081849974]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 8
+size_flags_vertical = 4
 theme_override_font_sizes/font_size = 26
 
-[node name="TimerIcon" type="TextureRect" parent="Body/Header" unique_id=1735204981]
+[node name="ResistRow" type="HBoxContainer" parent="Body/Header"]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(28, 28)
-layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
 
-[node name="Timer" type="Label" parent="Body/Header" unique_id=1588035000]
+[node name="Bars" type="Control" parent="Body"]
 unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_vertical = 8
-theme_override_font_sizes/font_size = 28
-horizontal_alignment = 2
-
-[node name="Bars" type="HBoxContainer" parent="Body" unique_id=1297346051]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
+custom_minimum_size = Vector2(0, 14)
 mouse_filter = 2
-theme_override_constants/separation = 2
 
-[node name="CoreBar" type="ProgressBar" parent="Body/Bars" unique_id=508237194]
+[node name="CoreBar" type="ProgressBar" parent="Body/Bars"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 16)
-layout_mode = 2
-size_flags_horizontal = 3
+anchor_right = 1.0
+anchor_bottom = 1.0
 mouse_filter = 2
+show_percentage = false
 theme_type_variation = &"BossBar"
-show_percentage = false
 
-[node name="ArmorBar" type="ProgressBar" parent="Body/Bars" unique_id=1820463529]
+[node name="ArmorBar" type="ProgressBar" parent="Body/Bars"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 16)
-layout_mode = 2
-size_flags_horizontal = 3
+anchor_right = 1.0
+anchor_bottom = 1.0
 mouse_filter = 2
+show_percentage = false
+theme_override_styles/background = SubResource("transparent")
 theme_override_styles/fill = SubResource("StyleBoxFlat_armor")
-show_percentage = false
-
-[node name="InfoRow" type="HBoxContainer" parent="Body" unique_id=713948205]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 6
-
-[node name="HpText" type="Label" parent="Body/InfoRow" unique_id=1239561847]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
-
-[node name="ResistRow" type="HBoxContainer" parent="Body/InfoRow" unique_id=362915084]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 6
-
-[node name="ShieldIcon" type="TextureRect" parent="Body/InfoRow/ResistRow" unique_id=1905728463]
-custom_minimum_size = Vector2(22, 22)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-texture = ExtResource("4_shield")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Resist" type="Label" parent="Body/InfoRow/ResistRow" unique_id=1471820395]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 18

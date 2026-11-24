@@ -19,22 +19,22 @@ theme_override_constants/separation = 8
 
 [node name="FirstButton" type="Button" parent="Row" unique_id=199718575]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_constants/icon_max_width = 40
-theme_override_font_sizes/font_size = 26
+theme_override_constants/icon_max_width = 30
+theme_override_font_sizes/font_size = 21
 toggle_mode = true
 icon = ExtResource("2_6xthw")
 
 [node name="NearestButton" type="Button" parent="Row" unique_id=129623567]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_constants/icon_max_width = 40
-theme_override_font_sizes/font_size = 26
+theme_override_constants/icon_max_width = 30
+theme_override_font_sizes/font_size = 21
 toggle_mode = true
 icon = ExtResource("3_6ccmc")

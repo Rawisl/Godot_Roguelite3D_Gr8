@@ -31,6 +31,7 @@ func _ready() -> void:
 	test_lazy_cap_and_boss()
 	await test_damage_sources()
 	test_weapon_effects_outside_hazard()
+	await test_cooldowns_at_each_speed()
 	test_cleanup()
 	_commander.free()
 	_run_state.free()
@@ -369,6 +370,40 @@ func test_weapon_effects_outside_hazard() -> void:
 		"Chain jumps grant commander credit")
 	for target in line:
 		target.free()
+
+
+func test_cooldowns_at_each_speed() -> void:
+	var camera := Camera3D.new()
+	add_child(camera)
+	camera.make_current()
+	_enter()
+	_commander._apply_weapon(&"chain_lightning")
+	var runner := _commander.get_node("SkillRunner") as SkillRunner
+	var slot := runner.set_skill_level(&"whirlwind", 1)
+	assert_true(runner.activate(slot) != null, "Whirlwind starts a cooldown in Hazard")
+	runner.set_physics_process(true)
+	_commander.set_physics_process(true)
+	await get_tree().physics_frame
+	const PHYSICS_STEPS := 8
+	for speed in [1, 2, 3]:
+		TimeManager.set_time_scale(speed)
+		await get_tree().process_frame
+		await get_tree().physics_frame
+		_run_state.chain_cd = 2.0
+		var skill_cooldown := runner.get_cooldown_left(slot)
+		for step in range(PHYSICS_STEPS):
+			await get_tree().physics_frame
+		var expected := float(PHYSICS_STEPS * speed) / Engine.physics_ticks_per_second
+		var elapsed := 2.0 - _run_state.chain_cd
+		assert_true(is_equal_approx(elapsed, expected),
+			"Chain cooldown in Hazard at x%d advances %.3f game seconds (expected %.3f)" % [speed, elapsed, expected])
+		assert_true(is_equal_approx(skill_cooldown - runner.get_cooldown_left(slot), expected),
+			"Whirlwind cooldown uses scaled gameplay time in Hazard at x%d" % speed)
+	_commander.set_physics_process(false)
+	runner.set_physics_process(false)
+	TimeManager.reset_time_scale()
+	_leave()
+	camera.free()
 
 
 func test_cleanup() -> void:

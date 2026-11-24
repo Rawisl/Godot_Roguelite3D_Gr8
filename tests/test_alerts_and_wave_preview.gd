@@ -104,10 +104,10 @@ func _check_commander() -> void:
 	EventBus.commander_hp_changed.emit(25, 100)
 	_expect(_alerts.is_empty(), "alerts: HP alone never raises the banner, the commander decides")
 	EventBus.commander_low_hp_changed.emit(true)
-	_expect(_keys() == [&"alert.commander_low"] and _alerts[0][0] == 1, "alerts: the commander going low raises one T1 banner")
+	_expect(_keys() == [&"alert.commander_low"] and _alerts[0][0] == 1, "alerts: the commander going low sends one T1 event")
 	EventBus.commander_low_hp_changed.emit(false)
 	_expect(_keys().size() == 1, "alerts: recovering raises nothing")
-	_expect(_layer._banner.visible, "alerts: the banner shows")
+	_expect(not _layer._banner.visible, "alerts: low HP is displayed at the health bar")
 
 func _check_boss_timer() -> void:
 	_alerts.clear()
@@ -129,34 +129,9 @@ func _check_towers() -> void:
 	_alerts.clear()
 	EventBus.tower_destroyed.emit(&"W3")
 	await get_tree().process_frame
-	var p: Dictionary = _alerts[0][2] if not _alerts.is_empty() else {}
-	_expect(_keys() == [&"alert.tower_ruined"] and p.get("name") == tr(&"tower.cannon") and p.get("level") == 2 and p.get("slot") == &"W3"
-		and p.get("cost") == _fake.slot.get_rebuild_cost(), "alerts: one destroyed tower names its type, level, slot and rebuild price")
-	_expect(_layer.shown_texts() == [UiFormat.tr_fmt(&"alert.tower_ruined", p)] and _toast_sub_visible(),
-		"alerts: the toast has the tower on its main line and the rebuild price on the second line")
-	# A second loss inside the window replaces the toast with a count instead of stacking a new one.
 	EventBus.tower_destroyed.emit(&"W1")
 	await get_tree().process_frame
-	_expect(_layer.visible_toast_count() == 1 and _layer.shown_keys() == [&"alert.towers_ruined"]
-		and _alerts[-1][2].get("count") == 2, "alerts: a loss within the merge window updates the same toast to a count")
-	for slot_id in [&"W2", &"G_0_4"]:
-		EventBus.tower_destroyed.emit(slot_id)
-	await get_tree().process_frame
-	_expect(_layer.visible_toast_count() == 1 and _alerts[-1][2].get("count") == 4 and _alerts[-1][2].get("slots") == "W3, W1, W2, G_0_4",
-		"alerts: towers lost in one frame join the count and the second line lists the slots")
-	# After the window, a new loss starts a new toast of its own.
-	# Stands in for the window running out, without waiting five real seconds.
-	(_layer.find_child("AlertSources", false, false) as AlertSources)._ruined_until = 0.0
-	EventBus.tower_destroyed.emit(&"W2")
-	await get_tree().process_frame
-	_expect(_alerts[-1][1] == &"alert.tower_ruined", "alerts: a loss after the window is told on its own")
-	_layer.clear()
-
-func _toast_sub_visible() -> bool:
-	for toast in _layer._top.get_children():
-		if (toast as Control).visible:
-			return (toast.get_child(0).get_child(1).get_child(1) as Label).visible
-	return false
+	_expect(_alerts.is_empty() and _layer.visible_toast_count() == 0, "tower losses leave the playfield clear")
 
 func _check_boss_next() -> void:
 	_alerts.clear()
