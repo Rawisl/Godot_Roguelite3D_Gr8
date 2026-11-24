@@ -29,6 +29,15 @@ class MemorySaveRepository extends SaveRepository:
 		last_error = OK
 		return OK
 
+class LossTestRunState extends RunState:
+	var results: Array[Dictionary] = []
+	var end_types: Array[StringName] = []
+
+	func end_run(end_type: StringName = &"DEFEAT") -> void:
+		end_types.append(end_type)
+		results.append(build_summary(end_type, get_run_result()))
+
+
 func _ready() -> void:
 	print("\n=======================================================")
 	print("       AUTOMATED GRUNT FSM & WAVE RUNNER TEST          ")
@@ -46,15 +55,14 @@ func _ready() -> void:
 	test_frenzy_retention_after_stagger()
 	test_targeting_rules_and_wall_filtering()
 	test_archer_projectile_and_dodge_iframes()
-	test_wave_fsm_and_8_grunts_flow()
+	await test_wave_fsm_and_8_grunts_flow()
 	test_boss_intro_and_boss_combat_flow()
 	await test_wave_victory_flow(GameConfig.victory_wave, 2, false)
 	await test_wave_victory_flow(GameConfig.victory_wave, 2, true)
 	await test_wave_victory_flow(10, 0, true)
-	EventBus.run_ended.disconnect(GameState._on_run_ended)
-	await test_victory_wave_same_frame_loss(true)
-	await test_victory_wave_same_frame_loss(false)
-	EventBus.run_ended.connect(GameState._on_run_ended)
+	for wave in [1, GameConfig.victory_wave]:
+		await test_wave_same_frame_loss(wave, true)
+		await test_wave_same_frame_loss(wave, false)
 
 	SaveManager.set_repository(real_repo)
 	SaveManager.load_save()
@@ -405,6 +413,7 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 	for enemy in enemies_spawned:
 		enemy.spawn_grace = false
 		enemy.health.take_damage(DamageInfo.new(999, Enums.DamageType.TRUE))
+	await get_tree().process_frame
 
 	assert_true(wave_manager.enemies_alive == 0, "enemies_alive is 0 after all 8 Grunts killed")
 	assert_true(wave_manager.wave_state == Enums.WaveState.SUMMARY, "Wave transitions to SUMMARY when queue is empty and enemies_alive == 0")
@@ -534,34 +543,34 @@ func test_wave_victory_flow(victory_wave: int, pending_picks: int, auto_advance:
 	GameConfig.victory_wave = original_victory_wave
 
 
-func test_victory_wave_same_frame_loss(enemy_dies_first: bool) -> void:
-	var run_state := RunState.new()
-	run_state.wave_index = GameConfig.victory_wave
-	run_state.waves_cleared = GameConfig.victory_wave - 1
+func test_wave_same_frame_loss(wave: int, enemy_dies_first: bool) -> void:
+	var run_state := LossTestRunState.new()
+	run_state.wave_index = wave
+	run_state.waves_cleared = wave - 1
 	add_child(run_state)
+	var gold_manager := GoldManager.new()
+	add_child(gold_manager)
+	var starting_gold := gold_manager.gold
 	var wm := WaveManager.new()
 	add_child(wm)
-	wm.wave_state = Enums.WaveState.BOSS_COMBAT
+	wm.wave_state = Enums.WaveState.BOSS_COMBAT if wm.is_boss_wave() else Enums.WaveState.COMBAT
 	wm.spawn_queue.clear()
 	wm.enemies_alive = 1
 
-	var results: Array[Dictionary] = []
-	var on_run_ended := func(_end_type: StringName, summary: Dictionary): results.append(summary)
-	EventBus.run_ended.connect(on_run_ended)
+	if not enemy_dies_first:
+		EventBus.fortress_destroyed.emit()
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 10.0, 0, false, true)
 	if enemy_dies_first:
-		EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 0.0, 0, false, true)
 		EventBus.fortress_destroyed.emit()
-	else:
-		EventBus.fortress_destroyed.emit()
-		EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 0.0, 0, false, true)
 	await get_tree().process_frame
 
-	var order := "enemy first" if enemy_dies_first else "Fortress first"
-	assert_true(results.size() == 1 and results[0].get("run_result") == &"DEFEAT"
-		and results[0].get("waves_cleared") == GameConfig.victory_wave - 1,
-		"Same-frame loss keeps the previous cleared wave (%s)" % order)
+	var scenario := "wave %d, %s first" % [wave, "enemy" if enemy_dies_first else "Fortress"]
+	assert_true(run_state.end_types == [&"FORTRESS_DESTROYED"] and run_state.results[0].get("run_result") == &"DEFEAT"
+		and run_state.results[0].get("waves_cleared") == wave - 1,
+		"Same-frame loss ends once and keeps the previous cleared wave (%s)" % scenario)
 	assert_true(not run_state.victory_reached and wm.wave_state != Enums.WaveState.SUMMARY,
-		"Same-frame loss prevents victory and SUMMARY (%s)" % order)
-	EventBus.run_ended.disconnect(on_run_ended)
+		"Same-frame loss prevents victory and SUMMARY (%s)" % scenario)
+	assert_true(gold_manager.gold == starting_gold, "Same-frame loss pays no wave gold (%s)" % scenario)
 	wm.free()
+	gold_manager.free()
 	run_state.free()
