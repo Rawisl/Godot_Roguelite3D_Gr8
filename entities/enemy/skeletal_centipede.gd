@@ -1145,18 +1145,21 @@ func _clip_length(clip: StringName) -> float:
 func _tick_move(delta: float) -> void:
 	if is_dead:
 		return
-	if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
+	var step := delta * _move_clip_speed
+	# The roar always plays out: a lost target or a commander out of reach is acted on once it ends.
+	if _roar_left > 0.0:
+		step = _tick_roar_lead_in(step)
+		if _roar_left > 0.0:
+			return
+	# A roll or a dash, roar included, runs to its own end (distance, time, a wall) even when its
+	# target is gone; only the other moves drop with their target.
+	if not _runs_to_its_end() and not _has_valid_target():
 		stop_attack_sequence()
 		_retarget_now()
 		return
 	if _move == MOVE_COMBO and _should_cancel_combo():
 		_cancel_combo()
 		return
-	var step := delta * _move_clip_speed
-	if _roar_left > 0.0:
-		step = _tick_roar_lead_in(step)
-		if _roar_left > 0.0:
-			return
 	# A combo step stops the move's clock: the hit windows wait while the boss walks.
 	if _combo_step_index >= 0:
 		_tick_combo_step(step)
@@ -1179,6 +1182,15 @@ func _tick_move(delta: float) -> void:
 			_tick_turn()
 	if _move_time >= _move_duration:
 		_finish_move()
+
+
+## True for the moves the AI never cuts short: the roll, the charge roll and the dash.
+func _runs_to_its_end() -> bool:
+	return _move == MOVE_ROLL or _move == MOVE_CHARGE_ROLL or _move == MOVE_DASH
+
+
+func _has_valid_target() -> bool:
+	return current_target != null and is_instance_valid(current_target) and _is_target_valid(current_target)
 
 
 ## Runs the roar that opens Spit and Combo: the boss stands still and its eyes warn. Returns the
@@ -1779,7 +1791,7 @@ func _track_roll_block(moved: float, wanted: float, delta: float) -> void:
 ## A Charge Roll that has landed its hit goes straight on.
 func _steer_roll(delta: float) -> void:
 	var target := current_target
-	if target == null or not is_instance_valid(target) or _roll_after_hit_left >= 0.0:
+	if not _has_valid_target() or _roll_after_hit_left >= 0.0:
 		_set_lean_toward(0.0, delta)
 		return
 	var max_step := _roll_turn_rate_rad() * delta

@@ -36,6 +36,7 @@ func _ready() -> void:
 	await test_tc23_structures()
 	await test_chase_blocked_by_tower()
 	await test_dash_no_climb()
+	await test_dash_plays_out_without_target()
 	await test_tc7_spit_pool()
 	await test_tc24_commander_sword()
 	test_tc1_brain_scores()
@@ -64,6 +65,7 @@ func _ready() -> void:
 	test_tc25_turn_pressure()
 	test_eye_glow_in_roar()
 	test_roar_cut_short_rests_arm()
+	test_roar_plays_out_without_target()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -589,10 +591,15 @@ func test_combo_cancel() -> void:
 	var roar_target := _make_commander(Vector3(0.0, 0.0, d.body(1.3)))
 	_start(roar_boss, roar_target, COMBO)
 	roar_target.global_position.z = far_z
-	_step(roar_boss, STEP)
+	_step(roar_boss, _roar(roar_boss) - 2.0 * STEP)
+	assert_true(roar_boss._move == COMBO and roar_boss._roar_left > 0.0,
+			"A commander far away during the roar does not cut the roar short")
+	_step(roar_boss, 3.0 * STEP)
+	assert_true(roar_boss._move == SkeletalCentipede.MOVE_COMBO_CANCEL,
+			"Once the roar is over the combo cancels (%s)" % roar_boss._move)
 	_step(roar_boss, roar_boss._combo_planned_length())
-	assert_true(roar_target.hits.is_empty() and roar_boss._move_time == 0.0 and roar_boss._move != COMBO,
-			"A commander far away at the start cancels in the roar, with no hit")
+	assert_true(roar_target.hits.is_empty() and roar_boss._move != COMBO,
+			"A combo cancelled after its roar lands no hit")
 	_free_all([roar_target, roar_boss])
 
 
@@ -1316,6 +1323,62 @@ func test_tc20_roar_lead_in() -> void:
 	_run_combo(combo_boss)
 	assert_true(front.hits.size() == 11, "All eleven hits still land after the roar (%d)" % front.hits.size())
 	_free_all([front, combo_boss])
+
+
+## The AI never cuts a roar short: with its target gone the boss still roars to the end before
+## Spit or Combo drop. A roll, a charge roll and a dash do not drop at all: they run to their own end.
+func test_roar_plays_out_without_target() -> void:
+	print("
+[No cut] A lost target does not cut the roar, a roll or a dash")
+	for move: StringName in [SPIT, COMBO]:
+		var boss := _make_boss()
+		var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(1.2)))
+		_start(boss, cmd, move)
+		_step(boss, 0.3)
+		cmd.free()
+		_step(boss, _roar(boss) - 0.3 - 2.0 * STEP)
+		assert_true(boss._move == move and boss._roar_left > 0.0,
+				"%s: the roar runs on with the target gone (move %s)" % [move, boss._move])
+		_step(boss, 4.0 * STEP)
+		assert_true(boss._move != move, "%s: the move is dropped once the roar is over (move %s)" % [move, boss._move])
+		_free_all([boss])
+	for move: StringName in [ROLL, CHARGE_ROLL]:
+		var boss := _make_boss()
+		var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(6.0)))
+		_start(boss, cmd, move)
+		_step(boss, 0.3)
+		cmd.free()
+		_step(boss, _roar(boss) + 0.3)
+		assert_true(boss._move == move and boss._roll_phase != SkeletalCentipede.RollPhase.ROAR,
+				"%s: past the roar it keeps rolling with the target gone (move %s)" % [move, boss._move])
+		var t := 0.0
+		while boss._move == move and t < 20.0:
+			_step(boss, STEP)
+			t += STEP
+		assert_true(boss._move != move and boss._roll_distance > 0.0,
+				"%s: the roll ends on its own after %.2f s and %.2f m" % [move, t, boss._roll_distance])
+		_free_all([boss])
+
+
+func test_dash_plays_out_without_target() -> void:
+	await get_tree().physics_frame
+	var kept := _make_boss()
+	var kept_cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(2.5)))
+	var with_target := _run_dash(kept, kept_cmd)
+	_free_all([kept_cmd, kept])
+	var boss := _make_boss()
+	var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(2.5)))
+	_start(boss, cmd, CentipedeBrain.DASH_LEFT)
+	for i in 10:
+		boss._update_state(STEP)
+	cmd.free()
+	var frames := 10
+	while boss._move == DASH and frames < 400:
+		boss._update_state(STEP)
+		frames += 1
+	assert_true(absi(frames - int(with_target["frames"])) <= 1,
+			"A dash whose target is gone runs as long as one that keeps it (%d vs %d frames)" % [frames, with_target["frames"]])
+	_free_all([boss])
 
 
 ## A roar cut short must not leave the right arm where the roar put it: Shoulder.R is keyed only
