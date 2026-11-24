@@ -2,14 +2,17 @@ extends Node
 
 ## Ten runs of the run scene in a row: each starts a run, clears wave 1 to its summary,
 ## abandons, and frees the scene. Memory, object and node counts after the last run stay
-## within LEAK_TOLERANCE of the counts after the second run, and no orphan nodes pile up.
+## within LEAK_TOLERANCE of the counts after run 1, and no orphan nodes pile up.
+## The baseline is taken after run 1, not before it: the first run loads the run scene's
+## resources and shaders into the caches, which stay for the whole session.
+## MEMORY_STATIC reads 0 in release builds, so memory growth is skipped there.
 ## The save goes to user://test_save_leak/, online features are off.
 
 const MAIN_SCENE := preload("res://main.tscn")
 const TEST_DIR := "user://test_save_leak"
 const TEST_PATH := TEST_DIR + "/endlesswar_save.json"
 const RUNS := 10
-const BASELINE_RUN := 2
+const BASELINE_RUN := 1
 const LEAK_TOLERANCE := 0.05
 const WAVE_TIMEOUT_SEC := 30.0
 const SETTLE_SEC := 1.5
@@ -165,18 +168,18 @@ func _print_sample(label: String, sample: Dictionary) -> void:
 
 
 func _check_samples(before: Dictionary, base: Dictionary, last: Dictionary) -> void:
-	var memory_usable: bool = base.memory > 0
-	assert_true(memory_usable, "memory monitor reports a usable value (memory growth not compared otherwise)")
-	if memory_usable:
-		assert_true(last.memory <= base.memory * (1.0 + LEAK_TOLERANCE), "memory after run 10 within 5% of run 2")
-	assert_true(last.objects <= base.objects * (1.0 + LEAK_TOLERANCE), "objects after run 10 within 5% of run 2")
-	assert_true(last.nodes <= base.nodes * (1.0 + LEAK_TOLERANCE), "nodes after run 10 within 5% of run 2")
+	if base.memory > 0:
+		assert_true(last.memory <= base.memory * (1.0 + LEAK_TOLERANCE), "memory after run 10 within 5% of run 1")
+	else:
+		print("  [SKIP] memory monitor reads 0 in this build, memory growth not compared")
+	assert_true(last.objects <= base.objects * (1.0 + LEAK_TOLERANCE), "objects after run 10 within 5% of run 1")
+	assert_true(last.nodes <= base.nodes * (1.0 + LEAK_TOLERANCE), "nodes after run 10 within 5% of run 1")
 	assert_true(last.orphans <= before.orphans, "no new orphan nodes")
 	var stats: Dictionary = _read_save().get("data", {}).get("profile", {}).get("stats", {})
 	assert_true(int(stats.get("total_runs", -1)) == RUNS, "every run was counted once in the save")
 	for metric in ["memory", "objects", "nodes"]:
 		if base[metric] > 0:
-			print("  %s growth run 2 -> run 10: %+.2f%%" % [metric, (float(last[metric]) / base[metric] - 1.0) * 100.0])
+			print("  %s growth run 1 -> run 10: %+.2f%%" % [metric, (float(last[metric]) / base[metric] - 1.0) * 100.0])
 	print("  Nodes before run 1: %d; after run 10: %d" % [before.nodes, last.nodes])
 	if last.orphans > before.orphans:
 		Node.print_orphan_nodes()
