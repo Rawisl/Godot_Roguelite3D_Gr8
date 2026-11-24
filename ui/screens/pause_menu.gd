@@ -73,5 +73,8 @@ func _confirm_end(title_key: StringName, body_prefix: String, on_confirm: Callab
 func _confirm(title_key: StringName, body_key: StringName, on_confirm: Callable, params: Dictionary = {}) -> void:
 	var dialog := DIALOG_SCENE.instantiate()
 	dialog.setup(title_key, body_key, params)
+	dialog.set_buttons(&"menu.abandon" if title_key == &"dialog.abandon.title" else &"menu.quit")
+	if params.has("gain"):
+		dialog.set_result(&"dialog.run_recovered.gain", params.gain)
 	dialog.confirmed.connect(on_confirm)
 	ScreenManager.open_dialog(dialog)

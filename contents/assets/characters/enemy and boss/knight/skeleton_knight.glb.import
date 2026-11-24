@@ -44,7 +44,7 @@ _subresources={
 "knight": {
 "use_external/enabled": true,
 "use_external/fallback_path": "res://contents/assets/characters/enemy and boss/knight/knight_body_material.tres",
-"use_external/path": "res://contents/assets/characters/enemy and boss/knight/knight_body_material.tres"
+"use_external/path": "uid://bsp2ukwwjo40b"
 },
 "skeleton": {
 "use_external/enabled": true,

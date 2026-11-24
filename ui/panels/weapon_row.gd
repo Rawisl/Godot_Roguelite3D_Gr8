@@ -12,20 +12,15 @@ extends Button
 @onready var _row: Control = $Row
 
 func _ready() -> void:
-	focus_mode = Control.FOCUS_NONE
+	_row.minimum_size_changed.connect(_fit_height)
 
-## Width the row needs to show these texts on its header line, side margins included. Leaves the
-## texts in place; show_weapon() sets the real ones.
-func measure_width(name_text: String, tag_text: String, range_text: String) -> float:
-	_name.text = name_text
-	_tag.text = tag_text
-	_range.text = range_text
-	_range.visible = true
-	return _row.get_combined_minimum_size().x + _row.offset_left - _row.offset_right
+func _fit_height() -> void:
+	custom_minimum_size.y = maxf(92.0, _row.get_combined_minimum_size().y + _row.offset_top - _row.offset_bottom)
 
 ## can_change is false outside PREP: every row is then read only.
 func show_weapon(data: WeaponData, owned: bool, equipped: bool, can_change: bool,
 		range_text: String, effect_text: String) -> void:
+	focus_mode = Control.FOCUS_ALL if owned and can_change else Control.FOCUS_NONE
 	_name.text = tr(data.name_key)
 	var icon: Variant = data.get(&"icon")
 	_icon.texture = icon as Texture2D

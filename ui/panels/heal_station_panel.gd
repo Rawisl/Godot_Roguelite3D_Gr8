@@ -15,7 +15,7 @@ const REFRESH_INTERVAL := 0.2
 var slot_id: StringName = &""
 var _locked := false
 var _next_refresh := 0.0
-var _sell_dialog: Control = null
+var _transaction_dialog: Control = null
 var _heal_rate := 0.0
 var _info: Dictionary = {}
 var _in_prep := false
@@ -31,7 +31,9 @@ var _in_prep := false
 
 func _ready() -> void:
 	_heal_rate = commander_stats.heal_rate_base
-	_close.text = tr(&"panel.close")
+	%TitleIcon.texture = preload("res://art/icons/heal_station_icon.png")
+	%TitleIcon.show()
+
 	_close.focus_mode = Control.FOCUS_NONE
 	_close.pressed.connect(closed.emit)
 	_upgrade.focus_mode = Control.FOCUS_NONE
@@ -45,14 +47,14 @@ func _ready() -> void:
 	EventBus.heal_tower_hp_changed.connect(_on_store_changed)
 	EventBus.heal_status_updated.connect(_on_heal_status_updated)
 
-## A sell dialog never outlives the panel or the station it was opened for.
+## A transaction dialog never outlives the panel or the station it was opened for.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible:
-		_cancel_sell_dialog()
+		_cancel_transaction_dialog()
 
 func open(id: StringName) -> void:
 	if id != slot_id:
-		_cancel_sell_dialog()
+		_cancel_transaction_dialog()
 	slot_id = id
 	refresh()
 
@@ -116,7 +118,7 @@ func _show_upgrade(info: Dictionary) -> void:
 			UiFormat.tr_fmt(&"panel.need_gold", {"gold": info.upgrade_shortfall}) if short else "")
 
 func _on_upgrade_pressed() -> void:
-	if not _try_lock():
+	if _upgrade.disabled or ScreenManager.has_dialog():
 		return
 	var service := _service()
 	if service != null:
@@ -126,7 +128,7 @@ func _on_upgrade_pressed() -> void:
 ## Selling always asks first. The dialog re-checks PREP and the station when confirmed,
 ## and closes by itself as a cancel when PREP ends.
 func _on_sell_pressed() -> void:
-	if not _try_lock() or is_instance_valid(_sell_dialog):
+	if not _try_lock() or is_instance_valid(_transaction_dialog):
 		return
 	var service := _service()
 	if service == null:
@@ -141,14 +143,14 @@ func _on_sell_pressed() -> void:
 		true, func() -> bool: return service.is_prep() and not service.get_tower_info(id).is_empty())
 	dialog.confirmed.connect(func(): service.sell(id))
 	if ScreenManager.open_dialog(dialog):
-		_sell_dialog = dialog
+		_transaction_dialog = dialog
 	else:
 		dialog.queue_free()
 
-func _cancel_sell_dialog() -> void:
-	if is_instance_valid(_sell_dialog):
-		_sell_dialog.cancel()
-	_sell_dialog = null
+func _cancel_transaction_dialog() -> void:
+	if is_instance_valid(_transaction_dialog):
+		_transaction_dialog.cancel()
+	_transaction_dialog = null
 
 func _show_heal_rate() -> void:
 	_rate_row.set_row(tr(&"panel.heal.rate"),
