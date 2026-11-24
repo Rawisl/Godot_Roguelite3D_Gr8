@@ -1395,10 +1395,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH4
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hồi quy tower (cổng bậc, Aura, xây lại, 36 cấp, trụ có sẵn)
 - Nghiệm thu: Không lỗi hồi quy
 - Cần xong trước: W10-MH9, W10-MH10
+- Ghi chú: Thêm ca vào runner có sẵn, không tạo runner mới. tests/test_build_service_runner.tscn: đường cấp Arrow với dữ liệu thật (cổng bậc 2 và 3, model_tier 2 và 3, cấp tối đa), cổng bậc áp dụng cho Trạm hồi phục, xây lại Trạm hồi phục cấp 14 khi chỉ huy cấp 0. tests/test_aura_runner.tscn: Trạm hồi phục không nhận Aura. Các ca còn lại (xây lại cả Arrow, Cannon, Barricade, bán, trụ có sẵn, bán kính Aura) đã có từ trước. Bỏ TODO khôi phục run dở ở systems/build/slot.gd vì bản MVP không chơi tiếp run dở.
 
 ##### W11-MH8
 - Người: Mạnh
