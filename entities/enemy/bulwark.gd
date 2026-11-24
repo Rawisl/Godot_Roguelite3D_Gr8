@@ -302,7 +302,8 @@ func _attack_structure() -> void:
 		_wait_and_turn()
 		return
 	# At boss_melee_point the wide wall is in reach from almost any facing: turn to the Fortress first.
-	if current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"fortress") 			and not _faces(current_target):
+	if (current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"fortress")
+			and not _faces(current_target)):
 		_wait_and_turn()
 		return
 	_start_move(MOVE_STOMP)

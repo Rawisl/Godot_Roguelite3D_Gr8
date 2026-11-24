@@ -1157,6 +1157,7 @@ func _update_state(delta: float) -> void:
 			diff.y = 0.0
 			var dist_to_target: float = diff.length()
 			var attack_rng: float = _arrive_distance(current_target)
+			_set_nav_arrive_distance(attack_rng)
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
 				return
@@ -1802,6 +1803,12 @@ func _keeps_slot_target() -> bool:
 func _arrive_distance(t: Node3D) -> float:
 	var attack_rng: float = data.attack_range if data else 1.5
 	return minf(attack_rng, _slot_arrive_distance(t))
+
+
+## Called each chase frame with _arrive_distance of the target. Regular units keep the stop
+## distance set when the target is picked; a boss overrides it to stop where it attacks.
+func _set_nav_arrive_distance(_arrive: float) -> void:
+	pass
 
 
 func _melee_reach() -> float:

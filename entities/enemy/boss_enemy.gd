@@ -544,8 +544,12 @@ func _arrive_distance(t: Node3D) -> float:
 	var arrive: float = super._arrive_distance(t)
 	if t != null and is_instance_valid(t) and t.is_in_group(&"fortress") and _get_boss_melee_point() != null:
 		arrive = BOSS_POINT_ARRIVE_DISTANCE
-	nav.target_desired_distance = arrive
 	return arrive
+
+
+## The navigation agent stops where the boss attacks, so it walks onto boss_melee_point.
+func _set_nav_arrive_distance(arrive: float) -> void:
+	nav.target_desired_distance = arrive
 
 
 ## The last metres onto boss_melee_point are walked straight: avoidance would keep the large
@@ -669,12 +673,32 @@ func _resolve_stuck_tier_3() -> void:
 				target_hop_pos.x = fortress.global_position.x + 1.0
 	var map := nav.get_navigation_map()
 	if map.is_valid():
-		var nav_pt := NavigationServer3D.map_get_closest_point(map, target_hop_pos)
-		global_position = nav_pt
+		global_position = _closest_point_on_own_layers(map, target_hop_pos)
 	else:
 		global_position = target_hop_pos
 	if current_target != null and is_instance_valid(current_target):
 		nav.target_position = _get_attack_point(current_target)
+
+
+## Closest navmesh point to pos on the regions of the boss's navigation_layers only, so a hop never
+## lands on the regular navmesh, too narrow for the large agent (BOSS-03). With no such region (a
+## map without the large navmesh) the closest point of the whole map.
+func _closest_point_on_own_layers(map: RID, pos: Vector3) -> Vector3:
+	var best := Vector3.ZERO
+	var best_dist := INF
+	for region in NavigationServer3D.map_get_regions(map):
+		if not NavigationServer3D.region_get_enabled(region):
+			continue
+		if not (NavigationServer3D.region_get_navigation_layers(region) & nav.navigation_layers):
+			continue
+		var pt := NavigationServer3D.region_get_closest_point(region, pos)
+		var d := pt.distance_squared_to(pos)
+		if d < best_dist:
+			best_dist = d
+			best = pt
+	if best_dist == INF:
+		return NavigationServer3D.map_get_closest_point(map, pos)
+	return best
 
 
 func _find_blocking_structure() -> Node3D:
