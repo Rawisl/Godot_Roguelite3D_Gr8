@@ -1233,7 +1233,7 @@ Từ v2.0 công thức chỉ dùng từ wave 31 (wave victory_wave + 1), cho wav
 | SCL-01 | Mọi hệ số trong ScaleConfig, đổi không cần sửa code |
 | SCL-02 | Sau scale_soft_cap_wave 40, tốc độ tăng budget giảm còn một nửa: budget(w) = round(f(40) + budget_soft_cap_factor × (f(w) − f(40))), f là công thức budget ở bảng trên chưa làm tròn. hp_mult, dmg_mult vẫn tăng. Chủ động khiến run phải kết thúc |
 | SCL-03 | par_time dùng thời lượng kế hoạch. Queue bị dồn do max_alive thì wave tự xuống Slow |
-| SCL-04 | Mục tiêu cân bằng: người mới thua ở wave 8-12, người thành thạo chạm victory_wave (30) |
+| SCL-04 | Mục tiêu cân bằng: người thành thạo chạm victory_wave (30). Không đặt mốc wave cố định mà người mới phải thua |
 | SCL-06 \[MVP] | Công thức chỉ áp từ wave victory_wave + 1. Wave 1-30 đọc hệ số từ WaveScript; thiếu thì dùng công thức và ghi cảnh báo |
 | SCL-05 | Hệ số áp lúc sinh quân, không đổi khi đã sống. Armored, Horde chồng lên |
 
@@ -1312,20 +1312,20 @@ Mọi nguồn sát thương phải khai báo damage_type.
 
 armor_hp, core_hp, resist_table (theo pha), move_speed, attack_*, target_rules, phase2_speed_mult, phase2_attack_rate_mult, is_ranged. Từ 16/11 thêm tham số bộ đòn và AI của Bulwark (mục 3.8.2.1). Giá trị dưới đây là ở wave 1 trước hệ số scale.
 
-|  | **Bulwark (Siege Walker, cận chiến) \[MVP]** | **Barrage (Artillery Mech, tầm xa) \[Should]** |
-| --- | --- | --- |
-| Xuất hiện | Wave 5 | Wave 10 |
-| armor_hp / core_hp | 1200 / 900 | 1000 / 800 |
-| Tốc độ | 1.6 m/s (pha 2 x1.2) | 1.4 m/s (pha 2 x1.2) |
-| Đòn | **Stomp**: damage 45, AoE 3 m có tâm ở điểm chùy nện phía trước boss (BOSS-45), wind-up 1.0 s (vòng đỏ), nhịp 3.0 s (đủ cho clip Melee_2H_Slam 2.83 s chạy hết, chùy về thế rồi blend sang Idle trước cú kế), knockback 3 m lên chỉ huy. Đánh chỉ huy thì dùng thêm Đánh thường, Stomp x3 và Combo (mục 3.8.2.1) | **Shell**: damage 40, AoE 2 m, tầm 18 m, barrage_hold_distance 13 m (BOSS-41), đạn cong 15 m/s, nhịp 3 s, đánh dấu điểm rơi 1.2 s trước khi nổ |
-| Pha 2 | Nhịp đánh nhanh hơn 30% (2.3 s; đoạn chùy về thế tăng tốc để kịp blend sang Idle trước cú kế); các chuỗi đòn của mục 3.8.2.1 nhanh lên cùng tỉ lệ | Bắn **2 quả** mỗi nhịp vào hai mục tiêu khác nhau nếu có |
-| Miễn nhiễm pha 1 | PIERCE, MAGIC | BLAST, TRAP |
-| Bảng kháng pha 1 | PIERCE 0, MAGIC 0, BLAST 1.0, SLASH 0.6, TRAP 1.0 | BLAST 0, TRAP 0, PIERCE 1.0, SLASH 0.6, MAGIC 1.0 |
-| is_ranged | Không | Có |
+|  | **Bulwark (Siege Walker, cận chiến) \[MVP]** | **Skeletal Centipede (cận chiến) \[MVP]** | **Barrage (Artillery Mech, tầm xa) \[Should]** |
+| --- | --- | --- | --- |
+| Xuất hiện | Wave 5, 15, 25 (kịch bản wave) | Wave 10, 20, 30 (kịch bản wave) | Chưa nằm trong wave 1-30 |
+| armor_hp / core_hp | 1200 / 900 | 1000 / 800 | 1000 / 800 |
+| Tốc độ | 1.6 m/s (pha 2 x1.2) | 1.8 m/s (pha 2 x1.2) | 1.4 m/s (pha 2 x1.2) |
+| Đòn | **Stomp**: damage 45, AoE 3 m có tâm ở điểm chùy nện phía trước boss (BOSS-45), wind-up 1.0 s (vòng đỏ), nhịp 3.0 s (đủ cho clip Melee_2H_Slam 2.83 s chạy hết, chùy về thế rồi blend sang Idle trước cú kế), knockback 3 m lên chỉ huy. Đánh chỉ huy thì dùng thêm Đánh thường, Stomp x3 và Combo (mục 3.8.2.1) | Nhịp đánh 2.4 s. **Slash**: damage 14, nhát thứ ba damage 22 (cooldown 4 s). **Combo**: nhiều nhát, mỗi nhát 4, nhát cuối 12, cooldown 8 s. **Spit**: phun tia độc 3 s (3 mỗi 0.3 s) để lại vũng độc bán kính 3 m, 4 mỗi 0.5 s trong 5 s, cooldown 30 s. **Roll**: damage 30, knockback 4 m, cooldown 30 s. **Charge Roll**: lăn đuổi chỉ huy, damage 26. **Dash**: nhảy ngang né, cooldown 20 s. Mở khóa theo lần xuất hiện của chính nó: Spit từ lần 1, Roll, Dash từ lần 2, Charge Roll từ lần 3 | **Shell**: damage 40, AoE 2 m, tầm 18 m, barrage_hold_distance 13 m (BOSS-41), đạn cong 15 m/s, nhịp 3 s, đánh dấu điểm rơi 1.2 s trước khi nổ |
+| Pha 2 | Nhịp đánh nhanh hơn 30% (2.3 s; đoạn chùy về thế tăng tốc để kịp blend sang Idle trước cú kế); các chuỗi đòn của mục 3.8.2.1 nhanh lên cùng tỉ lệ | Nhịp đánh nhanh hơn 30% (như Bulwark) | Bắn **2 quả** mỗi nhịp vào hai mục tiêu khác nhau nếu có |
+| Miễn nhiễm pha 1 | PIERCE, MAGIC | PIERCE, TRAP | BLAST, TRAP |
+| Bảng kháng pha 1 | PIERCE 0, MAGIC 0, BLAST 1.0, SLASH 0.6, TRAP 1.0 | PIERCE 0, TRAP 0, BLAST 1.0, SLASH 0.6, MAGIC 1.0 | BLAST 0, TRAP 0, PIERCE 1.0, SLASH 0.6, MAGIC 1.0 |
+| is_ranged | Không | Không | Có |
 
 Bulwark dạy cần Cannon (hoặc kiếm, skill BLAST/SLASH), Barrage dạy ngược lại là cần Arrow. Người chơi chỉ xây một loại tower sẽ bị đánh vào điểm yếu ở một trong hai boss khi có Barrage.
 
-**MVP chỉ có Bulwark.** BOSS-22 (MVP): mọi wave boss dùng Bulwark với chỉ số scale theo hp_mult(w), dmg_mult(w), speed_mult(w); pha 1 miễn nhiễm PIERCE, MAGIC nên bắt buộc dùng Cannon, kiếm hoặc skill BLAST/SLASH, Arrow không bắn. Khi làm Barrage \[Should] thì quay lại luân phiên theo n (xem BOSS-22 bản \[Should] ở mục 3.8.10). Dòng Barrage trong các bảng bên dưới chỉ áp dụng khi đã làm Barrage.
+**MVP có hai boss.** BOSS-22 (MVP): wave 1-30 theo kịch bản wave: Bulwark ở wave 5, 15, 25 và Skeletal Centipede ở wave 10, 20, 30 (Centipede thế chỗ Barrage trong wave 1-30; Barrage vẫn là \[Should]); từ wave 31 mọi wave boss là Bulwark cho tới khi làm xoay vòng (BOSS-23). Chỉ số scale theo hp_mult(w), dmg_mult(w), speed_mult(w). Bulwark pha 1 miễn nhiễm PIERCE, MAGIC nên bắt buộc dùng Cannon, kiếm hoặc skill BLAST/SLASH, Arrow không bắn; Skeletal Centipede miễn nhiễm PIERCE, TRAP nên Arrow vẫn không bắn được ở pha 1, còn Cannon và MAGIC đều gây sát thương. Dòng Barrage trong các bảng bên dưới chỉ áp dụng khi đã làm Barrage.
 
 **Thứ tự mục tiêu:**
 
@@ -1351,7 +1351,7 @@ Bulwark dùng Stomp (bảng trên) khi mục tiêu là công trình hoặc Fortr
 | BOSS-45 | **Tâm Stomp.** Mọi đòn Stomp (Stomp, ba nhát của Stomp x3, nhát đập của Combo) có tâm cách tâm boss stomp_forward_offset_heights (1.25) lần chiều cao model của boss về phía trước mặt, là chỗ chùy nện xuống (Bulwark cao khoảng 3.17 m nên tâm cách khoảng 3.96 m). Đứng sát hoặc sau lưng boss thì nằm ngoài vòng Stomp 3 m. Tâm được chốt lúc telegraph hiện ra; từ đó tới khung chạm boss không xoay, nên vòng đỏ và chỗ trúng luôn trùng nhau |
 | BOSS-46 | **Chọn hành động bằng điểm số (utility).** Chấm điểm ở mỗi điểm quyết định: đầu mỗi lần đánh trong ATTACK (khi vào ATTACK, sau mỗi lần nghỉ, và mỗi 0.1 s khi đang quay chờ) và mỗi ai_think_interval (0.3 s game time) khi CHASE, ADVANCE, WAIT; không bao giờ giữa một đòn (BOSS-47). Đầu vào: boss có để ý chỉ huy không (bảng thứ tự mục tiêu); chỉ huy có trong vùng ai_front_arc_deg 120° phía trước không; có trong hitbox chém, trong vòng Stomp nếu nện ngay lúc đó (tâm BOSS-45, bán kính 3 m, tức khoảng 1-7 m phía trước), trong vòng thứ ba của Stomp x3 không; t_away là số giây liên tục chỉ huy đứng ngoài tầm (ngoài vùng phía trước, hoặc trước mặt mà ngoài cả tầm chém lẫn vòng Stomp), chỉ đếm khi boss để ý chỉ huy hoặc đã bỏ chỉ huy; khi chỉ huy vào tầm thì ngừng đếm, và chỉ về 0 khi chỉ huy đứng trong tầm liên tục reach_reset_time (1 s) hoặc khi boss đánh trúng chỉ huy, để chạy vòng lướt qua phía trước boss không xóa được; tổng máu (armor_hp + core_hp); có công trình để tiến lên không (trong Hazard Trial thì không); cooldown và mở khóa (BOSS-48). Điểm = trọng số × tích các điều kiện (một điều kiện không thỏa thì bằng 0). Đánh thường (1.0): để ý, trước mặt, trong tầm chém. Combo (1.0): như Đánh thường, thêm đã mở khóa và máu dưới combo_hp_threshold (50%). Stomp lên chỉ huy (0.9): để ý, trước mặt, ngoài tầm chém, trong vòng Stomp, hết commander_stomp_cooldown (6 s game time, tính từ lúc bắt đầu Stomp đó), kể cả khi đang CHASE. Stomp x3 (1.1): để ý, ở hông hoặc sau lưng, trong vòng thứ ba, đã mở khóa, hết triple_stomp_cooldown (8 s game time). Đuổi (0.5): để ý, trước mặt, ngoài tầm chém. Quay về phía chỉ huy (0.5): để ý, ở hông hoặc sau lưng; boss không vung đòn vào khoảng trống sau lưng. Tiến lên đập công trình (1.5): có công trình, điểm = 1.5 × (push_base 0.2 + 0.8 × ramp(t_away, 2.5 s, 4 s)). Boss không để ý chỉ huy thì chỉ còn Tiến lên, giống hành vi thường. Chỉ huy đứng trước mặt trong tầm thì luôn bị đánh; đứng ngoài tầm (vòng sau lưng, thả diều) khoảng 3 s thì boss bỏ chỉ huy đi phá công trình. Khi bỏ chỉ huy, boss xóa khiêu khích và phớt lờ chỉ huy ít nhất push_commit_time (4 s game time); sau đó chỉ quay lại khi chỉ huy vào tầm phía trước. Nhóm hành động boss đang làm (đánh chỉ huy hay tiến lên) được nhân stickiness (×1.15) để không đổi qua lại liên tục. Lấy hành động điểm cao nhất; các hành động cách điểm cao nhất không quá tie_margin (10%) thì rút ngẫu nhiên tỉ lệ với điểm (nên dưới 50% máu Đánh thường và Combo là 50/50). Phép rút dùng RNG riêng seed = hash(run_seed, "boss_ai", wave_index) để test và replay tái hiện được. Mục tiêu là công trình hoặc Fortress: chỉ Stomp, boss quay tại chỗ về phía công trình trước nếu vòng Stomp ở hướng hiện tại không chạm nó (hoặc tới khi lệch không quá 10°) |
 | BOSS-47 | **Khóa khi tung đòn, quay khi nghỉ.** Từ lúc bắt đầu một đòn (wind-up) tới khi đòn hoặc cả chuỗi (combo, Stomp x3) kết thúc, boss đứng yên (velocity = 0) và giữ nguyên hướng, nên người chơi có thể lách sang hông hoặc vòng ra sau lưng để né. Trong khoảng nghỉ giữa hai đòn (BOSS-49) boss quay về phía mục tiêu với tốc độ tối đa ai_turn_rate_deg (90°/s), nhân cùng tỉ lệ rút ngắn nhịp đánh ở pha EXPOSED và Cuồng nộ (BOSS-49: khoảng 117°/s ở EXPOSED, khoảng 152°/s khi có cả hai); trong Hazard Trial nhân thêm hazard_turn_rate_mult (×2, tức 180°/s ở pha 1) vì trong phòng không có công trình để boss bỏ chỉ huy mà tiến lên (BOSS-46): chỉ huy chạy 6 m/s vòng quanh boss ở bán kính r quét khoảng 344/r °/s, sát mép boss (r khoảng 2 m) là khoảng 172°/s. Khi mục tiêu là chỉ huy, còn phải quay hơn 15° và clip đòn trước đã xong, boss vừa quay vừa đi chậm theo hướng mặt với 35% move_speed (clip Walking theo tốc độ đó) thay vì xoay tại chỗ; với công trình và Fortress boss xoay tại chỗ để không rời boss_melee_point (BOSS-40). Hướng dùng để chọn đòn và chốt tâm Stomp là hướng thật của boss lúc đó |
-| BOSS-48 | **Mở khóa theo lần xuất hiện.** Lần xuất hiện n = wave_index / boss_wave_interval (wave 5 là n = 1). Stomp x3 mở từ n ≥ triple_stomp_unlock_appearance (2), Combo mở từ n ≥ combo_unlock_appearance (3). Boss trong Hazard Trial dùng bộ đòn của lần xuất hiện n − hazard_appearance_offset (1), thấp nhất là n = 1 (HZT-14) |
+| BOSS-48 | **Mở khóa theo lần xuất hiện.** Lần xuất hiện n là số lần chính boss đó đã vào trận tính tới wave hiện tại: wave 1-30 đếm theo kịch bản wave (Bulwark wave 5, 15, 25 là n = 1, 2, 3; Skeletal Centipede wave 10, 20, 30 là n = 1, 2, 3), từ wave 31 mỗi wave boss tính thêm một lần. Không còn là wave_index / boss_wave_interval. Boss không có trong kịch bản thì dùng công thức cũ. Stomp x3 mở từ n ≥ triple_stomp_unlock_appearance (2), Combo mở từ n ≥ combo_unlock_appearance (3). Boss trong Hazard Trial dùng bộ đòn của lần xuất hiện n − hazard_appearance_offset (1), thấp nhất là n = 1 (HZT-14) |
 | BOSS-49 | **Khoảng hở sau đòn.** Sau Đánh thường boss nghỉ attack_recovery (0.6 s); sau Stomp x3 và Combo nghỉ heavy_attack_recovery (1.75 s) để người chơi đánh trả. Pha EXPOSED và Cuồng nộ rút ngắn các chuỗi và khoảng nghỉ cùng tỉ lệ rút ngắn nhịp Stomp (attack_interval chia phase2_attack_rate_mult và enrage_attack_rate_mult) |
 | BOSS-50 | **Ngắt chuỗi và mục tiêu độ khó.** Chuỗi đang chạy dừng ngay khi boss chết, vào TRANSITION (vỡ giáp), mục tiêu chết hoặc mất hợp lệ (chọn lại theo ETG-04), hoặc boss rời ATTACK. Mục tiêu cân bằng: ăn trọn một chuỗi không giết chỉ huy đầy máu ở wave của nó (wave 5: Stomp x3 gây 80, Combo gây 69 trên 100 HP); các wave sau kiểm lại khi playtest (Phụ lục C mục 68) |
 
@@ -1459,19 +1459,19 @@ Toàn bộ mục này bị xóa: RET-01 đến RET-12, Retreat Zone, phím F, n�
 
 | **ID** | **Đặc tả** |
 | --- | --- |
-| BOSS-22 | Wave boss khi w % 5 == 0. MVP: mọi wave boss là Bulwark với chỉ số scale theo wave. \[Should] Khi làm Barrage: n=1 Bulwark, n=2 Barrage, thứ tự cố định, rồi theo BOSS-23 |
+| BOSS-22 | Wave boss khi w % 5 == 0. Wave 1-30 theo kịch bản wave: Bulwark ở 5, 15, 25 và Skeletal Centipede ở 10, 20, 30, chỉ số scale theo wave. Từ wave 31 mọi wave boss là Bulwark cho tới khi làm xoay vòng. \[Should] Khi làm Barrage: từ wave 31 rút theo BOSS-23 |
 | BOSS-23 \[Should] | Từ n >= 3: rút ngẫu nhiên từ pool bằng RNG wave, không lặp boss ngay trước |
 | BOSS-24 | Chỉ số nhân hp_mult(w), dmg_mult(w), speed_mult(w) (wave 1-30 lấy từ WaveScript, từ wave 31 theo công thức, mục 3.7.6). Không có hệ số riêng ở MVP. Bảng dưới tính theo công thức, cũng là giá trị khởi điểm của bảng cân bằng |
 | BOSS-25 | boss_timer tăng chậm, trần 120 s |
 | BOSS-26 \[Should] | start_wave > 1: boss theo số thứ tự tuyệt đối (luân phiên theo n khi đã có Barrage) |
 
-| **Wave** | **Boss (MVP)** | **armor\_hp** | **core\_hp** | **Sát thương đòn (Stomp)** | **boss\_timer** |
+| **Wave** | **Boss (MVP)** | **armor\_hp** | **core\_hp** | **Sát thương đòn (Stomp, Slash)** | **boss\_timer** |
 | --- | --- | --- | --- | --- | --- |
 | 5 | Bulwark | 1757 | 1318 | 57 | 90 s |
-| 10 | Bulwark | 2669 | 2002 | 77 | 93 s |
+| 10 | Skeletal Centipede | 2224 | 1779 | Slash 24 | 93 s |
 | 15 | Bulwark | 3821 | 2866 | 100 | 96 s |
 
-\[Should] Khi có Barrage, wave 10 là Barrage (armor_hp 2224, core_hp 1779, Shell 68, 93 s) và wave 15 rút theo BOSS-23. Số trong bảng tính từ hp_mult(w), dmg_mult(w) chưa làm tròn (wave 10: 2.224 và 1.702), làm tròn gần nhất một lần ở cuối.
+\[Should] Barrage không nằm trong wave 1-30 (wave 10 là Skeletal Centipede); khi làm Barrage thì nó vào pool xoay vòng từ wave 31 (BOSS-23); ở wave 10 nó sẽ có armor_hp 2224, core_hp 1779, Shell 68, 93 s. Số trong bảng tính từ hp_mult(w), dmg_mult(w) chưa làm tròn (wave 10: 2.224 và 1.702), làm tròn gần nhất một lần ở cuối.
 
 Kiểm tra cân bằng thô wave 5: Cannon cấp 1 (\~14 dps mỗi cái, 2 cái) cộng kiếm 60% (\~27 dps) cho \~55 dps lên giáp, xấp xỉ 32 s phá giáp. Pha lõi \~14 s (gồm TRANSITION 2.5 s nhận x1.5, rồi EXPOSED x1.25). Cộng thời gian boss đi vào tầm (\~27 s) là \~73 s trong giới hạn 90 s. Mục tiêu playtest: 60-75% người mới diệt được Bulwark trước giờ. Số trong bảng tính từ hp\_mult và dmg\_mult chưa làm tròn (ví dụ wave 5: 1.464 và 1.272), làm tròn gần nhất một lần ở cuối.
 
@@ -2272,7 +2272,7 @@ Từ v2.0 tutorial **chạy một lần theo tài khoản**: chạy ở run có 
 | GridData | Bố cục ô grid của một level: gốc, số cột, grid_rows hàng, khoảng cách ô. Hàm đổi (cột, hàng) sang vị trí và cell_id; hàm thuần kiểm chặn kín đường (GRID-07) | 3.6.2 | Level (người làm Level), Tower & Build |
 | TowerData | Bốn loại tower (Arrow, Cannon, Barricade, Trạm hồi lực), mỗi loại 36 cấp và 3 scene model theo bậc. Dữ liệu theo cấp sinh từ bảng cân bằng | 3.6.3, 3.6.6, 6.6 | Tower & Build |
 | EnemyData | Chỉ số gốc, trait và thưởng gốc theo loại quân (10 loại MVP). Sinh từ bảng cân bằng | 3.7.1, 3.7.8, 6.6 | Enemy & Wave |
-| BossData | Bulwark \[MVP], Barrage \[Should] | 3.8.2, 6.6 | Enemy & Wave |
+| BossData | Bulwark \[MVP], Skeletal Centipede \[MVP], Barrage \[Should] | 3.8.2, 6.6 | Enemy & Wave |
 | ScaleConfig | Công thức scale endless | 3.7.6, 6.6 | Enemy & Wave |
 | WaveTable | Trọng số và trần sinh quân (dùng từ wave 31) | 3.7.5, 6.6 | Enemy & Wave |
 | WaveScript \[MVP] | Kịch bản wave 1-30: loại quân, số lượng, hộ tống, spawn_duration, hp_mult, dmg_mult, speed_mult mỗi wave. Sinh từ bảng cân bằng | 3.7.5, 3.7.6, 6.10 | Enemy & Wave |
@@ -2707,7 +2707,7 @@ Từ v2.0 đã bỏ các test của gọi wave sớm, đếm ngược PREP, sử
 8. Tua x2/x3 dùng được suốt BOSS_COMBAT, không có khóa theo đồng hồ boss (TIME-03).
 9. Tâm Stomp nằm 1.25 chiều cao boss phía trước: chỉ huy đứng ngay sau lưng boss không trúng Stomp, đứng cách điểm chùy nện 2 m thì trúng. Xoay boss trong lúc wind-up không đổi chỗ trúng, telegraph vẽ đúng điểm đó (BOSS-45, FBK-06).
 10. Chọn hành động (BOSS-46): chỉ huy trước mặt trong tầm, boss đầy máu: luôn Đánh thường. Ở hông hoặc sau lưng: Stomp x3, rồi quay về phía chỉ huy trong 8 s cooldown, không vung vào khoảng trống. Boss dưới 50% máu, chỉ huy trước mặt, Combo đã mở: Combo chiếm khoảng 50% qua nhiều lần rút; cùng seed thì cùng dãy lựa chọn. Chỉ huy ở xa và chưa đánh boss: boss tiến lên, mục tiêu là Fortress thì luôn Stomp. Chỉ huy chạy vòng quanh boss hết tốc độ, dừng lại chém: boss bỏ chỉ huy đi phá công trình, và trong push_commit_time bị chém thêm cũng không quay lại. Trong Hazard Trial cùng tình huống đó: boss không bỏ chỉ huy, quay 180°/s và đánh trúng được. Tower hoặc Fortress lệch 90° so với hướng boss: boss quay tại chỗ rồi Stomp trúng, không rời boss_melee_point. Đuổi chỉ huy ra khỏi lane không tính là kẹt (BOSS-04).
-11. Mở khóa (BOSS-48): wave 5 không có Stomp x3 và Combo (sau lưng thì Stomp); wave 10 có Stomp x3, chưa có Combo; wave 15 có cả hai. Boss trong Hazard Trial của wave 15 không có Combo.
+11. Mở khóa (BOSS-48): Bulwark ở wave 5 (lần 1) không có Stomp x3 và Combo (sau lưng thì Stomp); ở wave 15 (lần 2) có Stomp x3, chưa có Combo; ở wave 25 (lần 3) có cả hai. Boss trong Hazard Trial của wave 25 không có Combo. Skeletal Centipede ở wave 10 (lần 1) có Spit, chưa có Roll và Dash; ở wave 20 (lần 2) có Roll và Dash; ở wave 30 (lần 3) có thêm Charge Roll.
 12. Stomp x3: mỗi nhát phát lại clip đập đất từ đầu, dài 75% clip, bán kính 3, 4.5, 6.6 m; trong suốt chuỗi đòn boss khóa hướng và không di chuyển (BOSS-47). Ăn trọn Stomp x3 hoặc Combo ở wave 5 không giết chỉ huy 100 HP (BOSS-50).
 13. Sau Stomp x3 và Combo boss nghỉ 1.75 s, sau Đánh thường 0.6 s (BOSS-49). Vỡ giáp, mất mục tiêu hoặc boss chết giữa chuỗi thì chuỗi dừng ngay (BOSS-50). Runner tự động `tests/test_bulwark_combo_runner.tscn`; xem và chỉnh bằng mắt ở `tests/test_bulwark_attacks.tscn`.
 
@@ -3029,7 +3029,7 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 | 25 | \[ĐÃ BỎ v2.0] Di chuyển và hoán đổi tower (MOV) | Bỏ ở v2.0: người chơi tự chọn loại và slot khi xây. Đổi bố cục thì bán (60%) rồi xây lại. Xem Phụ lục E |
 | 26 | Các giá trị mới của v1.8 chưa được nhóm xác nhận: frontline_aura_radius 12 m và bonus 0.20, frontline_gold_mult 1.25, tower_gate_lv2/lv3 = 4/8 (v2.0 đổi thành tower_gate_tier2/tier3, cổng ở cấp 13 và 25), xp_tower_only_pct 0.5, enrage_* (1.3/1.3/1.5/0.5), level skill tối đa 3, 3+3 ô | Họp chốt 19/10. Mọi giá trị nằm trong Resource, đổi không sửa code. Nút cân bằng ưu tiên: tower_gate_tier2/tier3 trước, bonus Aura sau |
 | 27 | Cuồng nộ có thể làm boss "vượt tầm kiểm soát" nếu người chơi yếu | MVP chấp nhận: thua boss sau Cuồng nộ là hậu quả cố ý. Nếu playtest thấy mục tiêu 60-75% người mới diệt Bulwark không đạt, chỉnh boss_timer trước, enrage_damage_mult sau (không chỉnh HP trước) |
-| 28 | Chỉ 1 boss (Bulwark lặp) có thể nhàm | MVP chấp nhận; Barrage \[Should] làm ngay khi MVP xong, ưu tiên cao hơn mọi mục Should khác |
+| 28 | Wave 1-30 chỉ có hai boss luân phiên, từ wave 31 chỉ Bulwark lặp nên có thể nhàm | MVP chấp nhận; Barrage \[Should] làm ngay khi MVP xong, ưu tiên cao hơn mọi mục Should khác |
 | 29 | Firebomb dùng BLAST để tái dùng bảng kháng, nên Bulwark (BLAST 1.0) chịu Firebomb 100% | Giữ. Nếu Firebomb quá mạnh vs Bulwark, giảm sát thương gốc chứ không thêm loại sát thương |
 | 30 | Mọi giá trị Trạm hồi lực (80 gold, kho 300, 10 đến 25 HP/s, hold 1.0 s, e = 0.5, tối đa 2 trạm) là khởi điểm | Theo dõi ở playtest: tỉ lệ run có dùng trạm, số lần cạn kho, có trở thành máu vô hạn hay vô dụng không. Chỉnh kho và giá trước, rồi đến e |
 | 31 | SELL-05 (bán Trạm hồi lực hoàn tiền theo HP kho còn lại) do bản v1.9 thêm để khớp logic, chưa ai đề xuất | Nhóm xác nhận. Nếu không đồng ý thì hoàn nguyên giá như tower thường |
@@ -3194,6 +3194,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 94 | 21/11/2026. Đồng bộ luồng chọn kiếm và quay về bảng Chỉ huy, lý do tạm dừng WEAPON_PICK, hộp thoại khôi phục lượt chơi, xác nhận bỏ cuộc hoặc thoát và xác nhận thiết lập hiển thị. |
 
 | 93 | **22/11: cập nhật camera Hazard Trial** (HZT-11, CAM-09, CAM-16 đến CAM-19, MSE-01, MSE-10, HZ7, Phụ lục C mục 39 và 70): góc nhìn thứ ba bám vai, chuột xoay, cuộn chuột zoom vào, giữ Alt để bấm HUD; chỉ huy quay và di chuyển theo camera; aim theo tâm màn hình, nền phòng là khối cầu 60 m |
+| 95 | 24/11/2026. Kịch bản wave 1-30: Bulwark ở wave 5, 15, 25 và Skeletal Centipede ở wave 10, 20, 30 (mục 3.8.2, 3.8.10, BOSS-22); lần xuất hiện của boss đếm theo từng boss thay vì wave_index / boss_wave_interval, nên Stomp x3 mở ở Bulwark wave 15 và Combo ở wave 25 (BOSS-48, test Boss 11). SCL-04 bỏ mốc người mới thua ở wave 8-12. |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 
