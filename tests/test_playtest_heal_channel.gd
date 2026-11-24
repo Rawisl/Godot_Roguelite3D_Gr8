@@ -282,8 +282,15 @@ func _walkthrough() -> void:
 	await _wait(0.7)
 	_key(KEY_E, true)
 	await _wait(1.2)
+	var source := (_commander.get_node("HealChannel") as HealChannel).get_source() as HealStation
+	var depleted_slot := _slots[0] if _slots[0].tower == source else _slots[1]
 	_drain_source()
 	await _wait(0.15)
+	var alerts := _main.find_child("AlertLayer", true, false)
+	var alert_keys: Array = alerts.shown_keys()
+	_check(depleted_slot.state == Enums.SlotState.RUINED, "an exhausted corridor station becomes rubble")
+	_check(&"alert.heal_drained" in alert_keys or &"alert.heal_drained_plain" in alert_keys,
+		"the HUD distinguishes a drained station")
 	_check(_hud_text() == tr(&"hud.heal.depleted"), "depletion explains why the channel stopped with another station alive")
 	_key(KEY_W, true)
 	await _wait(0.1)
@@ -339,8 +346,77 @@ func _walkthrough() -> void:
 	_key(KEY_W, false)
 	ScreenManager.close_all_dialogs()
 	_release_input()
+	await _check_station_economy()
 	print("HEAL PLAYTEST WALKTHROUGH: %d FAILED" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
+
+
+func _check_station_economy() -> void:
+	await reset_fixture()
+	var slot := _slots[0]
+	var station := slot.tower as HealStation
+	var gold := get_tree().get_first_node_in_group(&"gold_manager") as GoldManager
+	var alerts := _main.find_child("AlertLayer", true, false)
+	var empty_slot: Slot
+	for node in get_tree().get_nodes_in_group(&"slot"):
+		var candidate := node as Slot
+		if candidate.is_ground() and candidate.state == Enums.SlotState.EMPTY:
+			empty_slot = candidate
+			break
+	_check(empty_slot != null, "the corridor has a third ground slot")
+	if empty_slot == null:
+		return
+	_waves.current_wave = 10
+	_check(station.take_damage(17) == 14, "the corridor station normalizes damage at wave 10")
+	_waves.current_wave = 20
+	_check(station.take_damage(40) == 24, "the corridor station normalizes damage at wave 20")
+	_waves.current_wave = 1
+	station.take_damage(10000)
+	await get_tree().process_frame
+	var alert_keys: Array = alerts.shown_keys()
+	_check(slot.state == Enums.SlotState.RUINED
+		and (&"alert.tower_ruined" in alert_keys or &"alert.tower_ruined_plain" in alert_keys),
+		"enemy damage ruins the station and shows the destruction alert")
+
+	set_wave(&"PREP")
+	_check(not _build.build(empty_slot.slot_id, STATION_DATA.id) and _build.get_heal_station_count() == 2,
+		"station rubble still counts toward the two-station limit")
+	var gold_before := gold.gold
+	_check(_build.build(slot.slot_id, STATION_DATA.id), "the ruined station can be rebuilt")
+	station = slot.tower as HealStation
+	if station == null:
+		return
+	_check(gold_before - gold.gold == STATION_DATA.levels[0].build_cost and station.hp == station.max_hp,
+		"rebuilding charges the level-one cost and fills the store")
+	station.drain(station.max_hp / 2.0)
+	var remaining := station.hp
+	set_wave(&"COMBAT")
+	var fortress := get_tree().get_first_node_in_group(&"fortress") as Fortress
+	fortress.take_damage(floori(fortress.get_max_hp() * 0.5), Enums.DamageType.TRUE)
+	_check(fortress.emergency_repair(GameConfig.emg_repair_base_heal_pct) > 0 and station.hp == remaining,
+		"emergency repair heals only the Fortress")
+	set_wave(&"PREP")
+	_check(station.hp == remaining, "changing waves does not refill a station")
+	var run_state := get_tree().get_first_node_in_group(&"run_state") as RunState
+	run_state.add_mithril(1)
+	_check(_build.repair_fortress_mithril() and station.hp == remaining, "Mithril repair heals only the Fortress")
+	gold_before = gold.gold
+	var expected_refund := floori(station.invested_gold * GameConfig.sell_refund_pct * 0.5)
+	_check(_build.sell(slot.slot_id) and gold.gold - gold_before == expected_refund,
+		"selling a half-full station pays half the normal refund")
+
+	_check(_build.build(empty_slot.slot_id, STATION_DATA.id), "selling frees a place for another station")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	gold.gold = 1000000
+	for level in range(2, GameConfig.tower_max_level + 1):
+		if not _build.upgrade(empty_slot.slot_id):
+			_check(false, "station upgrade stopped at level %d" % level)
+			return
+	var panel := _main.find_child("HealStationPanel", true, false) as HealStationPanel
+	panel.show_info(_build.get_tower_info(empty_slot.slot_id), true)
+	var upgrade_button := panel.get_node("%Upgrade") as PanelButton
+	_check(upgrade_button.disabled and upgrade_button._main.text == tr(&"panel.max")
+		and not _build.upgrade(empty_slot.slot_id), "the station panel shows MAX and rejects another upgrade")
 
 
 func _capture(label: String) -> void:

@@ -386,6 +386,7 @@ func test_boss_killed_last_pays_reward() -> void:
 	var start: int = fight.gold_mgr.gold
 	var bulwark := _spawn_bulwark()
 	bulwark._on_died()
+	await get_tree().process_frame
 	assert_true(_summaries.size() == 1, "Exactly one summary is built")
 	var summary := _last_summary()
 	assert_true(not summary.is_empty() and fight.gold_mgr.gold - start == _escort_gold(fight.wm, summary) + _boss_gold(BOSS_WAVE), "Wallet includes the boss gold")
@@ -402,6 +403,7 @@ func test_emergency_charge_cap_and_normal_wave() -> void:
 	var fight := await _setup_last_boss_fight(GameConfig.emg_repair_charges_max, false)
 	var bulwark := _spawn_bulwark()
 	bulwark._on_died()
+	await get_tree().process_frame
 	assert_true(fight.repair.charges == GameConfig.emg_repair_charges_max, "Charges stay at the maximum")
 	_free_fight(fight)
 	await _free_after_nav_setup([bulwark])
@@ -410,6 +412,7 @@ func test_emergency_charge_cap_and_normal_wave() -> void:
 	normal.wm.current_wave = BOSS_WAVE - 1
 	normal.wm.wave_state = Enums.WaveState.COMBAT
 	var grunt := _kill_grunt(BOSS_WAVE - 1)
+	await get_tree().process_frame
 	var summary := _last_summary()
 	assert_true(not summary.is_empty() and summary.emg_repair_gained == 0, "Normal wave reports no extra charge")
 	assert_true(normal.repair.charges == 2, "Normal wave leaves the charges alone")
@@ -422,6 +425,7 @@ func test_enraged_boss_still_gives_charge() -> void:
 	var fight := await _setup_last_boss_fight(2, true)
 	var bulwark := _spawn_bulwark()
 	bulwark._on_died()
+	await get_tree().process_frame
 	var summary := _last_summary()
 	assert_true(fight.repair.charges == 3, "Enraged boss death still refunds a charge")
 	assert_true(not summary.is_empty() and summary.emg_repair_gained == 1, "Summary reports the charge")
