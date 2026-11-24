@@ -1404,7 +1404,7 @@ func _begin_combo_step(index: int) -> void:
 		anim_player.speed_scale = clampf(ground_speed / cdata.body(cdata.walk_anim_base_speed), 0.0, cdata.walk_anim_max_scale)
 		anim_player.play(CLIP_WALK, COMBO_STEP_BLEND)
 	if _fx != null:
-		_fx.hold_slash()
+		_fx.detach_slash()
 
 
 ## One tick of a step (step in clip seconds): turns toward the target, then walks the way the body
