@@ -2,11 +2,15 @@
 ; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
 [ext_resource type="Script" uid="uid://x7apaf51e872" path="res://common/weapon_data.gd" id="1_weapon"]
+[ext_resource type="PackedScene" uid="uid://vnicigf2ux5x" path="res://contents/assets/weapons/weapon_swift.tscn" id="2_model"]
+[ext_resource type="Texture2D" uid="uid://dwhniyyg45wh2" path="res://art/icons/weapons/swift_icon.png" id="3_icon"]
 
 [resource]
 script = ExtResource("1_weapon")
 id = &"swift"
 name_key = &"weapon.swift.name"
+model = ExtResource("2_model")
+icon = ExtResource("3_icon")
 range_mult = 0.7
 effect_id = &"swift"
 params = Dictionary[StringName, float]({

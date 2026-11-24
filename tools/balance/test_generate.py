@@ -46,10 +46,14 @@ class WaveValidationTests(unittest.TestCase):
         self.assert_invalid("waves", 0, "is_escort", 1, "expected TRUE or FALSE")
 
     def test_conflicting_coefficients(self):
+        table = self.tables["waves"]
+        index = next(i for i, row in enumerate(table.rows[1:], 1)
+                     if row["wave"] == table.rows[i - 1]["wave"])
+        wave = table.rows[index]["wave"]
         for column in generate.WAVE_FIELDS:
             with self.subTest(column=column):
                 self.setUp()
-                self.assert_invalid("waves", 3, column, 20, f"{column} differs within wave 3")
+                self.assert_invalid("waves", index, column, 20, f"{column} differs within wave {wave}")
 
     def test_short_spawn_duration(self):
         self.assert_invalid("waves", 0, "spawn_duration", 12, "spawn_duration must be at least 15")
@@ -68,11 +72,16 @@ class WaveValidationTests(unittest.TestCase):
         table = self.tables["waves"]
         index = next(i for i, row in enumerate(table.rows) if row["wave"] == 5 and row["is_escort"])
         table.rows[index]["is_escort"] = False
-        with self.assertRaisesRegex(generate.BalanceError, r"waves!B8: boss wave 5 must have an escort"):
+        boss_index = next(i for i, row in enumerate(table.rows)
+                          if row["wave"] == 5 and row["enemy_id"] == "bulwark")
+        cell = table.cells[boss_index]["enemy_id"]
+        with self.assertRaisesRegex(generate.BalanceError, f"waves!{cell}: boss wave 5 must have an escort"):
             generate.validate_waves(self.tables)
 
     def test_multiple_bosses(self):
-        self.assert_invalid("waves", 8, "count", 2, "boss wave 5 must contain exactly one boss")
+        index = next(i for i, row in enumerate(self.tables["waves"].rows)
+                     if row["wave"] == 5 and row["enemy_id"] == "bulwark")
+        self.assert_invalid("waves", index, "count", 2, "boss wave 5 must contain exactly one boss")
 
     def test_too_many_types(self):
         table = self.tables["waves"]
@@ -94,8 +103,11 @@ class WaveValidationTests(unittest.TestCase):
             generate.validate_waves(self.tables)
 
     def test_equivalent_formula_results(self):
-        self.tables["waves"].rows[2]["hp_mult"] = 0.3
-        self.tables["waves"].rows[3]["hp_mult"] = 0.1 + 0.2
+        table = self.tables["waves"]
+        index = next(i for i, row in enumerate(table.rows[1:], 1)
+                     if row["wave"] == table.rows[i - 1]["wave"])
+        table.rows[index - 1]["hp_mult"] = 0.3
+        table.rows[index]["hp_mult"] = 0.1 + 0.2
         generate.validate_waves(self.tables)
 
     def test_reward_types_and_bounds(self):
@@ -160,6 +172,7 @@ class WaveValidationTests(unittest.TestCase):
                 self.assertIn("must have an escort", messages)
 
     def test_boss_identity_comes_from_resource_id(self):
+        other_bosses = generate.boss_ids() - {"bulwark"}
         for table_name in ("enemies", "waves"):
             for row in self.tables[table_name].rows:
                 if row["enemy_id"] == "bulwark":
@@ -171,10 +184,30 @@ class WaveValidationTests(unittest.TestCase):
             (folder / "unrelated_filename.tres").write_text(
                 '[gd_resource type="Resource" script_class="BossData" format=3]\n'
                 '[resource]\nid = &"sentinel"\n', encoding="utf-8")
+            for identifier in other_bosses:
+                (folder / f"{identifier}.tres").write_text(
+                    '[gd_resource type="Resource" script_class="BossData" format=3]\n'
+                    f'[resource]\nid = &"{identifier}"\n', encoding="utf-8")
             config = generate.wave_config()
             with patch.object(generate, "ROOT", root), patch.object(generate, "wave_config", return_value=config):
-                self.assertEqual(generate.boss_ids(), {"sentinel"})
+                self.assertEqual(generate.boss_ids(), {"sentinel"} | other_bosses)
                 generate.validate_waves(self.tables)
+
+    def test_boss_subclass_counts_as_boss(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "common").mkdir()
+            folder = root / "data" / "bosses"
+            folder.mkdir(parents=True)
+            for name, base in (("sub_boss", "BossData"), ("plain", "EnemyData")):
+                (root / "common" / f"{name}.gd").write_text(f"extends {base}\n", encoding="utf-8")
+                (folder / f"{name}.tres").write_text(
+                    f'[gd_resource type="Resource" script_class="{name}" format=3]\n'
+                    f'[ext_resource type="Script" path="res://common/{name}.gd" id="1_script"]\n'
+                    f'[resource]\nscript = ExtResource("1_script")\nid = &"{name}"\n',
+                    encoding="utf-8")
+            with patch.object(generate, "ROOT", root):
+                self.assertEqual(generate.boss_ids(), {"sub_boss"})
 
 
 class WorkbookValidationTests(unittest.TestCase):
@@ -205,11 +238,14 @@ class WorkbookValidationTests(unittest.TestCase):
         self.assertNotIn("", tables["towers"].rows[0])
 
     def test_trailing_formatted_empty_row_is_an_error(self):
+        expected = None
         def edit(book):
+            nonlocal expected
             sheet = book["waves"]
-            sheet.cell(sheet.max_row + 1, 1).number_format = "0.00"
+            expected = sheet.max_row + 1
+            sheet.cell(expected, 1).number_format = "0.00"
         _, errors = self.read_edited_workbook(edit)
-        self.assertIn("waves!A97: empty cell (wave)", errors)
+        self.assertIn(f"waves!A{expected}: empty cell (wave)", errors)
 
     def test_missing_sheet(self):
         def edit(book):

@@ -3,6 +3,7 @@
 
 [ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="2_vbqcx"]
 [ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_l87fw"]
+[ext_resource type="PackedScene" uid="uid://6ka6jtxno0f1" path="res://contents/assets/towers/barricade_tower_model.tscn" id="model"]
 [ext_resource type="Resource" uid="uid://bx3oq00w6v46p" path="res://data/towers/barricade_l1.tres" id="2_uhiiq"]
 [ext_resource type="Resource" uid="uid://btes1ffisudw3" path="res://data/towers/barricade_l2.tres" id="3_edo0w"]
 [ext_resource type="Resource" uid="uid://cljcqjf3fgm4r" path="res://data/towers/barricade_l3.tres" id="4_q017b"]
@@ -47,4 +48,5 @@ display_name = "tower.barricade"
 allowed_zones = Array[int]([1])
 targets_ground = false
 levels = Array[ExtResource("1_l87fw")]([ExtResource("2_uhiiq"), ExtResource("3_edo0w"), ExtResource("4_q017b"), ExtResource("l4"), ExtResource("l5"), ExtResource("l6"), ExtResource("l7"), ExtResource("l8"), ExtResource("l9"), ExtResource("l10"), ExtResource("l11"), ExtResource("l12"), ExtResource("l13"), ExtResource("l14"), ExtResource("l15"), ExtResource("l16"), ExtResource("l17"), ExtResource("l18"), ExtResource("l19"), ExtResource("l20"), ExtResource("l21"), ExtResource("l22"), ExtResource("l23"), ExtResource("l24"), ExtResource("l25"), ExtResource("l26"), ExtResource("l27"), ExtResource("l28"), ExtResource("l29"), ExtResource("l30"), ExtResource("l31"), ExtResource("l32"), ExtResource("l33"), ExtResource("l34"), ExtResource("l35"), ExtResource("l36")])
+model_tier_scenes = Array[PackedScene]([ExtResource("model"), ExtResource("model"), ExtResource("model")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"

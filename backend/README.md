@@ -42,9 +42,17 @@ Mở `tests/test_auth_service.tscn` trong Godot rồi nhấn F6. Test đăng ký
 
 1. Check Database, Egress, and Auth usage for both projects in the Supabase dashboard. Confirm demo is active.
 2. Export a logical backup using the Supabase CLI backup and restore workflow, including application data and the Auth records required by their user IDs. Keep the dump in team-controlled storage. Verify a restore on an isolated local instance by checking accounts, saves, and leaderboard rows.
-3. In a disposable checkout set `GameConfig.online_enabled = false` for the offline demo. Launch with a fresh profile and play through RunEnd. Repeat on the online build with the network disconnected and confirm local progress persists.
+3. Use an isolated Godot user-data directory. Run `tests/test_offline_demo_runner.tscn` with a fresh identifier after the `--` separator, for example `--run-id=demo_disabled`. Run it again with the same identifier and `--verify-reload` in a new process. Repeat using a different identifier and `--unreachable-backend` in both invocations. The runner checks guest controls, the leaderboard connection message, combat, RunEnd and a MetaShop purchase. It removes the test save after reload. Running from F6 with no identifier removes the save at the end of the same process. Replay the demo build with networking disconnected.
+
+Record the date and commit, the Database, Egress and Auth usage for each project, and the
+outcome of each isolated restore. Confirm restored accounts can be matched to their saves and
+leaderboard rows. Record the backup location in team-controlled storage.
 
 Client integration uses `AccountApi.pull_save()`, `AccountApi.push_save()`, `AuthService.fetch_leaderboard()` and the existing save-gated submission service. Sync pauses until RunEnd when requested mid-run. On a tied revision from another device with different data, sync backs up local progress and applies cloud progress. A backup failure leaves the two saves in place.
+
+For the live client check, sign in on a dev profile, sync a save, purchase a meta item and finish an
+eligible run. Verify the updated save revision, one leaderboard entry and the displayed rank.
+Include the failing step, error code and build commit when reporting an integration error.
 
 Apply `005_leaderboard_tolerance.sql`, `006_saves.sql`, then
 `007_validate_online_data.sql` on **both dev and demo**. These migrations are

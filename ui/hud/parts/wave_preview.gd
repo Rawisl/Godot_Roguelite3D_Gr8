@@ -6,7 +6,7 @@ extends HBoxContainer
 ## its left folds the whole panel away to the right (>) and leaves only the button (<), against the
 ## right edge under the Hazard Trial marker, to bring it back, like the skill slots; a new run shows
 ## it again. The node grows to the left, so folding keeps its right edge where it was.
-# TODO(kiezroth): the composition sent with wave_preview_ready should come from the WaveScript of that wave.
+# TODO(Ender-Via): when the spawner builds waves 1-30 from the WaveScript, make get_wave_plan() send that scripted composition (boss first) so this preview matches it, then delete this line.
 
 ## Every weapon in the game, to know when none is left to drop.
 @export var weapons: Array[WeaponData] = []

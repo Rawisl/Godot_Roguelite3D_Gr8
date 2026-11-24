@@ -6,12 +6,18 @@ extends Node
 ## - an unreadable save is refused until start_new_save() keeps every broken copy aside as .corrupt*
 ## - a temp copy that cannot be promoted, or a failed final rename, never loses the newest copy
 ## - saves are held back during combat, coalesced by request_save(), and clamped on load
+## - two save handles writing one after the other load the later save without corruption
+##   (sequential writes in one process; truly concurrent writers are not covered)
+## - one save on a full profile stays under the time budget on every write path (median of
+##   SAVE_SAMPLES writes, so one antivirus or disk stall does not fail it; the max is printed)
 ## Writes only under user://test_save_atomic/, the real save is put back afterwards.
 
 const TEST_DIR := "user://test_save_atomic"
 const TEST_PATH := "user://test_save_atomic/endlesswar_save.json"
 ## Performance target for one save.
 const SAVE_BUDGET_USEC := 50000
+const SAVE_SAMPLES := 20
+const LARGE_STAT := 9_999_999
 
 ## Off when driven from the editor or godot-mcp, so results can still be read.
 @export var quit_when_done := true
@@ -98,6 +104,7 @@ func _ready() -> void:
 	test_pending_flushed_on_quit()
 	test_clamp_values()
 	test_defaults_without_file()
+	test_two_handles_last_write_wins()
 	test_save_under_50ms()
 
 	EventBus.save_completed.disconnect(_on_save_completed)
@@ -541,18 +548,99 @@ func test_defaults_without_file() -> void:
 	assert_true(SaveManager.loaded_from == SaveManager.SOURCE_DEFAULTS, "loaded_from is the defaults")
 	assert_true(_failed_reasons.is_empty(), "no save_failed")
 
-func test_save_under_50ms() -> void:
-	print("\n--- Save time ---")
+func test_two_handles_last_write_wins() -> void:
+	print("\n--- Two save handles in turn: last write wins ---")
 	_begin()
-	var best: Dictionary = SaveManager.get_section(SaveManager.PROFILE)["best_by_start"]
-	for wave in range(1, 31):
-		best[str(wave)] = wave
+	_set_balance(5)
 	SaveManager.save()
-	var start := Time.get_ticks_usec()
-	var error := SaveManager.save()
-	var took := Time.get_ticks_usec() - start
-	print("  save() with backup copy took %.2f ms" % (took / 1000.0))
-	assert_true(error == OK and took < SAVE_BUDGET_USEC, "second save() under the budget")
+	var first := SaveManager.data.duplicate(true)
+	var second := SaveManager.data.duplicate(true)
+	first["profile"]["prestige_balance"] = 10
+	second["profile"]["prestige_balance"] = 20
+	SaveManager.data = first
+	var first_error := SaveManager.save()
+	SaveManager.set_repository(LocalSaveRepository.new(TEST_PATH))
+	SaveManager.data = second
+	var second_error := SaveManager.save()
+	_local = LocalSaveRepository.new(TEST_PATH)
+	SaveManager.set_repository(_local)
+	SaveManager.load_save()
+	assert_true(first_error == OK and second_error == OK, "both writes returned OK")
+	assert_true(_balance() == 20, "the later write is what loads")
+	assert_true(SaveManager.loaded_from == &"MAIN", "loaded from the main file")
+	var no_corrupt_copy := true
+	for source in [SaveRepository.Source.MAIN, SaveRepository.Source.TEMP, SaveRepository.Source.BACKUP]:
+		if FileAccess.file_exists(_local.corrupt_path(source)):
+			no_corrupt_copy = false
+	assert_true(no_corrupt_copy, "no corrupt copy was made")
+
+func _fill_full_profile() -> void:
+	var profile := SaveManager.get_section(SaveManager.PROFILE)
+	profile["prestige_balance"] = LARGE_STAT
+	profile["max_wave_cleared"] = GameConfig.victory_wave
+	var best: Dictionary = SaveManager.get_section(SaveManager.PROFILE)["best_by_start"]
+	for wave in range(1, GameConfig.victory_wave + 1):
+		best[str(wave)] = wave
+	# Keep every stat key the real profile has and raise each to a large value.
+	var stats: Dictionary = profile["stats"]
+	for key in stats.keys():
+		stats[key] = LARGE_STAT
+	SaveManager.get_section(SaveManager.META)["levels"] = MetaUpgrades.get_max_levels()
+	SaveManager.get_section(SaveManager.FLAGS)["tutorial_done"] = true
+
+func test_save_under_50ms() -> void:
+	print("\n--- Save time on a full profile ---")
+	_begin()
+	_fill_full_profile()
+	var rs := RunState.new()
+	add_child(rs)
+	rs.waves_cleared = GameConfig.victory_wave
+	rs.run_kills = LARGE_STAT
+	rs.run_bosses_defeated = LARGE_STAT
+	rs.prestige_pending = LARGE_STAT
+	var pending := rs.prestige_pending
+	var summary := rs.build_summary(&"ABANDONED", &"DEFEAT")
+	rs.free()
+	# Warm every real write path, including replacement of an existing backup.
+	var warm_start := SaveManager.record_run_start(1, 1.0)
+	var warm_wave := SaveManager.record_wave_summary(1, pending, 1, 1.0)
+	var warm_end := SaveManager.record_run_end(summary)
+	assert_true(warm_start == OK and warm_wave == OK and warm_end == OK, "every warm-up write returned OK")
+	var start_timed := _time_writes(func(_round: int) -> Error: return SaveManager.record_run_start(1, 1.0))
+	var wave_timed := _time_writes(func(round: int) -> Error:
+		return SaveManager.record_wave_summary(round + 1, pending, 1, 1.0))
+	# record_run_end() refuses a second call for the same run, so each sample first starts
+	# a fresh run through record_run_start(), outside the timed part.
+	var end_timed := _time_writes(func(_round: int) -> Error: return SaveManager.record_run_end(summary),
+			func() -> void: SaveManager.record_run_start(1, 1.0))
+	assert_true(start_timed.ok and wave_timed.ok and end_timed.ok, "every timed write returned OK")
+	_report_save_times("run start", start_timed.times)
+	_report_save_times("wave summary", wave_timed.times)
+	_report_save_times("run end", end_timed.times)
+
+## Times SAVE_SAMPLES calls of one write path (called with the sample index); ok is false when any call did not return OK.
+## prepare, when given, runs before each call and is not timed.
+func _time_writes(write: Callable, prepare := Callable()) -> Dictionary:
+	var times: Array[int] = []
+	var ok := true
+	for round in range(SAVE_SAMPLES):
+		if prepare.is_valid():
+			prepare.call()
+		var start := Time.get_ticks_usec()
+		var error: Error = write.call(round)
+		times.append(Time.get_ticks_usec() - start)
+		if error != OK:
+			ok = false
+	return {"times": times, "ok": ok}
+
+func _report_save_times(path_name: String, times: Array[int]) -> void:
+	times.sort()
+	var median := (times[SAVE_SAMPLES / 2 - 1] + times[SAVE_SAMPLES / 2]) / 2.0
+	var slowest: int = times.back()
+	print("  %s: max %.2f ms, median %.2f ms (%d writes)" % [path_name, slowest / 1000.0, median / 1000.0, SAVE_SAMPLES])
+	assert_true(median < SAVE_BUDGET_USEC, "%s write: median of %d under the budget" % [path_name, SAVE_SAMPLES])
+	if slowest >= SAVE_BUDGET_USEC:
+		print("  [WARN] %s: slowest write over the budget (%.2f ms), likely a disk stall" % [path_name, slowest / 1000.0])
 
 func assert_true(cond: bool, test_name: String) -> void:
 	if cond:

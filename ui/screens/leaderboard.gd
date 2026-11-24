@@ -65,7 +65,8 @@ func refresh() -> void:
 		return
 	_loading = false
 	if not result.get("ok", false):
-		_show_message(&"lbd.error", true)
+		var message := &"lbd.offline" if result.get("error") == AuthService.ERR_OFFLINE else &"lbd.error"
+		_show_message(message, true)
 		return
 	_show_table(result.get("rows", []), result.get("own", {}))
 
