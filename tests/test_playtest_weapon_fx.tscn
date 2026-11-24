@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://c6v1bgcuwlji6"]
+
+[ext_resource type="Script" uid="uid://dww7c8k1ou4h8" path="res://tests/test_playtest_weapon_fx.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c88o7toy6kiy5" path="res://entities/commander/commander.tscn" id="2_commander"]
+[ext_resource type="Material" uid="uid://dbp4ls6jc8erk" path="res://art/materials/env_grass.tres" id="3_grass"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.68633634, 0.6506461, 0.45609266, 1)
+
+[sub_resource type="Sky" id="Sky_sky"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_env"]
+background_mode = 2
+sky = SubResource("Sky_sky")
+ambient_light_source = 3
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(30, 0.5, 30)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(30, 0.5, 30)
+
+[node name="WeaponFxPlaytest" type="Node3D" unique_id=1801200001]
+script = ExtResource("1_script")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1801200002]
+transform = Transform3D(1, 0, 0, 0, -0.50302005, 0.86427474, 0, -0.86427474, -0.50302005, -17, 29, -45)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1801200003]
+environment = SubResource("Environment_env")
+
+[node name="Ground" type="StaticBody3D" parent="." unique_id=1801200004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground" unique_id=1801200005]
+shape = SubResource("BoxShape3D_ground")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground" unique_id=1801200006]
+mesh = SubResource("BoxMesh_ground")
+surface_material_override/0 = ExtResource("3_grass")
+
+[node name="Commander" parent="." unique_id=1801200007 instance=ExtResource("2_commander")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.5)
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1801200008]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 0, 5.5, 4.5)
+current = true
+fov = 50.0

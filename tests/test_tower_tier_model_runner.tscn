@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://demc56benev4o"]
+
+[ext_resource type="Script" uid="uid://nkmyf2rp5as7" path="res://tests/test_tower_tier_model_runner.gd" id="1_runner"]
+
+[node name="TestTowerTierModel" type="Node3D"]
+script = ExtResource("1_runner")

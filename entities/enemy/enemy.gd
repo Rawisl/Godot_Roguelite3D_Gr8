@@ -259,8 +259,10 @@ func _init_spawn_zone_bounds() -> void:
 			_spawn_zone_min_x = sz.global_position.x - 6.0
  
 func _setup_navigation() -> void:
+	if not is_inside_tree():
+		return
 	await get_tree().physics_frame
-	if not has_target_position and current_target == null:
+	if is_inside_tree() and not has_target_position and current_target == null:
 		_find_default_target()
  
 ## Walking and flying units both use the projection on the

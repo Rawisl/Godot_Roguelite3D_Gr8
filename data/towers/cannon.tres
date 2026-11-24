@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="2_yxcx4"]
 [ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_t20fp"]
 [ext_resource type="PackedScene" uid="uid://d0r1pq1be01t0" path="res://entities/projectile/cannon_projectile.tscn" id="5_cannonprj"]
+[ext_resource type="PackedScene" uid="uid://be2n7yc8bock6" path="res://contents/assets/towers/cannon_tower_model.tscn" id="model"]
 [ext_resource type="Resource" uid="uid://beoejy0vpkyjb" path="res://data/towers/cannon_l1.tres" id="2_7luwv"]
 [ext_resource type="Resource" uid="uid://drnqhtvrwrwyc" path="res://data/towers/cannon_l2.tres" id="3_dxqy6"]
 [ext_resource type="Resource" uid="uid://bpj2rucbr4p5j" path="res://data/towers/cannon_l3.tres" id="4_s70g0"]
@@ -52,4 +53,5 @@ min_range = 4.0
 projectile_scene = ExtResource("5_cannonprj")
 splash_falloff_edge = 0.5
 levels = Array[ExtResource("1_t20fp")]([ExtResource("2_7luwv"), ExtResource("3_dxqy6"), ExtResource("4_s70g0"), ExtResource("l4"), ExtResource("l5"), ExtResource("l6"), ExtResource("l7"), ExtResource("l8"), ExtResource("l9"), ExtResource("l10"), ExtResource("l11"), ExtResource("l12"), ExtResource("l13"), ExtResource("l14"), ExtResource("l15"), ExtResource("l16"), ExtResource("l17"), ExtResource("l18"), ExtResource("l19"), ExtResource("l20"), ExtResource("l21"), ExtResource("l22"), ExtResource("l23"), ExtResource("l24"), ExtResource("l25"), ExtResource("l26"), ExtResource("l27"), ExtResource("l28"), ExtResource("l29"), ExtResource("l30"), ExtResource("l31"), ExtResource("l32"), ExtResource("l33"), ExtResource("l34"), ExtResource("l35"), ExtResource("l36")])
+model_tier_scenes = Array[PackedScene]([ExtResource("model"), ExtResource("model"), ExtResource("model")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"

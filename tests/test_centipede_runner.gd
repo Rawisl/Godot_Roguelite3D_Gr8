@@ -80,7 +80,7 @@ func assert_true(cond: bool, test_name: String) -> void:
 # --- Helpers -----------------------------------------------------------------------------------
 
 ## Boss at the origin facing +Z with its own loops off, so the test drives them.
-func _make_boss(boss_data: CentipedeBossData = null, wave: int = 15) -> SkeletalCentipede:
+func _make_boss(boss_data: CentipedeBossData = null, wave: int = 30) -> SkeletalCentipede:
 	var boss := BOSS_SCENE.instantiate() as SkeletalCentipede
 	if boss_data != null:
 		boss.data = boss_data
@@ -211,7 +211,7 @@ func test_tc1_brain_scores() -> void:
 	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(BOSS_DATA.engage_range + 0.3))
 	assert_true(not boss.build_situation().engaged, "Past the engage range and not hit: not engaged")
 	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(5.2))
-	boss.spawn_wave = 5
+	boss.spawn_wave = 10
 	assert_true(boss.choose_attack() == CentipedeBrain.CHASE, "First appearance has no roll: CHASE")
 	cmd.global_position = Vector3(0.0, 0.0, -2.0)
 	assert_true(boss.choose_attack() == CentipedeBrain.FACE, "Commander behind: FACE")

@@ -8,6 +8,9 @@ extends Enemy
 ## A concrete boss extends this and overrides the hooks at the bottom: it owns its moves, its
 ## animation and its brain.
 
+## The scripted waves, read to tell which appearance of its boss a wave is.
+const WAVE_SCRIPT_PATH := "res://data/waves/wave_script.tres"
+
 var current_phase: Enums.BossPhase = Enums.BossPhase.ARMORED
 var current_armor_hp: int = 1200
 var max_armor_hp: int = 1200
@@ -370,9 +373,18 @@ func _on_commander_hit() -> void:
 	t_away = 0.0
 
 
-## Which appearance of the boss this is: 1 on its first boss wave, 2 on the next, and so on.
+## Which appearance of this boss this is: 1 on its first boss wave, 2 on its next, and so on.
+## Bosses alternate in the scripted waves, so each boss counts only its own waves; without a
+## wave script (or when it never names this boss) every boss wave counts as one appearance.
 func get_appearance() -> int:
-	return maxi(1, spawn_wave / maxi(1, GameConfig.boss_wave_interval))
+	var interval := maxi(1, GameConfig.boss_wave_interval)
+	var boss_data := data as BossData
+	var script := load(WAVE_SCRIPT_PATH) as WaveScript
+	if boss_data != null and script != null:
+		var scripted := script.get_boss_appearance(boss_data.id, spawn_wave, interval)
+		if scripted > 0:
+			return scripted
+	return maxi(1, spawn_wave / interval)
 
 
 ## The appearance whose moves the boss fights with; the Hazard Trial copy steps back.

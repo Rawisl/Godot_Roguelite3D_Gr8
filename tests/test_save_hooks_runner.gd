@@ -50,9 +50,9 @@ func _ready() -> void:
 	EventBus.prestige_pending_changed.connect(_on_pending_changed)
 	EventBus.wave_summary_ready.connect(_on_summary_ready)
 
-	test_summary_saved_before_summary_shows()
-	test_held_save_joins_summary_write()
-	test_wave_clear_prestige_added()
+	await test_summary_saved_before_summary_shows()
+	await test_held_save_joins_summary_write()
+	await test_wave_clear_prestige_added()
 	test_wave_clear_prestige_formula()
 	test_prestige_gain_formula()
 	test_wave1_buffer_only()
@@ -184,6 +184,7 @@ func _clear_wave(wm: WaveManager, prestige: int) -> void:
 	wm.spawn_queue.clear()
 	wm.enemies_alive = 1
 	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 1.0, prestige, false, false)
+	await get_tree().process_frame
 
 
 func _expected_gain(pending: int, buffer: int, start_mult: float) -> int:
@@ -204,7 +205,7 @@ func test_summary_saved_before_summary_shows() -> void:
 	_begin()
 	var rs := _new_run_state()
 	var wm := _new_wave_manager(3)
-	_clear_wave(wm, 4)
+	await _clear_wave(wm, 4)
 	assert_true(_summary_saves == 1, "One write is done by the time the summary is announced")
 	var run_flag := _summary_run_flag
 	assert_true(int(run_flag.get("waves_cleared", -1)) == 3, "The disk already holds waves_cleared 3")
@@ -223,7 +224,7 @@ func test_held_save_joins_summary_write() -> void:
 	SaveManager.get_section(SaveManager.PROFILE)["prestige_balance"] = 7
 	assert_true(SaveManager.save() == ERR_BUSY, "A save in combat is held back")
 	assert_true(_saves == 0, "Nothing is written yet")
-	_clear_wave(wm, 0)
+	await _clear_wave(wm, 0)
 	assert_true(_summary_saves == 1, "Exactly one write happened before the summary was announced")
 	assert_true(int(_disk(&"profile").get("prestige_balance", 0)) == 7, "That write carries the held back data")
 	assert_true(_saves == 1, "The state change to SUMMARY adds no second write")
@@ -236,7 +237,7 @@ func test_wave_clear_prestige_added() -> void:
 	var rs := _new_run_state()
 	var wm := _new_wave_manager(3)
 	var kill_prestige := 3
-	_clear_wave(wm, kill_prestige)
+	await _clear_wave(wm, kill_prestige)
 	var expected := kill_prestige + PrestigeCalc.wave_clear_prestige(3)
 	assert_true(rs.prestige_pending == expected, "Pending holds the kill prestige plus the wave clear prestige")
 	var summary: Dictionary = _summaries.back() if not _summaries.is_empty() else {}
@@ -244,7 +245,7 @@ func test_wave_clear_prestige_added() -> void:
 	assert_true(rs.wave_prestige_buffer == 0, "The wave buffer is emptied once it moved into pending")
 	assert_true(not _pending.is_empty() and _pending.back() == rs.prestige_pending, "prestige_pending_changed carries the total")
 	wm.advance_to_next_wave()
-	_clear_wave(wm, 0)
+	await _clear_wave(wm, 0)
 	assert_true(rs.prestige_pending == expected + PrestigeCalc.wave_clear_prestige(4), "The next wave adds its own wave clear prestige on top")
 	wm.free()
 	rs.free()

@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://d3nw0afw838g5"]
+
+[ext_resource type="Script" uid="uid://cavfplh5ldixj" path="res://art/vfx/weapon_blade_fx.gd" id="1_fx"]
+[ext_resource type="PackedScene" uid="uid://xv0knp2xb8pt" path="res://contents/assets/weapons/weapon_frost.glb" id="2_mesh"]
+
+[node name="WeaponFrost" type="Node3D"]
+script = ExtResource("1_fx")
+kind = 0
+blade_from = 0.35
+blade_to = 1.4
+color_start = Color(0.75, 0.88, 1, 1)
+color_end = Color(0.3, 0.55, 1, 0)
+amount = 10
+lifetime = 0.9
+particle_size = 0.06
+
+[node name="Mesh" parent="." instance=ExtResource("2_mesh")]
