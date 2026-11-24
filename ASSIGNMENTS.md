@@ -1425,12 +1425,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH10
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tua lại sheet towers/economy sau chạy thử wave 1-30: chỉnh trong balance.xlsx và sinh lại; test lưới (3 WALL + 9 hàng, ô bị bỏ) và chặn kín đường (2 bố cục thử)
 - Nghiệm thu: Test chặn kín đường đạt; không đủ gold nâng mọi công trình trước wave 30
 - Tệp liên quan: balance/balance.xlsx, tests/
 - ID SRS: test Fortress/tower 4, 15
 - Cần xong trước: W9-MH5, W11-MH11
+- Ghi chú: Bộ mô phỏng cân bằng (tools/balance_simulator/simulate.py) giờ tính skeletal_centipede là boss như bulwark, nên chạy được kịch bản wave 1-30. Kết quả: chi phí bố cục lên cấp 25 chia gold của run mạnh ở wave 30 là 1.54 (>1.0), gold trung bình ở wave 30 chia giá 3 cung lên cấp 25 là 0.94, nên giá tháp trong balance.xlsx giữ nguyên. Thêm test_blocks_boss_point_path (bố cục 2: ô thứ ba chỉ cắt đường tới boss_melee_point, cổng vẫn thông) vào tests/test_build_service_runner.gd, và hai case bấm vào mép giữa hai ô chỉ chọn tối đa một slot, id slot không trùng vào tests/test_ground_grid.gd. Chạy thật wave 1-30 trong game chờ W11-KT9 (#241); chạy lại bộ mô phỏng ở W12-MH1.
 
 #### Khang (UI/UX & Meta), tuần 11, 38h
 
