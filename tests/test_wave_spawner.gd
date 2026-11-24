@@ -92,6 +92,8 @@ func test_deterministic_by_run_seed() -> void:
 func test_intro_count_archer_w3_and_brute_w6() -> void:
 	print("\n[GROUP 2] Testing Intro Count (Wave 3 exactly 2 Archers, Wave 6 exactly 1 Brute)")
 	var wm := WaveManager.new()
+	# Intro counts are a rule of the generator; without a WaveScript every wave is generated.
+	wm.wave_script = null
 	add_child(wm)
 
 	# Test across various seeds to ensure it holds universally
@@ -138,6 +140,8 @@ func test_spn08_waves_1_and_2_grunt_only() -> void:
 func test_spn05_archer_max_40_percent() -> void:
 	print("\n[GROUP 4] Archer <= 40% of wave composition")
 	var wm := WaveManager.new()
+	# The cap is a rule of the generator (the WaveScript sets its own counts, e.g. 4 Archers on wave 5).
+	wm.wave_script = null
 	add_child(wm)
 
 	var all_within_cap := true
@@ -160,6 +164,8 @@ func test_spn05_archer_max_40_percent() -> void:
 func test_brute_cap_floor_w_over_4() -> void:
 	print("\n[GROUP 5] Testing Brute Cap (Brute <= floor(w / 4))")
 	var wm := WaveManager.new()
+	# The cap is a rule of the generator; without a WaveScript every wave is generated.
+	wm.wave_script = null
 	add_child(wm)
 
 	var all_within_brute_cap := true
