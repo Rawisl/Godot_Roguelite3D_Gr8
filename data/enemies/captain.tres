@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://cy2jddtibp4ur"]
+; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
+
+[ext_resource type="Script" path="res://common/enemy_data.gd" id="1_2twxq"]
+
+[resource]
+script = ExtResource("1_2twxq")
+id = &"captain"
+display_name_key = "enemy.captain"
+base_hp = 120
+base_damage = 12
+attack_interval = 1.2
+attack_range = 1.5
+move_speed = 3.2
+damage_type = 2
+knockback_force = 0
+projectile_speed = 20
+spawn_cost = 5
+is_flying = false
+is_ranged = false
+knockback_immune = false
+aggro_range = 10
+gold_reward = 17
+prestige_reward = 4
+xp_value = 4
+is_stealth = false
+stealth_opacity = 1
+explode_on_contact = false
+explode_on_death = true
+explode_radius = 3
+explode_damage = 80
+explode_windup = 1
+invuln_hp_threshold = 0
+invuln_duration = 0
+is_charger = false
+impact_damage = 0
+impact_knockback = 0
+revive_count = 0
+revive_delay = 0
+revive_dmg_mult = 1

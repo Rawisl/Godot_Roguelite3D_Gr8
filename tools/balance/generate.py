@@ -614,11 +614,23 @@ def group_wave_rows(table: Table, config: WaveConfig, errors: list[str]) -> dict
     return grouped
 
 
+def is_boss_data(resource: Tres) -> bool:
+    if resource.script_class == "BossData":
+        return True
+    for ext in resource.exts:
+        if ext.kind != "Script" or not ext.path.startswith("res://"):
+            continue
+        script = ROOT / ext.path.removeprefix("res://")
+        if script.is_file() and re.search(r"^extends\s+BossData\b", script.read_text(encoding="utf-8"), re.M):
+            return True
+    return False
+
+
 def boss_ids() -> set[str]:
     result: set[str] = set()
     for path in sorted((ROOT / "data" / "bosses").glob("*.tres")):
         resource = parse_tres(path)
-        if resource is None or resource.script_class != "BossData":
+        if resource is None or not is_boss_data(resource):
             continue
         raw = resource.fields.get("id", "")
         try:
@@ -687,7 +699,7 @@ def validate_wave_groups(table: Table, grouped: dict, enemies: set[str],
                          bosses: set[str], config: WaveConfig, errors: list[str]) -> None:
     for wave, entries in grouped.items():
         references: dict[str, float] = {}
-        valid_fields = [validate_wave_entry(table, row, coords, references, enemies, config, errors)
+        valid_fields = [validate_wave_entry(table, row, coords, references, enemies | bosses, config, errors)
                         for row, coords in entries]
         anchor = f"waves!{entries[0][1]['enemy_id']}"
         if len({row["enemy_id"] for row, _ in entries}) > config.wave_max_enemy_types:

@@ -2,7 +2,7 @@ extends Node3D
 
 ## AI test arena for the Bulwark.
 ## - Spawn the boss at any wave: HP/damage/speed are scaled with the real ScaleConfig, and the wave
-##   decides the appearance (wave / boss_wave_interval) and so which moves are unlocked.
+##   decides the appearance (the Bulwark's own waves in the wave script) and so which moves are unlocked.
 ## - Set the boss HP to any % (armor + core together). At or below the core share the armor is
 ##   gone and the boss goes to phase 2 (EXPOSED), optionally through the real armor-break transition.
 ## - A stand-in commander you walk with WASD / arrows (Shift = run, Space = dodge roll, left click
@@ -496,7 +496,10 @@ func _on_screen_shake_requested(intensity: float, _source: StringName) -> void:
 func _update_wave_info() -> void:
 	var wave := int(_wave_spin.value)
 	var interval := maxi(1, GameConfig.boss_wave_interval)
+	var wave_script := load(BossEnemy.WAVE_SCRIPT_PATH) as WaveScript
 	var appearance := maxi(1, wave / interval)
+	if wave_script != null:
+		appearance = maxi(1, wave_script.get_boss_appearance(&"bulwark", wave, interval))
 	var offset := 1
 	if _boss_alive() and _bulwark.data is BossData:
 		offset = (_bulwark.data as BossData).hazard_appearance_offset
@@ -547,7 +550,7 @@ func _update_labels() -> void:
 		for node in _structures:
 			if is_instance_valid(node):
 				parts.append("%s %d" % [node.get("display_name"), int(node.get("hp"))])
-d		_commander_label.text += "\nBOSS TARGET %s%s" % [_target_name(_bulwark.current_target),
+		_commander_label.text += "\nBOSS TARGET %s%s" % [_target_name(_bulwark.current_target),
 				("  |  " + ", ".join(parts)) if not parts.is_empty() else ""]
 	var total := 0
 	for k: StringName in _move_counts:
