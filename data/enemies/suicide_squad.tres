@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="EnemyData" format=3]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://b807ltgwo6hrh"]
 ; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
-[ext_resource type="Script" uid="uid://b5nxx0eyswlc0" path="res://common/enemy_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://common/enemy_data.gd" id="1_30tij"]
 
 [resource]
-script = ExtResource("1_script")
+script = ExtResource("1_30tij")
 id = &"suicide_squad"
 display_name_key = "enemy.suicide_squad"
-base_hp = 35
-base_damage = 6
+base_hp = 30
+base_damage = 0
 attack_interval = 1
 attack_range = 1.5
 move_speed = 4
@@ -20,16 +20,16 @@ is_flying = false
 is_ranged = false
 knockback_immune = false
 aggro_range = 10
-gold_reward = 6
+gold_reward = 9
 prestige_reward = 2
 xp_value = 2
 is_stealth = false
 stealth_opacity = 1
 explode_on_contact = true
 explode_on_death = false
-explode_radius = 2.5
-explode_damage = 40
-explode_windup = 0.8
+explode_radius = 3
+explode_damage = 60
+explode_windup = 1
 invuln_hp_threshold = 0
 invuln_duration = 0
 is_charger = false

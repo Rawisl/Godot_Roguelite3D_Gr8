@@ -1,17 +1,17 @@
-[gd_resource type="Resource" script_class="EnemyData" format=3]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://j250ekuu1jrt"]
 ; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
-[ext_resource type="Script" uid="uid://b5nxx0eyswlc0" path="res://common/enemy_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://common/enemy_data.gd" id="1_k11ex"]
 
 [resource]
-script = ExtResource("1_script")
+script = ExtResource("1_k11ex")
 id = &"undead"
 display_name_key = "enemy.undead"
-base_hp = 60
-base_damage = 9
-attack_interval = 1
-attack_range = 1.5
-move_speed = 3.2
+base_hp = 90
+base_damage = 10
+attack_interval = 1.2
+attack_range = 1.8
+move_speed = 3
 damage_type = 2
 knockback_force = 0
 projectile_speed = 20
@@ -20,8 +20,8 @@ is_flying = false
 is_ranged = false
 knockback_immune = false
 aggro_range = 10
-gold_reward = 10
-prestige_reward = 2
+gold_reward = 14
+prestige_reward = 4
 xp_value = 4
 is_stealth = false
 stealth_opacity = 1

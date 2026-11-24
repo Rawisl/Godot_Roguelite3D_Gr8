@@ -27,6 +27,33 @@ func get_wave(wave: int) -> Array[Dictionary]:
 	return entries
 
 
+## Last wave that has entries; waves after it are not scripted.
+func get_last_wave() -> int:
+	var last := 0
+	for wave in wave_of_entry:
+		last = maxi(last, wave)
+	return last
+
+
+## Which appearance of boss_id the boss of `wave` is: 1 on the first wave of the script that
+## brings it in, 2 on the next. Waves after the script count every boss wave (a multiple of
+## boss_wave_interval) as one more appearance. Returns 0 when the script never brings boss_id in.
+func get_boss_appearance(boss_id: StringName, wave: int, boss_wave_interval: int) -> int:
+	var last_wave := get_last_wave()
+	var appearance := 0
+	for scripted_wave in range(1, mini(wave, last_wave) + 1):
+		for entry in get_wave(scripted_wave):
+			if entry.enemy_type == boss_id and not entry.is_escort:
+				appearance += 1
+				break
+	if appearance == 0:
+		return 0
+	var interval := maxi(1, boss_wave_interval)
+	if wave > last_wave:
+		appearance += wave / interval - last_wave / interval
+	return appearance
+
+
 func get_spawn_duration(wave: int) -> float:
 	return _get_value(spawn_duration, wave, GameConfig.lbd_min_seconds_per_wave)
 

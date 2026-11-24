@@ -3,6 +3,7 @@
 
 [ext_resource type="Script" uid="uid://dpqaacof5680d" path="res://common/tower_data.gd" id="3_dat"]
 [ext_resource type="Script" uid="uid://dhh3dg0ixuheg" path="res://common/tower_level_data.gd" id="1_lvl"]
+[ext_resource type="PackedScene" uid="uid://d07b3hic7ijcr" path="res://contents/assets/towers/heal_station_model.tscn" id="model"]
 [ext_resource type="Resource" path="res://data/towers/heal_station_l1.tres" id="2_l1"]
 [ext_resource type="Resource" path="res://data/towers/heal_station_l2.tres" id="l2"]
 [ext_resource type="Resource" path="res://data/towers/heal_station_l3.tres" id="l3"]
@@ -47,4 +48,5 @@ display_name = "tower.heal_station"
 allowed_zones = Array[int]([1])
 targets_ground = false
 levels = Array[ExtResource("1_lvl")]([ExtResource("2_l1"), ExtResource("l2"), ExtResource("l3"), ExtResource("l4"), ExtResource("l5"), ExtResource("l6"), ExtResource("l7"), ExtResource("l8"), ExtResource("l9"), ExtResource("l10"), ExtResource("l11"), ExtResource("l12"), ExtResource("l13"), ExtResource("l14"), ExtResource("l15"), ExtResource("l16"), ExtResource("l17"), ExtResource("l18"), ExtResource("l19"), ExtResource("l20"), ExtResource("l21"), ExtResource("l22"), ExtResource("l23"), ExtResource("l24"), ExtResource("l25"), ExtResource("l26"), ExtResource("l27"), ExtResource("l28"), ExtResource("l29"), ExtResource("l30"), ExtResource("l31"), ExtResource("l32"), ExtResource("l33"), ExtResource("l34"), ExtResource("l35"), ExtResource("l36")])
+model_tier_scenes = Array[PackedScene]([ExtResource("model"), ExtResource("model"), ExtResource("model")])
 metadata/_custom_type_script = "uid://dpqaacof5680d"

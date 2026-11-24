@@ -14,8 +14,11 @@
 
 [node name="Fox" parent="." unique_id=586281845 instance=ExtResource("1_fox")]
 
-[node name="FoxSword" parent="Fox/Fox_Rig/Skeleton3D/hand_R" parent_id_path=PackedInt32Array(586281845, 684871904) index="0" unique_id=1846327060]
+[node name="FoxSword" parent="Fox/Fox_Rig/Skeleton3D/hand_R" parent_id_path=PackedInt32Array(586281845, 684871904) index="0" unique_id=1846327060 groups=["weapon_default_model"]]
 material_override = ExtResource("3_swordmat")
+
+[node name="WeaponMount" type="Node3D" parent="Fox/Fox_Rig/Skeleton3D/hand_R" index="1" unique_id=1846327061 groups=["weapon_mount"]]
+transform = Transform3D(0.1246921, -0.7384193, 0.04109873, 0.7360547, 0.1198546, -0.07974045, 0.07194134, 0.05359188, 0.7446158, 0.00135679, 0.01538529, -0.01628264)
 
 [node name="model_low_25" parent="Fox/Fox_Rig/Skeleton3D" parent_id_path=PackedInt32Array(586281845, 953012642) index="1" unique_id=680317146]
 material_override = ExtResource("2_foxmat")

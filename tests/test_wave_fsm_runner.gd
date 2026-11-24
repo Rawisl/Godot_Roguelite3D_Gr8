@@ -29,6 +29,15 @@ class MemorySaveRepository extends SaveRepository:
 		last_error = OK
 		return OK
 
+class LossTestRunState extends RunState:
+	var results: Array[Dictionary] = []
+	var end_types: Array[StringName] = []
+
+	func end_run(end_type: StringName = &"DEFEAT") -> void:
+		end_types.append(end_type)
+		results.append(build_summary(end_type, get_run_result()))
+
+
 func _ready() -> void:
 	print("\n=======================================================")
 	print("       AUTOMATED GRUNT FSM & WAVE RUNNER TEST          ")
@@ -46,9 +55,14 @@ func _ready() -> void:
 	test_frenzy_retention_after_stagger()
 	test_targeting_rules_and_wall_filtering()
 	test_archer_projectile_and_dodge_iframes()
-	test_wave_fsm_and_8_grunts_flow()
+	await test_wave_fsm_and_8_grunts_flow()
 	test_boss_intro_and_boss_combat_flow()
-	test_wave_victory_and_reward_pick_flow()
+	await test_wave_victory_flow(GameConfig.victory_wave, 2, false)
+	await test_wave_victory_flow(GameConfig.victory_wave, 2, true)
+	await test_wave_victory_flow(10, 0, true)
+	for wave in [1, GameConfig.victory_wave]:
+		await test_wave_same_frame_loss(wave, true)
+		await test_wave_same_frame_loss(wave, false)
 
 	SaveManager.set_repository(real_repo)
 	SaveManager.load_save()
@@ -400,6 +414,7 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 	for enemy in enemies_spawned:
 		enemy.spawn_grace = false
 		enemy.health.take_damage(DamageInfo.new(999, Enums.DamageType.TRUE))
+	await get_tree().process_frame
 
 	assert_true(wave_manager.enemies_alive == 0, "enemies_alive is 0 after all 8 Grunts killed")
 	assert_true(wave_manager.wave_state == Enums.WaveState.SUMMARY, "Wave transitions to SUMMARY when queue is empty and enemies_alive == 0")
@@ -470,49 +485,93 @@ func test_boss_intro_and_boss_combat_flow() -> void:
 	wm.free()
 
 
-func test_wave_victory_and_reward_pick_flow() -> void:
-	print("\n[GROUP 11] Testing Wave Victory Hook and Reward Pick Skip")
+func test_wave_victory_flow(victory_wave: int, pending_picks: int, auto_advance: bool) -> void:
+	print("\n[GROUP 11] Testing victory at wave %d with %d pending picks" % [victory_wave, pending_picks])
+	var original_victory_wave := GameConfig.victory_wave
+	GameConfig.victory_wave = victory_wave
 	var wm := WaveManager.new()
-	wm.auto_advance_summary = false
+	wm.auto_advance_summary = auto_advance
 	wm.enable_victory_screen = true
 	var run_state := RunState.new()
 	run_state.wave_index = GameConfig.victory_wave
 	add_child(run_state)
 	add_child(wm)
 
-	var victory_record := {"wave": -1}
-	var on_victory := func(w: int, _stats: Dictionary): victory_record["wave"] = w
+	var victory_events: Array[int] = []
+	var on_victory := func(wave: int, _stats: Dictionary): victory_events.append(wave)
 	EventBus.run_victory.connect(on_victory)
 
 	var tracker: Node = wm.get("_xp_tracker")
-	tracker.set("pending_picks", 1)
+	tracker.set("pending_picks", pending_picks)
 
 	wm.wave_state = Enums.WaveState.BOSS_COMBAT
-	wm._end_combat_to_summary()
+	wm.spawn_queue.clear()
+	wm.enemies_alive = 1
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 0.0, 0, false, true)
+	await get_tree().process_frame
 	assert_true(run_state.victory_reached and run_state.waves_cleared == GameConfig.victory_wave,
 		"Clearing the victory wave records victory before leaving SUMMARY")
-	wm.advance_from_summary()
+	var summary_prestige: int = wm.get("_prestige_pending")
+	if auto_advance:
+		wm._physics_process(wm.summary_timer)
+	else:
+		EventBus.summary_continue_requested.emit()
 
-	# 1. Victory screen triggered, game paused with REASON_VICTORY
-	assert_true(victory_record["wave"] == GameConfig.victory_wave, "run_victory emitted with victory_wave (30)")
 	assert_true(TimeManager.has_pause_reason(TimeManager.REASON_VICTORY), "Simulation paused under REASON_VICTORY")
 	assert_true(wm.wave_state == Enums.WaveState.SUMMARY, "FSM remains in SUMMARY awaiting victory continue")
-	wm.advance_from_summary()
+	EventBus.summary_continue_requested.emit()
+	wm._physics_process(GameConfig.summary_auto_advance)
 	assert_true(wm.wave_state == Enums.WaveState.SUMMARY, "An extra summary advance cannot skip the victory screen")
+	assert_true(victory_events == [victory_wave], "Victory is emitted once with the configured victory wave")
+	assert_true(wm.get("_prestige_pending") == summary_prestige, "Opening victory does not award more prestige")
+	assert_true(run_state.get_run_result() == &"SURVIVED", "Run result is SURVIVED after victory")
 
-	# 2. Player clicks Continue from victory screen
 	EventBus.victory_continue_requested.emit()
 	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_VICTORY), "REASON_VICTORY pause released")
-	assert_true(wm.wave_state == Enums.WaveState.REWARD_PICK, "Transitions to REWARD_PICK because pending_picks > 0")
-	assert_true(TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "Simulation paused under REASON_REWARD_PICK")
-
-	# 3. Player skips reward pick (RewardService sends reward_picked with SKIP kind)
-	EventBus.reward_picked.emit(&"", &"SKIP", 0)
-	assert_true(tracker.get("pending_picks") == 0, "pending_picks decremented to 0 on skip")
-	assert_true(wm.wave_state == Enums.WaveState.PREP, "Transitions to PREP once all picks consumed")
+	for picks_left in range(pending_picks, 0, -1):
+		assert_true(wm.wave_state == Enums.WaveState.REWARD_PICK
+			and TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK)
+			and tracker.get("pending_picks") == picks_left,
+			"Reward pick holds the wave with %d picks remaining" % picks_left)
+		EventBus.reward_picked.emit(&"", &"SKIP", 0)
+	assert_true(wm.wave_state == Enums.WaveState.PREP, "Victory and pending picks lead to PREP")
 	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "REASON_REWARD_PICK pause released")
-	assert_true(wm.current_wave == GameConfig.victory_wave + 1, "Wave advanced to victory_wave + 1 (31)")
+	assert_true(wm.current_wave == victory_wave + 1, "The next PREP starts after the configured victory wave")
 
 	EventBus.run_victory.disconnect(on_victory)
 	wm.free()
+	run_state.free()
+	GameConfig.victory_wave = original_victory_wave
+
+
+func test_wave_same_frame_loss(wave: int, enemy_dies_first: bool) -> void:
+	var run_state := LossTestRunState.new()
+	run_state.wave_index = wave
+	run_state.waves_cleared = wave - 1
+	add_child(run_state)
+	var gold_manager := GoldManager.new()
+	add_child(gold_manager)
+	var starting_gold := gold_manager.gold
+	var wm := WaveManager.new()
+	add_child(wm)
+	wm.wave_state = Enums.WaveState.BOSS_COMBAT if wm.is_boss_wave() else Enums.WaveState.COMBAT
+	wm.spawn_queue.clear()
+	wm.enemies_alive = 1
+
+	if not enemy_dies_first:
+		EventBus.fortress_destroyed.emit()
+	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 10.0, 0, false, true)
+	if enemy_dies_first:
+		EventBus.fortress_destroyed.emit()
+	await get_tree().process_frame
+
+	var scenario := "wave %d, %s first" % [wave, "enemy" if enemy_dies_first else "Fortress"]
+	assert_true(run_state.end_types == [&"FORTRESS_DESTROYED"] and run_state.results[0].get("run_result") == &"DEFEAT"
+		and run_state.results[0].get("waves_cleared") == wave - 1,
+		"Same-frame loss ends once and keeps the previous cleared wave (%s)" % scenario)
+	assert_true(not run_state.victory_reached and wm.wave_state != Enums.WaveState.SUMMARY,
+		"Same-frame loss prevents victory and SUMMARY (%s)" % scenario)
+	assert_true(gold_manager.gold == starting_gold, "Same-frame loss pays no wave gold (%s)" % scenario)
+	wm.free()
+	gold_manager.free()
 	run_state.free()

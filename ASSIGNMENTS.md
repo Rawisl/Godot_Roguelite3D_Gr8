@@ -1163,7 +1163,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí)
 - Nghiệm thu: Skill, projectile, boss clock, Cuồng nộ, hiệu ứng vũ khí đúng ở x1/x2/x3
 - Cần xong trước: W10-NG3
-- Ghi chú W11: TimeManager, boss timer, skill, projectile damage and Hazard effect runners passed. Full gameplay verification at all three speeds is pending.
+- Ghi chú W11: TimeManager 23/23, Boss Timer 45/45, Active Skills 93/93 and Hazard Commander 70/70 passed on the gameplay branch based on `eb3cd6b`. The runners exercise Chain Lightning and Whirlwind cooldowns in Hazard, the boss countdown and enrage through engine physics frames at x1, x2 and x3. Pending @Rawisl: play the combat and Hazard flows at each speed with the new room camera and verify projectile impact and skill effects from player input.
 
 ##### W11-NG3
 - Người: Ngọc
@@ -1172,7 +1172,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: Chạy lại test Combat, Skill, Boss (7.1, F1..F15, CM1..CM8, HT1..HT14); sửa lỗi
 - Nghiệm thu: Không lỗi console
 - Cần xong trước: W10-NG1
-- Ghi chú W11: Automated combat, skill, status, and heal regressions passed. The full manual SRS scenario pass is pending.
+- Ghi chú W11: Combat, skill, status, heal, shift-lock and Hazard camera runners passed on the gameplay branch based on `eb3cd6b`. Enemy navigation now stops setup if the enemy leaves the scene before its first physics frame. Pending @Rawisl: record the remaining manual F1–F15, CM1–CM8 and HT1–HT14 results. Pending @Ender-Via: in W11-NG4, run the F13 AFK and Frontline bots on matched seeds and report wave-12 Commander levels, the tower gate and the survival-rate difference at wave 15, with the tested commit.
 
 ##### W11-NG5
 - Người: Ngọc
@@ -1181,7 +1181,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: Backend ổn định: kiểm tra giới hạn gói miễn phí, sao lưu dữ liệu, tài liệu API một trang, bản demo offline (ACCT-12)
 - Nghiệm thu: Tài liệu API đủ cho Khang và Mạnh tự gọi; tắt mạng vẫn chơi trọn vẹn
 - Cần xong trước: W10-NG6
-- Ghi chú W11: API and offline demo preparation are documented in the backend README. The live dev/demo quota check, protected backups and restore verification remain open.
+- Ghi chú W11: Rendered MainMenu-to-RunEnd runs passed with online disabled and with a configured but unreachable backend. Both profiles loaded correctly in a new process. Pending @Rawisl: replay the demo build with networking disconnected, check Database, Egress and Auth usage in dev and demo, create protected backups, and verify isolated restores against accounts, saves and leaderboard rows. Record the outcome for each project and keep backups in team-controlled storage.
 
 ##### W11-NG6
 - Người: Ngọc
@@ -1190,7 +1190,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: Hỗ trợ tích hợp client của Khang và Mạnh, sửa lỗi API trong ngày
 - Nghiệm thu: Lỗi tích hợp được sửa trong ngày
 - Cần xong trước: W10-NG6
-- Ghi chú W11: Sync integration was verified with local doubles. Same-day support for Khang and Mạnh continues when live integration issues arrive.
+- Ghi chú W11: Local sync, save and leaderboard regressions passed. Pending @WhoKeng: on dev, verify sign-in, sync and the displayed leaderboard rank. Pending @kiezroth: verify the save revision after a meta purchase and confirm an eligible RunEnd creates one leaderboard entry. Report the tested commit, failing step and error code, with personal data and credentials removed. @Rawisl handles API defects found in those checks.
 
 ##### W11-NG7
 - Người: Ngọc
@@ -1201,7 +1201,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: entities/commander/commander.gd, systems/skill/skill_runner.gd, systems/skill/whirlwind_skill.gd
 - ID SRS: WPN-04..08
 - Cần xong trước: W9-NG5, W10-NG9, W10-NG10
-- Ghi chú W11: The runner covers weapon procs inside and outside Hazard, Chain target order, room isolation, and cooldown restoration after swapping weapons. Full gameplay verification is pending. Kim (@kimvux) owns final icons and VFX.
+- Ghi chú W11: The runners cover weapon procs inside and outside Hazard, Chain target order, room isolation and cooldown restoration after swapping weapons. Pending @Rawisl: record gameplay results for WP3–WP5, WP8 and HZ3 using the merged room camera. @kimvux owns W11-KM8 icon and VFX acceptance. If that change touches proc timing or damage, recheck the affected cases in the asset PR.
 
 ##### W11-NG8
 - Người: Ngọc
@@ -1223,7 +1223,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: systems/wave/wave_manager.gd (advance_from_summary ~637), autoload/time_manager.gd:18-20 (REASONS), autoload/game_state.gd
 - ID SRS: END-07..10, WAVE-13, TIME-11, EVB-44, EVB-46, SCL-06
 - Cần xong trước: W9-KT3, W10-KT2, W11-KH6
-- Ghi chú W11: Victory is recorded on entering SUMMARY. The screen receives the RunState snapshot and ignores repeat advance requests. Kiệt (@Ender-Via) owns the gameplay switch from WaveScript to ScaleConfig; verify VC4 with that change.
+- Ghi chú W11: Wave FSM 101/101, Run Lifecycle 49/49 and Run Flow Screens 32/32 passed on the victory and balance branch. Defeat takes precedence in both same-frame death orders. The runner exercises manual and timed SUMMARY, two pending picks, and victory at wave 10 with no picks. Pending @Ender-Via: in W11-KT9, set `victory_wave = 10` and verify the real spawner reads WaveScript through wave 10 and uses ScaleConfig from wave 11. Use distinguishable coefficients and record the tested commit, observed values, and VC4 result.
 
 ##### W11-NG10
 - Người: Ngọc
@@ -1234,7 +1234,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Tệp liên quan: mới: tests/test_balance_config_runner.tscn
 - ID SRS: BAL-05, BL3, BL4
 - Cần xong trước: W10-NG8, W11-MH11
-- Ghi chú bàn giao: Đã làm trước runner kiểm đủ 36 cấp của bốn tower, EnemyData theo ID, CharacterStats/SkillData/WeaponData, số hữu hạn/không âm, cấu trúc wave/reward và hệ số nối ScaleConfig. Đã xác minh runner phát hiện số âm wave 2, thời lượng 12 giây và thiếu cấp cuối. TODO(endervia): integrate scripted spawning and verify gameplay uses WaveScript through victory_wave and ScaleConfig afterwards; the runner currently checks boundary coefficients only. Kịch bản cuối và dữ liệu quân mới chờ kieroth; giữ task Đang làm tới khi kiểm BL4 trong gameplay và bảng cuối
+- Ghi chú W11: The BAL runner passed 779 checks on current data and failed as expected when Arrow lacked level 36 or wave 1 had a 12-second spawn duration. Pending @kiezroth: in W11-MH11, regenerate resources from the final workbook, run the BAL runner for BL3, and record the commit and output. Pending @Ender-Via: in W11-KT9, verify the live spawner uses WaveScript at wave 30 and ScaleConfig at wave 31, including continuity of HP, damage and speed for BL4. Record the tested commit and gameplay results.
 
 ##### W11-MH5
 - Người: Ngọc
@@ -1258,10 +1258,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH7
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc)
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Đang làm
 - Việc: Hồi quy Trạm hồi lực: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36
 - Nghiệm thu: HT6..HT12 đạt
 - Cần xong trước: W10-MH5
+- Ghi chú W11: Heal Station 126/126, ETG 27/27, Heal Channel 204/204, Panel 12/12 and Alerts/Hazard 36/36 passed on the gameplay branch. The rendered corridor walkthrough passed 37/37, including both ruin alerts, damage normalization, the third-station rejection, Fortress-only repairs, the half-store sale refund and MAX at level 36. Pending @Rawisl: run the corridor walkthrough on the merged commit and record the result before closing.
 
 #### Kiệt (Enemy & Wave), tuần 11, 43h
 
@@ -1357,13 +1358,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH11
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 7 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Kịch bản wave 1-30 trong sheet waves (loại quân, số lượng, hộ tống, spawn_duration, hệ số), wave 1-2 chỉ Grunt, wave boss đúng một boss và >= 1 hộ tống, số liệu 7 loại quân mới và 5 vũ khí
-- Nghiệm thu: Runner BAL pass; người mới thua wave 8-12 theo ước lượng thô (SCL-04); mỗi loại quân mới có đủ gold, uy tín, XP gốc (RWD-05)
+- Nghiệm thu: Runner BAL pass; mỗi loại quân mới có đủ gold, uy tín, XP gốc (RWD-05)
 - Tệp liên quan: balance/balance.xlsx (sheet waves, enemies, weapons)
 - ID SRS: SPN-08, SCL-04, 3.7.8, 3.5.13
 - Cần xong trước: W10-KT7, W10-KT8, W8B-MH1
-- Ghi chú bàn giao: Schema trait và generator đã sẵn sàng; runner hiện không cố định tổng số entry. TODO(kieroth): populate the seven new enemy archetypes and final wave composition after enemy traits and scenes are ready; regenerate resources and run the BAL checks after updating wave composition. Workbook chưa sửa trong phần công cụ này
+- Ghi chú: Sheet enemies có số cho mười loại quân (giữ Sniper và Rider từ W10-KT8); wave 1-30 theo danh sách đã chốt, Bulwark ở 5/15/25 và Skeletal Centipede ở 10/20/30. Wave boss có một boss và hộ tống khoảng nửa ngân sách. Generator nhận lớp con BossData. Năm EnemyData mới có UID và số liệu nhưng chưa có scene riêng; spawner còn rơi về Grunt và dùng Bulwark tới khi W11-KT7/KT8 và W11-KT9 tích hợp (@Ender-Via). Ước lượng thô bằng `python tools/balance_simulator/simulate.py --xlsx balance/balance.xlsx --boss-ids bulwark,skeletal_centipede` (sheet enemies chưa có hàng skeletal_centipede nên biểu đồ DPS tắt; chạy lại trên bản sao có thêm hàng với base_hp 1800): kịch bản người mới (raw) thiếu DPS ở wave 5 (0 so với nhu cầu 101.6) và wave 10 (79.2 so với 124.5), wave 6-9 và 11-14 đủ (wave 12: 98.4 so với 89.5), thiếu kéo dài từ wave 15 (125.2 so với 220.1) tới wave 18 (131.2 so với 147.6), rồi wave 20-21 (wave 1-4 hiện 0 vì mô phỏng chưa tính trụ có sẵn). Mốc người mới thua ở wave 8-12 đã bỏ khỏi nghiệm thu và SCL-04 (24/11); số trên chỉ để tham khảo cho lượt cân bằng cuối W12-MH1. Runner BAL trên nhánh `week11/wave-script-1-30`: 783 PASSED, 0 FAILED (hash commit ghi trong PR để W11-NG10 đối chiếu). Simulator dùng `--boss-ids bulwark,skeletal_centipede`; từ wave 31 gợi ý weight Rider 3, Sniper/Assassin/Suicide Squad/Undead 2, Captain/Knight 1.
 
 ##### W11-MH1
 - Người: Mạnh
@@ -1386,10 +1387,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH3
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Test ACP-05 (rò rỉ), ACP-06 (save < 50 ms), hồi quy economy và save
 - Nghiệm thu: Sau 10 run bộ nhớ tăng <= 5%
 - Cần xong trước: W10-MH6
+- Ghi chú: 10 run liên tiếp (tests/test_leak_runner.tscn): bộ nhớ +0,23%, object +0,00%, node +0,00% so với sau run 1 (run 1 nạp cache cảnh và shader nên không lấy mốc trước run 1), không còn node mồ côi; ghi save với profile đầy qua record_run_start, record_wave_summary, record_run_end: trung vị 8,6-10,3 ms, chậm nhất 14,2 ms (20 lần mỗi đường, chặn theo trung vị). Thêm ca thua giữa wave và ca hai đối tượng save ghi lần lượt (không phủ hai tiến trình ghi cùng lúc). Đo lại ở W12-MH1 khi kịch bản wave mới vào game.
 
 ##### W11-MH4
 - Người: Mạnh
@@ -1402,12 +1404,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH8
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tower 3 bậc model trong code (TWR-17): TowerData giữ 3 scene, đổi model ngay khi nâng qua cấp 13 và 25, đống đổ nát dùng chung một model
 - Nghiệm thu: Nâng Arrow từ 12 lên 13 thì đổi model bậc 2; cấp 25 đổi bậc 3
 - Tệp liên quan: common/tower_data.gd, entities/tower/tower.gd, tower_model.gd
 - ID SRS: TWR-17
 - Cần xong trước: W10-KM10, W10-MH9
+- Ghi chú: TowerData giữ ba scene model theo bậc; bốn loại tower hiện trỏ tới scene sẵn có chứa đủ ba bậc. Tower phát model_tier_changed khi đổi bậc và thay instance nếu scene mới khác scene đang dùng. Arrow, Cannon, Trạm hồi phục và Barricade cập nhật hình theo signal thay vì dò bậc mỗi frame. Mô hình đống đổ nát dùng chung; runner tests/test_tower_tier_model_runner.tscn kiểm tra đổi bậc, xây lại và muzzle sau khi thay scene.
 
 ##### W11-MH9
 - Người: Mạnh
@@ -1599,12 +1602,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM8
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model vũ khí và VFX: Frost (lớp băng), Chain Lightning (tia điện), Burn (lửa), Rampage (đổi ánh kiếm kèm biểu tượng), Swift (vệt chém nhanh), icon; dùng lại mesh vũ khí KayKit hiện có
 - Nghiệm thu: Mỗi vũ khí nhận ra được ở camera chuẩn, giảm nhấp nháy theo ACC-06
 - Tệp liên quan: contents/, art/vfx/, art/icons/
 - ID SRS: FBK-13, WPN-01
 - Cần xong trước: W9-NG6
+- Ghi chú bàn giao: Five sword models in `contents/assets/weapons/` (source `source/weapons.blend`), made from the KayKit swords with hilts of other KayKit weapons, chipped blades and a blade gradient: Frost blue, Chain Lightning violet, Burn orange, Rampage a red serrated greatsword, Swift a short green blade. Each `weapon_<id>.tscn` is the model plus its blade effect (`art/vfx/weapon_blade_fx.gd`: snow, sparks, embers, a fast streak; Rampage embers and glow grow through its HP bands, with one to three chevrons over the commander so the band does not read from colour alone). The Fox model now has `WeaponMount` and the `weapon_mount` / `weapon_default_model` groups, so `Commander._swap_weapon_model` shows the equipped sword. `WeaponFxManager` (in `level.tscn`) draws icy mist and a blue tint on slowed units, flames on burning units and a violet bolt with white and yellow strands plus a white orb at each Chain Lightning target; HitFxManager no longer plays a sword slash for weapon-effect damage. Icons in `art/icons/weapons/`, rendered from the `Icon_*` scenes of the .blend with the tower icon frame and light. Particles count toward ParticleBudget; Reduce flashing dims the bolt and the Rampage glow. Verified by `tests/test_weapon_fx.tscn` (23 checks); `tests/test_playtest_weapon_fx.tscn` shows every weapon on three pinned Grunts.
 
 ##### W11-KM9
 - Người: Kim

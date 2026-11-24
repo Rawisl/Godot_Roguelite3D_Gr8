@@ -1,28 +1,28 @@
-[gd_resource type="Resource" script_class="EnemyData" format=3]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://dnrlhd1srn6hw"]
 ; AUTO-GENERATED from balance/balance.xlsx by tools/balance/generate.py. Edit the table, not this file.
 
-[ext_resource type="Script" uid="uid://b5nxx0eyswlc0" path="res://common/enemy_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://common/enemy_data.gd" id="1_xtle2"]
 
 [resource]
-script = ExtResource("1_script")
+script = ExtResource("1_xtle2")
 id = &"knight"
 display_name_key = "enemy.knight"
-base_hp = 160
-base_damage = 14
-attack_interval = 1.2
-attack_range = 1.5
-move_speed = 2.8
+base_hp = 300
+base_damage = 18
+attack_interval = 1.5
+attack_range = 1.8
+move_speed = 2.4
 damage_type = 2
 knockback_force = 0
 projectile_speed = 20
-spawn_cost = 5
+spawn_cost = 7
 is_flying = false
 is_ranged = false
-knockback_immune = false
+knockback_immune = true
 aggro_range = 10
-gold_reward = 12
-prestige_reward = 3
-xp_value = 5
+gold_reward = 24
+prestige_reward = 6
+xp_value = 6
 is_stealth = false
 stealth_opacity = 1
 explode_on_contact = false

@@ -47,6 +47,7 @@ func _ready() -> void:
 	await test_bone_attachments_match_skeleton()
 	await test_eye_halo()
 	await test_hold_resume_slash()
+	await test_detach_slash()
 	await test_particles_follow_scale()
 	await test_spit_speed_scale()
 	await test_pool_mesh_disc()
@@ -245,6 +246,41 @@ func test_hold_resume_slash() -> void:
 	fx.resume_slash(1.2, 2.0)
 	assert_true(player.is_playing() and absf(player.current_animation_position - 1.2) < 0.01 and is_equal_approx(player.get_playing_speed(), 2.0),
 			"tc7 resume_slash carries the clip on from the given time at the given speed")
+	_free_rig(rig)
+	await get_tree().process_frame
+
+
+func test_detach_slash() -> void:
+	var rig := _make_rig(2.0)
+	var fx := rig.fx as CentipedeFx
+	var player := fx.get_node("VfxPlayer") as AnimationPlayer
+	var first := fx.get_node("SlashCombo/VFX_SlashCombo_01") as MeshInstance3D
+	assert_true(fx.detach_slash() == null, "tc13 detach_slash with no trail showing creates no ghost")
+	fx.play_slash(&"combo_vfx", 1.0)
+	player.advance(0.5)
+	var at := player.current_animation_position
+	var before := first.global_transform
+	var shatter_before := _uniform(first, &"shatter")
+	var ghost := fx.detach_slash()
+	assert_true(ghost != null and ghost.get_parent() == get_tree().current_scene, "tc13 detach_slash leaves a ghost in the current scene")
+	if ghost == null:
+		_free_rig(rig)
+		await get_tree().process_frame
+		return
+	var copy := ghost.get_node("VFX_SlashCombo_01") as MeshInstance3D
+	assert_true(copy.global_transform.is_equal_approx(before), "tc13 the ghost trail keeps the position and scale of the trail it took over")
+	assert_true(not first.visible and not player.is_playing(), "tc13 the trail on the model is hidden and the clip is held")
+	(rig.holder as Node3D).global_position += Vector3(30.0, 0.0, 0.0)
+	assert_true(copy.global_transform.is_equal_approx(before), "tc13 the ghost stays put when the boss moves away")
+	var ghost_player := ghost.get_child(ghost.get_child_count() - 1) as AnimationPlayer
+	assert_true(ghost_player.is_playing() and absf(ghost_player.current_animation_position - at) < 0.01, "tc13 the ghost plays on from the time of the detach")
+	ghost_player.advance(0.2)
+	assert_true(_uniform(copy, &"shatter") > shatter_before, "tc13 the ghost trail keeps shattering over time")
+	ghost_player.advance(10.0)
+	await get_tree().process_frame
+	assert_true(not is_instance_valid(ghost) or ghost.is_queued_for_deletion(), "tc13 the ghost frees itself after its last key")
+	fx.play_slash(&"combo_vfx", 1.0)
+	assert_true(first.visible, "tc13 play_slash shows the trail on the model again")
 	_free_rig(rig)
 	await get_tree().process_frame
 

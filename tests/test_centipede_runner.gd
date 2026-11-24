@@ -34,6 +34,9 @@ func _ready() -> void:
 	await test_tc22_dash()
 	await test_dash_air_turn()
 	await test_tc23_structures()
+	await test_chase_blocked_by_tower()
+	await test_dash_no_climb()
+	await test_dash_plays_out_without_target()
 	await test_tc7_spit_pool()
 	await test_tc24_commander_sword()
 	test_tc1_brain_scores()
@@ -61,6 +64,8 @@ func _ready() -> void:
 	test_tc26_shared_roll_cooldown()
 	test_tc25_turn_pressure()
 	test_eye_glow_in_roar()
+	test_roar_cut_short_rests_arm()
+	test_roar_plays_out_without_target()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -80,7 +85,7 @@ func assert_true(cond: bool, test_name: String) -> void:
 # --- Helpers -----------------------------------------------------------------------------------
 
 ## Boss at the origin facing +Z with its own loops off, so the test drives them.
-func _make_boss(boss_data: CentipedeBossData = null, wave: int = 15) -> SkeletalCentipede:
+func _make_boss(boss_data: CentipedeBossData = null, wave: int = 30) -> SkeletalCentipede:
 	var boss := BOSS_SCENE.instantiate() as SkeletalCentipede
 	if boss_data != null:
 		boss.data = boss_data
@@ -211,7 +216,7 @@ func test_tc1_brain_scores() -> void:
 	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(BOSS_DATA.engage_range + 0.3))
 	assert_true(not boss.build_situation().engaged, "Past the engage range and not hit: not engaged")
 	cmd.global_position = Vector3(0.0, 0.0, BOSS_DATA.body(5.2))
-	boss.spawn_wave = 5
+	boss.spawn_wave = 10
 	assert_true(boss.choose_attack() == CentipedeBrain.CHASE, "First appearance has no roll: CHASE")
 	cmd.global_position = Vector3(0.0, 0.0, -2.0)
 	assert_true(boss.choose_attack() == CentipedeBrain.FACE, "Commander behind: FACE")
@@ -586,10 +591,15 @@ func test_combo_cancel() -> void:
 	var roar_target := _make_commander(Vector3(0.0, 0.0, d.body(1.3)))
 	_start(roar_boss, roar_target, COMBO)
 	roar_target.global_position.z = far_z
-	_step(roar_boss, STEP)
+	_step(roar_boss, _roar(roar_boss) - 2.0 * STEP)
+	assert_true(roar_boss._move == COMBO and roar_boss._roar_left > 0.0,
+			"A commander far away during the roar does not cut the roar short")
+	_step(roar_boss, 3.0 * STEP)
+	assert_true(roar_boss._move == SkeletalCentipede.MOVE_COMBO_CANCEL,
+			"Once the roar is over the combo cancels (%s)" % roar_boss._move)
 	_step(roar_boss, roar_boss._combo_planned_length())
-	assert_true(roar_target.hits.is_empty() and roar_boss._move_time == 0.0 and roar_boss._move != COMBO,
-			"A commander far away at the start cancels in the roar, with no hit")
+	assert_true(roar_target.hits.is_empty() and roar_boss._move != COMBO,
+			"A combo cancelled after its roar lands no hit")
 	_free_all([roar_target, roar_boss])
 
 
@@ -1315,6 +1325,109 @@ func test_tc20_roar_lead_in() -> void:
 	_free_all([front, combo_boss])
 
 
+## The AI never cuts a roar short: with its target gone the boss still roars to the end before
+## Spit or Combo drop. A roll, a charge roll and a dash do not drop at all: they run to their own end.
+func test_roar_plays_out_without_target() -> void:
+	print("
+[No cut] A lost target does not cut the roar, a roll or a dash")
+	for move: StringName in [SPIT, COMBO]:
+		var boss := _make_boss()
+		var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(1.2)))
+		_start(boss, cmd, move)
+		_step(boss, 0.3)
+		cmd.free()
+		_step(boss, _roar(boss) - 0.3 - 2.0 * STEP)
+		assert_true(boss._move == move and boss._roar_left > 0.0,
+				"%s: the roar runs on with the target gone (move %s)" % [move, boss._move])
+		_step(boss, 4.0 * STEP)
+		assert_true(boss._move != move, "%s: the move is dropped once the roar is over (move %s)" % [move, boss._move])
+		_free_all([boss])
+	for move: StringName in [ROLL, CHARGE_ROLL]:
+		var boss := _make_boss()
+		var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(6.0)))
+		_start(boss, cmd, move)
+		_step(boss, 0.3)
+		cmd.free()
+		_step(boss, _roar(boss) + 0.3)
+		assert_true(boss._move == move and boss._roll_phase != SkeletalCentipede.RollPhase.ROAR,
+				"%s: past the roar it keeps rolling with the target gone (move %s)" % [move, boss._move])
+		var t := 0.0
+		while boss._move == move and t < 20.0:
+			_step(boss, STEP)
+			t += STEP
+		assert_true(boss._move != move and boss._roll_distance > 0.0,
+				"%s: the roll ends on its own after %.2f s and %.2f m" % [move, t, boss._roll_distance])
+		_free_all([boss])
+
+
+func test_dash_plays_out_without_target() -> void:
+	await get_tree().physics_frame
+	var kept := _make_boss()
+	var kept_cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(2.5)))
+	var with_target := _run_dash(kept, kept_cmd)
+	_free_all([kept_cmd, kept])
+	var boss := _make_boss()
+	var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(2.5)))
+	_start(boss, cmd, CentipedeBrain.DASH_LEFT)
+	for i in 10:
+		boss._update_state(STEP)
+	cmd.free()
+	var frames := 10
+	while boss._move == DASH and frames < 400:
+		boss._update_state(STEP)
+		frames += 1
+	assert_true(absi(frames - int(with_target["frames"])) <= 1,
+			"A dash whose target is gone runs as long as one that keeps it (%d vs %d frames)" % [frames, with_target["frames"]])
+	_free_all([boss])
+
+
+## A roar cut short must not leave the right arm where the roar put it: Shoulder.R is keyed only
+## by the extra clips, so every model clip holds it at rest.
+func test_roar_cut_short_rests_arm() -> void:
+	print("
+[Roar cut short] The right arm goes back to rest")
+	var boss := _make_boss()
+	var skeleton := boss._skeleton
+	var bone := skeleton.find_bone("Shoulder.R") if skeleton != null else -1
+	assert_true(bone >= 0, "The rig has a Shoulder.R bone")
+	if bone < 0:
+		_free_all([boss])
+		return
+	var path := NodePath("SkeletalCentipede_Rig/Skeleton3D:Shoulder.R")
+	var missing: Array[StringName] = []
+	var model_library := boss.anim_player.get_animation_library(&"")
+	for clip_name in model_library.get_animation_list():
+		if model_library.get_animation(clip_name).find_track(path, Animation.TYPE_ROTATION_3D) < 0:
+			missing.append(clip_name)
+	for clip_name in [SkeletalCentipede.CLIP_IDLE, SkeletalCentipede.CLIP_TURN_LEFT]:
+		if boss.anim_player.get_animation(clip_name).find_track(path, Animation.TYPE_ROTATION_3D) < 0:
+			missing.append(clip_name)
+	assert_true(missing.is_empty(), "Every model clip and the runtime copies hold Shoulder.R (missing %s)" % [missing])
+	var rest := skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
+	var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(1.2)))
+	_start(boss, cmd, COMBO)
+	_advance_pose(boss, _roar(boss) * 0.5)
+	var raised := skeleton.get_bone_pose_rotation(bone)
+	assert_true(raised.angle_to(rest) > 0.05, "Half way into the roar the arm is off rest (%.3f rad)" % raised.angle_to(rest))
+	boss.stop_attack_sequence()
+	_advance_pose(boss, 0.5)
+	var after := skeleton.get_bone_pose_rotation(bone)
+	assert_true(after.angle_to(rest) < 0.01, "After the cut the arm is back at rest (%.3f rad off)" % after.angle_to(rest))
+	_start(boss, cmd, COMBO)
+	_advance_pose(boss, _roar(boss) * 0.5)
+	boss._play_clip(SkeletalCentipede.CLIP_WALK, 0.0, 1.0)
+	_advance_pose(boss, 0.1)
+	assert_true(skeleton.get_bone_pose_rotation(bone).angle_to(rest) < 0.01, "A walk cut into the roar also puts the arm back")
+	_free_all([cmd, boss])
+
+
+## Advances the boss's animation by seconds, then once more by nothing: the skeleton shows the
+## pose of an advance only after the next one.
+func _advance_pose(boss: SkeletalCentipede, seconds: float) -> void:
+	boss.anim_player.advance(seconds)
+	boss.anim_player.advance(0.0)
+
+
 func _eye_glows(boss: SkeletalCentipede) -> Array[float]:
 	var fx := boss._fx
 	var nodes: Array[Node] = [fx.get_node("Head/EyeL"), fx.get_node("Head/EyeR"), fx.get_node("Head/EyeL/HaloL"), fx.get_node("Head/EyeR/HaloR")]
@@ -1716,6 +1829,206 @@ func test_dash_air_turn() -> void:
 			"The forward leap still goes straight ahead (%.2f, %.2f of %.2f m)" % [front_boss.global_position.x, front_boss.global_position.z, front_travel.z])
 	assert_true(front_boss.rotation.y > 0.1, "The face turned toward the commander on the +X side (%.2f rad)" % front_boss.rotation.y)
 	_free_all([front_cmd, front_boss])
+
+
+## A body holding a structure it cannot pass: the dash, the combo step and the roll never carry
+## the boss up onto a tower or Barricade, and the face does not turn into one in the air.
+func test_dash_no_climb() -> void:
+	print("\n[Dash] No climbing onto structures")
+	var d := BOSS_DATA
+	var rise := SkeletalCentipede.BODY_RISE_TOLERANCE
+	var half_w := d.body(d.body_box_size.x * 0.5)
+	var floor_nodes: Array = [_make_solid(Vector3(0.0, -0.5, 0.0), Vector3(200.0, 1.0, 200.0), &"")]
+	Enemy.invalidate_node_cache()
+
+	# A low Barricade deep in the hip: the physics would push the body up, so the step is undone.
+	var lift_boss := _make_boss()
+	var low_bar := _make_solid(Vector3(half_w + 1.0 - 1.2, 0.5, 0.0), Vector3(2.0, 1.0, 6.0), &"barricade")
+	await _settle()
+	var lift_held := lift_boss._move_body(Vector3(0.0, 0.0, 0.05))
+	assert_true(lift_held and lift_boss.global_position.y <= rise,
+			"A step that would lift the body is undone and counts as held (held %s, y %.3f)" % [lift_held, lift_boss.global_position.y])
+	_free_all([low_bar, lift_boss])
+
+	# Two low walls hugging the hips: turning the long body there would push it into them.
+	var turn_boss := _make_boss()
+	var turn_cmd := _make_commander(Vector3(0.0, 0.0, -d.body(2.0)))
+	var wall_a := _make_solid(Vector3(half_w + 0.52, 0.5, 0.0), Vector3(1.0, 1.0, 14.0), &"tower")
+	var wall_b := _make_solid(Vector3(-half_w - 0.52, 0.5, 0.0), Vector3(1.0, 1.0, 14.0), &"tower")
+	await _settle()
+	turn_boss._turn_in_air(STEP)
+	assert_true(is_zero_approx(turn_boss.rotation.y), "The face does not turn into a structure in the air (%.4f rad)" % turn_boss.rotation.y)
+	_free_all([wall_a, wall_b])
+	await _settle()
+	turn_boss._turn_in_air(STEP)
+	assert_true(not is_zero_approx(turn_boss.rotation.y), "The same turn goes ahead once nothing is in the way (%.4f rad)" % turn_boss.rotation.y)
+	_free_all([turn_cmd, turn_boss])
+
+	# A forward leap toward a commander on the +X side, between two low Barricades.
+	var front_boss := _make_boss()
+	front_boss.nav.avoidance_enabled = false
+	var front_cmd := _make_commander(Vector3(d.body(1.5), 0.0, d.body(2.5)))
+	var bar_a := _make_solid(Vector3(half_w + 0.52, 0.5, 0.0), Vector3(1.0, 1.0, 14.0), &"barricade")
+	var bar_b := _make_solid(Vector3(-half_w - 0.52, 0.5, 0.0), Vector3(1.0, 1.0, 14.0), &"barricade")
+	await _settle()
+	var max_y := 0.0
+	_start(front_boss, front_cmd, CentipedeBrain.DASH_FRONT)
+	var guard := 0
+	while front_boss._move == DASH and guard < 400:
+		front_boss._update_state(STEP)
+		max_y = maxf(max_y, front_boss.global_position.y)
+		guard += 1
+	assert_true(max_y < rise, "A forward dash beside low structures stays on the floor (highest y %.3f)" % max_y)
+	assert_true(not front_boss._body_overlaps(front_boss.global_transform), "The body does not end inside a structure")
+	_free_all([bar_a, bar_b, front_cmd, front_boss])
+
+	# A structure whose face is tilted: the contact normal points up, yet the leap is held.
+	var ramp_boss := _make_boss()
+	var ramp_cmd := _make_commander(Vector3(0.0, 0.0, -d.body(2.0)))
+	var ramp := _make_solid(Vector3(half_w + 3.0, 0.0, 0.0), Vector3(2.0, 8.0, 10.0), &"tower")
+	ramp.set_meta(&"is_wall", false)
+	ramp.rotation.z = deg_to_rad(55.0)
+	await _settle()
+	var ramp_travel := ramp_boss.dash_travel(CentipedeBrain.DASH_LEFT)
+	var ramp_run := _run_dash(ramp_boss, ramp_cmd, CentipedeBrain.DASH_LEFT)
+	assert_true(bool(ramp_run["stopped"]) and ramp_boss.global_position.x < ramp_travel.x - 0.5 and ramp_boss.global_position.y < rise,
+			"A structure holds the leap whatever the contact normal (stopped %s, x %.2f of %.2f, y %.3f)" % [ramp_run["stopped"], ramp_boss.global_position.x, ramp_travel.x, ramp_boss.global_position.y])
+	_free_all([ramp, ramp_cmd, ramp_boss])
+
+	# After a dash or roll the boss stands on the navmesh: a body left high is put back, a small rise stays.
+	var region := NavigationRegion3D.new()
+	var mesh := NavigationMesh.new()
+	mesh.vertices = PackedVector3Array([Vector3(-20.0, 0.0, -20.0), Vector3(20.0, 0.0, -20.0), Vector3(20.0, 0.0, 20.0), Vector3(-20.0, 0.0, 20.0)])
+	mesh.add_polygon(PackedInt32Array([0, 1, 2, 3]))
+	region.navigation_mesh = mesh
+	add_child(region)
+	var land_boss := _make_boss()
+	await _settle()
+	land_boss.global_position = Vector3(0.0, 1.0, 0.0)
+	land_boss._land_on_navmesh()
+	assert_true(absf(land_boss.global_position.y) < 0.05, "A body left 1 m above the navmesh is put back on it (y %.3f)" % land_boss.global_position.y)
+	land_boss.global_position = Vector3(0.0, 0.2, 0.0)
+	land_boss._land_on_navmesh()
+	assert_true(is_equal_approx(land_boss.global_position.y, 0.2), "A rise under the tolerance stays (y %.3f)" % land_boss.global_position.y)
+	_free_all([land_boss, region])
+	await _settle()
+	_free_all(floor_nodes)
+	Enemy.invalidate_node_cache()
+
+
+## A tower across the way holds the boss back while it chases the commander; after
+## blocked_retarget_time it turns on that tower, and goes back to the commander once it is gone.
+func test_chase_blocked_by_tower() -> void:
+	print("\n[Chase] Held back by a tower")
+	var d := BOSS_DATA
+	assert_true(d.blocked_retarget_time >= 0.7 and d.blocked_retarget_time <= 1.0 and d.blocked_lock_time > 0.0
+			and d.blocked_speed_share > 0.0 and d.blocked_speed_share < 1.0,
+			"The data holds a 0.7 to 1.0 s retarget time, a lock time and a speed share (%.2f, %.1f, %.2f)" % [d.blocked_retarget_time, d.blocked_lock_time, d.blocked_speed_share])
+	var floor_nodes: Array = [_make_solid(Vector3(0.0, -0.5, 0.0), Vector3(200.0, 1.0, 200.0), &"")]
+
+	var run := await _run_blocked_chase(&"tower", false, 4.0)
+	var boss: SkeletalCentipede = run["boss"]
+	var tower: MockSolid = run["tower"]
+	var cmd: MockCommander = run["cmd"]
+	var switch_wait := float(run["switch_time"]) - float(run["touch_time"])
+	assert_true(boss.current_target == tower and boss._locked_structure == tower, "The boss turns on the tower that blocks its chase")
+	assert_true(float(run["touch_time"]) >= 0.0 and switch_wait >= d.blocked_retarget_time - STEP and switch_wait <= d.blocked_retarget_time + 0.5,
+			"Not before it was held for blocked_retarget_time (%.2f s after the first touch)" % switch_wait)
+	boss._act_while_moving()
+	boss._find_best_target()
+	assert_true(boss.current_target == tower, "While locked the AI does not pull it back to the commander")
+	var guard := 0.0
+	while tower.hits.is_empty() and guard < 6.0:
+		boss._process(STEP)
+		boss._physics_process(STEP)
+		guard += STEP
+	assert_true(tower.hits.size() >= 1, "It swings at the tower (%d hits in %.1f s)" % [tower.hits.size(), guard])
+	run["nodes"].erase(tower)
+	tower.queue_free()
+	await _settle()
+	Enemy.invalidate_node_cache()
+	guard = 0.0
+	while (boss._locked_structure != null or boss.current_target != cmd) and guard < 6.0:
+		boss._process(STEP)
+		boss._physics_process(STEP)
+		guard += STEP
+	assert_true(boss._locked_structure == null and boss.current_target == cmd, "When the tower is gone it chases the commander again (%.1f s)" % guard)
+	_free_all(run["nodes"])
+
+	# The lock ends by itself, and a commander in reach breaks it.
+	var lock_boss := _make_boss()
+	lock_boss.rotation.y = -PI / 2.0
+	var lock_cmd := _make_commander(Vector3(-d.body(5.0), 0.0, 0.0))
+	var lock_tower := _make_structure(Vector3(-d.body(3.0), 0.0, d.body(4.0)), &"tower")
+	lock_tower.set_meta(&"is_wall", false)
+	Enemy.invalidate_node_cache()
+	lock_boss.change_state(Enums.EnemyState.CHASE)
+	lock_boss._lock_onto_structure(lock_tower)
+	var held_early := lock_boss._structure_lock_holds()
+	for frame in int(ceil((d.blocked_lock_time + 0.1) / STEP)):
+		lock_boss._process(STEP)
+	assert_true(held_early and not lock_boss._structure_lock_holds(), "The lock ends after blocked_lock_time")
+	lock_boss._find_best_target()
+	assert_true(lock_boss.current_target == lock_cmd, "The commander is the target again after the lock")
+	lock_boss._lock_onto_structure(lock_tower)
+	lock_cmd.global_position = Vector3(-d.body(1.2), 0.0, 0.0)
+	assert_true(lock_boss._commander_in_slash_reach(lock_cmd) and not lock_boss._structure_lock_holds(), "A commander in reach breaks the lock")
+	_free_all([lock_tower, lock_cmd, lock_boss])
+
+	# A wall tower and the Fortress are never the blocker.
+	for case in [[&"tower", true], [&"fortress", false]]:
+		var group: StringName = case[0]
+		var other := await _run_blocked_chase(group, bool(case[1]), 2.0)
+		var other_boss: SkeletalCentipede = other["boss"]
+		assert_true(other_boss._locked_structure == null and other_boss.current_target == other["cmd"],
+				"A %s%s never becomes the blocker" % ["wall " if bool(case[1]) else "", group])
+		_free_all(other["nodes"])
+	_free_all(floor_nodes)
+	Enemy.invalidate_node_cache()
+
+
+## A boss chasing a commander with a structure of the given group (a wall tower when is_wall) laid
+## across the way. Steps up to seconds; stops once the target is no longer the commander. Reports
+## the boss, the structure, the commander, every node to free and when the boss first touched the
+## structure and when its target changed ("touch_time" is -1 if it never touched).
+func _run_blocked_chase(group: StringName, is_wall: bool, seconds: float) -> Dictionary:
+	var d := BOSS_DATA
+	var half_len := d.body(d.body_box_size.z * 0.5)
+	var structure := _make_solid(Vector3(-(half_len + 1.5), 1.5, 0.0), Vector3(2.0, 3.0, 30.0), group)
+	structure.set_meta(&"is_wall", is_wall)
+	var cmd := _make_commander(Vector3(-(half_len + 8.0), 0.0, 0.0))
+	Enemy.invalidate_node_cache()
+	var boss := _make_boss()
+	boss.rotation.y = -PI / 2.0
+	boss.nav.avoidance_enabled = false
+	await _settle()
+	boss.set_target(cmd)
+	boss.change_state(Enums.EnemyState.CHASE)
+	var report := {"boss": boss, "tower": structure, "cmd": cmd, "nodes": [structure, cmd, boss], "touch_time": -1.0, "switch_time": seconds}
+	var t := 0.0
+	while t < seconds:
+		# The brain only walks and faces: every move stays on cooldown.
+		boss.combo_cooldown_left = 99.0
+		boss.spit_cooldown_left = 99.0
+		boss.roll_cooldown_left = 99.0
+		boss.dash_cooldown_left = 99.0
+		boss.dash_front_cooldown_left = 99.0
+		boss._process(STEP)
+		boss._physics_process(STEP)
+		t += STEP
+		if float(report["touch_time"]) < 0.0 and _touches(boss, structure):
+			report["touch_time"] = t
+		if boss.current_target != cmd:
+			report["switch_time"] = t
+			break
+	return report
+
+
+func _touches(boss: SkeletalCentipede, node: Node) -> bool:
+	for index in boss.get_slide_collision_count():
+		if boss.get_slide_collision(index).get_collider() == node:
+			return true
+	return false
 
 
 ## The roll's speed lines are full at the roll's top speed, whatever the boss's scale or cap.

@@ -18,6 +18,8 @@ extends Node3D
 const BULWARK_SCENE: PackedScene = preload("res://entities/enemy/bulwark.tscn")
 const COMMANDER_MODEL: PackedScene = preload("res://contents/assets/characters/fox_commander/fox_commander_model.tscn")
 const COMMANDER_START := Vector3(0.0, 0.0, 2.2)
+## The waves the wave script sends the Bulwark on, first to third appearance.
+const BOSS_WAVES: Array[int] = [5, 15, 25]
 const COMMANDER_RADIUS: float = 0.4  # same capsule as entities/commander/commander.tscn
 const MOVE_STEP: float = 0.25
 const FINE_STEP: float = 0.05
@@ -116,7 +118,7 @@ func _spawn_bulwark() -> void:
 	add_child(_bulwark)
 
 	# Start on the third appearance so every move is unlocked; N steps through the others.
-	_bulwark.spawn_wave = 3 * GameConfig.boss_wave_interval
+	_bulwark.spawn_wave = BOSS_WAVES[2]
 
 	# Disable physics process so gravity/navigation AI does not drop or move the boss in test environment
 	_bulwark.set_physics_process(false)
@@ -336,16 +338,15 @@ func _toggle_boss_low_hp() -> void:
 	_log("Boss HP: %d%%" % int(round(_bulwark.get_hp_fraction() * 100.0)))
 
 
-## Steps the boss through its appearances (wave 5, 10, ... 25) to try each unlocked moveset.
-## Only the move table changes; HP and damage stay at the wave 1 numbers.
+## Steps the boss through its three scripted appearances (waves 5, 15, 25) to try each unlocked
+## moveset. Only the move table changes; HP and damage stay at the wave 1 numbers.
 func _cycle_boss_appearance() -> void:
 	if _bulwark == null:
 		return
-	var interval := GameConfig.boss_wave_interval
 	var next := _bulwark.get_appearance() + 1
-	if next > 5:
+	if next > BOSS_WAVES.size():
 		next = 1
-	_bulwark.spawn_wave = next * interval
+	_bulwark.spawn_wave = BOSS_WAVES[next - 1]
 	_log("Boss appearance %d (wave %d)" % [next, _bulwark.spawn_wave])
 
 

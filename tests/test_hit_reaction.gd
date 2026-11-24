@@ -143,6 +143,43 @@ func _run() -> void:
 	_step(0.2)
 	_check("a freed enemy is dropped", not _manager._hits.has(unit))
 
+	# Effects under a no-flash node keep their own look.
+	_step(1.0)
+	var fx_unit := _unit(&"enemy")
+	var fx_root := Node3D.new()
+	fx_root.add_to_group(HitReactionManager.NO_FLASH_GROUP)
+	var fx_mid := Node3D.new()
+	var fx_mesh := MeshInstance3D.new()
+	fx_mesh.mesh = BoxMesh.new()
+	var fx_overlay := StandardMaterial3D.new()
+	fx_mesh.material_overlay = fx_overlay
+	var fx_particles := CPUParticles3D.new()
+	(fx_unit[0] as Node3D).add_child(fx_root)
+	fx_root.add_child(fx_mid)
+	fx_mid.add_child(fx_mesh)
+	fx_mid.add_child(fx_particles)
+	_hit(fx_unit[3])
+	_check("a hit flashes the body but not a mesh under a no-flash node",
+		(fx_unit[1] as MeshInstance3D).material_overlay == _manager.flash_material
+		and fx_mesh.material_overlay == fx_overlay and fx_particles.material_overlay == null)
+	_step(0.15)
+	_check("the effect keeps its overlay after the flash",
+		fx_mesh.material_overlay == fx_overlay and (fx_unit[1] as MeshInstance3D).material_overlay == null)
+	(fx_unit[0] as Node3D).free()
+
+	# A no-flash group above the entity does not stop its flash.
+	_step(1.0)
+	var holder := Node3D.new()
+	holder.add_to_group(HitReactionManager.NO_FLASH_GROUP)
+	add_child(holder)
+	var held := _unit(&"enemy")
+	(held[0] as Node3D).reparent(holder)
+	_hit(held[3])
+	_check("a no-flash group above the entity does not stop its flash",
+		(held[1] as MeshInstance3D).material_overlay == _manager.flash_material)
+	_step(0.15)
+	holder.free()
+
 
 func _check(label: String, ok: bool) -> void:
 	if ok:
