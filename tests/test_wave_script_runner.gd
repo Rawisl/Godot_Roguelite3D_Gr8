@@ -45,6 +45,10 @@ func _ready() -> void:
 			enemies[identifier] = load("res://data/enemies/%s.tres" % identifier) as EnemyData
 		test_wave_types_match_list()
 		test_boss_waves()
+		test_boss_appearance_per_boss()
+		test_boss_appearance_after_script()
+		test_boss_appearance_fallback()
+		test_boss_moveset_follows_own_appearance()
 		test_every_enemy_row_has_data()
 		test_new_enemy_traits()
 		test_budget_within_10pct()
@@ -102,6 +106,58 @@ func test_boss_waves() -> void:
 		assert_true(actual_boss == expected_boss and boss_count == 1
 			and escort_count >= 1 and escort_flags_valid,
 			"Wave %d has its boss and valid escorts" % wave)
+
+
+func test_boss_appearance_per_boss() -> void:
+	var interval := GameConfig.boss_wave_interval
+	var bulwark_waves := [5, 15, 25]
+	var centipede_waves := [10, 20, 30]
+	for index in range(3):
+		assert_true(waves.get_boss_appearance(&"bulwark", bulwark_waves[index], interval) == index + 1,
+			"Bulwark on wave %d is appearance %d" % [bulwark_waves[index], index + 1])
+		assert_true(waves.get_boss_appearance(&"skeletal_centipede", centipede_waves[index], interval) == index + 1,
+			"Centipede on wave %d is appearance %d" % [centipede_waves[index], index + 1])
+
+
+func test_boss_appearance_after_script() -> void:
+	var interval := GameConfig.boss_wave_interval
+	assert_true(waves.get_last_wave() == 30, "The script ends on wave 30")
+	assert_true(waves.get_boss_appearance(&"bulwark", 30, interval) == 3, "Bulwark still counts 3 on wave 30")
+	assert_true(waves.get_boss_appearance(&"bulwark", 35, interval) == 4, "Bulwark on wave 35 is appearance 4")
+	assert_true(waves.get_boss_appearance(&"bulwark", 40, interval) == 5, "Bulwark on wave 40 is appearance 5")
+
+
+func test_boss_appearance_fallback() -> void:
+	var interval := GameConfig.boss_wave_interval
+	assert_true(WaveScript.new().get_boss_appearance(&"bulwark", 15, interval) == 0,
+		"An empty script reports no appearance")
+	assert_true(waves.get_boss_appearance(&"barrage", 15, interval) == 0, "A boss the script never names reports none")
+	var boss := BossEnemy.new()
+	boss.spawn_wave = 15
+	assert_true(boss.get_appearance() == 3, "A boss without data falls back to wave / interval")
+	boss.free()
+
+
+func test_boss_moveset_follows_own_appearance() -> void:
+	var data := bosses.get(&"bulwark") as BossData
+	assert_true(data != null, "Bulwark boss data loads")
+	if data == null:
+		return
+	var scene := load("res://entities/enemy/bulwark.tscn") as PackedScene
+	var bulwark := scene.instantiate() as Bulwark
+	add_child(bulwark)
+	bulwark.set_physics_process(false)
+	bulwark.set_process(false)
+	var expected := {5: 1, 15: 2, 25: 3}
+	for wave in expected:
+		bulwark.spawn_wave = wave
+		var appearance := bulwark.get_appearance()
+		assert_true(appearance == expected[wave], "Bulwark node on wave %d is appearance %d" % [wave, expected[wave]])
+		var stomp_x3 := appearance >= data.triple_stomp_unlock_appearance
+		var combo := appearance >= data.combo_unlock_appearance
+		assert_true(stomp_x3 == (wave >= 15), "Wave %d: Stomp x3 unlocked only from wave 15" % wave)
+		assert_true(combo == (wave == 25), "Wave %d: Combo unlocked only on wave 25" % wave)
+	bulwark.free()
 
 
 func test_every_enemy_row_has_data() -> void:

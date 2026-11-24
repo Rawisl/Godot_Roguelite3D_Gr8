@@ -63,7 +63,7 @@ func _make_bulwark() -> Bulwark:
 	bulwark.global_position = Vector3.ZERO
 	bulwark.rotation.y = 0.0
 	bulwark.spawn_grace = false
-	bulwark.spawn_wave = 15  # third appearance: every move unlocked
+	bulwark.spawn_wave = 25  # third appearance: every move unlocked
 	bulwark.is_in_spawn_zone = false
 	return bulwark
 
@@ -574,17 +574,17 @@ func test_moves_unlock_by_appearance() -> void:
 	assert_true(bulwark.choose_attack() == Bulwark.MOVE_FACE, "Appearance 1, behind: no triple stomp yet, so it turns")
 	assert_true(not saw_combo.call(), "Appearance 1, front at low HP: never the combo")
 
-	bulwark.spawn_wave = 10
+	bulwark.spawn_wave = 15
 	cmd.global_position = behind
 	assert_true(bulwark.choose_attack() == Bulwark.MOVE_TRIPLE, "Appearance 2, behind: triple stomp")
 	assert_true(not saw_combo.call(), "Appearance 2, front at low HP: still no combo")
 
-	bulwark.spawn_wave = 15
+	bulwark.spawn_wave = 25
 	assert_true(saw_combo.call(), "Appearance 3, front at low HP: the combo shows up")
 
 	bulwark.in_hazard_trial = true
-	assert_true(bulwark.get_moveset_appearance() == 2, "Hazard Trial boss on wave 15 fights like appearance 2")
-	assert_true(not saw_combo.call(), "Hazard Trial boss on wave 15 has no combo")
+	assert_true(bulwark.get_moveset_appearance() == 2, "Hazard Trial boss on wave 25 fights like appearance 2")
+	assert_true(not saw_combo.call(), "Hazard Trial boss on wave 25 has no combo")
 	bulwark.spawn_wave = 5
 	assert_true(bulwark.get_moveset_appearance() == 1, "Hazard Trial never drops below appearance 1")
 	cmd.free()
