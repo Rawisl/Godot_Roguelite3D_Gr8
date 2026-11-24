@@ -1273,7 +1273,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: Cân bằng lần 1: XP, cổng bậc tower, Aura, gold chỉ huy (SCL-04, FRT)
 - Nghiệm thu: Người chủ động cấp 4 ở wave 4 +-1, cấp 8 ở wave 8 +-1
 - Cần xong trước: W10-KT1, W11-NG4
-- Ghi chú bàn giao: XP shares tuned with the wave bot, see `balance/BALANCE_LOG.md`: `xp_commander_pct` 1.0 -> 1.25, `xp_tower_only_pct` 0.5 -> 0.4 (GameConfig; the XP-02 table still says 100% / 50%). Bot soak, 2 seeds each: Frontline with skills reaches level 3 / 7 / 11 at waves 4 / 8 / 12 (was 3 / 7 / 10), AFK 2 / 4 / 7 (was level 8 at wave 12), ratio at wave 12 0.64 (limit 0.65); AFK towers stop at level 24 by the tier 3 gate. Tower gates, Aura and commander gold unchanged: no bot run without soak gets past wave 5 (the Bulwark breaks the Fortress with the starter towers and 50-85 gold a wave), so their effect could not be measured; flagged in the log for a hand playtest of wave 5 and the wave script (W11-MH11). `test_wave_rewards_runner` now reads the shares from GameConfig.
+- Ghi chú bàn giao: XP shares tuned with the wave bot, see `balance/BALANCE_LOG.md`: `xp_commander_pct` 1.0 -> 1.25, `xp_tower_only_pct` 0.5 -> 0.4 (GameConfig; the SRS XP table, XP-06, CMD-10, FRT-03 and F1 updated to 125% / 40%). Bot soak, 2 seeds each: Frontline with skills reaches level 3 / 7 / 11 at waves 4 / 8 / 12 (was 3 / 7 / 10), AFK 2 / 4 / 7 (was level 8 at wave 12), ratio at wave 12 0.64 (limit 0.65); AFK towers stop at level 24 by the tier 3 gate. Tower gates, Aura and commander gold unchanged: no bot run without soak gets past wave 5 (the Bulwark breaks the Fortress with the starter towers and 50-85 gold a wave), so their effect could not be measured; flagged in the log for a hand playtest of wave 5 and the wave script (W11-MH11). `test_wave_rewards_runner` now reads the shares from GameConfig.
 
 ##### W11-KT2
 - Người: Kiệt
@@ -1300,7 +1300,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Việc: Chỉnh Resource theo log cân bằng, ghi lại tham số (chỉnh trong balance.xlsx rồi chạy công cụ dịch, không sửa tay .tres)
 - Nghiệm thu: Log thay đổi tham số
 - Cần xong trước: W11-KT1
-- Ghi chú bàn giao: Parameter log started in `balance/BALANCE_LOG.md` (date, parameter, file, old -> new, reason, numbers before and after). This pass only changed GameConfig values, which are hand-edited (not generated from balance.xlsx), so the workbook did not change; the generator still reports 0 files would change.
+- Ghi chú bàn giao: Parameter log started in `balance/BALANCE_LOG.md` (date, parameter, file, old -> new, reason, numbers before and after). This pass only changed GameConfig values, which are hand-edited (not generated from balance.xlsx), so the workbook did not change; the generator still reports 0 files would change. Why `xp_commander_pct` and `xp_tower_only_pct` stay in GameConfig: the workbook has no sheet for GameConfig and the generator only reads `autoload/game_config.gd` (victory_wave, wave caps, tower_max_level) and writes `.tres` files, never the script. Moving them would mean a new GameConfig output in the generator for two numbers; the change is logged in `balance/BALANCE_LOG.md` and SRS Phụ lục D #96 instead. The SRS XP table, XP-06, CMD-10, FRT-03, 6.3 and F1 now say 125% / 40%.
 
 ##### W11-KT5
 - Người: Kiệt
