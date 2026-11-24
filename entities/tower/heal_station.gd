@@ -77,6 +77,7 @@ func apply_level(new_level: int) -> void:
 	(range_shape.shape as CylinderShape3D).radius = _lv.attack_range
 	# Adds max_hp(new) - max_hp(old) and sends one hp_changed; _carry is left as it is.
 	health.set_max_hp(_lv.max_hp, true)
+	_apply_model_tier()
 
 ## A station ruined while it still has HP (Overload) stops being a source in the same frame.
 func is_alive() -> bool:

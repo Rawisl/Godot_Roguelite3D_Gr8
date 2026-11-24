@@ -19,15 +19,16 @@ func _ready() -> void:
 	# A stand-in tower walks through the levels.
 	var tower := Tower.new()
 	model._tower = tower
+	tower.model_tier_changed.connect(model._show_tier)
 	var expect := {1: 1, GameConfig.tower_tier2_level - 1: 1, GameConfig.tower_tier2_level: 2,
 		GameConfig.tower_tier3_level - 1: 2, GameConfig.tower_tier3_level: 3, 36: 3}
 	for level in expect:
-		tower.level = level
-		model._process(0.0)
+		tower.model_tier_changed.emit(TowerData.model_tier(level))
 		var tier: int = expect[level]
 		_check("level %d shows tier %d" % [level, tier], _visible_tier(model) == tier)
 		_check("level %d: orb at %.2f m, scale %.2f" % [level, model.orb_heights[tier - 1], model.orb_scales[tier - 1]],
 			is_equal_approx(orb.position.y, model.orb_heights[tier - 1]) and is_equal_approx(orb.scale.x, model.orb_scales[tier - 1]))
+	_check("the model does not poll the tier every frame", not model.is_processing())
 	tower.free()
 	model._tower = null
 

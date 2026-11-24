@@ -1402,12 +1402,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH8
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 5 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tower 3 bậc model trong code (TWR-17): TowerData giữ 3 scene, đổi model ngay khi nâng qua cấp 13 và 25, đống đổ nát dùng chung một model
 - Nghiệm thu: Nâng Arrow từ 12 lên 13 thì đổi model bậc 2; cấp 25 đổi bậc 3
 - Tệp liên quan: common/tower_data.gd, entities/tower/tower.gd, tower_model.gd
 - ID SRS: TWR-17
 - Cần xong trước: W10-KM10, W10-MH9
+- Ghi chú: TowerData giữ ba scene model theo bậc; bốn loại tower hiện trỏ tới scene sẵn có chứa đủ ba bậc. Tower phát model_tier_changed khi đổi bậc và thay instance nếu scene mới khác scene đang dùng. Arrow, Cannon, Trạm hồi phục và Barricade cập nhật hình theo signal thay vì dò bậc mỗi frame. Mô hình đống đổ nát dùng chung; runner tests/test_tower_tier_model_runner.tscn kiểm tra đổi bậc, xây lại và muzzle sau khi thay scene.
 
 ##### W11-MH9
 - Người: Mạnh
