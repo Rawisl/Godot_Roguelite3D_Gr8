@@ -64,13 +64,17 @@ func _ready() -> void:
 		var bolt := DamageInfo.outgoing(2.0, 1.0, Enums.DamageType.SLASH, commander)
 		bolt.is_weapon_effect = true
 		target.take_damage(bolt)
-	_check("a chain over three units draws three bolts", fx.bolt_count() == 3)
+	_check("the chain bursts at the first unit first, with a bigger orb", fx.bolt_count() == 0 and fx.orb_count() == 1 and fx.pending_jump_count() == 2 and (fx._orbs[0].mesh as SphereMesh).radius > fx.orb_radius)
+	await _seconds(fx.chain_step_delay * 0.5)
+	_check("the next jump waits for its step", fx.bolt_count() == 0)
+	await _seconds(fx.chain_step_delay * 1.5)
+	_check("then the chain spreads to the other units: two bolts", fx.bolt_count() == 2 and fx.pending_jump_count() == 0)
 	_check("every unit the chain hits shows a white orb", fx.orb_count() == 3 and fx._orbs[0].get_child_count() == 1)
 	_check("chain bolts play no sword slash", hit_fx._pools[HitFxManager.SWORD_HIT].all(func(n: Node) -> bool: return not n.is_playing()))
 	var first: MeshInstance3D = fx._bolts[0]
 	var second: MeshInstance3D = fx._bolts[1]
-	_check("the first bolt, with its white and yellow strands, starts at the commander", (first.mesh as ImmediateMesh).get_surface_count() == 1 + fx.bolt_strand_colors.size() and _bolt_start(first).distance_to(commander.global_position + Vector3.UP * fx.bolt_height) < 0.01)
-	_check("the next bolt starts at the previous target", _bolt_start(second).distance_to(a.global_position + Vector3.UP * fx.bolt_height) < 0.01)
+	_check("the first bolt, with its white and yellow strands, starts at the first unit hit, not the commander", (first.mesh as ImmediateMesh).get_surface_count() == 1 + fx.bolt_strand_colors.size() and _bolt_start(first).distance_to(a.global_position + Vector3.UP * fx.bolt_height) < 0.01)
+	_check("the next bolt starts at the previous target", _bolt_start(second).distance_to(b.global_position + Vector3.UP * fx.bolt_height) < 0.01)
 	await _seconds(maxf(fx.bolt_time, fx.orb_time) + 0.1)
 	_check("the bolts and orbs fade out", fx.bolt_count() == 0 and fx.orb_count() == 0)
 	var tick := DamageInfo.outgoing(2.0, 1.0, Enums.DamageType.SLASH, commander, 0.0, Vector3.ZERO, true)
@@ -80,8 +84,12 @@ func _ready() -> void:
 	EventBus.settings_changed.emit(&"reduce_flash", true)
 	var dim := DamageInfo.outgoing(2.0, 1.0, Enums.DamageType.SLASH, commander)
 	dim.is_weapon_effect = true
+	var dim_next := DamageInfo.outgoing(2.0, 1.0, Enums.DamageType.SLASH, commander)
+	dim_next.is_weapon_effect = true
 	await get_tree().physics_frame
 	a.take_damage(dim)
+	b.take_damage(dim_next)
+	await _seconds(fx.chain_step_delay + 0.02)
 	_check("Reduce flashing: the bolt is the violet strand only", fx.bolt_count() == 1 and (fx._bolts[0].mesh as ImmediateMesh).get_surface_count() == 1 and fx._orbs[0].get_child_count() == 0)
 	EventBus.settings_changed.emit(&"reduce_flash", false)
 

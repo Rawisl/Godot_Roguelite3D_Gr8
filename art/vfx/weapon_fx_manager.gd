@@ -4,10 +4,11 @@ extends Node
 ## - Frost: icy grey mist rising off every slowed unit and a light blue tint on its body, while the
 ##   slow lasts. Only the Frost weapon slows units, so slow_timer > 0 means Frost.
 ## - Burn: small flames on every burning unit, while the burn lasts.
-## - Chain Lightning: a jagged violet bolt with thinner white and yellow strands around it, from the
-##   commander to the first target and then from each target to the next, drawn once per chain
-##   (the chain has a 5 s cooldown, so it never flashes fast). The strands hug the main bolt. Every
-##   unit it hits shows a white orb with a few small arcs at its body for a moment.
+## - Chain Lightning: a burst at the first unit hit, then a jagged violet bolt with thinner white
+##   and yellow strands around it from each target to the next, drawn once per chain
+##   (the chain has a 5 s cooldown, so it never flashes fast). The strands hug the main bolt.
+##   Every unit it hits shows a white orb with a few small arcs at its body for a moment. The first
+##   target bursts at once with a bigger orb and each next jump follows chain_step_delay later.
 ## Reads the Enemy state each frame and the HealthComponent damaged signal; nothing is added to the
 ## enemy scenes. Mist and flames are extras of the particle budget: a unit that starts burning or
 ## freezing while the budget is full gets no particles (the Frost tint still shows).
@@ -48,6 +49,11 @@ extends Node
 @export var orb_arc_color := Color(0.85, 0.8, 1.0, 0.8)
 @export var orb_arcs := 4
 @export var orb_time := 0.4
+## The first target bursts first; each next jump of the chain shows this many seconds after the
+## previous one, so the lightning reads as spreading out from the first unit. Damage is not delayed.
+@export var chain_step_delay := 0.1
+## Size of the first target's orb against the others.
+@export var first_orb_scale := 1.6
 
 var _frost: Dictionary = {}  # Enemy -> GPUParticles3D
 var _fire: Dictionary = {}  # Enemy -> GPUParticles3D
@@ -56,6 +62,8 @@ var _bolts: Array[MeshInstance3D] = []
 var _orbs: Array[MeshInstance3D] = []
 var _chain_frame := -1
 var _chain_last := Vector3.ZERO
+var _chain_hop := 0
+var _pending_jumps: Array[Dictionary] = []  # {wait, from, to}, shown in order
 var _reduce_flash := false
 var _frost_process: ParticleProcessMaterial
 var _frost_mesh: QuadMesh
@@ -175,12 +183,14 @@ func _on_damaged(_amount: int, info: DamageInfo, target: Node3D) -> void:
 	var frame := Engine.get_physics_frames()
 	var to := target.global_position + Vector3.UP * bolt_height
 	var from := _chain_last
-	if frame != _chain_frame:
-		from = (info.source as Node3D).global_position + Vector3.UP * bolt_height
+	_chain_hop = 0 if frame != _chain_frame else _chain_hop + 1
 	_chain_frame = frame
 	_chain_last = to
-	_spawn_bolt(from, to)
-	_spawn_orb(to)
+	if _chain_hop == 0:
+		# The chain starts at the first unit hit; no bolt from the commander.
+		_spawn_orb(to, first_orb_scale)
+	else:
+		_pending_jumps.append({"wait": chain_step_delay * _chain_hop, "from": from, "to": to})
 
 
 func _spawn_bolt(from: Vector3, to: Vector3) -> void:
@@ -233,13 +243,13 @@ func _add_ribbon(mesh: ImmediateMesh, points: PackedVector3Array, width: float, 
 
 
 ## A white orb at the struck unit's body, with a few short arcs crackling out of it.
-func _spawn_orb(center: Vector3) -> void:
+func _spawn_orb(center: Vector3, size := 1.0) -> void:
 	var orb := MeshInstance3D.new()
 	orb.name = "ChainOrb"
 	orb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var sphere := SphereMesh.new()
-	sphere.radius = orb_radius
-	sphere.height = orb_radius * 2.0
+	sphere.radius = orb_radius * size
+	sphere.height = orb_radius * size * 2.0
 	sphere.radial_segments = 12
 	sphere.rings = 6
 	var mat := StandardMaterial3D.new()
@@ -255,7 +265,7 @@ func _spawn_orb(center: Vector3) -> void:
 		var mesh := ImmediateMesh.new()
 		for i in orb_arcs:
 			var dir := Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-0.5, 1), _rng.randf_range(-1, 1)).normalized()
-			_add_ribbon(mesh, _jag_points(dir * orb_radius * 0.8, dir * orb_radius * 2.2, orb_radius * 0.25), bolt_strand_width, orb_arc_color)
+			_add_ribbon(mesh, _jag_points(dir * orb_radius * size * 0.8, dir * orb_radius * size * 2.2, orb_radius * 0.25), bolt_strand_width, orb_arc_color)
 		arcs.mesh = mesh
 		arcs.material_override = _line_material()
 		orb.add_child(arcs)
@@ -275,6 +285,12 @@ func _line_material() -> StandardMaterial3D:
 
 
 func _update_bolts(delta: float) -> void:
+	for jump in _pending_jumps.duplicate():
+		jump.wait -= delta
+		if jump.wait <= 0.0:
+			_pending_jumps.erase(jump)
+			_spawn_bolt(jump.from, jump.to)
+			_spawn_orb(jump.to)
 	_fade(_bolts, bolt_time, delta)
 	_fade(_orbs, orb_time, delta)
 
@@ -383,6 +399,11 @@ func has_tint(enemy: Enemy) -> bool:
 ## For tests.
 func has_fire(enemy: Enemy) -> bool:
 	return _fire.has(enemy) and (_fire[enemy] as GPUParticles3D).emitting
+
+
+## For tests.
+func pending_jump_count() -> int:
+	return _pending_jumps.size()
 
 
 ## For tests.
