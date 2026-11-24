@@ -40,6 +40,10 @@ var in_hazard_trial: bool = false
 
 var _transition_timer: float = 0.0
 var _cached_boss_melee_point: Node3D = null
+## How close to boss_melee_point the boss stops before attacking the Fortress.
+const BOSS_POINT_ARRIVE_DISTANCE := 0.2
+## Within this distance of boss_melee_point the boss walks straight onto it, without avoidance.
+const BOSS_POINT_DIRECT_APPROACH := 2.0
 
 var _stuck_timer: float = 0.0
 var _last_stuck_progress: float = -INF
@@ -52,6 +56,26 @@ func _ready() -> void:
 	add_to_group(&"boss")
 	_init_boss_stats()
 	EventBus.boss_enraged.connect(enter_enrage)
+	_use_large_navmesh.call_deferred()
+
+
+## Paths on the navmesh baked for the large agent (BossData.nav_layers), which keeps a wide enough
+## way to the gate and to boss_melee_point. A map without that navmesh (a test arena) keeps the
+## regular one so the boss can still walk.
+func _use_large_navmesh() -> void:
+	var boss_data := data as BossData
+	if boss_data == null or boss_data.nav_layers == 0 or not is_inside_tree():
+		return
+	# Regions join the map on its next sync.
+	await get_tree().physics_frame
+	if not is_instance_valid(self) or not is_inside_tree():
+		return
+	var map := nav.get_navigation_map()
+	for region in NavigationServer3D.map_get_regions(map):
+		if NavigationServer3D.region_get_navigation_layers(region) & boss_data.nav_layers:
+			nav.navigation_layers = boss_data.nav_layers
+			return
+	push_warning("BossEnemy: no navmesh on layers %d, the boss walks on the regular one." % boss_data.nav_layers)
 
 
 func _exit_tree() -> void:
@@ -514,17 +538,43 @@ func _scale_attack_damage(base_damage: int) -> int:
 	return maxi(1, int(round(dmg)))
 
 
+## On its way to the Fortress the boss walks right onto boss_melee_point before it attacks, so
+## its Stomp lands on the wall; other targets keep attack_range.
+func _arrive_distance(t: Node3D) -> float:
+	var arrive: float = super._arrive_distance(t)
+	if t != null and is_instance_valid(t) and t.is_in_group(&"fortress") and _get_boss_melee_point() != null:
+		arrive = BOSS_POINT_ARRIVE_DISTANCE
+	nav.target_desired_distance = arrive
+	return arrive
+
+
+## The last metres onto boss_melee_point are walked straight: avoidance would keep the large
+## agent off a point that sits by design right at the edge of its navmesh.
+func _steers_without_avoidance() -> bool:
+	if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"fortress"):
+		return false
+	var point := _get_boss_melee_point()
+	if point == null:
+		return false
+	var gap := point.global_position - global_position
+	gap.y = 0.0
+	return gap.length() <= BOSS_POINT_DIRECT_APPROACH
+
+
+func _get_boss_melee_point() -> Node3D:
+	if _cached_boss_melee_point == null or not is_instance_valid(_cached_boss_melee_point):
+		_cached_boss_melee_point = get_tree().get_first_node_in_group(&"boss_melee_point") as Node3D
+		if _cached_boss_melee_point == null:
+			var root := get_tree().current_scene
+			if root != null:
+				_cached_boss_melee_point = root.find_child("BossMeleePoint", true, false) as Node3D
+	return _cached_boss_melee_point if is_instance_valid(_cached_boss_melee_point) else null
+
+
 func _get_attack_point(t: Node3D) -> Vector3:
 	if t != null and is_instance_valid(t) and t.is_in_group(&"fortress"):
-		if _cached_boss_melee_point == null or not is_instance_valid(_cached_boss_melee_point):
-			_cached_boss_melee_point = get_tree().get_first_node_in_group(&"boss_melee_point") as Node3D
-			if _cached_boss_melee_point == null:
-				var root := get_tree().current_scene
-				if root != null:
-					_cached_boss_melee_point = root.find_child("BossMeleePoint", true, false) as Node3D
-		if _cached_boss_melee_point != null and is_instance_valid(_cached_boss_melee_point):
-			return _cached_boss_melee_point.global_position
-		return t.global_position
+		var point := _get_boss_melee_point()
+		return point.global_position if point != null else t.global_position
 	return super._get_attack_point(t)
 
 

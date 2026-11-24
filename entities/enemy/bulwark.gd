@@ -301,6 +301,10 @@ func _attack_structure() -> void:
 	if current_target != null and is_instance_valid(current_target) and not _stomp_reaches(current_target):
 		_wait_and_turn()
 		return
+	# At boss_melee_point the wide wall is in reach from almost any facing: turn to the Fortress first.
+	if current_target != null and is_instance_valid(current_target) and current_target.is_in_group(&"fortress") 			and not _faces(current_target):
+		_wait_and_turn()
+		return
 	_start_move(MOVE_STOMP)
 
 
@@ -316,6 +320,15 @@ func _wait_and_turn() -> void:
 func _stomp_reaches(target: Node3D) -> bool:
 	if _get_distance_to_target(target, get_stomp_center()) <= stomp_radius:
 		return true
+	var to_target := target.global_position - global_position
+	to_target.y = 0.0
+	if to_target.length_squared() < 0.01:
+		return true
+	return rad_to_deg(absf(angle_difference(rotation.y, atan2(to_target.x, to_target.z)))) <= STRUCTURE_FACE_TOLERANCE_DEG
+
+
+## True when the boss faces the target's centre within STRUCTURE_FACE_TOLERANCE_DEG.
+func _faces(target: Node3D) -> bool:
 	var to_target := target.global_position - global_position
 	to_target.y = 0.0
 	if to_target.length_squared() < 0.01:

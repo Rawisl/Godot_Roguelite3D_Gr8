@@ -1301,10 +1301,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KT5
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Boss điều hướng agent lớn (BOSS-03), đứng tại boss_melee_point đánh Stomp vào Fortress (BOSS-32, 40) trên hành lang 23.5 m với ô grid đã đặt
 - Nghiệm thu: Bulwark tới được Fortress với 3 công trình ở mọi bố cục hợp lệ; không chiếm slot đánh
 - Cần xong trước: W9-KM6, W9-MH5
+- Ghi chú bàn giao: The large-agent navmesh (`NavigationRegionLarge`, layer 2, agent 1.6 m) was in the level but no unit walked on it. `BossData.nav_layers` (default 2) now sets the boss NavAgent to that layer one physics frame after spawning when the map has a region on it (otherwise it keeps layer 1 and logs a warning), so the Bulwark and the Centipede path on the navmesh that GRID-07/08 keep wide; `_fortress_reachable` asks the path on the agent's layers. With the Fortress as target the boss walks right onto `boss_melee_point` (`_arrive_distance` 0.2 m instead of attack_range), the last 2 m straight without RVO avoidance (the point sits on the edge of its navmesh), turns to face the Fortress within 10 degrees and only then Stomps; it never claims a Fortress melee slot. `Enemy._arrive_distance(t)` is the new hook for when a unit stops to attack. Runner `tests/test_bulwark_reaches_fortress_runner.tscn` on the real corridor: no cell within 3.2 m of the point, the tightest legal 3-cell layout near the point gets three Barricades, a wave 5 Bulwark at x1 and x3 stops 0.16-0.19 m from the point, faces the Fortress, never reaches stuck tier 2 and its first Fortress Stomp lowers the Fortress HP (18 checks, about 75 game seconds a run).
 
 ##### W11-NG4
 - Người: Kiệt
