@@ -269,7 +269,16 @@ func _has_boss() -> bool:
 
 
 func _on_unit_state_changed(new_state: Enums.EnemyState, _old: Enums.EnemyState, unit: Enemy) -> void:
-	if new_state == Enums.EnemyState.DEAD:
+	if new_state != Enums.EnemyState.DEAD:
+		return
+	# A unit that blew itself up is done but was not killed: no gold, no XP, no kill.
+	if unit.self_destructed:
+		_mark_done(unit, false)
+	# A killed Captain pays now but is done only once its blast went off.
+	elif unit.blast_pending:
+		_count_kill(unit)
+		unit.blast_done.connect(_mark_done.bind(unit, false), CONNECT_ONE_SHOT)
+	else:
 		_mark_done(unit, true)
 
 
@@ -277,6 +286,15 @@ func _on_unit_state_changed(new_state: Enums.EnemyState, _old: Enums.EnemyState,
 func _on_unit_gone(unit: Enemy) -> void:
 	if _active and not unit.is_dead:
 		_mark_done(unit, false)
+
+
+func _count_kill(unit: Enemy) -> void:
+	_kills += 1
+	if unit.is_boss():
+		_boss_killed = true
+	else:
+		_kill_gold += unit._get_kill_gold()
+	_xp += _xp_for(unit)
 
 
 func _mark_done(unit: Enemy, killed: bool) -> void:
@@ -287,12 +305,7 @@ func _mark_done(unit: Enemy, killed: bool) -> void:
 		return
 	_done[id] = true
 	if killed:
-		_kills += 1
-		if unit.is_boss():
-			_boss_killed = true
-		else:
-			_kill_gold += unit._get_kill_gold()
-		_xp += _xp_for(unit)
+		_count_kill(unit)
 	_send_progress()
 	if _done.size() >= _units.size():
 		_won = true

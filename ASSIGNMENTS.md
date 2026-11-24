@@ -1336,12 +1336,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KT8
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Suicide Squad và Captain: lao vào mục tiêu, wind-up với telegraph, nổ BLAST lên chỉ huy Frontline, tower (kể cả WALL trong bán kính), Barricade, Fortress; nổ thì không thưởng; Captain nổ khi bị diệt vẫn thưởng, bị cull không nổ
 - Nghiệm thu: NE2, NE3 đạt; Dodge né được; Commander mode miễn
 - Tệp liên quan: entities/enemy/enemy.gd, art/vfx/telegraph_fx_manager.gd
 - ID SRS: EN-22, EN-23, FBK-06
 - Cần xong trước: W10-KT7, W11-KM9
+- Ghi chú bàn giao: Both read the explode_* flags of EnemyData. Suicide Squad (`explode_on_contact`): when its ATTACK step starts it lights the fuse instead of swinging (`telegraph_started(&"explode", pos, explode_radius, explode_windup)` and `set_fuse(true)` on the model), stands still and after explode_windup game seconds calls `Enemy.detonate()`, then leaves with `enemy_died(..., is_cull = true)`: no gold, XP, prestige or kill, the wave still counts it as gone. Killed during the wind-up: no blast, normal reward. Captain (`explode_on_death`): killed, it pays as usual, sets `blast_pending` and blows up where it fell after explode_windup (a pausable physics timer, so game time); the body stays until then. Culled: no blast. `detonate()` deals explode_damage x the wave dmg multiplier (BLAST) to everything in the commander, tower (wall slots too), barricade and fortress groups within explode_radius of the nearest collider point, never to units; the commander's own `take_damage` keeps Dodge and Commander mode immune. The collider-distance helpers moved from BossEnemy up to Enemy unchanged. Hazard Trial: a unit that blew itself up is done without a kill; a killed Captain counts its kill at once but is done only after `blast_done`. Runner `tests/test_suicide_captain_runner.tscn` (29 checks).
 
 ##### W11-KT9
 - Người: Kiệt
