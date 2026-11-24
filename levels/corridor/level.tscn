@@ -24,6 +24,7 @@
 [ext_resource type="Script" uid="uid://tokwkffr20je" path="res://art/vfx/immune_fx_manager.gd" id="21_immunefx"]
 [ext_resource type="PackedScene" uid="uid://dqav6wa12be80" path="res://levels/corridor/hazard_room.tscn" id="22_hazardroom"]
 [ext_resource type="PackedScene" uid="uid://cd384eh4o2vce" path="res://levels/corridor/hazard_portal.tscn" id="23_hazardportal"]
+[ext_resource type="Script" uid="uid://wmc162fpih1r" path="res://art/vfx/weapon_fx_manager.gd" id="24_weaponfx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fbt3"]
 
@@ -284,6 +285,9 @@ script = ExtResource("20_bossfx")
 
 [node name="ImmuneFxManager" type="Node" parent="." unique_id=1468203957]
 script = ExtResource("21_immunefx")
+
+[node name="WeaponFxManager" type="Node" parent="." unique_id=1468203958]
+script = ExtResource("24_weaponfx")
 
 [node name="ProjectilePool" parent="." unique_id=1691879813 instance=ExtResource("8_a28fg")]
 

@@ -1600,12 +1600,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM8
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Model vũ khí và VFX: Frost (lớp băng), Chain Lightning (tia điện), Burn (lửa), Rampage (đổi ánh kiếm kèm biểu tượng), Swift (vệt chém nhanh), icon; dùng lại mesh vũ khí KayKit hiện có
 - Nghiệm thu: Mỗi vũ khí nhận ra được ở camera chuẩn, giảm nhấp nháy theo ACC-06
 - Tệp liên quan: contents/, art/vfx/, art/icons/
 - ID SRS: FBK-13, WPN-01
 - Cần xong trước: W9-NG6
+- Ghi chú bàn giao: Five sword models in `contents/assets/weapons/` (source `source/weapons.blend`), made from the KayKit swords with hilts of other KayKit weapons, chipped blades and a blade gradient: Frost blue, Chain Lightning violet, Burn orange, Rampage a red serrated greatsword, Swift a short green blade. Each `weapon_<id>.tscn` is the model plus its blade effect (`art/vfx/weapon_blade_fx.gd`: snow, sparks, embers, a fast streak; Rampage embers and glow grow through its HP bands, with one to three chevrons over the commander so the band does not read from colour alone). The Fox model now has `WeaponMount` and the `weapon_mount` / `weapon_default_model` groups, so `Commander._swap_weapon_model` shows the equipped sword. `WeaponFxManager` (in `level.tscn`) draws icy mist and a blue tint on slowed units, flames on burning units and a violet bolt with white and yellow strands plus a white orb at each Chain Lightning target; HitFxManager no longer plays a sword slash for weapon-effect damage. Icons in `art/icons/weapons/`, rendered from the `Icon_*` scenes of the .blend with the tower icon frame and light. Particles count toward ParticleBudget; Reduce flashing dims the bolt and the Rampage glow. Verified by `tests/test_weapon_fx.tscn` (23 checks); `tests/test_playtest_weapon_fx.tscn` shows every weapon on three pinned Grunts.
 
 ##### W11-KM9
 - Người: Kim

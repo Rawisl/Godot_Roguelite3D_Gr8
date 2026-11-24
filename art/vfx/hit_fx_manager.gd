@@ -91,6 +91,9 @@ func _on_node_added(node: Node) -> void:
 func _on_damaged(_amount: int, info: DamageInfo, target: Node3D) -> void:
 	if info == null or not is_instance_valid(target):
 		return
+	# Chain bolts and burn ticks have their own look (WeaponFxManager), not a sword slash.
+	if info.is_weapon_effect:
+		return
 	var source := info.source
 	var point := target.global_position + Vector3.UP * hit_height
 	var dir := info.hit_direction
