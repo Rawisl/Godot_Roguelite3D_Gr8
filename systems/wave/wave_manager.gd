@@ -7,7 +7,7 @@ extends Node
 ## every run; later waves draw their units from the WaveTable with an RNG of the run seed and scale
 ## by the ScaleConfig. Every schedule is stretched so the last unit spawns no sooner than the
 ## wave's spawn duration.
-# TODO(Ender-Via): when the spawner reads the WaveScript, spawn the boss its boss row names (bulwark on waves 5, 15, 25, skeletal_centipede on 10, 20, 30) with that boss's scene and BossData instead of always the Bulwark, and use the same id for the boss intro and get_wave_plan().
+## A scripted boss wave sends the boss its WaveScript boss row names; other boss waves send boss_data.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -38,6 +38,12 @@ var _fallback_run_seed: int = 0
 }
 @export var bulwark_scene: PackedScene = preload("res://entities/enemy/bulwark.tscn")
 @export var boss_data: BossData = preload("res://data/bosses/bulwark_boss.tres")
+## Scene of every boss a WaveScript boss row can name, by BossData id. A boss wave whose rows name
+## none of them sends bulwark_scene with the id of boss_data.
+@export var boss_scenes: Dictionary[StringName, PackedScene] = {
+	&"bulwark": preload("res://entities/enemy/bulwark.tscn"),
+	&"skeletal_centipede": preload("res://entities/enemy/skeletal_centipede.tscn"),
+}
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
 @export var wave_table: WaveTable = preload("res://data/waves/wave_table.tres")
 ## Units, spawn duration and scale of waves 1 to victory_wave.
@@ -420,8 +426,7 @@ func start_boss_intro() -> void:
 	TimeManager.set_time_scale(1)
 	wave_fsm_state_changed.emit(wave_state, old_state)
 	EventBus.state_changed.emit(&"BOSS_INTRO")
-	var b_id: StringName = boss_data.id if boss_data != null else &"bulwark"
-	EventBus.boss_intro_started.emit(b_id)
+	EventBus.boss_intro_started.emit(get_boss_id())
 
 
 func skip_boss_intro() -> void:
@@ -499,8 +504,22 @@ func _unit_entry(enemy_id: StringName) -> Dictionary:
 	return {"id": enemy_id, "scene": scene, "is_ranged": data != null and data.is_ranged}
 
 
-func _boss_id() -> StringName:
+## Id of the boss wave w sends (current_wave when w < 0): the WaveScript row of that wave naming a
+## boss of boss_scenes on a scripted wave, the id of boss_data otherwise.
+func get_boss_id(w: int = -1) -> StringName:
+	var wave_num: int = current_wave if w < 0 else w
+	if is_scripted_wave(wave_num):
+		for entry in wave_script.get_wave(wave_num):
+			var id: StringName = entry.get("enemy_type", &"")
+			if boss_scenes.has(id):
+				return id
 	return boss_data.id if boss_data != null else &"bulwark"
+
+
+## Scene of the boss wave w sends (current_wave when w < 0), bulwark_scene when boss_scenes has none.
+func get_boss_scene(w: int = -1) -> PackedScene:
+	var scene: PackedScene = boss_scenes.get(get_boss_id(w))
+	return scene if scene != null else bulwark_scene
 
 
 ## The units the WaveScript lists for a wave, escorts included and the boss left out. A type the
@@ -513,7 +532,7 @@ func _scripted_units(wave_num: int) -> Array[Dictionary]:
 		return units
 	for entry in entries:
 		var id: StringName = entry.get("enemy_type", &"")
-		if id == _boss_id():
+		if boss_scenes.has(id) or id == get_boss_id(wave_num):
 			continue
 		var unit := _unit_entry(id)
 		if unit.is_empty():
@@ -707,7 +726,7 @@ func _send_wave_preview() -> void:
 func get_wave_plan() -> Dictionary:
 	var plan := {}
 	if is_boss_wave(current_wave):
-		plan[_boss_id()] = 1
+		plan[get_boss_id()] = 1
 	plan.merge(_queue_plan)
 	return plan
 
@@ -1112,9 +1131,10 @@ func _cleanup_projectiles() -> void:
 
 
 func _spawn_boss() -> void:
-	if bulwark_scene == null:
+	var scene := get_boss_scene()
+	if scene == null:
 		return
-	var boss_inst := bulwark_scene.instantiate() as Enemy
+	var boss_inst := scene.instantiate() as Enemy
 	if boss_inst == null:
 		return
 

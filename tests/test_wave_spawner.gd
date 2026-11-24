@@ -349,7 +349,7 @@ func test_scripted_waves_follow_wave_script() -> void:
 	for w in range(1, GameConfig.victory_wave + 1):
 		var expected := {}
 		for entry in wm.wave_script.get_wave(w):
-			if entry.enemy_type == wm.boss_data.id:
+			if entry.enemy_type == wm.get_boss_id(w):
 				continue
 			expected[entry.enemy_type] = int(expected.get(entry.enemy_type, 0)) + int(entry.count)
 		var a := _count_ids(wm.generate_wave_composition(w, 1))
@@ -476,4 +476,14 @@ func test_wave_plan_matches_queue() -> void:
 		expected[entry.enemy_type] = int(expected.get(entry.enemy_type, 0)) + int(entry.count)
 	assert_true(plan == expected, "Wave 10 preview equals the WaveScript (boss included): %s" % plan)
 	assert_true(plan.size() <= GameConfig.wave_max_enemy_types, "Preview has at most wave_max_enemy_types types")
+	var bosses_match := true
+	for w in range(GameConfig.boss_wave_interval, GameConfig.victory_wave + 1, GameConfig.boss_wave_interval):
+		var row_boss: StringName = &""
+		for entry in wm.wave_script.get_wave(w):
+			if wm.boss_scenes.has(entry.enemy_type):
+				row_boss = entry.enemy_type
+		if row_boss == &"" or wm.get_boss_id(w) != row_boss or wm.get_boss_scene(w) != wm.boss_scenes[row_boss]:
+			bosses_match = false
+			printerr("Wave %d sends boss '%s', its WaveScript row names '%s'" % [w, wm.get_boss_id(w), row_boss])
+	assert_true(bosses_match, "Every scripted boss wave sends the boss its WaveScript row names, with that boss's scene")
 	wm.queue_free()

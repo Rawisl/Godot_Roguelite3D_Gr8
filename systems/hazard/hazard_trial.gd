@@ -85,9 +85,9 @@ func build_group(wave: int) -> Array[Dictionary]:
 			scenes[id] = scene
 		counts[id] = int(counts.get(id, 0)) + 1
 	var places := GameConfig.hazard_enemy_count
-	if wave_manager.is_boss_wave(wave) and wave_manager.bulwark_scene != null:
-		var boss_id: StringName = wave_manager.boss_data.id if wave_manager.boss_data != null else &"bulwark"
-		result.append({"id": boss_id, "scene": wave_manager.bulwark_scene, "boss": true})
+	var boss_scene: PackedScene = wave_manager.get_boss_scene(wave)
+	if wave_manager.is_boss_wave(wave) and boss_scene != null:
+		result.append({"id": wave_manager.get_boss_id(wave), "scene": boss_scene, "boss": true})
 		places = GameConfig.hazard_boss_escorts
 	if order.is_empty():
 		return result
