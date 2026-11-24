@@ -63,6 +63,7 @@ func _ready() -> void:
 	test_tc26_shared_roll_cooldown()
 	test_tc25_turn_pressure()
 	test_eye_glow_in_roar()
+	test_roar_cut_short_rests_arm()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -1315,6 +1316,53 @@ func test_tc20_roar_lead_in() -> void:
 	_run_combo(combo_boss)
 	assert_true(front.hits.size() == 11, "All eleven hits still land after the roar (%d)" % front.hits.size())
 	_free_all([front, combo_boss])
+
+
+## A roar cut short must not leave the right arm where the roar put it: Shoulder.R is keyed only
+## by the extra clips, so every model clip holds it at rest.
+func test_roar_cut_short_rests_arm() -> void:
+	print("
+[Roar cut short] The right arm goes back to rest")
+	var boss := _make_boss()
+	var skeleton := boss._skeleton
+	var bone := skeleton.find_bone("Shoulder.R") if skeleton != null else -1
+	assert_true(bone >= 0, "The rig has a Shoulder.R bone")
+	if bone < 0:
+		_free_all([boss])
+		return
+	var path := NodePath("SkeletalCentipede_Rig/Skeleton3D:Shoulder.R")
+	var missing: Array[StringName] = []
+	var model_library := boss.anim_player.get_animation_library(&"")
+	for clip_name in model_library.get_animation_list():
+		if model_library.get_animation(clip_name).find_track(path, Animation.TYPE_ROTATION_3D) < 0:
+			missing.append(clip_name)
+	for clip_name in [SkeletalCentipede.CLIP_IDLE, SkeletalCentipede.CLIP_TURN_LEFT]:
+		if boss.anim_player.get_animation(clip_name).find_track(path, Animation.TYPE_ROTATION_3D) < 0:
+			missing.append(clip_name)
+	assert_true(missing.is_empty(), "Every model clip and the runtime copies hold Shoulder.R (missing %s)" % [missing])
+	var rest := skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
+	var cmd := _make_commander(Vector3(0.0, 0.0, BOSS_DATA.body(1.2)))
+	_start(boss, cmd, COMBO)
+	_advance_pose(boss, _roar(boss) * 0.5)
+	var raised := skeleton.get_bone_pose_rotation(bone)
+	assert_true(raised.angle_to(rest) > 0.05, "Half way into the roar the arm is off rest (%.3f rad)" % raised.angle_to(rest))
+	boss.stop_attack_sequence()
+	_advance_pose(boss, 0.5)
+	var after := skeleton.get_bone_pose_rotation(bone)
+	assert_true(after.angle_to(rest) < 0.01, "After the cut the arm is back at rest (%.3f rad off)" % after.angle_to(rest))
+	_start(boss, cmd, COMBO)
+	_advance_pose(boss, _roar(boss) * 0.5)
+	boss._play_clip(SkeletalCentipede.CLIP_WALK, 0.0, 1.0)
+	_advance_pose(boss, 0.1)
+	assert_true(skeleton.get_bone_pose_rotation(bone).angle_to(rest) < 0.01, "A walk cut into the roar also puts the arm back")
+	_free_all([cmd, boss])
+
+
+## Advances the boss's animation by seconds, then once more by nothing: the skeleton shows the
+## pose of an advance only after the next one.
+func _advance_pose(boss: SkeletalCentipede, seconds: float) -> void:
+	boss.anim_player.advance(seconds)
+	boss.anim_player.advance(0.0)
 
 
 func _eye_glows(boss: SkeletalCentipede) -> Array[float]:

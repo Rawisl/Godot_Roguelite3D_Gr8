@@ -63,6 +63,9 @@ const SOURCE_TURN_CLIPS: Array[StringName] = [&"turn_left_90", &"turn_right_90",
 const SOURCE_REST_CLIP: StringName = &"roll_start"
 
 const RIG_ROOT_TRACK: NodePath = ^"SkeletalCentipede_Rig/Skeleton3D:Root"
+## Track types that pose a bone; the extra clips' bone tracks of these types are held at rest.
+const BONE_TRACK_TYPES: Array[Animation.TrackType] = [
+	Animation.TYPE_ROTATION_3D, Animation.TYPE_POSITION_3D, Animation.TYPE_SCALE_3D]
 const BLEND_RIBS_CLOSE: StringName = &"ribs_close"
 
 const MOVE_SLASH: StringName = &"slash"
@@ -247,8 +250,54 @@ func _setup_anim_player() -> void:
 			anim_player.get_animation(clip_name).loop_mode = Animation.LOOP_LINEAR
 	if not anim_player.has_animation_library(&"roll_extra"):
 		anim_player.add_animation_library(&"roll_extra", ROLL_EXTRA_LIBRARY)
+	_hold_extra_bones_at_rest()
 	if not anim_player.has_animation_library(LIBRARY_RUNTIME):
 		_build_runtime_library()
+
+
+## The roar and roll_start clips key bones (Shoulder.R) that none of the model's own clips key.
+## Without a track the bone keeps the last pose it got, so a roar cut short left the arm raised
+## through every move after it. Each model clip missing such a bone track gets one that holds the
+## bone's rest value. Runs before the runtime library is built, so the idle and turn copies carry
+## the track too. The clips are shared between bosses; a clip that already has the track is left
+## alone, so a second boss adds nothing.
+func _hold_extra_bones_at_rest() -> void:
+	var root := anim_player.get_node_or_null(anim_player.root_node)
+	if root == null or not anim_player.has_animation_library(&""):
+		return
+	var model_library := anim_player.get_animation_library(&"")
+	var extra_library := anim_player.get_animation_library(&"roll_extra")
+	for extra_name in extra_library.get_animation_list():
+		var extra := extra_library.get_animation(extra_name)
+		for i in extra.get_track_count():
+			var type := extra.track_get_type(i)
+			if type not in BONE_TRACK_TYPES:
+				continue
+			_hold_bone_track_at_rest(root, model_library, extra.track_get_path(i), type)
+
+
+## Adds a rest-value track for one bone track (path, type) to every model clip that lacks it.
+func _hold_bone_track_at_rest(root: Node, model_library: AnimationLibrary, path: NodePath, type: Animation.TrackType) -> void:
+	var skeleton := root.get_node_or_null(NodePath(path.get_concatenated_names())) as Skeleton3D
+	if skeleton == null:
+		return
+	var bone := skeleton.find_bone(path.get_concatenated_subnames())
+	if bone < 0:
+		return
+	var rest := skeleton.get_bone_rest(bone)
+	for clip_name in model_library.get_animation_list():
+		var clip := model_library.get_animation(clip_name)
+		if clip.find_track(path, type) >= 0:
+			continue
+		var track := clip.add_track(type)
+		clip.track_set_path(track, path)
+		match type:
+			Animation.TYPE_ROTATION_3D:
+				clip.rotation_track_insert_key(track, 0.0, rest.basis.get_rotation_quaternion())
+			Animation.TYPE_POSITION_3D:
+				clip.position_track_insert_key(track, 0.0, rest.origin)
+			Animation.TYPE_SCALE_3D:
+				clip.scale_track_insert_key(track, 0.0, rest.basis.get_scale())
 
 
 ## One resting-pose clip, and the three turns with the root bone's rotation taken out (the boss
