@@ -41,6 +41,7 @@ var _intro_timer: float = 0.0
 var _intro_elapsed: float = 0.0
 var _victory_handled: bool = false
 var _waiting_victory_continue: bool = false
+var _wave_clear_pending: bool = false
 
 var _fallback_current_wave: int = 1
 var current_wave: int:
@@ -788,9 +789,19 @@ func _on_enemy_died(enemy_type: StringName, _pos: Vector3, gold_base: float, pre
 	if wave_state == Enums.WaveState.COMBAT or wave_state == Enums.WaveState.BOSS_COMBAT:
 		enemies_alive = maxi(0, enemies_alive - 1)
 		EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
-		if spawn_queue.is_empty() and enemies_alive == 0:
+		if spawn_queue.is_empty() and enemies_alive == 0 and not _wave_clear_pending:
 			_clear_time = _combat_timer
-			_end_combat_to_summary()
+			# A lethal hit in the same frame invalidates the clear and its rewards.
+			_wave_clear_pending = true
+			_finish_wave_clear.call_deferred(current_wave)
+
+
+func _finish_wave_clear(wave: int) -> void:
+	_wave_clear_pending = false
+	if current_wave != wave or _is_run_lost or not spawn_queue.is_empty() or enemies_alive != 0:
+		return
+	if wave_state == Enums.WaveState.COMBAT or wave_state == Enums.WaveState.BOSS_COMBAT:
+		_end_combat_to_summary()
 
 
 func _end_combat_to_summary() -> void:
