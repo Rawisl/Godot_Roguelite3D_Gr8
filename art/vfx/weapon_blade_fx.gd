@@ -23,8 +23,13 @@ const RAMPAGE_DATA := "res://data/weapons/rampage.tres"
 @export var amount := 10
 @export var lifetime := 0.7
 @export var particle_size := 0.06
-## Rampage: emission energy of the blade for no band, then bands 1, 2 and 3.
-@export var rampage_glow: PackedFloat32Array = [0.4, 1.0, 2.0, 3.2]
+## Rampage: emission energy of the blade for no band, then bands 1, 2 and 3. Kept low: the
+## level's ACES tonemap washes a bright red out to pink and then cream.
+@export var rampage_glow: PackedFloat32Array = [0.2, 0.45, 0.7, 0.95]
+## Rampage: emission colour per band, a deeper and more saturated red each band, so the blade
+## reads hotter while it stays red.
+@export var rampage_glow_colors: PackedColorArray = [
+	Color(0.55, 0.04, 0.03), Color(0.85, 0.04, 0.02), Color(1.0, 0.04, 0.0), Color(1.0, 0.03, 0.0)]
 @export var rampage_mark_color := Color(1.0, 0.25, 0.15)
 @export var rampage_mark_height := 2.3
 
@@ -101,6 +106,7 @@ func _set_band(band: int, force: bool) -> void:
 	_band = band
 	if _blade_material != null:
 		var glow := rampage_glow[clampi(band, 0, rampage_glow.size() - 1)]
+		_blade_material.emission = rampage_glow_colors[clampi(band, 0, rampage_glow_colors.size() - 1)]
 		_blade_material.emission_energy_multiplier = glow * (0.5 if _reduce_flash else 1.0)
 	if _particles != null:
 		# Embers always rise off the blade; each lower band adds more.
