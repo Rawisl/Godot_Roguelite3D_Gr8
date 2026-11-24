@@ -75,6 +75,11 @@ enemy.grunt,Lính bộ
 enemy.archer,Cung thủ
 enemy.sniper,Xạ thủ
 enemy.rider,Kỵ binh
+enemy.assassin,Sát thủ
+enemy.suicide_squad,Cảm tử quân
+enemy.captain,Đội trưởng cảm tử
+enemy.knight,Hiệp sĩ
+enemy.undead,Xác sống
 enemy.brute,Lực sĩ
 enemy.bulwark,Bulwark
 enemy.skeletal_centipede,Skeletal Centipede

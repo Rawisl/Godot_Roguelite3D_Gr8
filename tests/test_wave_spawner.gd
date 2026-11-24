@@ -31,6 +31,12 @@ func _ready() -> void:
 	test_queue_throttling_max_alive()
 	test_spn03_overlap_retry_and_timeout()
 	test_wave_table_dynamic_tuning()
+	test_scripted_waves_follow_wave_script()
+	test_schedule_lasts_spawn_duration()
+	test_generated_waves_max_types()
+	test_scripted_wave_scale()
+	test_catalog_has_ten_types()
+	test_wave_plan_matches_queue()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -67,9 +73,9 @@ func test_deterministic_by_run_seed() -> void:
 			break
 	assert_true(identical, "All enemy IDs, group indices, and delays are 100% identical across same seed runs")
 
-	# Different seed produces variation for later waves (e.g. wave 7)
-	var comp_diff := wm.generate_wave_composition(7, 99999)
-	var comp_base := wm.generate_wave_composition(7, 11111)
+	# Different seed produces variation for generated waves (past victory_wave)
+	var comp_diff := wm.generate_wave_composition(37, 99999)
+	var comp_base := wm.generate_wave_composition(37, 11111)
 	var diff_found: bool = false
 	if comp_diff.size() != comp_base.size():
 		diff_found = true
@@ -135,7 +141,7 @@ func test_spn05_archer_max_40_percent() -> void:
 	add_child(wm)
 
 	var all_within_cap := true
-	for w in [3, 4, 5, 7, 8, 10, 15]:
+	for w in [3, 4, 5, 7, 8, 10, 15, 31, 33, 37, 44]:
 		for s in [0, 77, 333, 9999]:
 			var comp := wm.generate_wave_composition(w, s)
 			var archers := 0
@@ -157,7 +163,7 @@ func test_brute_cap_floor_w_over_4() -> void:
 	add_child(wm)
 
 	var all_within_brute_cap := true
-	for w in [6, 7, 8, 9, 10, 11, 12, 16]:
+	for w in [6, 7, 8, 9, 10, 11, 12, 16, 31, 34, 38]:
 		var max_allowed: int = int(floor(float(w) / 4.0))
 		for s in [10, 20, 30, 40]:
 			var comp := wm.generate_wave_composition(w, s)
@@ -305,7 +311,7 @@ func test_wave_table_dynamic_tuning() -> void:
 	wm.wave_table = custom_table
 	add_child(wm)
 
-	var comp := wm.generate_wave_composition(4, 42)
+	var comp := wm.generate_wave_composition(34, 42)
 	assert_true(comp.size() > 0, "Composition generated with custom WaveTable")
 
 	var group1_first_delay: float = -1.0
@@ -313,6 +319,161 @@ func test_wave_table_dynamic_tuning() -> void:
 		if u.group_index == 1:
 			group1_first_delay = u.delay
 			break
-	assert_true(is_equal_approx(group1_first_delay, 1.5), "Group 1 pause reflects custom WaveTable.group_pause (1.5s)")
+	assert_true(group1_first_delay >= 1.5 - 0.0001, "Group 1 pause starts from custom WaveTable.group_pause (1.5s) and only grows")
 
+	wm.queue_free()
+
+
+## Units per id of a schedule.
+func _count_ids(comp: Array[Dictionary]) -> Dictionary:
+	var counts := {}
+	for u in comp:
+		counts[u.id] = int(counts.get(u.id, 0)) + 1
+	return counts
+
+
+## Game seconds from the start of combat to the last planned spawn.
+func _last_spawn_time(comp: Array[Dictionary]) -> float:
+	var t := 0.0
+	for u in comp:
+		t += float(u.delay)
+	return t
+
+
+func test_scripted_waves_follow_wave_script() -> void:
+	print("\n[GROUP 11] Waves 1-30 follow the WaveScript, whatever the run seed")
+	var wm := WaveManager.new()
+	add_child(wm)
+	var all_match := true
+	var seed_free := true
+	for w in range(1, GameConfig.victory_wave + 1):
+		var expected := {}
+		for entry in wm.wave_script.get_wave(w):
+			if entry.enemy_type == wm.boss_data.id:
+				continue
+			expected[entry.enemy_type] = int(expected.get(entry.enemy_type, 0)) + int(entry.count)
+		var a := _count_ids(wm.generate_wave_composition(w, 1))
+		var b := _count_ids(wm.generate_wave_composition(w, 987654))
+		if a != expected:
+			all_match = false
+			printerr("Wave %d: %s, script says %s" % [w, a, expected])
+		if a != b:
+			seed_free = false
+	assert_true(all_match, "Every scripted wave spawns exactly the WaveScript units (escorts in, boss out)")
+	assert_true(seed_free, "Scripted wave units do not depend on the run seed")
+
+	# A scripted wave with no units: one Grunt and an error, the wave still runs.
+	var empty_script := WaveScript.new()
+	wm.wave_script = empty_script
+	var comp := wm.generate_wave_composition(4, 1)
+	assert_true(comp.size() == 1 and comp[0].id == &"grunt", "Scripted wave without data falls back to one Grunt")
+	wm.queue_free()
+
+
+func test_schedule_lasts_spawn_duration() -> void:
+	print("\n[GROUP 12] Every schedule lasts at least the wave's spawn duration")
+	var wm := WaveManager.new()
+	add_child(wm)
+	var all_long_enough := true
+	var stretched_exact := true
+	for w in range(1, 46):
+		for s in [3, 4242]:
+			var comp := wm.generate_wave_composition(w, s)
+			var last := _last_spawn_time(comp)
+			var dur := wm.get_spawn_duration(w)
+			if last < dur - 0.001:
+				all_long_enough = false
+				printerr("Wave %d seed %d: last spawn at %.2f s < %.2f s" % [w, s, last, dur])
+	# Wave 1 is short (8 Grunts), so it is stretched to exactly its spawn duration.
+	var w1 := wm.generate_wave_composition(1, 0)
+	stretched_exact = is_equal_approx(_last_spawn_time(w1), wm.get_spawn_duration(1))
+	assert_true(all_long_enough, "Last unit of waves 1-45 spawns at or after spawn_duration")
+	assert_true(stretched_exact, "A short schedule ends exactly at spawn_duration")
+	assert_true(is_equal_approx(wm.get_spawn_duration(1), wm.wave_script.get_spawn_duration(1)), "Scripted spawn_duration comes from the WaveScript")
+	assert_true(is_equal_approx(wm.get_spawn_duration(35), wm.scale_config.get_spawn_duration(35)), "Generated waves use the ScaleConfig spawn_duration")
+
+	# A single group only moves its last unit.
+	var units: Array[Dictionary] = [{"id": &"grunt", "scene": null, "is_ranged": false}]
+	var rng := RandomNumberGenerator.new()
+	var single := wm._schedule_units(units, 1, rng)
+	assert_true(single.size() == 1 and is_equal_approx(single[0].delay, wm.get_spawn_duration(1)), "One unit spawns right at spawn_duration")
+	wm.queue_free()
+
+
+func test_generated_waves_max_types() -> void:
+	print("\n[GROUP 13] Waves 31-40 have at most 5 types, the boss counted")
+	var wm := WaveManager.new()
+	add_child(wm)
+	var ok := true
+	var seen := {}
+	for w in range(31, 41):
+		for s in [1, 2, 3, 77, 9001]:
+			var ids := _count_ids(wm.generate_wave_composition(w, s))
+			var types := ids.size() + (1 if wm.is_boss_wave(w) else 0)
+			if types > GameConfig.wave_max_enemy_types:
+				ok = false
+				printerr("Wave %d seed %d has %d types" % [w, s, types])
+			seen.merge(ids)
+	assert_true(ok, "No generated wave 31-40 has more than wave_max_enemy_types types")
+	assert_true(seen.size() > 5, "Generated waves draw from the whole catalogue (saw %d types)" % seen.size())
+	wm.queue_free()
+
+
+func test_scripted_wave_scale() -> void:
+	print("\n[GROUP 14] Scale comes from the WaveScript up to victory_wave, the ScaleConfig after")
+	var wm := WaveManager.new()
+	add_child(wm)
+	var m10 := wm.get_wave_mults(10)
+	assert_true(is_equal_approx(m10.x, wm.wave_script.get_hp_mult(10)) and is_equal_approx(m10.y, wm.wave_script.get_dmg_mult(10)) and is_equal_approx(m10.z, wm.wave_script.get_speed_mult(10)), "Boss wave 10 uses WaveScript multipliers")
+	var m31 := wm.get_wave_mults(31)
+	assert_true(is_equal_approx(m31.x, wm.scale_config.get_hp_mult(31)), "Wave 31 uses the ScaleConfig formula")
+
+	var script := WaveScript.new()
+	script.hp_mult = PackedFloat32Array([3.0])
+	script.dmg_mult = PackedFloat32Array([2.0])
+	script.speed_mult = PackedFloat32Array([1.5])
+	wm.wave_script = script
+	var m1 := wm.get_wave_mults(1)
+	assert_true(m1 == Vector3(3.0, 2.0, 1.5), "Multipliers are read from the WaveScript")
+	var m2 := wm.get_wave_mults(2)
+	assert_true(is_equal_approx(m2.x, wm.scale_config.get_hp_mult(2)), "A wave missing from the WaveScript falls back to the formula")
+
+	var grunt := (wm.get_enemy_scene(&"grunt").instantiate()) as Enemy
+	wm.apply_wave_scale_to(grunt, 1)
+	assert_true(is_equal_approx(grunt.wave_hp_mult, 3.0) and is_equal_approx(grunt.wave_speed_mult, 1.5), "apply_wave_scale_to applies the scripted multipliers")
+	grunt.free()
+	wm.queue_free()
+
+
+func test_catalog_has_ten_types() -> void:
+	print("\n[GROUP 15] The spawner can send all ten unit types")
+	var wm := WaveManager.new()
+	add_child(wm)
+	assert_true(wm.enemy_scenes.size() == 10, "Catalogue has 10 types")
+	var all_ok := true
+	for id in wm.enemy_scenes:
+		var unit := wm.enemy_scenes[id].instantiate() as Enemy
+		if unit == null or unit.data == null or unit.data.id != id:
+			all_ok = false
+			printerr("Scene of '%s' does not carry matching EnemyData" % id)
+		if unit != null:
+			unit.free()
+		if wm.get_enemy_data(id) == null:
+			all_ok = false
+	assert_true(all_ok, "Every catalogue scene instantiates with its own EnemyData")
+	wm.queue_free()
+
+
+func test_wave_plan_matches_queue() -> void:
+	print("\n[GROUP 16] The PREP preview lists the queued units and the boss")
+	var wm := WaveManager.new()
+	add_child(wm)
+	wm.current_wave = 10
+	wm.start_prep()
+	var plan := wm.get_wave_plan()
+	var expected := {}
+	for entry in wm.wave_script.get_wave(10):
+		expected[entry.enemy_type] = int(expected.get(entry.enemy_type, 0)) + int(entry.count)
+	assert_true(plan == expected, "Wave 10 preview equals the WaveScript (boss included): %s" % plan)
+	assert_true(plan.size() <= GameConfig.wave_max_enemy_types, "Preview has at most wave_max_enemy_types types")
 	wm.queue_free()

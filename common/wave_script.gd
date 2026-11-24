@@ -43,6 +43,16 @@ func get_speed_mult(wave: int) -> float:
 	return _get_value(speed_mult, wave, 1.0)
 
 
+## True when the script has a spawn duration for this wave.
+func has_spawn_duration(wave: int) -> bool:
+	return wave >= 1 and wave <= spawn_duration.size()
+
+
+## True when the script has all three multipliers for this wave.
+func has_mults(wave: int) -> bool:
+	return wave >= 1 and wave <= mini(hp_mult.size(), mini(dmg_mult.size(), speed_mult.size()))
+
+
 func _get_value(values: PackedFloat32Array, wave: int, fallback: float) -> float:
 	if wave < 1 or wave > values.size():
 		return fallback

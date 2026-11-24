@@ -2,9 +2,11 @@ class_name WaveManager
 extends Node
 
 ## Wave FSM (PREP - COMBAT - SUMMARY) and Spawner.
-## Supports queue-based spawning, spawn_zone placement, spawn_grace,
-## deterministic wave composition generation by run_seed, group scheduling, and queue throttling.
-# TODO(Ender-Via): when waves past 30 are scripted, spawn boss escorts at 0.5x budget from wave 31 instead of reading them from the WaveScript.
+## Supports queue-based spawning, spawn_zone placement, spawn_grace, group scheduling and queue
+## throttling. Waves 1 to victory_wave take their units and scale from the WaveScript, the same for
+## every run; later waves draw their units from the WaveTable with an RNG of the run seed and scale
+## by the ScaleConfig. Every schedule is stretched so the last unit spawns no sooner than the
+## wave's spawn duration.
 
 signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveState)
 
@@ -20,15 +22,27 @@ signal wave_fsm_state_changed(new_state: Enums.WaveState, old_state: Enums.WaveS
 		if rs != null:
 			rs.run_seed = value
 var _fallback_run_seed: int = 0
-@export var grunt_scene: PackedScene = preload("res://entities/enemy/grunt.tscn")
-@export var archer_scene: PackedScene = preload("res://entities/enemy/archer.tscn")
-@export var brute_scene: PackedScene = preload("res://entities/enemy/brute.tscn")
-@export var sniper_scene: PackedScene = preload("res://entities/enemy/sniper.tscn")
-@export var rider_scene: PackedScene = preload("res://entities/enemy/rider.tscn")
+## Every unit type the spawner can send, by EnemyData id. The boss is spawned on its own.
+@export var enemy_scenes: Dictionary[StringName, PackedScene] = {
+	&"grunt": preload("res://entities/enemy/grunt.tscn"),
+	&"archer": preload("res://entities/enemy/archer.tscn"),
+	&"brute": preload("res://entities/enemy/brute.tscn"),
+	&"sniper": preload("res://entities/enemy/sniper.tscn"),
+	&"rider": preload("res://entities/enemy/rider.tscn"),
+	&"assassin": preload("res://entities/enemy/assassin.tscn"),
+	&"suicide_squad": preload("res://entities/enemy/suicide_squad.tscn"),
+	&"captain": preload("res://entities/enemy/captain.tscn"),
+	&"knight": preload("res://entities/enemy/knight.tscn"),
+	&"undead": preload("res://entities/enemy/undead.tscn"),
+}
 @export var bulwark_scene: PackedScene = preload("res://entities/enemy/bulwark.tscn")
 @export var boss_data: BossData = preload("res://data/bosses/bulwark_boss.tres")
 @export var scale_config: ScaleConfig = preload("res://data/config/scale_config.tres")
 @export var wave_table: WaveTable = preload("res://data/waves/wave_table.tres")
+## Units, spawn duration and scale of waves 1 to victory_wave.
+@export var wave_script: WaveScript = preload("res://data/waves/wave_script.tres")
+
+const FALLBACK_ENEMY_ID := &"grunt"
 
 @export var spawn_interval: float = 0.6
 @export var default_wave_1_count: int = 8
@@ -116,6 +130,8 @@ var _prestige_pending: int:
 var _kills_by_type: Dictionary = {}
 ## Enemy id -> count of the spawn queue built for the coming wave.
 var _queue_plan: Dictionary = {}
+## EnemyData by id for types the WaveTable does not list.
+var _enemy_data_cache: Dictionary = {}
 
 const XP_TRACKER_SCRIPT := preload("res://systems/xp/xp_tracker.gd")
 const BOSS_TIMER_SCRIPT := preload("res://systems/wave/boss_timer.gd")
@@ -298,18 +314,58 @@ func _setup_container() -> void:
 			spawn_zone_half_extents = box.size * 0.5
 
 
-func _get_scene_for_enemy_id(enemy_id: StringName) -> PackedScene:
-	match enemy_id:
-		&"archer":
-			return archer_scene
-		&"brute":
-			return brute_scene
-		&"sniper":
-			return sniper_scene
-		&"rider":
-			return rider_scene
-		_:
-			return grunt_scene
+func get_enemy_scene(enemy_id: StringName) -> PackedScene:
+	return enemy_scenes.get(enemy_id) as PackedScene
+
+
+## The EnemyData of a unit type: from the WaveTable when it lists the type, else from data/enemies.
+func get_enemy_data(enemy_id: StringName) -> EnemyData:
+	if wave_table != null:
+		for g in wave_table.groups:
+			if g != null and g.enemy != null and g.enemy.id == enemy_id:
+				return g.enemy
+	if _enemy_data_cache.has(enemy_id):
+		return _enemy_data_cache[enemy_id]
+	var path := "res://data/enemies/%s.tres" % enemy_id
+	var data: EnemyData = load(path) as EnemyData if ResourceLoader.exists(path) else null
+	_enemy_data_cache[enemy_id] = data
+	return data
+
+
+## Waves 1 to victory_wave follow the WaveScript; later waves are generated.
+func is_scripted_wave(wave_num: int) -> bool:
+	return wave_script != null and wave_num >= 1 and wave_num <= GameConfig.victory_wave
+
+
+## The wave's spawn duration in game seconds: the WaveScript for scripted waves (the ScaleConfig
+## formula with a warning when the script lacks it), the ScaleConfig from victory_wave + 1.
+func get_spawn_duration(wave_num: int) -> float:
+	if is_scripted_wave(wave_num):
+		if wave_script.has_spawn_duration(wave_num):
+			return wave_script.get_spawn_duration(wave_num)
+		push_warning("WaveScript has no spawn duration for wave %d; using the ScaleConfig formula." % wave_num)
+	return _scale_config().get_spawn_duration(wave_num)
+
+
+## hp, dmg and speed multipliers of a wave as (x, y, z): the WaveScript for scripted waves (the
+## ScaleConfig formula with a warning when the script lacks them), the ScaleConfig after.
+func get_wave_mults(wave_num: int) -> Vector3:
+	if is_scripted_wave(wave_num):
+		if wave_script.has_mults(wave_num):
+			return Vector3(wave_script.get_hp_mult(wave_num), wave_script.get_dmg_mult(wave_num), wave_script.get_speed_mult(wave_num))
+		push_warning("WaveScript has no multipliers for wave %d; using the ScaleConfig formula." % wave_num)
+	var cfg := _scale_config()
+	return Vector3(cfg.get_hp_mult(wave_num), cfg.get_dmg_mult(wave_num), cfg.get_speed_mult(wave_num))
+
+
+## Applies the scale of a wave to a unit about to spawn. Immutable while it lives.
+func apply_wave_scale_to(enemy: Enemy, wave_num: int) -> void:
+	var mults := get_wave_mults(wave_num)
+	enemy.apply_wave_scale(mults.x, mults.y, mults.z, wave_num, _scale_config())
+
+
+func _scale_config() -> ScaleConfig:
+	return scale_config if scale_config != null else ScaleConfig.new()
 
 
 func start_prep() -> void:
@@ -412,154 +468,184 @@ func start_combat() -> void:
 	EventBus.enemy_count_changed.emit(enemies_alive, spawn_queue.size(), total_wave_enemies)
 
 
-## Generates the structured wave composition according to budget, intro counts,
-## archetype weights, grouping, and melee-first ordering.
+## The wave's spawn schedule: one entry per unit ({id, scene, is_ranged, group_index, delay}),
+## delay being the game seconds after the previous spawn. Waves 1 to victory_wave take their units
+## from the WaveScript and do not depend on the run seed; later waves are drawn with an RNG of the
+## run seed and the wave. The boss is not in the list: it spawns on its own at second 0.
 func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dictionary]:
-	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
-	var budget: int = cfg.get_budget(wave_num)
+	var units: Array[Dictionary] = []
+	if is_scripted_wave(wave_num):
+		units = _scripted_units(wave_num)
+	else:
+		units = _generated_units(wave_num, p_run_seed)
+	if units.is_empty():
+		push_warning("Wave %d has 0 enemies. Forced minimum 1 Grunt." % wave_num)
+		var fallback := _unit_entry(FALLBACK_ENEMY_ID)
+		if not fallback.is_empty():
+			units.append(fallback)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([p_run_seed, wave_num, "schedule"])
+	return _schedule_units(units, wave_num, rng)
+
+
+## {id, scene, is_ranged} of a unit type, or {} when the spawner has no scene for it.
+func _unit_entry(enemy_id: StringName) -> Dictionary:
+	var scene := get_enemy_scene(enemy_id)
+	if scene == null:
+		return {}
+	var data := get_enemy_data(enemy_id)
+	return {"id": enemy_id, "scene": scene, "is_ranged": data != null and data.is_ranged}
+
+
+func _boss_id() -> StringName:
+	return boss_data.id if boss_data != null else &"bulwark"
+
+
+## The units the WaveScript lists for a wave, escorts included and the boss left out. A type the
+## spawner cannot send is skipped with an error.
+func _scripted_units(wave_num: int) -> Array[Dictionary]:
+	var units: Array[Dictionary] = []
+	var entries := wave_script.get_wave(wave_num)
+	if entries.is_empty():
+		push_error("WaveScript has no units for wave %d." % wave_num)
+		return units
+	for entry in entries:
+		var id: StringName = entry.get("enemy_type", &"")
+		if id == _boss_id():
+			continue
+		var unit := _unit_entry(id)
+		if unit.is_empty():
+			push_error("WaveScript wave %d lists '%s', which the spawner has no scene for." % [wave_num, id])
+			continue
+		for i in range(int(entry.get("count", 0))):
+			units.append(unit)
+	return units
+
+
+## Units of a generated wave: the budget of the ScaleConfig (escort_budget_ratio of it on a boss
+## wave), a set of at most wave_max_enemy_types types (the boss counts as one) drawn by weight, the
+## intro counts of types new on this wave first, then units drawn by weight within the set.
+func _generated_units(wave_num: int, p_run_seed: int) -> Array[Dictionary]:
+	var units: Array[Dictionary] = []
+	if wave_num <= 0:
+		return units
+	var table: WaveTable = wave_table if wave_table != null else WaveTable.new()
+	var budget: int = _scale_config().get_budget(wave_num)
 	var is_boss: bool = is_boss_wave(wave_num)
 	if is_boss:
-		# TODO(Ender-Via): SPN-10: escorts for waves 1-30 come from WaveScript; only from wave 31 is it 0.5x budget.
-		budget = maxi(1, int(floor(float(budget) * 0.5)))
+		budget = maxi(1, int(floor(float(budget) * table.escort_budget_ratio)))
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([p_run_seed, wave_num])
 
-	var table: WaveTable = wave_table if wave_table != null else WaveTable.new()
-	var archetypes: Array[Dictionary] = []
+	var eligible: Array[WaveGroup] = []
 	for g in table.groups:
-		if g == null or g.enemy == null:
+		if g == null or g.enemy == null or get_enemy_scene(g.enemy.id) == null:
 			continue
-		archetypes.append({
-			"id": g.enemy.id,
-			"scene": _get_scene_for_enemy_id(g.enemy.id),
-			"cost": g.enemy.spawn_cost,
-			"weight": g.weight,
-			"min_wave": g.min_wave,
-			"is_ranged": g.enemy.is_ranged,
-			"intro_count": g.intro_count,
-			"max_per_wave": g.max_per_wave
-		})
+		if wave_num < g.min_wave:
+			continue
+		# Waves 1 and 2 only have Grunts.
+		if wave_num <= 2 and g.enemy.id != FALLBACK_ENEMY_ID:
+			continue
+		eligible.append(g)
+	if eligible.is_empty():
+		return units
 
-	if archetypes.is_empty():
-		archetypes.append({
-			"id": &"grunt",
-			"scene": grunt_scene,
-			"cost": 1,
-			"weight": 10.0,
-			"min_wave": 1,
-			"is_ranged": false,
-			"intro_count": 0,
-			"max_per_wave": -1
-		})
+	# The type set: types new on this wave first, then drawn by weight without repeats.
+	var max_types: int = maxi(1, GameConfig.wave_max_enemy_types - (1 if is_boss else 0))
+	var type_set: Array[WaveGroup] = []
+	for g in eligible:
+		if _is_intro_wave(g, wave_num) and type_set.size() < max_types:
+			type_set.append(g)
+	var pool: Array[WaveGroup] = []
+	for g in eligible:
+		if not type_set.has(g):
+			pool.append(g)
+	while type_set.size() < max_types and not pool.is_empty():
+		var picked := _pick_by_weight(pool, rng)
+		type_set.append(picked)
+		pool.erase(picked)
 
-	var chosen: Array[Dictionary] = []
-
-	# Acceptance criteria: wave 0 (or non-positive wave) forces 1 Grunt
-	if wave_num <= 0:
-		push_warning("Wave %d has 0 enemies. Forced minimum 1 Grunt." % wave_num)
-		chosen.append(archetypes[0])
-	else:
-		# Step 2: Newly introduced enemy types guaranteed intro_count, deducted first
-		for arch in archetypes:
-			if arch.intro_count > 0 and arch.min_wave == wave_num:
-				var needed: int = arch.intro_count
-				for i in range(needed):
-					if budget >= arch.cost:
-						budget -= arch.cost
-						chosen.append(arch)
-
-		# Step 3: Loop candidates satisfying min_wave, budget, caps, and weight
-		while true:
-			var candidates: Array[Dictionary] = []
-			var current_archers: int = 0
-			var current_brutes: int = 0
-			for item in chosen:
-				if item.id == &"archer":
-					current_archers += 1
-				elif item.id == &"brute":
-					current_brutes += 1
-			var current_total: int = chosen.size()
-
-			for arch in archetypes:
-				# 1. Must satisfy min_wave
-				if wave_num < arch.min_wave:
-					continue
-				# 2. Waves 1-2 only contain Grunt
-				if wave_num <= 2 and arch.id != &"grunt":
-					continue
-				# 3. On intro wave (w == min_wave), new unit count is fixed to intro_count
-				if arch.intro_count > 0 and wave_num == arch.min_wave:
-					continue
-				# 4. Budget check
-				if arch.cost > budget:
-					continue
-				# 5. Brute cap: floor(w / 4)
-				if arch.id == &"brute":
-					var max_brutes: int = int(floor(float(wave_num) / 4.0))
-					if current_brutes >= max_brutes:
-						continue
-				# 6. Archer <= archer_max_ratio of total wave composition
-				if arch.id == &"archer":
-					var projected_ratio: float = float(current_archers + 1) / float(current_total + 1)
-					if projected_ratio > table.archer_max_ratio:
-						continue
-
-				candidates.append(arch)
-
-			if candidates.is_empty():
+	var counts: Dictionary = {}  # id -> count
+	for g in type_set:
+		if not _is_intro_wave(g, wave_num):
+			continue
+		for i in range(g.intro_count):
+			if budget < g.enemy.spawn_cost:
 				break
+			budget -= g.enemy.spawn_cost
+			counts[g.enemy.id] = int(counts.get(g.enemy.id, 0)) + 1
+			units.append(_unit_entry(g.enemy.id))
 
-			var total_weight: float = 0.0
-			for c in candidates:
-				total_weight += c.weight
-			var roll: float = rng.randf_range(0.0, total_weight)
-			var accum: float = 0.0
-			var selected: Dictionary = candidates[0]
-			for c in candidates:
-				accum += c.weight
-				if roll <= accum:
-					selected = c
-					break
+	while true:
+		var candidates: Array[WaveGroup] = []
+		for g in type_set:
+			var id: StringName = g.enemy.id
+			# On its intro wave a new type keeps exactly its intro count.
+			if _is_intro_wave(g, wave_num):
+				continue
+			if g.enemy.spawn_cost > budget:
+				continue
+			if int(counts.get(id, 0)) >= g.get_max_allowed(wave_num):
+				continue
+			if id == &"archer":
+				var projected_ratio: float = float(int(counts.get(id, 0)) + 1) / float(units.size() + 1)
+				if projected_ratio > table.archer_max_ratio:
+					continue
+			candidates.append(g)
+		if candidates.is_empty():
+			break
+		var selected := _pick_by_weight(candidates, rng)
+		budget -= selected.enemy.spawn_cost
+		counts[selected.enemy.id] = int(counts.get(selected.enemy.id, 0)) + 1
+		units.append(_unit_entry(selected.enemy.id))
+	return units
 
-			chosen.append(selected)
-			budget -= selected.cost
 
-	# Fallback if somehow empty
-	if chosen.is_empty():
-		push_warning("Wave %d generated 0 enemies. Forced minimum 1 Grunt." % wave_num)
-		chosen.append(archetypes[0])
+func _is_intro_wave(g: WaveGroup, wave_num: int) -> bool:
+	return g.intro_count > 0 and g.min_wave == wave_num
 
-	# Step 4 & 5: Grouping and melee-first ordering
-	var group_count: int = clampi(2 + int(floor(float(wave_num) / 5.0)), 2, 6)
-	if chosen.size() < group_count:
-		group_count = maxi(1, chosen.size())
 
-	var melee_units: Array[Dictionary] = []
-	var ranged_units: Array[Dictionary] = []
-	for item in chosen:
-		if item.is_ranged:
-			ranged_units.append(item)
-		else:
-			melee_units.append(item)
+func _pick_by_weight(groups: Array[WaveGroup], rng: RandomNumberGenerator) -> WaveGroup:
+	var total_weight: float = 0.0
+	for g in groups:
+		total_weight += maxf(g.weight, 0.0)
+	var roll: float = rng.randf_range(0.0, total_weight)
+	var accum: float = 0.0
+	for g in groups:
+		accum += maxf(g.weight, 0.0)
+		if roll <= accum:
+			return g
+	return groups[groups.size() - 1]
+
+
+## Splits the units into clamp(2 + floor(w/5), 2, 6) groups, melee before ranged in each group,
+## 0.4-0.8 s between units and group_pause between groups. When the last unit would spawn before
+## the wave's spawn duration, the pauses between groups grow evenly so it spawns right at it; a
+## single group moves only its last unit. A longer schedule is kept.
+func _schedule_units(units: Array[Dictionary], wave_num: int, rng: RandomNumberGenerator) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if units.is_empty():
+		return result
+	var table: WaveTable = wave_table if wave_table != null else WaveTable.new()
+	var group_count: int = clampi(2 + int(floor(float(maxi(wave_num, 0)) / 5.0)), 2, 6)
+	group_count = mini(group_count, units.size())
 
 	var groups: Array[Array] = []
 	for g in range(group_count):
 		groups.append([])
+	var melee_index := 0
+	var ranged_index := 0
+	for unit in units:
+		if not unit.is_ranged:
+			groups[melee_index % group_count].append(unit)
+			melee_index += 1
+	for unit in units:
+		if unit.is_ranged:
+			groups[ranged_index % group_count].append(unit)
+			ranged_index += 1
 
-	# Distribute melee units across groups
-	for i in range(melee_units.size()):
-		var g_idx: int = i % group_count
-		groups[g_idx].append(melee_units[i])
-
-	# Distribute ranged units across groups (placed AFTER melee in each group)
-	for i in range(ranged_units.size()):
-		var g_idx: int = i % group_count
-		groups[g_idx].append(ranged_units[i])
-
-	# Flatten into final schedule with delays from wave_table
-	var result: Array[Dictionary] = []
-
+	var total: float = 0.0
 	for g_idx in range(group_count):
 		var grp: Array = groups[g_idx]
 		for m_idx in range(grp.size()):
@@ -571,7 +657,7 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 				delay = table.group_pause
 			else:
 				delay = rng.randf_range(table.group_spawn_delay_min, table.group_spawn_delay_max)
-
+			total += delay
 			result.append({
 				"id": unit.id,
 				"scene": unit.scene,
@@ -580,6 +666,15 @@ func generate_wave_composition(wave_num: int, p_run_seed: int = 0) -> Array[Dict
 				"delay": delay
 			})
 
+	var missing: float = get_spawn_duration(wave_num) - total
+	if missing > 0.0:
+		if group_count > 1:
+			var extra: float = missing / float(group_count - 1)
+			for i in range(1, result.size()):
+				if result[i].group_index != result[i - 1].group_index:
+					result[i].delay += extra
+		else:
+			result[result.size() - 1].delay += missing
 	return result
 
 
@@ -610,7 +705,7 @@ func _send_wave_preview() -> void:
 func get_wave_plan() -> Dictionary:
 	var plan := {}
 	if is_boss_wave(current_wave):
-		plan[boss_data.id if boss_data != null else &"bulwark"] = 1
+		plan[_boss_id()] = 1
 	plan.merge(_queue_plan)
 	return plan
 
@@ -760,11 +855,7 @@ func _spawn_enemy_at(spawn_pos: Vector3) -> void:
 	enemy.is_in_spawn_zone = true
 
 	# Apply wave scale factors at spawn time. Immutable while alive.
-	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
-	var hp_mult: float = cfg.get_hp_mult(current_wave)
-	var dmg_mult: float = cfg.get_dmg_mult(current_wave)
-	var speed_mult: float = cfg.get_speed_mult(current_wave)
-	enemy.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave, cfg)
+	apply_wave_scale_to(enemy, current_wave)
 
 	if enemy_container != null and is_instance_valid(enemy_container):
 		enemy_container.add_child(enemy)
@@ -812,8 +903,7 @@ func _end_combat_to_summary() -> void:
 	TimeManager.reset_time_scale()
 
 	# Par time & Clear multiplier
-	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
-	var spawn_dur: float = cfg.get_spawn_duration(current_wave)
+	var spawn_dur: float = get_spawn_duration(current_wave)
 	var is_boss: bool = (current_wave % GameConfig.boss_wave_interval == 0)
 	var boss_n: int = current_wave / GameConfig.boss_wave_interval
 	var boss_time: float = GameConfig.get_boss_timer(boss_n)
@@ -1028,11 +1118,7 @@ func _spawn_boss() -> void:
 	boss_inst.spawn_grace = true
 	boss_inst.is_in_spawn_zone = true
 
-	var cfg: ScaleConfig = scale_config if scale_config != null else ScaleConfig.new()
-	var hp_mult: float = cfg.get_hp_mult(current_wave)
-	var dmg_mult: float = cfg.get_dmg_mult(current_wave)
-	var speed_mult: float = cfg.get_speed_mult(current_wave)
-	boss_inst.apply_wave_scale(hp_mult, dmg_mult, speed_mult, current_wave, cfg)
+	apply_wave_scale_to(boss_inst, current_wave)
 
 	if enemy_container != null and is_instance_valid(enemy_container):
 		enemy_container.add_child(boss_inst)
