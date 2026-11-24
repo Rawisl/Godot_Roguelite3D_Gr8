@@ -61,8 +61,12 @@ func _ready() -> void:
 		return
 	if online:
 		leaderboard.pressed.emit()
-		if not await _wait_for_scene(LEADERBOARD_SCENE) or not await _check_leaderboard_error():
-			_finish(false, "Leaderboard did not display the connection error and retry button")
+		if not await _wait_for_scene(LEADERBOARD_SCENE):
+			_finish(false, "Leaderboard did not open")
+			return
+		var leaderboard_failure := await _check_leaderboard_error()
+		if not leaderboard_failure.is_empty():
+			_finish(false, leaderboard_failure)
 			return
 		_press("%Back")
 		if not await _wait_for_scene(MENU_SCENE):
@@ -79,8 +83,11 @@ func _ready() -> void:
 		_finish(false, "The production run has no tutorial service")
 		return
 	tutorial.skip()
-	EventBus.wave_start_requested.emit()
 	var waves := get_tree().get_first_node_in_group(&"wave_manager") as WaveManager
+	if waves == null:
+		_finish(false, "The production run has no WaveManager")
+		return
+	EventBus.wave_start_requested.emit()
 	if waves.wave_state != Enums.WaveState.COMBAT:
 		_finish(false, "The guest could not start combat")
 		return
@@ -107,14 +114,18 @@ func _ready() -> void:
 	_finish(await _purchase_upgrade(), "The guest can play, save and purchase a local upgrade")
 
 
-func _check_leaderboard_error() -> bool:
+func _check_leaderboard_error() -> String:
 	var screen := get_tree().current_scene
 	var deadline := Time.get_ticks_msec() + 15000
 	while screen.is_loading() and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
+	if screen.is_loading():
+		return "Timed out after 15 seconds waiting for the leaderboard to finish loading"
 	var status := screen.get_node("%Status") as Label
 	var retry := screen.get_node("%Retry") as Button
-	return status.is_visible_in_tree() and status.text == tr(&"lbd.offline") and retry.is_visible_in_tree()
+	if not status.is_visible_in_tree() or status.text != tr(&"lbd.offline") or not retry.is_visible_in_tree():
+		return "Leaderboard did not display the connection error and retry button"
+	return ""
 
 
 func _purchase_upgrade() -> bool:
