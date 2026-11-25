@@ -1345,12 +1345,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KT9
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Spawner đọc WaveScript wave 1-30 (thành phần cố định, hộ tống, hp/dmg/speed_mult và spawn_duration từ kịch bản), thuật toán và ScaleConfig chỉ từ wave 31, tối đa 5 loại mỗi wave kể cả boss, danh mục 10 loại quân thay cho 3 loại hardcode; lịch sinh trải đủ spawn_duration (SPN-15)
 - Nghiệm thu: Wave 1-30 đúng thành phần của WaveScript không phụ thuộc run_seed; mỗi wave kéo dài >= spawn_duration; wave 31-40 tối đa 5 loại (NE8); hệ số boss wave 1-30 cũng lấy từ WaveScript (BOSS-24); phát wave_preview_ready với danh sách loại quân sắp tới cho preview PREP và Hazard Trial
 - Tệp liên quan: systems/wave/wave_manager.gd (generate_wave_composition 210, _get_scene_for_enemy_id 134, _build_spawn_queue_for_wave 375, _spawn_boss), common/scale_config.gd, common/wave_table.gd
 - ID SRS: SPN-13, SPN-14, SPN-15, SCL-06
 - Cần xong trước: W10-KT7, W11-MH11, W10-NG8
+- Ghi chú bàn giao: `WaveManager.enemy_scenes` is the catalogue of 10 types by EnemyData id (grunt, archer, brute, sniper, rider, assassin, suicide_squad, captain, knight, undead); the boss stays on `bulwark_scene`. Waves 1 to victory_wave take their units (escorts in, boss left out) from `wave_script`, the same for every run seed; a scripted wave with no units logs an error and sends 1 Grunt. Later waves draw a type set of at most `wave_max_enemy_types` (the boss counts as one) by weight from `wave_table.groups`, intro counts first, then units by weight within the set; a boss wave uses `escort_budget_ratio` of the budget. `get_spawn_duration(w)` and `get_wave_mults(w)` read the WaveScript up to victory_wave (formula plus a warning when it lacks the wave) and ScaleConfig after; `apply_wave_scale_to(enemy, w)` is used by the spawner, the boss, the Hazard Trial and the cheat panel. Every schedule is stretched so the last unit spawns at spawn_duration at the earliest (pauses between groups grow evenly; one group moves only its last unit). New: EnemyData and scenes for assassin, suicide_squad, captain, knight, undead (rows in balance.xlsx with first-pass numbers for Mạnh to tune in W11-MH11), their names in strings.csv and their WaveTable groups for endless waves. Traits are still not acted on (W11-KT7, W11-KT8). Runner `tests/test_wave_spawner.tscn` (48 checks).
 
 #### Mạnh (Tower & Build), tuần 11, 31h
 

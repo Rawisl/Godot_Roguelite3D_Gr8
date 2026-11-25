@@ -393,7 +393,8 @@ func test_wave_fsm_and_8_grunts_flow() -> void:
 			enemies_spawned.append(e)
 	EventBus.enemy_spawned.connect(on_enemy_spawned)
 
-	for _step in range(80):
+	# The schedule is stretched to the wave's spawn duration (15 s on wave 1), so give it 25 s.
+	for _step in range(250):
 		wave_manager._physics_process(0.1)
 		if wave_manager.spawn_queue.is_empty():
 			break

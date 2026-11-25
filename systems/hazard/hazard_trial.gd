@@ -85,9 +85,9 @@ func build_group(wave: int) -> Array[Dictionary]:
 			scenes[id] = scene
 		counts[id] = int(counts.get(id, 0)) + 1
 	var places := GameConfig.hazard_enemy_count
-	if wave_manager.is_boss_wave(wave) and wave_manager.bulwark_scene != null:
-		var boss_id: StringName = wave_manager.boss_data.id if wave_manager.boss_data != null else &"bulwark"
-		result.append({"id": boss_id, "scene": wave_manager.bulwark_scene, "boss": true})
+	var boss_scene: PackedScene = wave_manager.get_boss_scene(wave)
+	if wave_manager.is_boss_wave(wave) and boss_scene != null:
+		result.append({"id": wave_manager.get_boss_id(wave), "scene": boss_scene, "boss": true})
 		places = GameConfig.hazard_boss_escorts
 	if order.is_empty():
 		return result
@@ -236,7 +236,6 @@ func _spawn_group(room: HazardRoom) -> void:
 	var pads := room.get_enemy_spawns()
 	if _has_boss() and pads.size() > 1:
 		pads.erase(boss_pad)
-	var cfg: ScaleConfig = wave_manager.scale_config if wave_manager.scale_config != null else ScaleConfig.new()
 	var pad_index := 0
 	for entry in group:
 		var unit := (entry["scene"] as PackedScene).instantiate() as Enemy
@@ -251,7 +250,7 @@ func _spawn_group(room: HazardRoom) -> void:
 			unit.set(&"in_hazard_trial", true)
 		unit.spawn_grace = false
 		unit.is_in_spawn_zone = false
-		unit.apply_wave_scale(cfg.get_hp_mult(_wave), cfg.get_dmg_mult(_wave), cfg.get_speed_mult(_wave), _wave, cfg)
+		wave_manager.apply_wave_scale_to(unit, _wave)
 		add_child(unit)
 		if pad != null:
 			unit.global_transform = pad.global_transform
