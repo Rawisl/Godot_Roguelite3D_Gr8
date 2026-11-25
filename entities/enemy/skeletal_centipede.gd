@@ -1,6 +1,5 @@
 class_name SkeletalCentipede
 extends BossEnemy
-# TODO(Ender-Via): when bosses rotate by appearance, let WaveManager and the Hazard Trial pick this scene and its BossData instead of the fixed Bulwark.
 
 ## Skeletal Centipede: a long, low boss that slashes with its scythes, spits a poison stream that
 ## leaves a pool, and rolls over the commander from a distance. It shares the boss rules (armor

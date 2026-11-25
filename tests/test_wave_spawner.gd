@@ -92,6 +92,8 @@ func test_deterministic_by_run_seed() -> void:
 func test_intro_count_archer_w3_and_brute_w6() -> void:
 	print("\n[GROUP 2] Testing Intro Count (Wave 3 exactly 2 Archers, Wave 6 exactly 1 Brute)")
 	var wm := WaveManager.new()
+	# Intro counts are a rule of the generator; without a WaveScript every wave is generated.
+	wm.wave_script = null
 	add_child(wm)
 
 	# Test across various seeds to ensure it holds universally
@@ -138,6 +140,8 @@ func test_spn08_waves_1_and_2_grunt_only() -> void:
 func test_spn05_archer_max_40_percent() -> void:
 	print("\n[GROUP 4] Archer <= 40% of wave composition")
 	var wm := WaveManager.new()
+	# The cap is a rule of the generator (the WaveScript sets its own counts, e.g. 4 Archers on wave 5).
+	wm.wave_script = null
 	add_child(wm)
 
 	var all_within_cap := true
@@ -160,6 +164,8 @@ func test_spn05_archer_max_40_percent() -> void:
 func test_brute_cap_floor_w_over_4() -> void:
 	print("\n[GROUP 5] Testing Brute Cap (Brute <= floor(w / 4))")
 	var wm := WaveManager.new()
+	# The cap is a rule of the generator; without a WaveScript every wave is generated.
+	wm.wave_script = null
 	add_child(wm)
 
 	var all_within_brute_cap := true
@@ -363,10 +369,13 @@ func test_scripted_waves_follow_wave_script() -> void:
 	assert_true(seed_free, "Scripted wave units do not depend on the run seed")
 
 	# A scripted wave with no units: one Grunt and an error, the wave still runs.
+	var real_script := wm.wave_script
 	var empty_script := WaveScript.new()
 	wm.wave_script = empty_script
 	var comp := wm.generate_wave_composition(4, 1)
 	assert_true(comp.size() == 1 and comp[0].id == &"grunt", "Scripted wave without data falls back to one Grunt")
+	# The Hazard offer of the first PREP is deferred; give it the real script back.
+	wm.wave_script = real_script
 	wm.queue_free()
 
 
@@ -428,6 +437,7 @@ func test_scripted_wave_scale() -> void:
 	var m31 := wm.get_wave_mults(31)
 	assert_true(is_equal_approx(m31.x, wm.scale_config.get_hp_mult(31)), "Wave 31 uses the ScaleConfig formula")
 
+	var real_script := wm.wave_script
 	var script := WaveScript.new()
 	script.hp_mult = PackedFloat32Array([3.0])
 	script.dmg_mult = PackedFloat32Array([2.0])
@@ -442,6 +452,8 @@ func test_scripted_wave_scale() -> void:
 	wm.apply_wave_scale_to(grunt, 1)
 	assert_true(is_equal_approx(grunt.wave_hp_mult, 3.0) and is_equal_approx(grunt.wave_speed_mult, 1.5), "apply_wave_scale_to applies the scripted multipliers")
 	grunt.free()
+	# The Hazard offer of the first PREP is deferred; give it the real script back.
+	wm.wave_script = real_script
 	wm.queue_free()
 
 
