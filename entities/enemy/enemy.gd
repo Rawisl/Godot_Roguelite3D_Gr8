@@ -803,7 +803,7 @@ func _fortress_reachable() -> bool:
 	var fortress := _get_valid_fortress()
 	if fortress != null:
 		goal = _get_attack_point(fortress)
-	var path := NavigationServer3D.map_get_path(nav.get_navigation_map(), global_position, goal, true)
+	var path := NavigationServer3D.map_get_path(nav.get_navigation_map(), global_position, goal, true, nav.navigation_layers)
 	if path.is_empty():
 		return false
 	var end := path[path.size() - 1]
@@ -1178,8 +1178,8 @@ func _update_state(delta: float) -> void:
 			var diff := _get_attack_point(current_target) - global_position
 			diff.y = 0.0
 			var dist_to_target: float = diff.length()
-			var attack_rng: float = data.attack_range if data else 1.5
-			attack_rng = minf(attack_rng, _slot_arrive_distance(current_target))
+			var attack_rng: float = _arrive_distance(current_target)
+			_set_nav_arrive_distance(attack_rng)
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
 				return
@@ -1820,6 +1820,19 @@ func _keeps_slot_target() -> bool:
 		and current_target.has_melee_slot(self))
 
 ## Same reach as the strike check in _execute_melee_strike.
+## Distance to the attack point at which the unit stops and attacks: attack_range, or less when
+## the target asks units to walk onto their slot.
+func _arrive_distance(t: Node3D) -> float:
+	var attack_rng: float = data.attack_range if data else 1.5
+	return minf(attack_rng, _slot_arrive_distance(t))
+
+
+## Called each chase frame with _arrive_distance of the target. Regular units keep the stop
+## distance set when the target is picked; a boss overrides it to stop where it attacks.
+func _set_nav_arrive_distance(_arrive: float) -> void:
+	pass
+
+
 func _melee_reach() -> float:
 	return (data.attack_range if data else 1.5) + 0.6
 
@@ -1895,7 +1908,7 @@ func _is_skipped_full_target(t: Node3D) -> bool:
 func _apply_avoidance(delta: float) -> void:
 	if not nav.avoidance_enabled:
 		return
-	if _following_charge_lane:
+	if _following_charge_lane or _steers_without_avoidance():
 		# Straight charges must reach the physical collider before taking a detour.
 		nav.velocity = Vector3.ZERO
 		_has_safe_velocity = false
@@ -1928,6 +1941,11 @@ func _apply_avoidance(delta: float) -> void:
 	if walking and _has_safe_velocity and desired.length_squared() > 0.001:
 		velocity.x = _safe_velocity.x
 		velocity.z = _safe_velocity.z
+
+
+## True while the unit walks its last metres without avoidance (see BossEnemy).
+func _steers_without_avoidance() -> bool:
+	return false
 
 
 ## +1 = step left, -1 = step right. The side the destination lies on; when it is straight ahead,
