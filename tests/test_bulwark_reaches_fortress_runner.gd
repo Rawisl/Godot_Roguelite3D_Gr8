@@ -47,6 +47,7 @@ func _ready() -> void:
 	EventBus.state_changed.emit(&"PREP")
 
 	_check_clear_zone()
+	await _check_hop_stays_on_large_navmesh()
 	var layout: Array = _tightest_near_layout()
 	_check("found a legal three-cell layout near boss_melee_point", layout.size() == 3)
 	if layout.size() == 3:
@@ -83,6 +84,58 @@ func _check_clear_zone() -> void:
 		var dz := maxf(absf(point.z - center.z) - half, 0.0)
 		closest = minf(closest, Vector2(dx, dz).length())
 	_check("no grid cell within %.1f m of boss_melee_point (closest %.2f m)" % [radius, closest], closest >= radius - 0.001)
+
+
+## The stuck hop (tier 3) lands on the large-agent navmesh, never on the regular one, which runs
+## closer to the walls than the 1.6 m agent fits (BOSS-03).
+func _check_hop_stays_on_large_navmesh() -> void:
+	var boss := BULWARK_SCENE.instantiate() as BossEnemy
+	var start := _grid.spawn_zone.global_position
+	start.y = 0.0
+	boss.position = start
+	add_child(boss)
+	boss.set_physics_process(false)
+	for i in 3:
+		await get_tree().physics_frame
+	var map := boss.nav.get_navigation_map()
+	var large: Array[RID] = []
+	var bounds := AABB()
+	for region in NavigationServer3D.map_get_regions(map):
+		if NavigationServer3D.region_get_navigation_layers(region) & boss.nav.navigation_layers:
+			large.append(region)
+		else:
+			bounds = bounds.merge(NavigationServer3D.region_get_bounds(region)) if bounds.has_volume() else NavigationServer3D.region_get_bounds(region)
+	_check("the level has a large-agent navmesh region", not large.is_empty())
+	# A 2 m grid over the regular navmesh and 2 m past it: points beside the walls and outside.
+	var all_on_large := true
+	var map_would_leave := 0
+	var samples := 0
+	for x in range(int(bounds.position.x) - 2, int(bounds.end.x) + 3, 2):
+		for z in range(int(bounds.position.z) - 2, int(bounds.end.z) + 3, 2):
+			var p := Vector3(x, 0.0, z)
+			samples += 1
+			var hop := boss._closest_point_on_own_layers(map, p)
+			if not _on_regions(large, hop):
+				all_on_large = false
+				print("    hop near %s lands off the large navmesh at %s" % [p, hop])
+			if not _on_regions(large, NavigationServer3D.map_get_closest_point(map, p)):
+				map_would_leave += 1
+	print("[hop] %d of %d points: the closest point of the whole map is off the large navmesh" % [map_would_leave, samples])
+	_check("the hop point is on the large-agent navmesh for all %d points" % samples, all_on_large)
+	_check("some of those points would leave it with the closest point of the whole map", map_would_leave > 0)
+	boss.global_position = start
+	boss.current_target = get_tree().get_first_node_in_group(&"fortress") as Node3D
+	boss._resolve_stuck_tier_3()
+	_check("a stuck hop toward the Fortress lands on the large-agent navmesh", _on_regions(large, boss.global_position))
+	boss.free()
+	await get_tree().physics_frame
+
+
+func _on_regions(regions: Array[RID], p: Vector3) -> bool:
+	for region in regions:
+		if NavigationServer3D.region_get_closest_point(region, p).distance_to(p) < 0.05:
+			return true
+	return false
 
 
 ## Legal layouts of three cells near the point; the first refused when the check asks for more width.
