@@ -41,7 +41,7 @@ extends Resource
 
 @export_group("Traits")
 ## Every trait is off by default, so a unit without them behaves as before.
-# TODO(Ender-Via): make Enemy act on is_stealth, invuln_*, revive_* and explode_* when the Assassin, Knight, Undead and Suicide Squad land; read the flags here, never the unit id.
+# TODO(Ender-Via): make Enemy act on explode_* when the Suicide Squad and Captain land; read the flags here, never the unit id.
 @export var is_stealth: bool = false
 @export var stealth_opacity: float = 1.0
 @export var explode_on_contact: bool = false

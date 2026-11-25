@@ -1325,12 +1325,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KT7
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 9 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Assassin (tower không chọn làm mục tiêu và không tính là 'quân trong tầm', nổ Cannon vẫn trúng) và Knight (bất tử 5 s một lần khi máu < 50%, IMMUNE) và Undead (hồi sinh một lần, thưởng ở lần chết thứ hai)
 - Nghiệm thu: NE1, NE4, NE6 đạt
 - Tệp liên quan: entities/enemy/enemy.gd, entities/tower/tower.gd (_pick_target/_is_valid_target ~209-253), common/health_component.gd
 - ID SRS: EN-20, EN-24, EN-26
 - Cần xong trước: W10-KT7, W10-KM11
+- Ghi chú bàn giao: All three read EnemyData flags, never the unit id. Stealth: `Enemy.is_hidden_from_towers()`; `Tower._target_distance_sq` drops it like an untargetable unit, so it is never picked and never counts toward the immune-idle icon; the Cannon blast still hits it (it stays in the `enemy` group); the Assassin model already draws at stealth_opacity. Knight: `Enemy.get_resist(type)` now exists on every unit and returns 0 while invulnerable, else 1 (bosses keep their override); the window opens in `_on_health_damaged` the first time HP drops under `invuln_hp_threshold * max_hp` and the unit is alive, lasts `invuln_duration` game seconds, once per unit, and calls `set_invulnerable` on the model. Undead: the first time HP hits 0 with `revives_used < revive_count` it lies down (`is_reviving`): no enemy_died, no reward, no commander kill, not targetable, no damage, no slot, no stuck checks; after `revive_delay` it stands up with full HP and `scaled_damage * revive_dmg_mult`, keeps hit_by_commander and FRENZY, and calls `set_reviving` on the model. Cull while lying pays nothing. Runner `tests/test_stealth_knight_undead_runner.tscn` (38 checks).
 
 ##### W11-KT8
 - Người: Kiệt
