@@ -1623,13 +1623,12 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KM10
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Xong
+- Trạng thái: Chưa bắt đầu
 - Việc: Model 3 bậc cho tower, phần 2 (Barricade và Trạm hồi lực, bậc 2 và 3)
 - Nghiệm thu: Bậc 2 và 3 khác bậc 1
 - Tệp liên quan: entities/tower/barricade.tscn, heal_station.tscn
 - ID SRS: TWR-17
 - Cần xong trước: W10-KM10
-- Ghi chú bàn giao: Heal station: `contents/assets/towers/heal_station_tiers.glb` holds three tiers and `heal_station_model.gd` shows the one for the current tier and fits the energy orb to it. Barricade: three tier models (`contents/assets/towers/barricade/barricade_tier1..3.fbx`) in `barricade_tower_model.tscn`, made by kiezroth with Hyper3D Rodin.
 
 ### Tuần 12 (30/11-6/12)
 
