@@ -379,6 +379,7 @@ func _scale_config() -> ScaleConfig:
 func start_prep() -> void:
 	var old_state := wave_state
 	wave_state = Enums.WaveState.PREP
+	_remove_leftover_units()
 	_build_spawn_queue_for_wave(current_wave)
 
 	# Reset per-wave tracking
@@ -789,6 +790,20 @@ func _update_straggler_clock(delta: float) -> void:
 		_hard_cap_reached = true
 		for enemy in _wave_enemies():
 			enemy.cull(&"HARD_CAP")
+
+
+## A unit still alive when PREP starts should not exist (the wave ends only with none left). It is
+## removed with no reward and no kill and the removal is logged. Hazard Trial units are not the
+## wave's.
+func _remove_leftover_units() -> void:
+	if not is_inside_tree():
+		return
+	for enemy in _wave_enemies():
+		if enemy.in_hazard_room:
+			continue
+		push_warning("WaveManager: %s still alive at the PREP of wave %d, removed without reward." % [enemy.data.id if enemy.data != null else &"?", current_wave])
+		if not enemy.cull(&"PREP_LEFTOVER"):
+			enemy.queue_free()
 
 
 ## Living units of the wave, the boss included; each unit decides what applies to it.

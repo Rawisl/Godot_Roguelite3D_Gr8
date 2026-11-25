@@ -1277,18 +1277,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KT2
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Edge case EN-05..15 (ưu tiên ca hay gặp)
 - Nghiệm thu: Không treo wave
 - Cần xong trước: W10-KT3
+- Ghi chú bàn giao: Focused on what can hang a wave or pay twice, with the new units. New: a unit still alive when PREP starts (it should not exist) is culled with reason PREP_LEFTOVER (no reward, no kill, logged like every cull, plus a warning); Hazard Trial units are left alone. Checked by `tests/test_enemy_edge_cases_runner.tscn` (14 checks): leftover removal; an Undead lying down keeps the wave in COMBAT and still counted, its second death ends it; a Suicide Squad that blew itself up ends the wave; a Captain killed last ends the wave at once (its blast still comes later); the hard cap removes a lying Undead; a Barricade broken under five Grunts makes all five pick again; a unit attacking the commander drops it when the commander leaves the field. Not covered here: healer cases (no healer in the game), TIME-06 at 70 units (W10-NG4), and a Captain blast that lands after the wave ended still hits towers.
 
 ##### W11-KT3
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hồi quy wave 1-20 có skill
 - Nghiệm thu: Mọi wave kết thúc
 - Cần xong trước: W9-KT2
+- Ghi chú bàn giao: Covered by the Frontline soak of the wave bot (`--mode=frontline --soak`): 2 seeds x waves 1-20 at x3 with the commander swinging and casting every ready skill and Battle Cry (179 and 189 casts): every wave ended, none hung, 0 culls.
 
 ##### W11-KT4
 - Người: Kiệt
@@ -1310,18 +1312,20 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-NG4
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Script hoặc bot 20 wave ở x3 nhiều seed (NAV-14); bot AFK vs bot Frontline cho F13; mở rộng chạy kịch bản wave 1-30
 - Nghiệm thu: Mọi wave kết thúc, cull < 0.1%
 - Cần xong trước: W10-NG3
+- Ghi chú bàn giao: Bot `tests/wave_bot.tscn` (extends `cheat_main.gd`: no save, cloud or leaderboard writes) plays main.tscn headless: builds and upgrades the same way each PREP, picks level-up cards, x3 in combat, one JSON line per run; `tests/run_wave_bot.ps1 -Godot <console exe>` runs the seeds in parallel and `tests/wave_bot_report.py` prints the summary and fails on a hung wave, a wave shorter than its spawn duration or stuck culls >= 0.1%. Modes: `afk` (stays in Commander mode), `frontline` (walks to units, swings, uses skills, keeps away from a boss while escorts live, retreats under 50% HP), `--soak` (gold for every build, Fortress and commander kept alive, a boss that reached Enrage put down). Results 24/11, current wave script: soak 3 seeds x 20 waves AFK, 2 seeds x 20 waves Frontline, 1 seed x 30 waves (all scripted waves): 3875 units, 0 stuck culls, 0 hard cap culls, 0 hung waves, every wave lasted at least its spawn duration, no boss needed putting down. AFK vs Frontline without soak (3 seeds, 15 waves): both lose at wave 5 (the Bulwark breaks the Fortress), so the wave 12/15 comparison could not be measured in a real run; soak levels give AFK 8 against Frontline 10 at wave 12 (0.80, limit 0.65), see W11-KT1.
 
 ##### W11-KT6
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hồi quy Trạm hồi lực: quân nhắm trạm theo ETG, slot đánh, cân bằng sơ bộ (HLT-09, HLT-10)
 - Nghiệm thu: Ghi tỉ lệ run dùng trạm và số lần cạn kho
 - Cần xong trước: W10-KT3
+- Ghi chú bàn giao: New `tests/test_heal_station_regression_runner.tscn` (23 checks) with the real station scene and all ten unit types: every ground-tower attacker (Grunt family, Assassin, Rider, Knight, Undead, Suicide Squad, Captain) picks the station and fights for a melee slot, Archer and Sniper pick it without a slot, the Brute keeps the Fortress; at most max_attackers_per_tower melee units hold a slot, a fourth waits and gets the freed slot. Damage normalisation stays covered by `test_heal_station_runner` (126 passed) and the dummy-station ETG runner (27 passed). Bot numbers (24/11, the bot builds one station from wave 4 when it has 120 gold): built in 7 of 12 runs (all 6 soak runs, 1 of 6 real runs; real runs rarely have the gold before they lose at wave 5); the store ran dry 1 time over all runs (an earlier soak run with weak towers), 0 in the final batch.
 
 ##### W11-KT7
 - Người: Kiệt
