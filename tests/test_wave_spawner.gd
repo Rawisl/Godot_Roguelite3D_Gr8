@@ -369,10 +369,13 @@ func test_scripted_waves_follow_wave_script() -> void:
 	assert_true(seed_free, "Scripted wave units do not depend on the run seed")
 
 	# A scripted wave with no units: one Grunt and an error, the wave still runs.
+	var real_script := wm.wave_script
 	var empty_script := WaveScript.new()
 	wm.wave_script = empty_script
 	var comp := wm.generate_wave_composition(4, 1)
 	assert_true(comp.size() == 1 and comp[0].id == &"grunt", "Scripted wave without data falls back to one Grunt")
+	# The Hazard offer of the first PREP is deferred; give it the real script back.
+	wm.wave_script = real_script
 	wm.queue_free()
 
 
@@ -434,6 +437,7 @@ func test_scripted_wave_scale() -> void:
 	var m31 := wm.get_wave_mults(31)
 	assert_true(is_equal_approx(m31.x, wm.scale_config.get_hp_mult(31)), "Wave 31 uses the ScaleConfig formula")
 
+	var real_script := wm.wave_script
 	var script := WaveScript.new()
 	script.hp_mult = PackedFloat32Array([3.0])
 	script.dmg_mult = PackedFloat32Array([2.0])
@@ -448,6 +452,8 @@ func test_scripted_wave_scale() -> void:
 	wm.apply_wave_scale_to(grunt, 1)
 	assert_true(is_equal_approx(grunt.wave_hp_mult, 3.0) and is_equal_approx(grunt.wave_speed_mult, 1.5), "apply_wave_scale_to applies the scripted multipliers")
 	grunt.free()
+	# The Hazard offer of the first PREP is deferred; give it the real script back.
+	wm.wave_script = real_script
 	wm.queue_free()
 
 
