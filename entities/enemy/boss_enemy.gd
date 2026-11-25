@@ -528,51 +528,6 @@ func _get_attack_point(t: Node3D) -> Vector3:
 	return super._get_attack_point(t)
 
 
-func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
-	var diff := _closest_point_on_target(target, from_pos) - from_pos
-	diff.y = 0.0
-	return diff.length()
-
-
-func _find_collision_shape(target: Node3D) -> CollisionShape3D:
-	var col_shape := target.get_node_or_null("CollisionShape3D") as CollisionShape3D
-	if col_shape == null:
-		for child in target.get_children():
-			if child is CollisionShape3D:
-				return child
-	return col_shape
-
-
-## Nearest point of the target's box, cylinder or sphere collider to from_pos; the node origin
-## for any other shape.
-func _closest_point_on_target(target: Node3D, from_pos: Vector3) -> Vector3:
-	var col_shape := _find_collision_shape(target)
-	if col_shape != null and col_shape.shape != null:
-		if col_shape.shape is BoxShape3D:
-			var half_extents := (col_shape.shape as BoxShape3D).size * 0.5
-			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
-			var clamped_local := Vector3(
-				clampf(local_pos.x, -half_extents.x, half_extents.x),
-				clampf(local_pos.y, -half_extents.y, half_extents.y),
-				clampf(local_pos.z, -half_extents.z, half_extents.z)
-			)
-			return col_shape.global_transform * clamped_local
-		elif col_shape.shape is CylinderShape3D:
-			var cyl := col_shape.shape as CylinderShape3D
-			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
-			var clamped_xz := Vector2(local_pos.x, local_pos.z).limit_length(cyl.radius)
-			var clamped_y := clampf(local_pos.y, -cyl.height * 0.5, cyl.height * 0.5)
-			return col_shape.global_transform * Vector3(clamped_xz.x, clamped_y, clamped_xz.y)
-		elif col_shape.shape is SphereShape3D:
-			var sph := col_shape.shape as SphereShape3D
-			var to_from := from_pos - col_shape.global_position
-			to_from.y = 0.0
-			if to_from.length() <= sph.radius:
-				return from_pos
-			return col_shape.global_position + to_from.normalized() * sph.radius
-	return target.global_position
-
-
 func can_be_recycled() -> bool:
 	return false
 

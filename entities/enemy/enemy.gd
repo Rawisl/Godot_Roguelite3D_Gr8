@@ -172,6 +172,16 @@ static var _lane_ref_length: float = 0.0
 var revives_used: int = 0
 var is_reviving: bool = false
 var _revive_timer: float = 0.0
+## Suicide Squad and Captain: game seconds left before the blast (negative: no fuse lit).
+var _fuse_timer: float = -1.0
+## True once this unit blew itself up (no reward, no kill).
+var self_destructed: bool = false
+## True between a Captain's death and its blast.
+var blast_pending: bool = false
+## Where the "explode" telegraph of the lit fuse or pending blast was sent, for its cancel.
+var _blast_telegraph_pos: Vector3 = Vector3.ZERO
+## Sent when the blast of this unit has dealt its damage.
+signal blast_done
 ## Knight: the one invulnerable window was used, and the game seconds it has left.
 var invuln_used: bool = false
 var _invuln_timer: float = 0.0
@@ -393,6 +403,164 @@ func _play_death_pose() -> void:
 			return
 
 
+## Flat distance from from_pos to the nearest point of the target's collider.
+func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
+	var diff := _closest_point_on_target(target, from_pos) - from_pos
+	diff.y = 0.0
+	return diff.length()
+
+
+func _find_collision_shape(target: Node3D) -> CollisionShape3D:
+	var col_shape := target.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if col_shape == null:
+		for child in target.get_children():
+			if child is CollisionShape3D:
+				return child
+	return col_shape
+
+
+## Nearest point of the target's box, cylinder or sphere collider to from_pos; the node origin
+## for any other shape.
+func _closest_point_on_target(target: Node3D, from_pos: Vector3) -> Vector3:
+	var col_shape := _find_collision_shape(target)
+	if col_shape != null and col_shape.shape != null:
+		if col_shape.shape is BoxShape3D:
+			var half_extents := (col_shape.shape as BoxShape3D).size * 0.5
+			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
+			var clamped_local := Vector3(
+				clampf(local_pos.x, -half_extents.x, half_extents.x),
+				clampf(local_pos.y, -half_extents.y, half_extents.y),
+				clampf(local_pos.z, -half_extents.z, half_extents.z)
+			)
+			return col_shape.global_transform * clamped_local
+		elif col_shape.shape is CylinderShape3D:
+			var cyl := col_shape.shape as CylinderShape3D
+			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
+			var clamped_xz := Vector2(local_pos.x, local_pos.z).limit_length(cyl.radius)
+			var clamped_y := clampf(local_pos.y, -cyl.height * 0.5, cyl.height * 0.5)
+			return col_shape.global_transform * Vector3(clamped_xz.x, clamped_y, clamped_xz.y)
+		elif col_shape.shape is SphereShape3D:
+			var sph := col_shape.shape as SphereShape3D
+			var to_from := from_pos - col_shape.global_position
+			to_from.y = 0.0
+			if to_from.length() <= sph.radius:
+				return from_pos
+			return col_shape.global_position + to_from.normalized() * sph.radius
+	return target.global_position
+
+
+## Blast damage of this unit: explode_damage scaled by the wave damage multiplier.
+func get_explode_damage() -> int:
+	if data == null or data.explode_damage <= 0:
+		return 0
+	return maxi(1, int(round(float(data.explode_damage) * wave_dmg_mult)))
+
+
+func is_fuse_lit() -> bool:
+	return _fuse_timer >= 0.0
+
+
+## Starts the wind-up before a blast: the red ring for explode_windup and the lit bomb.
+func _light_fuse() -> void:
+	_fuse_timer = maxf(0.0, data.explode_windup)
+	velocity.x = 0.0
+	velocity.z = 0.0
+	_blast_telegraph_pos = global_position
+	EventBus.telegraph_started.emit(&"explode", _blast_telegraph_pos, data.explode_radius, data.explode_windup)
+	_set_model_flag(&"set_fuse", true)
+
+
+## Ends a lit fuse or a pending Captain blast with no blast: the bomb goes dark and the red ring is
+## cancelled, so the player is not told to dodge a blast that never comes. No-op when neither.
+func _cancel_blast() -> void:
+	if not is_fuse_lit() and not blast_pending:
+		return
+	_fuse_timer = -1.0
+	blast_pending = false
+	_set_model_flag(&"set_fuse", false)
+	EventBus.telegraph_cancelled.emit(&"explode", _blast_telegraph_pos)
+
+
+func _notification(what: int) -> void:
+	# Freed while the fuse is lit or the blast is pending (wave cleanup, scene exit): no blast comes.
+	if what == NOTIFICATION_EXIT_TREE:
+		_cancel_blast()
+
+
+## Deals explode_damage (BLAST) in explode_radius around the unit to the commander in Frontline,
+## every tower (wall slots included), Barricade and the Fortress. Never to other units. The
+## commander takes nothing while dodging or in Commander mode (its own damage rules).
+func detonate() -> Array[Node3D]:
+	var hits: Array[Node3D] = []
+	var tree := get_tree() if is_inside_tree() else null
+	if tree == null or data == null:
+		return hits
+	var radius: float = data.explode_radius
+	var center := global_position
+	var amount := get_explode_damage()
+	var targets: Array[Node3D] = []
+	for grp in [&"commander", &"tower", &"barricade", &"fortress"]:
+		for node in tree.get_nodes_in_group(grp):
+			var n3d := node as Node3D
+			if n3d == null or not is_instance_valid(n3d) or targets.has(n3d):
+				continue
+			if _get_distance_to_target(n3d, center) <= radius:
+				targets.append(n3d)
+	for tgt in targets:
+		if not tgt.has_method(&"take_damage"):
+			continue
+		var dir := tgt.global_position - center
+		dir.y = 0.0
+		var hit_dir := dir.normalized() if dir.length_squared() > 0.001 else Vector3.ZERO
+		tgt.take_damage(DamageInfo.new(amount, Enums.DamageType.BLAST, self, 0.0, hit_dir))
+		hits.append(tgt)
+	_set_model_flag(&"set_fuse", false)
+	EventBus.screen_shake_requested.emit(0.3, &"explode")
+	blast_pending = false
+	blast_done.emit()
+	return hits
+
+
+## The fuse of a Suicide Squad ran out: the blast, then the unit is gone with no gold, XP,
+## prestige or kill (it was not killed). The wave still counts it as gone.
+func _self_destruct() -> void:
+	_fuse_timer = -1.0
+	detonate()
+	if is_dead:
+		return
+	self_destructed = true
+	is_dead = true
+	_release_melee_slot()
+	remove_from_group(&"enemy")
+	collision_layer = 0
+	collision_mask = 0
+	if data != null and not in_hazard_room:
+		EventBus.enemy_died.emit(data.id, global_position, 0.0, 0, true, false)
+	var old_state := current_state
+	current_state = Enums.EnemyState.DEAD
+	state_changed.emit(Enums.EnemyState.DEAD, old_state)
+	set_physics_process(false)
+	queue_free()
+
+
+## A Captain killed: the blast comes explode_windup game seconds later where it fell.
+func _schedule_death_blast() -> void:
+	blast_pending = true
+	_blast_telegraph_pos = global_position
+	EventBus.telegraph_started.emit(&"explode", _blast_telegraph_pos, data.explode_radius, data.explode_windup)
+	_set_model_flag(&"set_fuse", true)
+	var tree := get_tree() if is_inside_tree() else null
+	if tree == null or data.explode_windup <= 0.0:
+		detonate()
+		return
+	tree.create_timer(data.explode_windup, false, true).timeout.connect(_on_death_blast_timeout)
+
+
+func _on_death_blast_timeout() -> void:
+	if blast_pending:
+		detonate()
+
+
 ## Calls a trait effect (set_invulnerable, set_reviving) on the model under Model, when it has one.
 func _set_model_flag(method: StringName, on: bool) -> void:
 	var model := get_node_or_null(^"Model")
@@ -449,6 +617,7 @@ func cull(reason: StringName) -> bool:
 	if reason == &"STUCK":
 		stuck_cull_count += 1
 	_log_stuck_event(4 if reason == &"STUCK" else 0, reason)
+	_cancel_blast()
 	is_dead = true
 	_release_melee_slot()
 	remove_from_group(&"enemy")
@@ -785,6 +954,13 @@ func _physics_process(delta: float) -> void:
 		_tick_revive(delta)
 		return
 	_tick_invuln(delta)
+	if is_fuse_lit():
+		velocity.x = 0.0
+		velocity.z = 0.0
+		_fuse_timer -= delta
+		if _fuse_timer <= 0.0:
+			_self_destruct()
+		return
  
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
@@ -1026,6 +1202,11 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.ATTACK:
 			velocity.x = 0.0
 			velocity.z = 0.0
+			# A Suicide Squad in reach of its target winds up and blows itself up instead of swinging.
+			if data != null and data.explode_on_contact:
+				if not is_fuse_lit():
+					_light_fuse()
+				return
 			# Finish the swing before choosing again, unless the target died or became ruined.
 			if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 				_retarget_now()
@@ -1929,7 +2110,14 @@ func _on_died() -> void:
 		if display_gold > 0:
 			EventBus.gold_delta.emit(display_gold)
 		EventBus.enemy_died.emit(data.id, global_position, kill_gold, _get_kill_prestige(), false, hit_by_commander)
- 
+
+	# A Captain killed still blows up where it fell; a lit Suicide Squad killed does not.
+	_cancel_blast()
+	if data != null and data.explode_on_death:
+		_schedule_death_blast()
+	else:
+		_set_model_flag(&"set_fuse", false)
+
 	change_state(Enums.EnemyState.DEAD)
 
 
@@ -1958,22 +2146,24 @@ func _play_death_anim() -> void:
 		elif anim_player.has_animation(&"Death_B"):
 			death_anim = &"Death_B"
  
+	var delay: float = 0.0
 	if not death_anim.is_empty():
 		play_anim(death_anim, 1.0)
-		var delay: float = 0.8
+		delay = 0.8
 		if anim_player != null and anim_player.has_animation(death_anim):
 			var anim: Animation = anim_player.get_animation(death_anim)
 			if anim != null and anim.length > 0.0:
 				delay = anim.length
-		var tree := get_tree()
-		if tree != null:
-			var timer := tree.create_timer(delay)
-			timer.timeout.connect(func():
-				if is_instance_valid(self):
-					queue_free()
-			)
-		else:
-			queue_free()
-	else:
+	# A Captain stays until its blast went off.
+	if blast_pending and data != null:
+		delay = maxf(delay, data.explode_windup + 0.05)
+	var tree := get_tree()
+	if delay <= 0.0 or tree == null:
 		queue_free()
+		return
+	var timer := tree.create_timer(delay)
+	timer.timeout.connect(func():
+		if is_instance_valid(self):
+			queue_free()
+	)
  
