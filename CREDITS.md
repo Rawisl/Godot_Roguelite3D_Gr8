@@ -40,15 +40,17 @@ CC0: Music Jingles by Kenney (www.kenney.nl).
 All CC0 1.0 (credit not required). Per-file list in `audio/CREDITS.md`.
 
 - Impact Sounds, Interface Sounds, Sci-Fi Sounds by Kenney (www.kenney.nl)
-- Bump by pyzaist, Slingshot Fly by 2 by saturdaysoundguy, Monster Cry by Algoto (freesound.org)
+- Bump by pyzaist (freesound.org)
+- Slingshot Fly by 2 by saturdaysoundguy (freesound.org)
+- Monster Cry by Algoto (freesound.org)
 
 ## Models, textures and animation
 
 | Asset | Author | Licence | Used in |
 |---|---|---|---|
 | KayKit: Adventurers Character Pack | Kay Lousberg (www.kaylousberg.com) | CC0 1.0 | `contents/assets/characters/commander/`, weapon models and icons |
-| KayKit Character Pack: Skeletons | Kay Lousberg | CC0 1.0 | `contents/assets/characters/enemy and boss/` |
-| KayKit: Character Animations | Kay Lousberg | CC0 1.0 | `contents/assets/characters/additional animations/` |
+| KayKit Character Pack: Skeletons | Kay Lousberg (www.kaylousberg.com) | CC0 1.0 | `contents/assets/characters/enemy and boss/` |
+| KayKit: Character Animations | Kay Lousberg (www.kaylousberg.com) | CC0 1.0 | `contents/assets/characters/additional animations/` |
 | Towers, Fortress, bushes and stones | CraftPix (craftpix.net) | [CraftPix File License](https://craftpix.net/file-licenses/) | `contents/assets/towers/`, `contents/assets/fortress/`, `contents/assets/environment/bush/`, `contents/assets/environment/stone/` |
 | Barricade tier models | Made by the team with Hyper3D Rodin | Commercial licence held by the author, no attribution required | `contents/assets/towers/barricade/` |
 | Fox Commander, Skeletal Centipede, heal station, hazard portal | Made by the team with Tripo 3D and Hyper3D | Generated under the author's accounts, no attribution required | `contents/assets/characters/fox_commander/`, `contents/assets/characters/enemy and boss/skeletal_centipede/`, `contents/assets/towers/heal_station*.glb`, `contents/assets/towers/hazard_portal.glb` |
@@ -62,6 +64,6 @@ the font in `ui/theme/fonts/OFL.txt`.
 
 ## Tools
 
-- Godot Engine (MIT licence, https://godotengine.org/license). The full engine licence and its
+- Godot Engine by Juan Linietsky, Ariel Manzur and contributors (MIT licence, https://godotengine.org/license). The full engine licence and its
   third-party notices are shown on the Credits screen from `Engine.get_license_text()`.
-- Blender.
+- Blender by Blender Foundation.
