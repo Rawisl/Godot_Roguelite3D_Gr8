@@ -21,6 +21,7 @@ var passes: int = 0
 var fails: int = 0
 var _died: Array[Dictionary] = []
 var _telegraphs: Array[Dictionary] = []
+var _cancels: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -32,6 +33,8 @@ func _ready() -> void:
 		_died.append({"id": id, "gold": gold, "cull": is_cull}))
 	EventBus.telegraph_started.connect(func(kind: StringName, pos: Vector3, radius: float, duration: float) -> void:
 		_telegraphs.append({"kind": kind, "pos": pos, "radius": radius, "duration": duration}))
+	EventBus.telegraph_cancelled.connect(func(kind: StringName, pos: Vector3) -> void:
+		_cancels.append({"kind": kind, "pos": pos}))
 	EventBus.state_changed.emit(&"COMBAT")
 
 	test_data()
@@ -39,6 +42,7 @@ func _ready() -> void:
 	await test_squad_killed_before_blast()
 	await test_commander_dodge_and_mode()
 	await test_captain()
+	await test_ring_cancelled()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -120,6 +124,7 @@ func test_squad_blast() -> void:
 	var hp := {"barricade": _hp(barricade), "tower": _hp(tower), "wall": _hp(wall_tower), "far": _hp(far_tower), "grunt": neighbour.health.hp}
 	_died.clear()
 	_telegraphs.clear()
+	_cancels.clear()
 
 	_attack(squad, barricade)
 	assert_true(squad.is_fuse_lit(), "In reach of the Barricade the Squad lights its fuse")
@@ -136,6 +141,8 @@ func test_squad_blast() -> void:
 	assert_true(neighbour.health.hp == hp.grunt, "No friendly fire on other units")
 	assert_true(squad.is_dead and squad.self_destructed, "The Squad is gone after its blast")
 	assert_true(_died.size() == 1 and _died[0].cull and _died[0].gold == 0.0, "Blowing up pays no gold, XP or kill, and the wave counts it as gone")
+	await _physics_frames()
+	assert_true(_cancels.is_empty(), "The ring is not cancelled when the blast comes")
 	for n in [barricade, tower, wall_tower, far_tower, neighbour]:
 		n.free()
 	await _physics_frames()
@@ -148,9 +155,12 @@ func test_squad_killed_before_blast() -> void:
 	await _physics_frames()
 	var hp_before := _hp(barricade)
 	_died.clear()
+	_telegraphs.clear()
+	_cancels.clear()
 	_attack(squad, barricade)
 	squad.take_damage(DamageInfo.new(squad.health.max_hp, Enums.DamageType.SLASH))
 	assert_true(squad.is_dead and not squad.self_destructed and not squad.is_fuse_lit(), "Killed during the wind-up: dead, fuse out")
+	assert_true(_cancels.size() == 1 and _cancels[0].kind == &"explode" and _telegraphs.size() == 1 and _cancels[0].pos.is_equal_approx(_telegraphs[0].pos), "Killed during the wind-up: its ring is cancelled where it was drawn")
 	await get_tree().create_timer(squad.data.explode_windup + 0.2).timeout
 	assert_true(_hp(barricade) == hp_before, "No blast when killed first")
 	assert_true(_died.size() == 1 and not _died[0].cull and _died[0].gold > 0.0, "Killed first: normal reward")
@@ -190,6 +200,7 @@ func test_captain() -> void:
 	var hp_before := _hp(barricade)
 	_died.clear()
 	_telegraphs.clear()
+	_cancels.clear()
 	captain.take_damage(DamageInfo.new(captain.health.max_hp, Enums.DamageType.SLASH))
 	assert_true(captain.is_dead and captain.blast_pending, "Killed, the Captain waits to blow up")
 	assert_true(_died.size() == 1 and not _died[0].cull and _died[0].gold > 0.0, "Killed, the Captain still pays")
@@ -198,6 +209,7 @@ func test_captain() -> void:
 	await get_tree().create_timer(captain.data.explode_windup + 0.1, true, true).timeout
 	assert_true(_hp(barricade) < hp_before, "The blast after the wind-up hits the Barricade")
 	assert_true(not is_instance_valid(captain) or not captain.blast_pending, "The blast went off once")
+	assert_true(_cancels.is_empty(), "The Captain's ring is not cancelled: its blast came")
 
 	var hp_mid := _hp(barricade)
 	var culled := _unit(CAPTAIN_SCENE, Vector3(1.0, 0, 0.5), "CulledCaptain")
@@ -208,4 +220,40 @@ func test_captain() -> void:
 	await get_tree().create_timer(culled.data.explode_windup + 0.2 if culled.data else 1.2).timeout
 	assert_true(_hp(barricade) == hp_mid and _telegraphs.is_empty(), "Culled: no blast")
 	assert_true(_died.size() == 1 and _died[0].cull, "Culled: no reward")
+	barricade.free()
+
+
+func test_ring_cancelled() -> void:
+	print("\n[GROUP 6] The red ring is cancelled when no blast follows (FBK-06)")
+	var barricade := _tower(BARRICADE_SCENE, Vector3(0, 0, 0))
+	var squad := _unit(SQUAD_SCENE, Vector3(0.8, 0, 0), "CulledSquad")
+	await _physics_frames()
+	var hp_before := _hp(barricade)
+	_telegraphs.clear()
+	_cancels.clear()
+	_attack(squad, barricade)
+	assert_true(squad.is_fuse_lit() and _telegraphs.size() == 1, "The Squad lights its fuse")
+	assert_true(squad.cull(&"STUCK"), "A lit Squad can be culled")
+	assert_true(_cancels.size() == 1 and _cancels[0].kind == &"explode" and _cancels[0].pos.is_equal_approx(_telegraphs[0].pos), "Culled during the wind-up: its ring is cancelled")
+	await _physics_frames()
+	assert_true(_cancels.size() == 1, "Cancelled once, not again when it leaves the tree")
+
+	var captain := _unit(CAPTAIN_SCENE, Vector3(1.0, 0, 0), "FreedCaptain")
+	await _physics_frames()
+	_telegraphs.clear()
+	_cancels.clear()
+	captain.take_damage(DamageInfo.new(captain.health.max_hp, Enums.DamageType.SLASH))
+	assert_true(captain.blast_pending and _telegraphs.size() == 1 and _cancels.is_empty(), "Killed, the Captain shows its ring")
+	var windup: float = captain.data.explode_windup
+	captain.free()
+	assert_true(_cancels.size() == 1 and _cancels[0].pos.is_equal_approx(_telegraphs[0].pos), "Freed before its blast: its ring is cancelled")
+	await get_tree().create_timer(windup + 0.2, true, true).timeout
+	assert_true(_hp(barricade) == hp_before, "Freed before its blast: no blast")
+
+	var alive := _unit(CAPTAIN_SCENE, Vector3(1.0, 0, 0.5), "AliveCaptain")
+	await _physics_frames()
+	_cancels.clear()
+	alive.cull(&"HARD_CAP")
+	await _physics_frames()
+	assert_true(_cancels.is_empty(), "A unit with no fuse lit sends no cancel")
 	barricade.free()

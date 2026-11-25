@@ -178,6 +178,8 @@ var _fuse_timer: float = -1.0
 var self_destructed: bool = false
 ## True between a Captain's death and its blast.
 var blast_pending: bool = false
+## Where the "explode" telegraph of the lit fuse or pending blast was sent, for its cancel.
+var _blast_telegraph_pos: Vector3 = Vector3.ZERO
 ## Sent when the blast of this unit has dealt its damage.
 signal blast_done
 ## Knight: the one invulnerable window was used, and the game seconds it has left.
@@ -463,8 +465,26 @@ func _light_fuse() -> void:
 	_fuse_timer = maxf(0.0, data.explode_windup)
 	velocity.x = 0.0
 	velocity.z = 0.0
-	EventBus.telegraph_started.emit(&"explode", global_position, data.explode_radius, data.explode_windup)
+	_blast_telegraph_pos = global_position
+	EventBus.telegraph_started.emit(&"explode", _blast_telegraph_pos, data.explode_radius, data.explode_windup)
 	_set_model_flag(&"set_fuse", true)
+
+
+## Ends a lit fuse or a pending Captain blast with no blast: the bomb goes dark and the red ring is
+## cancelled, so the player is not told to dodge a blast that never comes. No-op when neither.
+func _cancel_blast() -> void:
+	if not is_fuse_lit() and not blast_pending:
+		return
+	_fuse_timer = -1.0
+	blast_pending = false
+	_set_model_flag(&"set_fuse", false)
+	EventBus.telegraph_cancelled.emit(&"explode", _blast_telegraph_pos)
+
+
+func _notification(what: int) -> void:
+	# Freed while the fuse is lit or the blast is pending (wave cleanup, scene exit): no blast comes.
+	if what == NOTIFICATION_EXIT_TREE:
+		_cancel_blast()
 
 
 ## Deals explode_damage (BLAST) in explode_radius around the unit to the commander in Frontline,
@@ -526,7 +546,8 @@ func _self_destruct() -> void:
 ## A Captain killed: the blast comes explode_windup game seconds later where it fell.
 func _schedule_death_blast() -> void:
 	blast_pending = true
-	EventBus.telegraph_started.emit(&"explode", global_position, data.explode_radius, data.explode_windup)
+	_blast_telegraph_pos = global_position
+	EventBus.telegraph_started.emit(&"explode", _blast_telegraph_pos, data.explode_radius, data.explode_windup)
 	_set_model_flag(&"set_fuse", true)
 	var tree := get_tree() if is_inside_tree() else null
 	if tree == null or data.explode_windup <= 0.0:
@@ -596,6 +617,7 @@ func cull(reason: StringName) -> bool:
 	if reason == &"STUCK":
 		stuck_cull_count += 1
 	_log_stuck_event(4 if reason == &"STUCK" else 0, reason)
+	_cancel_blast()
 	is_dead = true
 	_release_melee_slot()
 	remove_from_group(&"enemy")
@@ -2108,7 +2130,7 @@ func _on_died() -> void:
 		EventBus.enemy_died.emit(data.id, global_position, kill_gold, _get_kill_prestige(), false, hit_by_commander)
 
 	# A Captain killed still blows up where it fell; a lit Suicide Squad killed does not.
-	_fuse_timer = -1.0
+	_cancel_blast()
 	if data != null and data.explode_on_death:
 		_schedule_death_blast()
 	else:
