@@ -655,16 +655,17 @@ func _schedule_units(units: Array[Dictionary], wave_num: int, rng: RandomNumberG
 	var groups: Array[Array] = []
 	for g in range(group_count):
 		groups.append([])
-	var melee_index := 0
-	var ranged_index := 0
+	# One counter for melee then ranged, so no group is left empty (an empty group would take a
+	# share of the stretch below and end the schedule early).
+	var unit_index := 0
 	for unit in units:
 		if not unit.is_ranged:
-			groups[melee_index % group_count].append(unit)
-			melee_index += 1
+			groups[unit_index % group_count].append(unit)
+			unit_index += 1
 	for unit in units:
 		if unit.is_ranged:
-			groups[ranged_index % group_count].append(unit)
-			ranged_index += 1
+			groups[unit_index % group_count].append(unit)
+			unit_index += 1
 
 	var total: float = 0.0
 	for g_idx in range(group_count):
