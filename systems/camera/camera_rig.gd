@@ -4,6 +4,14 @@ extends Node3D
 ## let the move keys pan it. Runs on TimeManager's real-time clock, so it ignores the game
 ## speed and keeps working while paused. The boss intro pan is the exception: it runs on game
 ## time, so it holds still while paused and lasts as long as the intro itself.
+## In the corridor the same camera is a third-person view the player turns on and off with
+## view_toggle_key (a physical key, read like free_cursor_key). It works in Frontline and Commander
+## mode, never in PREP, the boss intro or the Hazard Trial. Each time it comes on it starts along
+## the corridor toward the enemies with the numbers of corridor_chase. PREP and the boss intro cut
+## back to the top-down view and the choice returns after them. Switching is a hard cut both ways;
+## Tab, Deploy and Recall do not glide while it is on, and in Commander mode it orbits the
+## commander on the wall, so the move keys do not pan. Every view change is sent on
+## EventBus.camera_view_changed.
 ## In the Hazard Trial the view cuts to ChaseCamera, a perspective camera the rig builds itself.
 ## It stands behind the commander and over its right shoulder (chase_shoulder_offset), starting at
 ## the corridor camera's yaw (numbers on the HazardRoom), and follows the commander smoothly on
@@ -16,7 +24,8 @@ extends Node3D
 ## brings the camera nearer so it stays above chase_min_height over the floor. The cursor comes
 ## back while the game is paused, a dialog is open or free_cursor_key is held. Leaving cuts back
 ## to the PREP frame on the corridor camera. Every frame change is sent on
-## EventBus.camera_frame_changed.
+## EventBus.camera_frame_changed; the third-person view in the corridor keeps the Frontline or
+## Overview frame.
 
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_down", &"move_left", &"move_right"]
 const CONTEXT_FRONTLINE := &"FRONTLINE"
@@ -24,11 +33,14 @@ const CONTEXT_COMMANDER := &"COMMANDER"
 const CONTEXT_PREP := &"PREP"
 const STATE_BOSS_INTRO := &"BOSS_INTRO"
 const STATE_REWARD_PICK := &"REWARD_PICK"
+const STATE_SUMMARY := &"SUMMARY"
 const STATE_HAZARD_TRIAL := &"HAZARD_TRIAL"
 const FRAME_FRONTLINE := &"FRONTLINE"
 const FRAME_OVERVIEW := &"OVERVIEW"
 const FRAME_BOSS_INTRO := &"BOSS_INTRO"
 const FRAME_HAZARD_TRIAL := &"HAZARD_TRIAL"
+const VIEW_TOP_DOWN := &"TOP_DOWN"
+const VIEW_THIRD_PERSON := &"THIRD_PERSON"
 
 @export var camera_pan_speed: float = 14.0
 ## Seconds to reach full pan speed, so starting and stopping does not jerk.
@@ -53,6 +65,12 @@ const FRAME_HAZARD_TRIAL := &"HAZARD_TRIAL"
 @export var shake_frequency: float = 15.0
 ## 1 normal, 0.5 reduced, 0 off, from the Accessibility tab. Also set through the "screen_shake" setting.
 @export_range(0.0, 1.0) var shake_scale: float = 1.0
+
+@export_group("Corridor chase")
+## Numbers of the third-person view in the corridor. Without it the view cannot be turned on.
+@export var corridor_chase: ChaseCameraSettings = preload("res://data/config/corridor_chase_camera.tres")
+## Turns the third-person view on and off in Frontline and Commander mode.
+@export var view_toggle_key: Key = KEY_F5
 
 @export_group("Boss intro")
 ## Where the boss appears. Empty = the node in group "boss_spawn_point", then the spawn zone.
@@ -99,9 +117,21 @@ var _chase: Camera3D
 var _chase_on: bool = false
 var _room: HazardRoom
 var _orbit := ChaseCameraOrbit.new()
+var _fade := ChaseCameraFade.new()
+## The commander's place at the last chase tick, to tell a teleport from a step.
+var _last_chase_focus: Vector3 = Vector3.INF
+## A commander move bigger than this in one tick cuts the chase onto it instead of following.
+var _teleport_snap_distance: float = 3.0
 ## True while the rig holds the cursor captured.
 var _captured: bool = false
 var _crosshair: CanvasLayer
+## True once the player turned the third-person view on in the corridor; kept through PREP and the
+## boss intro, which show the top-down view meanwhile.
+var _third_person_chosen: bool = false
+## The view sent last on camera_view_changed.
+var _view: StringName = &""
+## True after the run ended: the end screens need the cursor.
+var _run_over: bool = false
 
 
 func _ready() -> void:
@@ -121,6 +151,7 @@ func _ready() -> void:
 		_camera.size = _target_size()
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_state_changed)
+	EventBus.run_ended.connect(_on_run_ended)
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.screen_shake_requested.connect(_on_screen_shake_requested)
 	EventBus.pause_changed.connect(_on_pause_changed)
@@ -128,6 +159,7 @@ func _ready() -> void:
 	EventBus.hazard_trial_exited.connect(_on_hazard_trial_exited)
 	ScreenManager.dialog_context_changed.connect(_clear_held)
 	_update_frame()
+	_update_view()
 
 
 func _notification(what: int) -> void:
@@ -137,6 +169,7 @@ func _notification(what: int) -> void:
 
 ## Never leaves the cursor captured behind, for example when the run scene is freed.
 func _exit_tree() -> void:
+	_fade.restore()
 	if not _captured:
 		return
 	_captured = false
@@ -145,7 +178,9 @@ func _exit_tree() -> void:
 
 ## Panning is off in Frontline and while the boss intro, a reward pick or a dialog owns input.
 func is_panning_enabled() -> bool:
-	if _hazard or _context() == CONTEXT_FRONTLINE or ScreenManager.has_dialog():
+	if _hazard or _chase_on:
+		return false
+	if _context() == CONTEXT_FRONTLINE or ScreenManager.has_dialog():
 		return false
 	return _state != STATE_BOSS_INTRO and _state != STATE_REWARD_PICK \
 			and not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK)
@@ -168,6 +203,35 @@ func is_in_hazard_trial() -> bool:
 ## True while the rig holds the cursor captured for the chase view.
 func is_cursor_captured() -> bool:
 	return _captured
+
+
+## True while ChaseCamera shows the game: the Hazard Trial room, or the corridor view.
+func is_third_person() -> bool:
+	return _chase_on
+
+
+## True while the player has the corridor third-person view turned on, even when PREP or the boss
+## intro shows the top-down view meanwhile.
+func is_third_person_chosen() -> bool:
+	return _third_person_chosen
+
+
+## The view sent last on camera_view_changed: TOP_DOWN or THIRD_PERSON.
+func get_view() -> StringName:
+	return _view
+
+
+## Turns the corridor third-person view on or off. Does nothing where it is not allowed: no
+## settings, the Hazard Trial, the boss intro, PREP, pause or a dialog.
+func toggle_view() -> void:
+	if corridor_chase == null or _hazard:
+		return
+	if _intro or _in_prep:
+		return
+	if TimeManager.is_paused or ScreenManager.has_dialog():
+		return
+	_third_person_chosen = not _third_person_chosen
+	_sync_corridor_chase()
 
 
 ## The frame sent last on camera_frame_changed: FRONTLINE, OVERVIEW, BOSS_INTRO or HAZARD_TRIAL.
@@ -225,11 +289,22 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _is_view_toggle(event):
+		toggle_view()
+		get_viewport().set_input_as_handled()
+		return
 	for action in _blocked.keys():
 		if event.is_action_released(action):
 			_blocked.erase(action)
 	if is_panning_enabled() and event.is_action_pressed(&"camera_recenter", false):
 		_glide_to_focus(recenter_time)
+
+
+func _is_view_toggle(event: InputEvent) -> bool:
+	var key := event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return false
+	return key.physical_keycode == view_toggle_key
 
 
 ## Where the camera goes when entering a context: the commander in Frontline and Commander
@@ -253,7 +328,7 @@ func _process(_delta: float) -> void:
 	var game_delta := _game_delta()
 	_update_shake(real_delta)
 	_update_size(real_delta)
-	if _hazard:
+	if _hazard or _chase_on:
 		_velocity = Vector3.ZERO
 		return
 	if _intro:
@@ -280,11 +355,11 @@ func _physics_process(_delta: float) -> void:
 	_follow(get_physics_process_delta_time() / maxf(Engine.time_scale, 0.001))
 
 
-## Frontline follow, and the chase view in the Hazard Trial room. It must step with the
+## Frontline follow, and the chase view in the Hazard Trial room and the corridor. It must step with the
 ## commander's physics ticks: sampling the commander once per rendered frame mixes two clocks
 ## and makes it shake on screen.
 func _follow(real_delta: float) -> void:
-	if _hazard:
+	if _hazard or _chase_on:
 		_follow_chase(real_delta)
 		return
 	if _intro or _context() != CONTEXT_FRONTLINE or _glide_left > 0.0:
@@ -472,6 +547,10 @@ func _on_mode_changed(mode: StringName) -> void:
 	# The intro and the Hazard Trial keep their frame whatever the mode; the frame follows after.
 	if _intro or _hazard:
 		return
+	# The chase follows the commander wherever it stands, so the mode change glides nothing.
+	if _chase_on:
+		_update_frame()
+		return
 	if _context() != before:
 		_glide_to_focus(transition_time)
 		_glide_size()
@@ -493,7 +572,11 @@ func _on_state_changed(new_state: StringName) -> void:
 		if new_state == STATE_BOSS_INTRO:
 			_start_intro()
 			_update_frame()
+		_sync_corridor_chase()
 		return
+	# The intro pans from, and PREP glides back from, the commander's place on the top-down camera.
+	if _chase_on and _state_needs_top_down(new_state):
+		_stop_corridor_chase()
 	if new_state == STATE_BOSS_INTRO:
 		_start_intro()
 		_update_frame()
@@ -506,6 +589,7 @@ func _on_state_changed(new_state: StringName) -> void:
 		_glide_to_focus(transition_time)
 		_glide_size()
 	_update_frame()
+	_sync_corridor_chase()
 
 
 ## The wave side sends hazard_trial_entered and the HAZARD_TRIAL state; either one switches the
@@ -548,20 +632,73 @@ func _enter_hazard() -> void:
 	position = Vector3(focus.x, _home.y, focus.z)
 	if _camera != null and _room.camera_size > 0.0:
 		_camera.size = _room.camera_size
-	_start_chase()
+	_start_chase(_room.get_chase_settings(),
+			_camera.global_rotation.y if _camera != null else global_rotation.y)
 	_update_frame()
 
 
-## Reads the room's chase settings once and makes ChaseCamera the view.
-func _start_chase() -> void:
+## Reads the given chase settings once and makes ChaseCamera the view.
+func _start_chase(settings: Dictionary, start_yaw: float) -> void:
 	if _chase == null:
 		return
-	_orbit.configure(_chase, _room.get_chase_settings(),
-			_camera.global_rotation.y if _camera != null else global_rotation.y)
+	_orbit.configure(_chase, settings, start_yaw)
+	_fade.configure(settings)
+	_teleport_snap_distance = settings.get("teleport_snap_distance", 3.0)
 	_chase_on = true
 	_snap_chase()
 	_chase.current = true
 	_update_cursor()
+	_update_view()
+
+
+func _state_needs_top_down(state: StringName) -> bool:
+	if state == STATE_BOSS_INTRO:
+		return true
+	return state == &"PREP"
+
+
+## The corridor view may be on only in Frontline and Commander mode.
+func _can_use_corridor_chase() -> bool:
+	if corridor_chase == null or _hazard:
+		return false
+	return not _intro and not _in_prep
+
+
+## Brings the corridor view in line with the player's choice and where it is allowed. Starting it
+## reads corridor_chase again, so every start looks along the corridor with the default pitch and
+## zoom.
+func _sync_corridor_chase() -> void:
+	var want := _third_person_chosen and _can_use_corridor_chase()
+	if want and not _chase_on:
+		_velocity = Vector3.ZERO
+		_glide_left = 0.0
+		_size_left = 0.0
+		_clear_held()
+		_start_chase(corridor_chase.get_orbit_settings(), deg_to_rad(corridor_chase.start_yaw_deg))
+	elif not want and _chase_on and not _hazard:
+		_stop_corridor_chase()
+
+
+## Hard cut back to the top-down camera, standing where the commander is (not where the smoothed
+## chase rig is), at the ortho size of the context.
+func _stop_corridor_chase() -> void:
+	_stop_chase()
+	_velocity = Vector3.ZERO
+	_glide_left = 0.0
+	_size_left = 0.0
+	position = _commander_focus()
+	if _camera != null and bounds != null:
+		_camera.size = _target_size()
+
+
+## The commander on the ground plane of the top-down camera, limited by the context's bounds;
+## where the rig is while there is no commander.
+func _commander_focus() -> Vector3:
+	var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
+	if commander == null:
+		return _clamped(Vector3(position.x, _home.y, position.z))
+	var p := commander.global_position
+	return _clamped(Vector3(p.x, _home.y, p.z))
 
 
 ## Puts the chase view on the commander at once, or on CameraFrame while there is none.
@@ -569,22 +706,48 @@ func _snap_chase() -> void:
 	if not _chase_on:
 		return
 	position = _chase_focus()
-	_orbit.place(global_position)
+	_last_chase_focus = position
+	_sync_orbit()
+	_orbit.snap(global_position)
 
 
 ## Smooth follow of the commander in the room, on real seconds.
 func _follow_chase(real_delta: float) -> void:
 	if not _chase_on:
 		return
-	position = _orbit.follow(position, _chase_focus(), real_delta)
+	var actual := _chase_focus()
+	var jumped := _last_chase_focus.is_finite() \
+			and actual.distance_to(_last_chase_focus) > _teleport_snap_distance
+	_last_chase_focus = actual
+	if jumped:
+		_snap_chase()
+	else:
+		_sync_orbit()
+		position = _orbit.follow(position, actual, real_delta)
 	_orbit.advance(real_delta, global_position)
+	_fade.update(get_tree().get_first_node_in_group(&"commander") as Node3D,
+			_orbit.get_pivot_gap(), real_delta, reduced_motion)
 
 
-## The commander on the camera's ground plane, else the room's CameraFrame, else where the rig is.
+## Gives the orbit what only the rig knows: the commander's body, which the wall check ignores, and
+## the reduced motion setting.
+func _sync_orbit() -> void:
+	var body := get_tree().get_first_node_in_group(&"commander") as CollisionObject3D
+	var excluded: Array[RID] = []
+	if body != null:
+		excluded.append(body.get_rid())
+	_orbit.exclude = excluded
+	_orbit.reduced_motion = reduced_motion
+	_orbit.actual_focus = _chase_focus()
+
+
+## The commander on the camera's ground plane in the room, at its real height in the corridor (the
+## Fortress wall is higher than the floor), else the room's CameraFrame, else where the rig is.
 func _chase_focus() -> Vector3:
 	var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
 	if commander != null:
-		return Vector3(commander.global_position.x, _home.y, commander.global_position.z)
+		var height := _home.y if _hazard else commander.global_position.y
+		return Vector3(commander.global_position.x, height, commander.global_position.z)
 	if is_instance_valid(_room):
 		var focus := _room.get_camera_focus()
 		return Vector3(focus.x, _home.y, focus.z)
@@ -606,12 +769,15 @@ func _zoom_chase(notches: float) -> void:
 	_orbit.change_zoom(notches, reduced_motion, global_position)
 
 
-## The room keeps the cursor captured unless the game is paused, a dialog is open or
-## free_cursor_key is held, so the pause menu, dialogs and the Leave button can be clicked.
+## The chase view keeps the cursor captured unless the game is paused, a dialog is open, a panel
+## without a pause owns input (the wave summary, the end of the run) or free_cursor_key is held,
+## so the pause menu, dialogs, panels and the Leave button can be clicked.
 func _wants_captured_cursor() -> bool:
 	if not _chase_on:
 		return false
 	if TimeManager.is_paused or ScreenManager.has_dialog():
+		return false
+	if _state == STATE_SUMMARY or _run_over:
 		return false
 	return not Input.is_physical_key_pressed(free_cursor_key)
 
@@ -662,9 +828,11 @@ func _stop_chase() -> void:
 	if not _chase_on:
 		return
 	_chase_on = false
+	_fade.restore()
 	_update_cursor()
 	if _camera != null:
 		_camera.current = true
+	_update_view()
 
 
 ## The camera that shows the game now: ChaseCamera in the room, the corridor camera otherwise.
@@ -722,6 +890,20 @@ func _update_frame() -> void:
 		return
 	_frame = frame
 	EventBus.camera_frame_changed.emit(frame)
+
+
+## Sends camera_view_changed when the camera that shows the game changes, once per change.
+func _update_view() -> void:
+	var view := VIEW_THIRD_PERSON if _chase_on else VIEW_TOP_DOWN
+	if view == _view:
+		return
+	_view = view
+	EventBus.camera_view_changed.emit(view)
+
+
+func _on_run_ended(_end_type: StringName, _summary: Dictionary) -> void:
+	_run_over = true
+	_update_cursor()
 
 
 func _on_settings_changed(key: StringName, value: Variant) -> void:

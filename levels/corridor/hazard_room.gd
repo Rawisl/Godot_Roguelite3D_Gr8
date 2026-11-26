@@ -59,6 +59,33 @@ extends Node3D
 @export var chase_pivot_height: float = 1.4
 ## Far plane of the chase camera; has to reach past the sky sphere.
 @export var chase_far: float = 1000.0
+## Physics layers the chase camera cannot pass through: 1 world and 4 structure.
+@export_flags_3d_physics var chase_collision_mask: int = 9
+## Radius of the sphere that checks for walls on the way to the camera, in metres.
+@export var chase_probe_radius: float = 0.3
+## The chase camera never comes nearer to the pivot than this, in metres.
+@export var chase_min_distance: float = 1.0
+## Real seconds the chase camera takes to ease back out after a wall stops blocking it.
+@export var chase_return_time: float = 0.25
+## Real seconds the way has to stay clear before the chase camera starts to ease back out.
+@export var chase_release_delay: float = 0.15
+## The way has to get clearer than this share of the way before the chase camera counts the wall
+## as gone.
+@export var chase_release_margin: float = 0.01
+## How far the commander may stand from the middle of the screen toward the left edge, as a share
+## of that half width; a camera pulled in by a wall narrows its shoulder offset to stay inside it.
+@export_range(0.0, 1.0) var chase_max_screen_offset: float = 0.6
+## A commander move bigger than this in one physics tick cuts the chase camera onto it at once.
+@export var chase_teleport_snap_distance: float = 3.0
+## The commander fades out with a dither from chase_fade_start_distance (metres from camera to
+## pivot) down to chase_fade_min_alpha at chase_fade_end_distance.
+@export var chase_fade_start_distance: float = 2.0
+@export var chase_fade_end_distance: float = 1.0
+## Nearer than this the commander is hidden completely.
+@export var chase_fade_hide_distance: float = 0.6
+@export_range(0.0, 1.0) var chase_fade_min_alpha: float = 0.3
+## Real seconds from fully visible to hidden.
+@export var chase_fade_time: float = 0.15
 
 @export_group("Ambience")
 ## The level's sun; without it the room keeps the level's light.
@@ -124,7 +151,15 @@ func get_chase_settings() -> Dictionary:
 		"min_height": chase_min_height, "shoulder": chase_shoulder_offset,
 		"aim_tilt": chase_aim_tilt_deg, "follow_smoothing": chase_smoothing,
 		"zoom_min": chase_zoom_min, "zoom_step": chase_zoom_step,
-		"zoom_smoothing": chase_zoom_smoothing, "fov": chase_fov, "far": chase_far
+		"zoom_smoothing": chase_zoom_smoothing, "fov": chase_fov, "far": chase_far,
+		"collision_mask": chase_collision_mask, "probe_radius": chase_probe_radius,
+		"min_distance": chase_min_distance, "return_time": chase_return_time,
+		"release_delay": chase_release_delay, "release_margin": chase_release_margin, "max_screen_offset": chase_max_screen_offset,
+		"teleport_snap_distance": chase_teleport_snap_distance,
+		"fade_hide_distance": chase_fade_hide_distance,
+		"fade_start_distance": chase_fade_start_distance,
+		"fade_end_distance": chase_fade_end_distance,
+		"fade_min_alpha": chase_fade_min_alpha, "fade_time": chase_fade_time
 	}
 
 
