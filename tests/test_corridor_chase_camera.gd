@@ -42,6 +42,10 @@ func _ready() -> void:
 	test_cursor_captured_in_corridor_chase()
 	test_summary_frees_cursor()
 	test_run_end_frees_cursor()
+	test_selection_frees_cursor()
+	await test_no_picking_while_cursor_captured()
+	test_f5_ignored_in_summary_reward_and_run_end()
+	test_min_distance_without_direction()
 	test_wasd_and_c_do_not_pan_in_chase()
 	test_toggle_during_glide()
 	test_recall_then_f5_before_follow_converges()
@@ -61,6 +65,8 @@ func _ready() -> void:
 	await test_commander_fade_between_and_release()
 	await test_commander_fade_reduced_motion_and_chase_off()
 	await test_commander_fade_follows_model_changes()
+	await test_commander_fade_covers_weapon_material()
+	await test_commander_fade_survives_freed_target()
 	test_commander_hides_when_very_close()
 	await test_shoulder_narrows_near_wall()
 	await test_shoulder_eases_back_out()
@@ -292,6 +298,96 @@ func test_run_end_frees_cursor() -> void:
 	rig._on_run_ended(&"ABANDONED", {})
 	_check(not rig.is_cursor_captured() and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE,
 			"run_end_frees_cursor: the end screens get the cursor")
+
+
+func test_selection_frees_cursor() -> void:
+	_combat_rig()
+	var selection := SelectionController.new()
+	add_child(selection)
+	EventBus.mode_changed.emit(&"COMMANDER")
+	rig.toggle_view()
+	rig._update_cursor()
+	_check(rig.is_cursor_captured(), "selection_frees_cursor: the third-person view captures first")
+	selection.selected_slot = &"W1"
+	rig._update_cursor()
+	_check(not rig.is_cursor_captured() and not (rig.get_node("Crosshair") as CanvasLayer).visible,
+			"selection_frees_cursor: a selected slot frees the cursor for its panel")
+	selection.selected_slot = &""
+	rig._update_cursor()
+	_check(rig.is_cursor_captured(), "selection_frees_cursor: closing the panel captures again")
+	EventBus.mode_changed.emit(&"FRONTLINE")
+	selection.free()
+
+
+func test_no_picking_while_cursor_captured() -> void:
+	_combat_rig()
+	var selection := SelectionController.new()
+	add_child(selection)
+	EventBus.mode_changed.emit(&"COMMANDER")
+	var slot := (load("res://systems/build/slot.tscn") as PackedScene).instantiate() as Slot
+	slot.slot_id = &"W1"
+	add_child(slot)
+	var mouse := get_viewport().get_mouse_position()
+	slot.global_position = get_viewport().get_camera_3d().project_position(mouse, 5.0)
+	slot.state = Enums.SlotState.OCCUPIED
+	await get_tree().physics_frame
+	var hovers: Array = []
+	selection.hovered_changed.connect(func(node: Node) -> void: hovers.append(node))
+	selection._process(0.0)
+	_check(selection.hovered == slot,
+			"no_picking_while_captured: with the cursor free the slot under the mouse is hovered")
+	var press := InputEventAction.new()
+	press.action = &"select"
+	press.pressed = true
+	selection._unhandled_input(press)
+	_check(selection.selected_slot == &"W1",
+			"no_picking_while_captured: with the cursor free a click selects it")
+	selection.clear_selection()
+	hovers.clear()
+	rig.toggle_view()
+	rig._update_cursor()
+	mouse = get_viewport().get_mouse_position()
+	slot.global_position = get_viewport().get_camera_3d().project_position(mouse, 5.0)
+	await get_tree().physics_frame
+	_check(selection.pick_under_mouse() == slot,
+			"no_picking_while_captured: the slot sits under the mouse of the chase camera")
+	var tower_selected: Array = []
+	EventBus.tower_selected.connect(func(slot_id: StringName) -> void: tower_selected.append(slot_id))
+	selection._process(0.0)
+	_check(rig.is_cursor_captured() and selection.hovered == null and hovers == [null],
+			"no_picking_while_captured: a captured cursor clears the hover")
+	selection._unhandled_input(press)
+	_check(selection.selected_slot == &"" and tower_selected.is_empty(),
+			"no_picking_while_captured: a captured cursor selects nothing")
+	EventBus.mode_changed.emit(&"FRONTLINE")
+	slot.free()
+	selection.free()
+
+
+func test_f5_ignored_in_summary_reward_and_run_end() -> void:
+	for state in [&"SUMMARY", &"REWARD_PICK"]:
+		_combat_rig()
+		EventBus.state_changed.emit(state)
+		_press_f5()
+		_check(not rig.is_third_person() and not rig.is_third_person_chosen() and views.is_empty(),
+				"f5_ignored_late_states: F5 does nothing in %s" % state)
+	_combat_rig()
+	_press_f5()
+	rig._on_run_ended(&"FORTRESS_DESTROYED", {})
+	_press_f5()
+	_check(rig.is_third_person_chosen() and views == [&"THIRD_PERSON"],
+			"f5_ignored_late_states: F5 does not turn the view off after the run ended")
+
+
+func test_min_distance_without_direction() -> void:
+	_combat_rig()
+	rig.toggle_view()
+	rig._orbit.min_distance = 1.0
+	var pivot := Vector3(1.0, 2.0, 3.0)
+	var result := rig._orbit._keep_min_distance(get_world_3d().direct_space_state, pivot, pivot,
+			pivot, Vector3.RIGHT, Vector3.FORWARD)
+	_check(result == pivot and result.is_finite(),
+			"min_distance_without_direction: no direction to push in leaves the camera where it is")
 
 
 func _press_move_and_recenter() -> void:
@@ -597,17 +693,20 @@ func test_hazard_room_uses_wall_settings() -> void:
 	var room := ROOM_SCENE.instantiate() as HazardRoom
 	room.position = Vector3(0, 0, 100)
 	add_child(room)
-	room.chase_probe_radius = 0.45
-	room.chase_max_screen_offset = 0.4
-	room.chase_fade_hide_distance = 0.7
-	room.chase_teleport_snap_distance = 5.0
+	_check(room.chase_camera.resource_path == "res://data/config/hazard_chase_camera.tres",
+			"hazard_room_uses_wall_settings: the room takes its numbers from the data file")
+	room.chase_camera = room.chase_camera.duplicate()
+	room.chase_camera.probe_radius = 0.45
+	room.chase_camera.max_screen_offset = 0.4
+	room.chase_camera.fade_hide_distance = 0.7
+	room.chase_camera.teleport_snap_distance = 5.0
 	_new_rig()
 	EventBus.state_changed.emit(&"PREP")
 	commander_mock.global_position = room.get_commander_spawn().global_position
 	EventBus.hazard_trial_entered.emit(5, [])
 	await get_tree().physics_frame
 	_check(rig.is_third_person() and is_equal_approx(rig._orbit.probe_radius, 0.45)
-			and rig._orbit.collision_mask == room.chase_collision_mask
+			and rig._orbit.collision_mask == room.chase_camera.collision_mask
 			and is_equal_approx(rig._orbit.max_screen_offset, 0.4)
 			and is_equal_approx(rig._fade.hide_distance, 0.7)
 			and is_equal_approx(rig._teleport_snap_distance, 5.0),
@@ -694,13 +793,12 @@ func _dither_mesh(parent: Node) -> MeshInstance3D:
 
 
 func test_commander_fade_follows_model_changes() -> void:
+	var mount := _weapon_mount()
 	_chase_rig()
 	_set_fade_range()
 	var wall := _add_box((_shoulder_point() + _wanted()) * 0.5, Vector3.ONE, 1)
 	await _resnap()
 	_step(0.3)
-	var mount := Node3D.new()
-	commander_mock.add_child(mount)
 	var swapped := _dither_mesh(mount)
 	_step(0.016)
 	_check(is_equal_approx(float(swapped.get_instance_shader_parameter(&"dither_alpha")), 0.0),
@@ -710,6 +808,76 @@ func test_commander_fade_follows_model_changes() -> void:
 	_check(is_equal_approx(_mesh_alpha(), 0.0) and rig.is_third_person(),
 			"commander_fade_model_change: removing a mesh breaks nothing")
 	wall.free()
+
+
+## A node like the commander's WeaponMount, there before the chase view starts.
+func _weapon_mount() -> Node3D:
+	var mount := Node3D.new()
+	mount.add_to_group(&"weapon_mount")
+	commander_mock.add_child(mount)
+	return mount
+
+
+func _plain_mesh(parent: Node, material: Material) -> MeshInstance3D:
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = BoxMesh.new()
+	mesh.material_override = material
+	parent.add_child(mesh)
+	return mesh
+
+
+func test_commander_fade_covers_weapon_material() -> void:
+	var mount := _weapon_mount()
+	_chase_rig()
+	_set_fade_range()
+	var wall := _add_box((_shoulder_point() + _wanted()) * 0.5, Vector3.ONE, 1)
+	await _resnap()
+	_step(0.3)
+	var weapon := _plain_mesh(mount, StandardMaterial3D.new())
+	var other_shader := ShaderMaterial.new()
+	other_shader.shader = load("res://art/shaders/toon.gdshader") as Shader
+	var other := _plain_mesh(mount, other_shader)
+	other.transparency = 0.25
+	_step(0.3)
+	_check(weapon.transparency > 0.99 and other.transparency > 0.99,
+			"commander_fade_weapon: a mesh without the dither material fades out through transparency")
+	_check(not weapon.visible and not other.visible,
+			"commander_fade_weapon: a mesh without the dither material is hidden once the model is faded")
+	_check(weapon.get_instance_shader_parameter(&"dither_alpha") == null
+			and other.get_instance_shader_parameter(&"dither_alpha") == null,
+			"commander_fade_weapon: only dither meshes get the dither parameter")
+	wall.free()
+	await get_tree().physics_frame
+	_step(3.0)
+	_check(is_zero_approx(weapon.transparency) and is_equal_approx(other.transparency, 0.25),
+			"commander_fade_weapon: removing the wall gives each mesh its own transparency back")
+	_check(weapon.visible and other.visible,
+			"commander_fade_weapon: removing the wall shows the meshes again")
+	wall = _add_box((_shoulder_point() + _wanted()) * 0.5, Vector3.ONE, 1)
+	await _resnap()
+	_step(0.3)
+	var faded := weapon.transparency
+	rig.toggle_view()
+	_check(faded > 0.99 and is_zero_approx(weapon.transparency) and is_equal_approx(other.transparency, 0.25)
+			and weapon.visible,
+			"commander_fade_weapon: turning the chase off restores the weapon at once")
+	wall.free()
+	mount.free()
+
+
+func test_commander_fade_survives_freed_target() -> void:
+	commander_mock.remove_from_group(&"commander")
+	var temporary := Node3D.new()
+	temporary.add_to_group(&"commander")
+	add_child(temporary)
+	_plain_mesh(temporary, StandardMaterial3D.new())
+	_chase_rig()
+	_step(0.1)
+	temporary.free()
+	commander_mock.add_to_group(&"commander")
+	_step(0.1)
+	_check(rig.is_third_person() and (rig._fade._target == null or rig._fade._target == commander_mock),
+			"commander_fade_freed_target: a commander freed mid-view leaves the fade intact")
 
 
 func test_commander_fade_with_real_settings() -> void:
@@ -867,7 +1035,7 @@ func test_framing_while_commander_strafes_and_jumps() -> void:
 func _resnap_with_lag(sideways: float) -> void:
 	await get_tree().physics_frame
 	rig.position = commander_mock.global_position - _orbit_basis().x * sideways
-	rig._sync_orbit()
+	rig._sync_orbit(commander_mock, rig._chase_focus(commander_mock))
 	rig._orbit.snap(rig.global_position)
 
 
@@ -900,7 +1068,7 @@ func test_framing_when_resweeps_are_cut_short() -> void:
 ## Moves the rig's smoothed focus an offset to the side of the commander, without cutting yet.
 func _lag_rig(sideways: float) -> void:
 	rig.position = commander_mock.global_position - _orbit_basis().x * sideways
-	rig._sync_orbit()
+	rig._sync_orbit(commander_mock, rig._chase_focus(commander_mock))
 
 
 func test_offset_limit_is_continuous_and_monotonic() -> void:
