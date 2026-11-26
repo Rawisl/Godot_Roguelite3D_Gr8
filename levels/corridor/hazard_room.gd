@@ -22,77 +22,9 @@ extends Node3D
 @export var boss_spawn_index: int = 2
 
 @export_group("Chase camera")
-## Metres from the chase camera to its pivot above the commander at chase_far_pitch_deg.
-@export var chase_distance: float = 9.0
-## Metres from the chase camera to the pivot at the lowest pitch; the distance blends between
-## the two with the pitch.
-@export var chase_distance_near: float = 6.0
-## Downward angle of the chase camera when entering the room, in degrees.
-@export_range(-89.0, -5.0) var chase_pitch_deg: float = -45.0
-## Highest and lowest angle the mouse can tilt the chase camera to, in degrees.
-@export_range(-89.0, 60.0) var chase_pitch_max_deg: float = 30.0
-@export_range(-89.0, -5.0) var chase_pitch_min_deg: float = -70.0
-## Pitch at which the chase camera stands chase_distance away; it comes nearer below it
-## (chase_distance_near at the lowest pitch) and above it (chase_distance_up at the highest).
-@export_range(-89.0, 60.0) var chase_far_pitch_deg: float = -15.0
-## Metres from the chase camera to the pivot at the highest pitch, before the floor pulls it in.
-@export var chase_distance_up: float = 3.0
-## Lowest the chase camera goes above the floor when it looks up, in metres.
-@export var chase_min_height: float = 0.5
-## Metres the chase camera stands to the right of the pivot, over the commander's shoulder.
-@export var chase_shoulder_offset: float = 1.0
-## Nearest zoom of the mouse wheel, as a share of the normal distance; the wheel never zooms
-## out past the normal distance, so the corridor stays behind the sky.
-@export_range(0.1, 1.0) var chase_zoom_min: float = 0.35
-## Share of the normal distance one wheel notch zooms in or out.
-@export var chase_zoom_step: float = 0.1
-## Real seconds of smoothing of the wheel zoom.
-@export var chase_zoom_smoothing: float = 0.08
-## Degrees the chase camera looks above its pivot, so the commander stays this far below the
-## middle of the screen and the middle points at the ground in front of the commander.
-@export_range(0.0, 30.0) var chase_aim_tilt_deg: float = 10.0
-## Vertical field of view of the chase camera, in degrees.
-@export_range(20.0, 100.0) var chase_fov: float = 60.0
-## Real seconds of smoothing of the chase follow.
-@export var chase_smoothing: float = 0.12
-## Height above the commander's feet of the point the chase camera orbits, in metres.
-@export var chase_pivot_height: float = 1.4
-## Far plane of the chase camera; has to reach past the sky sphere.
-@export var chase_far: float = 1000.0
-## Physics layers the chase camera cannot pass through: 1 world and 4 structure.
-@export_flags_3d_physics var chase_collision_mask: int = 9
-## Radius of the sphere that checks for walls on the way to the camera, in metres.
-@export var chase_probe_radius: float = 0.3
-## The chase camera never comes nearer to the pivot than this, in metres.
-@export var chase_min_distance: float = 1.0
-## Real seconds the chase camera takes to ease back out after a wall stops blocking it.
-@export var chase_return_time: float = 0.25
-## Real seconds the way has to stay clear before the chase camera starts to ease back out.
-@export var chase_release_delay: float = 0.15
-## The way has to get clearer than this share of the way before the chase camera counts the wall
-## as gone.
-@export var chase_release_margin: float = 0.01
-## How far the commander may stand from the middle of the screen toward the left edge, as a share
-## of that half width, with nothing in the way (loose).
-@export_range(0.0, 1.0) var chase_free_screen_offset: float = 0.6
-## The same once a wall has pulled the camera in; it shrinks with the clearance, so the commander
-## moves toward the middle, to the middle when fully pulled in.
-@export_range(0.0, 1.0) var chase_max_screen_offset: float = 0.15
-## Share of the clearance, from 1 down, over which the loose offset blends to the tight one.
-@export_range(0.01, 1.0) var chase_screen_offset_blend: float = 0.2
-## The shoulder narrows as shoulder * clearance ^ this when a wall pulls the camera in.
-@export var chase_shoulder_pull_power: float = 2.0
-## A commander move bigger than this in one physics tick cuts the chase camera onto it at once.
-@export var chase_teleport_snap_distance: float = 3.0
-## The commander fades out with a dither from chase_fade_start_distance (metres from camera to
-## pivot) down to chase_fade_min_alpha at chase_fade_end_distance.
-@export var chase_fade_start_distance: float = 2.0
-@export var chase_fade_end_distance: float = 1.0
-## Nearer than this the commander is hidden completely.
-@export var chase_fade_hide_distance: float = 0.6
-@export_range(0.0, 1.0) var chase_fade_min_alpha: float = 0.3
-## Real seconds from fully visible to hidden.
-@export var chase_fade_time: float = 0.15
+## Numbers of the chase camera in the room. start_yaw_deg is not used: the camera starts at the
+## yaw of the corridor camera.
+@export var chase_camera: ChaseCameraSettings = preload("res://data/config/hazard_chase_camera.tres")
 
 @export_group("Ambience")
 ## The level's sun; without it the room keeps the level's light.
@@ -148,29 +80,11 @@ func get_camera_focus() -> Vector3:
 	return _camera_frame.global_position
 
 
-## Profile for the reusable chase orbit; the room remains the editor-facing source of its values.
+## Profile for the reusable chase orbit, from the room's chase camera resource.
 func get_chase_settings() -> Dictionary:
-	return {
-		"pitch": chase_pitch_deg, "pitch_min": chase_pitch_min_deg,
-		"pitch_max": chase_pitch_max_deg, "far_pitch": chase_far_pitch_deg,
-		"distance": chase_distance, "distance_near": chase_distance_near,
-		"distance_up": chase_distance_up, "pivot_height": chase_pivot_height,
-		"min_height": chase_min_height, "shoulder": chase_shoulder_offset,
-		"aim_tilt": chase_aim_tilt_deg, "follow_smoothing": chase_smoothing,
-		"zoom_min": chase_zoom_min, "zoom_step": chase_zoom_step,
-		"zoom_smoothing": chase_zoom_smoothing, "fov": chase_fov, "far": chase_far,
-		"collision_mask": chase_collision_mask, "probe_radius": chase_probe_radius,
-		"min_distance": chase_min_distance, "return_time": chase_return_time,
-		"release_delay": chase_release_delay, "release_margin": chase_release_margin, "free_screen_offset": chase_free_screen_offset,
-		"max_screen_offset": chase_max_screen_offset,
-		"screen_offset_blend": chase_screen_offset_blend,
-		"shoulder_pull_power": chase_shoulder_pull_power,
-		"teleport_snap_distance": chase_teleport_snap_distance,
-		"fade_hide_distance": chase_fade_hide_distance,
-		"fade_start_distance": chase_fade_start_distance,
-		"fade_end_distance": chase_fade_end_distance,
-		"fade_min_alpha": chase_fade_min_alpha, "fade_time": chase_fade_time
-	}
+	if chase_camera == null:
+		return ChaseCameraSettings.new().get_orbit_settings()
+	return chase_camera.get_orbit_settings()
 
 
 ## True while the room light is on.

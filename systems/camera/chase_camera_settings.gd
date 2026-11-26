@@ -1,8 +1,9 @@
 class_name ChaseCameraSettings
 extends Resource
-## Numbers of the third-person camera the player turns on in the corridor. Same meaning and
-## defaults as the "Chase camera" group of the Hazard Trial room; CameraRig reads them each time
-## it switches the view on.
+## Numbers of the third-person camera: the one the player turns on in the corridor
+## (corridor_chase_camera.tres) and the one in the Hazard Trial room (hazard_chase_camera.tres).
+## start_yaw_deg is used by the corridor only. CameraRig reads them each time it switches the
+## view on.
 
 ## Metres from the camera to its pivot above the commander at far_pitch_deg.
 @export var distance: float = 9.0
@@ -86,7 +87,7 @@ extends Resource
 @export_range(-180.0, 180.0) var start_yaw_deg: float = -90.0
 
 
-## Profile for ChaseCameraOrbit.configure, with the keys HazardRoom.get_chase_settings uses.
+## Profile for ChaseCameraOrbit.configure.
 func get_orbit_settings() -> Dictionary:
 	return {
 		"pitch": pitch_deg, "pitch_min": pitch_min_deg,

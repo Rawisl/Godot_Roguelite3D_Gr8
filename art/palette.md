@@ -276,7 +276,7 @@ Vệt chém trắng theo lưỡi kiếm của 3 đòn combo (dải dựng sẵn 
 | fox_trail_bright | `#E0F2FF` | Phần sáng gần mép lưỡi (`color_bright`) |
 | fox_trail_core | `#FFFFFF` | Lõi trắng ngay sau lưỡi kiếm (`color_core`) |
 
-Khi tường đẩy camera góc thứ ba sát chỉ huy, model chỉ huy mờ dần bằng dither (shader `toon_dither.gdshader` trên `fox_material.tres` và `commander_material.tres`, độ đục ghi bằng `ChaseCameraFade`). Không phải màu; chỉnh ở `data/config/corridor_chase_camera.tres` (hành lang) và nhóm "Chase camera" của `HazardRoom` (phòng Hazard).
+Khi tường đẩy camera góc thứ ba sát chỉ huy, model chỉ huy mờ dần bằng dither (shader `toon_dither.gdshader` trên `fox_material.tres` và `commander_material.tres`, độ đục ghi bằng `ChaseCameraFade`). Không phải màu; chỉnh ở `data/config/corridor_chase_camera.tres` (hành lang) và `data/config/hazard_chase_camera.tres` (phòng Hazard).
 
 | Tên | Giá trị | Dùng cho |
 |---|---|---|

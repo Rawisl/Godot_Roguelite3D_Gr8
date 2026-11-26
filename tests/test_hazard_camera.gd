@@ -106,7 +106,7 @@ func _test_entry_and_motion() -> void:
 	_check(get_viewport().get_camera_3d() == chase
 			and chase.projection == Camera3D.PROJECTION_PERSPECTIVE
 			and frames == [&"HAZARD_TRIAL"], "entering cuts to the perspective frame once")
-	_check(rig._orbit.zoom == 1.0 and absf(rig._orbit.pitch_deg - room.chase_pitch_deg) < 0.01
+	_check(rig._orbit.zoom == 1.0 and absf(rig._orbit.pitch_deg - room.chase_camera.pitch_deg) < 0.01
 			and not rig.is_panning_enabled(), "entry resets orbit and disables map panning")
 	var start := rig.position
 	# Steps below the teleport distance, so the chase follows instead of cutting.
@@ -122,31 +122,31 @@ func _test_entry_and_motion() -> void:
 	var yaw := rig._orbit.yaw
 	rig._input(_motion(Vector2(100, -100000)))
 	_check(absf(angle_difference(rig._orbit.yaw, yaw) - deg_to_rad(100 * rig.mouse_sensitivity)) < 0.001
-			and absf(rig._orbit.pitch_deg - room.chase_pitch_max_deg) < 0.01,
+			and absf(rig._orbit.pitch_deg - room.chase_camera.pitch_max_deg) < 0.01,
 			"mouse look turns yaw and clamps pitch")
 	var floor_ok := true
-	for pitch in [room.chase_pitch_min_deg, room.chase_far_pitch_deg, room.chase_pitch_max_deg]:
+	for pitch in [room.chase_camera.pitch_min_deg, room.chase_camera.far_pitch_deg, room.chase_camera.pitch_max_deg]:
 		rig._orbit.pitch_deg = pitch
-		for zoom in [room.chase_zoom_min, 1.0]:
+		for zoom in [room.chase_camera.zoom_min, 1.0]:
 			rig._orbit.zoom = zoom
 			rig._orbit.place(rig.global_position)
-			floor_ok = floor_ok and chase.global_position.y - rig.global_position.y >= room.chase_min_height - 0.001
+			floor_ok = floor_ok and chase.global_position.y - rig.global_position.y >= room.chase_camera.min_height - 0.001
 	_check(floor_ok, "the camera stays above the floor across pitch and zoom limits")
 
 
 func _test_cursor_and_zoom() -> void:
-	rig._orbit.pitch_deg = room.chase_far_pitch_deg
+	rig._orbit.pitch_deg = room.chase_camera.far_pitch_deg
 	rig._orbit.zoom = 1.0
 	rig._orbit.zoom_target = 1.0
 	rig._orbit.place(rig.global_position)
 	rig._input(_wheel(MOUSE_BUTTON_WHEEL_UP))
 	_step(1.0)
-	_check(absf(rig._orbit.zoom - (1.0 - room.chase_zoom_step)) < 0.01,
+	_check(absf(rig._orbit.zoom - (1.0 - room.chase_camera.zoom_step)) < 0.01,
 			"the wheel zooms toward the camera")
 	for i in 30:
 		rig._input(_wheel(MOUSE_BUTTON_WHEEL_UP))
 	_step(1.0)
-	_check(absf(rig._orbit.zoom - room.chase_zoom_min) < 0.01,
+	_check(absf(rig._orbit.zoom - room.chase_camera.zoom_min) < 0.01,
 			"zoom stops at the room's minimum")
 	var key := InputEventKey.new()
 	key.physical_keycode = rig.free_cursor_key

@@ -63,6 +63,8 @@ var _clear_time: float = 0.0
 ## True once the delay is over and the camera is easing out.
 var _releasing: bool = false
 var _probe := SphereShape3D.new()
+## Reused for every sweep and overlap check, so none is allocated per tick.
+var _query := PhysicsShapeQueryParameters3D.new()
 var _pivot_gap: float = 0.0
 ## True when the camera could not be put anywhere that frames the commander as of the last
 ## placement (a wall corner with the follow lagging), so the commander has to be hidden instead.
@@ -348,12 +350,13 @@ func _free_fraction(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3
 ## The sphere the camera is checked with, standing at a point.
 func _probe_at(point: Vector3) -> PhysicsShapeQueryParameters3D:
 	_probe.radius = probe_radius
-	var query := PhysicsShapeQueryParameters3D.new()
-	query.shape = _probe
-	query.transform = Transform3D(Basis.IDENTITY, point)
-	query.collision_mask = collision_mask
-	query.exclude = exclude
-	return query
+	_query.shape = _probe
+	_query.transform = Transform3D(Basis.IDENTITY, point)
+	_query.collision_mask = collision_mask
+	_query.exclude = exclude
+	# A sweep sets a motion on the query, so the next use starts from none.
+	_query.motion = Vector3.ZERO
+	return _query
 
 
 ## Blocked pulls in at once. A way that is only a little clearer changes nothing. A clearly clearer
@@ -383,6 +386,8 @@ func _keep_min_distance(space: PhysicsDirectSpaceState3D, pivot: Vector3, positi
 	if gap >= min_distance:
 		return position
 	var away := position - pivot if gap > 0.0001 else wanted - pivot
+	if away.length_squared() < 0.000001:
+		return position
 	var pushed := pivot + away.normalized() * min_distance
 	if _free_fraction(space, position, pushed) < 1.0:
 		return position
