@@ -556,7 +556,7 @@ Any -> Dead
 | CMD-07 | Emergency repair khi Fortress đầy HP: từ chối, không tốn lượt, không tốn cooldown |
 | CMD-08 | Dùng khi Fortress chỉ thiếu ít hơn lượng hồi (nhưng chưa đầy): vẫn tốn 1 lượt và cooldown, HP kẹp ở max (FORT-03). HUD hiện tooltip "Hồi thừa" khi Fortress thiếu dưới 10% |
 | CMD-09 | Điều kiện dùng Emergency repair: đang Commander mode, emg_repair_charges > 0, emg_repair_cd = 0, Fortress chưa đầy HP, không Pause (TIME-08). Thiếu điều kiện nào thì từ chối và HUD báo đúng lý do (HUD-13) |
-| CMD-10 | **Bất khả xâm phạm ở Commander mode:** từ frame vào Arriving đến hết Commanding, chỉ huy không thể bị nhắm và không nhận sát thương từ bất kỳ nguồn nào (đạn, AoE, telegraph). Đạn và vùng nổ đang tác dụng lên vị trí chỉ huy bị vô hiệu, không gây knockback hay hiệu ứng trạng thái. Cái giá của chế độ này (v1.8): không gây sát thương, XP từ tower chỉ 50% (XP-02), không có Aura (FRT-01), không có gold chỉ huy (FRT-02), không dùng được skill chủ động (SKL-06), không dùng được Trạm hồi phục (HLT-03), không có regen (mục 3.5.7), không được bonus clear time do chỉ huy đánh. Rủi ro khi chuyển chế độ nằm ở Recall (channel) và Deploy |
+| CMD-10 | **Bất khả xâm phạm ở Commander mode:** từ frame vào Arriving đến hết Commanding, chỉ huy không thể bị nhắm và không nhận sát thương từ bất kỳ nguồn nào (đạn, AoE, telegraph). Đạn và vùng nổ đang tác dụng lên vị trí chỉ huy bị vô hiệu, không gây knockback hay hiệu ứng trạng thái. Cái giá của chế độ này (v1.8): không gây sát thương, XP từ tower chỉ 40% (xp_tower_only_pct, XP-02), không có Aura (FRT-01), không có gold chỉ huy (FRT-02), không dùng được skill chủ động (SKL-06), không dùng được Trạm hồi phục (HLT-03), không có regen (mục 3.5.7), không được bonus clear time do chỉ huy đánh. Rủi ro khi chuyển chế độ nằm ở Recall (channel) và Deploy |
 
 ### 3.5.5 Chuyển chế độ
 
@@ -647,7 +647,7 @@ Mục tiêu: Commander vẫn an toàn và vẫn thắng được, nhưng chậm 
 | --- | --- | --- |
 | FRT-01 | **Aura Tiền tuyến.** Khi chỉ huy ở Frontline (kể cả đang Dodge, không áp khi Stunned, Recalling, Deploying), mọi tower (WALL, ô grid) trong frontline_aura_radius (12 m) quanh chỉ huy có dealt_mult cộng thêm frontline_aura_dmg_bonus (+0.20), cộng dồn với các khoản dealt_mult khác theo DMG-06. Quét mỗi scan_interval (0.2 s, lệch pha), tower chỉ đọc cờ `aura_active`. Hiển thị vòng sáng quanh chỉ huy và biểu tượng nhỏ trên tower nhận. Tower Barricade và Trạm hồi phục không tấn công nên không hưởng | MVP |
 | FRT-02 | **Gold chỉ huy.** Quân chết có hit_by_commander = true cộng vào wave_gold_base với hệ số frontline_gold_mult (1.25) trên gold_reward(w), tức kill_gold của RWD-02. Quân không có cờ thì 1.0. Hệ số áp một lần mỗi quân, kể cả trong Hazard Trial (GLD-10). Hệ số này nằm **trong** wave_gold_base nên chịu gold_pct_total và clear_mult như mọi khoản gold từ quân (mục 3.9.1). Không áp lên boss_gold. Số nổi gold hiển thị đã gồm hệ số, kèm biểu tượng kiếm | MVP |
-| FRT-03 | **Giới hạn bậc tower theo Cấp Chỉ huy.** Cổng chỉ đặt ở đầu bậc model (TWR-17): nâng tower lên cấp tower_tier2_level (13) cần commander_level >= tower_gate_tier2 (4); lên cấp tower_tier3_level (25) cần commander_level >= tower_gate_tier3 (8). Trong cùng một bậc không có cổng. Áp cho cả bốn loại tower, kể cả Trạm hồi phục. Xây mới luôn cấp 1. Xây lại (BLD-07) không bị chặn vì commander_level không giảm. Nút Nâng cấp xám kèm "Yêu cầu chỉ huy: cấp N" (UPG-06). Ước lượng: người chơi chủ động đạt cấp 4 ở khoảng wave 4, cấp 8 ở khoảng wave 8; người đứng yên chỉ nhận 50% XP nên chậm khoảng 1,6 đến 2 lần | MVP |
+| FRT-03 | **Giới hạn bậc tower theo Cấp Chỉ huy.** Cổng chỉ đặt ở đầu bậc model (TWR-17): nâng tower lên cấp tower_tier2_level (13) cần commander_level >= tower_gate_tier2 (4); lên cấp tower_tier3_level (25) cần commander_level >= tower_gate_tier3 (8). Trong cùng một bậc không có cổng. Áp cho cả bốn loại tower, kể cả Trạm hồi phục. Xây mới luôn cấp 1. Xây lại (BLD-07) không bị chặn vì commander_level không giảm. Nút Nâng cấp xám kèm "Yêu cầu chỉ huy: cấp N" (UPG-06). Ước lượng: người chơi chủ động đạt cấp 4 ở khoảng wave 4, cấp 8 ở khoảng wave 8; người đứng yên chỉ nhận 40% XP (quân chỉ huy đã đánh cho 125%) nên chậm khoảng 1,6 lần (bot đo 24/11: cấp 7 so với 11 ở wave 12, tỉ lệ 0.64 dưới mức 0.65 của F13) | MVP |
 | FRT-04 | Aura và gold chỉ huy tắt hoàn toàn ở Commander mode. Đổi chế độ cập nhật cờ aura_active trong cùng frame (không trễ quá 1 scan_interval) | MVP |
 | FRT-05 | **Elite có giáp tiền tuyến.** Từ wave 8, mỗi wave 1 Brute "Giáp nặng" với kháng PIERCE 0.4, BLAST 0.4, SLASH 1.0 (EnemyData thêm resist_table tùy chọn). Buộc có chỉ huy hoặc skill SLASH để giải quyết | SHOULD |
 | FRT-06 | **Chiến lợi phẩm.** Brute chết rơi 1 gói tiếp tế ở vị trí chết, bán kính nhặt 1 m, tồn tại 12 s game time: cộng gold bằng 1.0 × gold_reward(w) và hồi 2% fortress_max_hp, tối đa 3 gói mỗi wave. Chỉ chỉ huy Frontline nhặt được | SHOULD |
@@ -658,9 +658,9 @@ Giả định kỹ thuật: Cấp Chỉ huy (commander_level) chỉ tăng, khôn
 
 | **Ai giết** | **XP nhận (hệ số trên xp_value)** |
 | --- | --- |
-| Chỉ huy giết (kiếm hoặc skill) | xp_commander_pct = 100% |
-| Tower giết, quân đã có cờ hit_by_commander | 100% |
-| Tower giết, quân chưa có cờ | xp_tower_only_pct = 50% |
+| Chỉ huy giết (kiếm hoặc skill) | xp_commander_pct = 125% |
+| Tower giết, quân đã có cờ hit_by_commander | xp_commander_pct = 125% |
+| Tower giết, quân chưa có cờ | xp_tower_only_pct = 40% |
 | Quân bị cull chống kẹt, dọn cuối run | 0 (giống RWD-03) |
 
 | **ID** | **Đặc tả** | **Tag** |
@@ -670,7 +670,7 @@ Giả định kỹ thuật: Cấp Chỉ huy (commander_level) chỉ tăng, khôn
 | XP-03 | Cờ hit_by_commander bật ở lần đầu chỉ huy gây ≥ 1 điểm sát thương thật (kiếm hoặc skill, gồm tick vùng cháy). Battle Cry (taunt) và shockwave Deploy không gây sát thương nên không tính. Cờ thuộc về quân, không mất khi recycle (NAV-08) | MVP |
 | XP-04 | Chỉ huy bắt đầu run ở **cấp 0**. XP cần để lên cấp n (n ≥ 1): xp_to_level(n) = xp_base + xp_step × (n − 1) = 5 + 4 × (n − 1). XP dư chuyển sang cấp kế. Mỗi lần lên cấp: commander_level += 1, pending_picks += 1, phát level_up. Một wave lên nhiều cấp thì nhiều lượt chọn. RunState.xp là XP trong cấp hiện tại (reset về phần dư khi lên cấp), to_next = xp_to_level(commander_level + 1). Tổng tích lũy chỉ dùng để cân bằng và test, không lưu. | MVP |
 | XP-05 | Thanh XP và số lượt chờ hiển thị ở HUD trong COMBAT (HUD-15) nhưng không dừng trận. Chọn ở REWARD_PICK (RWP-01). Đã max hết skill và stat: XP và cấp vẫn tăng (vẫn mở khóa nâng cấp tower), không có lượt chọn mới | MVP |
-| XP-06 | **XP trong Hazard Trial.** Quân trong phòng cho xp_value như ngoài wave (hệ số 100% vì chỉ chỉ huy giết được). XP tích trong phòng và chỉ cộng vào chỉ huy khi rời phòng (thắng, bấm rời hoặc chết, HZT-08). Lên cấp từ khoản này sinh lượt chọn như thường, chờ tới REWARD_PICK của wave đó (RWP-01) | MVP |
+| XP-06 | **XP trong Hazard Trial.** Quân trong phòng cho xp_value như ngoài wave (hệ số xp_commander_pct = 125% vì chỉ chỉ huy giết được). XP tích trong phòng và chỉ cộng vào chỉ huy khi rời phòng (thắng, bấm rời hoặc chết, HZT-08). Lên cấp từ khoản này sinh lượt chọn như thường, chờ tới REWARD_PICK của wave đó (RWP-01) | MVP |
 
 Cân bằng thô: XP tích lũy để đạt cấp n là 2n² + 3n (cấp 4 = 44, cấp 8 = 152, cấp 10 = 230). Tổng ngân sách quân đến wave 10 khoảng 194, cộng boss (30 mỗi boss) khoảng 60, tức khoảng 254 XP nếu 100%, tương ứng cấp 10. Người chỉ để tower giết nhận khoảng một nửa nên chạm cấp 8 ở khoảng wave 11-12. **Mục tiêu playtest:** người chơi chủ động chạm cấp 4 ở wave 4 ± 1 và cấp 8 ở wave 8 ± 1. Từ v2.0 các ước tính này tính lại theo kịch bản wave và xp_mult(w) trong bảng cân bằng; xp_base và xp_step cũng nằm trong bảng (sheet nhân vật).
 
@@ -2425,7 +2425,7 @@ Từ v2.0 tutorial **chạy một lần theo tài khoản**: chạy ở run có 
 | frontline_aura_radius* | 12 m | FRT-01 |
 | frontline_aura_dmg_bonus* | 0.20 | FRT-01 |
 | frontline_gold_mult* | 1.25 | FRT-02 |
-| xp_commander_pct* / xp_tower_only_pct* | 1.0 / 0.5 | XP-02 |
+| xp_commander_pct* / xp_tower_only_pct* | 1.25 / 0.4 | XP-02. Chỉnh 24/11 theo bot (balance/BALANCE_LOG.md); nằm trong GameConfig, không sinh từ balance.xlsx |
 | xp_base* / xp_step* | 5 / 4 | XP-04 |
 | tower_max_level | 36 | UPG-03 |
 | tower_tier2_level / tower_tier3_level | 13 / 25 | TWR-17. Cấp đầu bậc model 2 và 3 |
@@ -2774,7 +2774,7 @@ Các test Overload, Retreat, ép x1 ở T-20, cảnh báo y% và retarget sau Ov
 
 | # | Test | Liên quan |
 | --- | --- | --- |
-| F1 | Tower giết quân chưa bị chỉ huy đánh: nhận 50% xp_value. Chỉ huy đánh 1 đòn rồi tower giết: 100%. Chỉ huy giết: 100%. Quân bị cull: 0 XP | XP-02, XP-03 |
+| F1 | Tower giết quân chưa bị chỉ huy đánh: nhận 40% xp_value. Chỉ huy đánh 1 đòn rồi tower giết: 125%. Chỉ huy giết: 125%. Quân bị cull: 0 XP | XP-02, XP-03 |
 | F2 | Battle Cry và shockwave Deploy không bật cờ hit_by_commander. Tick vùng cháy Firebomb bật cờ ở tick đầu | XP-03, CMB-10 |
 | F3 | Đường cong XP: xp_to_level(1..4) = 5, 9, 13, 17, cộng dồn ra tích lũy 5, 14, 27, 44, khớp xp_to_level (XP dư chuyển cấp, một wave lên nhiều cấp thì nhiều lượt chờ) | XP-04 |
 | F4 | Aura: chỉ huy Frontline ở 11 m một Arrow, Arrow nhận sát thương nhân 1.2 (dealt_mult 1.2). Ở 13 m: không. Vào Commander: tắt trong ≤ 1 scan_interval. Stunned, Recalling, Deploying: tắt | FRT-01, FRT-04 |
@@ -3016,7 +3016,7 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 | 12 | \[ĐÃ CHỐT v1.8] 3 chọn 1 là MVP, dùng XP. Không có gói gold | RWP-06 |
 | 13 | Emergency repair chỉ còn 3 lượt/run, +1 mỗi boss (tối đa 1 lượt hồi mỗi 5 wave) nên nguồn hồi Fortress miễn phí khan hiếm hơn nhiều | Playtest theo dõi HP Fortress giữa hai boss. Nếu hao quá nhanh, chỉnh emg_repair_heal_pct hoặc emg_repair_charges_max trước, không đụng cooldown 60 s |
 | 14 | Thang xử lý kẹt (NAV-01 đến NAV-14) dùng ngưỡng ước tính: 3 s phát hiện, 3 m hop, 2 lần recycle, 45 s watchdog | MVP: chạy tay hoặc script ít nhất 20 wave ở x3 (tuần 10), chỉnh ngưỡng theo log STUCK_CULL. Mục tiêu cull dưới 0.1%. Bot soak 200 wave là Should |
-| 15 | Commander mode bất khả xâm phạm: người chơi có thể ở Commander gần như cả run | **Sửa v1.8:** Commander mode vẫn bất khả xâm phạm nhưng có giá rõ ràng: XP 50%, không Aura, không gold chỉ huy, không skill, tower chậm lên cấp (CMD-10, FRT-01..03). Theo dõi test F13. Nếu AFK vẫn thống trị: tăng frontline_aura_dmg_bonus lên 0.30, tăng tower_gate_tier2/tier3 lên 5/10, hoặc giảm xp_tower_only_pct xuống 0.35 (chỉnh qua Resource, không sửa code) |
+| 15 | Commander mode bất khả xâm phạm: người chơi có thể ở Commander gần như cả run | **Sửa v1.8:** Commander mode vẫn bất khả xâm phạm nhưng có giá rõ ràng: XP 40% (v2.0, 24/11; v1.8 là 50%), không Aura, không gold chỉ huy, không skill, tower chậm lên cấp (CMD-10, FRT-01..03). Theo dõi test F13. Nếu AFK vẫn thống trị: tăng frontline_aura_dmg_bonus lên 0.30, tăng tower_gate_tier2/tier3 lên 5/10, hoặc giảm xp_tower_only_pct xuống 0.35 (chỉnh qua Resource, không sửa code) |
 | 16 | \[Cập nhật v2.0] Sửa Fortress theo % máu: mỗi Mithril hồi 20% fortress_max_hp nên FORT_HP làm Fortress bền hơn và mỗi viên hồi nhiều HP hơn | Theo dõi sức mạnh meta FORT_HP khi playtest. Nếu quá mạnh, giảm mỗi cấp từ 5% xuống 4% hoặc giảm mithril_repair_pct |
 | 17 | Nếu sau v1.4 nhóm vẫn quá tải | **Sửa v1.9:** Các mục cắt cũ (Reroll, ducking AUD-05, tab Dữ liệu và Điều khiển, TUT-04/05, thẻ Bền thành, bị động Focus và Lightstep) đã chuyển sang \[Should] từ v1.9. Ứng viên cắt tiếp theo, theo thứ tự: (1) Firebomb (giữ Whirlwind, Sword Wave), (2) edge-pan và look-ahead camera, (3) HLT-12, (4) bảng xếp hạng, (5) đồng bộ tài khoản. Quyết định cuối tuần 9 |
 | 18 | Chỉ phát hành tiếng Việt | Nếu giảng viên hoặc người chấm yêu cầu tiếng Anh, thêm cột tiếng Anh vào CSV và bật mục Ngôn ngữ trong Settings (kiến trúc tr() đã sẵn) |
@@ -3195,6 +3195,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 
 | 93 | **22/11: cập nhật camera Hazard Trial** (HZT-11, CAM-09, CAM-16 đến CAM-19, MSE-01, MSE-10, HZ7, Phụ lục C mục 39 và 70): góc nhìn thứ ba bám vai, chuột xoay, cuộn chuột zoom vào, giữ Alt để bấm HUD; chỉ huy quay và di chuyển theo camera; aim theo tâm màn hình, nền phòng là khối cầu 60 m |
 | 95 | 24/11/2026. Kịch bản wave 1-30: Bulwark ở wave 5, 15, 25 và Skeletal Centipede ở wave 10, 20, 30 (mục 3.8.2, 3.8.10, BOSS-22); lần xuất hiện của boss đếm theo từng boss thay vì wave_index / boss_wave_interval, nên Stomp x3 mở ở Bulwark wave 15 và Combo ở wave 25 (BOSS-48, test Boss 11). SCL-04 bỏ mốc người mới thua ở wave 8-12. |
+| 96 | 24/11/2026. Cân bằng XP lần 1 theo bot (balance/BALANCE_LOG.md): xp_commander_pct 1.0 lên 1.25, xp_tower_only_pct 0.5 xuống 0.4 (bảng XP mục 3.5.11, XP-06, CMD-10, FRT-03, mục 6.3, test F1, Phụ lục C mục 15). Hai giá trị nằm trong GameConfig, không sinh từ balance.xlsx. |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 

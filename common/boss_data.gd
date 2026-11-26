@@ -24,6 +24,11 @@ extends EnemyData
 	Enums.DamageType.TRUE: 1.0,
 }
 
+@export_group("Navigation")
+## Navigation layers of the navmesh baked for the large agent (agent_radius). 0 keeps the
+## regular navmesh.
+@export_flags_3d_navigation var nav_layers: int = 2
+
 @export_group("Timer & Rewards")
 @export var boss_timer: float = 90.0
 @export var boss_gold: int = 100

@@ -1269,88 +1269,98 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-KT1
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Cân bằng lần 1: XP, cổng bậc tower, Aura, gold chỉ huy (SCL-04, FRT)
 - Nghiệm thu: Người chủ động cấp 4 ở wave 4 +-1, cấp 8 ở wave 8 +-1
 - Cần xong trước: W10-KT1, W11-NG4
+- Ghi chú bàn giao: XP shares tuned with the wave bot, see `balance/BALANCE_LOG.md`: `xp_commander_pct` 1.0 -> 1.25, `xp_tower_only_pct` 0.5 -> 0.4 (GameConfig; the SRS XP table, XP-06, CMD-10, FRT-03 and F1 updated to 125% / 40%). Bot soak, 2 seeds each: Frontline with skills reaches level 3 / 7 / 11 at waves 4 / 8 / 12 (was 3 / 7 / 10), AFK 2 / 4 / 7 (was level 8 at wave 12), ratio at wave 12 0.64 (limit 0.65); AFK towers stop at level 24 by the tier 3 gate. Tower gates, Aura and commander gold unchanged: no bot run without soak gets past wave 5 (the Bulwark breaks the Fortress with the starter towers and 50-85 gold a wave), so their effect could not be measured; flagged in the log for a hand playtest of wave 5 and the wave script (W11-MH11). `test_wave_rewards_runner` now reads the shares from GameConfig.
 
 ##### W11-KT2
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Edge case EN-05..15 (ưu tiên ca hay gặp)
 - Nghiệm thu: Không treo wave
 - Cần xong trước: W10-KT3
+- Ghi chú bàn giao: Focused on what can hang a wave or pay twice, with the new units. New: a unit still alive when PREP starts (it should not exist) is culled with reason PREP_LEFTOVER (no reward, no kill, logged like every cull, plus a warning); Hazard Trial units are left alone. Checked by `tests/test_enemy_edge_cases_runner.tscn` (14 checks): leftover removal; an Undead lying down keeps the wave in COMBAT and still counted, its second death ends it; a Suicide Squad that blew itself up ends the wave; a Captain killed last ends the wave at once (its blast still comes later); the hard cap removes a lying Undead; a Barricade broken under five Grunts makes all five pick again; a unit attacking the commander drops it when the commander leaves the field. Not covered here: healer cases (no healer in the game), TIME-06 at 70 units (W10-NG4), and a Captain blast that lands after the wave ended still hits towers.
 
 ##### W11-KT3
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hồi quy wave 1-20 có skill
 - Nghiệm thu: Mọi wave kết thúc
 - Cần xong trước: W9-KT2
+- Ghi chú bàn giao: Covered by the Frontline soak of the wave bot (`--mode=frontline --soak`): 2 seeds x waves 1-20 at x3 with the commander swinging and casting every ready skill and Battle Cry (179 and 189 casts): every wave ended, none hung, 0 culls.
 
 ##### W11-KT4
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Chỉnh Resource theo log cân bằng, ghi lại tham số (chỉnh trong balance.xlsx rồi chạy công cụ dịch, không sửa tay .tres)
 - Nghiệm thu: Log thay đổi tham số
 - Cần xong trước: W11-KT1
+- Ghi chú bàn giao: Parameter log started in `balance/BALANCE_LOG.md` (date, parameter, file, old -> new, reason, numbers before and after). This pass only changed GameConfig values, which are hand-edited (not generated from balance.xlsx), so the workbook did not change; the generator still reports 0 files would change. Why `xp_commander_pct` and `xp_tower_only_pct` stay in GameConfig: the workbook has no sheet for GameConfig and the generator only reads `autoload/game_config.gd` (victory_wave, wave caps, tower_max_level) and writes `.tres` files, never the script. Moving them would mean a new GameConfig output in the generator for two numbers; the change is logged in `balance/BALANCE_LOG.md` and SRS Phụ lục D #96 instead. The SRS XP table, XP-06, CMD-10, FRT-03, 6.3 and F1 now say 125% / 40%.
 
 ##### W11-KT5
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Boss điều hướng agent lớn (BOSS-03), đứng tại boss_melee_point đánh Stomp vào Fortress (BOSS-32, 40) trên hành lang 23.5 m với ô grid đã đặt
 - Nghiệm thu: Bulwark tới được Fortress với 3 công trình ở mọi bố cục hợp lệ; không chiếm slot đánh
 - Cần xong trước: W9-KM6, W9-MH5
+- Ghi chú bàn giao: The large-agent navmesh (`NavigationRegionLarge`, layer 2, agent 1.6 m) was in the level but no unit walked on it. `BossData.nav_layers` (default 2) now sets the boss NavAgent to that layer one physics frame after spawning when the map has a region on it (otherwise it keeps layer 1 and logs a warning), so the Bulwark and the Centipede path on the navmesh that GRID-07/08 keep wide; `_fortress_reachable` asks the path on the agent's layers. With the Fortress as target the boss walks right onto `boss_melee_point` (`_arrive_distance` 0.2 m instead of attack_range), the last 2 m straight without RVO avoidance (the point sits on the edge of its navmesh), turns to face the Fortress within 10 degrees and only then Stomps; it never claims a Fortress melee slot. `Enemy._arrive_distance(t)` is the new hook for when a unit stops to attack. Runner `tests/test_bulwark_reaches_fortress_runner.tscn` on the real corridor: no cell within 3.2 m of the point, the tightest legal 3-cell layout near the point gets three Barricades, a wave 5 Bulwark at x1 and x3 stops 0.16-0.19 m from the point, faces the Fortress, never reaches stuck tier 2 and its first Fortress Stomp lowers the Fortress HP (18 checks, about 75 game seconds a run).
 
 ##### W11-NG4
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Script hoặc bot 20 wave ở x3 nhiều seed (NAV-14); bot AFK vs bot Frontline cho F13; mở rộng chạy kịch bản wave 1-30
 - Nghiệm thu: Mọi wave kết thúc, cull < 0.1%
 - Cần xong trước: W10-NG3
+- Ghi chú bàn giao: Bot `tests/wave_bot.tscn` (extends `cheat_main.gd`: no save, cloud or leaderboard writes) plays main.tscn headless: builds and upgrades the same way each PREP, picks level-up cards, x3 in combat, one JSON line per run; `tests/run_wave_bot.ps1 -Godot <console exe>` runs the seeds in parallel and `tests/wave_bot_report.py` prints the summary and fails on a hung wave, a wave shorter than its spawn duration or stuck culls >= 0.1%. Modes: `afk` (stays in Commander mode), `frontline` (walks to units, swings, uses skills, keeps away from a boss while escorts live, retreats under 50% HP), `--soak` (gold for every build, Fortress and commander kept alive, a boss that reached Enrage put down). Results 24/11, current wave script: soak 3 seeds x 20 waves AFK, 2 seeds x 20 waves Frontline, 1 seed x 30 waves (all scripted waves): 3875 units, 0 stuck culls, 0 hard cap culls, 0 hung waves, every wave lasted at least its spawn duration, no boss needed putting down. AFK vs Frontline without soak (3 seeds, 15 waves): both lose at wave 5 (the Bulwark breaks the Fortress), so the wave 12/15 comparison could not be measured in a real run; soak levels give AFK 8 against Frontline 10 at wave 12 (0.80, limit 0.65), see W11-KT1.
 
 ##### W11-KT6
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hồi quy Trạm hồi phục: quân nhắm trạm theo ETG, slot đánh, cân bằng sơ bộ (HLT-09, HLT-10)
 - Nghiệm thu: Ghi tỉ lệ run dùng trạm và số lần cạn kho
 - Cần xong trước: W10-KT3
+- Ghi chú bàn giao: New `tests/test_heal_station_regression_runner.tscn` (23 checks) with the real station scene and all ten unit types: every ground-tower attacker (Grunt family, Assassin, Rider, Knight, Undead, Suicide Squad, Captain) picks the station and fights for a melee slot, Archer and Sniper pick it without a slot, the Brute keeps the Fortress; at most max_attackers_per_tower melee units hold a slot, a fourth waits and gets the freed slot. Damage normalisation stays covered by `test_heal_station_runner` (126 passed) and the dummy-station ETG runner (27 passed). Bot numbers (24/11, the bot builds one station from wave 4 when it has 120 gold): built in 7 of 12 runs (all 6 soak runs, 1 of 6 real runs; real runs rarely have the gold before they lose at wave 5); the store ran dry 1 time over all runs (an earlier soak run with weak towers), 0 in the final batch.
 
 ##### W11-KT7
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 9 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Assassin (tower không chọn làm mục tiêu và không tính là 'quân trong tầm', nổ Cannon vẫn trúng) và Knight (bất tử 5 s một lần khi máu < 50%, IMMUNE) và Undead (hồi sinh một lần, thưởng ở lần chết thứ hai)
 - Nghiệm thu: NE1, NE4, NE6 đạt
 - Tệp liên quan: entities/enemy/enemy.gd, entities/tower/tower.gd (_pick_target/_is_valid_target ~209-253), common/health_component.gd
 - ID SRS: EN-20, EN-24, EN-26
 - Cần xong trước: W10-KT7, W10-KM11
+- Ghi chú bàn giao: All three read EnemyData flags, never the unit id. Stealth: `Enemy.is_hidden_from_towers()`; `Tower._target_distance_sq` drops it like an untargetable unit, so it is never picked and never counts toward the immune-idle icon; the Cannon blast still hits it (it stays in the `enemy` group); the Assassin model already draws at stealth_opacity. Knight: `Enemy.get_resist(type)` now exists on every unit and returns 0 while invulnerable, else 1 (bosses keep their override); the window opens in `_on_health_damaged` the first time HP drops under `invuln_hp_threshold * max_hp` and the unit is alive, lasts `invuln_duration` game seconds, once per unit, and calls `set_invulnerable` on the model. Undead: the first time HP hits 0 with `revives_used < revive_count` it lies down (`is_reviving`): no enemy_died, no reward, no commander kill, not targetable, no damage, no slot, no stuck checks; after `revive_delay` it stands up with full HP and `scaled_damage * revive_dmg_mult`, keeps hit_by_commander and FRENZY, and calls `set_reviving` on the model. Cull while lying pays nothing. Runner `tests/test_stealth_knight_undead_runner.tscn` (38 checks).
 
 ##### W11-KT8
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Suicide Squad và Captain: lao vào mục tiêu, wind-up với telegraph, nổ BLAST lên chỉ huy Frontline, tower (kể cả WALL trong bán kính), Barricade, Fortress; nổ thì không thưởng; Captain nổ khi bị diệt vẫn thưởng, bị cull không nổ
 - Nghiệm thu: NE2, NE3 đạt; Dodge né được; Commander mode miễn
 - Tệp liên quan: entities/enemy/enemy.gd, art/vfx/telegraph_fx_manager.gd
 - ID SRS: EN-22, EN-23, FBK-06
 - Cần xong trước: W10-KT7, W11-KM9
+- Ghi chú bàn giao: Both read the explode_* flags of EnemyData. Suicide Squad (`explode_on_contact`): when its ATTACK step starts it lights the fuse instead of swinging (`telegraph_started(&"explode", pos, explode_radius, explode_windup)` and `set_fuse(true)` on the model), stands still and after explode_windup game seconds calls `Enemy.detonate()`, then leaves with `enemy_died(..., is_cull = true)`: no gold, XP, prestige or kill, the wave still counts it as gone. Killed during the wind-up: no blast, normal reward. Captain (`explode_on_death`): killed, it pays as usual, sets `blast_pending` and blows up where it fell after explode_windup (a pausable physics timer, so game time); the body stays until then. Culled: no blast. `detonate()` deals explode_damage x the wave dmg multiplier (BLAST) to everything in the commander, tower (wall slots too), barricade and fortress groups within explode_radius of the nearest collider point, never to units; the commander's own `take_damage` keeps Dodge and Commander mode immune. The collider-distance helpers moved from BossEnemy up to Enemy unchanged. Hazard Trial: a unit that blew itself up is done without a kill; a killed Captain counts its kill at once but is done only after `blast_done`. Runner `tests/test_suicide_captain_runner.tscn` (29 checks).
 
 ##### W11-KT9
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 8 | Nguồn: MỚI + SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Spawner đọc WaveScript wave 1-30 (thành phần cố định, hộ tống, hp/dmg/speed_mult và spawn_duration từ kịch bản), thuật toán và ScaleConfig chỉ từ wave 31, tối đa 5 loại mỗi wave kể cả boss, danh mục 10 loại quân thay cho 3 loại hardcode; lịch sinh trải đủ spawn_duration (SPN-15)
 - Nghiệm thu: Wave 1-30 đúng thành phần của WaveScript không phụ thuộc run_seed; mỗi wave kéo dài >= spawn_duration; wave 31-40 tối đa 5 loại (NE8); hệ số boss wave 1-30 cũng lấy từ WaveScript (BOSS-24); phát wave_preview_ready với danh sách loại quân sắp tới cho preview PREP và Hazard Trial
 - Tệp liên quan: systems/wave/wave_manager.gd (generate_wave_composition 210, _get_scene_for_enemy_id 134, _build_spawn_queue_for_wave 375, _spawn_boss), common/scale_config.gd, common/wave_table.gd
 - ID SRS: SPN-13, SPN-14, SPN-15, SCL-06
 - Cần xong trước: W10-KT7, W11-MH11, W10-NG8
+- Ghi chú bàn giao: `WaveManager.enemy_scenes` is the catalogue of 10 types by EnemyData id (grunt, archer, brute, sniper, rider, assassin, suicide_squad, captain, knight, undead); the boss stays on `bulwark_scene`. Waves 1 to victory_wave take their units (escorts in, boss left out) from `wave_script`, the same for every run seed; a scripted wave with no units logs an error and sends 1 Grunt. Later waves draw a type set of at most `wave_max_enemy_types` (the boss counts as one) by weight from `wave_table.groups`, intro counts first, then units by weight within the set; a boss wave uses `escort_budget_ratio` of the budget. `get_spawn_duration(w)` and `get_wave_mults(w)` read the WaveScript up to victory_wave (formula plus a warning when it lacks the wave) and ScaleConfig after; `apply_wave_scale_to(enemy, w)` is used by the spawner, the boss, the Hazard Trial and the cheat panel. Every schedule is stretched so the last unit spawns at spawn_duration at the earliest (pauses between groups grow evenly; one group moves only its last unit). New: EnemyData and scenes for assassin, suicide_squad, captain, knight, undead (rows in balance.xlsx with first-pass numbers for Mạnh to tune in W11-MH11), their names in strings.csv and their WaveTable groups for endless waves. Traits are still not acted on (W11-KT7, W11-KT8). Runner `tests/test_wave_spawner.tscn` (48 checks).
 
 #### Mạnh (Tower & Build), tuần 11, 31h
 
