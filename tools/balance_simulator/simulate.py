@@ -50,7 +50,7 @@ DEFAULT_AVG_CMD_RATIO = 0.4  # share of kills made while a commander flag is up,
 DEFAULT_STRONG_CMD_RATIO = 0.6  # same, strong player
 # Total gold bonus of the strong scenario: the gold meta upgrade at its top, 4 levels of 4 percent.
 DEFAULT_STRONG_GOLD_PCT = 0.16
-DEFAULT_BOSS_IDS = "bulwark"
+DEFAULT_BOSS_IDS = "bulwark,skeletal_centipede"
 
 # Design targets, only shown as PASS or FAIL next to the numbers.
 # M1..M4: (tower type, count, level, wave). The average run's cumulative gold up to and including that wave (the

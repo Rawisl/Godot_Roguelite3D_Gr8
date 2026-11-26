@@ -70,6 +70,9 @@ func _ready() -> void:
 	test_rebuild()
 	test_upgrade_all_types_to_max()
 	test_rebuild_level14_real_data()
+	test_arrow_tier_path_real_data()
+	test_heal_station_tier_gate()
+	test_rebuild_heal_station_real_data()
 	test_level_range()
 	test_tier_gate_table()
 	test_level_cap()
@@ -88,6 +91,7 @@ func _ready() -> void:
 	test_wallet()
 	test_scene_data()
 	test_blocks_path()
+	test_blocks_boss_point_path()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -475,6 +479,85 @@ func test_rebuild_level14_real_data() -> void:
 				if n != null and n.visible:
 					shown.append("Level%d" % i)
 			assert_true(shown == ["Level2"], "barricade rebuilt at level 14 shows only Level2 (shows %s)" % [shown])
+
+func test_arrow_tier_path_real_data() -> void:
+	print("
+[GROUP 8d] Arrow tier path with the real data")
+	var t2 := GameConfig.tower_tier2_level
+	var t3 := GameConfig.tower_tier3_level
+	_reset()
+	_gold.gold = 1000000
+	_service.build(&"W1", &"arrow")
+	var t := _slot(&"W1").tower
+	assert_true(_upgrade_to(&"W1", t2 - 1) and t.model_tier == 1, "arrow: model tier 1 below the tier 2 level")
+	assert_true(not _service.upgrade(&"W1") and _service.get_upgrade_block_reason(&"W1") == &"COMMANDER_LEVEL", "arrow: tier 2 level blocked by COMMANDER_LEVEL below the gate")
+	assert_true(t.level == t2 - 1 and t.model_tier == 1, "arrow: refused upgrade leaves level and model tier alone")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier2, 0)
+	assert_true(_service.upgrade(&"W1") and t.level == t2 and t.model_tier == 2, "arrow: tier 2 level upgrades at the gate and shows model tier 2")
+	assert_true(_upgrade_to(&"W1", t3 - 1) and t.model_tier == 2, "arrow: levels inside tier 2 need no further gate")
+	assert_true(not _service.upgrade(&"W1") and _service.get_upgrade_block_reason(&"W1") == &"COMMANDER_LEVEL", "arrow: tier 3 level blocked at the tier 2 gate")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	assert_true(_service.upgrade(&"W1") and t.level == t3 and t.model_tier == 3, "arrow: tier 3 level upgrades at the gate and shows model tier 3")
+	assert_true(_upgrade_to(&"W1", GameConfig.tower_max_level) and t.model_tier == 3, "arrow: levels inside tier 3 need no further gate")
+	assert_true(not _service.upgrade(&"W1") and _service.get_upgrade_block_reason(&"W1") == &"MAX_LEVEL", "arrow: top level reports MAX_LEVEL")
+
+## Runs `action` with the heal station data registered in the service, then restores the lists.
+func _with_heal_station(action: Callable) -> void:
+	var saved_towers := _service.towers.duplicate()
+	var saved_scenes := _service.tower_scenes.duplicate()
+	_service.towers.append(_service.heal_station_data)
+	_service.tower_scenes[&"heal_station"] = HEAL_STATION_SCENE
+	action.call()
+	_service.towers.assign(saved_towers)
+	_service.tower_scenes = saved_scenes
+
+func test_heal_station_tier_gate() -> void:
+	print("
+[GROUP 8e] The tier gate also applies to the heal station")
+	_with_heal_station(_check_heal_station_gate)
+
+func _check_heal_station_gate() -> void:
+	var t2 := GameConfig.tower_tier2_level
+	var t3 := GameConfig.tower_tier3_level
+	var gid := _ground_id(0)
+	_reset()
+	_gold.gold = 1000000
+	assert_true(_service.build(gid, &"heal_station"), "heal station builds at level 1")
+	var t := _slot(gid).tower
+	assert_true(_upgrade_to(gid, t2 - 1), "heal station reaches the level below the tier 2 level")
+	_denied.clear()
+	assert_true(not _service.upgrade(gid), "heal station: tier 2 level refused below the gate")
+	assert_true(_service.get_upgrade_block_reason(gid) == &"COMMANDER_LEVEL", "heal station: reason is COMMANDER_LEVEL for tier 2")
+	assert_true(_denied == [[&"COMMANDER_LEVEL", 0]], "heal station: build_denied COMMANDER_LEVEL, 0")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier2, 0)
+	assert_true(_service.upgrade(gid) and t.level == t2 and t.model_tier == 2, "heal station: tier 2 level allowed at the gate")
+	assert_true(_upgrade_to(gid, t3 - 1), "heal station reaches the level below the tier 3 level")
+	assert_true(not _service.upgrade(gid) and _service.get_upgrade_block_reason(gid) == &"COMMANDER_LEVEL", "heal station: tier 3 level refused at the tier 2 gate")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	assert_true(_service.upgrade(gid) and t.level == t3 and t.model_tier == 3, "heal station: tier 3 level allowed at the gate")
+
+func test_rebuild_heal_station_real_data() -> void:
+	print("
+[GROUP 8f] Rebuild a level 14 heal station from the real data")
+	_with_heal_station(_check_heal_station_rebuild)
+
+func _check_heal_station_rebuild() -> void:
+	var gid := _ground_id(0)
+	_reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	_gold.gold = 1000000
+	_service.build(gid, &"heal_station")
+	assert_true(_upgrade_to(gid, REBUILD_LEVEL), "heal station reaches the level to lose")
+	_slot(gid).ruin()
+	# Back to commander level 0: rebuilding must not need the level again.
+	EventBus.run_started.emit()
+	EventBus.state_changed.emit(&"PREP")
+	_gold.gold = 1000000
+	assert_true(_service.build(gid, &"heal_station", REBUILD_LEVEL), "heal station rebuild works at commander level 0")
+	var t := _slot(gid).tower
+	assert_true(t.level == REBUILD_LEVEL and t.model_tier == TowerData.model_tier(REBUILD_LEVEL), "heal station rebuilt at level %d with its model tier" % REBUILD_LEVEL)
+	assert_true(1000000 - _gold.gold == HEAL_STATION.get_total_cost(REBUILD_LEVEL), "heal station rebuild costs the summed level costs")
+	assert_true(t.priority == HEAL_STATION.default_priority, "heal station priority is back to the default")
 
 func test_tier_gate_table() -> void:
 	print("\n[GROUP 9a] Upgrade gate table")
@@ -902,7 +985,10 @@ func test_wallet() -> void:
 	assert_true(_gold.gold == g, "gold unchanged after the refused spend")
 
 ## A 16 m corridor with rows at -5, 0 and +5 m: one column of three cells seals it, two do not.
-func _make_path_grid() -> Node3D:
+## boss_pos is where the boss melee marker stands, columns how many cell columns the grid has, rows the row offsets
+## and holes the cells left out.
+func _make_path_grid(boss_pos: Vector3 = Vector3(-2, 0, 0), columns: int = 3,
+		rows: PackedFloat32Array = PackedFloat32Array([-5, 0, 5]), holes: Array[Vector2i] = []) -> Node3D:
 	var holder := Node3D.new()
 	_root.add_child(holder)
 	var spawn := Area3D.new()
@@ -920,12 +1006,13 @@ func _make_path_grid() -> Node3D:
 	holder.add_child(lane)
 	var boss := Marker3D.new()
 	holder.add_child(boss)
-	boss.global_position = Vector3(-2, 0, 0)
+	boss.global_position = boss_pos
 	var data := GridData.new()
 	data.origin = Vector3(5, 0, 0)
 	data.column_dir = Vector3.RIGHT
-	data.columns = 3
-	data.row_offsets = PackedFloat32Array([-5, 0, 5])
+	data.columns = columns
+	data.row_offsets = rows
+	data.holes = holes
 	data.corridor_width = 16.0
 	var grid := GroundGrid.new()
 	grid.name = "PathGrid"
@@ -1018,6 +1105,70 @@ func test_blocks_path() -> void:
 	assert_true(_denied == [[&"BLOCKS_PATH", 0]], "the rebuild adds no denial")
 
 	# 13: clean up so later groups see no grid slots.
+	_reset()
+	_root.remove_child(holder)
+	holder.free()
+	assert_true(_service.find_slot(&"G_0_0") == null, "grid slots are gone after cleanup")
+
+## Five columns, rows at -5, -2.125 and 5 m. The boss stands in the wall-side strip, 3.2 m clear of every cell, so the
+## pocket around it is shut only by the two outer cells of the wall-side row and the cell of the second row above it
+## (each pair of them is closer than the path width). Any two leave it reachable, the third closes it, and the gate
+## stays open the whole time through the free side of the corridor.
+func test_blocks_boss_point_path() -> void:
+	print("
+[GROUP 24] Ground builds that cut the path to the boss point only")
+	_reset()
+	var boss_pos := Vector3(10, 0, -6.4)
+	# The wall-side cells within the boss clear zone are left out, as the clear zone would drop them.
+	var boss_holes: Array[Vector2i] = [Vector2i(1, 0), Vector2i(2, 0), Vector2i(3, 0)]
+	var holder := _make_path_grid(boss_pos, 5, PackedFloat32Array([-5, -2.125, 5]), boss_holes)
+	var w := GameConfig.path_check_min_width
+	var grid := holder.get_node("PathGrid") as GroundGrid
+	var data := grid.grid_data
+	var gate := Vector3(-4, 0, 0)
+	var spawn := Vector3(30, 0, 0)
+	var goals: Array[Vector3] = [data.gate_goal(gate, w), boss_pos]
+	var gate_only: Array[Vector3] = [goals[0]]
+	var pair: Array[Vector2i] = [Vector2i(0, 0), Vector2i(4, 0)]
+	var trio: Array[Vector2i] = [Vector2i(0, 0), Vector2i(4, 0), Vector2i(2, 1)]
+	var premise := GameConfig.max_ground_buildings >= 3
+	for id in [&"G_0_0", &"G_4_0", &"G_2_1", &"G_0_2"]:
+		premise = premise and grid.cells.has(id)
+	premise = premise and not grid.cells.has(&"G_2_0")
+	premise = premise and grid.get_boss_point().is_equal_approx(boss_pos)
+	premise = premise and data.is_path_open([] as Array[Vector2i], spawn, gate, goals, w)
+	premise = premise and data.is_path_open(pair, spawn, gate, goals, w)
+	# The third building closes the boss point only: the gate goal is still reachable on its own.
+	premise = premise and data.unreachable_goals(trio, spawn, gate, goals, w) == PackedInt32Array([1])
+	premise = premise and data.is_path_open(trio, spawn, gate, gate_only, w)
+	assert_true(premise, "premise: the third cell closes the boss point and leaves the gate reachable")
+	if not premise:
+		holder.free()
+		return
+
+	# 1-2: two cells leave both goals open.
+	assert_true(_service.build(&"G_0_0", &"arrow") and _service.build(&"G_4_0", &"arrow"), "the two outer cells of the wall-side row are built")
+	assert_true(_denied.is_empty(), "no denial for the first two")
+
+	# 3-7: the third cell is refused for the boss point alone.
+	var opts := _service.get_build_options(&"G_2_1")
+	var all_locked := not opts.is_empty()
+	for o in opts:
+		all_locked = all_locked and o["locked_reason"] == BuildService.BLOCKS_PATH
+	assert_true(all_locked, "every menu entry of the boss-sealing cell is locked with BLOCKS_PATH")
+	var g := _gold.gold
+	_denied.clear()
+	assert_true(not _service.build(&"G_2_1", &"arrow"), "the build that cuts the boss point is refused")
+	assert_true(_denied == [[&"BLOCKS_PATH", 0]], "build_denied carries BLOCKS_PATH and no shortfall")
+	assert_true(_gold.gold == g, "gold unchanged after the refusal")
+	assert_true(_slot(&"G_2_1").state == Enums.SlotState.EMPTY and _slot(&"G_2_1").tower == null, "the refused cell stays empty")
+	assert_true(not _built.has(&"G_2_1"), "no tower_built for the refused cell")
+
+	# 8-9: a cell that leaves the pocket open is still buildable.
+	assert_true(not _service.would_block_path(_slot(&"G_0_2"), ARROW), "a cell away from the pocket is not blocked")
+	assert_true(_service.build(&"G_0_2", &"arrow"), "that cell is built")
+
+	# 10: clean up so later groups see no grid slots.
 	_reset()
 	_root.remove_child(holder)
 	holder.free()

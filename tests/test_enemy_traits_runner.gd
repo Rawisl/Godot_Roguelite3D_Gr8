@@ -101,7 +101,7 @@ func test_wave_preview() -> void:
 	wm.start_prep()
 	preview_at = _events.find_custom(func(e: Array) -> bool: return e[0] == "preview")
 	plan = _events[preview_at][2]
-	var boss_id: StringName = wm.boss_data.id
+	var boss_id: StringName = wm.get_boss_id()
 	assert_true(_events[preview_at][3] and plan.get(boss_id, 0) == 1, "A boss wave lists the boss once")
 
 	EventBus.wave_preview_ready.disconnect(on_preview)

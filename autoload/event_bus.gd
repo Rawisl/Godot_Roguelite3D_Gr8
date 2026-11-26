@@ -97,7 +97,10 @@ signal boss_timer_milestone(t_mark: int)  # 30, then 10..1 once per second
 signal boss_hp_changed(armor_hp: int, core_hp: int, phase: StringName)
 signal boss_phase_changed(phase: StringName)  # ARMORED | TRANSITION | EXPOSED
 signal boss_enraged  # once per boss wave, when boss_timer reaches 0 with the boss still alive
-signal telegraph_started(kind: StringName, position: Vector3, radius: float, duration: float) 
+signal telegraph_started(kind: StringName, position: Vector3, radius: float, duration: float)
+## The telegraph of this kind started at this position ends with no hit (a lit Suicide Squad killed
+## or culled, a Captain freed before its blast): its ring should go away (FBK-06).
+signal telegraph_cancelled(kind: StringName, position: Vector3)
 signal boss_defeated
 #------------------------------------------------------#
 

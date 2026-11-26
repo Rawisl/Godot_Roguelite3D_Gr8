@@ -168,6 +168,24 @@ static var _lane_ref_length: float = 0.0
 @onready var nav: NavigationAgent3D = %NavAgent
 @onready var _body_shape := get_node_or_null(^"CollisionShape3D") as CollisionShape3D
 
+## Undead: revives used so far, and the game seconds left lying down before the next one.
+var revives_used: int = 0
+var is_reviving: bool = false
+var _revive_timer: float = 0.0
+## Suicide Squad and Captain: game seconds left before the blast (negative: no fuse lit).
+var _fuse_timer: float = -1.0
+## True once this unit blew itself up (no reward, no kill).
+var self_destructed: bool = false
+## True between a Captain's death and its blast.
+var blast_pending: bool = false
+## Where the "explode" telegraph of the lit fuse or pending blast was sent, for its cancel.
+var _blast_telegraph_pos: Vector3 = Vector3.ZERO
+## Sent when the blast of this unit has dealt its damage.
+signal blast_done
+## Knight: the one invulnerable window was used, and the game seconds it has left.
+var invuln_used: bool = false
+var _invuln_timer: float = 0.0
+
 var hit_by_commander: bool:
 	get:
 		return health.hit_by_commander if health != null else false
@@ -295,9 +313,262 @@ func _get_lane() -> Path3D:
 	return _lane
 
 func can_be_targeted() -> bool:
-	if is_dead or spawn_grace or is_in_spawn_zone:
+	if is_dead or spawn_grace or is_in_spawn_zone or is_reviving:
 		return false
 	return true
+
+
+## Stealth units are never picked by a tower and do not count as a unit in its range. Area
+## damage (a Cannon blast aimed at another unit) still hits them.
+func is_hidden_from_towers() -> bool:
+	return data != null and data.is_stealth
+
+
+## Damage multiplier by type: 0 while the Knight is invulnerable (towers drop it, commander hits
+## show IMMUNE), else 1. Bosses override it with their phase table.
+func get_resist(_dmg_type: Enums.DamageType) -> float:
+	return 0.0 if is_invulnerable() else 1.0
+
+
+func is_invulnerable() -> bool:
+	return _invuln_timer > 0.0
+
+
+## The first time a Knight drops under invuln_hp_threshold of its max HP and is still alive, it
+## is invulnerable for invuln_duration game seconds. Once per unit; a hit from above the
+## threshold to 0 kills it.
+func _check_invuln_trigger() -> void:
+	if invuln_used or data == null or data.invuln_duration <= 0.0 or data.invuln_hp_threshold <= 0.0:
+		return
+	if health.hp <= 0 or float(health.hp) >= data.invuln_hp_threshold * float(health.max_hp):
+		return
+	invuln_used = true
+	_invuln_timer = data.invuln_duration
+	_set_model_flag(&"set_invulnerable", true)
+
+
+func _tick_invuln(delta: float) -> void:
+	if _invuln_timer <= 0.0:
+		return
+	_invuln_timer = maxf(0.0, _invuln_timer - delta)
+	if _invuln_timer <= 0.0:
+		_set_model_flag(&"set_invulnerable", false)
+
+
+## True when dropping to 0 HP lays the unit down to revive instead of killing it.
+func _will_revive() -> bool:
+	return data != null and revives_used < data.revive_count
+
+
+## Lies down for revive_delay game seconds: no rewards, no enemy_died, not targetable, no
+## attack slot, not counted as stuck. Then stands up where it lay with full HP and its hit damage
+## times revive_dmg_mult. hit_by_commander is kept.
+func _start_revive() -> void:
+	revives_used += 1
+	is_reviving = true
+	_revive_timer = data.revive_delay
+	_release_melee_slot()
+	current_target = null
+	has_target_position = false
+	is_attacking_active = false
+	velocity = Vector3.ZERO
+	_play_death_pose()
+	_set_model_flag(&"set_reviving", true)
+
+
+func _tick_revive(delta: float) -> void:
+	_revive_timer -= delta
+	if _revive_timer > 0.0:
+		return
+	is_reviving = false
+	health.hp = health.max_hp
+	health.dot_remainder = 0.0
+	health.hp_changed.emit(health.hp, health.max_hp)
+	scaled_damage = maxi(1, int(round(float(scaled_damage) * data.revive_dmg_mult)))
+	_set_model_flag(&"set_reviving", false)
+	_reset_stuck_tracking()
+	_play_locomotion_anim()
+	# FRENZY sent while it lay down still applies.
+	if is_frenzied:
+		change_state(Enums.EnemyState.FRENZY)
+		_find_default_target()
+	else:
+		_retarget_now()
+
+
+func _play_death_pose() -> void:
+	for clip in [&"general/Death_A", &"general/Death_B", &"Death_A", &"Death_B"]:
+		if anim_player != null and anim_player.has_animation(clip):
+			play_anim(clip, 1.0)
+			return
+
+
+## Flat distance from from_pos to the nearest point of the target's collider.
+func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
+	var diff := _closest_point_on_target(target, from_pos) - from_pos
+	diff.y = 0.0
+	return diff.length()
+
+
+func _find_collision_shape(target: Node3D) -> CollisionShape3D:
+	var col_shape := target.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if col_shape == null:
+		for child in target.get_children():
+			if child is CollisionShape3D:
+				return child
+	return col_shape
+
+
+## Nearest point of the target's box, cylinder or sphere collider to from_pos; the node origin
+## for any other shape.
+func _closest_point_on_target(target: Node3D, from_pos: Vector3) -> Vector3:
+	var col_shape := _find_collision_shape(target)
+	if col_shape != null and col_shape.shape != null:
+		if col_shape.shape is BoxShape3D:
+			var half_extents := (col_shape.shape as BoxShape3D).size * 0.5
+			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
+			var clamped_local := Vector3(
+				clampf(local_pos.x, -half_extents.x, half_extents.x),
+				clampf(local_pos.y, -half_extents.y, half_extents.y),
+				clampf(local_pos.z, -half_extents.z, half_extents.z)
+			)
+			return col_shape.global_transform * clamped_local
+		elif col_shape.shape is CylinderShape3D:
+			var cyl := col_shape.shape as CylinderShape3D
+			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
+			var clamped_xz := Vector2(local_pos.x, local_pos.z).limit_length(cyl.radius)
+			var clamped_y := clampf(local_pos.y, -cyl.height * 0.5, cyl.height * 0.5)
+			return col_shape.global_transform * Vector3(clamped_xz.x, clamped_y, clamped_xz.y)
+		elif col_shape.shape is SphereShape3D:
+			var sph := col_shape.shape as SphereShape3D
+			var to_from := from_pos - col_shape.global_position
+			to_from.y = 0.0
+			if to_from.length() <= sph.radius:
+				return from_pos
+			return col_shape.global_position + to_from.normalized() * sph.radius
+	return target.global_position
+
+
+## Blast damage of this unit: explode_damage scaled by the wave damage multiplier.
+func get_explode_damage() -> int:
+	if data == null or data.explode_damage <= 0:
+		return 0
+	return maxi(1, int(round(float(data.explode_damage) * wave_dmg_mult)))
+
+
+func is_fuse_lit() -> bool:
+	return _fuse_timer >= 0.0
+
+
+## Starts the wind-up before a blast: the red ring for explode_windup and the lit bomb.
+func _light_fuse() -> void:
+	_fuse_timer = maxf(0.0, data.explode_windup)
+	velocity.x = 0.0
+	velocity.z = 0.0
+	_blast_telegraph_pos = global_position
+	EventBus.telegraph_started.emit(&"explode", _blast_telegraph_pos, data.explode_radius, data.explode_windup)
+	_set_model_flag(&"set_fuse", true)
+
+
+## Ends a lit fuse or a pending Captain blast with no blast: the bomb goes dark and the red ring is
+## cancelled, so the player is not told to dodge a blast that never comes. No-op when neither.
+func _cancel_blast() -> void:
+	if not is_fuse_lit() and not blast_pending:
+		return
+	_fuse_timer = -1.0
+	blast_pending = false
+	_set_model_flag(&"set_fuse", false)
+	EventBus.telegraph_cancelled.emit(&"explode", _blast_telegraph_pos)
+
+
+func _notification(what: int) -> void:
+	# Freed while the fuse is lit or the blast is pending (wave cleanup, scene exit): no blast comes.
+	if what == NOTIFICATION_EXIT_TREE:
+		_cancel_blast()
+
+
+## Deals explode_damage (BLAST) in explode_radius around the unit to the commander in Frontline,
+## every tower (wall slots included), Barricade and the Fortress. Never to other units. The
+## commander takes nothing while dodging or in Commander mode (its own damage rules).
+func detonate() -> Array[Node3D]:
+	var hits: Array[Node3D] = []
+	var tree := get_tree() if is_inside_tree() else null
+	if tree == null or data == null:
+		return hits
+	var radius: float = data.explode_radius
+	var center := global_position
+	var amount := get_explode_damage()
+	var targets: Array[Node3D] = []
+	for grp in [&"commander", &"tower", &"barricade", &"fortress"]:
+		for node in tree.get_nodes_in_group(grp):
+			var n3d := node as Node3D
+			if n3d == null or not is_instance_valid(n3d) or targets.has(n3d):
+				continue
+			if _get_distance_to_target(n3d, center) <= radius:
+				targets.append(n3d)
+	for tgt in targets:
+		if not tgt.has_method(&"take_damage"):
+			continue
+		var dir := tgt.global_position - center
+		dir.y = 0.0
+		var hit_dir := dir.normalized() if dir.length_squared() > 0.001 else Vector3.ZERO
+		tgt.take_damage(DamageInfo.new(amount, Enums.DamageType.BLAST, self, 0.0, hit_dir))
+		hits.append(tgt)
+	_set_model_flag(&"set_fuse", false)
+	EventBus.screen_shake_requested.emit(0.3, &"explode")
+	blast_pending = false
+	blast_done.emit()
+	return hits
+
+
+## The fuse of a Suicide Squad ran out: the blast, then the unit is gone with no gold, XP,
+## prestige or kill (it was not killed). The wave still counts it as gone.
+func _self_destruct() -> void:
+	_fuse_timer = -1.0
+	detonate()
+	if is_dead:
+		return
+	self_destructed = true
+	is_dead = true
+	_release_melee_slot()
+	remove_from_group(&"enemy")
+	collision_layer = 0
+	collision_mask = 0
+	if data != null and not in_hazard_room:
+		EventBus.enemy_died.emit(data.id, global_position, 0.0, 0, true, false)
+	var old_state := current_state
+	current_state = Enums.EnemyState.DEAD
+	state_changed.emit(Enums.EnemyState.DEAD, old_state)
+	set_physics_process(false)
+	queue_free()
+
+
+## A Captain killed: the blast comes explode_windup game seconds later where it fell.
+func _schedule_death_blast() -> void:
+	blast_pending = true
+	_blast_telegraph_pos = global_position
+	EventBus.telegraph_started.emit(&"explode", _blast_telegraph_pos, data.explode_radius, data.explode_windup)
+	_set_model_flag(&"set_fuse", true)
+	var tree := get_tree() if is_inside_tree() else null
+	if tree == null or data.explode_windup <= 0.0:
+		detonate()
+		return
+	tree.create_timer(data.explode_windup, false, true).timeout.connect(_on_death_blast_timeout)
+
+
+func _on_death_blast_timeout() -> void:
+	if blast_pending:
+		detonate()
+
+
+## Calls a trait effect (set_invulnerable, set_reviving) on the model under Model, when it has one.
+func _set_model_flag(method: StringName, on: bool) -> void:
+	var model := get_node_or_null(^"Model")
+	if model == null:
+		return
+	for child in model.get_children():
+		if child.has_method(method):
+			child.call(method, on)
 
 
 func can_be_recycled() -> bool:
@@ -346,6 +617,7 @@ func cull(reason: StringName) -> bool:
 	if reason == &"STUCK":
 		stuck_cull_count += 1
 	_log_stuck_event(4 if reason == &"STUCK" else 0, reason)
+	_cancel_blast()
 	is_dead = true
 	_release_melee_slot()
 	remove_from_group(&"enemy")
@@ -531,7 +803,7 @@ func _fortress_reachable() -> bool:
 	var fortress := _get_valid_fortress()
 	if fortress != null:
 		goal = _get_attack_point(fortress)
-	var path := NavigationServer3D.map_get_path(nav.get_navigation_map(), global_position, goal, true)
+	var path := NavigationServer3D.map_get_path(nav.get_navigation_map(), global_position, goal, true, nav.navigation_layers)
 	if path.is_empty():
 		return false
 	var end := path[path.size() - 1]
@@ -677,6 +949,17 @@ func change_state(new_state: Enums.EnemyState) -> void:
  
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		return
+	if is_reviving:
+		_tick_revive(delta)
+		return
+	_tick_invuln(delta)
+	if is_fuse_lit():
+		velocity.x = 0.0
+		velocity.z = 0.0
+		_fuse_timer -= delta
+		if _fuse_timer <= 0.0:
+			_self_destruct()
 		return
  
 	if not is_on_floor():
@@ -895,8 +1178,8 @@ func _update_state(delta: float) -> void:
 			var diff := _get_attack_point(current_target) - global_position
 			diff.y = 0.0
 			var dist_to_target: float = diff.length()
-			var attack_rng: float = data.attack_range if data else 1.5
-			attack_rng = minf(attack_rng, _slot_arrive_distance(current_target))
+			var attack_rng: float = _arrive_distance(current_target)
+			_set_nav_arrive_distance(attack_rng)
 			if dist_to_target <= attack_rng:
 				change_state(Enums.EnemyState.ATTACK)
 				return
@@ -919,6 +1202,11 @@ func _update_state(delta: float) -> void:
 		Enums.EnemyState.ATTACK:
 			velocity.x = 0.0
 			velocity.z = 0.0
+			# A Suicide Squad in reach of its target winds up and blows itself up instead of swinging.
+			if data != null and data.explode_on_contact:
+				if not is_fuse_lit():
+					_light_fuse()
+				return
 			# Finish the swing before choosing again, unless the target died or became ruined.
 			if current_target == null or not is_instance_valid(current_target) or not _is_target_valid(current_target):
 				_retarget_now()
@@ -1532,6 +1820,19 @@ func _keeps_slot_target() -> bool:
 		and current_target.has_melee_slot(self))
 
 ## Same reach as the strike check in _execute_melee_strike.
+## Distance to the attack point at which the unit stops and attacks: attack_range, or less when
+## the target asks units to walk onto their slot.
+func _arrive_distance(t: Node3D) -> float:
+	var attack_rng: float = data.attack_range if data else 1.5
+	return minf(attack_rng, _slot_arrive_distance(t))
+
+
+## Called each chase frame with _arrive_distance of the target. Regular units keep the stop
+## distance set when the target is picked; a boss overrides it to stop where it attacks.
+func _set_nav_arrive_distance(_arrive: float) -> void:
+	pass
+
+
 func _melee_reach() -> float:
 	return (data.attack_range if data else 1.5) + 0.6
 
@@ -1607,7 +1908,7 @@ func _is_skipped_full_target(t: Node3D) -> bool:
 func _apply_avoidance(delta: float) -> void:
 	if not nav.avoidance_enabled:
 		return
-	if _following_charge_lane:
+	if _following_charge_lane or _steers_without_avoidance():
 		# Straight charges must reach the physical collider before taking a detour.
 		nav.velocity = Vector3.ZERO
 		_has_safe_velocity = false
@@ -1640,6 +1941,11 @@ func _apply_avoidance(delta: float) -> void:
 	if walking and _has_safe_velocity and desired.length_squared() > 0.001:
 		velocity.x = _safe_velocity.x
 		velocity.z = _safe_velocity.z
+
+
+## True while the unit walks its last metres without avoidance (see BossEnemy).
+func _steers_without_avoidance() -> bool:
+	return false
 
 
 ## +1 = step left, -1 = step right. The side the destination lies on; when it is straight ahead,
@@ -1693,7 +1999,7 @@ func apply_commander_taunt(commander_node: Node3D, duration: float) -> void:
 		_retarget_timer = 0.0
  
 func take_damage(damage_input: Variant, p_damage_type: Enums.DamageType = Enums.DamageType.SLASH) -> int:
-	if is_dead or spawn_grace:
+	if is_dead or spawn_grace or is_reviving:
 		return 0
  
 	var info: DamageInfo = null
@@ -1786,14 +2092,21 @@ func apply_knockback(force_vector: Vector3) -> void:
 	stagger_timer = GameConfig.enemy_stagger_time
  
 func _on_health_damaged(_amount: int, info: DamageInfo) -> void:
-	if health.hp > 0 or info == null or info.damage_type == Enums.DamageType.TRUE:
+	if health.hp > 0:
+		_check_invuln_trigger()
+		return
+	# A unit about to revive is not killed yet.
+	if info == null or info.damage_type == Enums.DamageType.TRUE or _will_revive():
 		return
 	if is_instance_valid(info.source) and info.source.is_in_group(&"commander"):
 		EventBus.commander_enemy_killed.emit(info.source)
 
 
 func _on_died() -> void:
-	if is_dead:
+	if is_dead or is_reviving:
+		return
+	if _will_revive():
+		_start_revive()
 		return
 	is_dead = true
 	_release_melee_slot()
@@ -1815,7 +2128,14 @@ func _on_died() -> void:
 		if display_gold > 0:
 			EventBus.gold_delta.emit(display_gold)
 		EventBus.enemy_died.emit(data.id, global_position, kill_gold, _get_kill_prestige(), false, hit_by_commander)
- 
+
+	# A Captain killed still blows up where it fell; a lit Suicide Squad killed does not.
+	_cancel_blast()
+	if data != null and data.explode_on_death:
+		_schedule_death_blast()
+	else:
+		_set_model_flag(&"set_fuse", false)
+
 	change_state(Enums.EnemyState.DEAD)
 
 
@@ -1844,22 +2164,24 @@ func _play_death_anim() -> void:
 		elif anim_player.has_animation(&"Death_B"):
 			death_anim = &"Death_B"
  
+	var delay: float = 0.0
 	if not death_anim.is_empty():
 		play_anim(death_anim, 1.0)
-		var delay: float = 0.8
+		delay = 0.8
 		if anim_player != null and anim_player.has_animation(death_anim):
 			var anim: Animation = anim_player.get_animation(death_anim)
 			if anim != null and anim.length > 0.0:
 				delay = anim.length
-		var tree := get_tree()
-		if tree != null:
-			var timer := tree.create_timer(delay)
-			timer.timeout.connect(func():
-				if is_instance_valid(self):
-					queue_free()
-			)
-		else:
-			queue_free()
-	else:
+	# A Captain stays until its blast went off.
+	if blast_pending and data != null:
+		delay = maxf(delay, data.explode_windup + 0.05)
+	var tree := get_tree()
+	if delay <= 0.0 or tree == null:
 		queue_free()
+		return
+	var timer := tree.create_timer(delay)
+	timer.timeout.connect(func():
+		if is_instance_valid(self):
+			queue_free()
+	)
  

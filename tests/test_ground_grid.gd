@@ -7,8 +7,13 @@ extends Node
 ## - the pick collider is 1.9 m for a 2 m cell
 ## - grid slots sit outside the navmesh source group, so the baked navmesh is unchanged
 ## - slots stay the same nodes across a run reset
+## - a click on the edge between two neighbouring cells picks at most one slot
+## - every slot id in the level is unique
 
 const LEVEL_SCENE: PackedScene = preload("res://levels/corridor/level.tscn")
+## Slot pick colliders sit on this physics layer (same as SelectionController.CLICK_LAYER).
+const CLICK_LAYER := 1 << 6
+const MAX_PROBE_HITS := 8
 
 @export var quit_when_done := true
 
@@ -85,12 +90,64 @@ func _ready() -> void:
 		same = same and before[i] == after[i]
 	assert_true(same, "grid slots are the same nodes after a run reset")
 
+	# The pick colliders need a physics frame in the tree before a ray sees them.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var data := grid.grid_data
+	var centres_ok := true
+	var edge_pairs := 0
+	var edge_ok := true
+	for cell in valid:
+		var centre := data.cell_position(cell)
+		var hit_here := _slots_hit_at(centre)
+		centres_ok = centres_ok and hit_here.size() == 1 and hit_here[0] == mgr.get_slot(GridData.cell_id(cell.x, cell.y))
+		for step in [Vector2i(1, 0), Vector2i(0, 1)]:
+			var neighbour: Vector2i = cell + step
+			if not valid.has(neighbour):
+				continue
+			edge_pairs += 1
+			var mid := (centre + data.cell_position(neighbour)) * 0.5
+			edge_ok = edge_ok and _slots_hit_at(mid).size() <= 1
+	assert_true(centres_ok, "a ray at each cell centre hits exactly that cell's slot")
+	assert_true(edge_pairs > 0 and edge_ok, "an edge click picks at most one slot (%d neighbour pairs)" % edge_pairs)
+
+	# Read the nodes themselves: SlotManager drops a duplicate id, so its own list cannot show one.
+	var seen := {}
+	var unique := true
+	var slot_nodes := level.find_children("*", "Slot", true, false)
+	for node in slot_nodes:
+		var id: StringName = (node as Slot).slot_id
+		unique = unique and not seen.has(id)
+		seen[id] = true
+	var wall_count := mgr.get_slots_in_zone(Enums.SlotZone.WALL).size()
+	assert_true(unique and slot_nodes.size() == ground.size() + wall_count and wall_count > 0,
+		"slot ids are unique across ground and wall slots (%d)" % slot_nodes.size())
+
 	level.queue_free()
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
 	print("=======================================================\n")
 	if quit_when_done:
 		get_tree().quit(0 if fails == 0 else 1)
+
+## Distinct Slots whose pick collider a ray straight down through point crosses.
+func _slots_hit_at(point: Vector3) -> Array[Slot]:
+	var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 20.0, point + Vector3.DOWN * 20.0, CLICK_LAYER)
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	var space := get_viewport().find_world_3d().direct_space_state
+	var exclude: Array[RID] = []
+	var out: Array[Slot] = []
+	for i in MAX_PROBE_HITS:
+		query.exclude = exclude
+		var hit := space.intersect_ray(query)
+		if hit.is_empty():
+			break
+		exclude.append(hit.rid)
+		var slot := (hit.collider as Node).get_parent() as Slot
+		if slot != null and not out.has(slot):
+			out.append(slot)
+	return out
 
 func assert_true(cond: bool, test_name: String) -> void:
 	if cond:
