@@ -36,6 +36,7 @@ func _ready() -> void:
 	_test_lock_from_the_third_person_view_signal()
 	_test_dodge_follows_the_move_direction()
 	_test_leave_restores_mouse_aim()
+	_test_late_commander_reads_the_view()
 	EventBus.camera_frame_changed.emit(&"OVERVIEW")
 	camera.free()
 	commander.free()
@@ -308,3 +309,25 @@ func _test_leave_restores_mouse_aim() -> void:
 			and commander.aim_point.is_finite()
 			and commander.aim_point.distance_to(hit) < 0.01,
 			"leaving the room restores the mouse ray's ground point")
+
+
+func _test_late_commander_reads_the_view() -> void:
+	EventBus.camera_frame_changed.emit(&"OVERVIEW")
+	EventBus.camera_view_changed.emit(&"TOP_DOWN")
+	var before := CommanderScene.instantiate()
+	add_child(before)
+	var unlocked_without_rig: bool = not before._is_view_locked()
+	before.free()
+	var rig := CameraRig.new()
+	rig.add_child(Camera3D.new())
+	add_child(rig)
+	EventBus.state_changed.emit(&"COMBAT")
+	rig.toggle_view()
+	var late := CommanderScene.instantiate()
+	add_child(late)
+	var locked_when_late: bool = late._is_view_locked()
+	rig.toggle_view()
+	rig.free()
+	late.free()
+	_check(unlocked_without_rig and locked_when_late and not commander._is_view_locked(),
+			"a commander spawned in the third-person view reads the view from the camera rig")

@@ -139,6 +139,7 @@ func _ready() -> void:
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	EventBus.commander_enemy_killed.connect(_on_enemy_killed)
 	_sync_wave_state()
+	_sync_camera_view()
 	_apply_equipped_weapon()
 	_refresh_aura.call_deferred()
 
@@ -1174,6 +1175,16 @@ func _sync_wave_state() -> void:
 	var index: int = wave_manager.wave_state
 	if index >= 0 and index < state_names.size():
 		_wave_state = StringName(state_names[index])
+
+
+## The camera rig may have sent its view and frame before this commander existed (a respawn in
+## the third-person view), so read the current ones instead of waiting for the next change.
+func _sync_camera_view() -> void:
+	var rig := get_tree().get_first_node_in_group(&"camera_rig")
+	if rig == null or not rig.has_method(&"get_view"):
+		return
+	_on_camera_view_changed(rig.get_view())
+	_on_camera_frame_changed(rig.get_frame())
 
 
 ## Weapon range goes into the StatBlock as a multiplier on the base sword range.

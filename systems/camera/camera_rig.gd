@@ -13,15 +13,15 @@ extends Node3D
 ## commander on the wall, so the move keys do not pan. Every view change is sent on
 ## EventBus.camera_view_changed.
 ## In the Hazard Trial the view cuts to ChaseCamera, a perspective camera the rig builds itself.
-## It stands behind the commander and over its right shoulder (chase_shoulder_offset), starting at
-## the corridor camera's yaw (numbers on the HazardRoom), and follows the commander smoothly on
+## It stands behind the commander and over its right shoulder (shoulder_offset), starting at
+## the corridor camera's yaw (numbers in the HazardRoom's chase_camera resource), and follows the commander smoothly on
 ## real time; the move keys and C do not move it. The mouse turns it: while the room has the
 ## cursor, the cursor is captured and mouse motion turns the yaw and the pitch (within the room's
 ## limits, and it can look up past the horizon); the wheel zooms in, never farther than the normal
 ## distance. The camera orbits a pivot just above the commander and looks a few degrees above it,
 ## so the commander stays a little below the middle of the screen, marked by a crosshair, which
 ## points at the ground in front of the commander, and the commander's aim follows it. Looking up
-## brings the camera nearer so it stays above chase_min_height over the floor. The cursor comes
+## brings the camera nearer so it stays above min_height over the floor. The cursor comes
 ## back while the game is paused, a dialog is open or free_cursor_key is held. Leaving cuts back
 ## to the PREP frame on the corridor camera. Every frame change is sent on
 ## EventBus.camera_frame_changed; the third-person view in the corridor keeps the Frontline or
@@ -138,6 +138,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# After the commander's move_and_slide, so the follow reads this tick's position.
 	process_physics_priority = 100
+	add_to_group(&"camera_rig")
 	_home = position
 	_camera = find_child("*", true, false) as Camera3D
 	_make_chase_camera()
@@ -222,11 +223,14 @@ func get_view() -> StringName:
 
 
 ## Turns the corridor third-person view on or off. Does nothing where it is not allowed: no
-## settings, the Hazard Trial, the boss intro, PREP, pause or a dialog.
+## settings, the Hazard Trial, the boss intro, PREP, the wave summary, the reward pick, the end of
+## the run, pause or a dialog.
 func toggle_view() -> void:
 	if corridor_chase == null or _hazard:
 		return
 	if _intro or _in_prep:
+		return
+	if _state == STATE_SUMMARY or _state == STATE_REWARD_PICK or _run_over:
 		return
 	if TimeManager.is_paused or ScreenManager.has_dialog():
 		return
@@ -705,9 +709,13 @@ func _commander_focus() -> Vector3:
 func _snap_chase() -> void:
 	if not _chase_on:
 		return
-	position = _chase_focus()
+	_snap_chase_to(get_tree().get_first_node_in_group(&"commander") as Node3D)
+
+
+func _snap_chase_to(commander: Node3D) -> void:
+	position = _chase_focus(commander)
 	_last_chase_focus = position
-	_sync_orbit()
+	_sync_orbit(commander, position)
 	_orbit.snap(global_position)
 
 
@@ -715,37 +723,35 @@ func _snap_chase() -> void:
 func _follow_chase(real_delta: float) -> void:
 	if not _chase_on:
 		return
-	var actual := _chase_focus()
-	var jumped := _last_chase_focus.is_finite() \
-			and actual.distance_to(_last_chase_focus) > _teleport_snap_distance
+	var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
+	var actual := _chase_focus(commander)
+	var jumped := _last_chase_focus.is_finite() 			and actual.distance_to(_last_chase_focus) > _teleport_snap_distance
 	_last_chase_focus = actual
 	if jumped:
-		_snap_chase()
+		_snap_chase_to(commander)
 	else:
-		_sync_orbit()
+		_sync_orbit(commander, actual)
 		position = _orbit.follow(position, actual, real_delta)
 	_orbit.advance(real_delta, global_position)
 	_fade.unframed = _orbit.is_unframed()
-	_fade.update(get_tree().get_first_node_in_group(&"commander") as Node3D,
-			_orbit.get_pivot_gap(), real_delta, reduced_motion)
+	_fade.update(commander, _orbit.get_pivot_gap(), real_delta, reduced_motion)
 
 
 ## Gives the orbit what only the rig knows: the commander's body, which the wall check ignores, and
 ## the reduced motion setting.
-func _sync_orbit() -> void:
-	var body := get_tree().get_first_node_in_group(&"commander") as CollisionObject3D
+func _sync_orbit(commander: Node3D, focus: Vector3) -> void:
+	var body := commander as CollisionObject3D
 	var excluded: Array[RID] = []
 	if body != null:
 		excluded.append(body.get_rid())
 	_orbit.exclude = excluded
 	_orbit.reduced_motion = reduced_motion
-	_orbit.actual_focus = _chase_focus()
+	_orbit.actual_focus = focus
 
 
 ## The commander on the camera's ground plane in the room, at its real height in the corridor (the
 ## Fortress wall is higher than the floor), else the room's CameraFrame, else where the rig is.
-func _chase_focus() -> Vector3:
-	var commander := get_tree().get_first_node_in_group(&"commander") as Node3D
+func _chase_focus(commander: Node3D) -> Vector3:
 	if commander != null:
 		var height := _home.y if _hazard else commander.global_position.y
 		return Vector3(commander.global_position.x, height, commander.global_position.z)
@@ -771,8 +777,9 @@ func _zoom_chase(notches: float) -> void:
 
 
 ## The chase view keeps the cursor captured unless the game is paused, a dialog is open, a panel
-## without a pause owns input (the wave summary, the end of the run) or free_cursor_key is held,
-## so the pause menu, dialogs, panels and the Leave button can be clicked.
+## without a pause owns input (the wave summary, the end of the run), a slot or tower is selected
+## (so its panel can be clicked) or free_cursor_key is held, so the pause menu, dialogs, panels
+## and the Leave button can be clicked.
 func _wants_captured_cursor() -> bool:
 	if not _chase_on:
 		return false
@@ -780,7 +787,15 @@ func _wants_captured_cursor() -> bool:
 		return false
 	if _state == STATE_SUMMARY or _run_over:
 		return false
+	if _has_selection():
+		return false
 	return not Input.is_physical_key_pressed(free_cursor_key)
+
+
+## True while a slot, tower or the Fortress is selected, which is when its panel is open.
+func _has_selection() -> bool:
+	var selection := get_tree().get_first_node_in_group(&"selection_controller") as SelectionController
+	return selection != null and selection.selected_slot != &""
 
 
 ## Captures or frees the cursor when the wanted state changes. Only the state this rig set is
