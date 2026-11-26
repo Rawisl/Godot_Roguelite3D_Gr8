@@ -43,13 +43,13 @@ res://
   autoload/        Chứa script và scene tự động nạp khi mở game ở dạng singleton. Chỉ đặt các file đã được khai báo trong Project Settings.
   common/          Chứa các lớp Resource và Component dùng chung cho dự án.
   data/            Chứa dữ liệu cân bằng game. Tuyệt đối không đặt file code tại đây.
-    towers/        Chứa dữ liệu TowerData và TowerLevelData của Arrow, Cannon, Barricade và Trạm hồi lực (mỗi loại 36 cấp, 3 bậc model) dưới dạng đuôi .tres. Sinh từ bảng cân bằng.
+    towers/        Chứa dữ liệu TowerData và TowerLevelData của Arrow, Cannon, Barricade và Trạm hồi phục (mỗi loại 36 cấp, 3 bậc model) dưới dạng đuôi .tres. Sinh từ bảng cân bằng.
     enemies/       Chứa dữ liệu EnemyData của 10 loại quân (Grunt, Archer, Brute và 7 loại mới) dưới dạng đuôi .tres. Sinh từ bảng cân bằng. Bulwark là BossData trong bosses/.
     bosses/        Chứa dữ liệu BossData dưới dạng đuôi .tres.
     waves/         WaveTable và ScaleConfig (từ wave 31, sửa tay); WaveScript (kịch bản wave 1-30) và WaveRewardTable (gold_mult, xp_mult, mithril_reward), hai file này sinh từ bảng cân bằng.
     weapons/       WeaponData của kiếm thường và 5 vũ khí. Sinh từ bảng cân bằng.
     config/        Cấu hình chung của game như fortress_stats.tres, scale_config.tres.
-    skills/        Chứa dữ liệu SkillData (Whirlwind, Sword Wave, Firebomb, 4 bị động gồm Sharpness, Armored, Lifesteal và Trạm hồi lực, 2 thẻ stat Thể lực và Tinh thông) dưới dạng đuôi .tres. Sinh từ bảng cân bằng.
+    skills/        Chứa dữ liệu SkillData (Whirlwind, Sword Wave, Firebomb, 4 bị động gồm Sharpness, Armored, Lifesteal và Trạm hồi phục, 2 thẻ stat Thể lực và Tinh thông) dưới dạng đuôi .tres. Sinh từ bảng cân bằng.
     locale/        Chứa file strings.csv quản lý chuỗi tiếng Việt với khóa được phân loại theo ngữ cảnh.
   entities/        Lưu trữ các thực thể trong game. Mỗi loại thực thể có một thư mục riêng chứa scene .tscn và script .gd tương ứng.
     commander/     Chứa nhân vật của người chơi.
@@ -105,14 +105,14 @@ Quy tắc đặt tên file:
 * **Hệ thống Collision layer:** Các lớp dùng cho 3D Physics được quy định cứng là layer 1 cho world, layer 2 cho commander, layer 3 cho enemy, layer 4 cho structure, layer 5 cho proj_player, layer 6 cho proj_enemy và layer 7 cho click. Tuyệt đối không thay đổi bảng quy định này.
 * **Tạo Scene kế thừa:** Khi tạo các biến thể con như Grunt hoặc Arrow, hãy sử dụng tính năng New Inherited Scene từ scene gốc, sau đó chỉ chỉnh sửa các dữ liệu và đặc tính riêng biệt.
 * **Sử dụng Make Unique:** Nếu một shape va chạm được dùng chung giữa nhiều instance, hãy nhấn nút Make Unique để đảm bảo mỗi đối tượng hoạt động độc lập và có shape riêng.
-* **Tùy chỉnh InputMap:** Hãy thiết lập phím bằng Physical Keycode. Phím số 1, 2, 3 là skill chủ động (SKL-05). Tua tốc độ, nút Bắt đầu wave và nút Rời phòng Hazard Trial không có phím tắt (chỉ nút HUD). Phím E có hai action tách riêng: `heal_channel` (giữ để hồi máu ở Trạm hồi lực, chỉ ở COMBAT và BOSS_COMBAT) và `hazard_enter` (vào Tháp Hazard Trial, chỉ ở PREP). Phím C là `camera_recenter`. WASD chỉ có một nghĩa trong mỗi ngữ cảnh: di chuyển nhân vật ở Frontline và trong Hazard Trial, dịch camera ở Commander và PREP khi camera ở góc trên xuống (CAM-10); khi góc nhìn thứ ba đang bật ở Commander, WASD và C không làm gì (CAM-20). Không còn phím G (gọi wave sớm) và phím M (di chuyển tower). Mọi action dùng phím vật lý theo INP-09. Phím F5 bật tắt góc nhìn thứ ba ở Frontline và Commander (CAM-20); CameraRig đọc bằng phím vật lý qua một biến export, như phím Alt, không phải action InputMap.
+* **Tùy chỉnh InputMap:** Hãy thiết lập phím bằng Physical Keycode. Phím số 1, 2, 3 là skill chủ động (SKL-05). Tua tốc độ, nút Bắt đầu wave và nút Rời phòng Hazard Trial không có phím tắt (chỉ nút HUD). Phím E có hai action tách riêng: `heal_channel` (giữ để hồi máu ở Trạm hồi phục, chỉ ở COMBAT và BOSS_COMBAT) và `hazard_enter` (vào Tháp Hazard Trial, chỉ ở PREP). Phím C là `camera_recenter`. WASD chỉ có một nghĩa trong mỗi ngữ cảnh: di chuyển nhân vật ở Frontline và trong Hazard Trial, dịch camera ở Commander và PREP khi camera ở góc trên xuống (CAM-10); khi góc nhìn thứ ba đang bật ở Commander, WASD và C không làm gì (CAM-20). Không còn phím G (gọi wave sớm) và phím M (di chuyển tower). Mọi action dùng phím vật lý theo INP-09. Phím F5 bật tắt góc nhìn thứ ba ở Frontline và Commander (CAM-20); CameraRig đọc bằng phím vật lý qua một biến export, như phím Alt, không phải action InputMap.
 * **Xử lý thời gian:** Mọi logic gameplay phải sử dụng thời gian trong game thông qua hệ thống `TimeManager`. Tuyệt đối không dùng hàm `Time.get_ticks_msec()` cho thời gian hồi chiêu hoặc timer liên quan đến gameplay, vì sẽ gây sai sót logic khi người chơi tua nhanh thời gian bằng tốc độ x2 hoặc x3.
 * **Sát thương và XP:** Mọi nguồn sát thương, kể cả skill và vùng cháy theo tick, phải đi qua `HealthComponent` với `DamageInfo` có `damage_type` và `source` để cờ `hit_by_commander` hoạt động (XP-03, CMB-10). Không trừ máu trực tiếp.
 * **Ngẫu nhiên có seed:** Mọi RNG gameplay (sinh wave, thẻ REWARD_PICK) dùng `run_seed` theo RWP-05 và SPN-05. Không gọi `randi()` toàn cục trong logic gameplay để test và replay tái hiện được.
 * **Lưu và mạng:** Mọi đọc ghi tiến trình đi qua `SaveRepository` (ACCT-01), không gọi thẳng `FileAccess` cho save. Các lệnh gọi mạng chạy bất đồng bộ, không chặn UI quá 100 ms và mất mạng không được làm chậm RunEnd hay cửa hàng (ACP-08). Token đăng nhập lưu ở `auth.cfg` riêng, không bao giờ nằm trong `endlesswar_save.json`.
 * **Bí mật:** Không commit `auth.cfg`, khóa quản trị hay mật khẩu của backend. Trong repo chỉ có khóa công khai của dự án BaaS. Thêm `auth.cfg` vào `.gitignore`.
 * **Số liệu cân bằng:** không sửa tay `.tres` do công cụ sinh; sửa `balance/balance.xlsx` rồi chạy `tools/balance/` và chạy runner `tests/test_balance_config_runner.tscn`.
-* **Hồi máu chỉ huy:** Không còn hồi tự động theo giây ở Commander mode. Chỉ huy hồi 35% HP tối đa khi vào PREP (`prep_heal_pct`) và qua Trạm hồi lực. Không thêm `commander_regen_pct_per_sec` trở lại.
+* **Hồi máu chỉ huy:** Không còn hồi tự động theo giây ở Commander mode. Chỉ huy hồi 35% HP tối đa khi vào PREP (`prep_heal_pct`) và qua Trạm hồi phục. Không thêm `commander_regen_pct_per_sec` trở lại.
 
 ---
 

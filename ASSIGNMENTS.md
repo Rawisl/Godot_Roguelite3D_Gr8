@@ -67,7 +67,7 @@ Tính năng và task bảo đảm nó (logic, giao diện, art, test):
 | run_elapsed và bảng xếp hạng (RUN-02, LBD-06, AC9) | W8B-KT1, W10-KT2, W10-NG6, W11-KT9 (SPN-15), W11-MH6, W12-NG3 |
 | Trụ có sẵn và tutorial một lần theo tài khoản | W10-MH10, W11-NG1, W10-NG5, W11-KH4 |
 | Hành lang 23.5 m, 3 WALL + 3 ô grid, GRID-07, GRID-08 | W8B-KM1, W8B-MH2, W9-KM6, W9-KM7, W9-MH5, W10-KH8, W11-KT5, W11-MH10 |
-| Tower 36 cấp, 3 bậc model, cổng bậc 13 và 25, Trạm hồi lực 36 cấp | W8B-MH2, W10-MH8, W10-MH9, W10-KH2, W10-KM10, W11-KM10, W11-MH8 |
+| Tower 36 cấp, 3 bậc model, cổng bậc 13 và 25, Trạm hồi phục 36 cấp | W8B-MH2, W10-MH8, W10-MH9, W10-KH2, W10-KM10, W11-KM10, W11-MH8 |
 | Sửa Fortress bằng Mithril (bỏ sửa bằng gold) | W9-MH2, W9-KH4 |
 | Hạ tầng sát thương (DMG-06, Slow, DoT) dùng chung cho vũ khí và Hazard | W8B-NG1, W9-NG5 |
 
@@ -132,14 +132,14 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W9-KM5 | Kim | 9 | 1.5 | CŨ | Camera BOSS_INTRO tự lia tới boss trong 4 s game time, khóa dịch tay, hết intro về khung c... |
 | W9-KM6 | Kim | 9 | 5 | SỬA | Hành lang 23.5 m phần 2 |
 | W9-KM7 | Kim | 9 | 7 | SỬA + MỚI | GridData của map |
-| W10-MH5 | Ngọc | 10 | 4 | CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Trạm hồi lực phần 2 |
+| W10-MH5 | Ngọc | 10 | 4 | CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Trạm hồi phục phần 2 |
 | W10-MH6 | Ngọc | 10 | 2 | CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc) | save.json thêm revision, updated_at, device_id (ACCT-04) |
 | W10-NG1 | Ngọc | 10 | 5 | CŨ | Bị động và thẻ stat qua StatBlock |
 | W10-NG10 | Ngọc | 10 | 8 | MỚI | Hazard Trial phía chỉ huy |
 | W10-NG2 | Ngọc | 10 | 2 | CŨ | Kiểm skill với boss (kháng, cờ hit_by_commander) |
 | W10-NG5 | Ngọc | 10 | 4 | CŨ-SỬA | Backend 2 |
 | W10-NG6 | Ngọc | 10 | 7 | CŨ-SỬA | Backend 3 |
-| W10-NG7 | Ngọc | 10 | 2 | CŨ | Nối lõi hồi máu với Trạm hồi lực thật (thay trạm giả), test HT1..HT5 và test input camera ... |
+| W10-NG7 | Ngọc | 10 | 2 | CŨ | Nối lõi hồi máu với Trạm hồi phục thật (thay trạm giả), test HT1..HT5 và test input camera ... |
 | W10-NG8 | Ngọc | 10 | 6 | MỚI | Công cụ dịch phần 2 |
 | W10-NG9 | Ngọc | 10 | 5 | MỚI | Vũ khí qua StatBlock |
 | W10-KT1 | Kiệt | 10 | 3 | CŨ-SỬA | RunLoading 8 bước (RUN-01, APL-01..04) trên RunState có sẵn; áp meta; gọi bước đặt trụ có ... |
@@ -160,7 +160,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W10-MH3 | Mạnh | 10 | 3 | CŨ-SỬA | Thưởng boss BRW-01, 02, 04, 06, 07 theo WaveRewardTable (boss_gold = 100 x gold_mult(w), k... |
 | W10-MH4 | Mạnh | 10 | 3 | CŨ-SỬA | MetaShop backend (SHP-05..09, 4 mục |
 | W10-MH7 | Mạnh | 10 | 6 | MỚI + SỬA | Resource WaveRewardTable và sheet wave_rewards |
-| W10-MH8 | Mạnh | 10 | 4 | MỚI | Soạn số liệu 36 cấp cho 4 loại tower trong sheet towers (giá, chỉ số, HP, kho Trạm hồi lực... |
+| W10-MH8 | Mạnh | 10 | 4 | MỚI | Soạn số liệu 36 cấp cho 4 loại tower trong sheet towers (giá, chỉ số, HP, kho Trạm hồi phục... |
 | W10-MH9 | Mạnh | 10 | 10 | MỚI + SỬA | Tower cấp 1-36 cho cả 4 loại |
 | W10-KH1 | Khang | 10 | 6 | CŨ-SỬA | HUD skill bar 3+3 ô (HUD-16), thanh XP và lượt chờ (HUD-15), biểu tượng Aura (HUD-17), XP-... |
 | W10-KH2 | Khang | 10 | 3 | CŨ-SỬA | Nút nâng cấp xám 'Cần Chỉ huy cấp N' (UPG-06) áp ở cấp 13 và 25; panel Tower hiển thị cấp ... |
@@ -175,14 +175,14 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W10-KM11 | Kim | 10 | 6 | MỚI | Model quân mới, phần 1 (Sniper, Rider, Assassin) |
 | W10-KM3 | Kim | 10 | 2 | CŨ | Logic tab Âm thanh và Đồ họa (SET-01..04) |
 | W10-KM4 | Kim | 10 | 2 | CŨ-SỬA | Nhạc theo state (COMBAT một lớp, sting SUMMARY, RunEnd); HAZARD_TRIAL dùng nhạc COMBAT (nh... |
-| W10-KM6 | Kim | 10 | 3 | CŨ | VFX và SFX Trạm hồi lực |
+| W10-KM6 | Kim | 10 | 3 | CŨ | VFX và SFX Trạm hồi phục |
 | W10-KM8 | Kim | 10 | 6 | MỚI | Level |
 | W10-KM9 | Kim | 10 | 3 | MỚI | Camera frame HAZARD_TRIAL (CAM-16) |
 | W13-KM1 | Kim | 10 | 2 | DỜI | FBK-04, 05 (flash, đóng băng riêng thực thể) [dời từ tuần 13] |
 | W13-KM3 | Kim | 10 | 2.5 | DỜI | FBK-08 tower bị phá (khói, mảnh vỡ, đống đổ nát) [dời từ tuần 13] |
 | W11-MH5 | Ngọc | 11 | 2 | CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Chính sách xung đột đơn giản |
 | W11-MH6 | Ngọc | 11 | 2 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Tích hợp và hồi quy hook nộp điểm với RunEnd hoàn chỉnh |
-| W11-MH7 | Ngọc | 11 | 3 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hồi quy Trạm hồi lực: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36 |
+| W11-MH7 | Ngọc | 11 | 3 | CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc) | Hồi quy Trạm hồi phục: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36 |
 | W11-NG10 | Ngọc | 11 | 4 | MỚI | Runner BAL tests/test_balance_config_runner.tscn (BAL-05, BL3, BL4) |
 | W11-NG2 | Ngọc | 11 | 3 | CŨ-SỬA | Kiểm thử time scale toàn hệ thống x1/x2/x3 (gồm Hazard Trial và hiệu ứng vũ khí) |
 | W11-NG3 | Ngọc | 11 | 5 | CŨ | Chạy lại test Combat, Skill, Boss (7.1, F1..F15, CM1..CM8, HT1..HT14); sửa lỗi |
@@ -196,7 +196,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W11-KT3 | Kiệt | 11 | 2 | CŨ | Hồi quy wave 1-20 có skill |
 | W11-KT4 | Kiệt | 11 | 2 | CŨ-SỬA | Chỉnh Resource theo log cân bằng, ghi lại tham số (chỉnh trong balance.xlsx rồi chạy công ... |
 | W11-KT5 | Kiệt | 11 | 3 | CŨ-SỬA | Boss điều hướng agent lớn (BOSS-03), đứng tại boss_melee_point đánh Stomp vào Fortress (BO... |
-| W11-KT6 | Kiệt | 11 | 2 | CŨ | Hồi quy Trạm hồi lực: quân nhắm trạm theo ETG, slot đánh, cân bằng sơ bộ (HLT-09, HLT-10) |
+| W11-KT6 | Kiệt | 11 | 2 | CŨ | Hồi quy Trạm hồi phục: quân nhắm trạm theo ETG, slot đánh, cân bằng sơ bộ (HLT-09, HLT-10) |
 | W11-KT7 | Kiệt | 11 | 9 | MỚI | Assassin (tower không chọn làm mục tiêu và không tính là 'quân trong tầm', nổ Cannon vẫn t... |
 | W11-KT8 | Kiệt | 11 | 8 | MỚI | Suicide Squad và Captain |
 | W11-KT9 | Kiệt | 11 | 8 | MỚI + SỬA | Spawner đọc WaveScript wave 1-30 (thành phần cố định, hộ tống, hp/dmg/speed_mult và spawn_... |
@@ -219,7 +219,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W11-NG1 | Khang | 11 | 10 | CŨ-SỬA + MỚI + ĐỔI NGƯỜI (Ngọc sang Khang) | Tutorial một lần theo tài khoản (đổi người |
 | W13-KH1 | Khang | 11 | 3 | DỜI | Kích hoạt cảnh báo T1/T2 (ALR-01..04, 07, 09, 11) [dời từ tuần 13; ALR-08 đã bỏ ở v2.0] |
 | W11-KM1 | Kim | 11 | 2 | CŨ | Accessibility ACC-05, 06 và kiểm UI-05 (gồm biểu tượng trait quân) |
-| W11-KM10 | Kim | 11 | 4 | MỚI | Model 3 bậc cho tower, phần 2 (Barricade và Trạm hồi lực, bậc 2 và 3) |
+| W11-KM10 | Kim | 11 | 4 | MỚI | Model 3 bậc cho tower, phần 2 (Barricade và Trạm hồi phục, bậc 2 và 3) |
 | W11-KM2 | Kim | 11 | 3 | CŨ-SỬA | Âm thanh hoàn chỉnh (AUD-06..09, -14 LUFS nhạc, -12 LUFS SFX); sting thắng và sting RunEnd... |
 | W11-KM4 | Kim | 11 | 3 | CŨ | Tổ chức playtest >= 5 người ngoài nhóm trên bản có Hazard, vũ khí, quân mới, biểu mẫu thu ... |
 | W11-KM5 | Kim | 11 | 2 | CŨ | Sửa lỗi Art/Audio từ playtest |
@@ -241,7 +241,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W12-KT6 | Kiệt | 12 | 2 | CŨ | Đệm sửa lỗi tích hợp và cân bằng theo playtest vòng 2 |
 | W12-MH1 | Mạnh | 12 | 6 | CŨ-SỬA | Hồi quy tower, economy, save; cân bằng kinh tế cuối trong balance.xlsx (nhịp danh vọng 3.9... |
 | W12-MH3 | Mạnh | 12 | 3 | CŨ | Sửa blocker (đệm) |
-| W12-MH4 | Mạnh | 12 | 7 | CŨ-SỬA | Kiểm thử AC3, AC4 và hồi quy Trạm hồi lực, SELL-05; chạy BL1..BL4, VC1..VC5, TU1..TU4 |
+| W12-MH4 | Mạnh | 12 | 7 | CŨ-SỬA | Kiểm thử AC3, AC4 và hồi quy Trạm hồi phục, SELL-05; chạy BL1..BL4, VC1..VC5, TU1..TU4 |
 | W12-MH5 | Mạnh | 12 | 2 | MỚI | Chạy lại runner BAL sau mọi lần chỉnh bảng cuối; chốt balance.xlsx và bộ .tres sinh ra |
 | W12-MH6 | Mạnh | 12 | 6 | MỚI | Camera góc nhìn thứ ba ở hành lang, bật tắt bằng F5 ở Frontline và Commander (CAM-20) |
 | W12-KH1 | Khang | 12 | 4 | CŨ-SỬA | QA giao diện tiếng Việt (dấu, tràn khung, LOC-03) gồm chuỗi v2.0; đo UI < 10% frame (ACP-0... |
@@ -676,7 +676,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 5 | Nguồn: CŨ
 - Trạng thái: Xong
-- Việc: Bị động và thẻ stat qua StatBlock: Sharpness, Armored, Lifesteal, Trạm hồi lực (SKL-26); thẻ stat Thể lực, Tinh thông (SKL-13..15); cắt Lightstep, Focus, Bền thành
+- Việc: Bị động và thẻ stat qua StatBlock: Sharpness, Armored, Lifesteal, Trạm hồi phục (SKL-26); thẻ stat Thể lực, Tinh thông (SKL-13..15); cắt Lightstep, Focus, Bền thành
 - Nghiệm thu: Sharpness L3 +24%; Armored L3 15%; Lifesteal L3 1.5%; SKL-26 hồi 15, 20, 25 HP/s ở level 1, 2, 3 qua StatBlock
 - Cần xong trước: W9-MH4b, W9-NG3
 
@@ -713,7 +713,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 2 | Nguồn: CŨ
 - Trạng thái: Xong
-- Việc: Nối lõi hồi máu với Trạm hồi lực thật (thay trạm giả), test HT1..HT5 và test input camera (CM4)
+- Việc: Nối lõi hồi máu với Trạm hồi phục thật (thay trạm giả), test HT1..HT5 và test input camera (CM4)
 - Nghiệm thu: HT1..HT5 đạt với trạm thật; CM4 đạt
 - Cần xong trước: W8-MH5
 - Ghi chú bàn giao: HUD nhận trạng thái, lý do khóa, countdown, tốc độ hồi và số trạm thật qua EventBus. Playtest F6: `tests/test_playtest_heal_channel.tscn`; có preset, cấp bị động 0..3, pause và hộp thoại; dùng save trong bộ nhớ và tắt backend. Runner `test_heal_status_runner`, `test_heal_channel` và `test_camera_flow` đạt; walkthrough có render đã kiểm tra HUD và chuyển ngữ cảnh.
@@ -744,7 +744,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 8 | Nguồn: MỚI
 - Trạng thái: Xong
-- Việc: Hazard Trial phía chỉ huy: bản sao chỉ số (HP, level, skill, StatBlock, vũ khí, cooldown) và bỏ khi ra; chết trong phòng không phải chết thật (không commander_died); khóa Tab/Recall; trần sát thương 10% theo con nhiều máu nhất (boss chỉ tính core_hp) áp cho mọi nguồn; không Emergency repair, không Trạm hồi lực
+- Việc: Hazard Trial phía chỉ huy: bản sao chỉ số (HP, level, skill, StatBlock, vũ khí, cooldown) và bỏ khi ra; chết trong phòng không phải chết thật (không commander_died); khóa Tab/Recall; trần sát thương 10% theo con nhiều máu nhất (boss chỉ tính core_hp) áp cho mọi nguồn; không Emergency repair, không Trạm hồi phục
 - Nghiệm thu: Vào phòng 70/100 HP, mất 50, ra ngoài vẫn 70; đòn 80 vào con 500 HP chỉ gây 50; chết trong phòng không kết thúc run
 - Tệp liên quan: entities/commander/commander.gd, mode_switch.gd, heal_channel.gd, common/damage_info.gd (hook trần từ W8B-NG1)
 - ID SRS: HZT-05, HZT-06, HZT-10, DEAD-05, DEAD-11
@@ -758,7 +758,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: CŨ + ĐỔI NGƯỜI (Mạnh sang Ngọc)
 - Trạng thái: Xong
-- Việc: Trạm hồi lực phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
+- Việc: Trạm hồi phục phần 2: chuẩn hóa sát thương nhận ceil(raw / dmg_mult^0.5), EVB-34, nối panel, test HT6..HT12 (HLT-09)
 - Nghiệm thu: Đòn raw 17 ở wave 10 gây 14; hút máu không bị chuẩn hóa
 - Ghi chú: TODO(Rawisl) ở entities/tower/heal_station.gd
 - Cần xong trước: W8-MH5
@@ -944,22 +944,22 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 4 | Nguồn: MỚI
 - Trạng thái: Xong
-- Việc: Soạn số liệu 36 cấp cho 4 loại tower trong sheet towers (giá, chỉ số, HP, kho Trạm hồi lực)
+- Việc: Soạn số liệu 36 cấp cho 4 loại tower trong sheet towers (giá, chỉ số, HP, kho Trạm hồi phục)
 - Nghiệm thu: Gold khan hiếm: không đủ nâng cả 6 công trình lên bậc cao trước wave 30 trong tính toán thô
 - Tệp liên quan: balance/balance.xlsx (sheet towers)
 - ID SRS: 3.6.3, 3.9
 - Cần xong trước: W8B-MH1
-- Ghi chú: giá, max_hp (với Trạm hồi lực max_hp là kho) và damage 36 cấp đã cân bằng bằng công cụ tools/balance_simulator (đọc balance.xlsx, xuất trang HTML để chỉnh và khối TSV để dán vào sheet towers). Nghiệm thu: nâng bố cục 6 công trình lên cấp 25 tốn 1.38 lần gold kịch bản mạnh tới wave 30
+- Ghi chú: giá, max_hp (với Trạm hồi phục max_hp là kho) và damage 36 cấp đã cân bằng bằng công cụ tools/balance_simulator (đọc balance.xlsx, xuất trang HTML để chỉnh và khối TSV để dán vào sheet towers). Nghiệm thu: nâng bố cục 6 công trình lên cấp 25 tốn 1.38 lần gold kịch bản mạnh tới wave 30
 
 ##### W10-MH9
 - Người: Mạnh
 - Tuần: 10 | Giờ ước tính: 10 | Nguồn: MỚI + SỬA
 - Trạng thái: Xong
-- Việc: Tower cấp 1-36 cho cả 4 loại: dữ liệu 36 cấp từ bảng, nâng từng cấp, 'MAX' ở 36; Trạm hồi lực cấp 1-36 (nâng chỉ cộng phần kho tăng thêm, xây lại giữ cấp, hoàn bán theo kho còn lại); xây lại giá bằng tổng cost; đo hiệu năng với 6 tower
+- Việc: Tower cấp 1-36 cho cả 4 loại: dữ liệu 36 cấp từ bảng, nâng từng cấp, 'MAX' ở 36; Trạm hồi phục cấp 1-36 (nâng chỉ cộng phần kho tăng thêm, xây lại giữ cấp, hoàn bán theo kho còn lại); xây lại giá bằng tổng cost; đo hiệu năng với 6 tower
 - Nghiệm thu: Tower cấp 14 bị phá thì 'Xây lại' đúng cấp 14 với giá tổng cost cấp 1-14; trạm nâng cấp không hồi đầy kho
 - Tệp liên quan: common/tower_data.gd, common/tower_level_data.gd, data/towers/*, entities/tower/tower.gd (apply_level), entities/tower/heal_station.gd, systems/build/slot.gd (get_rebuild_cost), ui/panels/heal_station_panel.gd
 - ID SRS: TWR, UPG-01..03, HLT-01, HLT-07, HLT-08, SELL-05, TWR-15
-- Ghi chú: dữ liệu 36 cấp, MAX, cổng 13/25 và giá xây lại đã có từ W9-NG7 và W10-MH8; nhánh này cho Trạm hồi lực nâng cấp chỉ cộng phần kho tăng thêm (xây lại vẫn đầy kho), Barricade hiện mesh theo bậc 1-12 / 13-24 / 25-36 tạm tới W11-MH8, thêm test nâng 1-36 cả 4 loại, xây lại cấp 14 và đo quét 6 tower cấp 36 (dưới 1 ms mỗi frame).
+- Ghi chú: dữ liệu 36 cấp, MAX, cổng 13/25 và giá xây lại đã có từ W9-NG7 và W10-MH8; nhánh này cho Trạm hồi phục nâng cấp chỉ cộng phần kho tăng thêm (xây lại vẫn đầy kho), Barricade hiện mesh theo bậc 1-12 / 13-24 / 25-36 tạm tới W11-MH8, thêm test nâng 1-36 cả 4 loại, xây lại cấp 14 và đo quét 6 tower cấp 36 (dưới 1 ms mỗi frame).
 - Cần xong trước: W9-NG7, W10-MH8
 
 ##### W10-MH10
@@ -998,7 +998,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Khang
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
 - Trạng thái: Xong
-- Việc: Nút nâng cấp xám 'Cần Chỉ huy cấp N' (UPG-06) áp ở cấp 13 và 25; panel Tower hiển thị cấp thật và bậc model; Trạm hồi lực có nút Nâng cấp và 'MAX'
+- Việc: Nút nâng cấp xám 'Cần Chỉ huy cấp N' (UPG-06) áp ở cấp 13 và 25; panel Tower hiển thị cấp thật và bậc model; Trạm hồi phục có nút Nâng cấp và 'MAX'
 - Nghiệm thu: Tooltip đúng cấp yêu cầu; trụ có sẵn hiện nút Bán xám 'Bán được từ wave 3'
 - Tệp liên quan: ui/panels/tower_panel.gd, ui/panels/heal_station_panel.gd
 - ID SRS: UPG-06, PNL-02, PNL-14
@@ -1089,7 +1089,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Kim
 - Tuần: 10 | Giờ ước tính: 3 | Nguồn: CŨ
 - Trạng thái: Xong
-- Việc: VFX và SFX Trạm hồi lực: vòng tiến trình hold, tia sáng trạm sang chỉ huy, số nổi xanh, âm bắt đầu hồi và trạm cạn (HLT-11, FBK-12, AUD-07)
+- Việc: VFX và SFX Trạm hồi phục: vòng tiến trình hold, tia sáng trạm sang chỉ huy, số nổi xanh, âm bắt đầu hồi và trạm cạn (HLT-11, FBK-12, AUD-07)
 - Nghiệm thu: Vòng hold và tia hồi đọc được, giảm nhấp nháy tôn trọng ACC-06
 - Cần xong trước: W7-MH1
 
@@ -1260,7 +1260,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Ngọc
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA + ĐỔI NGƯỜI (Mạnh sang Ngọc)
 - Trạng thái: Đang làm
-- Việc: Hồi quy Trạm hồi lực: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36
+- Việc: Hồi quy Trạm hồi phục: HT6..HT12, SELL-05, giới hạn 2 trạm, nâng cấp tới cấp 36
 - Nghiệm thu: HT6..HT12 đạt
 - Cần xong trước: W10-MH5
 - Ghi chú W11: Heal Station 126/126, ETG 27/27, Heal Channel 204/204, Panel 12/12 and Alerts/Hazard 36/36 passed on the gameplay branch. The rendered corridor walkthrough passed 37/37, including both ruin alerts, damage normalization, the third-station rejection, Fortress-only repairs, the half-store sale refund and MAX at level 36. Pending @Rawisl: run the corridor walkthrough on the merged commit and record the result before closing.
@@ -1325,7 +1325,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Kiệt
 - Tuần: 11 | Giờ ước tính: 2 | Nguồn: CŨ
 - Trạng thái: Xong
-- Việc: Hồi quy Trạm hồi lực: quân nhắm trạm theo ETG, slot đánh, cân bằng sơ bộ (HLT-09, HLT-10)
+- Việc: Hồi quy Trạm hồi phục: quân nhắm trạm theo ETG, slot đánh, cân bằng sơ bộ (HLT-09, HLT-10)
 - Nghiệm thu: Ghi tỉ lệ run dùng trạm và số lần cạn kho
 - Cần xong trước: W10-KT3
 - Ghi chú bàn giao: New `tests/test_heal_station_regression_runner.tscn` (23 checks) with the real station scene and all ten unit types: every ground-tower attacker (Grunt family, Assassin, Rider, Knight, Undead, Suicide Squad, Captain) picks the station and fights for a melee slot, Archer and Sniper pick it without a slot, the Brute keeps the Fortress; at most max_attackers_per_tower melee units hold a slot, a fourth waits and gets the freed slot. Damage normalisation stays covered by `test_heal_station_runner` (126 passed) and the dummy-station ETG runner (27 passed). Bot numbers (24/11, the bot builds one station from wave 4 when it has 120 gold): built in 7 of 12 runs (all 6 soak runs, 1 of 6 real runs; real runs rarely have the gold before they lose at wave 5); the store ran dry 1 time over all runs (an earlier soak run with weak towers), 0 in the final batch.
@@ -1406,10 +1406,11 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH4
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 3 | Nguồn: CŨ-SỬA
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Hồi quy tower (cổng bậc, Aura, xây lại, 36 cấp, trụ có sẵn)
 - Nghiệm thu: Không lỗi hồi quy
 - Cần xong trước: W10-MH9, W10-MH10
+- Ghi chú: Thêm ca vào runner có sẵn, không tạo runner mới. tests/test_build_service_runner.tscn: đường cấp Arrow với dữ liệu thật (cổng bậc 2 và 3, model_tier 2 và 3, cấp tối đa), cổng bậc áp dụng cho Trạm hồi phục, xây lại Trạm hồi phục cấp 14 khi chỉ huy cấp 0. tests/test_aura_runner.tscn: Trạm hồi phục không nhận Aura. Các ca còn lại (xây lại cả Arrow, Cannon, Barricade, bán, trụ có sẵn, bán kính Aura) đã có từ trước. Bỏ TODO khôi phục run dở ở systems/build/slot.gd vì bản MVP không chơi tiếp run dở.
 
 ##### W11-MH8
 - Người: Mạnh
@@ -1436,12 +1437,13 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 ##### W11-MH10
 - Người: Mạnh
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Tua lại sheet towers/economy sau chạy thử wave 1-30: chỉnh trong balance.xlsx và sinh lại; test lưới (3 WALL + 9 hàng, ô bị bỏ) và chặn kín đường (2 bố cục thử)
 - Nghiệm thu: Test chặn kín đường đạt; không đủ gold nâng mọi công trình trước wave 30
 - Tệp liên quan: balance/balance.xlsx, tests/
 - ID SRS: test Fortress/tower 4, 15
 - Cần xong trước: W9-MH5, W11-MH11
+- Ghi chú: Bộ mô phỏng cân bằng (tools/balance_simulator/simulate.py) giờ tính skeletal_centipede là boss như bulwark, nên chạy được kịch bản wave 1-30. Kết quả: chi phí bố cục lên cấp 25 chia gold của run mạnh ở wave 30 là 1.54 (>1.0), gold trung bình ở wave 30 chia giá 3 cung lên cấp 25 là 0.94, nên giá tháp trong balance.xlsx giữ nguyên. Thêm test_blocks_boss_point_path (bố cục 2: ô thứ ba chỉ cắt đường tới boss_melee_point, cổng vẫn thông) vào tests/test_build_service_runner.gd, và hai case bấm vào mép giữa hai ô chỉ chọn tối đa một slot, id slot không trùng vào tests/test_ground_grid.gd. Chạy thật wave 1-30 trong game chờ W11-KT9 (#241); chạy lại bộ mô phỏng ở W12-MH1.
 
 #### Khang (UI/UX & Meta), tuần 11, 38h
 
@@ -1635,7 +1637,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 - Người: Kim
 - Tuần: 11 | Giờ ước tính: 4 | Nguồn: MỚI
 - Trạng thái: Chưa bắt đầu
-- Việc: Model 3 bậc cho tower, phần 2 (Barricade và Trạm hồi lực, bậc 2 và 3)
+- Việc: Model 3 bậc cho tower, phần 2 (Barricade và Trạm hồi phục, bậc 2 và 3)
 - Nghiệm thu: Bậc 2 và 3 khác bậc 1
 - Tệp liên quan: entities/tower/barricade.tscn, heal_station.tscn
 - ID SRS: TWR-17
@@ -1693,7 +1695,7 @@ Gameplay đóng băng 29/11, toàn bộ tính năng đóng băng 6/12. Tuần n�
 - Người: Kiệt
 - Tuần: 12 | Giờ ước tính: 6 | Nguồn: CŨ-SỬA
 - Trạng thái: Chưa bắt đầu
-- Việc: Cân bằng cuối trong balance.xlsx: boss_timer trước, HP sau; XP; wave 20-30 (SCL-04); Trạm hồi lực
+- Việc: Cân bằng cuối trong balance.xlsx: boss_timer trước, HP sau; XP; wave 20-30 (SCL-04); Trạm hồi phục
 - Nghiệm thu: Người mới diệt Bulwark trước giờ 60-75%; người thành thạo chạm wave 30
 - Cần xong trước: W11-KT4, W11-KT6
 
@@ -1751,7 +1753,7 @@ Gameplay đóng băng 29/11, toàn bộ tính năng đóng băng 6/12. Tuần n�
 - Người: Mạnh
 - Tuần: 12 | Giờ ước tính: 7 | Nguồn: CŨ-SỬA
 - Trạng thái: Chưa bắt đầu
-- Việc: Kiểm thử AC3, AC4 và hồi quy Trạm hồi lực, SELL-05; chạy BL1..BL4, VC1..VC5, TU1..TU4
+- Việc: Kiểm thử AC3, AC4 và hồi quy Trạm hồi phục, SELL-05; chạy BL1..BL4, VC1..VC5, TU1..TU4
 - Nghiệm thu: AC3, AC4 đạt; HT6..HT12 vẫn đạt
 - Cần xong trước: W11-MH5
 
@@ -1819,7 +1821,7 @@ Gameplay đóng băng 29/11, toàn bộ tính năng đóng băng 6/12. Tuần n�
 ##### W12-KM2
 - Người: Kim
 - Tuần: 12 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Ghi credit và license mọi asset ngoài (gồm model dùng lại)
 - Nghiệm thu: Danh sách license đủ
 - Cần xong trước: Mốc B2
@@ -1979,7 +1981,7 @@ Chỉ test, sửa lỗi, báo cáo và video. 14/12 đóng băng bản nộp, 15
 - Tuần: 13 | Giờ ước tính: 6 | Nguồn: DỜI
 - Trạng thái: Chưa bắt đầu
 - Việc: Quay video demo, ảnh chụp (có Hazard Trial, vũ khí, thắng và endless) [dời]
-- Nghiệm thu: Video hoàn chỉnh có phần online và Trạm hồi lực
+- Nghiệm thu: Video hoàn chỉnh có phần online và Trạm hồi phục
 - Cần xong trước: Đóng băng 6/12, W13-NG3
 
 ##### W12-KM4

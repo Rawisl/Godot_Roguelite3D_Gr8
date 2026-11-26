@@ -54,7 +54,7 @@ panel.stats,Sát thương {damage} · Tầm {range} m · {rate} phát/s · HP {h
 tower.arrow,Tháp cung
 tower.cannon,Tháp pháo
 tower.barricade,Rào chắn
-tower.heal_station,Trạm hồi lực
+tower.heal_station,Trạm hồi phục
 panel.tower.level,Cấp {level}
 panel.tower.hp,Máu {value}/{max}
 panel.tower.upgrade,Nâng cấp · {gold} vàng
@@ -203,8 +203,8 @@ skill.lifesteal.name,Hút máu
 skill.lifesteal.desc,Hồi máu khi hạ địch bằng kiếm hoặc kỹ năng.
 skill.vitality.name,Thể lực
 skill.vitality.desc,Tăng máu tối đa.
-skill.heal_station.name,Trạm hồi lực
-skill.heal_station.desc,Tăng tốc độ hồi máu của chỉ huy tại Trạm hồi lực.
+skill.heal_station.name,Trạm hồi phục
+skill.heal_station.desc,Tăng tốc độ hồi máu của chỉ huy tại Trạm hồi phục.
 skill.mastery.name,Tinh thông
 skill.mastery.desc,Tăng sát thương kỹ năng chủ động.
 hud.fortress_low,NGUY CẤP
@@ -249,7 +249,7 @@ panel.heal.level_value,{level}/{max} · Bậc {tier}
 panel.heal.upgrade_tip,Nâng cấp chỉ cộng thêm phần kho tăng thêm
 panel.heal.broken,Đã hỏng
 panel.heal.sell_tip,Tiền hoàn lại tính theo lượng máu còn trong kho
-panel.build.heal_limit,Tối đa {max} Trạm hồi lực
+panel.build.heal_limit,Tối đa {max} Trạm hồi phục
 panel.build.ground_full,Đã đủ {max} công trình trên mặt đất
 panel.build.tutorial,Làm theo hướng dẫn
 panel.need_commander_level,Yêu cầu chỉ huy: cấp {level}
@@ -355,9 +355,9 @@ alert.hazard.won,"Thắng Hazard Trial: +{mithril} Mithril, +{gold} vàng, +{xp}
 alert.hazard.left,"Đã rời tháp: +{gold} vàng, +{xp} XP"
 alert.hazard.died,"Thất bại trong tháp: +{gold} vàng, +{xp} XP"
 alert.weapon_gained,Nhận vũ khí {name}. Đổi ở giai đoạn chuẩn bị
-alert.heal_drained,Trạm hồi lực ở ô {slot} đã cạn (xây lại {cost} vàng)
-alert.heal_drained_plain,Trạm hồi lực ở ô {slot} đã cạn
-alert.heal_low,Trạm hồi lực sắp cạn
+alert.heal_drained,Trạm hồi phục ở ô {slot} đã cạn (xây lại {cost} vàng)
+alert.heal_drained_plain,Trạm hồi phục ở ô {slot} đã cạn
+alert.heal_low,Trạm hồi phục sắp cạn
 menu.leaderboard,Bảng xếp hạng
 settings.tab.account,Tài khoản
 shop.balance,Danh vọng: {value}
@@ -516,7 +516,7 @@ tutorial.step,Bước {n}/{total}
 tutorial.remind,(Nhắc lại)
 tutorial.skip,Bỏ qua hướng dẫn
 alert.commander_low,Chỉ huy sắp gục
-alert.commander_low_sub,Lùi về hoặc hồi máu ở Trạm hồi lực
+alert.commander_low_sub,Lùi về hoặc hồi máu ở Trạm hồi phục
 alert.boss_enrage_soon,Boss sắp cuồng nộ
 alert.boss_enrage_soon_sub,Còn {seconds} giây
 alert.boss_enraged,Boss đã vào trạng thái cuồng nộ
@@ -596,3 +596,21 @@ debug.cheat.hint_prep,Triệu hồi chỉ dùng lúc đang đánh
 debug.cheat.hint_combat,Nhảy đợt chỉ dùng ở PREP: hạ hết quân rồi chờ PREP
 debug.cheat.hint_other,Chờ PREP để nhảy đợt
 debug.cheat.hint_ended,Run đã kết thúc
+menu.credits,Ghi công
+credits.title,Ghi công
+credits.subtitle,Đồ án SE116
+credits.section.team,Nhóm phát triển
+credits.section.music,Nhạc
+credits.section.sound,Âm thanh
+credits.section.models,"Model, texture và animation"
+credits.section.font,Phông chữ
+credits.section.tools,Công cụ
+credits.section.engine,Giấy phép Godot Engine
+credits.item.towers_env,"Tower, Fortress, bụi cây và đá"
+credits.item.barricade,Model Barricade ba bậc
+credits.item.rubble,Đống đổ nát của tower
+credits.by.team_rodin,"Nhóm phát triển, dựng bằng Hyper3D Rodin"
+credits.item.ai_models,"Fox Commander, Skeletal Centipede, Trạm hồi lực, Cổng Hazard"
+credits.by.team_ai,"Nhóm phát triển, dựng bằng Tripo 3D và Hyper3D"
+credits.by.team,Nhóm phát triển
+credits.thanks,Cảm ơn bạn đã chơi!

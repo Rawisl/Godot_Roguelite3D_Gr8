@@ -5,7 +5,7 @@ Branch `codex/compact-combat-hud`. Các thay đổi dưới đây mô tả hành
 | Phần | Hành vi trong bản thử | Đối chiếu SRS v2.0 |
 | --- | --- | --- |
 | Xây trụ | Trong PREP, B chọn ô có vòng xây gần con trỏ nhất trong khung hình và mở danh sách. Bấm trực tiếp vào ô cũng mở danh sách. Người chơi chọn loại trụ mới thực hiện giao dịch. Mỗi dòng hiện icon, tên và giá. Rê chuột để xem chỉ số hoặc lý do khóa. | INP-01, mục 4.1.3, PNL-01 |
-| Bảng ngữ cảnh | Xây, trụ, trạm hồi lực, Thành, nhân vật và vũ khí dùng chung vị trí sát mép phải với chuyển động trượt 0,22 giây. Khung xem trước đợt quái tạm nhường chỗ khi mở bảng. Danh sách vũ khí cuộn dọc. Hộp xác nhận giao dịch trong PREP cũng mở bên phải. | Mục 4.1.3, HUD-25, PNL-01 tới PNL-04, PNL-14, PNL-15 |
+| Bảng ngữ cảnh | Xây, trụ, trạm hồi phục, Thành, nhân vật và vũ khí dùng chung vị trí sát mép phải với chuyển động trượt 0,22 giây. Khung xem trước đợt quái tạm nhường chỗ khi mở bảng. Danh sách vũ khí cuộn dọc. Hộp xác nhận giao dịch trong PREP cũng mở bên phải. | Mục 4.1.3, HUD-25, PNL-01 tới PNL-04, PNL-14, PNL-15 |
 | Chỉ huy | V hoặc bấm thanh máu chỉ huy để mở. Sinh lực và kinh nghiệm có thanh riêng kèm số. Cấp khởi đầu 0 hiển thị “Tân binh” trong bảng và trên HUD. Từ cấp 1 hiển thị số cấp thực. Đường cong XP và HP vẫn lấy từ gameplay. | HUD-15, INP-01 |
 | Kỹ năng và vũ khí | HUD có ba ô chủ động với phím và hồi chiêu. Kỹ năng bị động và ô trang bị nằm trong bảng nhân vật. Đổi vũ khí trong PREP. Bỏ mũi tên thu gọn. V và B được liệt kê trong Cài đặt → Gameplay. | HUD-16, HUD-21, HUD-24, ACC-07 |
 | Máu thấp | Chỉ huy và Thành báo ngay cạnh thanh HP bằng viền và nhãn nguy cấp. | ALR-01, ALR-02, HUD-01 |
@@ -13,7 +13,7 @@ Branch `codex/compact-combat-hud`. Các thay đổi dưới đây mô tả hành
 
 Các bảng ngữ cảnh và xác nhận giao dịch neo giữa cạnh phải, mặt bảng nối sát biên khung chơi. Các bảng thông tin có nút × ở đầu bảng. Bảng Thành chia riêng máu, Mithril và lượt sửa khẩn cấp, mỗi dòng căn giá trị sang phải. Lý do khóa sửa chữa dùng dòng phụ.
 
-B mở hoặc đóng bảng xây trong PREP. Chọn lại đúng ô đất, trụ, trạm hoặc Thành đang xem cũng đóng bảng. Bảng trụ hiển thị máu và ba chỉ số tấn công, chi tiết cấp kế nằm trong tooltip nâng cấp. Trạm hồi lực hiển thị kho máu bằng thanh xanh cùng tốc độ hồi và cấp trạm. Ba nút tốc độ nằm chung trong khung vàng và Mithril.
+B mở hoặc đóng bảng xây trong PREP. Chọn lại đúng ô đất, trụ, trạm hoặc Thành đang xem cũng đóng bảng. Bảng trụ hiển thị máu và ba chỉ số tấn công, chi tiết cấp kế nằm trong tooltip nâng cấp. Trạm hồi phục hiển thị kho máu bằng thanh xanh cùng tốc độ hồi và cấp trạm. Ba nút tốc độ nằm chung trong khung vàng và Mithril.
 
 Các nút thao tác dùng chung có trạng thái rê, nhấn và khóa. Nâng cấp dùng nền xanh bạc hà và mũi tên lên, bán dùng nền sẫm viền màu san hô và dấu trừ. Sửa Thành dùng dấu cộng, dọn đổ nát dùng dấu ×.
 
@@ -23,15 +23,15 @@ Bảng chọn vũ khí chuyển ra giữa màn hình với sáu ô kiếm, làm 
 
 Sau khi đóng bảng kiếm bằng × hoặc Esc, bảng Chỉ huy hiện lại với kiếm đang dùng. Hộp thoại bỏ cuộc và thoát lượt chơi tách danh vọng thành hàng riêng. Xác nhận thay đổi hiển thị có thanh đếm ngược.
 
-Xác nhận bán trụ và trạm hồi lực xuất hiện giữa màn hình, dùng chung nền mờ với bảng kiếm và tạm dừng game cho đến khi hộp thoại đóng.
+Xác nhận bán trụ và trạm hồi phục xuất hiện giữa màn hình, dùng chung nền mờ với bảng kiếm và tạm dừng game cho đến khi hộp thoại đóng.
 
-Nâng cấp trụ và trạm hồi lực cần xác nhận ở giữa màn hình. Bảng hiển thị cấp trước và sau cùng chi phí vàng, ẩn dấu cảnh báo và tạm dừng game như khi bán.
+Nâng cấp trụ và trạm hồi phục cần xác nhận ở giữa màn hình. Bảng hiển thị cấp trước và sau cùng chi phí vàng, ẩn dấu cảnh báo và tạm dừng game như khi bán.
 
 ## Sau review trên nhánh fix/refactor-ui
 
-- B bật/tắt bảng xây trong PREP. Bảng xây, trụ, trạm hồi lực, Thành và Chỉ huy trượt ra giữa cạnh phải.
+- B bật/tắt bảng xây trong PREP. Bảng xây, trụ, trạm hồi phục, Thành và Chỉ huy trượt ra giữa cạnh phải.
 - V mở bảng Chỉ huy với hai hàng kỹ năng chủ động và bị động. Bảng kiếm mở giữa màn hình, tạm dừng và trả về bảng Chỉ huy khi bấm × hoặc Esc.
-- Mỗi lần bấm nâng cấp trụ hoặc trạm hồi lực áp dụng ngay một cấp nếu đủ điều kiện. Bán vẫn cần xác nhận ở giữa màn hình. Ba chỉ số dùng biểu tượng kèm số. Rê chuột để đọc tên chỉ số hoặc loại sát thương.
+- Mỗi lần bấm nâng cấp trụ hoặc trạm hồi phục áp dụng ngay một cấp nếu đủ điều kiện. Bán vẫn cần xác nhận ở giữa màn hình. Ba chỉ số dùng biểu tượng kèm số. Rê chuột để đọc tên chỉ số hoặc loại sát thương.
 - Thanh boss dưới giữa chỉ hiện tên, biểu tượng miễn nhiễm có gạch chéo và một thanh lõi với giáp phủ lên. Ngưỡng cảnh báo và cơ chế Cuồng nộ giữ nguyên.
 - Trong Hazard Trial, bảng trên giữa hiện tên phòng và số đợt; nút Rời tháp ở dưới. Phần thưởng hiện khi rời phòng.
 - Một nút tốc độ trong khung tài nguyên chuyển vòng x1, x2, x3. Máu thấp hiển thị cạnh thanh HP; chọn ô đổ nát để xem giá xây lại.

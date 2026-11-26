@@ -50,7 +50,7 @@ Màu phẳng theo từng mặt đá của `contents/assets/environment/rubble/to
 | rubble_roof | `#3D4C36` | Mảnh ngói xanh, mặt trên |
 | rubble_roof_dark | `#2B3625` | Mảnh ngói xanh, mặt bên và mặt dưới |
 
-### Trạm hồi lực
+### Trạm hồi phục
 
 Thân trạm (`contents/assets/towers/heal_station.glb`) dùng màu phẳng, mỗi màu một file `contents/assets/towers/texture/heal_station_*.tres`. Đá xám lạnh hơn `struct_stone` để trạm không lẫn với Arrow và Cannon. Hồ nước, quả cầu, vòng tầm và tia sáng nằm trong `art/materials/`. Hồ nước và quả cầu chuyển dần sang màu "cạn" theo HP còn trong kho.
 
