@@ -596,3 +596,21 @@ debug.cheat.hint_prep,Triệu hồi chỉ dùng lúc đang đánh
 debug.cheat.hint_combat,Nhảy đợt chỉ dùng ở PREP: hạ hết quân rồi chờ PREP
 debug.cheat.hint_other,Chờ PREP để nhảy đợt
 debug.cheat.hint_ended,Run đã kết thúc
+menu.credits,Ghi công
+credits.title,Ghi công
+credits.subtitle,Đồ án SE116
+credits.section.team,Nhóm phát triển
+credits.section.music,Nhạc
+credits.section.sound,Âm thanh
+credits.section.models,"Model, texture và animation"
+credits.section.font,Phông chữ
+credits.section.tools,Công cụ
+credits.section.engine,Giấy phép Godot Engine
+credits.item.towers_env,"Tower, Fortress, bụi cây và đá"
+credits.item.barricade,Model Barricade ba bậc
+credits.item.rubble,Đống đổ nát của tower
+credits.by.team_rodin,"Nhóm phát triển, dựng bằng Hyper3D Rodin"
+credits.item.ai_models,"Fox Commander, Skeletal Centipede, Trạm hồi lực, Cổng Hazard"
+credits.by.team_ai,"Nhóm phát triển, dựng bằng Tripo 3D và Hyper3D"
+credits.by.team,Nhóm phát triển
+credits.thanks,Cảm ơn bạn đã chơi!
