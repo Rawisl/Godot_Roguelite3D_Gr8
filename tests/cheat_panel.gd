@@ -164,8 +164,7 @@ func summon(scene: PackedScene) -> Node:
 	enemy.spawn_grace = true
 	enemy.is_in_spawn_zone = true
 	var wave := wm.current_wave
-	var cfg: ScaleConfig = wm.scale_config if wm.scale_config != null else ScaleConfig.new()
-	enemy.apply_wave_scale(cfg.get_hp_mult(wave), cfg.get_dmg_mult(wave), cfg.get_speed_mult(wave), wave, cfg)
+	wm.apply_wave_scale_to(enemy, wave)
 	var boss_data := enemy.data as BossData
 	# The boss id first, so the boss bar names this boss instead of the first one it knows.
 	if boss_data != null:

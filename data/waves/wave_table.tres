@@ -5,6 +5,13 @@
 [ext_resource type="Script" uid="uid://c4n48ya7fbgkf" path="res://common/wave_group.gd" id="2_0y014"]
 [ext_resource type="Resource" uid="uid://ca08sj3da7flm" path="res://data/enemies/archer.tres" id="3_tfp00"]
 [ext_resource type="Resource" uid="uid://e7bep37g0mum" path="res://data/enemies/brute.tres" id="4_ufkje"]
+[ext_resource type="Resource" path="res://data/enemies/sniper.tres" id="10_sniper"]
+[ext_resource type="Resource" path="res://data/enemies/rider.tres" id="10_rider"]
+[ext_resource type="Resource" path="res://data/enemies/assassin.tres" id="10_assassin"]
+[ext_resource type="Resource" path="res://data/enemies/suicide_squad.tres" id="10_suicide_squad"]
+[ext_resource type="Resource" path="res://data/enemies/knight.tres" id="10_knight"]
+[ext_resource type="Resource" path="res://data/enemies/captain.tres" id="10_captain"]
+[ext_resource type="Resource" path="res://data/enemies/undead.tres" id="10_undead"]
 
 [sub_resource type="Resource" id="Resource_qtorv"]
 script = ExtResource("2_0y014")
@@ -27,7 +34,63 @@ min_wave = 6
 intro_count = 1
 metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
 
+[sub_resource type="Resource" id="Resource_sniper"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("10_sniper")
+weight = 3.0
+min_wave = 8
+max_per_wave = 4
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_rider"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("10_rider")
+weight = 3.0
+min_wave = 10
+max_per_wave = -1
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_assassin"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("10_assassin")
+weight = 2.0
+min_wave = 12
+max_per_wave = 4
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_suicide_squad"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("10_suicide_squad")
+weight = 2.0
+min_wave = 14
+max_per_wave = 4
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_knight"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("10_knight")
+weight = 2.0
+min_wave = 16
+max_per_wave = 3
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_captain"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("10_captain")
+weight = 1.0
+min_wave = 18
+max_per_wave = 2
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
+[sub_resource type="Resource" id="Resource_undead"]
+script = ExtResource("2_0y014")
+enemy = ExtResource("10_undead")
+weight = 2.0
+min_wave = 20
+max_per_wave = 4
+metadata/_custom_type_script = "uid://c4n48ya7fbgkf"
+
 [resource]
 script = ExtResource("1_yya70")
-groups = Array[ExtResource("2_0y014")]([SubResource("Resource_qtorv"), SubResource("Resource_ejb6e"), SubResource("Resource_pgu2a")])
+groups = Array[ExtResource("2_0y014")]([SubResource("Resource_qtorv"), SubResource("Resource_ejb6e"), SubResource("Resource_pgu2a"), SubResource("Resource_sniper"), SubResource("Resource_rider"), SubResource("Resource_assassin"), SubResource("Resource_suicide_squad"), SubResource("Resource_knight"), SubResource("Resource_captain"), SubResource("Resource_undead")])
 metadata/_custom_type_script = "uid://bykknpph6d0of"

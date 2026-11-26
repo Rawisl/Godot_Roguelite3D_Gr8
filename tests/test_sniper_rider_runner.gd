@@ -134,7 +134,7 @@ func test_wave_manager_scenes() -> void:
 	print("\n[GROUP 4] Spawner")
 	var wm := WaveManager.new()
 	add_child(wm)
-	assert_true(wm._get_scene_for_enemy_id(&"sniper") == wm.sniper_scene and wm.sniper_scene != null, "The spawner knows the Sniper")
-	assert_true(wm._get_scene_for_enemy_id(&"rider") == wm.rider_scene and wm.rider_scene != null, "The spawner knows the Rider")
+	assert_true(wm.get_enemy_scene(&"sniper") != null and wm.get_enemy_scene(&"sniper").resource_path.ends_with("sniper.tscn"), "The spawner knows the Sniper")
+	assert_true(wm.get_enemy_scene(&"rider") != null and wm.get_enemy_scene(&"rider").resource_path.ends_with("rider.tscn"), "The spawner knows the Rider")
 	wm.queue_free()
 	await get_tree().process_frame

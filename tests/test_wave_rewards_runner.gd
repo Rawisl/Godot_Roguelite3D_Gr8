@@ -131,24 +131,28 @@ func test_xp_tracker_damage_sources_and_cull() -> void:
 	add_child(xp_tracker)
 	xp_tracker.reset()
 
-	# 1. Grunt killed by tower only (base XP 1, 50% = 0.5 XP)
+	# Shares from GameConfig: xp_commander_pct when the commander hit the unit, xp_tower_only_pct otherwise.
+	var cmd := GameConfig.xp_commander_pct
+	var tow := GameConfig.xp_tower_only_pct
+	# 1. Grunt killed by tower only (base XP 1)
 	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4, 1, false, false)
-	assert_true(xp_tracker.xp == 0.5, "Tower-only Grunt kill gives 0.5 XP (50%)")
-	assert_true(xp_tracker.total_xp_from_towers == 0.5, "total_xp_from_towers recorded 0.5")
+	assert_true(is_equal_approx(xp_tracker.xp, 1.0 * tow), "Tower-only Grunt kill gives %.2f XP" % tow)
+	assert_true(is_equal_approx(xp_tracker.total_xp_from_towers, 1.0 * tow), "total_xp_from_towers recorded %.2f" % tow)
 
-	# 2. Grunt killed with hit_by_commander (base XP 1, 100% = 1.0 XP)
+	# 2. Grunt killed with hit_by_commander (base XP 1)
 	EventBus.enemy_died.emit(&"grunt", Vector3.ZERO, 4, 1, false, true)
-	assert_true(xp_tracker.xp == 1.5, "Commander Grunt kill adds 1.0 XP (100%)")
-	assert_true(xp_tracker.total_xp_from_commander == 1.0, "total_xp_from_commander recorded 1.0")
+	assert_true(is_equal_approx(xp_tracker.xp, tow + cmd), "Commander Grunt kill adds %.2f XP" % cmd)
+	assert_true(is_equal_approx(xp_tracker.total_xp_from_commander, cmd), "total_xp_from_commander recorded %.2f" % cmd)
 
-	# 3. Archer killed by tower only (base XP 2, 50% = 1.0 XP)
+	# 3. Archer killed by tower only (base XP 2)
 	EventBus.enemy_died.emit(&"archer", Vector3.ZERO, 7, 2, false, false)
-	assert_true(xp_tracker.xp == 2.5, "Tower-only Archer kill adds 1.0 XP (50% of 2)")
+	assert_true(is_equal_approx(xp_tracker.xp, 3.0 * tow + cmd), "Tower-only Archer kill adds %.2f XP" % (2.0 * tow))
 
-	# 4. Brute killed with hit_by_commander (base XP 5, 100% = 5.0 XP -> triggers level up from 2.5 + 5 = 7.5 >= 5)
+	# 4. Brute killed with hit_by_commander (base XP 5): crosses the 5 XP of level 1
+	var before_brute: float = float(xp_tracker.xp)
 	EventBus.enemy_died.emit(&"brute", Vector3.ZERO, 20, 5, false, true)
 	assert_true(xp_tracker.commander_level == 1, "XP from Brute triggers Level 1")
-	assert_true(is_equal_approx(xp_tracker.xp, 2.5), "XP remainder carries over to Level 1 (7.5 - 5 = 2.5)")
+	assert_true(is_equal_approx(xp_tracker.xp, before_brute + 5.0 * cmd - 5.0), "XP remainder carries over to Level 1")
 
 	# 5. Culled enemy gives 0 XP
 	var xp_before: float = float(xp_tracker.xp)
@@ -602,7 +606,7 @@ func test_cmb10_firebomb_dot_tick_commander_xp() -> void:
 
 	grunt._on_died()
 
-	assert_true(xp_tracker.wave_xp_commander == 1.0, "Commander DoT kill awarded 100% XP (1.0) to commander XP")
+	assert_true(is_equal_approx(xp_tracker.wave_xp_commander, GameConfig.xp_commander_pct), "Commander DoT kill awarded the commander share of XP")
 	assert_true(xp_tracker.wave_xp_towers == 0.0, "Tower XP is 0.0 for commander DoT kill")
 
 	xp_tracker.free()

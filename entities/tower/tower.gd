@@ -303,8 +303,11 @@ func _target_distance_sq(obj) -> float:
 		or not obj is Enemy):
 			return -1.0
 	var e := obj as Enemy
-	# Not targetable: dead, in spawn_grace or still inside the spawn zone.
+	# Not targetable: dead, in spawn_grace, still inside the spawn zone or lying down to revive.
 	if not e.can_be_targeted():
+		return -1.0
+	# Stealth units are not a target and do not count as a unit in range.
+	if e.is_hidden_from_towers():
 		return -1.0
 	var flying := e.data != null and e.data.is_flying
 	if flying and not data.targets_air:
