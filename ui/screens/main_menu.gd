@@ -1,6 +1,7 @@
 extends MarginContainer
 
 const LOGIN_SCENE := preload("res://ui/screens/login.tscn")
+const CREDITS_SCENE := preload("res://ui/screens/credits.tscn")
 const DRAWER_SLIDE_TIME := 0.2
 
 var _drawer_open := false
@@ -14,6 +15,7 @@ var _drawer_tween: Tween
 @onready var _leaderboard: Button = %Leaderboard
 @onready var _sync_status: Control = %SyncStatus
 @onready var _account_hint: Label = %AccountHint
+@onready var _credits: Button = %Credits
 @onready var _quit: Button = %Quit
 @onready var _prestige: Label = %Prestige
 @onready var _record: Label = %Record
@@ -28,6 +30,7 @@ func _ready() -> void:
 	_settings.text = tr(&"menu.settings")
 	_account.text = tr(&"menu.account")
 	_leaderboard.text = tr(&"menu.leaderboard")
+	_credits.text = tr(&"menu.credits")
 	_quit.text = tr(&"menu.quit")
 	_play.pressed.connect(GameState.change_state.bind(GameState.AppState.RUN_LOADING))
 	_meta_shop.pressed.connect(GameState.change_state.bind(GameState.AppState.META_SHOP))
@@ -38,10 +41,11 @@ func _ready() -> void:
 	GameState.session_restore_failed.connect(_show_restore_problem)
 	_refresh_account()
 	_show_restore_problem(GameState.session_restore_error)
+	_credits.pressed.connect(_open_credits)
 	_quit.pressed.connect(get_tree().quit)
 	_drawer_toggle.tooltip_text = tr(&"menu.stats_toggle")
 	_drawer_toggle.pressed.connect(_toggle_drawer)
-	for button: Button in [_play, _meta_shop, _leaderboard, _settings, _account, _quit, _drawer_toggle]:
+	for button: Button in [_play, _meta_shop, _leaderboard, _settings, _account, _credits, _quit, _drawer_toggle]:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
 	_show_saved_meta()
@@ -85,6 +89,16 @@ func _open_login() -> void:
 	var login := LOGIN_SCENE.instantiate()
 	if ScreenManager.open_dialog(login):
 		login.tree_exited.connect(_on_login_closed)
+
+## Team and asset credits, over the menu on the dialog layer like the login form.
+func _open_credits() -> void:
+	var credits := CREDITS_SCENE.instantiate()
+	if ScreenManager.open_dialog(credits):
+		credits.tree_exited.connect(_on_credits_closed)
+
+func _on_credits_closed() -> void:
+	if _credits.is_inside_tree():
+		_credits.grab_focus()
 
 ## Keyboard focus comes back to the button that opened the form.
 func _on_login_closed() -> void:

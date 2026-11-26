@@ -1809,7 +1809,7 @@ Gameplay đóng băng 29/11, toàn bộ tính năng đóng băng 6/12. Tuần n�
 ##### W12-KM2
 - Người: Kim
 - Tuần: 12 | Giờ ước tính: 2 | Nguồn: CŨ
-- Trạng thái: Chưa bắt đầu
+- Trạng thái: Xong
 - Việc: Ghi credit và license mọi asset ngoài (gồm model dùng lại)
 - Nghiệm thu: Danh sách license đủ
 - Cần xong trước: Mốc B2

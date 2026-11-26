@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://c6o0nicaqf7gs"]
+
+[ext_resource type="Script" uid="uid://c1kgi48lsgf88" path="res://ui/screens/credits.gd" id="1_credits"]
+[ext_resource type="Texture2D" uid="uid://dr5t78tcaumig" path="res://ui/icons/close.svg" id="2_close"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_close"]
+
+[node name="Credits" type="Control" unique_id=1301500001]
+texture_filter = 2
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_credits")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1301500002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7019608)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1301500003]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=1301500004]
+layout_mode = 2
+theme_type_variation = &"DialogPanel"
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel" unique_id=1301500005]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="Center/Panel/Margin" unique_id=1301500006]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TopBar" type="HBoxContainer" parent="Center/Panel/Margin/Content" unique_id=1301500007]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/Content/TopBar" unique_id=1301500008]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TitleLabel"
+vertical_alignment = 1
+
+[node name="Close" type="Button" parent="Center/Panel/Margin/Content/TopBar" unique_id=1301500009]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+theme_override_colors/icon_normal_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
+theme_override_colors/icon_focus_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/icon_pressed_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/icon_hover_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_colors/icon_hover_pressed_color = Color(0.9098039, 0.7607843, 0.3529412, 1)
+theme_override_styles/normal = SubResource("StyleBoxEmpty_close")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_close")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_close")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_close")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_close")
+icon = ExtResource("2_close")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="Scroll" type="ScrollContainer" parent="Center/Panel/Margin/Content" unique_id=1301500010]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(960, 600)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="List" type="VBoxContainer" parent="Center/Panel/Margin/Content/Scroll" unique_id=1301500011]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Back" type="Button" parent="Center/Panel/Margin/Content" unique_id=1301500012]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 4
