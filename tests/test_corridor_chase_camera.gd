@@ -18,6 +18,8 @@ var commander_mesh: MeshInstance3D
 
 
 func _ready() -> void:
+	# The game's window shape; a headless run would otherwise frame a square.
+	get_tree().root.size = Vector2i(1920, 1080)
 	commander_mock = Node3D.new()
 	commander_mock.add_to_group(&"commander")
 	add_child(commander_mock)
@@ -66,6 +68,15 @@ func _ready() -> void:
 	await test_framing_while_commander_strafes_and_jumps()
 	await test_framing_after_min_distance_push()
 	await test_framing_when_resweeps_are_cut_short()
+	await test_commander_offset_follows_clearance()
+	test_offset_limit_is_continuous_and_monotonic()
+	test_reversed_offsets_are_normalised()
+	await test_commander_moves_steadily_toward_middle()
+	await test_strafing_through_the_blend_zone()
+	await test_narrowing_meets_a_closer_obstacle()
+	await test_unframed_hides_the_commander()
+	test_unframed_flag_survives_a_target_switch()
+	await test_strafing_without_wall_keeps_shoulder()
 	await test_push_dropped_to_keep_commander_framed()
 	await test_final_check_accept_restarts_release_delay()
 	await test_commander_fade_with_real_settings()
@@ -526,9 +537,10 @@ func test_camera_never_inside_collider() -> void:
 	_chase_rig()
 	rig._orbit.min_distance = 2.5
 	var along := (_wanted() - _shoulder_point()).normalized()
-	# The wall face is 0.4 m ahead of the shoulder point: the sweep stops right in front of it and
-	# the point at the minimum distance lies inside it.
-	var wall := _add_box(_shoulder_point() + along * 0.9, Vector3.ONE, 1)
+	# The wall face is 0.9 m ahead of the shoulder point and wide enough to block the narrowed
+	# shoulder's way as well: the sweep stops right in front of it and the point at the minimum
+	# distance lies inside it.
+	var wall := _add_box(_shoulder_point() + along * 2.4, Vector3.ONE * 3.0, 1)
 	await _resnap()
 	var overlaps := _camera_overlaps_collider()
 	var gap := _chase().global_position.distance_to(_pivot())
@@ -744,6 +756,10 @@ func test_commander_hides_when_very_close() -> void:
 
 
 ## Horizontal screen position of the pivot over the screen width, 0 left, 0.5 the middle.
+func _offset_limit() -> float:
+	return rig._orbit._offset_limit(rig._orbit._clearance)
+
+
 func _pivot_screen_x() -> float:
 	var width := get_viewport().get_visible_rect().size.x
 	return _chase().unproject_position(_pivot()).x / width
@@ -757,14 +773,14 @@ func test_shoulder_narrows_near_wall() -> void:
 	_chase_rig()
 	await _resnap()
 	_check(absf(_shoulder_now() - rig._orbit.shoulder) < 0.01
-			and _pivot_screen_x() >= 0.5 * (1.0 - rig._orbit.max_screen_offset) - 0.001
+			and _pivot_screen_x() >= 0.5 * (1.0 - _offset_limit()) - 0.001
 			and _pivot_screen_x() <= 0.5,
 			"shoulder_narrows: with no wall the shoulder is the full offset and the commander is inside the limit")
 	var along := (_wanted() - _shoulder_point()).normalized()
 	var wall := _add_box(_shoulder_point() + along * 0.9, Vector3.ONE, 1)
 	await _resnap()
 	var x := _pivot_screen_x()
-	var left_limit := 0.5 * (1.0 - rig._orbit.max_screen_offset)
+	var left_limit := 0.5 * (1.0 - _offset_limit())
 	_check(_shoulder_now() < rig._orbit.shoulder and x >= left_limit - 0.002 and x <= 0.5 + 0.002
 			and not _camera_overlaps_collider(),
 			"shoulder_narrows: a wall close behind keeps the commander between the limit and the middle, camera clear")
@@ -798,7 +814,7 @@ func _commander_framed(slack: float) -> bool:
 	var width := get_viewport().get_visible_rect().size.x
 	var point := commander_mock.global_position + Vector3.UP * rig._orbit.pivot_height
 	var x := _chase().unproject_position(point).x / width
-	var left_limit := 0.5 * (1.0 - rig._orbit.max_screen_offset)
+	var left_limit := 0.5 * (1.0 - _offset_limit())
 	return x >= left_limit - slack and x <= 0.5 + slack
 
 
@@ -885,6 +901,230 @@ func test_framing_when_resweeps_are_cut_short() -> void:
 func _lag_rig(sideways: float) -> void:
 	rig.position = commander_mock.global_position - _orbit_basis().x * sideways
 	rig._sync_orbit()
+
+
+func test_offset_limit_is_continuous_and_monotonic() -> void:
+	_chase_rig()
+	var orbit := rig._orbit
+	var last := orbit._offset_limit(1.0)
+	var steady := true
+	var smooth := true
+	for i in range(1, 101):
+		var limit := orbit._offset_limit(1.0 - i / 100.0)
+		steady = steady and limit <= last + 0.0000001
+		smooth = smooth and last - limit < 0.04
+		last = limit
+	_check(steady and smooth and is_equal_approx(orbit._offset_limit(1.0), orbit.free_screen_offset)
+			and is_equal_approx(orbit._offset_limit(0.8), orbit.max_screen_offset * 0.8)
+			and is_zero_approx(orbit._offset_limit(0.0)),
+			"offset_limit: loose with no wall, tight from the blend on, continuous, never growing as the clearance drops")
+
+
+func test_reversed_offsets_are_normalised() -> void:
+	_chase_rig()
+	var settings := rig.corridor_chase.get_orbit_settings()
+	settings["free_screen_offset"] = 0.15
+	settings["max_screen_offset"] = 0.6
+	settings["screen_offset_blend"] = 0.0
+	var camera := Camera3D.new()
+	add_child(camera)
+	var orbit := ChaseCameraOrbit.new()
+	orbit.configure(camera, settings, 0.0)
+	var last := orbit._offset_limit(1.0)
+	var steady := true
+	for i in range(1, 101):
+		var limit := orbit._offset_limit(1.0 - i / 100.0)
+		steady = steady and limit <= last + 0.0000001
+		last = limit
+	camera.free()
+	_check(steady and orbit.max_screen_offset <= orbit.free_screen_offset
+			and orbit.screen_offset_blend >= 0.01,
+			"offsets_normalised: a tight offset above the free one is lowered and the limit still never rises")
+
+
+func test_commander_moves_steadily_toward_middle() -> void:
+	var samples: Array[Vector2] = []
+	for distance in [0.0, 6.0, 5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.6, 1.3, 1.1]:
+		_chase_rig()
+		var wall: StaticBody3D = null
+		if distance > 0.0:
+			var along := (_wanted() - _shoulder_point()).normalized()
+			wall = _add_box(_shoulder_point() + along * distance, Vector3.ONE, 1)
+		await _resnap()
+		samples.append(Vector2(rig._orbit._clearance, _pivot_offset()))
+		if wall != null:
+			wall.free()
+	samples.sort_custom(func(first: Vector2, second: Vector2) -> bool: return first.x < second.x)
+	var steady := true
+	for i in range(1, samples.size()):
+		steady = steady and samples[i].y >= samples[i - 1].y - 0.002
+	_check(steady, "steady_pull: with no lag the commander only moves toward the middle as the clearance drops")
+
+
+func test_strafing_through_the_blend_zone() -> void:
+	_chase_rig()
+	var along := (_wanted() - _shoulder_point()).normalized()
+	var wall := _add_box(_shoulder_point() + along * 5.5, Vector3.ONE, 1)
+	await _resnap()
+	var side := _orbit_basis().x
+	var width := get_viewport().get_visible_rect().size.x
+	var point := commander_mock.global_position + Vector3.UP * rig._orbit.pivot_height
+	var last := _chase().unproject_position(point).x / width
+	var last_clearance := rig._orbit._clearance
+	var biggest := 0.0
+	var in_blend := 0
+	for direction in [1.0, -1.0]:
+		for i in 60:
+			commander_mock.global_position += side * direction * 0.1
+			_step(0.016)
+			point = commander_mock.global_position + Vector3.UP * rig._orbit.pivot_height
+			var now := _chase().unproject_position(point).x / width
+			var clearance := rig._orbit._clearance
+			if clearance > 0.75 and clearance < 1.0:
+				in_blend += 1
+			# A wall pulling the camera in is a cut by design, so that frame is not counted.
+			if absf(clearance - last_clearance) < 0.05:
+				biggest = maxf(biggest, absf(now - last))
+			last = now
+			last_clearance = clearance
+	_check(in_blend > 0 and biggest < 0.02,
+			"strafe_blend: strafing through the blend zone moves the commander on screen in small steps")
+	wall.free()
+
+
+func test_narrowing_meets_a_closer_obstacle() -> void:
+	var bad := 0
+	for passes in [0, 1]:
+		for far_distance in [3.5, 4.5]:
+			for near_distance in [1.6, 2.0, 2.6]:
+				_chase_rig()
+				rig._orbit.max_resweeps = passes
+				var along := (_wanted() - _shoulder_point()).normalized()
+				# One obstacle on the full shoulder's way, a closer one on the narrowed way.
+				var far_box := _add_box(_shoulder_point() + along * far_distance, Vector3.ONE, 1)
+				var near_box := _add_box(_pivot() + along * near_distance, Vector3.ONE * 0.6, 1)
+				await _resnap()
+				_step(rig._fade.fade_time + 0.032)
+				var hidden := is_zero_approx(_mesh_alpha())
+				var framed := _commander_framed(0.003)
+				if not (framed or hidden) or (not framed and not rig._orbit.is_unframed()) \
+						or _camera_overlaps_collider():
+					bad += 1
+				far_box.free()
+				near_box.free()
+	_check(bad == 0,
+			"narrowing_closer_obstacle: the commander ends framed, or flagged unframed and really hidden, never off to the side and visible")
+
+
+func test_unframed_hides_the_commander() -> void:
+	_chase_rig()
+	# The commander keeps running off to the right of the smoothed pivot (a lag of 2.5 m), and a
+	# block on the sideways sweep keeps the camera from following it: no position frames the
+	# commander. The block and the commander are moved with the rig every tick to hold that.
+	var side := _orbit_basis().x
+	_lag_rig(2.5)
+	var block := _add_box(_pivot() + side * 0.9, Vector3.ONE * 0.5, 1)
+	await get_tree().physics_frame
+	var orbit := rig._orbit
+	orbit.snap(rig.global_position)
+	var always_unframed := true
+	var always_far := true
+	var falls := true
+	var hidden_on_time := true
+	var previous := _mesh_alpha()
+	# Each round runs the rig's own physics tick (waiting for the block to register) and one step.
+	var elapsed := 0.0
+	for i in 14:
+		block.global_position = _pivot() + side * 0.9
+		commander_mock.global_position = rig.position + side * 2.5
+		await get_tree().physics_frame
+		_step(0.016)
+		elapsed += 0.016 + 1.0 / Engine.physics_ticks_per_second
+		var alpha := _mesh_alpha()
+		always_unframed = always_unframed and orbit.is_unframed()
+		always_far = always_far and orbit.get_pivot_gap() > rig._fade.hide_distance
+		falls = falls and (alpha < previous or is_zero_approx(previous))
+		hidden_on_time = hidden_on_time and (elapsed < rig._fade.fade_time - 0.0001 or is_zero_approx(alpha))
+		previous = alpha
+	_check(always_unframed and always_far and falls and hidden_on_time and is_zero_approx(previous),
+			"unframed_hides: the commander's alpha falls every tick and is zero once the fade time has passed")
+	block.free()
+	commander_mock.global_position = rig.position
+	await get_tree().physics_frame
+	_step(2.5)
+	_check(not orbit.is_unframed() and is_equal_approx(_mesh_alpha(), rig._fade.alpha_for(orbit.get_pivot_gap())),
+			"unframed_hides: once framed again the commander comes back to the distance-based alpha")
+
+
+func test_unframed_flag_survives_a_target_switch() -> void:
+	var fade := ChaseCameraFade.new()
+	var other := Node3D.new()
+	add_child(other)
+	var mesh := _dither_mesh(other)
+	fade.update(commander_mock, 5.0, 0.016, false)
+	fade.unframed = true
+	fade.update(other, 5.0, 0.016, true)
+	var hidden_at_once := is_zero_approx(float(mesh.get_instance_shader_parameter(&"dither_alpha")))
+	fade.restore()
+	_check(hidden_at_once and not fade.unframed,
+			"unframed_switch: a new target is hidden on the first update, and restore clears the flag")
+	other.free()
+
+
+func test_strafing_without_wall_keeps_shoulder() -> void:
+	_chase_rig()
+	await _resnap()
+	var orbit := rig._orbit
+	var kept := true
+	for lag in [-0.3, 0.3]:
+		_lag_rig(lag)
+		orbit.snap(rig.global_position)
+		kept = kept and absf(_shoulder_now() - orbit.shoulder) < 0.005
+	var side := _orbit_basis().x
+	for i in 40:
+		commander_mock.global_position -= side * 0.1
+		_step(0.016)
+		kept = kept and absf(_shoulder_now() - orbit.shoulder) < 0.005
+	_check(kept, "strafing_no_wall: a lagging or strafing commander does not tighten the shoulder without a wall")
+
+
+## How far left of the middle the pivot is on screen, as a share of the half width.
+func _pivot_offset() -> float:
+	return (0.5 - _pivot_screen_x()) / 0.5
+
+
+func test_commander_offset_follows_clearance() -> void:
+	_chase_rig()
+	await _resnap()
+	var orbit := rig._orbit
+	var depth := orbit.orbit_distance() * cos(deg_to_rad(orbit.aim_tilt_deg))
+	var natural := orbit.shoulder / (depth * orbit._half_width())
+	_check(is_equal_approx(_shoulder_now(), orbit.shoulder) and absf(_pivot_offset() - natural) < 0.005
+			and natural < orbit.max_screen_offset and absf(natural - 0.134) < 0.01,
+			"commander_offset: with no wall the shoulder and the place on screen are unchanged (about 13%)")
+	var along := (_wanted() - _shoulder_point()).normalized()
+	var wall := _add_box(_shoulder_point() + along * 3.5, Vector3.ONE, 1)
+	await _resnap()
+	var half_way := _pivot_offset()
+	_check(orbit._clearance < 0.6 and half_way <= orbit.max_screen_offset * orbit._clearance + 0.005
+			and half_way >= -0.005,
+			"commander_offset: pulled in about halfway the commander is nearer the middle, never right of it")
+	wall.free()
+	var close_wall := _add_box(_shoulder_point() + along * 0.9, Vector3.ONE, 1)
+	await _resnap()
+	_check(absf(_pivot_offset()) < 0.01,
+			"commander_offset: pulled in close the commander is at the middle")
+	close_wall.free()
+	await get_tree().physics_frame
+	var last := _pivot_offset()
+	var biggest := 0.0
+	for i in 150:
+		_step(0.016)
+		var now := _pivot_offset()
+		biggest = maxf(biggest, absf(now - last))
+		last = now
+	_check(biggest < 0.03 and absf(last - natural) < 0.005,
+			"commander_offset: easing out moves the commander back gradually to its natural place")
 
 
 func test_push_dropped_to_keep_commander_framed() -> void:
