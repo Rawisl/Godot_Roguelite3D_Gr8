@@ -73,8 +73,15 @@ extends Node3D
 ## as gone.
 @export var chase_release_margin: float = 0.01
 ## How far the commander may stand from the middle of the screen toward the left edge, as a share
-## of that half width; a camera pulled in by a wall narrows its shoulder offset to stay inside it.
-@export_range(0.0, 1.0) var chase_max_screen_offset: float = 0.6
+## of that half width, with nothing in the way (loose).
+@export_range(0.0, 1.0) var chase_free_screen_offset: float = 0.6
+## The same once a wall has pulled the camera in; it shrinks with the clearance, so the commander
+## moves toward the middle, to the middle when fully pulled in.
+@export_range(0.0, 1.0) var chase_max_screen_offset: float = 0.15
+## Share of the clearance, from 1 down, over which the loose offset blends to the tight one.
+@export_range(0.01, 1.0) var chase_screen_offset_blend: float = 0.2
+## The shoulder narrows as shoulder * clearance ^ this when a wall pulls the camera in.
+@export var chase_shoulder_pull_power: float = 2.0
 ## A commander move bigger than this in one physics tick cuts the chase camera onto it at once.
 @export var chase_teleport_snap_distance: float = 3.0
 ## The commander fades out with a dither from chase_fade_start_distance (metres from camera to
@@ -154,7 +161,10 @@ func get_chase_settings() -> Dictionary:
 		"zoom_smoothing": chase_zoom_smoothing, "fov": chase_fov, "far": chase_far,
 		"collision_mask": chase_collision_mask, "probe_radius": chase_probe_radius,
 		"min_distance": chase_min_distance, "return_time": chase_return_time,
-		"release_delay": chase_release_delay, "release_margin": chase_release_margin, "max_screen_offset": chase_max_screen_offset,
+		"release_delay": chase_release_delay, "release_margin": chase_release_margin, "free_screen_offset": chase_free_screen_offset,
+		"max_screen_offset": chase_max_screen_offset,
+		"screen_offset_blend": chase_screen_offset_blend,
+		"shoulder_pull_power": chase_shoulder_pull_power,
 		"teleport_snap_distance": chase_teleport_snap_distance,
 		"fade_hide_distance": chase_fade_hide_distance,
 		"fade_start_distance": chase_fade_start_distance,

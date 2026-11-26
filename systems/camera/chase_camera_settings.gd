@@ -55,8 +55,18 @@ extends Resource
 ## gone; smaller changes leave it where it is.
 @export var release_margin: float = 0.01
 ## How far the commander may stand from the middle of the screen toward the left edge, as a share
-## of that half width. A camera pulled in by a wall narrows its shoulder offset to stay inside it.
-@export_range(0.0, 1.0) var max_screen_offset: float = 0.6
+## of that half width, with nothing in the way: loose, so the camera follows as it always did.
+@export_range(0.0, 1.0) var free_screen_offset: float = 0.6
+## The same once a wall has pulled the camera in (the clearance is 1 - screen_offset_blend or
+## less); it then shrinks with the clearance, so the commander moves toward the middle, to the
+## middle when fully pulled in. Keep it above the natural offset of the shoulder (about 0.13).
+@export_range(0.0, 1.0) var max_screen_offset: float = 0.15
+## Share of the clearance, from 1 down, over which the loose offset blends to the tight one.
+@export_range(0.01, 1.0) var screen_offset_blend: float = 0.2
+## The shoulder narrows as shoulder * clearance ^ this when a wall pulls the camera in, so the
+## commander moves steadily toward the middle (2 gives an offset of about its natural one times the
+## clearance). Nothing changes at full clearance.
+@export var shoulder_pull_power: float = 2.0
 ## A commander move bigger than this in one physics tick (Recall, Deploy, a respawn) cuts the
 ## camera onto it at once instead of following, in metres.
 @export var teleport_snap_distance: float = 3.0
@@ -89,7 +99,9 @@ func get_orbit_settings() -> Dictionary:
 		"zoom_smoothing": zoom_smoothing, "fov": fov, "far": far,
 		"collision_mask": collision_mask, "probe_radius": probe_radius,
 		"min_distance": min_distance, "return_time": return_time,
-		"release_delay": release_delay, "release_margin": release_margin, "max_screen_offset": max_screen_offset,
+		"release_delay": release_delay, "release_margin": release_margin, "free_screen_offset": free_screen_offset,
+		"max_screen_offset": max_screen_offset, "screen_offset_blend": screen_offset_blend,
+		"shoulder_pull_power": shoulder_pull_power,
 		"teleport_snap_distance": teleport_snap_distance,
 		"fade_hide_distance": fade_hide_distance,
 		"fade_start_distance": fade_start_distance, "fade_end_distance": fade_end_distance,

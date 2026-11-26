@@ -39,8 +39,19 @@ var release_delay: float = 0.15
 ## go; smaller changes leave the camera where it is.
 var release_margin: float = 0.01
 ## How far the commander may stand from the middle of the screen toward the left edge, as a share
-## of that half width. A camera pulled in by a wall narrows its shoulder offset to stay inside it.
-var max_screen_offset: float = 0.6
+## of that half width. With nothing in the way it is free_screen_offset; as a wall pulls the camera
+## in, it blends to max_screen_offset over the first screen_offset_blend of the clearance, then
+## shrinks in step with the clearance, so a camera pulled in by a wall narrows its shoulder and
+## brings the commander toward the middle, to the middle when fully pulled in. The natural place of
+## the full shoulder at the full distance is a floor for both, so it never forces a change.
+var free_screen_offset: float = 0.6
+var max_screen_offset: float = 0.15
+## Share of the clearance, from 1 down, over which the free offset blends to the tight one.
+var screen_offset_blend: float = 0.2
+## The shoulder narrows with the clearance as shoulder * clearance ^ shoulder_pull_power, so the
+## commander moves steadily toward the middle as the camera is pulled in (offset about natural *
+## clearance with a power of 2). The full shoulder at full clearance.
+var shoulder_pull_power: float = 2.0
 ## Replaces the ease back out with a cut.
 var reduced_motion: bool = false
 ## Bodies the sweep ignores, such as the commander being followed.
@@ -53,6 +64,9 @@ var _clear_time: float = 0.0
 var _releasing: bool = false
 var _probe := SphereShape3D.new()
 var _pivot_gap: float = 0.0
+## True when the camera could not be put anywhere that frames the commander as of the last
+## placement (a wall corner with the follow lagging), so the commander has to be hidden instead.
+var _unframed: bool = false
 ## Where the sweep put the start of the way back, the pivot moved sideways by the shoulder.
 var _path_start: Vector3 = Vector3.ZERO
 ## Where the commander really is minus where the smoothed focus is, for the framing.
@@ -60,6 +74,9 @@ var _frame_offset: Vector3 = Vector3.ZERO
 
 ## Set when the push out to min_distance was dropped to keep the commander framed; a test reads it.
 var push_rejected_by_frame: bool = false
+
+## Times the final framing step sweeps again with the shoulder for the new clearance.
+const NARROWING_PASSES := 4
 
 ## Metres of play in the framing check, for rounding.
 const FRAME_SLACK := 0.0005
@@ -100,7 +117,12 @@ func configure(view: Camera3D, settings: Dictionary, initial_yaw: float) -> void
 	return_time = settings.get("return_time", 0.25)
 	release_delay = settings.get("release_delay", 0.15)
 	release_margin = settings.get("release_margin", 0.01)
-	max_screen_offset = settings.get("max_screen_offset", 0.6)
+	# The tight offset is never looser than the free one and the blend is never zero, which the
+	# limit's monotonic proof (see _offset_limit) relies on.
+	free_screen_offset = settings.get("free_screen_offset", 0.6)
+	max_screen_offset = minf(settings.get("max_screen_offset", 0.15), free_screen_offset)
+	screen_offset_blend = clampf(settings.get("screen_offset_blend", 0.2), 0.01, 1.0)
+	shoulder_pull_power = maxf(settings.get("shoulder_pull_power", 2.0), 0.0)
 	_clearance = 1.0
 	_clear_time = 0.0
 	_releasing = false
@@ -138,6 +160,12 @@ func snap(focus: Vector3) -> void:
 	place(focus)
 
 
+## True when no position that frames the commander was found at the last placement. The caller
+## hides the commander meanwhile.
+func is_unframed() -> bool:
+	return _unframed
+
+
 ## Distance from the camera to the pivot as of the last placement, walls included.
 func get_pivot_gap() -> float:
 	return _pivot_gap
@@ -160,7 +188,7 @@ func place(focus: Vector3, real_delta: float = 0.0) -> void:
 
 ## The camera position: from the pivot sideways by the shoulder (side_axis), then back by back,
 ## pulled in front of whatever blocks that way. The way back sets the clearance. The commander
-## has to stay on screen between the middle and max_screen_offset of the half width to the left
+## has to stay on screen between the middle and the allowed offset (see _offset_limit) to the left
 ## (see _shoulder_for), which a short way back or a commander ahead of the smoothed pivot would
 ## break with the full shoulder, so the shoulder is set for the clearance and the way is swept
 ## again. Each pass can only lower the clearance and narrow the shoulder, so it settles in a few
@@ -170,6 +198,7 @@ func place(focus: Vector3, real_delta: float = 0.0) -> void:
 func _clear_position(pivot: Vector3, side_axis: Vector3, back: Vector3, forward: Vector3,
 		real_delta: float) -> Vector3:
 	var space := _space()
+	_unframed = false
 	if space == null:
 		return pivot + side_axis * shoulder + back
 	var side := shoulder
@@ -186,46 +215,81 @@ func _clear_position(pivot: Vector3, side_axis: Vector3, back: Vector3, forward:
 			_clear_time = 0.0
 			_releasing = false
 	var standing := _path_start + back * _clearance
-	if not _is_framed(standing, pivot, side_axis, forward):
+	if not _is_framed(standing, pivot, side_axis, forward, _clearance):
 		standing = _frame_by_narrowing(space, standing, pivot, side_axis, back, forward, side)
-	return _keep_min_distance(space, pivot, standing, _path_start + back, side_axis, forward)
+	var result := _keep_min_distance(space, pivot, standing, _path_start + back, side_axis, forward)
+	_unframed = not _is_framed(result, pivot, side_axis, forward, _clearance)
+	return result
 
 
-## The last attempt at framing: the shoulder that suits the depth the camera ended at, swept once
-## more. Returns that position when it is clear and frames the commander, else the position given.
+## The last attempt at framing: the shoulder that suits the depth the camera ended at, swept again.
+## A sweep that meets a closer obstacle lowers the clearance and so the allowed shoulder, so this
+## repeats (NARROWING_PASSES times) with the new clearance, and the final try puts the camera
+## right behind the commander, which frames it at any depth. Returns the first position that is
+## clear and frames the commander, else the safe position given; _clear_position then flags the
+## placement as unframed so the commander is hidden.
 func _frame_by_narrowing(space: PhysicsDirectSpaceState3D, safe: Vector3, pivot: Vector3,
 		side_axis: Vector3, back: Vector3, forward: Vector3, side: float) -> Vector3:
-	var rel := pivot + _frame_offset - safe
 	var sideways := _frame_offset.dot(side_axis)
-	var widest := sideways + maxf(rel.dot(forward), 0.0) * _screen_slope()
-	var narrowed := clampf(side, sideways, maxf(sideways, widest))
-	var clearance := _clearance
-	var path_free := _sweep_path(space, pivot, side_axis * narrowed, back)
-	var candidate := _path_start + back * minf(clearance, path_free)
-	if not _is_framed(candidate, pivot, side_axis, forward):
-		return safe
-	if path_free < clearance:
-		_clear_time = 0.0
-		_releasing = false
-	_clearance = minf(clearance, path_free)
-	return candidate
+	var entry_clearance := _clearance
+	var clearance := entry_clearance
+	var reference := safe
+	for attempt in NARROWING_PASSES + 1:
+		var narrowed := sideways
+		if attempt < NARROWING_PASSES:
+			var depth := (pivot + _frame_offset - reference).dot(forward)
+			var widest := sideways + maxf(depth, 0.0) * _screen_slope(clearance)
+			narrowed = clampf(side, sideways, maxf(sideways, widest))
+		var swept := minf(clearance, _sweep_path(space, pivot, side_axis * narrowed, back))
+		var candidate := _path_start + back * swept
+		if _is_framed(candidate, pivot, side_axis, forward, swept):
+			if swept < entry_clearance:
+				_clear_time = 0.0
+				_releasing = false
+			_clearance = swept
+			return candidate
+		clearance = swept
+		reference = candidate
+	return safe
 
 
 ## True when the commander's actual point seen from the camera position is not right of the middle
-## of the screen and not left of max_screen_offset of the half width.
+## of the screen and not left of the offset allowed at that clearance.
 func _is_framed(camera_position: Vector3, pivot: Vector3, side_axis: Vector3,
-		forward: Vector3) -> bool:
+		forward: Vector3, clearance: float) -> bool:
 	var rel := pivot + _frame_offset - camera_position
 	var depth := rel.dot(forward)
 	if depth <= 0.0:
 		return false
 	var left := -rel.dot(side_axis)
-	return left >= -FRAME_SLACK and left <= depth * _screen_slope() + FRAME_SLACK
+	return left >= -FRAME_SLACK and left <= depth * _screen_slope(clearance) + FRAME_SLACK
 
 
 ## Sideways distance per metre of depth at the left limit of the frame.
-func _screen_slope() -> float:
-	return max_screen_offset * tan(deg_to_rad(camera.fov) * 0.5) * _aspect()
+func _screen_slope(clearance: float) -> float:
+	return _offset_limit(clearance) * _half_width()
+
+
+## Tangent of half the horizontal field of view.
+func _half_width() -> float:
+	return tan(deg_to_rad(camera.fov) * 0.5) * _aspect()
+
+
+## How far left of the middle the commander may be, as a share of the half width, with the camera
+## at this share of its free distance: the loose free_screen_offset at full clearance (as before a
+## wall was ever involved), blending to the tight max_screen_offset over the first
+## screen_offset_blend of the clearance, then the whole thing times the clearance, down to the
+## middle at none. Both ends are at least the natural offset of the full shoulder at the full
+## distance. The product is continuous and never grows as the clearance drops: inside the blend its
+## slope is free - (free - tight) * (2 - 1 / blend) at worst, positive for tight >= 0.
+func _offset_limit(clearance: float) -> float:
+	var depth := orbit_distance() * cos(deg_to_rad(aim_tilt_deg))
+	var natural := shoulder / (depth * _half_width()) if depth > 0.0 else 0.0
+	var tightness := 1.0
+	if screen_offset_blend > 0.0:
+		tightness = clampf((1.0 - clearance) / screen_offset_blend, 0.0, 1.0)
+	var base := lerpf(maxf(free_screen_offset, natural), maxf(max_screen_offset, natural), tightness)
+	return base * clearance
 
 
 ## Sweeps from the pivot out to the shoulder and from there back. Leaves the start of the way back
@@ -239,14 +303,15 @@ func _sweep_path(space: PhysicsDirectSpaceState3D, pivot: Vector3, side_vector: 
 
 ## The shoulder for a camera standing clearance of the way back behind the pivot, so that the
 ## commander's actual point (the pivot plus _frame_offset) is not right of the screen's middle and
-## not further left than max_screen_offset of the half width. The full shoulder where it fits.
+## not further left than the offset allowed at that clearance. The shoulder pulled in with the
+## clearance (the full one at full clearance) where it fits.
 func _shoulder_for(clearance: float, side_axis: Vector3, forward: Vector3) -> float:
 	var sideways := _frame_offset.dot(side_axis)
 	var depth := orbit_distance() * clearance * cos(deg_to_rad(aim_tilt_deg)) \
 			+ _frame_offset.dot(forward)
-	var half_width := tan(deg_to_rad(camera.fov) * 0.5) * _aspect()
-	var widest := sideways + maxf(depth, 0.0) * max_screen_offset * half_width
-	return clampf(shoulder, sideways, maxf(sideways, widest))
+	var widest := sideways + maxf(depth, 0.0) * _screen_slope(clearance)
+	var pulled := shoulder * pow(clearance, shoulder_pull_power)
+	return clampf(pulled, sideways, maxf(sideways, widest))
 
 
 ## Width over height of the screen the camera renders to; 16:9 without a viewport.
@@ -322,7 +387,7 @@ func _keep_min_distance(space: PhysicsDirectSpaceState3D, pivot: Vector3, positi
 	if _free_fraction(space, position, pushed) < 1.0:
 		return position
 	# Moving the camera must not take the commander out of the frame it was solved for.
-	if not _is_framed(pushed, pivot, side_axis, forward):
+	if not _is_framed(pushed, pivot, side_axis, forward, _clearance):
 		push_rejected_by_frame = true
 		return position
 	return pushed

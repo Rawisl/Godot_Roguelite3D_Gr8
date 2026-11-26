@@ -725,6 +725,7 @@ func _follow_chase(real_delta: float) -> void:
 		_sync_orbit()
 		position = _orbit.follow(position, actual, real_delta)
 	_orbit.advance(real_delta, global_position)
+	_fade.unframed = _orbit.is_unframed()
 	_fade.update(get_tree().get_first_node_in_group(&"commander") as Node3D,
 			_orbit.get_pivot_gap(), real_delta, reduced_motion)
 

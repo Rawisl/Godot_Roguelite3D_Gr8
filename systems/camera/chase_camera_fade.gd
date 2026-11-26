@@ -18,6 +18,9 @@ var hide_distance: float = 0.6
 var min_alpha: float = 0.3
 ## Real seconds from fully visible to hidden.
 var fade_time: float = 0.15
+## Set by the caller while the camera cannot frame the commander: the commander is hidden then,
+## whatever the distance, with the same smoothing, and follows the distance again afterwards.
+var unframed: bool = false
 
 var _alpha: float = 1.0
 var _applied: float = 1.0
@@ -49,16 +52,16 @@ func alpha_for(gap: float) -> float:
 
 
 ## Moves the opacity of the target's dither meshes toward what the distance asks for. A different
-## target is put back to full opacity first.
+## target is put back to full opacity first; the unframed flag the caller set for this tick stays.
 func update(target: Node3D, gap: float, real_delta: float, reduced_motion: bool) -> void:
 	if target != _target:
-		restore()
+		_release_target()
 		_target = target
 		_watch_target()
 		_collect()
 	elif _dirty:
 		_collect()
-	var wanted := alpha_for(gap)
+	var wanted := 0.0 if unframed else alpha_for(gap)
 	if reduced_motion or fade_time <= 0.0:
 		_alpha = wanted
 	else:
@@ -66,8 +69,14 @@ func update(target: Node3D, gap: float, real_delta: float, reduced_motion: bool)
 	_apply()
 
 
-## Back to full opacity at once, and forgets the target.
+## Back to full opacity at once, forgets the target and the unframed flag.
 func restore() -> void:
+	_release_target()
+	unframed = false
+
+
+## Puts the current target's meshes back to full opacity and lets go of it.
+func _release_target() -> void:
 	_alpha = 1.0
 	_apply()
 	_unwatch()

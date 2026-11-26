@@ -285,4 +285,7 @@ Khi tường đẩy camera góc thứ ba sát chỉ huy, model chỉ huy mờ d�
 | fox_fade_hide_distance | 0,6 m | Gần hơn khoảng này chỉ huy ẩn hẳn (từ độ đục tối thiểu ở 1,0 m xuống 0) |
 | fox_fade_min_alpha | 0,3 | Độ đục khi mờ hết cỡ |
 | fox_fade_time | 0,15 s | Thời gian đi từ rõ hẳn tới ẩn hẳn |
-| camera_max_screen_offset | 0,6 | Chỉ huy lệch trái tâm màn hình tối đa bao nhiêu phần nửa chiều rộng; tường kéo camera sát thì vai camera thu hẹp để giữ trong mức này (`max_screen_offset`) |
+| camera_free_screen_offset | 0,6 | Chỉ huy được lệch trái tâm màn hình tối đa bao nhiêu phần nửa chiều rộng khi không có tường (rộng, camera bám như cũ; `free_screen_offset`) |
+| camera_max_screen_offset | 0,15 | Mức lệch tối đa khi tường đã kéo camera sát (vị trí tự nhiên khoảng 0,13); mức cho phép co theo khoảng thoáng của camera nên camera bị kéo hết cỡ thì chỉ huy về giữa màn hình (`max_screen_offset`) |
+| camera_shoulder_pull_power | 2,0 | Vai camera co theo `khoảng thoáng ^ số mũ` khi tường kéo camera sát, nên chỉ huy nhích đều về giữa màn hình (`shoulder_pull_power`) |
+| camera_screen_offset_blend | 0,2 | Phần đầu của khoảng thoáng (từ 1 trở xuống) dùng để chuyển mượt từ mức rộng sang mức chặt (`screen_offset_blend`) |
