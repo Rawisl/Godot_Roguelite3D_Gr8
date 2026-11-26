@@ -27,102 +27,129 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_gfx")
 
-[node name="Rows" type="VBoxContainer" parent="." unique_id=137340634]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=137340635]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = 32.0
-offset_right = -32.0
-offset_bottom = -32.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+horizontal_scroll_mode = 0
 
-[node name="WindowModeRow" type="HBoxContainer" parent="Rows" unique_id=1172163217]
+[node name="Rows" type="VBoxContainer" parent="Scroll" unique_id=137340634]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="WindowModeRow" type="HBoxContainer" parent="Scroll/Rows" unique_id=1172163217]
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="WindowModeLabel" type="Label" parent="Rows/WindowModeRow" unique_id=1148257660]
+[node name="WindowModeLabel" type="Label" parent="Scroll/Rows/WindowModeRow" unique_id=1148257660]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+vertical_alignment = 1
 
-[node name="WindowMode" type="OptionButton" parent="Rows/WindowModeRow" unique_id=622530639]
+[node name="WindowMode" type="OptionButton" parent="Scroll/Rows/WindowModeRow" unique_id=622530639]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(360, 76)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Sep1" type="HSeparator" parent="Scroll/Rows" unique_id=1172163301]
 layout_mode = 2
 
-[node name="ResolutionRow" type="HBoxContainer" parent="Rows" unique_id=899656721]
+[node name="ResolutionRow" type="HBoxContainer" parent="Scroll/Rows" unique_id=899656721]
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="ResolutionLabel" type="Label" parent="Rows/ResolutionRow" unique_id=1353661946]
+[node name="ResolutionLabel" type="Label" parent="Scroll/Rows/ResolutionRow" unique_id=1353661946]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+vertical_alignment = 1
 
-[node name="Resolution" type="OptionButton" parent="Rows/ResolutionRow" unique_id=1800425212]
+[node name="Resolution" type="OptionButton" parent="Scroll/Rows/ResolutionRow" unique_id=1800425212]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(360, 76)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Sep2" type="HSeparator" parent="Scroll/Rows" unique_id=1172163302]
 layout_mode = 2
 
-[node name="VSync" type="CheckButton" parent="Rows" unique_id=994647479]
+[node name="VSync" type="CheckButton" parent="Scroll/Rows" unique_id=994647479]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 
-[node name="MaxFpsRow" type="HBoxContainer" parent="Rows" unique_id=200308460]
+[node name="Sep3" type="HSeparator" parent="Scroll/Rows" unique_id=1172163303]
+layout_mode = 2
+
+[node name="MaxFpsRow" type="HBoxContainer" parent="Scroll/Rows" unique_id=200308460]
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="MaxFpsLabel" type="Label" parent="Rows/MaxFpsRow" unique_id=483780869]
+[node name="MaxFpsLabel" type="Label" parent="Scroll/Rows/MaxFpsRow" unique_id=483780869]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+vertical_alignment = 1
 
-[node name="MaxFps" type="OptionButton" parent="Rows/MaxFpsRow" unique_id=1192126254]
+[node name="MaxFps" type="OptionButton" parent="Scroll/Rows/MaxFpsRow" unique_id=1192126254]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(360, 76)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Sep4" type="HSeparator" parent="Scroll/Rows" unique_id=1172163304]
 layout_mode = 2
 
-[node name="KeepPanel" type="PanelContainer" parent="Rows" unique_id=702000959]
+[node name="KeepPanel" type="PanelContainer" parent="Scroll/Rows" unique_id=702000959]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_keep")
 
-[node name="KeepRow" type="HBoxContainer" parent="Rows/KeepPanel" unique_id=230396767]
+[node name="KeepRow" type="HBoxContainer" parent="Scroll/Rows/KeepPanel" unique_id=230396767]
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="Message" type="VBoxContainer" parent="Rows/KeepPanel/KeepRow"]
+[node name="Message" type="VBoxContainer" parent="Scroll/Rows/KeepPanel/KeepRow"]
 size_flags_vertical = 4
 
-[node name="KeepLabel" type="Label" parent="Rows/KeepPanel/KeepRow/Message" unique_id=752708718]
+[node name="KeepLabel" type="Label" parent="Scroll/Rows/KeepPanel/KeepRow/Message" unique_id=752708718]
 unique_name_in_owner = true
 text = "settings.gfx.keep_question"
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.9490196, 0.9372549, 0.9019608, 1)
 
-[node name="Countdown" type="Label" parent="Rows/KeepPanel/KeepRow/Message"]
+[node name="Countdown" type="Label" parent="Scroll/Rows/KeepPanel/KeepRow/Message"]
 unique_name_in_owner = true
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.98, 0.85, 0.55, 1)
 
-[node name="TimeLeft" type="ProgressBar" parent="Rows/KeepPanel/KeepRow/Message"]
+[node name="TimeLeft" type="ProgressBar" parent="Scroll/Rows/KeepPanel/KeepRow/Message"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 8)
 show_percentage = false
 
-[node name="KeepButton" type="Button" parent="Rows/KeepPanel/KeepRow" unique_id=1035369993]
+[node name="KeepButton" type="Button" parent="Scroll/Rows/KeepPanel/KeepRow" unique_id=1035369993]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 56)
 layout_mode = 2
 
-[node name="RevertButton" type="Button" parent="Rows/KeepPanel/KeepRow" unique_id=1904217964]
+[node name="RevertButton" type="Button" parent="Scroll/Rows/KeepPanel/KeepRow" unique_id=1904217964]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 56)
 layout_mode = 2
