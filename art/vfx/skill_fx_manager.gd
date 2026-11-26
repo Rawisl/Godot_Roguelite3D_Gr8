@@ -15,6 +15,8 @@ extends Node
 ## Nothing is added to the commander scene.
 
 const SKILL_DIR := "res://data/skills/%s.tres"
+## Points along the crescent where Sword Wave sparks start.
+const WAVE_SPARK_POINTS := 12
 
 @export_group("Whirlwind")
 ## Colour and blade shape are tuned in this material; radius, progress and fade are set per effect.
@@ -35,6 +37,12 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 @export var wave_height := 0.6
 ## The wave stops where a ray at this height hits something on these layers (1 = world).
 @export_flags_3d_physics var wave_stop_mask := 1
+@export var wave_spark_color := Color("#C6F5FF")
+## Sparks per metre of wave width, and how long and how fast they fly back from the wave.
+@export var wave_spark_density := 16.0
+@export var wave_spark_lifetime := 0.4
+@export var wave_spark_speed_min := 1.5
+@export var wave_spark_speed_max := 4.0
 
 @export_group("Firebomb")
 @export var fire_material: ShaderMaterial = preload("res://art/materials/skill_fire_zone.tres")
@@ -58,7 +66,7 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 @export var ground_lift := 0.05
 ## Room outside the radius for the soft edge.
 @export var ring_margin := 0.3
-## The shared particle limit (ParticleBudget). Over it, dust and embers are skipped; the
+## The shared particle limit (ParticleBudget). Over it, dust, embers and sparks are skipped; the
 ## effects themselves always play.
 var particle_budget: int:
 	get: return ParticleBudget.limit
@@ -164,8 +172,9 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	var travel := _clear_distance(start, flat, maxf(distance - wave_start_offset, 0.0))
 	var bulge: float = wave_material.get_shader_parameter(&"bulge")
 	var tail: float = wave_material.get_shader_parameter(&"tail_length")
+	var halo: float = wave_material.get_shader_parameter(&"halo_width")
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(width + ring_margin, bulge + tail + ring_margin * 2.0)
+	plane.size = Vector2(width + 2.0 * halo + ring_margin, bulge + tail + 2.0 * (halo + ring_margin))
 	# Local -Z is forward: the plane reaches bulge ahead of the node and the tail behind it.
 	plane.center_offset = Vector3(0.0, 0.0, (tail - bulge) * 0.5)
 	var mesh := MeshInstance3D.new()
@@ -176,11 +185,52 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	mesh.set_instance_shader_parameter(&"half_width", width * 0.5)
 	mesh.set_instance_shader_parameter(&"tail_scale", 0.0)
 	mesh.set_instance_shader_parameter(&"fade", 1.0)
+	mesh.set_instance_shader_parameter(&"game_time", 0.0)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
 	add_child(mesh)
 	mesh.global_basis = Basis.looking_at(flat, Vector3.UP)
 	mesh.global_position = start + Vector3.UP * wave_height
-	_effects.append({"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
-		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed})
+	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
+		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed}
+	var count := clampi(roundi(width * wave_spark_density), 12, 56)
+	if _has_room(count):
+		fx["particles"] = _wave_sparks(count, width, bulge, mesh)
+	_effects.append(fx)
+
+
+## Sparks leave the inner arc of the crescent and fall back along the flight line.
+func _wave_sparks(count: int, width: float, bulge: float, mesh: MeshInstance3D) -> CPUParticles3D:
+	var rim: float = wave_material.get_shader_parameter(&"rim_thickness")
+	var band: float = wave_material.get_shader_parameter(&"band_thickness")
+	var sparks := _particles(count, wave_spark_lifetime, wave_spark_color)
+	var sweep: float = wave_material.get_shader_parameter(&"tip_sweep")
+	# The same arc as the shader: u across the wave, the front edge leading at the middle and
+	# sweeping back to the tips, the tongues behind it.
+	var points := PackedVector3Array()
+	for i in WAVE_SPARK_POINTS:
+		var u := lerpf(-1.0, 1.0, float(i) / float(WAVE_SPARK_POINTS - 1))
+		var lean := sqrt(1.0 - u * u)
+		points.append(Vector3(u * width * 0.5, 0.0, -bulge + sweep * width * 0.5 * (1.0 - lean) + (rim + band * 0.7) * lean))
+	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_POINTS
+	sparks.emission_points = points
+	sparks.direction = Vector3(0.0, 0.0, 1.0)
+	sparks.spread = 20.0
+	sparks.initial_velocity_min = wave_spark_speed_min
+	sparks.initial_velocity_max = wave_spark_speed_max
+	sparks.gravity = Vector3.ZERO
+	sparks.lifetime_randomness = 0.6
+	sparks.scale_amount_min = 0.2
+	sparks.scale_amount_max = 0.45
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.0))
+	curve.add_point(Vector2(0.2, 1.0))
+	curve.add_point(Vector2(0.6, 0.6))
+	curve.add_point(Vector2(1.0, 0.0))
+	sparks.scale_amount_curve = curve
+	sparks.global_basis = mesh.global_basis
+	sparks.global_position = mesh.global_position
+	sparks.emitting = true
+	return sparks
 
 
 func _update_sword_wave(fx: Dictionary) -> bool:
@@ -192,6 +242,12 @@ func _update_sword_wave(fx: Dictionary) -> bool:
 	mesh.set_instance_shader_parameter(&"tail_scale", clampf((travelled + wave_start_offset) / maxf(fx.tail, 0.001), 0.0, 1.0))
 	var fade := _fade_after(fx.elapsed, fx.fly_time)
 	mesh.set_instance_shader_parameter(&"fade", fade)
+	mesh.set_instance_shader_parameter(&"game_time", fx.elapsed)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	var sparks: CPUParticles3D = fx.get("particles")
+	if sparks != null and sparks.emitting:
+		sparks.global_position = mesh.global_position
+		sparks.emitting = fx.elapsed < fx.fly_time
 	return fade > 0.0
 
 
@@ -399,4 +455,12 @@ func get_effect_mesh(kind: StringName) -> MeshInstance3D:
 	for i in range(_effects.size() - 1, -1, -1):
 		if _effects[i].kind == kind:
 			return _effects[i].mesh
+	return null
+
+
+## The particle emitter of the newest effect of that kind, null when there is none. For tests.
+func get_effect_particles(kind: StringName) -> CPUParticles3D:
+	for i in range(_effects.size() - 1, -1, -1):
+		if _effects[i].kind == kind:
+			return _effects[i].get("particles")
 	return null

@@ -3,7 +3,9 @@ extends Node3D
 ## Test for the active skill visuals (SkillFxManager):
 ## - Whirlwind: the sweep sits on the cast point at the skill radius, goes round once on game
 ##   time (faster at x2, held while paused), then fades and frees itself
-## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall
+## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall; its
+##   plane leaves room for the glow, sparks follow the wave and stop with it, the band runs on
+##   game time (held while paused), and reduced flashing turns the pulse off, capped at 3 per second
 ## - Firebomb: the bomb flies first, then the burn area shows at the cast point for the burn
 ##   time; reduced flashing turns the flicker off, and the flicker is capped at 3 per second
 ## - every skill shader keeps the depth test, so walls hide the effects
@@ -38,6 +40,10 @@ func _ready() -> void:
 	await test_whirlwind_fades_and_frees()
 	await test_sword_wave_flies_along_aim()
 	await test_sword_wave_stops_at_wall()
+	await test_sword_wave_plane_fits_halo()
+	await test_sword_wave_sparks()
+	await test_sword_wave_on_game_time()
+	await test_sword_wave_flicker()
 	await test_firebomb_lands_and_burns()
 	await test_firebomb_flicker()
 	test_depth_test_kept()
@@ -135,6 +141,76 @@ func test_sword_wave_stops_at_wall() -> void:
 	await _clear()
 
 
+func test_sword_wave_plane_fits_halo() -> void:
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	var plane := mesh.mesh as PlaneMesh if mesh != null else null
+	var halo: float = _fx.wave_material.get_shader_parameter(&"halo_width")
+	assert_true(plane != null and plane.size.x >= _fx.fallback_wave_width + 2.0 * halo,
+		"the wave plane leaves room for the glow")
+	await _clear()
+
+
+func test_sword_wave_sparks() -> void:
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	var sparks := _fx.get_effect_particles(&"sword_wave")
+	assert_true(sparks != null and sparks.emitting and sparks.gravity == Vector3.ZERO and _fx.active_particles() > 0,
+		"the wave throws sparks back")
+	if sparks == null or mesh == null:
+		await _clear()
+		return
+	var start := mesh.global_position
+	var flight := (_fx.fallback_wave_distance - _fx.wave_start_offset) / _fx.fallback_wave_speed
+	await TimeManager.wait_game(flight * 0.5)
+	assert_true(sparks.global_position.distance_to(mesh.global_position) < 0.01, "the sparks follow the wave")
+	assert_true(sparks.global_position.distance_to(start) > 0.1, "the sparks have left the start point")
+	await TimeManager.wait_game(flight * 0.5 + _fx.fade_time * 0.5)
+	assert_true(not sparks.emitting and _fx.active_particles() == 0, "the sparks stop when the wave stops")
+	await _clear()
+	assert_true(_fx.get_active_count() == 0, "the wave and its sparks free themselves")
+
+
+func test_sword_wave_on_game_time() -> void:
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	if mesh == null:
+		assert_true(false, "the wave exists")
+		return
+	var t0: float = mesh.get_instance_shader_parameter(&"game_time")
+	await TimeManager.wait_game(0.05)
+	var t1: float = mesh.get_instance_shader_parameter(&"game_time")
+	assert_true(t1 > t0, "the band moves on game time")
+	TimeManager.request_pause(TimeManager.REASON_USER)
+	await TimeManager.wait_real(0.1)
+	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the band holds")
+	TimeManager.release_pause(TimeManager.REASON_USER)
+	await _clear()
+
+
+func test_sword_wave_flicker() -> void:
+	EventBus.settings_changed.emit(&"reduce_flash", true)
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(2)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 0.0,
+		"reduced flashing turns the band pulse off")
+	EventBus.settings_changed.emit(&"reduce_flash", false)
+	await _frames(2)
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
+		"turning it back off brings the pulse back")
+	assert_true(_fx.wave_material.shader.code.contains("min(pulse_hz, 3.0)"), "the pulse never goes over 3 per second")
+	assert_true(float(_fx.wave_material.get_shader_parameter(&"pulse_hz")) <= 3.0, "the tuned pulse is under 3 per second")
+	await _clear()
+
+
 func test_firebomb_lands_and_burns() -> void:
 	var target := Vector3(-2, 0, 3)
 	_cast(&"firebomb", target, FIRE_RADIUS)
@@ -186,9 +262,12 @@ func test_particle_budget() -> void:
 	_fx.particle_budget = 0
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	_cast(&"firebomb", Vector3(3, 0, 0), FIRE_RADIUS)
-	await TimeManager.wait_game(_fx.throw_time + 0.1)
-	assert_true(_fx.get_active_count() == 2, "over the budget both effects still play")
-	assert_true(_fx.active_particles() == 0, "over the budget there is no dust and no embers")
+	_cast(&"sword_wave", Vector3(0, 0, 5), 0.0)
+	# Before the wave has flown and faded out (0.175 s flight plus the fade).
+	await TimeManager.wait_game(0.15)
+	assert_true(_fx.get_active_count() == 3, "over the budget all effects still play")
+	assert_true(_fx.active_particles() == 0, "over the budget there is no dust, no embers and no sparks")
+	assert_true(_fx.get_effect_particles(&"sword_wave") == null, "over the budget the wave has no sparks")
 	_fx.clear()
 	_fx.particle_budget = budget
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
@@ -201,6 +280,7 @@ func test_particle_budget() -> void:
 func test_run_started_clears() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	_cast(&"firebomb", Vector3.ZERO, FIRE_RADIUS)
+	_cast(&"sword_wave", Vector3.ZERO, 0.0)
 	await _frames(1)
 	EventBus.run_started.emit()
 	await _frames(2)
