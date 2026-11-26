@@ -40,6 +40,10 @@ var in_hazard_trial: bool = false
 
 var _transition_timer: float = 0.0
 var _cached_boss_melee_point: Node3D = null
+## How close to boss_melee_point the boss stops before attacking the Fortress.
+const BOSS_POINT_ARRIVE_DISTANCE := 0.2
+## Within this distance of boss_melee_point the boss walks straight onto it, without avoidance.
+const BOSS_POINT_DIRECT_APPROACH := 2.0
 
 var _stuck_timer: float = 0.0
 var _last_stuck_progress: float = -INF
@@ -52,6 +56,26 @@ func _ready() -> void:
 	add_to_group(&"boss")
 	_init_boss_stats()
 	EventBus.boss_enraged.connect(enter_enrage)
+	_use_large_navmesh.call_deferred()
+
+
+## Paths on the navmesh baked for the large agent (BossData.nav_layers), which keeps a wide enough
+## way to the gate and to boss_melee_point. A map without that navmesh (a test arena) keeps the
+## regular one so the boss can still walk.
+func _use_large_navmesh() -> void:
+	var boss_data := data as BossData
+	if boss_data == null or boss_data.nav_layers == 0 or not is_inside_tree():
+		return
+	# Regions join the map on its next sync.
+	await get_tree().physics_frame
+	if not is_instance_valid(self) or not is_inside_tree():
+		return
+	var map := nav.get_navigation_map()
+	for region in NavigationServer3D.map_get_regions(map):
+		if NavigationServer3D.region_get_navigation_layers(region) & boss_data.nav_layers:
+			nav.navigation_layers = boss_data.nav_layers
+			return
+	push_warning("BossEnemy: no navmesh on layers %d, the boss walks on the regular one." % boss_data.nav_layers)
 
 
 func _exit_tree() -> void:
@@ -514,63 +538,48 @@ func _scale_attack_damage(base_damage: int) -> int:
 	return maxi(1, int(round(dmg)))
 
 
+## On its way to the Fortress the boss walks right onto boss_melee_point before it attacks, so
+## its Stomp lands on the wall; other targets keep attack_range.
+func _arrive_distance(t: Node3D) -> float:
+	var arrive: float = super._arrive_distance(t)
+	if t != null and is_instance_valid(t) and t.is_in_group(&"fortress") and _get_boss_melee_point() != null:
+		arrive = BOSS_POINT_ARRIVE_DISTANCE
+	return arrive
+
+
+## The navigation agent stops where the boss attacks, so it walks onto boss_melee_point.
+func _set_nav_arrive_distance(arrive: float) -> void:
+	nav.target_desired_distance = arrive
+
+
+## The last metres onto boss_melee_point are walked straight: avoidance would keep the large
+## agent off a point that sits by design right at the edge of its navmesh.
+func _steers_without_avoidance() -> bool:
+	if current_target == null or not is_instance_valid(current_target) or not current_target.is_in_group(&"fortress"):
+		return false
+	var point := _get_boss_melee_point()
+	if point == null:
+		return false
+	var gap := point.global_position - global_position
+	gap.y = 0.0
+	return gap.length() <= BOSS_POINT_DIRECT_APPROACH
+
+
+func _get_boss_melee_point() -> Node3D:
+	if _cached_boss_melee_point == null or not is_instance_valid(_cached_boss_melee_point):
+		_cached_boss_melee_point = get_tree().get_first_node_in_group(&"boss_melee_point") as Node3D
+		if _cached_boss_melee_point == null:
+			var root := get_tree().current_scene
+			if root != null:
+				_cached_boss_melee_point = root.find_child("BossMeleePoint", true, false) as Node3D
+	return _cached_boss_melee_point if is_instance_valid(_cached_boss_melee_point) else null
+
+
 func _get_attack_point(t: Node3D) -> Vector3:
 	if t != null and is_instance_valid(t) and t.is_in_group(&"fortress"):
-		if _cached_boss_melee_point == null or not is_instance_valid(_cached_boss_melee_point):
-			_cached_boss_melee_point = get_tree().get_first_node_in_group(&"boss_melee_point") as Node3D
-			if _cached_boss_melee_point == null:
-				var root := get_tree().current_scene
-				if root != null:
-					_cached_boss_melee_point = root.find_child("BossMeleePoint", true, false) as Node3D
-		if _cached_boss_melee_point != null and is_instance_valid(_cached_boss_melee_point):
-			return _cached_boss_melee_point.global_position
-		return t.global_position
+		var point := _get_boss_melee_point()
+		return point.global_position if point != null else t.global_position
 	return super._get_attack_point(t)
-
-
-func _get_distance_to_target(target: Node3D, from_pos: Vector3) -> float:
-	var diff := _closest_point_on_target(target, from_pos) - from_pos
-	diff.y = 0.0
-	return diff.length()
-
-
-func _find_collision_shape(target: Node3D) -> CollisionShape3D:
-	var col_shape := target.get_node_or_null("CollisionShape3D") as CollisionShape3D
-	if col_shape == null:
-		for child in target.get_children():
-			if child is CollisionShape3D:
-				return child
-	return col_shape
-
-
-## Nearest point of the target's box, cylinder or sphere collider to from_pos; the node origin
-## for any other shape.
-func _closest_point_on_target(target: Node3D, from_pos: Vector3) -> Vector3:
-	var col_shape := _find_collision_shape(target)
-	if col_shape != null and col_shape.shape != null:
-		if col_shape.shape is BoxShape3D:
-			var half_extents := (col_shape.shape as BoxShape3D).size * 0.5
-			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
-			var clamped_local := Vector3(
-				clampf(local_pos.x, -half_extents.x, half_extents.x),
-				clampf(local_pos.y, -half_extents.y, half_extents.y),
-				clampf(local_pos.z, -half_extents.z, half_extents.z)
-			)
-			return col_shape.global_transform * clamped_local
-		elif col_shape.shape is CylinderShape3D:
-			var cyl := col_shape.shape as CylinderShape3D
-			var local_pos := col_shape.global_transform.affine_inverse() * from_pos
-			var clamped_xz := Vector2(local_pos.x, local_pos.z).limit_length(cyl.radius)
-			var clamped_y := clampf(local_pos.y, -cyl.height * 0.5, cyl.height * 0.5)
-			return col_shape.global_transform * Vector3(clamped_xz.x, clamped_y, clamped_xz.y)
-		elif col_shape.shape is SphereShape3D:
-			var sph := col_shape.shape as SphereShape3D
-			var to_from := from_pos - col_shape.global_position
-			to_from.y = 0.0
-			if to_from.length() <= sph.radius:
-				return from_pos
-			return col_shape.global_position + to_from.normalized() * sph.radius
-	return target.global_position
 
 
 func can_be_recycled() -> bool:
@@ -664,12 +673,32 @@ func _resolve_stuck_tier_3() -> void:
 				target_hop_pos.x = fortress.global_position.x + 1.0
 	var map := nav.get_navigation_map()
 	if map.is_valid():
-		var nav_pt := NavigationServer3D.map_get_closest_point(map, target_hop_pos)
-		global_position = nav_pt
+		global_position = _closest_point_on_own_layers(map, target_hop_pos)
 	else:
 		global_position = target_hop_pos
 	if current_target != null and is_instance_valid(current_target):
 		nav.target_position = _get_attack_point(current_target)
+
+
+## Closest navmesh point to pos on the regions of the boss's navigation_layers only, so a hop never
+## lands on the regular navmesh, too narrow for the large agent (BOSS-03). With no such region (a
+## map without the large navmesh) the closest point of the whole map.
+func _closest_point_on_own_layers(map: RID, pos: Vector3) -> Vector3:
+	var best := Vector3.ZERO
+	var best_dist := INF
+	for region in NavigationServer3D.map_get_regions(map):
+		if not NavigationServer3D.region_get_enabled(region):
+			continue
+		if not (NavigationServer3D.region_get_navigation_layers(region) & nav.navigation_layers):
+			continue
+		var pt := NavigationServer3D.region_get_closest_point(region, pos)
+		var d := pt.distance_squared_to(pos)
+		if d < best_dist:
+			best_dist = d
+			best = pt
+	if best_dist == INF:
+		return NavigationServer3D.map_get_closest_point(map, pos)
+	return best
 
 
 func _find_blocking_structure() -> Node3D:
