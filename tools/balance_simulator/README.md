@@ -33,7 +33,7 @@ Mã thoát: 0 là chạy xong (kể cả khi mục tiêu M hiện FAIL, đó ch�
 | `--avg-cmd-ratio` | `0.4` | Tỷ lệ quân có cờ chỉ huy, kịch bản trung bình |
 | `--strong-cmd-ratio` | `0.6` | Như trên, kịch bản mạnh |
 | `--strong-gold-pct` | `0.16` | Tổng gold cộng thêm của kịch bản mạnh (nâng cấp meta vàng ở mức tối đa) |
-| `--boss-ids LIST` | `bulwark` | enemy_id được coi là boss trong sheet `waves` |
+| `--boss-ids LIST` | `bulwark,skeletal_centipede` | enemy_id được coi là boss trong sheet `waves` |
 | `--target-gold INT` | không (> 0) | Mốc gold muốn có ở wave thắng, chỉ để so sánh (không đổi công thức thu nhập); điền sẵn ô `target_gold` trên trang |
 | `--tsv PATH` | không | Ghi cột build_cost đề xuất ra file TSV |
 | `--check-js` | tắt | Sau khi ghi trang, mở bằng Edge hoặc Chrome headless và kiểm huy hiệu engine check: `engine check: pass` (mã 0), lỗi đầu tiên (mã 1), hoặc `skipped` (mã 0) khi máy không có trình duyệt |
