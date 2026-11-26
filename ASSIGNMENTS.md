@@ -1768,11 +1768,11 @@ Gameplay đóng băng 29/11, toàn bộ tính năng đóng băng 6/12. Tuần n�
 ##### W12-MH6
 - Người: Mạnh
 - Tuần: 12 | Giờ ước tính: 6 | Nguồn: MỚI
-- Trạng thái: Đang làm
+- Trạng thái: Xong
 - Việc: Camera góc nhìn thứ ba ở hành lang bằng F5 ở Frontline và Commander; PREP và boss intro về camera cũ rồi trả lại lựa chọn; Hazard Trial không đổi (CAM-20)
 - Nghiệm thu: Runner test_corridor_chase_camera và các runner camera (camera_flow, camera_rig, camera_bounds, hazard_camera, boss_intro_camera) pass
 - Cần xong trước: Không
-- Ghi chú: Sửa thêm file của Kim (systems/camera/camera_rig.gd, chase_camera_settings.gd mới) và của Ngọc (entities/commander/commander.gd), cộng autoload/event_bus.gd (thêm signal camera_view_changed); thông số ở data/config/corridor_chase_camera.tres. Cần tag @kimvux và @Rawisl trong PR.
+- Ghi chú: Sửa thêm file của Kim (systems/camera/camera_rig.gd, chase_camera_settings.gd và chase_camera_fade.gd mới, levels/corridor/hazard_room.gd), của Ngọc (entities/commander/commander.gd) và của Khang (ui/world/selection_controller.gd: không hover, không chọn khi chuột bị khóa), cộng autoload/event_bus.gd (thêm signal camera_view_changed); thông số ở data/config/corridor_chase_camera.tres, phòng Hazard đọc data/config/hazard_chase_camera.tres. Cần tag @kimvux, @Rawisl và @WhoKeng trong PR.
 
 #### Khang (UI/UX & Meta), tuần 12, 18h
 
