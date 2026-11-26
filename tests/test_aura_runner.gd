@@ -6,13 +6,14 @@ extends Node3D
 ## - Commander mode, stun, deploying and death turn the aura off in the same frame and
 ##   emit aura_changed(false) once; back to Frontline it comes back within one scan_interval
 ## - recall is checked on a stub commander until the real Recall state exists
-## - a Barricade inside the radius never gets the aura
+## - a Barricade or a Heal Station inside the radius never gets the aura
 ## - shots read dealt_mult on impact, and keep the value saved at fire() when the tower is gone
 ## - Cannon blast damage is rounded once, after falloff and dealt_mult
 
 const ARROW_SCENE: PackedScene = preload("res://entities/tower/arrow.tscn")
 const CANNON_SCENE: PackedScene = preload("res://entities/tower/cannon.tscn")
 const BARRICADE_SCENE: PackedScene = preload("res://entities/tower/barricade.tscn")
+const HEAL_STATION_SCENE: PackedScene = preload("res://entities/tower/heal_station.tscn")
 const GRUNT_SCENE: PackedScene = preload("res://entities/enemy/grunt.tscn")
 const COMMANDER_SCENE: PackedScene = preload("res://entities/commander/commander.tscn")
 const POOL_SCENE: PackedScene = preload("res://entities/projectile/projectile_pool.tscn")
@@ -48,6 +49,7 @@ func _ready() -> void:
 	await test_stun_deploy_death()
 	await test_recall_stub()
 	await test_barricade()
+	await test_heal_station()
 	await test_impact_mult()
 	await test_cannon_rounding()
 
@@ -260,6 +262,18 @@ func test_barricade() -> void:
 	assert_true(not b.aura_active and is_equal_approx(b.get_dealt_mult(), 1.0),
 		"Barricade 2 m from the commander: aura_active false")
 	_clear([b, c])
+
+
+func test_heal_station() -> void:
+	print("
+[GROUP 5b] The Heal Station gets no aura")
+	var h := _tower(HEAL_STATION_SCENE, Vector3(3, 0, 0))
+	var c = _commander(Vector3(5, 0, 0))
+	await _one_scan()
+	h._update_aura()
+	assert_true(not h.aura_active and is_equal_approx(h.get_dealt_mult(), 1.0),
+		"Heal Station 2 m from the commander: aura_active false")
+	_clear([h, c])
 
 
 func test_impact_mult() -> void:

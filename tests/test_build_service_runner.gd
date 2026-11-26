@@ -70,6 +70,9 @@ func _ready() -> void:
 	test_rebuild()
 	test_upgrade_all_types_to_max()
 	test_rebuild_level14_real_data()
+	test_arrow_tier_path_real_data()
+	test_heal_station_tier_gate()
+	test_rebuild_heal_station_real_data()
 	test_level_range()
 	test_tier_gate_table()
 	test_level_cap()
@@ -476,6 +479,85 @@ func test_rebuild_level14_real_data() -> void:
 				if n != null and n.visible:
 					shown.append("Level%d" % i)
 			assert_true(shown == ["Level2"], "barricade rebuilt at level 14 shows only Level2 (shows %s)" % [shown])
+
+func test_arrow_tier_path_real_data() -> void:
+	print("
+[GROUP 8d] Arrow tier path with the real data")
+	var t2 := GameConfig.tower_tier2_level
+	var t3 := GameConfig.tower_tier3_level
+	_reset()
+	_gold.gold = 1000000
+	_service.build(&"W1", &"arrow")
+	var t := _slot(&"W1").tower
+	assert_true(_upgrade_to(&"W1", t2 - 1) and t.model_tier == 1, "arrow: model tier 1 below the tier 2 level")
+	assert_true(not _service.upgrade(&"W1") and _service.get_upgrade_block_reason(&"W1") == &"COMMANDER_LEVEL", "arrow: tier 2 level blocked by COMMANDER_LEVEL below the gate")
+	assert_true(t.level == t2 - 1 and t.model_tier == 1, "arrow: refused upgrade leaves level and model tier alone")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier2, 0)
+	assert_true(_service.upgrade(&"W1") and t.level == t2 and t.model_tier == 2, "arrow: tier 2 level upgrades at the gate and shows model tier 2")
+	assert_true(_upgrade_to(&"W1", t3 - 1) and t.model_tier == 2, "arrow: levels inside tier 2 need no further gate")
+	assert_true(not _service.upgrade(&"W1") and _service.get_upgrade_block_reason(&"W1") == &"COMMANDER_LEVEL", "arrow: tier 3 level blocked at the tier 2 gate")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	assert_true(_service.upgrade(&"W1") and t.level == t3 and t.model_tier == 3, "arrow: tier 3 level upgrades at the gate and shows model tier 3")
+	assert_true(_upgrade_to(&"W1", GameConfig.tower_max_level) and t.model_tier == 3, "arrow: levels inside tier 3 need no further gate")
+	assert_true(not _service.upgrade(&"W1") and _service.get_upgrade_block_reason(&"W1") == &"MAX_LEVEL", "arrow: top level reports MAX_LEVEL")
+
+## Runs `action` with the heal station data registered in the service, then restores the lists.
+func _with_heal_station(action: Callable) -> void:
+	var saved_towers := _service.towers.duplicate()
+	var saved_scenes := _service.tower_scenes.duplicate()
+	_service.towers.append(_service.heal_station_data)
+	_service.tower_scenes[&"heal_station"] = HEAL_STATION_SCENE
+	action.call()
+	_service.towers.assign(saved_towers)
+	_service.tower_scenes = saved_scenes
+
+func test_heal_station_tier_gate() -> void:
+	print("
+[GROUP 8e] The tier gate also applies to the heal station")
+	_with_heal_station(_check_heal_station_gate)
+
+func _check_heal_station_gate() -> void:
+	var t2 := GameConfig.tower_tier2_level
+	var t3 := GameConfig.tower_tier3_level
+	var gid := _ground_id(0)
+	_reset()
+	_gold.gold = 1000000
+	assert_true(_service.build(gid, &"heal_station"), "heal station builds at level 1")
+	var t := _slot(gid).tower
+	assert_true(_upgrade_to(gid, t2 - 1), "heal station reaches the level below the tier 2 level")
+	_denied.clear()
+	assert_true(not _service.upgrade(gid), "heal station: tier 2 level refused below the gate")
+	assert_true(_service.get_upgrade_block_reason(gid) == &"COMMANDER_LEVEL", "heal station: reason is COMMANDER_LEVEL for tier 2")
+	assert_true(_denied == [[&"COMMANDER_LEVEL", 0]], "heal station: build_denied COMMANDER_LEVEL, 0")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier2, 0)
+	assert_true(_service.upgrade(gid) and t.level == t2 and t.model_tier == 2, "heal station: tier 2 level allowed at the gate")
+	assert_true(_upgrade_to(gid, t3 - 1), "heal station reaches the level below the tier 3 level")
+	assert_true(not _service.upgrade(gid) and _service.get_upgrade_block_reason(gid) == &"COMMANDER_LEVEL", "heal station: tier 3 level refused at the tier 2 gate")
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	assert_true(_service.upgrade(gid) and t.level == t3 and t.model_tier == 3, "heal station: tier 3 level allowed at the gate")
+
+func test_rebuild_heal_station_real_data() -> void:
+	print("
+[GROUP 8f] Rebuild a level 14 heal station from the real data")
+	_with_heal_station(_check_heal_station_rebuild)
+
+func _check_heal_station_rebuild() -> void:
+	var gid := _ground_id(0)
+	_reset()
+	EventBus.level_up.emit(GameConfig.tower_gate_tier3, 0)
+	_gold.gold = 1000000
+	_service.build(gid, &"heal_station")
+	assert_true(_upgrade_to(gid, REBUILD_LEVEL), "heal station reaches the level to lose")
+	_slot(gid).ruin()
+	# Back to commander level 0: rebuilding must not need the level again.
+	EventBus.run_started.emit()
+	EventBus.state_changed.emit(&"PREP")
+	_gold.gold = 1000000
+	assert_true(_service.build(gid, &"heal_station", REBUILD_LEVEL), "heal station rebuild works at commander level 0")
+	var t := _slot(gid).tower
+	assert_true(t.level == REBUILD_LEVEL and t.model_tier == TowerData.model_tier(REBUILD_LEVEL), "heal station rebuilt at level %d with its model tier" % REBUILD_LEVEL)
+	assert_true(1000000 - _gold.gold == HEAL_STATION.get_total_cost(REBUILD_LEVEL), "heal station rebuild costs the summed level costs")
+	assert_true(t.priority == HEAL_STATION.default_priority, "heal station priority is back to the default")
 
 func test_tier_gate_table() -> void:
 	print("\n[GROUP 9a] Upgrade gate table")
