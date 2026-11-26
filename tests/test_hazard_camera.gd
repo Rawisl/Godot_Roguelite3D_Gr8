@@ -109,8 +109,10 @@ func _test_entry_and_motion() -> void:
 	_check(rig._orbit.zoom == 1.0 and absf(rig._orbit.pitch_deg - room.chase_pitch_deg) < 0.01
 			and not rig.is_panning_enabled(), "entry resets orbit and disables map panning")
 	var start := rig.position
-	commander.global_position += Vector3(8, 0, 4)
-	_step(0.016)
+	# Steps below the teleport distance, so the chase follows instead of cutting.
+	for i in 5:
+		commander.global_position += Vector3(1.6, 0, 0.8)
+		_step(0.016)
 	_check(rig.position.distance_to(start) > 0.0
 			and rig.position.distance_to(commander.global_position) > 1.0,
 			"the camera follows the commander smoothly")
