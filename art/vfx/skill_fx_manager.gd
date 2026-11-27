@@ -16,6 +16,10 @@ extends Node
 ## Whirlwind and Sword Wave take their colours from the equipped sword (EventBus.weapon_equipped):
 ## the material of the skill is cloned once per sword and recoloured from that sword's SkillPalette.
 ## An effect keeps the material it was made with, so changing sword never recolours one in flight.
+## Whirlwind and Sword Wave lie flat; when the camera looks at one flatter than min_view_angle it
+## tilts up towards the camera, each at most its own max tilt. Sword Wave also rises so no corner
+## dips into the floor. Whirlwind sits at the middle of the commander and turns about its centre
+## only a few degrees, little enough that its edge never reaches the floor.
 ## Nothing is added to the commander scene.
 
 const SKILL_DIR := "res://data/skills/%s.tres"
@@ -25,6 +29,8 @@ const WAVE_SPARK_POINTS := 12
 const WAVE_SPARK_SPAN := 0.9
 ## The sword whose palette is used before any sword is announced and for swords with no palette.
 const BASE_WEAPON := &"sword_base"
+## Rounds of tilt-then-lift; each round works the tilt out again from the last lifted spot.
+const TILT_PASSES := 6
 
 @export_group("Palettes")
 ## Colours of Whirlwind and Sword Wave per sword id; tuned in art/materials/palettes/.
@@ -41,6 +47,12 @@ const BASE_WEAPON := &"sword_base"
 ## Blade shape and timing (end_ms is the life of the effect) are tuned in this material, its
 ## colours come from the palette of the equipped sword; radius, age_ms and flicker are set per effect.
 @export var whirlwind_material: ShaderMaterial = preload("res://art/materials/skill_whirlwind.tres")
+## Height of the blades above the floor: the middle of the commander (its capsule centre).
+@export var whirlwind_height := 0.9
+## The most the blades tilt towards a low camera, in degrees (see min_view_angle). The disc turns
+## about its centre, so its edge moves about radius x sin(this) up or down; keep that under
+## whirlwind_height so it never cuts into the floor.
+@export_range(0.0, 90.0) var whirlwind_max_tilt := 5.0
 ## Sparks thrown in from the edge, how long they live, and their speed in metres per second.
 @export var whirlwind_spark_count := 15
 @export var whirlwind_spark_lifetime := 0.18
@@ -60,6 +72,8 @@ const BASE_WEAPON := &"sword_base"
 
 @export_group("Sword Wave")
 @export var wave_material: ShaderMaterial = preload("res://art/materials/skill_sword_wave.tres")
+## The most the wave tilts towards a low camera, in degrees, even when the camera looks up at it.
+@export_range(0.0, 90.0) var wave_max_tilt := 45.0
 ## Used while data/skills/sword_wave.tres has no width or range, or GameConfig no speed.
 @export var fallback_wave_width := 3.0
 @export var fallback_wave_distance := 4.0
@@ -96,6 +110,9 @@ const BASE_WEAPON := &"sword_base"
 @export var fade_time := 0.2
 ## Height above the floor for flat effects.
 @export var ground_lift := 0.05
+## Whirlwind and Sword Wave tilt up towards the camera when it looks at them flatter than this
+## many degrees, so a low chase camera still sees them. 0 keeps them flat.
+@export_range(0.0, 90.0) var min_view_angle := 25.0
 ## Room outside the radius for the soft edge.
 @export var ring_margin := 0.3
 ## The shared particle limit (ParticleBudget). Over it, dust, embers and sparks are skipped; the
@@ -213,9 +230,11 @@ func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) 
 		ring.set_instance_shader_parameter(&"ring_centre", whirlwind_ring_centres[i])
 		ring.set_instance_shader_parameter(&"ring_delay_ms", whirlwind_ring_delays_ms[i])
 		rings.append(ring)
-	var fx := {"kind": &"whirlwind", "mesh": mesh, "rings": rings, "elapsed": 0.0}
+	var fx := {"kind": &"whirlwind", "mesh": mesh, "rings": rings, "elapsed": 0.0,
+		"flat": mesh.global_basis, "at": mesh.global_position}
 	if _has_room(whirlwind_spark_count):
 		fx["particles"] = _whirlwind_sparks(whirlwind_spark_count, radius, origin)
+	_face_whirlwind(fx)
 	_effects.append(fx)
 
 
@@ -223,7 +242,7 @@ func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) 
 func _whirlwind_ring(origin: Vector3, radius: float, start_dir: Vector3, ring_scale: float) -> MeshInstance3D:
 	var wisp: float = whirlwind_material.get_shader_parameter(&"wisp_offset")
 	var mesh := _flat_mesh(_skill_material(&"whirlwind", whirlwind_material), radius * ring_scale * (wisp + 0.05) + ring_margin)
-	mesh.global_position = origin + Vector3.UP * ground_lift
+	mesh.global_position = origin + Vector3.UP * whirlwind_height
 	mesh.rotation.y = atan2(-start_dir.z, start_dir.x)
 	mesh.set_instance_shader_parameter(&"radius", radius)
 	mesh.set_instance_shader_parameter(&"age_ms", 0.0)
@@ -274,7 +293,7 @@ func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticl
 	sparks.gravity = Vector3.ZERO
 	sparks.lifetime_randomness = 0.33
 	sparks.particle_flag_align_y = true
-	sparks.global_position = origin + Vector3.UP * ground_lift
+	sparks.global_position = origin + Vector3.UP * whirlwind_height
 	sparks.emitting = true
 	return sparks
 
@@ -287,7 +306,17 @@ func _update_whirlwind(fx: Dictionary) -> bool:
 	for mesh in meshes:
 		mesh.set_instance_shader_parameter(&"age_ms", age * 1000.0)
 		mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	_face_whirlwind(fx)
 	return fx.elapsed < whirlwind_time()
+
+
+## All the rings share one tilt about their centre, so they stay one disc.
+func _face_whirlwind(fx: Dictionary) -> void:
+	var meshes: Array[MeshInstance3D] = [fx.mesh]
+	meshes.append_array(fx.rings)
+	var basis: Basis = _view_tilt(fx.at, whirlwind_max_tilt) * fx.flat
+	for mesh in meshes:
+		mesh.global_basis = basis
 #endregion
 
 
@@ -323,7 +352,9 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	mesh.global_basis = Basis.looking_at(flat, Vector3.UP)
 	mesh.global_position = start + Vector3.UP * wave_height
 	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
-		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed}
+		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed,
+		"flat": mesh.global_basis, "floor": origin.y}
+	_face_camera(mesh, fx.flat, mesh.global_position, fx.floor, wave_max_tilt)
 	var count := clampi(roundi(width * wave_spark_density), 8, 28)
 	if _has_room(count):
 		fx["particles"] = _wave_sparks(count, scale_m, mesh)
@@ -367,7 +398,7 @@ func _update_sword_wave(fx: Dictionary) -> bool:
 	var mesh: MeshInstance3D = fx.mesh
 	var t: float = minf(fx.elapsed, fx.fly_time)
 	var travelled: float = fx.speed * t
-	mesh.global_position = fx.start + fx.dir * travelled
+	_face_camera(mesh, fx.flat, fx.start + fx.dir * travelled, fx.floor, wave_max_tilt)
 	# The tail grows as the wave leaves, so it never reaches back past the commander.
 	mesh.set_instance_shader_parameter(&"tail_scale", clampf((travelled + wave_start_offset) / maxf(fx.tail, 0.001), 0.0, 1.0))
 	var fade := _fade_after(fx.elapsed, fx.fly_time)
@@ -499,6 +530,51 @@ func _free_effect(fx: Dictionary) -> void:
 	for ring: MeshInstance3D in fx.get("rings", []):
 		if is_instance_valid(ring):
 			ring.queue_free()
+
+
+## Puts a flat effect mesh at `at`, tilted towards the camera (at most max_tilt degrees) and lifted
+## clear of the floor when the view grazes it. flat is its lying-flat basis, floor_y the height of
+## the floor under it. The tilt is worked out again from the lifted spot, since lifting changes how
+## the camera sees it.
+func _face_camera(mesh: MeshInstance3D, flat: Basis, at: Vector3, floor_y: float, max_tilt: float) -> void:
+	var lift := 0.0
+	var basis := flat
+	for _round in TILT_PASSES:
+		basis = _view_tilt(at + Vector3.UP * lift, max_tilt) * flat
+		lift = _floor_lift(mesh, basis, at, floor_y)
+	mesh.global_basis = basis
+	mesh.global_position = at + Vector3.UP * lift
+
+
+## The turn that leans a flat effect at `at` towards the camera until the camera sees it at
+## min_view_angle, at most max_tilt degrees; identity when it already does, or with no camera.
+func _view_tilt(at: Vector3, max_tilt: float) -> Basis:
+	if min_view_angle <= 0.0:
+		return Basis.IDENTITY
+	var cam := get_viewport().get_camera_3d() if get_viewport() != null else null
+	if cam == null:
+		return Basis.IDENTITY
+	var to_cam := cam.global_position - at
+	if cam.projection == Camera3D.PROJECTION_ORTHOGONAL:
+		to_cam = cam.global_basis.z
+	var across := Vector3(to_cam.x, 0.0, to_cam.z)
+	if across.length_squared() < 0.000001:
+		return Basis.IDENTITY
+	var need := minf(deg_to_rad(min_view_angle) - atan2(to_cam.y, across.length()), deg_to_rad(max_tilt))
+	if need <= 0.0:
+		return Basis.IDENTITY
+	# Turning about this axis leans the plane's up towards the camera.
+	return Basis(Vector3.UP.cross(across.normalized()), need)
+
+
+## How far to raise a mesh at `at` with this basis so its lowest corner stays ground_lift above
+## floor_y. 0 when it is already clear.
+func _floor_lift(mesh: MeshInstance3D, basis: Basis, at: Vector3, floor_y: float) -> float:
+	var box := mesh.get_aabb()
+	var low := INF
+	for i in 8:
+		low = minf(low, (basis * box.get_endpoint(i)).y)
+	return maxf(floor_y + ground_lift - (at.y + low), 0.0)
 
 
 ## 1 until hold seconds have passed, then down to 0 over fade_time.
