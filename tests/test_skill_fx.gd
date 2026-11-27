@@ -5,8 +5,9 @@ extends Node3D
 ##   at x2, held while paused), then free themselves with their sparks; the sparks fly in towards
 ##   the commander, and reduced flashing turns the flicker off
 ## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall; its
-##   plane leaves room for the glow, sparks follow the wave and stop with it, the band runs on
-##   game time (held while paused), and reduced flashing turns the pulse off, capped at 3 per second
+##   plane leaves room for the glow, sparks follow the wave and stop with it, the wisps run on
+##   game time (held while paused), reduced flashing stops the wisp gaps drifting, and the
+##   colours are the ones Whirlwind uses
 ## - Firebomb: the bomb flies first, then the burn area shows at the cast point for the burn
 ##   time; reduced flashing turns the flicker off, and the flicker is capped at 3 per second
 ## - every skill shader keeps the depth test, so walls hide the effects
@@ -51,6 +52,7 @@ func _ready() -> void:
 	await test_firebomb_flicker()
 	test_depth_test_kept()
 	test_whirlwind_shader_rules()
+	test_sword_wave_shader_rules()
 	await test_particle_budget()
 	await test_run_started_clears()
 
@@ -194,9 +196,14 @@ func test_sword_wave_plane_fits_halo() -> void:
 	await _frames(1)
 	var mesh := _fx.get_effect_mesh(&"sword_wave")
 	var plane := mesh.mesh as PlaneMesh if mesh != null else null
-	var halo: float = _fx.wave_material.get_shader_parameter(&"halo_width")
-	assert_true(plane != null and plane.size.x >= _fx.fallback_wave_width + 2.0 * halo,
-		"the wave plane leaves room for the glow")
+	var arc_half: float = _fx.wave_material.get_shader_parameter(&"arc_half")
+	var scale_m: float = _fx.fallback_wave_width * 0.5 / arc_half
+	var front_margin: float = _fx.wave_material.get_shader_parameter(&"front_margin")
+	var tail_extent: float = _fx.wave_material.get_shader_parameter(&"tail_extent")
+	assert_true(plane != null and plane.size.x > _fx.fallback_wave_width,
+		"the wave plane is wider than the arc, so the glow and the fanned shards fit")
+	assert_true(plane != null and plane.size.y >= (front_margin + tail_extent) * scale_m - 0.001,
+		"the wave plane reaches in front of the front edge and back over the shards and wisps")
 	await _clear()
 
 
@@ -211,6 +218,13 @@ func test_sword_wave_sparks() -> void:
 	if sparks == null or mesh == null:
 		await _clear()
 		return
+	assert_true(sparks.particle_flag_align_y, "the wave sparks are streaks turned along their flight")
+	assert_true(sparks.lifetime <= _fx.wave_spark_lifetime, "the wave sparks are short lived")
+	# The front edge sits at local z = 0 and the wave flies towards -Z.
+	var behind_front := true
+	for point in sparks.emission_points:
+		behind_front = behind_front and point.z > 0.0
+	assert_true(behind_front, "the wave sparks start behind the front edge")
 	var start := mesh.global_position
 	var flight := (_fx.fallback_wave_distance - _fx.wave_start_offset) / _fx.fallback_wave_speed
 	await TimeManager.wait_game(flight * 0.5)
@@ -233,10 +247,10 @@ func test_sword_wave_on_game_time() -> void:
 	var t0: float = mesh.get_instance_shader_parameter(&"game_time")
 	await TimeManager.wait_game(0.05)
 	var t1: float = mesh.get_instance_shader_parameter(&"game_time")
-	assert_true(t1 > t0, "the band moves on game time")
+	assert_true(t1 > t0, "the wisps move on game time")
 	TimeManager.request_pause(TimeManager.REASON_USER)
 	await TimeManager.wait_real(0.1)
-	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the band holds")
+	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the wisps hold")
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	await _clear()
 
@@ -248,13 +262,12 @@ func test_sword_wave_flicker() -> void:
 	await _frames(2)
 	var mesh := _fx.get_effect_mesh(&"sword_wave")
 	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 0.0,
-		"reduced flashing turns the band pulse off")
+		"reduced flashing stops the wisp gaps drifting")
 	EventBus.settings_changed.emit(&"reduce_flash", false)
 	await _frames(2)
 	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
-		"turning it back off brings the pulse back")
-	assert_true(_fx.wave_material.shader.code.contains("min(pulse_hz, 3.0)"), "the pulse never goes over 3 per second")
-	assert_true(float(_fx.wave_material.get_shader_parameter(&"pulse_hz")) <= 3.0, "the tuned pulse is under 3 per second")
+		"turning it back off brings the wisp drift back")
+	assert_true(_fx.wave_material.shader.code.contains("wisp_scroll * flicker"), "the wisp drift follows the flicker setting")
 	await _clear()
 
 
@@ -308,6 +321,26 @@ func test_whirlwind_shader_rules() -> void:
 	var code := _fx.whirlwind_material.shader.code
 	assert_true(code.contains("blend_premul_alpha"), "the whirlwind blends with premultiplied alpha")
 	assert_true(not code.contains("TIME"), "the whirlwind runs on the age it is given, not on engine time")
+
+
+func test_sword_wave_shader_rules() -> void:
+	var code := _fx.wave_material.shader.code
+	assert_true(code.contains("blend_premul_alpha"), "the wave blends with premultiplied alpha")
+	assert_true(not code.contains("TIME"), "the wave runs on the game time it is given, not on engine time")
+	assert_true(not code.contains("slash_common"), "the wave shader includes nothing")
+	# The growth scaling must run before the offset to the disc centre, or the front edge drifts off the node.
+	var scale_at := code.find("q /= mix(start_scale")
+	var offset_at := code.find("q.y += arc_origin + arc_radius;")
+	assert_true(scale_at >= 0 and offset_at > scale_at, "the wave grows around its front edge, which stays on the node")
+	# The glow must be gone before the plane edge, or the plane shows as a faint rectangle.
+	var margin: float = _fx.wave_material.get_shader_parameter(&"front_margin")
+	var glow_w: float = _fx.wave_material.get_shader_parameter(&"glow_width")
+	var glow_a: float = _fx.wave_material.get_shader_parameter(&"glow_alpha")
+	assert_true(glow_a * exp(-margin / glow_w) < 0.005, "the glow is invisible at the front edge of the plane")
+	var same_colours := true
+	for color_name in [&"core_color", &"rim_color", &"band_color", &"shard_color", &"mid_color", &"tail_color"]:
+		same_colours = same_colours and _fx.wave_material.get_shader_parameter(color_name) == _fx.whirlwind_material.get_shader_parameter(color_name)
+	assert_true(same_colours, "Sword Wave and Whirlwind share the skill_wave colours")
 
 
 func test_particle_budget() -> void:
