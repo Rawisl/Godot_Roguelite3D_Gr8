@@ -42,6 +42,9 @@ func _ready() -> void:
 	await test_whirlwind_fades_and_frees()
 	await test_whirlwind_sparks()
 	await test_whirlwind_flicker()
+	await test_whirlwind_rings()
+	await test_whirlwind_rings_on_game_time()
+	await test_whirlwind_rings_free()
 	await test_sword_wave_flies_along_aim()
 	await test_sword_wave_stops_at_wall()
 	await test_sword_wave_plane_fits_halo()
@@ -157,6 +160,70 @@ func test_whirlwind_flicker() -> void:
 	await _frames(2)
 	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
 		"turning it back off brings the flicker back")
+	await _clear()
+
+
+func test_whirlwind_rings() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var rings := _fx.get_whirlwind_rings()
+	var wanted := _fx.whirlwind_ring_count()
+	assert_true(wanted >= 1 and rings.size() == wanted, "the whirlwind has one extra mesh per extra ring")
+	assert_true(_whirlwind_mesh_count() == 1 + wanted, "the whirlwind is the main mesh plus the extra rings")
+	var main := _fx.get_effect_mesh(&"whirlwind")
+	# Values never set read back as null: the shader defaults (1 and 0) apply.
+	assert_true(main != null and main.get_instance_shader_parameter(&"ring_scale") in [null, 1.0]
+		and main.get_instance_shader_parameter(&"ring_delay_ms") in [null, 0.0], "the main ring keeps the default ring values")
+	var wisp: float = _fx.whirlwind_material.get_shader_parameter(&"wisp_offset")
+	var ok := rings.size() == wanted
+	var plane_ok := ok
+	for i in rings.size():
+		var ring_scale: float = rings[i].get_instance_shader_parameter(&"ring_scale")
+		ok = ok and is_equal_approx(ring_scale, _fx.whirlwind_ring_scales[i]) \
+			and is_equal_approx(rings[i].get_instance_shader_parameter(&"ring_delay_ms"), _fx.whirlwind_ring_delays_ms[i]) \
+			and is_equal_approx(rings[i].get_instance_shader_parameter(&"ring_weight"), _fx.whirlwind_ring_weights[i]) \
+			and is_equal_approx(rings[i].get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS)
+		var plane := rings[i].mesh as PlaneMesh
+		plane_ok = plane_ok and plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * ring_scale * wisp
+	assert_true(ok, "each extra ring carries its own radius factor, delay and strength")
+	assert_true(plane_ok, "each ring plane fits the outer wisps of its own radius")
+	await _clear()
+
+
+func test_whirlwind_rings_on_game_time() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await TimeManager.wait_game(0.2)
+	var rings := _fx.get_whirlwind_rings()
+	var ok := not rings.is_empty()
+	for ring in rings:
+		ok = ok and absf(ring.get_instance_shader_parameter(&"age_ms") - 200.0) < 60.0
+	assert_true(ok, "after 0.2 s of game time the extra rings are 200 ms old")
+	TimeManager.request_pause(TimeManager.REASON_USER)
+	var held := _age_ms()
+	await TimeManager.wait_real(0.2)
+	assert_true(not rings.is_empty() and is_equal_approx(rings[0].get_instance_shader_parameter(&"age_ms"), held),
+		"while paused the extra rings hold too")
+	TimeManager.release_pause(TimeManager.REASON_USER)
+	await _clear()
+
+
+func test_whirlwind_rings_free() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var rings := _fx.get_whirlwind_rings().duplicate()
+	var end_s: float = float(_fx.whirlwind_material.get_shader_parameter(&"end_ms")) * 0.001
+	var max_delay_s := 0.0
+	for delay in _fx.whirlwind_ring_delays_ms:
+		max_delay_s = maxf(max_delay_s, delay * 0.001)
+	assert_true(is_equal_approx(_fx.whirlwind_time(), end_s + max_delay_s),
+		"the effect lives until the latest ring has faded")
+	await TimeManager.wait_game(_fx.whirlwind_time() + 0.3)
+	await _frames(2)
+	var freed := not rings.is_empty()
+	for ring in rings:
+		freed = freed and (not is_instance_valid(ring) or ring.is_queued_for_deletion())
+	assert_true(freed, "the extra rings are freed with the blades")
+	assert_true(_whirlwind_mesh_count() == 0, "no whirlwind mesh is left behind")
 	await _clear()
 
 
@@ -391,6 +458,11 @@ func _aim(dir: Vector3) -> void:
 func _age_ms() -> float:
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
 	return mesh.get_instance_shader_parameter(&"age_ms") if mesh != null else -1.0
+
+
+## Meshes still alive under the manager: the main ring and the extra ones.
+func _whirlwind_mesh_count() -> int:
+	return _fx.get_children().filter(func(n: Node) -> bool: return n is MeshInstance3D and not n.is_queued_for_deletion()).size()
 
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
