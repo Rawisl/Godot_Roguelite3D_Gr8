@@ -66,6 +66,7 @@ const EYE_SIDE := 0.17
 @export var scratch_distance := 4.5
 @export var scratch_time := 1.2
 @export var scratch_speed := 3.0
+@export var dust_color := Color(0.62, 0.52, 0.4, 0.5)
 @export_group("Coin")
 ## Passing the CoinFlip marker the fox, still walking, looks at the chest, takes a coin from his
 ## pocket and flicks it onto the coins on the floor in front of the chest.
@@ -81,6 +82,17 @@ const EYE_SIDE := 0.17
 @export var flicker_speed := 6.0
 ## Torches waver more than the hanging lamps.
 @export var torch_flicker_amount := 0.35
+@export_group("Door Light")
+## Light through the doorway once the leaves are open.
+@export var door_sun_open := 12.0
+@export var door_glow_open := 0.3
+@export var door_glare_open := 0.5
+@export var door_beam_open := 0.35
+## Peak values while the camera rushes in and the screen turns white.
+@export var door_sun_peak := 24.0
+@export var door_glow_peak := 1.5
+@export var door_glare_peak := 1.5
+@export var white_out_exposure := 4.0
 @export_group("Door")
 ## The leaves open outwards, away from the fox standing right at the door.
 @export var door_open_degrees := 100.0
@@ -155,7 +167,9 @@ var _scratched := false
 @onready var _door_glow: OmniLight3D = %DoorGlow
 ## Daylight through the doorway, so the floor just inside the door lights up in its shape.
 @onready var _door_sun: SpotLight3D = %DoorSun
-@onready var _env: Environment = $WorldEnvironment.environment
+## A copy of the scene's Environment, so raising the exposure for the white-out never leaks into
+## the next time the room is loaded.
+@onready var _env: Environment = ($WorldEnvironment as WorldEnvironment).environment.duplicate()
 @onready var _white: ColorRect = %White
 @onready var _glare: ShaderMaterial = ($DoorGlare as MeshInstance3D).material_override
 @onready var _door_beam: ShaderMaterial = ($DoorBeam as MeshInstance3D).material_override
@@ -173,6 +187,7 @@ var _scratched := false
 
 
 func _ready() -> void:
+	($WorldEnvironment as WorldEnvironment).environment = _env
 	_apply_materials(_room)
 	_camera.current = true
 	_door_glow.light_energy = 0.0
@@ -307,7 +322,7 @@ func _make_dust() -> void:
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.albedo_color = Color(0.62, 0.52, 0.4, 0.5)
+	mat.albedo_color = dust_color
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	_dust_mesh.material = mat
 
@@ -603,10 +618,10 @@ func _open_door() -> void:
 	doors.parallel().tween_property(_door_r, "rotation:y", squeeze, door_squeeze_time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	doors.tween_property(_door_l, "rotation:y", open, door_open_time).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	doors.parallel().tween_property(_door_r, "rotation:y", -open, door_open_time).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	doors.parallel().tween_property(_door_sun, "light_energy", 12.0, door_open_time * 0.5)
-	doors.parallel().tween_property(_door_glow, "light_energy", 0.3, door_open_time * 0.5)
-	doors.parallel().tween_method(func(v: float) -> void: _glare.set_shader_parameter(&"strength", v), 0.0, 0.5, door_open_time * 0.5)
-	doors.parallel().tween_method(func(v: float) -> void: _door_beam.set_shader_parameter(&"intensity", v), 0.0, 0.35, door_open_time * 0.5)
+	doors.parallel().tween_property(_door_sun, "light_energy", door_sun_open, door_open_time * 0.5)
+	doors.parallel().tween_property(_door_glow, "light_energy", door_glow_open, door_open_time * 0.5)
+	doors.parallel().tween_method(func(v: float) -> void: _glare.set_shader_parameter(&"strength", v), 0.0, door_glare_open, door_open_time * 0.5)
+	doors.parallel().tween_method(func(v: float) -> void: _door_beam.set_shader_parameter(&"intensity", v), 0.0, door_beam_open, door_open_time * 0.5)
 
 
 ## In front of the door the fox looks back over his right shoulder, towards the camera.
@@ -625,10 +640,10 @@ func _rush_to_face() -> void:
 	var rush := create_tween().set_parallel()
 	rush.tween_method(_rush_step.bind(from), 0.0, 1.0, rush_time) \
 			.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN)
-	rush.tween_property(_env, "tonemap_exposure", 4.0, rush_time).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	rush.tween_property(_door_sun, "light_energy", 24.0, rush_time)
-	rush.tween_property(_door_glow, "light_energy", 1.5, rush_time)
-	rush.tween_method(func(v: float) -> void: _glare.set_shader_parameter(&"strength", v), 0.5, 1.5, rush_time)
+	rush.tween_property(_env, "tonemap_exposure", white_out_exposure, rush_time).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	rush.tween_property(_door_sun, "light_energy", door_sun_peak, rush_time)
+	rush.tween_property(_door_glow, "light_energy", door_glow_peak, rush_time)
+	rush.tween_method(func(v: float) -> void: _glare.set_shader_parameter(&"strength", v), door_glare_open, door_glare_peak, rush_time)
 	rush.tween_property(_white, "color:a", 1.0, rush_time * 0.35).set_delay(rush_time * 0.65)
 	await rush.finished
 
