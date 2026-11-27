@@ -13,6 +13,10 @@ extends Node3D
 ## - every skill shader keeps the depth test, so walls hide the effects
 ## - over the particle budget the effects still play without sparks or embers
 ## - run_started clears everything
+## - Whirlwind and Sword Wave stay flat under a high or top-down camera and tilt towards a low one,
+##   never past their own max tilt, and stay flat when min_view_angle is 0; the wave reaches
+##   min_view_angle and stays clear of the floor, Whirlwind turns about its centre at the middle of
+##   the commander and its edge never reaches the floor
 ## - the colours follow the equipped sword: six palettes, base sword by default and for unknown swords, never
 ##   changed under an effect already flying
 ## Headless it runs the checks and quits. F6 in the editor runs the checks, then casts the three
@@ -66,6 +70,7 @@ func _ready() -> void:
 	await test_sword_change_keeps_flying_effect()
 	await test_unknown_sword_uses_base()
 	await test_sword_change_after_readd()
+	await test_tilt_toward_low_camera()
 
 	TimeManager.reset()
 	print("[skill fx] done: %d passed, %d failed" % [passes, fails])
@@ -90,8 +95,8 @@ func test_whirlwind_placed() -> void:
 	await _frames(1)
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
 	assert_true(_fx.get_active_count(&"whirlwind") == 1, "skill_cast whirlwind adds one ring of blades")
-	assert_true(mesh != null and mesh.global_position.distance_to(Vector3(1, _fx.ground_lift, -2)) < 0.001,
-		"the blades sit on the cast point, just above the floor")
+	assert_true(mesh != null and mesh.global_position.distance_to(Vector3(1, _fx.whirlwind_height, -2)) < 0.001,
+		"the blades sit over the cast point, at the middle of the commander")
 	assert_true(mesh != null and is_equal_approx(mesh.get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS),
 		"the blades use the skill radius")
 	var plane := mesh.mesh as PlaneMesh if mesh != null else null
@@ -593,6 +598,50 @@ func _clear() -> void:
 	await _frames(2)
 
 
+func _whirlwind_meshes() -> Array[MeshInstance3D]:
+	var meshes: Array[MeshInstance3D] = [_fx.get_effect_mesh(&"whirlwind")]
+	meshes.append_array(_fx.get_whirlwind_rings())
+	return meshes
+
+
+func _wave_mesh() -> Array[MeshInstance3D]:
+	var meshes: Array[MeshInstance3D] = [_fx.get_effect_mesh(&"sword_wave")]
+	return meshes
+
+
+func _tilt_deg(mesh: MeshInstance3D) -> float:
+	return rad_to_deg(mesh.global_basis.y.angle_to(Vector3.UP)) if mesh != null else INF
+
+
+func _all_flat(meshes: Array[MeshInstance3D]) -> bool:
+	for mesh in meshes:
+		if mesh == null or not mesh.global_basis.y.normalized().is_equal_approx(Vector3.UP):
+			return false
+	return true
+
+
+## Degrees between the camera's view of the mesh centre and the mesh plane.
+func _view_angle(mesh: MeshInstance3D, cam: Camera3D) -> float:
+	var to_cam := (cam.global_position - mesh.global_position).normalized()
+	return rad_to_deg(asin(absf(to_cam.dot(mesh.global_basis.y.normalized()))))
+
+
+func _lowest_corner(mesh: MeshInstance3D) -> float:
+	var box := mesh.get_aabb()
+	var low := INF
+	for i in 8:
+		low = minf(low, (mesh.global_transform * box.get_endpoint(i)).y)
+	return low
+
+
+func _cast_tilt_pair(origin: Vector3) -> void:
+	_fx.clear()
+	_aim(Vector3.FORWARD)
+	_cast(&"whirlwind", origin, WHIRLWIND_RADIUS)
+	_cast(&"sword_wave", origin, 0.0)
+	await _frames(2)
+
+
 func _frames(count: int) -> void:
 	for i in count:
 		await get_tree().process_frame
@@ -648,6 +697,73 @@ func _make_world() -> void:
 	cam.look_at(Vector3.ZERO)
 	cam.current = true
 #endregion
+
+
+## Placed after the other tests: it swaps the camera and puts the old one back at the end.
+func test_tilt_toward_low_camera() -> void:
+	var old_cam := get_viewport().get_camera_3d()
+	var origin := Vector3(-6, 0, 0)
+	var cam := Camera3D.new()
+	add_child(cam)
+	cam.current = true
+
+	cam.global_position = origin + Vector3(0, 10, 6)
+	cam.look_at(origin)
+	await _cast_tilt_pair(origin)
+	assert_true(_all_flat(_wave_mesh()) and _all_flat(_whirlwind_meshes()), "a high camera leaves both effects flat")
+
+	cam.global_position = origin + Vector3(0, 1.2, 9)
+	cam.look_at(origin + Vector3.UP * 0.6)
+	await _cast_tilt_pair(origin)
+	var wave: MeshInstance3D = _wave_mesh()[0]
+	assert_true(wave != null and not _all_flat(_wave_mesh())
+		and _view_angle(wave, cam) >= _fx.min_view_angle - 1.0,
+		"a low camera sees Sword Wave at least at min_view_angle")
+	assert_true(wave != null and _lowest_corner(wave) >= origin.y + _fx.ground_lift - 0.001,
+		"the tilted wave rises so no corner dips into the floor")
+	var rings := _whirlwind_meshes()
+	var one_disc := true
+	for ring in rings:
+		one_disc = one_disc and ring != null and ring.global_transform.is_equal_approx(rings[0].global_transform)
+	assert_true(not _all_flat(rings) and _tilt_deg(rings[0]) <= _fx.whirlwind_max_tilt + 0.5,
+		"a low camera tilts Whirlwind, at most whirlwind_max_tilt")
+	var whirl_clear := true
+	for ring in rings:
+		whirl_clear = whirl_clear and ring != null and _lowest_corner(ring) >= origin.y
+	assert_true(one_disc and rings[0].global_position.is_equal_approx(origin + Vector3.UP * _fx.whirlwind_height),
+		"the Whirlwind rings tilt together about their centre, without moving")
+	assert_true(whirl_clear, "the tilted Whirlwind never cuts into the floor")
+
+	# Looking up from near the floor, as the chase camera does at its highest pitch.
+	cam.global_position = origin + Vector3(0, 0.3, 3)
+	cam.look_at(origin + Vector3.UP * 1.6)
+	await _cast_tilt_pair(origin)
+	wave = _wave_mesh()[0]
+	assert_true(_tilt_deg(wave) <= _fx.wave_max_tilt + 0.5, "a camera below the wave never tilts it past wave_max_tilt")
+	var whirl: MeshInstance3D = _whirlwind_meshes()[0]
+	assert_true(_tilt_deg(whirl) <= _fx.whirlwind_max_tilt + 0.5
+		and whirl.global_position.is_equal_approx(origin + Vector3.UP * _fx.whirlwind_height),
+		"a camera looking up never tilts Whirlwind past whirlwind_max_tilt nor lifts it")
+
+	var angle := _fx.min_view_angle
+	_fx.min_view_angle = 0.0
+	cam.global_position = origin + Vector3(0, 1.2, 9)
+	cam.look_at(origin + Vector3.UP * 0.6)
+	await _cast_tilt_pair(origin)
+	assert_true(_all_flat(_wave_mesh()) and _all_flat(_whirlwind_meshes()),
+		"min_view_angle 0 keeps both effects flat under a low camera")
+	_fx.min_view_angle = angle
+
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.global_position = origin + Vector3.UP * 10.0
+	cam.rotation_degrees = Vector3(-90, 0, 0)
+	await _cast_tilt_pair(origin)
+	assert_true(_all_flat(_wave_mesh()) and _all_flat(_whirlwind_meshes()), "a top-down overview camera leaves both effects flat")
+
+	_fx.clear()
+	cam.queue_free()
+	if old_cam != null:
+		old_cam.current = true
 
 
 func _run_demo() -> void:
