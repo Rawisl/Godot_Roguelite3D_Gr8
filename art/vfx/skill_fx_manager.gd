@@ -2,7 +2,8 @@ class_name SkillFxManager
 extends Node
 ## Visuals for the commander's active skills, one effect per EventBus.skill_cast:
 ## - Whirlwind: a ring of three spinning blades grows to the skill radius round the commander and
-##   unravels, sparks fly in from the edge
+##   unravels, sparks fly in from the edge; a faster ring inside and a thinner, later ring outside
+##   make it denser
 ## - Sword Wave: a wide shallow crescent with a white rim, blade shards and broken wisps trailing
 ##   it flies from the commander along its aim, and stops early at a wall
 ## - Firebomb: a bomb arcs from the commander to the cast point, then the burn area and its
@@ -32,6 +33,15 @@ const WAVE_SPARK_SPAN := 0.9
 @export var whirlwind_spark_speed_max := 1.6
 ## How much the sparks swirl along the spin instead of flying straight at the commander, 0..1.
 @export var whirlwind_spark_swirl := 0.6
+## Extra rings drawn with the main one, one value per ring in each list (the shortest list sets
+## the number of rings): radius as a part of the skill radius, turn offset in radians, spin speed
+## as a multiple of the material's, strength, strength of the centre glow, and start delay in ms.
+@export var whirlwind_ring_scales := PackedFloat32Array([0.7, 1.15])
+@export var whirlwind_ring_phases := PackedFloat32Array([1.0, 2.1])
+@export var whirlwind_ring_spins := PackedFloat32Array([1.3, 0.9])
+@export var whirlwind_ring_weights := PackedFloat32Array([0.7, 0.5])
+@export var whirlwind_ring_centres := PackedFloat32Array([0.0, 0.0])
+@export var whirlwind_ring_delays_ms := PackedFloat32Array([0.0, 40.0])
 
 @export_group("Sword Wave")
 @export var wave_material: ShaderMaterial = preload("res://art/materials/skill_sword_wave.tres")
@@ -142,23 +152,50 @@ func _set_reduce_flash(on: bool) -> void:
 #region Whirlwind
 ## start_dir is where the main blade starts; the blades spin counter-clockwise from there.
 func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) -> void:
-	var wisp: float = whirlwind_material.get_shader_parameter(&"wisp_offset")
-	var mesh := _flat_mesh(whirlwind_material, radius * (wisp + 0.05) + ring_margin)
-	mesh.global_position = origin + Vector3.UP * ground_lift
-	mesh.rotation.y = atan2(-start_dir.z, start_dir.x)
-	mesh.set_instance_shader_parameter(&"radius", radius)
-	mesh.set_instance_shader_parameter(&"age_ms", 0.0)
-	mesh.set_instance_shader_parameter(&"flicker", _flicker)
-	var fx := {"kind": &"whirlwind", "mesh": mesh, "elapsed": 0.0}
+	var mesh := _whirlwind_ring(origin, radius, start_dir, 1.0)
+	var rings: Array[MeshInstance3D] = []
+	for i in whirlwind_ring_count():
+		var ring := _whirlwind_ring(origin, radius, start_dir, whirlwind_ring_scales[i])
+		ring.set_instance_shader_parameter(&"ring_scale", whirlwind_ring_scales[i])
+		ring.set_instance_shader_parameter(&"ring_phase", whirlwind_ring_phases[i])
+		ring.set_instance_shader_parameter(&"ring_spin", whirlwind_ring_spins[i])
+		ring.set_instance_shader_parameter(&"ring_weight", whirlwind_ring_weights[i])
+		ring.set_instance_shader_parameter(&"ring_centre", whirlwind_ring_centres[i])
+		ring.set_instance_shader_parameter(&"ring_delay_ms", whirlwind_ring_delays_ms[i])
+		rings.append(ring)
+	var fx := {"kind": &"whirlwind", "mesh": mesh, "rings": rings, "elapsed": 0.0}
 	if _has_room(whirlwind_spark_count):
 		fx["particles"] = _whirlwind_sparks(whirlwind_spark_count, radius, origin)
 	_effects.append(fx)
 
 
-## Seconds the blades live, from the material.
+## One plane of blades, sized for a ring of radius x ring_scale.
+func _whirlwind_ring(origin: Vector3, radius: float, start_dir: Vector3, ring_scale: float) -> MeshInstance3D:
+	var wisp: float = whirlwind_material.get_shader_parameter(&"wisp_offset")
+	var mesh := _flat_mesh(whirlwind_material, radius * ring_scale * (wisp + 0.05) + ring_margin)
+	mesh.global_position = origin + Vector3.UP * ground_lift
+	mesh.rotation.y = atan2(-start_dir.z, start_dir.x)
+	mesh.set_instance_shader_parameter(&"radius", radius)
+	mesh.set_instance_shader_parameter(&"age_ms", 0.0)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	return mesh
+
+
+## Number of extra rings: the shortest of the ring lists.
+func whirlwind_ring_count() -> int:
+	return mini(mini(mini(whirlwind_ring_scales.size(), whirlwind_ring_phases.size()),
+		mini(whirlwind_ring_spins.size(), whirlwind_ring_weights.size())),
+		mini(whirlwind_ring_centres.size(), whirlwind_ring_delays_ms.size()))
+
+
+## Seconds the blades live: the material's end time plus the latest ring delay, so a late ring
+## also fades out before it is freed.
 func whirlwind_time() -> float:
 	var end_ms: float = whirlwind_material.get_shader_parameter(&"end_ms")
-	return end_ms * 0.001
+	var latest := 0.0
+	for i in whirlwind_ring_count():
+		latest = maxf(latest, whirlwind_ring_delays_ms[i])
+	return (end_ms + latest) * 0.001
 
 
 ## Sparks start on a ring just inside the radius and fly in towards the commander, swirling the
@@ -194,10 +231,12 @@ func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticl
 
 ## The shader fades itself out, so the effect only needs to run until its end time.
 func _update_whirlwind(fx: Dictionary) -> bool:
-	var mesh: MeshInstance3D = fx.mesh
 	var age := minf(fx.elapsed, whirlwind_time())
-	mesh.set_instance_shader_parameter(&"age_ms", age * 1000.0)
-	mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	var meshes: Array[MeshInstance3D] = [fx.mesh]
+	meshes.append_array(fx.rings)
+	for mesh in meshes:
+		mesh.set_instance_shader_parameter(&"age_ms", age * 1000.0)
+		mesh.set_instance_shader_parameter(&"flicker", _flicker)
 	return fx.elapsed < whirlwind_time()
 #endregion
 
@@ -407,6 +446,9 @@ func _free_effect(fx: Dictionary) -> void:
 		var node: Node = fx.get(key)
 		if node != null and is_instance_valid(node):
 			node.queue_free()
+	for ring: MeshInstance3D in fx.get("rings", []):
+		if is_instance_valid(ring):
+			ring.queue_free()
 
 
 ## 1 until hold seconds have passed, then down to 0 over fade_time.
@@ -497,6 +539,14 @@ func get_effect_mesh(kind: StringName) -> MeshInstance3D:
 		if _effects[i].kind == kind:
 			return _effects[i].mesh
 	return null
+
+
+## The extra Whirlwind rings of the newest Whirlwind, empty when there is none. For tests.
+func get_whirlwind_rings() -> Array[MeshInstance3D]:
+	for i in range(_effects.size() - 1, -1, -1):
+		if _effects[i].kind == &"whirlwind":
+			return _effects[i].rings
+	return []
 
 
 ## The particle emitter of the newest effect of that kind, null when there is none. For tests.
