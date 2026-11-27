@@ -152,24 +152,24 @@ var _scratched := false
 @onready var _camera: Camera3D = _room.find_child("Camera", true, false)
 @onready var _door_l: Node3D = _room.find_child("DoorHinge_L", true, false)
 @onready var _door_r: Node3D = _room.find_child("DoorHinge_R", true, false)
-@onready var _door_glow: OmniLight3D = $Lights/DoorGlow
+@onready var _door_glow: OmniLight3D = %DoorGlow
 ## Daylight through the doorway, so the floor just inside the door lights up in its shape.
-@onready var _door_sun: SpotLight3D = $Lights/DoorSun
+@onready var _door_sun: SpotLight3D = %DoorSun
 @onready var _env: Environment = $WorldEnvironment.environment
-@onready var _white: ColorRect = $Fade/White
+@onready var _white: ColorRect = %White
 @onready var _glare: ShaderMaterial = ($DoorGlare as MeshInstance3D).material_override
 @onready var _door_beam: ShaderMaterial = ($DoorBeam as MeshInstance3D).material_override
 ## Positions you can drag in the editor. World ones sit under Markers; the ones under Fox move
 ## with him and are measured in his own frame.
-@onready var _sword_lean_grip: Marker3D = $Markers/SwordLeanGrip
-@onready var _sword_lean_tip: Marker3D = $Markers/SwordLeanTip
-@onready var _coin_landing: Marker3D = $Markers/CoinLanding
-@onready var _walk_path: Node3D = $Markers/WalkPath
-@onready var _hip_marker: Marker3D = $Fox/HipGrip
-@onready var _upright_marker: Marker3D = $Fox/UprightGrip
-@onready var _butt_marker: Marker3D = $Fox/ButtScratch
-@onready var _pocket_marker: Marker3D = $Fox/PocketRight
-@onready var _flick_marker: Marker3D = $Fox/FlickHand
+@onready var _sword_lean_grip: Marker3D = %SwordLeanGrip
+@onready var _sword_lean_tip: Marker3D = %SwordLeanTip
+@onready var _coin_landing: Marker3D = %CoinLanding
+@onready var _walk_path: Node3D = %WalkPath
+@onready var _hip_marker: Marker3D = %HipGrip
+@onready var _upright_marker: Marker3D = %UprightGrip
+@onready var _butt_marker: Marker3D = %ButtScratch
+@onready var _pocket_marker: Marker3D = %PocketRight
+@onready var _flick_marker: Marker3D = %FlickHand
 
 
 func _ready() -> void:

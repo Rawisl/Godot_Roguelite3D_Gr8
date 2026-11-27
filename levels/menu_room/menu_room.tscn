@@ -145,12 +145,14 @@ shadow_enabled = true
 omni_range = 5.5
 
 [node name="DoorGlow" type="OmniLight3D" parent="Lights" unique_id=1422641477]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, -15)
 light_color = Color(0.95, 0.97, 1, 1)
 light_energy = 0.0
 omni_range = 14.0
 
 [node name="DoorSun" type="SpotLight3D" parent="Lights" unique_id=327447351]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, -0.8524, 0.5228, 0, -0.5228, -0.8524, 0, 4.6, -19)
 light_color = Color(1, 0.96, 0.86, 1)
 light_energy = 0.0
@@ -216,15 +218,19 @@ transform = Transform3D(0, 0, -1.1, 0, -1.1, 0, -1.1, 0, 0, 5.62, 2.6, -14.1)
 [node name="Markers" type="Node3D" parent="." unique_id=486134498]
 
 [node name="SwordLeanGrip" type="Marker3D" parent="Markers" unique_id=267965455]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.28, -4.05)
 
 [node name="SwordLeanTip" type="Marker3D" parent="Markers" unique_id=1114964474]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.45, 0, -3.8)
 
 [node name="CoinLanding" type="Marker3D" parent="Markers" unique_id=484495397]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9, 0.008, -14.37)
 
 [node name="WalkPath" type="Node3D" parent="Markers" unique_id=515581170]
+unique_name_in_owner = true
 
 [node name="P1" type="Marker3D" parent="Markers/WalkPath" unique_id=97942518]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4, 0, -4)
@@ -242,18 +248,23 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -15.6)
 transform = Transform3D(0, 0, 1.6, 0, 1.6, 0, -1.6, 0, 0, 3, 0.743, -4.42)
 
 [node name="HipGrip" type="Marker3D" parent="Fox" unique_id=68930002]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2813, 0.4625, 0.1753)
 
 [node name="UprightGrip" type="Marker3D" parent="Fox" unique_id=912990014]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3875, 0.8375, 0.075)
 
 [node name="ButtScratch" type="Marker3D" parent="Fox" unique_id=294920024]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.13, 0.3, -0.11)
 
 [node name="PocketRight" type="Marker3D" parent="Fox" unique_id=20191200]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.19, 0.26, 0.1)
 
 [node name="FlickHand" type="Marker3D" parent="Fox" unique_id=1356813590]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.62, 0.26)
 
 [node name="Vignette" type="CanvasLayer" parent="." unique_id=1055717623]
@@ -271,6 +282,7 @@ mouse_filter = 2
 layer = 2
 
 [node name="White" type="ColorRect" parent="Fade" unique_id=582312966]
+unique_name_in_owner = true
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
