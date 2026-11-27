@@ -40,8 +40,8 @@ uniform float edge_fade_thin = 0.06;
 // Width of the bright rim at the middle (thins to a point at the tips) and of the glow, and the
 // glow strength.
 uniform float rim_width = 0.05;
-uniform float glow_width = 0.06;
-uniform float glow_alpha = 0.45;
+uniform float glow_width = 0.09;
+uniform float glow_alpha = 0.65;
 // Shards: lanes in the front and back layers, the shortest length, the extra length a lane can
 // get, how much they fan out behind the inner edge, and how short they get when fading.
 uniform float lanes_front = 8.0;
@@ -64,9 +64,9 @@ uniform float start_scale = 0.55;
 // the margin in front of it. SkillFxManager sizes the plane from these.
 uniform float side_extent = 1.35;
 uniform float tail_extent = 1.25;
-uniform float front_margin = 0.3;
+uniform float front_margin = 0.45;
 // Overall brightness. The Compatibility renderer has no HDR, so a high value burns to white.
-uniform float brightness = 1.4;
+uniform float brightness = 1.7;
 // Half the width of the wave, tip to tip.
 instance uniform float half_width = 1.5;
 // 0..1: the shards and wisps grow to full length as the wave leaves the commander.
