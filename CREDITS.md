@@ -55,6 +55,7 @@ All CC0 1.0 (credit not required). Per-file list in `audio/CREDITS.md`.
 | Barricade tier models | Made by the team with Hyper3D Rodin | Commercial licence held by the author, no attribution required | `contents/assets/towers/barricade/` |
 | Fox Commander, Skeletal Centipede, heal station, hazard portal | Made by the team with Tripo 3D and Hyper3D | Generated under the author's accounts, no attribution required | `contents/assets/characters/fox_commander/`, `contents/assets/characters/enemy and boss/skeletal_centipede/`, `contents/assets/towers/heal_station*.glb`, `contents/assets/towers/hazard_portal.glb` |
 | Tower rubble | Made by the team (AI base, edited in Blender) | No third-party licence | `contents/assets/environment/rubble/` |
+| Tavern menu room (model and stone, wood and roof textures) | Made by the team (textures AI-generated, room built in Blender) | No third-party licence | `contents/assets/environment/menu_room/` |
 
 ## Font
 
