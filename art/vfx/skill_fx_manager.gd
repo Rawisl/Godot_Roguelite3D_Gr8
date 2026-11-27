@@ -3,8 +3,8 @@ extends Node
 ## Visuals for the commander's active skills, one effect per EventBus.skill_cast:
 ## - Whirlwind: a ring of three spinning blades grows to the skill radius round the commander and
 ##   unravels, sparks fly in from the edge
-## - Sword Wave: a crescent with straight streaks in its tail flies from the commander along its
-##   aim, and stops early at a wall
+## - Sword Wave: a wide shallow crescent with a white rim, blade shards and broken wisps trailing
+##   it flies from the commander along its aim, and stops early at a wall
 ## - Firebomb: a bomb arcs from the commander to the cast point, then the burn area and its
 ##   embers stay for the burn time
 ## What skill_cast carries: origin is the commander's position for Whirlwind and Sword Wave and
@@ -17,6 +17,8 @@ extends Node
 const SKILL_DIR := "res://data/skills/%s.tres"
 ## Points along the crescent where Sword Wave sparks start.
 const WAVE_SPARK_POINTS := 12
+## How far across the arc the spark points reach, as a part of its half width.
+const WAVE_SPARK_SPAN := 0.9
 
 @export_group("Whirlwind")
 ## Colour, blade shape and timing (end_ms is the life of the effect) are tuned in this material;
@@ -45,10 +47,10 @@ const WAVE_SPARK_POINTS := 12
 @export_flags_3d_physics var wave_stop_mask := 1
 @export var wave_spark_color := Color("#C6F5FF")
 ## Sparks per metre of wave width, and how long and how fast they fly back from the wave.
-@export var wave_spark_density := 16.0
-@export var wave_spark_lifetime := 0.4
-@export var wave_spark_speed_min := 1.5
-@export var wave_spark_speed_max := 4.0
+@export var wave_spark_density := 6.0
+@export var wave_spark_lifetime := 0.25
+@export var wave_spark_speed_min := 2.0
+@export var wave_spark_speed_max := 4.5
 
 @export_group("Firebomb")
 @export var fire_material: ShaderMaterial = preload("res://art/materials/skill_fire_zone.tres")
@@ -207,13 +209,17 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	flat = flat.normalized() if flat.length_squared() > 0.0001 else Vector3.FORWARD
 	var start := origin + flat * wave_start_offset
 	var travel := _clear_distance(start, flat, maxf(distance - wave_start_offset, 0.0))
-	var bulge: float = wave_material.get_shader_parameter(&"bulge")
-	var tail: float = wave_material.get_shader_parameter(&"tail_length")
-	var halo: float = wave_material.get_shader_parameter(&"halo_width")
+	# The shader works in wave space, where half the arc width is arc_half; s turns it into metres.
+	var arc_half: float = wave_material.get_shader_parameter(&"arc_half")
+	var scale_m := width * 0.5 / maxf(arc_half, 0.001)
+	var side: float = wave_material.get_shader_parameter(&"side_extent") * scale_m
+	var front: float = wave_material.get_shader_parameter(&"front_margin") * scale_m
+	var tail: float = wave_material.get_shader_parameter(&"tail_extent") * scale_m
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(width + 2.0 * halo + ring_margin, bulge + tail + 2.0 * (halo + ring_margin))
-	# Local -Z is forward: the plane reaches bulge ahead of the node and the tail behind it.
-	plane.center_offset = Vector3(0.0, 0.0, (tail - bulge) * 0.5)
+	plane.size = Vector2(2.0 * side, front + tail)
+	# Local -Z is forward: the node sits on the front edge, the plane reaches front ahead of it
+	# and the tail behind it.
+	plane.center_offset = Vector3(0.0, 0.0, (tail - front) * 0.5)
 	var mesh := MeshInstance3D.new()
 	mesh.name = "SwordWave"
 	mesh.mesh = plane
@@ -229,25 +235,30 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	mesh.global_position = start + Vector3.UP * wave_height
 	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
 		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed}
-	var count := clampi(roundi(width * wave_spark_density), 12, 56)
+	var count := clampi(roundi(width * wave_spark_density), 8, 28)
 	if _has_room(count):
-		fx["particles"] = _wave_sparks(count, width, bulge, mesh)
+		fx["particles"] = _wave_sparks(count, scale_m, mesh)
 	_effects.append(fx)
 
 
-## Sparks leave the inner arc of the crescent and fall back along the flight line.
-func _wave_sparks(count: int, width: float, bulge: float, mesh: MeshInstance3D) -> CPUParticles3D:
-	var rim: float = wave_material.get_shader_parameter(&"rim_thickness")
-	var band: float = wave_material.get_shader_parameter(&"band_thickness")
+## Streaks leave the inner edge of the crescent and fall back along the flight line.
+func _wave_sparks(count: int, scale_m: float, mesh: MeshInstance3D) -> CPUParticles3D:
+	var radius: float = wave_material.get_shader_parameter(&"arc_radius")
+	var origin_y: float = wave_material.get_shader_parameter(&"arc_origin")
+	var shift: float = wave_material.get_shader_parameter(&"inner_shift")
+	var half: float = wave_material.get_shader_parameter(&"arc_half")
+	var close: float = wave_material.get_shader_parameter(&"tip_close")
 	var sparks := _particles(count, wave_spark_lifetime, wave_spark_color)
-	var sweep: float = wave_material.get_shader_parameter(&"tip_sweep")
-	# The same arc as the shader: u across the wave, the front edge leading at the middle and
-	# sweeping back to the tips, the tongues behind it.
+	# The same inner edge as the shader: a circle of the same radius shifted back, pushed outward
+	# towards the tips. Points are measured back from the front edge, which sits at local z = 0.
 	var points := PackedVector3Array()
 	for i in WAVE_SPARK_POINTS:
-		var u := lerpf(-1.0, 1.0, float(i) / float(WAVE_SPARK_POINTS - 1))
-		var lean := sqrt(1.0 - u * u)
-		points.append(Vector3(u * width * 0.5, 0.0, -bulge + sweep * width * 0.5 * (1.0 - lean) + (rim + band * 0.7) * lean))
+		var u := lerpf(-WAVE_SPARK_SPAN, WAVE_SPARK_SPAN, float(i) / float(WAVE_SPARK_POINTS - 1))
+		var qx := u * half
+		var inner_r := radius + close * (1.0 - sqrt(1.0 - u * u))
+		var inner_y := origin_y - shift + sqrt(maxf(inner_r * inner_r - qx * qx, 0.0))
+		points.append(Vector3(qx * scale_m, 0.0, (origin_y + radius - inner_y) * scale_m))
+	sparks.mesh = _spark_mesh
 	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_POINTS
 	sparks.emission_points = points
 	sparks.direction = Vector3(0.0, 0.0, 1.0)
@@ -256,14 +267,7 @@ func _wave_sparks(count: int, width: float, bulge: float, mesh: MeshInstance3D) 
 	sparks.initial_velocity_max = wave_spark_speed_max
 	sparks.gravity = Vector3.ZERO
 	sparks.lifetime_randomness = 0.6
-	sparks.scale_amount_min = 0.2
-	sparks.scale_amount_max = 0.45
-	var curve := Curve.new()
-	curve.add_point(Vector2(0.0, 0.0))
-	curve.add_point(Vector2(0.2, 1.0))
-	curve.add_point(Vector2(0.6, 0.6))
-	curve.add_point(Vector2(1.0, 0.0))
-	sparks.scale_amount_curve = curve
+	sparks.particle_flag_align_y = true
 	sparks.global_basis = mesh.global_basis
 	sparks.global_position = mesh.global_position
 	sparks.emitting = true

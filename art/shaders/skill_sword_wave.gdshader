@@ -1,80 +1,81 @@
 shader_type spatial;
-// Sword Wave: a crescent of sword energy flying flat over the ground, drawn in four layers.
-// 1. Rim: a smooth near-white band on the convex leading edge, thinning to a point at the tips.
-// 2. Band: a thick saturated cyan body behind the rim. Its back edge is torn into flame-like
-//    tongues of different lengths by drifting noise and its brightness pulses gently.
-// 3. Tail: a few broad pale shards with white highlights and thin filaments trailing back,
-//    fanning out along the crescent normal and fading to dark blue.
-// 4. Halo: a soft cyan glow around the crescent. It is added on top of the scene, since the
-//    Compatibility renderer has no glow.
-// The front edge is a circular arc: the middle leads, the tips sweep back and curl inward.
-// Local -Z is the flight direction, local X runs across the wave.
-// SkillFxManager moves the plane and sets tail_scale, fade, game_time and flicker, so it follows
-// x2 / x3 and holds on Pause. Depth test stays on so walls, towers and units hide it.
-// Premultiplied alpha lets the crescent blend normally while the halo only adds light.
+// Sword Wave: a wide shallow crescent of sword energy flying flat over the ground, in the same
+// family as the Whirlwind blades. Layers, back to front:
+// 1. Wisp: five thin broken streaks behind the hollow, they leave first.
+// 2. Shard: two overlapping layers of blade shards streaming back from the inner edge and
+//    fanning out, each cut off at a slant and narrowing to a point.
+// 3. Glow: a soft cyan haze hugging the front edge.
+// 4. Body and rim: the crescent itself, the outer disc minus an inner disc of the same radius
+//    shifted back, with a bright rim on the front edge. The tips close because the inner edge
+//    moves outward towards them.
+// Shape maths runs in "wave space" q (X across, +Y forward) where the half width of the arc is
+// arc_half; the plane is scaled so that arc_half lands on the half_width instance uniform.
+// Local -Z is the flight direction and the node sits on the middle of the front edge.
+// SkillFxManager moves the plane and sets half_width, tail_scale, fade, game_time and flicker, so
+// it follows x2 / x3 and holds on Pause. Depth test stays on so walls, towers and units hide it.
+// Premultiplied alpha lets the blade blend normally while the glow only adds light.
 render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never, blend_premul_alpha;
-
-#include "res://art/shaders/slash_common.gdshaderinc"
 
 // skill_wave_* in art/palette.md.
 uniform vec4 core_color : source_color = vec4(0.914, 0.988, 1.0, 1.0);
 uniform vec4 rim_color : source_color = vec4(0.663, 0.914, 0.969, 1.0);
-uniform vec4 band_color : source_color = vec4(0.161, 0.725, 0.910, 0.95);
-uniform vec4 shard_color : source_color = vec4(0.52, 0.86, 0.95, 0.95);
-uniform vec4 mid_color : source_color = vec4(0.141, 0.475, 0.616, 0.75);
-uniform vec4 tail_color : source_color = vec4(0.090, 0.224, 0.306, 0.5);
-uniform vec4 halo_color : source_color = vec4(0.161, 0.725, 0.910, 1.0);
-// Sizes are in metres. SkillFxManager sizes the plane from bulge, tail_length and halo_width.
-// How far the middle of the crescent leads the tips.
-uniform float bulge = 1.0;
-// Thickness of the rim and of the band behind it in the middle. Both thin to a point at the tips.
-uniform float rim_thickness = 0.5;
-uniform float band_thickness = 1.1;
-// How far behind the middle of the front edge the tips sit, as a part of half_width. The more
-// the tips sweep back, the deeper the hollow inside the crescent.
-uniform float tip_sweep = 1.15;
-// Exponent of the head thickness along the arc: 1 tapers to sharp tips, lower is fuller.
-uniform float head_taper = 1.2;
-// Tongues torn out of the back edge of the band: size per metre across the wave, depth 0..1
-// (how much of the band they can cut away), and how fast they drift in time.
-uniform float band_noise_scale = 5.5;
-uniform float band_tear = 0.7;
-uniform float band_scroll = 0.6;
-// How strongly the tongues and the tail converge: 1 / tail_fan is the distance behind the front
-// edge where the lanes would meet.
-uniform float tail_fan = 0.12;
-// How much the band brightness pulses, and how often per second. The rate is capped at 3.
-uniform float band_pulse = 0.15;
-uniform float pulse_hz = 2.0;
-// Length of the longest streak behind the front edge.
-uniform float tail_length = 2.6;
-// Shards and filaments per metre across the wave, and the filaments' opacity.
-uniform float shard_density = 2.2;
-uniform float filament_density = 8.0;
-uniform float filament_alpha = 0.7;
-// How much the streaks break up, and the shortest one as a part of the tail.
-uniform float streak_breakup = 0.3;
-uniform float streak_min_length = 0.35;
-// Soft fill under the streaks, strongest at the head and gone by the end of the tail, so the
-// head runs into the tail instead of standing apart.
-uniform float body_alpha = 0.3;
-// Opacity of the tail where it leaves the head, 0..1. Low values leave a dark bite inside the crescent.
-uniform float tail_bite = 0.25;
-// Part of the tail, at its end, over which everything fades out.
-uniform float end_fade = 0.4;
-// How far the glow reaches from the head. It is exactly zero at this distance.
-uniform float halo_width = 0.45;
-uniform float halo_strength = 0.4;
-uniform float edge_softness = 0.04;
+uniform vec4 band_color : source_color = vec4(0.161, 0.725, 0.910, 1.0);
+uniform vec4 shard_color : source_color = vec4(0.522, 0.859, 0.949, 1.0);
+uniform vec4 mid_color : source_color = vec4(0.141, 0.475, 0.616, 1.0);
+uniform vec4 tail_color : source_color = vec4(0.090, 0.224, 0.306, 1.0);
+
+// Crescent in wave space: radius of both discs, the height of the outer disc centre, how far back
+// the inner disc is shifted, half the width of the arc, and how far the inner edge moves out at
+// the tips so they close.
+uniform float arc_radius = 1.4;
+uniform float arc_origin = -0.6;
+uniform float inner_shift = 0.16;
+uniform float arc_half = 0.85;
+uniform float tip_close = 0.17;
+// Ripples on the inner edge: size around the circle, amount, and how much the edge thins and
+// roughens while the wave fades.
+uniform float edge_cells = 6.0;
+uniform float edge_ripple = 0.035;
+uniform float edge_fade_thin = 0.06;
+// Width of the bright rim at the middle (thins to a point at the tips) and of the glow, and the
+// glow strength.
+uniform float rim_width = 0.05;
+uniform float glow_width = 0.06;
+uniform float glow_alpha = 0.45;
+// Shards: lanes in the front and back layers, the shortest length, the extra length a lane can
+// get, how much they fan out behind the inner edge, and how short they get when fading.
+uniform float lanes_front = 8.0;
+uniform float lanes_back = 11.0;
+uniform float shard_min = 0.25;
+uniform float shard_extra = 0.45;
+uniform float shard_fan = 0.8;
+uniform float shard_fade_len = 0.45;
+// Wisps: their opacity, the spacing between them, their length, how fast the gaps drift per
+// second, and the fade level at which they are gone.
+uniform float wisp_alpha = 0.45;
+uniform float wisp_spacing = 0.26;
+uniform float wisp_length = 0.75;
+uniform float wisp_scroll = 4.0;
+uniform float wisp_gone_at = 0.5;
+// Seconds the wave takes to form, and the size it starts at (a part of the full size).
+uniform float form_time = 0.06;
+uniform float start_scale = 0.55;
+// How far the plane reaches in wave space: sideways from the middle, behind the front edge, and
+// the margin in front of it. SkillFxManager sizes the plane from these.
+uniform float side_extent = 1.35;
+uniform float tail_extent = 1.25;
+uniform float front_margin = 0.3;
+// Overall brightness. The Compatibility renderer has no HDR, so a high value burns to white.
+uniform float brightness = 1.4;
 // Half the width of the wave, tip to tip.
 instance uniform float half_width = 1.5;
-// 0..1: the tail grows to full length as the wave leaves the commander.
+// 0..1: the shards and wisps grow to full length as the wave leaves the commander.
 instance uniform float tail_scale = 1.0;
 // 0 hidden, 1 shown.
 instance uniform float fade = 1.0;
-// Seconds since the cast, on game time. Drives the band tears and pulse.
+// Seconds since the cast, on game time. Drives the growth and the drifting gaps.
 instance uniform float game_time = 0.0;
-// 1 normal, 0 when flashing is reduced: the band stops pulsing and drifting.
+// 1 normal, 0 when flashing is reduced: the gaps in the wisps stop drifting.
 instance uniform float flicker = 1.0;
 
 varying vec2 local_xz;
@@ -83,110 +84,103 @@ void vertex() {
 	local_xz = VERTEX.xz;
 }
 
-float wave_hash(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float wave_noise(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	vec2 s = f * f * (3.0 - 2.0 * f);
-	return mix(mix(wave_hash(i), wave_hash(i + vec2(1.0, 0.0)), s.x),
-		mix(wave_hash(i + vec2(0.0, 1.0)), wave_hash(i + vec2(1.0, 1.0)), s.x), s.y);
-}
-
-// One lane of blades: each is widest at the head and tapers to a point. lane is the coordinate
-// across the wave, k the distance along the tail (0..1), max_half the widest half width in lane
-// units. highlight is a thin bright spine on some of the blades.
-float wave_blade(float lane, float k, float along, float min_length, float max_half, float breakup, out float highlight) {
-	float id = floor(lane);
-	float x = abs(fract(lane) - 0.5);
-	float length_k = mix(min_length, 1.0, wave_hash(vec2(id + 3.7, 1.3)));
-	float left = clamp(1.0 - k / length_k, 0.0, 1.0);
-	float half_w = mix(0.55, 1.0, wave_hash(vec2(id + 5.1, 2.9))) * max_half * left;
-	float aa = fwidth(lane);
-	float body = (1.0 - smoothstep(half_w - aa, half_w + aa, x)) * smoothstep(0.0, 0.03, left) * step(0.0, k);
-	float gaps = mix(1.0, smoothstep(0.1, 0.5, wave_noise(vec2(along * 1.2 + id * 13.1, id))), breakup);
-	float spine = (1.0 - smoothstep(0.0, max(half_w * 0.45, aa), x)) * step(0.5, wave_hash(vec2(id + 7.7, 4.1)));
-	highlight = spine * body;
-	return body * gaps * mix(0.55, 1.0, left);
+float wave_rand(float x) {
+	return fract(sin(x) * 43758.5);
 }
 
 void fragment() {
-	float u = local_xz.x / max(half_width, 0.001);
-	float shape = max(1.0 - u * u, 0.0);
-	float lean = sqrt(shape);
-	// Distance behind the front edge (negative in front of it). The front edge is an arc that
-	// leads at the middle and sweeps back to the tips.
-	float front_d = tip_sweep * half_width * (1.0 - lean);
-	float back = local_xz.y + bulge - front_d;
-	float inside = smoothstep(0.0, edge_softness, back) * step(abs(u), 1.0);
-	// Lanes are straight lines converging on a point behind the wave: vertical in the middle,
-	// slanting inward toward the tips, like the normal of the arc.
-	float fan_x = local_xz.x / max(1.0 - max(back, 0.0) * tail_fan, 0.3);
+	float grow = smoothstep(0.0, max(form_time, 0.001), game_time);
+	float fade_t = 1.0 - clamp(fade, 0.0, 1.0);
+	float wisp_fade = smoothstep(wisp_gone_at, 1.0, fade);
+	float reach = mix(0.5, 1.0, tail_scale);
 
-	float head_lean = pow(lean, head_taper);
-	float rim_w = rim_thickness * head_lean;
-	float band_w = band_thickness * head_lean;
+	// Wave space: the front edge of the outer disc is at local z = 0, +q.y points forward.
+	float s = max(half_width, 0.001) / arc_half;
+	vec2 q = vec2(local_xz.x, -local_xz.y) / s;
+	// Grow around the front edge so it stays on the node while forming, then move to the disc centre.
+	q /= mix(start_scale, 1.0, grow);
+	q.y += arc_origin + arc_radius;
+	float aa = max(fwidth(q.y), 1e-4) * 1.5;
 
-	// Tail: broad shards and thin filaments, shorter toward the tips.
-	// The tail leaves from the inner edge of the head and from the tips.
-	float k = max(back - (rim_w + band_w * 0.8), 0.0) / max(tail_length * tail_scale, 0.001);
-	float k_tip = k / (0.6 + 0.4 * lean);
-	float shard_hl;
-	float fil_hl;
-	float shard_m = wave_blade(fan_x * shard_density, k_tip, back, streak_min_length, 0.48, streak_breakup, shard_hl);
-	float fil_m = wave_blade(fan_x * filament_density + 17.0, k_tip * 0.6, back, streak_min_length, 0.2, streak_breakup, fil_hl) * filament_alpha;
-	// The tail starts faint at the inner edge and grows, leaving a dark bite inside the crescent.
-	float bite = mix(tail_bite, 1.0, smoothstep(0.0, 0.2, k));
-	float fade_k = (1.0 - smoothstep(1.0 - end_fade, 1.0, k)) * inside * bite;
-	float far = smoothstep(0.15, 1.0, k);
-	vec3 shard_rgb = mix(shard_color.rgb, tail_color.rgb, far);
-	vec3 fil_rgb = mix(mid_color.rgb, tail_color.rgb, far);
-	float shard_a = clamp(shard_m * mix(shard_color.a, tail_color.a, clamp(k, 0.0, 1.0)), 0.0, 1.0) * fade_k;
-	float fil_a = clamp(fil_m * mix(mid_color.a, tail_color.a, clamp(k, 0.0, 1.0)), 0.0, 1.0) * fade_k;
-	float fill_a = body_alpha * pow(clamp(1.0 - k_tip, 0.0, 1.0), 2.0) * mid_color.a * fade_k;
-	vec3 rgb = mid_color.rgb * fill_a;
-	float a = fill_a;
-	rgb = fil_rgb * fil_a + rgb * (1.0 - fil_a);
-	a = fil_a + a * (1.0 - fil_a);
-	rgb = shard_rgb * shard_a + rgb * (1.0 - shard_a);
-	a = shard_a + a * (1.0 - shard_a);
-	// White highlights on the broad shards, fading with distance.
-	float hl_a = clamp(shard_hl * (1.0 - far) * 0.6, 0.0, 1.0) * shard_a;
-	rgb = rim_color.rgb * hl_a + rgb * (1.0 - hl_a);
-	a = hl_a + a * (1.0 - hl_a);
+	vec2 o = vec2(0.0, arc_origin);
+	vec2 inner_c = vec2(0.0, arc_origin - inner_shift);
+	float d_o = length(q - o);
+	float d_i = length(q - inner_c);
+	float xn = clamp(abs(q.x) / arc_half, 0.0, 1.0);
+	float taper = sqrt(clamp(1.0 - xn * xn, 0.0, 1.0));
 
-	// Band: the solid body is torn from behind into tongues that drift slowly over time.
-	float t = game_time * band_scroll * flicker;
-	float n1 = wave_noise(vec2(fan_x * band_noise_scale, t));
-	float n2 = wave_noise(vec2(fan_x * band_noise_scale * 2.7 + 9.0, t * 1.4 + 4.0));
-	float tongue = pow(smoothstep(0.3, 0.85, n1 * 0.7 + n2 * 0.5), 1.4);
-	float reach = band_w * mix(1.0 - band_tear, 1.0, tongue);
-	float band_depth = back - rim_w;
-	float band_mask = (1.0 - smoothstep(reach - edge_softness, reach + edge_softness, band_depth)) * inside;
-	float pulse = 1.0 + band_pulse * flicker * sin(game_time * TAU * min(pulse_hz, 3.0));
-	float band_a = band_mask * band_color.a;
-	// The body is bright cyan near the rim and cools toward the torn ends.
-	vec3 band_rgb = mix(band_color.rgb, mid_color.rgb, smoothstep(0.35, 1.0, band_depth / max(reach, 0.001)) * 0.7) * pulse;
-	rgb = band_rgb * band_a + rgb * (1.0 - band_a);
-	a = band_a + a * (1.0 - band_a);
+	// Torn inner edge along the angle around the inner circle.
+	float ang = atan(q.x, q.y - inner_c.y) * edge_cells;
+	float ei = floor(ang);
+	float ef = fract(ang);
+	float edge_n = mix(wave_rand(ei * 12.9898), wave_rand((ei + 1.0) * 12.9898), ef * ef * (3.0 - 2.0 * ef));
+	float inner_r = arc_radius + edge_ripple * (edge_n - 0.5) * mix(1.0, 2.0, fade_t)
+		+ edge_fade_thin * fade_t + tip_close * (1.0 - taper);
 
-	// Rim: smooth on the outside, never eaten by the noise. Near-white on the front edge.
-	float rim_pos = clamp(back / max(rim_w, 0.001), 0.0, 1.0);
-	float rim_mask = inside * (1.0 - smoothstep(rim_w - edge_softness, rim_w, back));
-	float rim_a = rim_mask * mix(core_color.a, rim_color.a, rim_pos);
-	vec3 rim_rgb = mix(core_color.rgb, rim_color.rgb, rim_pos * rim_pos);
-	rgb = rim_rgb * rim_a + rgb * (1.0 - rim_a);
-	a = rim_a + a * (1.0 - rim_a);
+	float in_outer = 1.0 - smoothstep(arc_radius - aa, arc_radius, d_o);
+	float out_inner = smoothstep(inner_r - 0.02, inner_r, d_i);
+	float body_a = in_outer * out_inner * step(abs(q.x), arc_half);
+	float depth = arc_radius - d_o;
+	float rw = rim_width * taper;
 
-	// Halo: distance to the head (rim and body), ahead of it and past the tips included. It is
-	// exactly zero at halo_width, which stays inside the plane.
-	float dx = max(abs(local_xz.x) - half_width, 0.0);
-	float dy = back < 0.0 ? -back : max(back - (rim_w + band_w), 0.0);
-	float falloff = 1.0 - smoothstep(0.0, max(halo_width, 0.001), length(vec2(dx, dy)));
-	float halo = halo_strength * falloff * falloff;
+	vec4 acc = vec4(0.0);
 
-	ALBEDO = (rgb + halo_color.rgb * halo * (1.0 - a)) * fade;
-	ALPHA = clamp(a, 0.0, 1.0) * fade;
+	// Distance behind the inner edge at this x.
+	float inner_y = inner_c.y + sqrt(max(arc_radius * arc_radius - q.x * q.x, 0.0));
+	float back = inner_y - q.y;
+
+	// Long broken wisps behind the hollow.
+	for (int w = 0; w < 5; w++) {
+		float fw = float(w);
+		float wx = (fw - 2.0) * wisp_spacing * (1.0 + max(back, 0.0) * 0.3);
+		float wd = abs(q.x - wx);
+		float wlen = (wisp_length - abs(fw - 2.0) * 0.12) * reach;
+		float wt = clamp(back / max(wlen, 0.001), 0.0, 1.0);
+		float seg = fract(back * 5.0 - game_time * wisp_scroll * flicker + fw * 0.37);
+		float wa = (1.0 - smoothstep(0.008, 0.008 + aa * 2.0, wd)) * step(0.0, back) * (1.0 - smoothstep(0.7, 1.0, wt))
+			* smoothstep(0.25, 0.4, seg) * wisp_alpha * wisp_fade;
+		vec3 wc = mix(rim_color.rgb, mix(mid_color.rgb, tail_color.rgb, clamp(wt * 2.0 - 1.0, 0.0, 1.0)), clamp(wt * 2.0, 0.0, 1.0));
+		acc = vec4(wc * wa, wa) + acc * (1.0 - wa);
+	}
+
+	// Shards: two overlapping layers streaming back from the inner edge, fanning out.
+	float shard_len = mix(1.0, shard_fade_len, fade_t) * reach;
+	for (int j = 1; j >= 0; j--) {
+		float fj = float(j);
+		float n = (j == 0) ? lanes_front : lanes_back;
+		float xs = q.x / (1.0 + max(back, 0.0) * shard_fan);
+		float lc = (xs / arc_half + 1.0) * 0.5 * n + fj * 0.5;
+		float li = floor(lc);
+		float lf = fract(lc);
+		float h1 = wave_rand(li * 78.233 + fj * 17.0);
+		float h2 = fract(sin(li * 39.425 + fj * 5.3) * 12543.3);
+		float lane_x = (li + 0.5 - fj * 0.5) / n * 2.0 - 1.0;
+		float len = (shard_min + shard_extra * h2) * (1.0 - lane_x * lane_x * 0.7) * shard_len * ((j == 0) ? 1.0 : 0.75);
+		float b0 = -0.03;
+		float t = clamp((back - b0) / max(len, 0.001), 0.0, 1.0);
+		float half_w = (0.18 + 0.17 * h1) * (1.0 - 0.8 * t);
+		float side = 1.0 - smoothstep(half_w - 0.1, half_w, abs(lf - 0.5));
+		float cut_end = len + (lf - 0.5) * 0.2 * ((mod(li, 2.0) < 1.0) ? 1.0 : -1.0);
+		float along = step(b0, back) * (1.0 - smoothstep(cut_end - 0.01, cut_end, back - b0)) * step(abs(lane_x), 1.0);
+		float sa = side * along * ((j == 0) ? 0.9 : 0.6) * mix(1.0, 0.5, t) * grow;
+		vec3 sc = mix(mix(shard_color.rgb, band_color.rgb, clamp(t * 1.6, 0.0, 1.0)), mid_color.rgb, clamp(t * 2.0 - 1.0, 0.0, 1.0));
+		acc = vec4(sc * sa, sa) + acc * (1.0 - sa);
+	}
+
+	// Soft cyan glow around the front edge.
+	float glow_a = exp(-abs(d_o - arc_radius) / max(glow_width, 0.001)) * glow_alpha * taper
+		* smoothstep(arc_radius - 0.02, arc_radius + 0.06, d_i) * grow;
+	acc = vec4(band_color.rgb * glow_a, glow_a) + acc * (1.0 - glow_a);
+
+	// Solid crescent body: rim colour at the front edge, shard colour towards the hollow.
+	vec3 body_c = mix(rim_color.rgb, shard_color.rgb, clamp((d_i - inner_r) / 0.12, 0.0, 1.0));
+	acc = vec4(body_c * body_a, body_a) + acc * (1.0 - body_a);
+	float rim_a = in_outer * (1.0 - smoothstep(rw - aa, rw, depth)) * out_inner * clamp(rw * 60.0, 0.0, 1.0);
+	vec3 rim_c = mix(core_color.rgb, rim_color.rgb, clamp(depth / max(rw, 0.001), 0.0, 1.0));
+	acc = vec4(rim_c * rim_a, rim_a) + acc * (1.0 - rim_a);
+
+	acc *= fade;
+	// acc is already premultiplied, so the colour is not divided by its alpha.
+	ALBEDO = acc.rgb * brightness;
+	ALPHA = clamp(acc.a, 0.0, 1.0);
 }

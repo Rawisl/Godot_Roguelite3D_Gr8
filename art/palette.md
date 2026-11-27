@@ -135,13 +135,13 @@ Whirlwind và Sword Wave dùng chung bảng `skill_wave_*` (trắng thép, viề
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| skill_wave_core | `#E9FCFF` | Mép trước trắng xanh của Sword Wave (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `core_color`) |
-| skill_wave_rim | `#A9E9F7` | Mặt trong của viền Sword Wave (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `rim_color`) |
-| skill_wave_band | `#29B9E8` | Dải lửa xé của Sword Wave và quầng sáng quanh nó (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `band_color`, `halo_color`) |
-| skill_wave_shard | `#85DBF2` | Mảnh đuôi rộng của Sword Wave, đoạn gần đầu (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `shard_color`) |
-| skill_wave_mid | `#24799D` | Mảnh và sợi đuôi Sword Wave, đoạn gần đầu (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `mid_color`) |
-| skill_wave_tail | `#17394E` | Cuối đuôi Sword Wave (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `tail_color`) |
-| skill_wave_spark | `#C6F5FF` | Tia sáng bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind (`wave_spark_color`, `whirlwind_spark_color` trong `skill_fx_manager.gd`) |
+| skill_wave_core | `#E9FCFF` | Viền sáng nhất ở mép trước cung của Sword Wave (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `core_color`) |
+| skill_wave_rim | `#A9E9F7` | Thân cung Sword Wave sát viền và sợi wisp đoạn đầu (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `rim_color`) |
+| skill_wave_band | `#29B9E8` | Quầng sáng ôm mép trước cung và đoạn giữa của các mảnh shard Sword Wave (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `band_color`) |
+| skill_wave_shard | `#85DBF2` | Thân cung Sword Wave phía mép trong và các mảnh shard, đoạn gần mép trong (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `shard_color`) |
+| skill_wave_mid | `#24799D` | Đuôi các mảnh shard và sợi wisp của Sword Wave, đoạn giữa (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `mid_color`) |
+| skill_wave_tail | `#17394E` | Sợi wisp của Sword Wave, đoạn cuối (`skill_sword_wave.tres`, `skill_whirlwind.tres`, `tail_color`) |
+| skill_wave_spark | `#C6F5FF` | Tia mảnh bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind (`wave_spark_color`, `whirlwind_spark_color` trong `skill_fx_manager.gd`) |
 | skill_fire_core | `#FFB347` | Vùng cháy Firebomb, quả bom, tàn lửa (`skill_fire_zone.tres`, `skill_firebomb.tres`) |
 | skill_fire_rim | `#FFD46B` | Viền vùng cháy |
 | skill_fire_dark | `#C7541F` | Mảng lửa tối trong vùng cháy |
