@@ -13,6 +13,9 @@ extends Node
 ## Sword Wave takes its direction from the commander's aim_dir.
 ## Other sizes come from the skill's SkillData in data/skills/ when it has the value, otherwise
 ## from the fallbacks here. Runs on game time: follows x2 / x3 and holds while paused.
+## Whirlwind and Sword Wave take their colours from the equipped sword (EventBus.weapon_equipped):
+## the material of the skill is cloned once per sword and recoloured from that sword's SkillPalette.
+## An effect keeps the material it was made with, so changing sword never recolours one in flight.
 ## Nothing is added to the commander scene.
 
 const SKILL_DIR := "res://data/skills/%s.tres"
@@ -20,12 +23,24 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 const WAVE_SPARK_POINTS := 12
 ## How far across the arc the spark points reach, as a part of its half width.
 const WAVE_SPARK_SPAN := 0.9
+## The sword whose palette is used before any sword is announced and for swords with no palette.
+const BASE_WEAPON := &"sword_base"
+
+@export_group("Palettes")
+## Colours of Whirlwind and Sword Wave per sword id; tuned in art/materials/palettes/.
+@export var palettes: Dictionary = {
+	&"sword_base": preload("res://art/materials/palettes/skill_palette_sword_base.tres"),
+	&"frost": preload("res://art/materials/palettes/skill_palette_frost.tres"),
+	&"chain_lightning": preload("res://art/materials/palettes/skill_palette_chain_lightning.tres"),
+	&"burn": preload("res://art/materials/palettes/skill_palette_burn.tres"),
+	&"rampage": preload("res://art/materials/palettes/skill_palette_rampage.tres"),
+	&"swift": preload("res://art/materials/palettes/skill_palette_swift.tres"),
+}
 
 @export_group("Whirlwind")
-## Colour, blade shape and timing (end_ms is the life of the effect) are tuned in this material;
-## radius, age_ms and flicker are set per effect.
+## Blade shape and timing (end_ms is the life of the effect) are tuned in this material, its
+## colours come from the palette of the equipped sword; radius, age_ms and flicker are set per effect.
 @export var whirlwind_material: ShaderMaterial = preload("res://art/materials/skill_whirlwind.tres")
-@export var whirlwind_spark_color := Color("#C6F5FF")
 ## Sparks thrown in from the edge, how long they live, and their speed in metres per second.
 @export var whirlwind_spark_count := 15
 @export var whirlwind_spark_lifetime := 0.18
@@ -55,7 +70,6 @@ const WAVE_SPARK_SPAN := 0.9
 @export var wave_height := 0.6
 ## The wave stops where a ray at this height hits something on these layers (1 = world).
 @export_flags_3d_physics var wave_stop_mask := 1
-@export var wave_spark_color := Color("#C6F5FF")
 ## Sparks per metre of wave width, and how long and how fast they fly back from the wave.
 @export var wave_spark_density := 6.0
 @export var wave_spark_lifetime := 0.25
@@ -96,6 +110,8 @@ var _commander: Node3D
 var _particle_mesh: SphereMesh
 var _spark_mesh: SphereMesh
 var _flicker := 1.0
+var _weapon_id := BASE_WEAPON
+var _material_cache: Dictionary = {}  # "<skill>:<weapon id>" -> ShaderMaterial
 
 
 func _ready() -> void:
@@ -123,6 +139,11 @@ func _ready() -> void:
 	EventBus.skill_cast.connect(_on_skill_cast)
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.run_started.connect(clear)
+	EventBus.weapon_equipped.connect(_on_weapon_equipped)
+
+
+func _on_weapon_equipped(weapon_id: StringName) -> void:
+	_weapon_id = weapon_id
 
 
 func _on_skill_cast(skill_id: StringName, _slot: int, level: int, origin: Vector3, radius: float) -> void:
@@ -143,6 +164,35 @@ func _on_skill_cast(skill_id: StringName, _slot: int, level: int, origin: Vector
 func _on_settings_changed(key: StringName, value: Variant) -> void:
 	if key == &"reduce_flash":
 		_set_reduce_flash(value == true)
+
+
+## The palette of the equipped sword, the base sword's when that sword has none.
+func current_palette() -> SkillPalette:
+	var palette := palettes.get(_weapon_id) as SkillPalette
+	if palette == null:
+		palette = palettes.get(BASE_WEAPON) as SkillPalette
+	return palette
+
+
+## base cloned and coloured for the equipped sword, made once per skill and sword.
+func _skill_material(skill_id: StringName, base: ShaderMaterial) -> ShaderMaterial:
+	var palette := current_palette()
+	if palette == null:
+		return base
+	var weapon := _weapon_id if palettes.get(_weapon_id) is SkillPalette else BASE_WEAPON
+	var key := "%s:%s" % [skill_id, weapon]
+	var cached := _material_cache.get(key) as ShaderMaterial
+	if cached != null:
+		return cached
+	var material := base.duplicate() as ShaderMaterial
+	palette.apply_to(material)
+	_material_cache[key] = material
+	return material
+
+
+func _spark_color() -> Color:
+	var palette := current_palette()
+	return palette.spark if palette != null else Color.WHITE
 
 
 func _set_reduce_flash(on: bool) -> void:
@@ -172,7 +222,7 @@ func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) 
 ## One plane of blades, sized for a ring of radius x ring_scale.
 func _whirlwind_ring(origin: Vector3, radius: float, start_dir: Vector3, ring_scale: float) -> MeshInstance3D:
 	var wisp: float = whirlwind_material.get_shader_parameter(&"wisp_offset")
-	var mesh := _flat_mesh(whirlwind_material, radius * ring_scale * (wisp + 0.05) + ring_margin)
+	var mesh := _flat_mesh(_skill_material(&"whirlwind", whirlwind_material), radius * ring_scale * (wisp + 0.05) + ring_margin)
 	mesh.global_position = origin + Vector3.UP * ground_lift
 	mesh.rotation.y = atan2(-start_dir.z, start_dir.x)
 	mesh.set_instance_shader_parameter(&"radius", radius)
@@ -201,7 +251,7 @@ func whirlwind_time() -> float:
 ## Sparks start on a ring just inside the radius and fly in towards the commander, swirling the
 ## way the blades spin.
 func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticles3D:
-	var sparks := _particles(count, whirlwind_spark_lifetime, whirlwind_spark_color)
+	var sparks := _particles(count, whirlwind_spark_lifetime, _spark_color())
 	sparks.mesh = _spark_mesh
 	var points := PackedVector3Array()
 	var normals := PackedVector3Array()
@@ -263,7 +313,7 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	mesh.name = "SwordWave"
 	mesh.mesh = plane
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mesh.material_override = wave_material
+	mesh.material_override = _skill_material(&"sword_wave", wave_material)
 	mesh.set_instance_shader_parameter(&"half_width", width * 0.5)
 	mesh.set_instance_shader_parameter(&"tail_scale", 0.0)
 	mesh.set_instance_shader_parameter(&"fade", 1.0)
@@ -287,7 +337,7 @@ func _wave_sparks(count: int, scale_m: float, mesh: MeshInstance3D) -> CPUPartic
 	var shift: float = wave_material.get_shader_parameter(&"inner_shift")
 	var half: float = wave_material.get_shader_parameter(&"arc_half")
 	var close: float = wave_material.get_shader_parameter(&"tip_close")
-	var sparks := _particles(count, wave_spark_lifetime, wave_spark_color)
+	var sparks := _particles(count, wave_spark_lifetime, _spark_color())
 	# The same inner edge as the shader: a circle of the same radius shifted back, pushed outward
 	# towards the tips. Points are measured back from the front edge, which sits at local z = 0.
 	var points := PackedVector3Array()

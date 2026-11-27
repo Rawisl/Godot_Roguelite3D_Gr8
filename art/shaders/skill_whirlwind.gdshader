@@ -14,7 +14,7 @@ shader_type spatial;
 // Premultiplied alpha lets the blades blend normally while the glow only adds light.
 render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never, blend_premul_alpha;
 
-// skill_wave_* in art/palette.md.
+// The skill palettes are in art/palette.md (Skill chỉ huy); these defaults are the Frost one.
 uniform vec4 core_color : source_color = vec4(0.914, 0.988, 1.0, 1.0);
 uniform vec4 rim_color : source_color = vec4(0.663, 0.914, 0.969, 1.0);
 uniform vec4 band_color : source_color = vec4(0.161, 0.725, 0.910, 1.0);
