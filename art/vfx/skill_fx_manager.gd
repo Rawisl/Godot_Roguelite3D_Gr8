@@ -1,8 +1,8 @@
 class_name SkillFxManager
 extends Node
 ## Visuals for the commander's active skills, one effect per EventBus.skill_cast:
-## - Whirlwind: a brush slash with streaks sweeps once round the commander at the skill radius,
-##   dust kicks up at the edge
+## - Whirlwind: a ring of three spinning blades grows to the skill radius round the commander and
+##   unravels, sparks fly in from the edge
 ## - Sword Wave: a crescent with straight streaks in its tail flies from the commander along its
 ##   aim, and stops early at a wall
 ## - Firebomb: a bomb arcs from the commander to the cast point, then the burn area and its
@@ -19,11 +19,17 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 const WAVE_SPARK_POINTS := 12
 
 @export_group("Whirlwind")
-## Colour and blade shape are tuned in this material; radius, progress and fade are set per effect.
+## Colour, blade shape and timing (end_ms is the life of the effect) are tuned in this material;
+## radius, age_ms and flicker are set per effect.
 @export var whirlwind_material: ShaderMaterial = preload("res://art/materials/skill_whirlwind.tres")
-## Seconds for the blade to go once round.
-@export var sweep_time := 0.25
-@export var dust_color := Color("#D8CBB0")
+@export var whirlwind_spark_color := Color("#C6F5FF")
+## Sparks thrown in from the edge, how long they live, and their speed in metres per second.
+@export var whirlwind_spark_count := 15
+@export var whirlwind_spark_lifetime := 0.18
+@export var whirlwind_spark_speed_min := 0.8
+@export var whirlwind_spark_speed_max := 1.6
+## How much the sparks swirl along the spin instead of flying straight at the commander, 0..1.
+@export var whirlwind_spark_swirl := 0.6
 
 @export_group("Sword Wave")
 @export var wave_material: ShaderMaterial = preload("res://art/materials/skill_sword_wave.tres")
@@ -76,6 +82,7 @@ var _effects: Array[Dictionary] = []
 var _skill_data: Dictionary = {}  # StringName -> SkillData, or null when there is no file
 var _commander: Node3D
 var _particle_mesh: SphereMesh
+var _spark_mesh: SphereMesh
 var _flicker := 1.0
 
 
@@ -93,6 +100,13 @@ func _ready() -> void:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.vertex_color_use_as_albedo = true
 	_particle_mesh.material = mat
+	# A long thin sphere, turned along the flight so each spark leaves a streak.
+	_spark_mesh = SphereMesh.new()
+	_spark_mesh.radius = 0.03
+	_spark_mesh.height = 0.3
+	_spark_mesh.radial_segments = 6
+	_spark_mesh.rings = 3
+	_spark_mesh.material = mat
 	_set_reduce_flash(GameState.get_setting(&"reduce_flash", false) == true)
 	EventBus.skill_cast.connect(_on_skill_cast)
 	EventBus.settings_changed.connect(_on_settings_changed)
@@ -124,42 +138,65 @@ func _set_reduce_flash(on: bool) -> void:
 
 
 #region Whirlwind
-## start_dir is where the blade starts; it sweeps once round from there.
+## start_dir is where the main blade starts; the blades spin counter-clockwise from there.
 func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) -> void:
-	var mesh := _flat_mesh(whirlwind_material, radius + ring_margin)
+	var wisp: float = whirlwind_material.get_shader_parameter(&"wisp_offset")
+	var mesh := _flat_mesh(whirlwind_material, radius * (wisp + 0.05) + ring_margin)
 	mesh.global_position = origin + Vector3.UP * ground_lift
 	mesh.rotation.y = atan2(-start_dir.z, start_dir.x)
 	mesh.set_instance_shader_parameter(&"radius", radius)
-	mesh.set_instance_shader_parameter(&"progress", 0.0)
+	mesh.set_instance_shader_parameter(&"age_ms", 0.0)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
 	var fx := {"kind": &"whirlwind", "mesh": mesh, "elapsed": 0.0}
-	var count := roundi(radius * 6.0)
-	if _has_room(count):
-		var dust := _particles(count, 0.5, dust_color)
-		dust.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
-		dust.emission_ring_axis = Vector3.UP
-		dust.emission_ring_radius = radius
-		dust.emission_ring_inner_radius = radius * 0.85
-		dust.emission_ring_height = 0.0
-		dust.one_shot = true
-		dust.explosiveness = 0.6
-		dust.direction = Vector3.UP
-		dust.spread = 30.0
-		dust.initial_velocity_min = 0.6
-		dust.initial_velocity_max = 1.2
-		dust.gravity = Vector3.DOWN * 1.5
-		dust.global_position = origin + Vector3.UP * ground_lift
-		dust.emitting = true
-		fx["particles"] = dust
+	if _has_room(whirlwind_spark_count):
+		fx["particles"] = _whirlwind_sparks(whirlwind_spark_count, radius, origin)
 	_effects.append(fx)
 
 
+## Seconds the blades live, from the material.
+func whirlwind_time() -> float:
+	var end_ms: float = whirlwind_material.get_shader_parameter(&"end_ms")
+	return end_ms * 0.001
+
+
+## Sparks start on a ring just inside the radius and fly in towards the commander, swirling the
+## way the blades spin.
+func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticles3D:
+	var sparks := _particles(count, whirlwind_spark_lifetime, whirlwind_spark_color)
+	sparks.mesh = _spark_mesh
+	var points := PackedVector3Array()
+	var normals := PackedVector3Array()
+	for i in count:
+		var angle := (float(i) + randf_range(-0.3, 0.3)) / float(count) * TAU
+		var radial := Vector3(cos(angle), 0.0, -sin(angle))
+		# Counter-clockwise seen from above, like the blades.
+		var tangent := Vector3(-sin(angle), 0.0, -cos(angle))
+		points.append(radial * radius * randf_range(0.9, 1.0))
+		normals.append((-radial + tangent * whirlwind_spark_swirl).normalized())
+	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_DIRECTED_POINTS
+	sparks.emission_points = points
+	sparks.emission_normals = normals
+	sparks.one_shot = true
+	sparks.explosiveness = 0.8
+	sparks.direction = Vector3(0.0, 0.0, 1.0)
+	sparks.spread = 10.0
+	sparks.initial_velocity_min = whirlwind_spark_speed_min
+	sparks.initial_velocity_max = whirlwind_spark_speed_max
+	sparks.gravity = Vector3.ZERO
+	sparks.lifetime_randomness = 0.33
+	sparks.particle_flag_align_y = true
+	sparks.global_position = origin + Vector3.UP * ground_lift
+	sparks.emitting = true
+	return sparks
+
+
+## The shader fades itself out, so the effect only needs to run until its end time.
 func _update_whirlwind(fx: Dictionary) -> bool:
 	var mesh: MeshInstance3D = fx.mesh
-	var t: float = fx.elapsed
-	mesh.set_instance_shader_parameter(&"progress", minf(t / maxf(sweep_time, 0.001), 1.0))
-	var fade := _fade_after(t, sweep_time)
-	mesh.set_instance_shader_parameter(&"fade", fade)
-	return fade > 0.0
+	var age := minf(fx.elapsed, whirlwind_time())
+	mesh.set_instance_shader_parameter(&"age_ms", age * 1000.0)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	return fx.elapsed < whirlwind_time()
 #endregion
 
 
