@@ -1,15 +1,16 @@
 extends Node3D
 
 ## Test for the active skill visuals (SkillFxManager):
-## - Whirlwind: the sweep sits on the cast point at the skill radius, goes round once on game
-##   time (faster at x2, held while paused), then fades and frees itself
+## - Whirlwind: the blades sit on the cast point at the skill radius and spin on game time (faster
+##   at x2, held while paused), then free themselves with their sparks; the sparks fly in towards
+##   the commander, and reduced flashing turns the flicker off
 ## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall; its
 ##   plane leaves room for the glow, sparks follow the wave and stop with it, the band runs on
 ##   game time (held while paused), and reduced flashing turns the pulse off, capped at 3 per second
 ## - Firebomb: the bomb flies first, then the burn area shows at the cast point for the burn
 ##   time; reduced flashing turns the flicker off, and the flicker is capped at 3 per second
 ## - every skill shader keeps the depth test, so walls hide the effects
-## - over the particle budget the effects still play without dust or embers
+## - over the particle budget the effects still play without sparks or embers
 ## - run_started clears everything
 ## Headless it runs the checks and quits. F6 in the editor runs the checks, then casts the three
 ## skills together every 2 s, each in its own spot around a wall, with buttons for the game
@@ -38,6 +39,8 @@ func _ready() -> void:
 	await test_whirlwind_placed()
 	await test_whirlwind_on_game_time()
 	await test_whirlwind_fades_and_frees()
+	await test_whirlwind_sparks()
+	await test_whirlwind_flicker()
 	await test_sword_wave_flies_along_aim()
 	await test_sword_wave_stops_at_wall()
 	await test_sword_wave_plane_fits_halo()
@@ -47,6 +50,7 @@ func _ready() -> void:
 	await test_firebomb_lands_and_burns()
 	await test_firebomb_flicker()
 	test_depth_test_kept()
+	test_whirlwind_shader_rules()
 	await test_particle_budget()
 	await test_run_started_clears()
 
@@ -72,30 +76,32 @@ func test_whirlwind_placed() -> void:
 	_cast(&"whirlwind", Vector3(1, 0, -2), WHIRLWIND_RADIUS)
 	await _frames(1)
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	assert_true(_fx.get_active_count(&"whirlwind") == 1, "skill_cast whirlwind adds one sweep")
+	assert_true(_fx.get_active_count(&"whirlwind") == 1, "skill_cast whirlwind adds one ring of blades")
 	assert_true(mesh != null and mesh.global_position.distance_to(Vector3(1, _fx.ground_lift, -2)) < 0.001,
-		"the sweep sits on the cast point, just above the floor")
+		"the blades sit on the cast point, just above the floor")
 	assert_true(mesh != null and is_equal_approx(mesh.get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS),
-		"the sweep uses the skill radius")
+		"the blades use the skill radius")
 	var plane := mesh.mesh as PlaneMesh if mesh != null else null
 	assert_true(plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS, "the plane is wide enough for the radius")
+	var wisp: float = _fx.whirlwind_material.get_shader_parameter(&"wisp_offset")
+	assert_true(plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * wisp, "the plane fits the outer wisps")
 	await _clear()
 
 
 func test_whirlwind_on_game_time() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await TimeManager.wait_game(_fx.sweep_time * 0.5)
-	assert_true(absf(_progress() - 0.5) < 0.15, "half the sweep time in, the blade is half way round")
+	await TimeManager.wait_game(0.2)
+	assert_true(absf(_age_ms() - 200.0) < 60.0, "after 0.2 s of game time the blades are 200 ms old")
 	await _clear()
 
 	TimeManager.set_time_scale(2)
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await TimeManager.wait_real(_fx.sweep_time * 0.25)
-	assert_true(absf(_progress() - 0.5) < 0.2, "at x2 the blade is half way round after a quarter of the sweep time")
+	await TimeManager.wait_real(0.1)
+	assert_true(absf(_age_ms() - 200.0) < 80.0, "at x2 the blades are 200 ms old after 0.1 s")
 	TimeManager.request_pause(TimeManager.REASON_USER)
-	var held := _progress()
+	var held := _age_ms()
 	await TimeManager.wait_real(0.2)
-	assert_true(is_equal_approx(_progress(), held), "while paused the sweep holds")
+	assert_true(is_equal_approx(_age_ms(), held), "while paused the blades hold")
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	TimeManager.set_time_scale(1)
 	await _clear()
@@ -103,12 +109,53 @@ func test_whirlwind_on_game_time() -> void:
 
 func test_whirlwind_fades_and_frees() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await TimeManager.wait_game(_fx.sweep_time + _fx.fade_time * 0.5)
-	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	assert_true(mesh != null and _progress() == 1.0 and mesh.get_instance_shader_parameter(&"fade") < 1.0,
-		"after one turn the sweep fades")
+	var unravel: float = _fx.whirlwind_material.get_shader_parameter(&"unravel_ms")
+	await TimeManager.wait_game(_fx.whirlwind_time() - 0.05)
+	assert_true(_fx.get_active_count(&"whirlwind") == 1 and _age_ms() > unravel,
+		"just before the end time the blades are still there and unravelling")
+	await TimeManager.wait_game(0.3)
+	assert_true(_fx.get_active_count() == 0, "the blades and their sparks free themselves")
 	await _clear()
-	assert_true(_fx.get_active_count() == 0, "the sweep frees itself after the fade and the dust")
+
+
+func test_whirlwind_sparks() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var sparks := _fx.get_effect_particles(&"whirlwind")
+	assert_true(sparks != null, "the whirlwind throws sparks")
+	if sparks == null:
+		await _clear()
+		return
+	assert_true(sparks.amount == _fx.whirlwind_spark_count, "one spark per start point")
+	assert_true(sparks.emission_shape == CPUParticles3D.EMISSION_SHAPE_DIRECTED_POINTS, "the sparks leave from points with a direction")
+	var inward := sparks.emission_normals.size() == sparks.emission_points.size() and not sparks.emission_points.is_empty()
+	for i in sparks.emission_points.size():
+		inward = inward and sparks.emission_normals[i].dot(sparks.emission_points[i]) < 0.0
+	assert_true(inward, "every spark flies in towards the commander")
+	# Counter-clockwise seen from above: the tangent at (x, z) is (z, 0, -x), as for the blades.
+	var with_spin := not sparks.emission_points.is_empty()
+	for i in sparks.emission_points.size():
+		var point := sparks.emission_points[i]
+		with_spin = with_spin and sparks.emission_normals[i].dot(Vector3(point.z, 0.0, -point.x)) > 0.0
+	assert_true(with_spin, "every spark swirls the same way the blades spin")
+	assert_true(sparks.lifetime <= 0.18 and sparks.gravity == Vector3.ZERO and sparks.particle_flag_align_y,
+		"the sparks are short, fly straight and stretch along the flight")
+	assert_true(_fx.active_particles() > 0, "the sparks count against the particle budget while they fly")
+	await _clear()
+
+
+func test_whirlwind_flicker() -> void:
+	EventBus.settings_changed.emit(&"reduce_flash", true)
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(2)
+	var mesh := _fx.get_effect_mesh(&"whirlwind")
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 0.0,
+		"reduced flashing turns the centre burst and the extra brightness off")
+	EventBus.settings_changed.emit(&"reduce_flash", false)
+	await _frames(2)
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
+		"turning it back off brings the flicker back")
+	await _clear()
 
 
 func test_sword_wave_flies_along_aim() -> void:
@@ -257,6 +304,12 @@ func test_depth_test_kept() -> void:
 			"%s keeps the depth test, so walls hide it" % shader.resource_path.get_file())
 
 
+func test_whirlwind_shader_rules() -> void:
+	var code := _fx.whirlwind_material.shader.code
+	assert_true(code.contains("blend_premul_alpha"), "the whirlwind blends with premultiplied alpha")
+	assert_true(not code.contains("TIME"), "the whirlwind runs on the age it is given, not on engine time")
+
+
 func test_particle_budget() -> void:
 	var budget := _fx.particle_budget
 	_fx.particle_budget = 0
@@ -266,13 +319,14 @@ func test_particle_budget() -> void:
 	# Before the wave has flown and faded out (0.175 s flight plus the fade).
 	await TimeManager.wait_game(0.15)
 	assert_true(_fx.get_active_count() == 3, "over the budget all effects still play")
-	assert_true(_fx.active_particles() == 0, "over the budget there is no dust, no embers and no sparks")
+	assert_true(_fx.active_particles() == 0, "over the budget there are no embers and no sparks")
+	assert_true(_fx.get_effect_particles(&"whirlwind") == null, "over the budget the whirlwind has no sparks")
 	assert_true(_fx.get_effect_particles(&"sword_wave") == null, "over the budget the wave has no sparks")
 	_fx.clear()
 	_fx.particle_budget = budget
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	await _frames(1)
-	assert_true(_fx.active_particles() > 0, "under the budget the whirlwind kicks up dust")
+	assert_true(_fx.active_particles() > 0, "under the budget the whirlwind throws sparks")
 	_fx.clear()
 	await _frames(1)
 
@@ -301,9 +355,9 @@ func _aim(dir: Vector3) -> void:
 	_commander.global_basis = Basis.looking_at(dir, Vector3.UP)
 
 
-func _progress() -> float:
+func _age_ms() -> float:
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	return mesh.get_instance_shader_parameter(&"progress") if mesh != null else -1.0
+	return mesh.get_instance_shader_parameter(&"age_ms") if mesh != null else -1.0
 
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
