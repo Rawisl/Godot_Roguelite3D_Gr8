@@ -13,6 +13,8 @@ extends Node3D
 ## - every skill shader keeps the depth test, so walls hide the effects
 ## - over the particle budget the effects still play without sparks or embers
 ## - run_started clears everything
+## - the colours follow the equipped sword: six palettes, base sword by default and for unknown swords, never
+##   changed under an effect already flying
 ## Headless it runs the checks and quits. F6 in the editor runs the checks, then casts the three
 ## skills together every 2 s, each in its own spot around a wall, with buttons for the game
 ## speed and reduced flashing.
@@ -58,6 +60,12 @@ func _ready() -> void:
 	test_sword_wave_shader_rules()
 	await test_particle_budget()
 	await test_run_started_clears()
+	test_palettes_complete()
+	await test_default_palette_is_base()
+	await test_burn_palette_on_both_skills()
+	await test_sword_change_keeps_flying_effect()
+	await test_unknown_sword_uses_base()
+	await test_sword_change_after_readd()
 
 	TimeManager.reset()
 	print("[skill fx] done: %d passed, %d failed" % [passes, fails])
@@ -407,7 +415,7 @@ func test_sword_wave_shader_rules() -> void:
 	var same_colours := true
 	for color_name in [&"core_color", &"rim_color", &"band_color", &"shard_color", &"mid_color", &"tail_color"]:
 		same_colours = same_colours and _fx.wave_material.get_shader_parameter(color_name) == _fx.whirlwind_material.get_shader_parameter(color_name)
-	assert_true(same_colours, "Sword Wave and Whirlwind share the skill_wave colours")
+	assert_true(same_colours, "Sword Wave and Whirlwind share the same base colours")
 
 
 func test_particle_budget() -> void:
@@ -441,6 +449,104 @@ func test_run_started_clears() -> void:
 	assert_true(_fx.get_active_count() == 0, "run_started clears every effect")
 	var left := _fx.get_children().filter(func(n: Node) -> bool: return not n.is_queued_for_deletion())
 	assert_true(left.is_empty(), "no mesh or particle node is left behind")
+
+
+func test_palettes_complete() -> void:
+	var ids: Array[StringName] = [&"sword_base", &"frost", &"chain_lightning", &"burn", &"rampage", &"swift"]
+	var whole := true
+	var seen: Array[String] = []
+	for id in ids:
+		var palette := _fx.palettes.get(id) as SkillPalette
+		if palette == null:
+			whole = false
+			continue
+		var colours: Array[Color] = [palette.core, palette.rim, palette.band, palette.shard, palette.mid, palette.tail, palette.spark]
+		var key := ""
+		for colour in colours:
+			whole = whole and colour.a == 1.0
+			key += colour.to_html(false)
+		for other in colours.size() - 1:
+			whole = whole and colours[other] != colours[other + 1]
+		seen.append(key)
+	assert_true(whole and _fx.palettes.size() == ids.size(), "every sword has a palette of seven colours")
+	var unique := {}
+	for key in seen:
+		unique[key] = true
+	assert_true(seen.size() == ids.size() and unique.size() == ids.size(), "the six palettes differ from each other")
+
+
+func test_default_palette_is_base() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var base := _fx.palettes[&"sword_base"] as SkillPalette
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), base), "before any sword is announced the base sword colours are used")
+	await _clear()
+
+
+func test_burn_palette_on_both_skills() -> void:
+	var burn := _fx.palettes[&"burn"] as SkillPalette
+	EventBus.weapon_equipped.emit(&"burn")
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var ring_ok := _mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), burn)
+	var extra := _fx.get_whirlwind_rings()
+	for ring in extra:
+		ring_ok = ring_ok and _mesh_colours_match(ring, burn)
+	assert_true(ring_ok and not extra.is_empty(), "after equipping burn every Whirlwind ring uses the burn colours")
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"sword_wave"), burn), "after equipping burn the Sword Wave uses the burn colours")
+	var whirl_sparks := _fx.get_effect_particles(&"whirlwind")
+	var wave_sparks := _fx.get_effect_particles(&"sword_wave")
+	assert_true(whirl_sparks != null and whirl_sparks.color_ramp.get_color(0).is_equal_approx(burn.spark), "the Whirlwind sparks have the burn spark colour")
+	assert_true(wave_sparks != null and wave_sparks.color_ramp.get_color(0).is_equal_approx(burn.spark), "the Sword Wave sparks have the burn spark colour")
+	assert_true(_fx.whirlwind_material.get_shader_parameter(&"core_color") != burn.core, "the shared source material is not recoloured")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
+
+
+func test_sword_change_keeps_flying_effect() -> void:
+	var base := _fx.palettes[&"sword_base"] as SkillPalette
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var wave := _fx.get_effect_mesh(&"sword_wave")
+	var whirl := _fx.get_effect_mesh(&"whirlwind")
+	EventBus.weapon_equipped.emit(&"swift")
+	await _frames(2)
+	assert_true(_mesh_colours_match(wave, base) and _mesh_colours_match(whirl, base), "changing sword does not recolour an effect already flying")
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"sword_wave"), _fx.palettes[&"swift"]), "the next cast uses the new sword colours")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
+
+
+func test_unknown_sword_uses_base() -> void:
+	var base := _fx.palettes[&"sword_base"] as SkillPalette
+	EventBus.weapon_equipped.emit(&"no_such_sword")
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), base), "a sword with no palette falls back to the base sword colours")
+	var sparks := _fx.get_effect_particles(&"whirlwind")
+	assert_true(sparks != null and sparks.color_ramp.get_color(0).is_equal_approx(base.spark), "its sparks use the base spark colour")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
+
+
+func test_sword_change_after_readd() -> void:
+	var parent := _fx.get_parent()
+	parent.remove_child(_fx)
+	parent.add_child(_fx)
+	EventBus.weapon_equipped.emit(&"swift")
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var swift := _fx.palettes[&"swift"] as SkillPalette
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), swift),
+		"a manager taken out of the tree and added back still follows the sword change")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
 #endregion
 
 
@@ -463,6 +569,19 @@ func _age_ms() -> float:
 ## Meshes still alive under the manager: the main ring and the extra ones.
 func _whirlwind_mesh_count() -> int:
 	return _fx.get_children().filter(func(n: Node) -> bool: return n is MeshInstance3D and not n.is_queued_for_deletion()).size()
+
+
+## Whether the six shader colours on the mesh's material are the palette's.
+func _mesh_colours_match(mesh: MeshInstance3D, palette: SkillPalette) -> bool:
+	var material := mesh.material_override as ShaderMaterial if mesh != null else null
+	if material == null or palette == null:
+		return false
+	var want := {&"core_color": palette.core, &"rim_color": palette.rim, &"band_color": palette.band,
+		&"shard_color": palette.shard, &"mid_color": palette.mid, &"tail_color": palette.tail}
+	for key in want:
+		if not (material.get_shader_parameter(key) as Color).is_equal_approx(want[key]):
+			return false
+	return true
 
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
