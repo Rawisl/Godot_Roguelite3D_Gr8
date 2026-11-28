@@ -125,6 +125,8 @@ signal reward_pick_requested(card_id: StringName, kind: StringName, level: int) 
 signal reward_skip_requested  # UI -> RewardService: the player gave up the open offer
 signal reward_picked(card_id: StringName, slot_kind: StringName, new_level: int)  # RewardService -> StatBlock, SkillRunner, XpTracker, RunState. new_level is the absolute level after the pick; (&"", &"SKIP", 0) for a skip
 signal skill_cast(skill_id: StringName, slot_index: int, level: int, origin: Vector3, radius: float)  # SkillRunner -> VFX, audio, once per cast
+signal skill_wave_fired(skill_id: StringName, origin: Vector3, dir: Vector3, level: int)  # SkillRunner -> VFX, once per wave of a channelled skill
+signal skill_channel_ended(skill_id: StringName)  # SkillRunner -> VFX, when a channelled skill finishes or is cut
 #------------------------------------------------------#
 
 

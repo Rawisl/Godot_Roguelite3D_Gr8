@@ -8,6 +8,7 @@ const SKILLS: Array[SkillData] = [
 	preload("res://data/skills/whirlwind.tres"),
 	preload("res://data/skills/sword_wave.tres"),
 	preload("res://data/skills/firebomb.tres"),
+	preload("res://data/skills/blade_tempest.tres"),
 ]
 const SLOT_IDS: Array[StringName] = [&"skill_1", &"skill_2", &"skill_3"]
 
@@ -18,15 +19,25 @@ var caster: Node3D
 var stat_block: StatBlock
 
 var _cooldowns: Dictionary[StringName, float] = {}
+## The running channelled skill, if any. Its on_wave points at a runner method, not a lambda, so
+## the skill and the runner do not keep each other alive.
+var _channel: BladeTempestSkill
+var _channel_id: StringName = &""
+var _channel_level: int = 0
 
 
 func _ready() -> void:
 	reset()
 	EventBus.run_started.connect(reset)
 	EventBus.reward_picked.connect(_on_reward_picked)
+	EventBus.run_ended.connect(_on_run_ended)
 
 
 func _exit_tree() -> void:
+	# The VFX still needs the end signal when the runner leaves mid-channel.
+	stop_channel()
+	if EventBus.run_ended.is_connected(_on_run_ended):
+		EventBus.run_ended.disconnect(_on_run_ended)
 	if EventBus.run_started.is_connected(reset):
 		EventBus.run_started.disconnect(reset)
 	if EventBus.reward_picked.is_connected(_on_reward_picked):
@@ -35,6 +46,7 @@ func _exit_tree() -> void:
 
 ## Start of a run: empty slots, no cooldowns.
 func reset() -> void:
+	stop_channel()
 	state.reset()
 	_cooldowns.clear()
 
@@ -55,6 +67,22 @@ func tick(delta: float) -> void:
 			var slot := state.active.find(skill_id)
 			if slot != -1:
 				_emit_cooldown(slot)
+	if _channel != null and (not _caster_can_act() or not _channel.tick(delta)):
+		stop_channel()
+
+
+func is_channeling() -> bool:
+	return _channel != null
+
+
+## Drops the running channel and announces it once. No-op when nothing is channelling.
+func stop_channel() -> void:
+	if _channel == null:
+		return
+	var skill_id := _channel_id
+	_channel = null
+	_channel_id = &""
+	EventBus.skill_channel_ended.emit(skill_id)
 
 
 func get_skill_id(slot: int) -> StringName:
@@ -75,6 +103,8 @@ func export_state() -> Dictionary:
 
 
 func import_state(saved: Dictionary) -> void:
+	# A channel started under the old slots and levels must not outlive them.
+	stop_channel()
 	state.from_dict(saved["skills"])
 	_cooldowns.assign(saved["cooldowns"])
 	for slot in state.active.size():
@@ -97,6 +127,7 @@ func activate(slot: int) -> SkillData:
 	var data := _find(get_skill_id(slot))
 	if data == null:
 		return null
+	stop_channel()
 	var level := get_level(slot)
 	var total := data.get_value(&"cooldown", level)
 	_cooldowns[data.id] = total
@@ -114,9 +145,19 @@ func activate(slot: int) -> SkillData:
 			var point := FirebombSkill.landing_point(caster, aim_point if aim_point is Vector3 else Vector3.INF, _aim_dir())
 			FirebombSkill.cast(caster, data, level, mult, point)
 			EventBus.skill_cast.emit(data.id, slot, level, point, data.get_value(&"radius", level))
+		&"blade_tempest":
+			_channel = BladeTempestSkill.new(caster, data, level, mult)
+			_channel.on_wave = _on_channel_wave
+			_channel_id = data.id
+			_channel_level = level
+			EventBus.skill_cast.emit(data.id, slot, level, caster.global_position, data.get_value(&"radius", level))
 		_:
 			EventBus.skill_cast.emit(data.id, slot, level, caster.global_position, 0.0)
 	return data
+
+
+func _on_channel_wave(origin: Vector3, dir: Vector3) -> void:
+	EventBus.skill_wave_fired.emit(_channel_id, origin, dir, _channel_level)
 
 
 ## Puts an active skill at an absolute level. A new skill takes the lowest empty slot.
@@ -140,6 +181,10 @@ func set_skill_level(skill_id: StringName, new_level: int) -> int:
 		_cooldowns[skill_id] = total
 		_emit_cooldown(slot)
 	return slot
+
+
+func _on_run_ended(_end_type: StringName, _summary: Dictionary) -> void:
+	stop_channel()
 
 
 func _on_reward_picked(card_id: StringName, slot_kind: StringName, new_level: int) -> void:

@@ -479,6 +479,8 @@ func _try_dodge(camera: Camera3D) -> void:
 		return
 	if is_attacking:
 		_interrupt_attack()
+	if skill_runner != null:
+		skill_runner.stop_channel()
 	_start_dodge(camera)
 
 
@@ -550,6 +552,8 @@ func _try_battle_cry() -> void:
 		return
 	if health != null and health.hp <= 0:
 		return
+	if skill_runner != null:
+		skill_runner.stop_channel()
 	_start_battle_cry()
 
 
@@ -814,6 +818,8 @@ func _turn_model(delta: float, free_dir: Vector3) -> void:
 
 func _try_attack() -> void:
 	if is_commander_mode or is_dodging or is_attacking or is_using_skill:
+		return
+	if skill_runner != null and skill_runner.is_channeling():
 		return
 	_start_attack(current_combo_hit)
 
