@@ -1,13 +1,14 @@
 extends Node3D
 
 ## Test for the active skill visuals (SkillFxManager):
-## - Whirlwind: the blades sit on the cast point at the skill radius and spin on game time (faster
-##   at x2, held while paused), then free themselves with their sparks; the sparks fly in towards
-##   the commander, and reduced flashing turns the flicker off
+## - Whirlwind: the sweeps sit over the cast point at the skill radius and turn on game time
+##   (faster at x2, held while paused), the second one starts later, then they fade and free
+##   themselves with their sparks; the sparks fly in towards the commander, and reduced flashing
+##   turns the flicker off
 ## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall; its
-##   plane leaves room for the glow, sparks follow the wave and stop with it, the wisps run on
-##   game time (held while paused), reduced flashing stops the wisp gaps drifting, and the
-##   colours are the ones Whirlwind uses
+##   plane leaves room for the glow, sparks follow the wave and stop with it, it grows on game
+##   time (held while paused), reduced flashing turns the white blade off, and the colours are
+##   the ones Whirlwind uses
 ## - Firebomb: the bomb flies first, then the burn area shows at the cast point for the burn
 ##   time; reduced flashing turns the flicker off, and the flicker is capped at 3 per second
 ## - every skill shader keeps the depth test, so walls hide the effects
@@ -108,32 +109,34 @@ func test_whirlwind_placed() -> void:
 	_cast(&"whirlwind", Vector3(1, 0, -2), WHIRLWIND_RADIUS)
 	await _frames(1)
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	assert_true(_fx.get_active_count(&"whirlwind") == 1, "skill_cast whirlwind adds one ring of blades")
+	assert_true(_fx.get_active_count(&"whirlwind") == 1, "skill_cast whirlwind adds one whirlwind")
 	assert_true(mesh != null and mesh.global_position.distance_to(Vector3(1, _fx.whirlwind_height, -2)) < 0.001,
 		"the blades sit over the cast point, at the middle of the commander")
 	assert_true(mesh != null and is_equal_approx(mesh.get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS),
 		"the blades use the skill radius")
 	var plane := mesh.mesh as PlaneMesh if mesh != null else null
 	assert_true(plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS, "the plane is wide enough for the radius")
-	var wisp: float = _fx.whirlwind_material.get_shader_parameter(&"wisp_offset")
-	assert_true(plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * wisp, "the plane fits the outer wisps")
+	var reach: float = _fx.whirlwind_material.get_shader_parameter(&"outer_reach")
+	assert_true(plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * reach, "the plane fits the glow outside the rim")
 	await _clear()
 
 
 func test_whirlwind_on_game_time() -> void:
+	# The test commander holds no sword, so the sweeps turn at whirlwind_spin_speed.
+	var per_second := deg_to_rad(_fx.whirlwind_spin_speed)
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	await TimeManager.wait_game(0.2)
-	assert_true(absf(_age_ms() - 200.0) < 60.0, "after 0.2 s of game time the blades are 200 ms old")
+	assert_true(absf(_sweep() - per_second * 0.2) < per_second * 0.06, "after 0.2 s of game time the sweep has turned for 0.2 s")
 	await _clear()
 
 	TimeManager.set_time_scale(2)
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	await TimeManager.wait_real(0.1)
-	assert_true(absf(_age_ms() - 200.0) < 80.0, "at x2 the blades are 200 ms old after 0.1 s")
+	assert_true(absf(_sweep() - per_second * 0.2) < per_second * 0.08, "at x2 the sweep turns for 0.2 s in 0.1 s")
 	TimeManager.request_pause(TimeManager.REASON_USER)
-	var held := _age_ms()
+	var held := _sweep()
 	await TimeManager.wait_real(0.2)
-	assert_true(is_equal_approx(_age_ms(), held), "while paused the blades hold")
+	assert_true(is_equal_approx(_sweep(), held), "while paused the sweep holds")
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	TimeManager.set_time_scale(1)
 	await _clear()
@@ -141,12 +144,12 @@ func test_whirlwind_on_game_time() -> void:
 
 func test_whirlwind_fades_and_frees() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	var unravel: float = _fx.whirlwind_material.get_shader_parameter(&"unravel_ms")
 	await TimeManager.wait_game(_fx.whirlwind_time() - 0.05)
-	assert_true(_fx.get_active_count(&"whirlwind") == 1 and _age_ms() > unravel,
-		"just before the end time the blades are still there and unravelling")
+	var mesh := _fx.get_effect_mesh(&"whirlwind")
+	assert_true(_fx.get_active_count(&"whirlwind") == 1 and mesh != null and mesh.get_instance_shader_parameter(&"fade") < 1.0,
+		"just before the end time the sweeps are still there and fading")
 	await TimeManager.wait_game(0.3)
-	assert_true(_fx.get_active_count() == 0, "the blades and their sparks free themselves")
+	assert_true(_fx.get_active_count() == 0, "the sweeps and their sparks free themselves")
 	await _clear()
 
 
@@ -164,12 +167,12 @@ func test_whirlwind_sparks() -> void:
 	for i in sparks.emission_points.size():
 		inward = inward and sparks.emission_normals[i].dot(sparks.emission_points[i]) < 0.0
 	assert_true(inward, "every spark flies in towards the commander")
-	# Counter-clockwise seen from above: the tangent at (x, z) is (z, 0, -x), as for the blades.
+	# Clockwise seen from above: the tangent at (x, z) is (-z, 0, x), the way the sword turns.
 	var with_spin := not sparks.emission_points.is_empty()
 	for i in sparks.emission_points.size():
 		var point := sparks.emission_points[i]
-		with_spin = with_spin and sparks.emission_normals[i].dot(Vector3(point.z, 0.0, -point.x)) > 0.0
-	assert_true(with_spin, "every spark swirls the same way the blades spin")
+		with_spin = with_spin and sparks.emission_normals[i].dot(Vector3(-point.z, 0.0, point.x)) > 0.0
+	assert_true(with_spin, "every spark swirls the way the sword turns")
 	assert_true(sparks.lifetime <= 0.18 and sparks.gravity == Vector3.ZERO and sparks.particle_flag_align_y,
 		"the sparks are short, fly straight and stretch along the flight")
 	assert_true(_fx.active_particles() > 0, "the sparks count against the particle budget while they fly")
@@ -193,63 +196,48 @@ func test_whirlwind_flicker() -> void:
 func test_whirlwind_rings() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	await _frames(1)
-	var rings := _fx.get_whirlwind_rings()
-	var wanted := _fx.whirlwind_ring_count()
-	assert_true(wanted >= 1 and rings.size() == wanted, "the whirlwind has one extra mesh per extra ring")
-	assert_true(_whirlwind_mesh_count() == 1 + wanted, "the whirlwind is the main mesh plus the extra rings")
-	var main := _fx.get_effect_mesh(&"whirlwind")
-	# Values never set read back as null: the shader defaults (1 and 0) apply.
-	assert_true(main != null and main.get_instance_shader_parameter(&"ring_scale") in [null, 1.0]
-		and main.get_instance_shader_parameter(&"ring_delay_ms") in [null, 0.0], "the main ring keeps the default ring values")
-	var wisp: float = _fx.whirlwind_material.get_shader_parameter(&"wisp_offset")
-	var ok := rings.size() == wanted
-	var plane_ok := ok
-	for i in rings.size():
-		var ring_scale: float = rings[i].get_instance_shader_parameter(&"ring_scale")
-		ok = ok and is_equal_approx(ring_scale, _fx.whirlwind_ring_scales[i]) \
-			and is_equal_approx(rings[i].get_instance_shader_parameter(&"ring_delay_ms"), _fx.whirlwind_ring_delays_ms[i]) \
-			and is_equal_approx(rings[i].get_instance_shader_parameter(&"ring_weight"), _fx.whirlwind_ring_weights[i]) \
-			and is_equal_approx(rings[i].get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS)
-		var plane := rings[i].mesh as PlaneMesh
-		plane_ok = plane_ok and plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * ring_scale * wisp
-	assert_true(ok, "each extra ring carries its own radius factor, delay and strength")
-	assert_true(plane_ok, "each ring plane fits the outer wisps of its own radius")
+	var wanted := _fx.whirlwind_sweep_count()
+	assert_true(wanted == 2 and _fx.get_whirlwind_sweeps().is_empty() and _whirlwind_mesh_count() == 1,
+		"right after the cast only the first of the two sweeps is there")
+	await TimeManager.wait_game(_fx.whirlwind_sweep_delays[1] + 0.05)
+	var later := _fx.get_whirlwind_sweeps()
+	var reach: float = _fx.whirlwind_material.get_shader_parameter(&"outer_reach")
+	var plane := later[0].mesh as PlaneMesh if later.size() == 1 else null
+	assert_true(later.size() == 1 and _whirlwind_mesh_count() == 2, "the second sweep starts after its delay")
+	assert_true(plane != null and is_equal_approx(later[0].get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS)
+		and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * reach, "the second sweep uses the skill radius and fits its glow")
 	await _clear()
 
 
 func test_whirlwind_rings_on_game_time() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await TimeManager.wait_game(0.2)
-	var rings := _fx.get_whirlwind_rings()
-	var ok := not rings.is_empty()
-	for ring in rings:
-		ok = ok and absf(ring.get_instance_shader_parameter(&"age_ms") - 200.0) < 60.0
-	assert_true(ok, "after 0.2 s of game time the extra rings are 200 ms old")
+	await TimeManager.wait_game(_fx.whirlwind_sweep_delays[1] + 0.05)
+	var first := _fx.get_effect_mesh(&"whirlwind")
+	var later := _fx.get_whirlwind_sweeps()
+	var same_head := first != null and later.size() == 1 \
+		and first.global_basis.x.normalized().is_equal_approx(later[0].global_basis.x.normalized())
+	assert_true(same_head, "both sweeps keep their head on the same point of the swing")
 	TimeManager.request_pause(TimeManager.REASON_USER)
-	var held := _age_ms()
+	var held: float = later[0].get_instance_shader_parameter(&"sweep") if later.size() == 1 else -1.0
 	await TimeManager.wait_real(0.2)
-	assert_true(not rings.is_empty() and is_equal_approx(rings[0].get_instance_shader_parameter(&"age_ms"), held),
-		"while paused the extra rings hold too")
+	assert_true(later.size() == 1 and is_equal_approx(later[0].get_instance_shader_parameter(&"sweep"), held),
+		"while paused the second sweep holds too")
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	await _clear()
 
 
 func test_whirlwind_rings_free() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await _frames(1)
-	var rings := _fx.get_whirlwind_rings().duplicate()
-	var end_s: float = float(_fx.whirlwind_material.get_shader_parameter(&"end_ms")) * 0.001
-	var max_delay_s := 0.0
-	for delay in _fx.whirlwind_ring_delays_ms:
-		max_delay_s = maxf(max_delay_s, delay * 0.001)
-	assert_true(is_equal_approx(_fx.whirlwind_time(), end_s + max_delay_s),
-		"the effect lives until the latest ring has faded")
+	assert_true(is_equal_approx(_fx.whirlwind_time(), _fx.whirlwind_swing_time + _fx.whirlwind_fade_time),
+		"without a commander swing the effect lasts the swing plus the fade")
+	await TimeManager.wait_game(_fx.whirlwind_sweep_delays[1] + 0.05)
+	var later := _fx.get_whirlwind_sweeps().duplicate()
 	await TimeManager.wait_game(_fx.whirlwind_time() + 0.3)
 	await _frames(2)
-	var freed := not rings.is_empty()
-	for ring in rings:
-		freed = freed and (not is_instance_valid(ring) or ring.is_queued_for_deletion())
-	assert_true(freed, "the extra rings are freed with the blades")
+	var freed := not later.is_empty()
+	for sweep in later:
+		freed = freed and (not is_instance_valid(sweep) or sweep.is_queued_for_deletion())
+	assert_true(freed, "the second sweep is freed with the first")
 	assert_true(_whirlwind_mesh_count() == 0, "no whirlwind mesh is left behind")
 	await _clear()
 
@@ -341,10 +329,10 @@ func test_sword_wave_on_game_time() -> void:
 	var t0: float = mesh.get_instance_shader_parameter(&"game_time")
 	await TimeManager.wait_game(0.05)
 	var t1: float = mesh.get_instance_shader_parameter(&"game_time")
-	assert_true(t1 > t0, "the wisps move on game time")
+	assert_true(t1 > t0, "the wave grows on game time")
 	TimeManager.request_pause(TimeManager.REASON_USER)
 	await TimeManager.wait_real(0.1)
-	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the wisps hold")
+	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the wave holds")
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	await _clear()
 
@@ -356,12 +344,12 @@ func test_sword_wave_flicker() -> void:
 	await _frames(2)
 	var mesh := _fx.get_effect_mesh(&"sword_wave")
 	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 0.0,
-		"reduced flashing stops the wisp gaps drifting")
+		"reduced flashing turns the white blade off")
 	EventBus.settings_changed.emit(&"reduce_flash", false)
 	await _frames(2)
 	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
-		"turning it back off brings the wisp drift back")
-	assert_true(_fx.wave_material.shader.code.contains("wisp_scroll * flicker"), "the wisp drift follows the flicker setting")
+		"turning it back off brings the white blade back")
+	assert_true(_fx.wave_material.shader.code.contains("head_width, 0.001), xn)) * flicker"), "the white blade follows the flicker setting")
 	await _clear()
 
 
@@ -510,10 +498,9 @@ func test_burn_palette_on_both_skills() -> void:
 	_cast(&"sword_wave", _commander.global_position, 0.0)
 	await _frames(1)
 	var ring_ok := _mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), burn)
-	var extra := _fx.get_whirlwind_rings()
-	for ring in extra:
-		ring_ok = ring_ok and _mesh_colours_match(ring, burn)
-	assert_true(ring_ok and not extra.is_empty(), "after equipping burn every Whirlwind ring uses the burn colours")
+	for sweep in _fx.get_whirlwind_sweeps():
+		ring_ok = ring_ok and _mesh_colours_match(sweep, burn)
+	assert_true(ring_ok, "after equipping burn the Whirlwind uses the burn colours")
 	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"sword_wave"), burn), "after equipping burn the Sword Wave uses the burn colours")
 	var whirl_sparks := _fx.get_effect_particles(&"whirlwind")
 	var wave_sparks := _fx.get_effect_particles(&"sword_wave")
@@ -757,12 +744,12 @@ func _aim(dir: Vector3) -> void:
 	_commander.global_basis = Basis.looking_at(dir, Vector3.UP)
 
 
-func _age_ms() -> float:
+func _sweep() -> float:
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	return mesh.get_instance_shader_parameter(&"age_ms") if mesh != null else -1.0
+	return mesh.get_instance_shader_parameter(&"sweep") if mesh != null else -1.0
 
 
-## Meshes still alive under the manager: the main ring and the extra ones.
+## Meshes still alive under the manager: every Whirlwind sweep.
 func _whirlwind_mesh_count() -> int:
 	return _fx.get_children().filter(func(n: Node) -> bool: return n is MeshInstance3D and not n.is_queued_for_deletion()).size()
 
@@ -791,7 +778,7 @@ func _clear() -> void:
 
 func _whirlwind_meshes() -> Array[MeshInstance3D]:
 	var meshes: Array[MeshInstance3D] = [_fx.get_effect_mesh(&"whirlwind")]
-	meshes.append_array(_fx.get_whirlwind_rings())
+	meshes.append_array(_fx.get_whirlwind_sweeps())
 	return meshes
 
 

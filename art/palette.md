@@ -137,73 +137,73 @@ Whirlwind và Sword Wave đổi bộ màu theo kiếm đang cầm (id kiếm l�
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| skill_base_core | `#F4F6F8` | Viền sáng nhất ở mép trước cung của Sword Wave và lõi các lưỡi Whirlwind |
-| skill_base_rim | `#C9D1D9` | Thân cung Sword Wave sát viền và sợi wisp đoạn đầu |
-| skill_base_band | `#8A97A6` | Quầng sáng ôm mép trước cung và đoạn giữa của các mảnh shard |
-| skill_base_shard | `#B4BEC9` | Thân cung phía mép trong và các mảnh shard, đoạn gần mép trong |
-| skill_base_mid | `#5B6673` | Đuôi các mảnh shard và sợi wisp, đoạn giữa |
-| skill_base_tail | `#2E343C` | Sợi wisp, đoạn cuối |
-| skill_base_spark | `#E6EBF0` | Tia mảnh bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind |
+| skill_base_core | `#F4F6F8` | Phần trắng giữa lưỡi Sword Wave và đầu vệt quét Whirlwind |
+| skill_base_rim | `#C9D1D9` | Viền lưỡi Sword Wave và viền ngoài vệt quét Whirlwind |
+| skill_base_band | `#8A97A6` | Quầng sáng trước lưỡi Sword Wave, ngoài viền Whirlwind; thân vệt đoạn gần lưỡi |
+| skill_base_shard | `#B4BEC9` | Thân vệt (Sword Wave và Whirlwind), đoạn sát lưỡi kiếm |
+| skill_base_mid | `#5B6673` | Thân vệt, đoạn giữa đuôi |
+| skill_base_tail | `#2E343C` | Thân vệt, đoạn cuối đuôi |
+| skill_base_spark | `#E6EBF0` | Tia bay từ lưỡi Sword Wave về sau theo sóng và tia sáng bay vào tâm của Whirlwind |
 
 ### Hàn Sương (`art/materials/palettes/skill_palette_frost.tres`)
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| skill_frost_core | `#E9FCFF` | Viền sáng nhất ở mép trước cung của Sword Wave và lõi các lưỡi Whirlwind |
-| skill_frost_rim | `#A9E9F7` | Thân cung Sword Wave sát viền và sợi wisp đoạn đầu |
-| skill_frost_band | `#29B9E8` | Quầng sáng ôm mép trước cung và đoạn giữa của các mảnh shard |
-| skill_frost_shard | `#85DBF2` | Thân cung phía mép trong và các mảnh shard, đoạn gần mép trong |
-| skill_frost_mid | `#24799D` | Đuôi các mảnh shard và sợi wisp, đoạn giữa |
-| skill_frost_tail | `#17394E` | Sợi wisp, đoạn cuối |
-| skill_frost_spark | `#C6F5FF` | Tia mảnh bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind |
+| skill_frost_core | `#E9FCFF` | Phần trắng giữa lưỡi Sword Wave và đầu vệt quét Whirlwind |
+| skill_frost_rim | `#A9E9F7` | Viền lưỡi Sword Wave và viền ngoài vệt quét Whirlwind |
+| skill_frost_band | `#29B9E8` | Quầng sáng trước lưỡi Sword Wave, ngoài viền Whirlwind; thân vệt đoạn gần lưỡi |
+| skill_frost_shard | `#85DBF2` | Thân vệt (Sword Wave và Whirlwind), đoạn sát lưỡi kiếm |
+| skill_frost_mid | `#24799D` | Thân vệt, đoạn giữa đuôi |
+| skill_frost_tail | `#17394E` | Thân vệt, đoạn cuối đuôi |
+| skill_frost_spark | `#C6F5FF` | Tia bay từ lưỡi Sword Wave về sau theo sóng và tia sáng bay vào tâm của Whirlwind |
 
 ### Lôi Kiếm (`art/materials/palettes/skill_palette_chain_lightning.tres`)
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| skill_lightning_core | `#FBF2FF` | Viền sáng nhất ở mép trước cung của Sword Wave và lõi các lưỡi Whirlwind |
-| skill_lightning_rim | `#DCC2FF` | Thân cung Sword Wave sát viền và sợi wisp đoạn đầu |
-| skill_lightning_band | `#9A5CFF` | Quầng sáng ôm mép trước cung và đoạn giữa của các mảnh shard |
-| skill_lightning_shard | `#C3A2FF` | Thân cung phía mép trong và các mảnh shard, đoạn gần mép trong |
-| skill_lightning_mid | `#5B33A8` | Đuôi các mảnh shard và sợi wisp, đoạn giữa |
-| skill_lightning_tail | `#2A1A4F` | Sợi wisp, đoạn cuối |
-| skill_lightning_spark | `#F0E0FF` | Tia mảnh bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind |
+| skill_lightning_core | `#FBF2FF` | Phần trắng giữa lưỡi Sword Wave và đầu vệt quét Whirlwind |
+| skill_lightning_rim | `#DCC2FF` | Viền lưỡi Sword Wave và viền ngoài vệt quét Whirlwind |
+| skill_lightning_band | `#9A5CFF` | Quầng sáng trước lưỡi Sword Wave, ngoài viền Whirlwind; thân vệt đoạn gần lưỡi |
+| skill_lightning_shard | `#C3A2FF` | Thân vệt (Sword Wave và Whirlwind), đoạn sát lưỡi kiếm |
+| skill_lightning_mid | `#5B33A8` | Thân vệt, đoạn giữa đuôi |
+| skill_lightning_tail | `#2A1A4F` | Thân vệt, đoạn cuối đuôi |
+| skill_lightning_spark | `#F0E0FF` | Tia bay từ lưỡi Sword Wave về sau theo sóng và tia sáng bay vào tâm của Whirlwind |
 
 ### Xích Tiêu (`art/materials/palettes/skill_palette_burn.tres`)
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| skill_burn_core | `#FFF6DC` | Viền sáng nhất ở mép trước cung của Sword Wave và lõi các lưỡi Whirlwind |
-| skill_burn_rim | `#FFD48A` | Thân cung Sword Wave sát viền và sợi wisp đoạn đầu |
-| skill_burn_band | `#FF7A1F` | Quầng sáng ôm mép trước cung và đoạn giữa của các mảnh shard |
-| skill_burn_shard | `#FFB45C` | Thân cung phía mép trong và các mảnh shard, đoạn gần mép trong |
-| skill_burn_mid | `#B8360F` | Đuôi các mảnh shard và sợi wisp, đoạn giữa |
-| skill_burn_tail | `#4F1A0A` | Sợi wisp, đoạn cuối |
-| skill_burn_spark | `#FFE0A0` | Tia mảnh bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind |
+| skill_burn_core | `#FFF6DC` | Phần trắng giữa lưỡi Sword Wave và đầu vệt quét Whirlwind |
+| skill_burn_rim | `#FFD48A` | Viền lưỡi Sword Wave và viền ngoài vệt quét Whirlwind |
+| skill_burn_band | `#FF7A1F` | Quầng sáng trước lưỡi Sword Wave, ngoài viền Whirlwind; thân vệt đoạn gần lưỡi |
+| skill_burn_shard | `#FFB45C` | Thân vệt (Sword Wave và Whirlwind), đoạn sát lưỡi kiếm |
+| skill_burn_mid | `#B8360F` | Thân vệt, đoạn giữa đuôi |
+| skill_burn_tail | `#4F1A0A` | Thân vệt, đoạn cuối đuôi |
+| skill_burn_spark | `#FFE0A0` | Tia bay từ lưỡi Sword Wave về sau theo sóng và tia sáng bay vào tâm của Whirlwind |
 
 ### Nộ Kiếm (`art/materials/palettes/skill_palette_rampage.tres`)
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| skill_rampage_core | `#FFE4DC` | Viền sáng nhất ở mép trước cung của Sword Wave và lõi các lưỡi Whirlwind |
-| skill_rampage_rim | `#FF8A70` | Thân cung Sword Wave sát viền và sợi wisp đoạn đầu |
-| skill_rampage_band | `#D61E1E` | Quầng sáng ôm mép trước cung và đoạn giữa của các mảnh shard |
-| skill_rampage_shard | `#F05A45` | Thân cung phía mép trong và các mảnh shard, đoạn gần mép trong |
-| skill_rampage_mid | `#7A0D0D` | Đuôi các mảnh shard và sợi wisp, đoạn giữa |
-| skill_rampage_tail | `#330606` | Sợi wisp, đoạn cuối |
-| skill_rampage_spark | `#FF9C80` | Tia mảnh bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind |
+| skill_rampage_core | `#FFE4DC` | Phần trắng giữa lưỡi Sword Wave và đầu vệt quét Whirlwind |
+| skill_rampage_rim | `#FF8A70` | Viền lưỡi Sword Wave và viền ngoài vệt quét Whirlwind |
+| skill_rampage_band | `#D61E1E` | Quầng sáng trước lưỡi Sword Wave, ngoài viền Whirlwind; thân vệt đoạn gần lưỡi |
+| skill_rampage_shard | `#F05A45` | Thân vệt (Sword Wave và Whirlwind), đoạn sát lưỡi kiếm |
+| skill_rampage_mid | `#7A0D0D` | Thân vệt, đoạn giữa đuôi |
+| skill_rampage_tail | `#330606` | Thân vệt, đoạn cuối đuôi |
+| skill_rampage_spark | `#FF9C80` | Tia bay từ lưỡi Sword Wave về sau theo sóng và tia sáng bay vào tâm của Whirlwind |
 
 ### Truy Phong (`art/materials/palettes/skill_palette_swift.tres`)
 
 | Tên | Hex | Dùng cho |
 |---|---|---|
-| skill_swift_core | `#F2FFF0` | Viền sáng nhất ở mép trước cung của Sword Wave và lõi các lưỡi Whirlwind |
-| skill_swift_rim | `#C2F5B8` | Thân cung Sword Wave sát viền và sợi wisp đoạn đầu |
-| skill_swift_band | `#4CD96A` | Quầng sáng ôm mép trước cung và đoạn giữa của các mảnh shard |
-| skill_swift_shard | `#96EB8C` | Thân cung phía mép trong và các mảnh shard, đoạn gần mép trong |
-| skill_swift_mid | `#2A8A45` | Đuôi các mảnh shard và sợi wisp, đoạn giữa |
-| skill_swift_tail | `#133D22` | Sợi wisp, đoạn cuối |
-| skill_swift_spark | `#DDFFD4` | Tia mảnh bay về sau Sword Wave và tia sáng bay vào tâm của Whirlwind |
+| skill_swift_core | `#F2FFF0` | Phần trắng giữa lưỡi Sword Wave và đầu vệt quét Whirlwind |
+| skill_swift_rim | `#C2F5B8` | Viền lưỡi Sword Wave và viền ngoài vệt quét Whirlwind |
+| skill_swift_band | `#4CD96A` | Quầng sáng trước lưỡi Sword Wave, ngoài viền Whirlwind; thân vệt đoạn gần lưỡi |
+| skill_swift_shard | `#96EB8C` | Thân vệt (Sword Wave và Whirlwind), đoạn sát lưỡi kiếm |
+| skill_swift_mid | `#2A8A45` | Thân vệt, đoạn giữa đuôi |
+| skill_swift_tail | `#133D22` | Thân vệt, đoạn cuối đuôi |
+| skill_swift_spark | `#DDFFD4` | Tia bay từ lưỡi Sword Wave về sau theo sóng và tia sáng bay vào tâm của Whirlwind |
 
 ### Firebomb
 
