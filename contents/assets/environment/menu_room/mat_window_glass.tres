@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://contents/assets/environment/menu_room/window_glass.gdshader" id="1_rc2ds"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_rc2ds")
+shader_parameter/glass_color = null
+shader_parameter/glow = null
+shader_parameter/cells = null
+shader_parameter/lead_width = null
