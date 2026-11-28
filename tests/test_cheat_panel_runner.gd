@@ -78,6 +78,7 @@ func _ready() -> void:
 	await test_sync_offline()
 	test_panel_and_input()
 	test_gold_and_level()
+	test_skill_picker()
 	test_jump_and_phase_gating()
 	await test_combat_cheats()
 
@@ -244,6 +245,57 @@ func test_gold_and_level() -> void:
 	_panel.add_level()
 	EventBus.level_up.disconnect(_count_level_up)
 	assert_true(tracker.commander_level == level_before + 2, "test_d3_add_level_twice")
+
+
+func test_skill_picker() -> void:
+	print("
+[GROUP D2] Skill picker")
+	var commander := get_tree().get_first_node_in_group(&"commander")
+	var runner: SkillRunner = commander.skill_runner
+	var service := get_tree().get_first_node_in_group(&"reward_service") as RewardService
+	var ids: Array[StringName] = []
+	var kinds: Array[SkillData.Kind] = []
+	for i in _panel.skill_option.item_count:
+		var id: StringName = _panel.skill_option.get_item_metadata(i)
+		ids.append(id)
+		kinds.append(service.find_card_data(id).kind)
+	assert_true(ids.has(&"blade_tempest") and ids.has(&"whirlwind") and ids.has(&"sharpness")
+		and ids.has(&"mastery") and ids.size() == service.get_catalog().size() + 1
+		and kinds.has(SkillData.Kind.ACTIVE) and kinds.has(SkillData.Kind.PASSIVE) and kinds.has(SkillData.Kind.STAT)
+		and not _panel.skill_option.get_item_text(0).begins_with("skill."),
+		"test_d2_skill_list_holds_pool_cards_and_blade_tempest")
+	assert_true(_panel.slot_option.item_count == 3 and _panel.slot_option.get_item_text(0) != "debug.cheat.slot",
+		"test_d2b_slot_option_lists_three_slots")
+	var requests: Array = []
+	var on_request := func(card_id: StringName, slot: int) -> void: requests.append([card_id, slot])
+	EventBus.skill_grant_requested.connect(on_request)
+	_panel.skill_option.select(ids.find(&"whirlwind"))
+	_panel.slot_option.select(2)
+	_panel.skill_button.pressed.emit()
+	EventBus.skill_grant_requested.disconnect(on_request)
+	assert_true(requests == [[&"whirlwind", 2]], "test_d3_button_sends_chosen_card_and_slot")
+	assert_true(runner.state.active[2] == &"whirlwind" and runner.state.get_level(&"whirlwind") == 1,
+		"test_d3b_grant_reaches_skill_runner_slot")
+	_reset_skills(runner, service)
+	assert_true(_panel.add_skill(&"blade_tempest", 0) and runner.state.active[0] == &"blade_tempest"
+		and runner.state.get_level(&"blade_tempest") == 1 and service.state.picks_used == 0,
+		"test_d4_add_skill_takes_chosen_slot_at_level_1")
+	_panel.add_skill(&"whirlwind", 0)
+	assert_true(runner.state.active[0] == &"whirlwind" and runner.state.get_level(&"blade_tempest") == 0,
+		"test_d5_add_skill_replaces_slot")
+	_panel.skill_option.select(ids.find(&"mastery"))
+	_panel.refresh()
+	assert_true(_panel.slot_option.disabled, "test_d6_slot_option_disabled_for_stat_card")
+	_panel.skill_option.select(ids.find(&"sharpness"))
+	_panel.refresh()
+	assert_true(not _panel.slot_option.disabled, "test_d6b_slot_option_enabled_for_slotted_card")
+	_reset_skills(runner, service)
+	assert_true(not _panel.skill_button.disabled, "test_d8_button_enabled_while_run_goes")
+
+
+func _reset_skills(runner: SkillRunner, service: RewardService) -> void:
+	runner.reset()
+	service.state.reset()
 
 
 func test_jump_and_phase_gating() -> void:

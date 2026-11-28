@@ -84,6 +84,9 @@ func _ready() -> void:
 	await test_zero_pending_skips()
 	await test_seed_from_run_state()
 	await test_empty_pool_mid_pick()
+	test_cheat_grant_slots()
+	await test_cheat_grant_keeps_open_offer()
+	await test_cheat_grant_empties_pool()
 
 	print("=======================================================")
 	print("TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -352,4 +355,129 @@ func test_empty_pool_mid_pick() -> void:
 	assert_true(env.empty_offers == earned - 1, "tc_empty: screen told about each empty offer (%d)" % env.empty_offers)
 	assert_true(env.service.state.picks_used == earned, "tc_empty: every turn counted")
 	assert_true(not TimeManager.has_pause_reason(TimeManager.REASON_REWARD_PICK), "tc_empty: pause released")
+	_teardown(env)
+
+## Records the grant signals so a case can count them.
+func _watch_grants(removed: Array, granted: Array) -> Array[Callable]:
+	var on_removed := func(card_id: StringName, slot_kind: StringName) -> void: removed.append([card_id, slot_kind])
+	var on_granted := func(card_id: StringName, slot_kind: StringName, level: int, slot: int) -> void:
+		granted.append([card_id, slot_kind, level, slot])
+	EventBus.skill_removed.connect(on_removed)
+	EventBus.skill_granted.connect(on_granted)
+	return [on_removed, on_granted]
+
+func _unwatch_grants(handlers: Array[Callable]) -> void:
+	EventBus.skill_removed.disconnect(handlers[0])
+	EventBus.skill_granted.disconnect(handlers[1])
+
+func test_cheat_grant_slots() -> void:
+	print("\n[TEST] grant a card without a pick")
+	var env := _build({"screen": false})
+	var service := env.service
+	var runner := env.skill_runner
+	var removed: Array = []
+	var granted: Array = []
+	var handlers := _watch_grants(removed, granted)
+	var pending_before: int = env.tracker.pending_picks
+
+	EventBus.skill_grant_requested.emit(&"blade_tempest", 1)
+	assert_true(service.state.active[1] == &"blade_tempest" and service.state.get_level(&"blade_tempest") == 1,
+		"tc_grant: card outside the pool goes into the chosen empty slot")
+	assert_true(runner.state.active[1] == &"blade_tempest" and runner.get_level(1) == 1,
+		"tc_grant: SkillRunner mirrors the slot and level")
+	assert_true(removed.is_empty() and granted.size() == 1 and granted[0] == [&"blade_tempest", &"ACTIVE", 1, 1],
+		"tc_grant: one skill_granted, no skill_removed")
+	assert_true(service.state.picks_used == 0 and env.tracker.pending_picks == pending_before and env.skips == 0 and env.picked_ids.is_empty(),
+		"tc_grant: no pick used and no reward_picked sent")
+
+	EventBus.skill_grant_requested.emit(&"whirlwind", 1)
+	assert_true(service.state.active[1] == &"whirlwind" and service.state.get_level(&"blade_tempest") == 0
+		and not service.state.levels.has(&"blade_tempest"),
+		"tc_grant: replacing a slot drops the old skill and its level")
+	assert_true(removed.size() == 1 and removed[0] == [&"blade_tempest", &"ACTIVE"],
+		"tc_grant: skill_removed once for the replaced skill")
+	assert_true(runner.state.active[1] == &"whirlwind" and runner.state.get_level(&"blade_tempest") == 0,
+		"tc_grant: SkillRunner drops the replaced skill")
+
+	removed.clear()
+	EventBus.skill_grant_requested.emit(&"whirlwind", 2)
+	assert_true(service.state.active[1] == &"" and service.state.active[2] == &"whirlwind"
+		and service.state.get_level(&"whirlwind") == 2 and removed.is_empty(),
+		"tc_grant: same skill moves to the other slot, +1 level, nothing removed")
+	assert_true(runner.state.active[1] == &"" and runner.state.active[2] == &"whirlwind" and runner.get_level(2) == 2,
+		"tc_grant: SkillRunner moves it too")
+
+	EventBus.skill_grant_requested.emit(&"whirlwind", 2)
+	EventBus.skill_grant_requested.emit(&"whirlwind", 2)
+	var max_level := load("res://data/skills/whirlwind.tres").get_max_level() as int
+	assert_true(service.state.get_level(&"whirlwind") == max_level and runner.get_level(2) == max_level,
+		"tc_grant: a maxed card stays at max")
+
+	granted.clear()
+	EventBus.skill_grant_requested.emit(&"mastery", 0)
+	EventBus.skill_grant_requested.emit(&"mastery", 2)
+	assert_true(service.state.get_level(&"mastery") == 2 and granted.size() == 2 and granted[1][3] == -1,
+		"tc_grant: stat card adds one stack each time and takes no slot")
+	assert_true(not service.state.active.has(&"mastery") and not service.state.passive.has(&"mastery"),
+		"tc_grant: stat card is in no slot")
+	assert_true(service.grant(load("res://data/skills/whirlwind.tres"), 9).is_empty(),
+		"tc_grant: slot out of range is refused")
+	assert_true(service.state.picks_used == 0 and env.tracker.pending_picks == pending_before,
+		"tc_grant: picks untouched after every grant")
+
+	_unwatch_grants(handlers)
+	_teardown(env)
+
+func test_cheat_grant_keeps_open_offer() -> void:
+	print("\n[TEST] grant while REWARD_PICK is open")
+	var env := _build()
+	await get_tree().process_frame
+	_earn_picks(env, 2)
+	var pending: int = env.tracker.pending_picks
+	_advance_from_summary(env)
+	for i in MAX_FRAMES:
+		if env.offer_pending:
+			break
+		await get_tree().process_frame
+	assert_true(env.wm.wave_state == Enums.WaveState.REWARD_PICK and env.offer_pending, "tc_grant_open: offer is open")
+	var offers_before := env.log.count("O")
+	var held_before: Array[StringName] = _ids(env.offer)
+	var target: StringName = &"blade_tempest"
+	EventBus.skill_grant_requested.emit(target, 0)
+	await get_tree().process_frame
+	assert_true(env.wm.wave_state == Enums.WaveState.REWARD_PICK, "tc_grant_open: screen stays open")
+	assert_true(env.tracker.pending_picks == pending and env.service.state.picks_used == 0 and env.picked_ids.is_empty(),
+		"tc_grant_open: no pick used")
+	assert_true(env.log.count("O") == offers_before + 1, "tc_grant_open: offer sent again")
+	assert_true(env.service.state.active[0] == target, "tc_grant_open: skill is in the slot")
+	assert_true(held_before.size() == env.offer.size(), "tc_grant_open: offer still has %d cards" % held_before.size())
+	_teardown(env)
+
+func test_cheat_grant_empties_pool() -> void:
+	print("
+[TEST] grant takes the last card of the open offer")
+	var only := SkillData.new()
+	only.id = &"flow_test_active"
+	only.kind = SkillData.Kind.ACTIVE
+	only.max_level_override = 1
+	var tiny := RewardPool.new()
+	tiny.skills = [only]
+	var env := _build({"pool": tiny})
+	await get_tree().process_frame
+	_earn_picks(env, 2)
+	var pending: int = env.tracker.pending_picks
+	_advance_from_summary(env)
+	for i in MAX_FRAMES:
+		if env.offer_pending:
+			break
+		await get_tree().process_frame
+	assert_true(env.offer_pending and env.offer.size() == 1, "tc_grant_empty: the one card is on offer")
+	var empty_before: int = env.empty_offers
+	var picked_before := env.log.count("P")
+	env.service.grant(only, 0)
+	await get_tree().process_frame
+	assert_true(env.empty_offers == empty_before + 1, "tc_grant_empty: reward_offered([]) sent")
+	assert_true(env.log.count("P") == picked_before and env.skips == 0, "tc_grant_empty: no reward_picked, no skip")
+	assert_true(env.service.state.picks_used == 0 and env.tracker.pending_picks == pending,
+		"tc_grant_empty: picks_used and pending picks unchanged")
 	_teardown(env)

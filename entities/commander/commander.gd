@@ -5,6 +5,11 @@ extends CharacterBody3D
 @export var debug_print_speed: bool = false
 @export var _anim_player: AnimationPlayer
 @export var stat_cards: StatCardTable
+## Speed of the spinning clip while a channelled skill runs; same as the third combo hit by default.
+@export var channel_spin_anim_speed: float = 2.2
+## The part of the spinning clip that repeats while a channelled skill runs, in seconds inside the clip; one full turn so the body never jumps.
+@export var channel_spin_loop_start: float = 0.48
+@export var channel_spin_loop_end: float = 0.96
 
 # Combat & hit constants
 const COLLISION_LAYER_ENEMY: int = 3
@@ -296,6 +301,7 @@ func _physics_process(delta: float) -> void:
 		_mode_switch.request()
 		command = &""
 	_execute_command(command, camera)
+	_keep_channel_spin_playing()
 
 	if is_dodging:
 		_update_dodge_movement(delta)
@@ -474,8 +480,32 @@ func _try_skill(slot: int) -> void:
 	# Whirlwind shares the spinning swing of the third combo hit until it gets its own clip.
 	var clip := COMBO_ANIM_CLIPS[2]
 	if _anim_player != null and _anim_player.has_animation(clip):
-		var speed := _anim_player.get_animation(clip).length / maxf(0.01, anim_time)
+		# A channelled skill keeps spinning at its own speed instead of fitting the cast lock.
+		var speed := channel_spin_anim_speed
+		if not skill_runner.is_channeling():
+			speed = _anim_player.get_animation(clip).length / maxf(0.01, anim_time)
 		_anim_player.play(clip, 0.05, speed)
+
+
+## Loops the spinning segment of the clip while the channel runs, and resumes it inside the loop
+## when a hit clip cut it. Dodge and death play their own clips.
+func _keep_channel_spin_playing() -> void:
+	if skill_runner == null or not skill_runner.is_channeling():
+		return
+	if is_dodging or is_dead or is_stunned or _anim_player == null:
+		return
+	var clip := COMBO_ANIM_CLIPS[2]
+	if not _anim_player.has_animation(clip):
+		return
+	if _anim_player.is_playing() and _anim_player.current_animation == clip:
+		var pos := _anim_player.current_animation_position
+		if pos >= channel_spin_loop_end:
+			# Keep the overshoot so the loop phase stays even.
+			_anim_player.seek(channel_spin_loop_start + (pos - channel_spin_loop_end), true)
+		return
+	# Cut by another clip or finished: resume inside the loop, skipping the wind-up.
+	_anim_player.play(clip, 0.05, channel_spin_anim_speed)
+	_anim_player.seek(channel_spin_loop_start, true)
 
 
 func _try_dodge(camera: Camera3D) -> void:
@@ -483,6 +513,8 @@ func _try_dodge(camera: Camera3D) -> void:
 		return
 	if is_attacking:
 		_interrupt_attack()
+	if skill_runner != null:
+		skill_runner.stop_channel()
 	_start_dodge(camera)
 
 
@@ -552,6 +584,8 @@ func _try_battle_cry() -> void:
 		return
 	if health != null and health.hp <= 0:
 		return
+	if skill_runner != null:
+		skill_runner.stop_channel()
 	_start_battle_cry()
 
 
@@ -806,6 +840,8 @@ func _turn_model(delta: float, free_dir: Vector3) -> void:
 
 func _try_attack() -> void:
 	if is_commander_mode or is_dodging or is_attacking or is_using_skill:
+		return
+	if skill_runner != null and skill_runner.is_channeling():
 		return
 	_start_attack(current_combo_hit)
 

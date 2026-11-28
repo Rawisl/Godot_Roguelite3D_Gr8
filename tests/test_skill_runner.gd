@@ -23,6 +23,7 @@ func _ready() -> void:
 	await test_cooldown_clamp_and_damage_mult()
 	await test_keys_and_modes()
 	await test_cooldown_time_scale()
+	test_grant_and_remove()
 
 	print("=======================================================")
 	print("SKILL RUNNER TEST SUMMARY: %d PASSED, %d FAILED" % [passes, fails])
@@ -309,3 +310,40 @@ func test_cooldown_time_scale() -> void:
 
 	commander.free()
 	runner.free()
+
+
+func test_grant_and_remove() -> void:
+	print("
+[GROUP 7] Granted and removed skills")
+	var commander := _new_commander()
+	var runner: SkillRunner = commander.skill_runner
+	var ended: Array = []
+	var on_ended := func(skill_id: StringName) -> void: ended.append(skill_id)
+	EventBus.skill_channel_ended.connect(on_ended)
+
+	EventBus.skill_granted.emit(&"blade_tempest", &"ACTIVE", 1, 2)
+	assert_true(runner.get_skill_id(2) == &"blade_tempest" and runner.get_level(2) == 1 and runner.get_skill_id(0) == &"",
+		"skill_granted puts the skill in the given slot, not the lowest one")
+	EventBus.skill_granted.emit(&"blade_tempest", &"ACTIVE", 2, 0)
+	assert_true(runner.get_skill_id(0) == &"blade_tempest" and runner.get_skill_id(2) == &"" and runner.get_level(0) == 2,
+		"skill_granted moves a skill that sat in another slot")
+	EventBus.skill_granted.emit(&"sharpness", &"PASSIVE", 1, 0)
+	assert_true(runner.state.passive.count(&"sharpness") == 0 and runner.state.get_level(&"sharpness") == 0,
+		"skill_granted ignores passive cards")
+
+	var started := runner.activate(0)
+	assert_true(started != null and runner.is_channeling() and runner.get_cooldown_left(0) > 0.0,
+		"blade tempest is channelling and on cooldown")
+	EventBus.skill_removed.emit(&"blade_tempest", &"ACTIVE")
+	assert_true(not runner.is_channeling() and ended == [&"blade_tempest"],
+		"removing the channelling skill ends the channel once")
+	assert_true(runner.get_skill_id(0) == &"" and runner.get_level(0) == 0 and runner.get_cooldown_left(0) == 0.0
+		and not runner.can_use(0) and runner.state.get_level(&"blade_tempest") == 0,
+		"removed skill has no slot, level or cooldown and cannot be used")
+	EventBus.skill_granted.emit(&"whirlwind", &"ACTIVE", 1, 0)
+	assert_true(runner.get_skill_id(0) == &"whirlwind" and runner.can_use(0), "the new skill sits in the freed slot and is ready")
+	EventBus.skill_removed.emit(&"whirlwind", &"PASSIVE")
+	assert_true(runner.get_skill_id(0) == &"whirlwind", "skill_removed for another slot kind changes nothing")
+
+	EventBus.skill_channel_ended.disconnect(on_ended)
+	commander.queue_free()

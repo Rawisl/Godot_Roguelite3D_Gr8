@@ -21,6 +21,8 @@ extends Node
 ## tilts up towards the camera, each at most its own max tilt. Sword Wave also rises so no corner
 ## dips into the floor. Whirlwind sits at the middle of the commander and turns about its centre
 ## only a few degrees, little enough that its edge never reaches the floor.
+## Blade Tempest: the Whirlwind sweeps follow the commander and its sword for the whole channel,
+## and each wave announced on EventBus.skill_wave_fired is a Sword Wave leaving the ring edge.
 ## Nothing is added to the commander scene.
 
 const SKILL_DIR := "res://data/skills/%s.tres"
@@ -102,6 +104,15 @@ const TILT_PASSES := 6
 @export var wave_spark_speed_min := 2.0
 @export var wave_spark_speed_max := 4.5
 
+@export_group("Blade Tempest")
+## Seconds the sweeps take to fade when the channel is cut short.
+@export var channel_cut_time := 0.15
+## Used while data/skills/blade_tempest.tres has no such value.
+@export var fallback_tempest_radius := 3.0
+@export var fallback_tempest_duration := 3.0
+## Seconds between two bursts of sparks while the channel runs.
+@export var tempest_spark_gap := 0.5
+
 @export_group("Firebomb")
 @export var fire_material: ShaderMaterial = preload("res://art/materials/skill_fire_zone.tres")
 @export var bomb_material: Material = preload("res://art/materials/skill_firebomb.tres")
@@ -166,6 +177,8 @@ func _ready() -> void:
 	_spark_mesh.material = mat
 	_set_reduce_flash(GameState.get_setting(&"reduce_flash", false) == true)
 	EventBus.skill_cast.connect(_on_skill_cast)
+	EventBus.skill_wave_fired.connect(_on_skill_wave_fired)
+	EventBus.skill_channel_ended.connect(_on_skill_channel_ended)
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.run_started.connect(clear)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
@@ -188,6 +201,24 @@ func _on_skill_cast(skill_id: StringName, _slot: int, level: int, origin: Vector
 			var c := _get_commander()
 			var from := c.global_position if c != null else origin
 			play_firebomb(from, origin, radius, _value(skill_id, &"duration", level, fallback_burn_time))
+		&"blade_tempest":
+			play_blade_tempest(origin, radius, _value(skill_id, &"duration", level, fallback_tempest_duration))
+
+
+## One wave of Blade Tempest: a Sword Wave that starts at the ring edge and flies range metres on.
+func _on_skill_wave_fired(skill_id: StringName, origin: Vector3, dir: Vector3, level: int) -> void:
+	if skill_id != &"blade_tempest":
+		return
+	var radius := _value(skill_id, &"radius", level, fallback_tempest_radius)
+	play_sword_wave(origin, dir,
+		_value(skill_id, &"width", level, fallback_wave_width),
+		radius + _value(skill_id, &"range", level, fallback_wave_distance),
+		_wave_speed(), radius)
+
+
+func _on_skill_channel_ended(skill_id: StringName) -> void:
+	if skill_id == &"blade_tempest":
+		_cut_tempest()
 
 
 func _on_settings_changed(key: StringName, value: Variant) -> void:
@@ -232,16 +263,24 @@ func _set_reduce_flash(on: bool) -> void:
 ## start_dir is where the sword starts when there is no sword to follow; the sweeps turn
 ## clockwise from there.
 func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) -> void:
+	_effects.append(_make_whirlwind(&"whirlwind", origin, radius, start_dir))
+
+
+## The sweeps, sparks and bookkeeping of a Whirlwind-looking effect of the given kind, not yet in
+## _effects. spin_time is how long the sweeps turn on their own when there is no sword to follow.
+func _make_whirlwind(kind: StringName, origin: Vector3, radius: float, start_dir: Vector3,
+		spin_time := whirlwind_swing_time) -> Dictionary:
 	var rings: Array[MeshInstance3D] = []
 	var start_head := atan2(-start_dir.z, start_dir.x)
-	var fx := {"kind": &"whirlwind", "mesh": null, "rings": rings, "elapsed": 0.0, "radius": radius,
+	var fx := {"kind": kind, "mesh": null, "rings": rings, "elapsed": 0.0, "radius": radius,
 		"at": origin + Vector3.UP * whirlwind_height, "start_head": start_head, "head": start_head,
-		"sweeps": [], "fade_from": -1.0, "sword": _sword_of_commander()}
+		"sweeps": [], "fade_from": -1.0, "fade_len": whirlwind_fade_time, "spin_time": spin_time,
+		"sword": _sword_of_commander()}
 	fx.head = _whirlwind_head(fx)
 	_spawn_due_sweeps(fx)
 	if _has_room(whirlwind_spark_count):
 		fx["particles"] = _whirlwind_sparks(whirlwind_spark_count, radius, origin)
-	_effects.append(fx)
+	return fx
 
 
 ## Number of sweeps: the shorter of the two sweep lists.
@@ -274,12 +313,15 @@ func _whirlwind_head(fx: Dictionary) -> float:
 		var rel: Vector3 = tip - fx.at
 		if Vector2(rel.x, rel.z).length_squared() > 0.0001:
 			return atan2(-rel.z, rel.x)
-	var spun := deg_to_rad(whirlwind_spin_speed) * minf(fx.elapsed, whirlwind_swing_time)
+	var spun := deg_to_rad(whirlwind_spin_speed) * minf(fx.elapsed, fx.spin_time)
 	return fx.start_head - spun
 
 
-## True once the commander's swing is over, so the sweeps start to fade.
+## True once the commander's swing is over, so the sweeps start to fade. Blade Tempest fades out
+## over the end of its channel instead, so it is gone when the channel ends.
 func _swing_over(fx: Dictionary) -> bool:
+	if fx.kind == &"blade_tempest":
+		return fx.elapsed >= fx.duration - fx.fade_len
 	if fx.elapsed >= whirlwind_swing_time * 2.0:
 		return true
 	var c := _get_commander()
@@ -352,20 +394,24 @@ func _update_whirlwind(fx: Dictionary) -> bool:
 		fx.fade_from = fx.elapsed
 	for sweep: Dictionary in fx.sweeps:
 		_place_sweep(fx, sweep)
-	return fx.fade_from < 0.0 or fx.elapsed - fx.fade_from < whirlwind_fade_time
+	return fx.fade_from < 0.0 or fx.elapsed - fx.fade_from < fx.fade_len
 
 
-## Keeps the sweeps centred on the commander while it holds the sword they follow. The commander
-## can run during the swing; left at the cast point, the sword would only wobble round the centre
-## and the trail would stay a short head.
+## Keeps the sweeps centred on the commander while it holds the sword they follow, and Blade
+## Tempest on the commander for its whole channel. The commander can run during the swing; left
+## at the cast point, the sword would only wobble round the centre and the trail would stay a
+## short head.
 func _follow_sword_holder(fx: Dictionary) -> void:
-	var sword: Node3D = fx.sword
-	if sword == null or not is_instance_valid(sword):
-		return
 	var c := _get_commander()
-	if c == null or not c.is_ancestor_of(sword):
+	if c == null:
+		return
+	if fx.kind != &"blade_tempest" and not _holds_sword(c, fx.sword):
 		return
 	fx.at = c.global_position + Vector3.UP * whirlwind_height
+
+
+func _holds_sword(c: Node3D, sword: Node3D) -> bool:
+	return sword != null and is_instance_valid(sword) and c.is_ancestor_of(sword)
 
 
 ## Turns a sweep so its head is on the sword, grows it in, fades it and tilts it to the camera.
@@ -375,7 +421,7 @@ func _place_sweep(fx: Dictionary, sweep: Dictionary) -> void:
 	var size: float = lerpf(whirlwind_start_scale, 1.0, grow) * sweep.size
 	var fade := 1.0
 	if fx.fade_from >= 0.0:
-		fade = 1.0 - clampf((fx.elapsed - fx.fade_from) / maxf(whirlwind_fade_time, 0.001), 0.0, 1.0)
+		fade = 1.0 - clampf((fx.elapsed - fx.fade_from) / maxf(fx.fade_len, 0.001), 0.0, 1.0)
 	mesh.set_instance_shader_parameter(&"sweep", sweep.sweep)
 	mesh.set_instance_shader_parameter(&"fade", fade)
 	mesh.set_instance_shader_parameter(&"flicker", _flicker)
@@ -385,13 +431,59 @@ func _place_sweep(fx: Dictionary, sweep: Dictionary) -> void:
 #endregion
 
 
+#region Blade Tempest
+## The Whirlwind sweeps kept up for duration seconds on the commander. The commander loops its
+## spinning swing for the whole channel, so the sweeps keep turning with the sword; they fade out
+## over the last fade seconds, or faster when the channel is cut short.
+func play_blade_tempest(origin: Vector3, radius: float, duration: float) -> void:
+	var fx := _make_whirlwind(&"blade_tempest", origin, radius, Vector3.RIGHT, duration)
+	fx["duration"] = duration
+	fx["spark_at"] = 0.0
+	_effects.append(fx)
+
+
+## Fades every running Tempest out over channel_cut_time, unless it is already fading.
+func _cut_tempest() -> void:
+	for fx in _effects:
+		if fx.kind != &"blade_tempest" or fx.fade_from >= 0.0:
+			continue
+		fx.fade_from = fx.elapsed
+		fx.fade_len = channel_cut_time
+
+
+func _update_tempest(fx: Dictionary) -> bool:
+	var alive := _update_whirlwind(fx)
+	var sparks: CPUParticles3D = fx.get("particles")
+	if sparks == null:
+		return alive
+	sparks.global_position = fx.at
+	# A fresh burst of sparks every tempest_spark_gap while the channel runs.
+	if fx.fade_from < 0.0 and fx.elapsed - fx.spark_at >= tempest_spark_gap:
+		sparks.restart()
+		fx.spark_at = fx.elapsed
+	return alive
+#endregion
+
+
 #region Sword Wave
-## Flies from origin along dir for distance metres at speed m/s, stopping early at a wall.
-func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: float, speed: float) -> void:
+## Flies from origin along dir for distance metres at speed m/s, stopping early at a wall. It
+## appears start_offset in front of origin, or at the wall when that is nearer.
+func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: float, speed: float,
+		start_offset := wave_start_offset) -> void:
 	var flat := Vector3(dir.x, 0.0, dir.z)
 	flat = flat.normalized() if flat.length_squared() > 0.0001 else Vector3.FORWARD
-	var start := origin + flat * wave_start_offset
-	var travel := _clear_distance(start, flat, maxf(distance - wave_start_offset, 0.0))
+	var clear: float
+	var offset: float
+	if is_equal_approx(start_offset, wave_start_offset):
+		# The plain Sword Wave: the ray starts where the wave does.
+		offset = wave_start_offset
+		clear = offset + _clear_distance(origin + flat * offset, flat, maxf(distance - offset, 0.0))
+	else:
+		# The ray runs from origin, so a wall between origin and a far start_offset still stops the wave.
+		clear = _clear_distance(origin, flat, maxf(distance, 0.0))
+		offset = minf(start_offset, clear)
+	var start := origin + flat * offset
+	var travel := maxf(clear - offset, 0.0)
 	# The shader works in wave space, where half the arc width is arc_half; s turns it into metres.
 	var arc_half: float = wave_material.get_shader_parameter(&"arc_half")
 	var scale_m := width * 0.5 / maxf(arc_half, 0.001)
@@ -416,7 +508,7 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	add_child(mesh)
 	mesh.global_basis = Basis.looking_at(flat, Vector3.UP)
 	mesh.global_position = start + Vector3.UP * wave_height
-	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
+	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail, "offset": offset,
 		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed,
 		"flat": mesh.global_basis, "floor": origin.y}
 	_face_camera(mesh, fx.flat, mesh.global_position, fx.floor, wave_max_tilt)
@@ -462,7 +554,7 @@ func _update_sword_wave(fx: Dictionary) -> bool:
 	var travelled: float = fx.speed * t
 	_face_camera(mesh, fx.flat, fx.start + fx.dir * travelled, fx.floor, wave_max_tilt)
 	# The tail grows as the wave leaves, so it never reaches back past the commander.
-	mesh.set_instance_shader_parameter(&"tail_scale", clampf((travelled + wave_start_offset) / maxf(fx.tail, 0.001), 0.0, 1.0))
+	mesh.set_instance_shader_parameter(&"tail_scale", clampf((travelled + fx.offset) / maxf(fx.tail, 0.001), 0.0, 1.0))
 	var fade := _fade_after(fx.elapsed, fx.fly_time)
 	mesh.set_instance_shader_parameter(&"fade", fade)
 	mesh.set_instance_shader_parameter(&"game_time", fx.elapsed)
@@ -565,6 +657,8 @@ func _process(delta: float) -> void:
 		match fx.kind:
 			&"whirlwind":
 				alive = _update_whirlwind(fx)
+			&"blade_tempest":
+				alive = _update_tempest(fx)
 			&"sword_wave":
 				alive = _update_sword_wave(fx)
 			&"firebomb":

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 uid="uid://b7dekxxwg5elr"]
+; Hand-written prototype for tuning feel. Not generated from balance/balance.xlsx yet.
+
+[ext_resource type="Script" path="res://common/skill_data.gd" id="1_skill"]
+[ext_resource type="Texture2D" path="res://art/icons/skills/whirlwind_icon.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_skill")
+id = &"blade_tempest"
+name_key = &"skill.blade_tempest.name"
+description_key = &"skill.blade_tempest.desc"
+icon = ExtResource("2_icon")
+values = Dictionary[StringName, PackedFloat32Array]({
+&"cooldown": PackedFloat32Array(8, 8, 8),
+&"duration": PackedFloat32Array(3, 3, 3),
+&"hit_interval": PackedFloat32Array(1, 0.7, 0.55),
+&"radius": PackedFloat32Array(3, 3, 3),
+&"ramp": PackedFloat32Array(0.3, 0.3, 0.3),
+&"range": PackedFloat32Array(4, 4, 4),
+&"start_angle": PackedFloat32Array(0, 0, 0),
+&"wave_damage": PackedFloat32Array(24, 24, 24),
+&"wave_interval": PackedFloat32Array(0.17, 0.12, 0.095),
+&"whirl_damage": PackedFloat32Array(25, 25, 25),
+&"width": PackedFloat32Array(4, 4, 4)
+})
