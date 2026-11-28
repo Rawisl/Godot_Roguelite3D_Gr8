@@ -78,6 +78,7 @@ func _ready() -> void:
 	await test_sync_offline()
 	test_panel_and_input()
 	test_gold_and_level()
+	test_skill_picker()
 	test_jump_and_phase_gating()
 	await test_combat_cheats()
 
@@ -244,6 +245,37 @@ func test_gold_and_level() -> void:
 	_panel.add_level()
 	EventBus.level_up.disconnect(_count_level_up)
 	assert_true(tracker.commander_level == level_before + 2, "test_d3_add_level_twice")
+
+
+func test_skill_picker() -> void:
+	print("
+[GROUP D2] Skill picker")
+	var commander := get_tree().get_first_node_in_group(&"commander")
+	var runner: SkillRunner = commander.skill_runner
+	var ids: Array[StringName] = []
+	for i in _panel.skill_option.item_count:
+		ids.append(_panel.skill_option.get_item_metadata(i))
+	assert_true(ids.size() == 4 and ids.has(&"blade_tempest") and ids.has(&"whirlwind")
+		and ids.has(&"sword_wave") and ids.has(&"firebomb")
+		and not _panel.skill_option.get_item_text(0).begins_with("skill."),
+		"test_d2_skill_list_holds_four_active_skills")
+	runner.reset()
+	var slot: int = _panel.add_skill(&"blade_tempest")
+	assert_true(slot == 0 and runner.state.get_level(&"blade_tempest") == 1,
+		"test_d3_add_skill_takes_lowest_slot_at_level_1")
+	_panel.add_skill(&"blade_tempest")
+	assert_true(runner.state.get_level(&"blade_tempest") == 2, "test_d4_second_add_raises_level")
+	_panel.add_skill(&"blade_tempest")
+	_panel.add_skill(&"blade_tempest")
+	assert_true(runner.state.get_level(&"blade_tempest") == 3, "test_d5_level_capped_at_max")
+	runner.reset()
+	_panel.add_skill(&"whirlwind")
+	_panel.add_skill(&"sword_wave")
+	_panel.add_skill(&"firebomb")
+	assert_true(_panel.add_skill(&"blade_tempest") == -1, "test_d6_no_free_slot_returns_minus_one")
+	assert_true(_panel.add_skill(&"missing_skill") == -1, "test_d7_unknown_skill_returns_minus_one")
+	runner.reset()
+	assert_true(not _panel.skill_button.disabled, "test_d8_button_enabled_while_run_goes")
 
 
 func test_jump_and_phase_gating() -> void:

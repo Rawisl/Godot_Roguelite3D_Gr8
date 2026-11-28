@@ -28,6 +28,8 @@ const XP_TOP_UP := 0.001
 @onready var instant_kill_check: CheckButton = %InstantKillCheck
 @onready var summon_option: OptionButton = %SummonOption
 @onready var summon_button: Button = %SummonButton
+@onready var skill_option: OptionButton = %SkillOption
+@onready var skill_button: Button = %SkillButton
 @onready var jump_label: Label = %JumpLabel
 @onready var jump_spin: SpinBox = %JumpSpin
 @onready var jump_button: Button = %JumpButton
@@ -47,6 +49,7 @@ func _ready() -> void:
 	level_button.text = tr(&"debug.cheat.add_level")
 	instant_kill_check.text = tr(&"debug.cheat.instant_kill")
 	summon_button.text = tr(&"debug.cheat.summon")
+	skill_button.text = tr(&"debug.cheat.add_skill")
 	jump_label.text = tr(&"debug.cheat.jump_label")
 	jump_button.text = tr(&"debug.cheat.jump_wave")
 	_disable_focus()
@@ -63,9 +66,11 @@ func _ready() -> void:
 	level_button.pressed.connect(add_level)
 	instant_kill_check.toggled.connect(set_instant_kill)
 	summon_button.pressed.connect(_on_summon_pressed)
+	skill_button.pressed.connect(_on_skill_pressed)
 	jump_button.pressed.connect(_on_jump_pressed)
 
 	_build_summon_list()
+	_build_skill_list()
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.run_ended.connect(_on_run_ended)
 	refresh()
@@ -199,10 +204,26 @@ func jump_to_wave(wave: int) -> bool:
 	return true
 
 
+## Puts an active skill in the commander's slots: a new one takes the lowest empty slot at level 1,
+## an owned one goes up one level up to its maximum. Returns the slot, -1 when refused (no
+## commander, run ended, unknown skill or no free slot).
+func add_skill(skill_id: StringName) -> int:
+	var run_state := _run_state()
+	if run_state != null and run_state.is_run_ended():
+		return -1
+	var commander := get_tree().get_first_node_in_group(&"commander")
+	if commander == null:
+		return -1
+	var runner := commander.get(&"skill_runner") as SkillRunner
+	if runner == null:
+		return -1
+	return runner.set_skill_level(skill_id, runner.state.get_level(skill_id) + 1)
+
+
 ## Every control the player can click. Used to keep focus off them.
 func get_clickable_controls() -> Array[Control]:
 	return [invincible_check, heal_button, gold_button, level_button, instant_kill_check,
-		summon_option, summon_button, jump_spin, jump_spin.get_line_edit(), jump_button]
+		summon_option, summon_button, skill_option, skill_button, jump_spin, jump_spin.get_line_edit(), jump_button]
 
 
 func get_summon_scenes() -> Array[PackedScene]:
@@ -224,6 +245,8 @@ func refresh() -> void:
 	instant_kill_check.disabled = ended
 	summon_button.disabled = ended or not combat or _summon_scenes.is_empty()
 	summon_option.disabled = summon_button.disabled
+	skill_button.disabled = ended or skill_option.item_count == 0
+	skill_option.disabled = skill_button.disabled
 	jump_button.disabled = ended or not prep
 	jump_spin.editable = not ended and prep
 	hint_label.text = tr(_hint_key(ended, prep, combat))
@@ -252,6 +275,13 @@ func _on_summon_pressed() -> void:
 	if index < 0 or index >= _summon_scenes.size():
 		return
 	summon(_summon_scenes[index])
+
+
+func _on_skill_pressed() -> void:
+	var index := skill_option.selected
+	if index < 0 or index >= skill_option.item_count:
+		return
+	add_skill(skill_option.get_item_metadata(index))
 
 
 func _on_jump_pressed() -> void:
@@ -348,6 +378,15 @@ func _build_summon_list() -> void:
 		inst.free()
 		_summon_scenes.append(scene)
 		summon_option.add_item(label)
+
+
+## Every active skill the runner offers, labelled by name with the id as item metadata.
+func _build_skill_list() -> void:
+	for data in SkillRunner.SKILLS:
+		if data == null or data.kind != SkillData.Kind.ACTIVE:
+			continue
+		skill_option.add_item(tr(data.name_key))
+		skill_option.set_item_metadata(skill_option.item_count - 1, data.id)
 
 
 ## Gold from the cheat is not run income, so it stays out of the earned total.
