@@ -54,6 +54,10 @@ func _ready() -> void:
 	test_paused_and_x3()
 	test_cooldown_full_after_cut()
 	test_commander_hooks()
+	test_spin_loops_while_channelling()
+	test_spin_not_replayed_after_dodge()
+	test_spin_not_replayed_after_channel_end()
+	test_spin_resumes_in_loop_after_hit()
 	test_whirl_schedule_ignores_tick_size()
 	test_import_state_stops_channel()
 	test_stops_on_run_ended()
@@ -497,3 +501,107 @@ func test_commander_hooks() -> void:
 	assert_true(commander.skill_runner.is_channeling(), "a refused dodge keeps the channel")
 	commander.free()
 	camera.free()
+
+
+## Advances game time by seconds the way the physics loop would: runner tick, animation, loop check.
+func _step_commander(commander: CharacterBody3D, seconds: float) -> void:
+	var done := 0.0
+	while done < seconds - 0.0001:
+		commander.skill_runner.tick(STEP)
+		commander._anim_player.advance(STEP)
+		commander._keep_channel_spin_playing()
+		done += STEP
+
+
+func _spin_playing(commander: CharacterBody3D) -> bool:
+	var anim: AnimationPlayer = commander._anim_player
+	return anim.is_playing() and anim.current_animation == commander.COMBO_ANIM_CLIPS[2]
+
+
+func _spin_pos(commander: CharacterBody3D) -> float:
+	return commander._anim_player.current_animation_position
+
+
+func test_spin_loops_while_channelling() -> void:
+	print("
+[GROUP 17] spin segment loops during the channel")
+	var commander := _channelling_commander()
+	var anim: AnimationPlayer = commander._anim_player
+	assert_true(anim != null and anim.has_animation(commander.COMBO_ANIM_CLIPS[2]), "commander has the spin clip")
+	assert_true(is_equal_approx(anim.get_playing_speed(), commander.channel_spin_anim_speed), "cast plays the spin at the channel speed")
+	var loop_start: float = commander.channel_spin_loop_start
+	var loop_end: float = commander.channel_spin_loop_end
+	var max_pos := 0.0
+	var inside_at_1_5 := false
+	var inside_at_2_8 := false
+	var loops_seen := 0
+	var last_pos := 0.0
+	var t := 0.0
+	while t < 2.8 - 0.0001:
+		_step_commander(commander, STEP)
+		t += STEP
+		var pos := _spin_pos(commander)
+		max_pos = maxf(max_pos, pos)
+		if pos < last_pos - 0.1:
+			loops_seen += 1
+		last_pos = pos
+		if absf(t - 1.5) < STEP * 0.5:
+			inside_at_1_5 = _spin_playing(commander) and pos >= loop_start and pos <= loop_end
+	inside_at_2_8 = _spin_playing(commander) and _spin_pos(commander) >= loop_start and _spin_pos(commander) <= loop_end
+	assert_true(inside_at_1_5, "spin is playing inside the loop at 1.5 s")
+	assert_true(inside_at_2_8, "spin is playing inside the loop at 2.8 s")
+	assert_true(max_pos <= loop_end, "position never passes the loop end while channelling")
+	assert_true(loops_seen >= 2, "the segment wrapped at least twice")
+	commander.free()
+
+
+func test_spin_not_replayed_after_dodge() -> void:
+	print("
+[GROUP 18] spin clip not replayed after a dodge")
+	var camera := Camera3D.new()
+	add_child(camera)
+	var commander := _channelling_commander()
+	_step_commander(commander, 1.0)
+	commander._try_dodge(camera)
+	var current: String = commander._anim_player.current_animation
+	assert_true(current.begins_with("advance/Dodge"), "dodge clip replaces the spin")
+	_step_commander(commander, 0.2)
+	assert_true(commander._anim_player.current_animation == current, "dodge clip is still the current animation")
+	commander.free()
+	camera.free()
+
+
+func test_spin_not_replayed_after_channel_end() -> void:
+	print("
+[GROUP 19] recovery plays after the channel ends")
+	var commander := _channelling_commander()
+	_step_commander(commander, 1.0)
+	commander.skill_runner.stop_channel()
+	var loop_end: float = commander.channel_spin_loop_end
+	var passed_end := false
+	var replayed := false
+	var t := 0.0
+	while t < 1.0:
+		_step_commander(commander, STEP)
+		t += STEP
+		if _spin_playing(commander) and _spin_pos(commander) > loop_end:
+			passed_end = true
+		if passed_end and _spin_playing(commander) and _spin_pos(commander) < loop_end:
+			replayed = true
+	assert_true(passed_end, "position goes past the loop end once the channel is over")
+	assert_true(not replayed, "spin is not looped again after the channel")
+	assert_true(not _spin_playing(commander), "the clip has finished after its recovery")
+	commander.free()
+
+
+func test_spin_resumes_in_loop_after_hit() -> void:
+	print("
+[GROUP 20] spin resumes in the loop after a hit clip")
+	var commander := _channelling_commander()
+	_step_commander(commander, 1.0)
+	commander._anim_player.play(commander.ANIM_HIT)
+	assert_true(commander._anim_player.current_animation == commander.ANIM_HIT, "hit clip cuts the spin")
+	commander._keep_channel_spin_playing()
+	assert_true(_spin_playing(commander), "spin plays again")
+	assert_true(absf(_spin_pos(commander) - commander.channel_spin_loop_start) < 0.001, "resumes at the loop start, no second wind-up")
+	commander.free()
