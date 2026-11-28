@@ -20,6 +20,8 @@ extends Node
 ## tilts up towards the camera, each at most its own max tilt. Sword Wave also rises so no corner
 ## dips into the floor. Whirlwind sits at the middle of the commander and turns about its centre
 ## only a few degrees, little enough that its edge never reaches the floor.
+## Blade Tempest: the Whirlwind rings loop round the commander for the whole channel, following
+## it, and each wave announced on EventBus.skill_wave_fired is a Sword Wave leaving the ring edge.
 ## Nothing is added to the commander scene.
 
 const SKILL_DIR := "res://data/skills/%s.tres"
@@ -90,6 +92,20 @@ const TILT_PASSES := 6
 @export var wave_spark_speed_min := 2.0
 @export var wave_spark_speed_max := 4.5
 
+@export_group("Blade Tempest")
+## Seconds the ring takes to finish when the channel is cut short.
+@export var channel_cut_time := 0.15
+## Used while data/skills/blade_tempest.tres has no such value.
+@export var fallback_tempest_radius := 3.0
+@export var fallback_tempest_duration := 3.0
+@export var fallback_tempest_ramp := 0.3
+## The ring loops its full-size spin between these two shader ages, in ms. Keep them inside the
+## steady part of the blade timeline: after form_ms, before the side blades start to dim.
+@export var tempest_loop_start_ms := 123.0
+@export var tempest_loop_end_ms := 200.0
+## Least seconds between two bursts of sparks while the ring loops.
+@export var tempest_spark_gap := 0.5
+
 @export_group("Firebomb")
 @export var fire_material: ShaderMaterial = preload("res://art/materials/skill_fire_zone.tres")
 @export var bomb_material: Material = preload("res://art/materials/skill_firebomb.tres")
@@ -154,6 +170,8 @@ func _ready() -> void:
 	_spark_mesh.material = mat
 	_set_reduce_flash(GameState.get_setting(&"reduce_flash", false) == true)
 	EventBus.skill_cast.connect(_on_skill_cast)
+	EventBus.skill_wave_fired.connect(_on_skill_wave_fired)
+	EventBus.skill_channel_ended.connect(_on_skill_channel_ended)
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.run_started.connect(clear)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
@@ -176,6 +194,26 @@ func _on_skill_cast(skill_id: StringName, _slot: int, level: int, origin: Vector
 			var c := _get_commander()
 			var from := c.global_position if c != null else origin
 			play_firebomb(from, origin, radius, _value(skill_id, &"duration", level, fallback_burn_time))
+		&"blade_tempest":
+			play_blade_tempest(origin, radius,
+				_value(skill_id, &"duration", level, fallback_tempest_duration),
+				_value(skill_id, &"ramp", level, fallback_tempest_ramp))
+
+
+## One wave of Blade Tempest: a Sword Wave that starts at the ring edge and flies range metres on.
+func _on_skill_wave_fired(skill_id: StringName, origin: Vector3, dir: Vector3, level: int) -> void:
+	if skill_id != &"blade_tempest":
+		return
+	var radius := _value(skill_id, &"radius", level, fallback_tempest_radius)
+	play_sword_wave(origin, dir,
+		_value(skill_id, &"width", level, fallback_wave_width),
+		radius + _value(skill_id, &"range", level, fallback_wave_distance),
+		_wave_speed(), radius)
+
+
+func _on_skill_channel_ended(skill_id: StringName) -> void:
+	if skill_id == &"blade_tempest":
+		_cut_tempest()
 
 
 func _on_settings_changed(key: StringName, value: Variant) -> void:
@@ -219,6 +257,12 @@ func _set_reduce_flash(on: bool) -> void:
 #region Whirlwind
 ## start_dir is where the main blade starts; the blades spin counter-clockwise from there.
 func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) -> void:
+	_effects.append(_make_whirlwind(&"whirlwind", origin, radius, start_dir))
+
+
+## The rings, sparks and bookkeeping of a Whirlwind-looking effect of the given kind, not yet in
+## _effects.
+func _make_whirlwind(kind: StringName, origin: Vector3, radius: float, start_dir: Vector3) -> Dictionary:
 	var mesh := _whirlwind_ring(origin, radius, start_dir, 1.0)
 	var rings: Array[MeshInstance3D] = []
 	for i in whirlwind_ring_count():
@@ -230,12 +274,12 @@ func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) 
 		ring.set_instance_shader_parameter(&"ring_centre", whirlwind_ring_centres[i])
 		ring.set_instance_shader_parameter(&"ring_delay_ms", whirlwind_ring_delays_ms[i])
 		rings.append(ring)
-	var fx := {"kind": &"whirlwind", "mesh": mesh, "rings": rings, "elapsed": 0.0,
+	var fx := {"kind": kind, "mesh": mesh, "rings": rings, "elapsed": 0.0,
 		"flat": mesh.global_basis, "at": mesh.global_position}
 	if _has_room(whirlwind_spark_count):
 		fx["particles"] = _whirlwind_sparks(whirlwind_spark_count, radius, origin)
 	_face_whirlwind(fx)
-	_effects.append(fx)
+	return fx
 
 
 ## One plane of blades, sized for a ring of radius x ring_scale.
@@ -320,13 +364,129 @@ func _face_whirlwind(fx: Dictionary) -> void:
 #endregion
 
 
+#region Blade Tempest
+## The shader age of the ring t seconds into the channel: grows over the first ramp seconds, runs on
+## to loop_end_ms, then loops between loop_start_ms and loop_end_ms, then unravels over the last
+## ramp seconds and is gone at end_ms.
+static func tempest_age_ms(t: float, duration: float, ramp: float, form_ms: float, unravel_ms: float, end_ms: float,
+		loop_start_ms: float, loop_end_ms: float) -> float:
+	var safe_ramp := maxf(ramp, 0.001)
+	if t < ramp:
+		return form_ms * maxf(t, 0.0) / safe_ramp
+	if t < duration - ramp:
+		var run := form_ms + (t - ramp) * 1000.0
+		if run < loop_end_ms:
+			return run
+		return loop_start_ms + fmod(run - loop_start_ms, maxf(loop_end_ms - loop_start_ms, 0.001))
+	return minf(unravel_ms + (end_ms - unravel_ms) * (t - (duration - ramp)) / safe_ramp, end_ms)
+
+
+## Milliseconds of spin the age mapping drops by looping and by jumping to the end phase. The age
+## plus this is a clock that never goes back, so the blades keep turning smoothly.
+static func tempest_spin_lost_ms(t: float, duration: float, ramp: float, form_ms: float, unravel_ms: float,
+		end_ms: float, loop_start_ms: float, loop_end_ms: float) -> float:
+	if t < ramp:
+		return 0.0
+	# The age before any looping, held at its value when the end phase starts.
+	var run := form_ms + (minf(t, duration - ramp) - ramp) * 1000.0
+	if t < duration - ramp:
+		return run - tempest_age_ms(t, duration, ramp, form_ms, unravel_ms, end_ms, loop_start_ms, loop_end_ms)
+	return run - unravel_ms
+
+
+## The Whirlwind rings kept up for duration seconds, following the commander. The age loops while
+## the channel runs; the last ramp seconds play the unravel.
+func play_blade_tempest(origin: Vector3, radius: float, duration: float, ramp: float) -> void:
+	var fx := _make_whirlwind(&"blade_tempest", origin, radius, Vector3.RIGHT)
+	fx["duration"] = duration
+	fx["ramp"] = ramp
+	fx["cut_at"] = -1.0
+	fx["lost"] = 0.0
+	fx["last_age"] = 0.0
+	fx["spark_at"] = 0.0
+	_effects.append(fx)
+
+
+## Sends every running Tempest to its end phase, unless it is already there or already cut.
+func _cut_tempest() -> void:
+	for fx in _effects:
+		if fx.kind != &"blade_tempest" or fx.cut_at >= 0.0 or fx.elapsed >= fx.duration - fx.ramp:
+			continue
+		fx.cut_at = fx.elapsed
+		var sparks: CPUParticles3D = fx.get("particles")
+		if sparks != null:
+			sparks.emitting = false
+
+
+func _update_tempest(fx: Dictionary) -> bool:
+	var form_ms: float = whirlwind_material.get_shader_parameter(&"form_ms")
+	var unravel_ms: float = whirlwind_material.get_shader_parameter(&"unravel_ms")
+	var end_ms: float = whirlwind_material.get_shader_parameter(&"end_ms")
+	var spin_speed: float = whirlwind_material.get_shader_parameter(&"spin_speed")
+	var t: float = fx.elapsed
+	var duration: float = fx.duration
+	var ramp: float = fx.ramp
+	var age: float
+	var alive: bool
+	if fx.cut_at >= 0.0:
+		# Cut short: the end phase plays over channel_cut_time, the spin carries on from where it was.
+		var k := clampf((t - fx.cut_at) / maxf(channel_cut_time, 0.001), 0.0, 1.0)
+		age = unravel_ms + (end_ms - unravel_ms) * k
+		alive = k < 1.0
+	else:
+		age = tempest_age_ms(t, duration, ramp, form_ms, unravel_ms, end_ms, tempest_loop_start_ms, tempest_loop_end_ms)
+		fx.lost = tempest_spin_lost_ms(t, duration, ramp, form_ms, unravel_ms, end_ms, tempest_loop_start_ms, tempest_loop_end_ms)
+		alive = t < duration
+		var looped: bool = age < fx.last_age
+		fx.last_age = age
+		var sparks: CPUParticles3D = fx.get("particles")
+		# A fresh burst of sparks when the ring loops, not more often than tempest_spark_gap.
+		if looped and t < duration - ramp and sparks != null and t - fx.spark_at >= tempest_spark_gap:
+			sparks.restart()
+			fx.spark_at = t
+	var lost_s: float = fx.lost * 0.001
+	var meshes: Array[MeshInstance3D] = [fx.mesh]
+	meshes.append_array(fx.rings)
+	for i in meshes.size():
+		# The ring list starts after the main ring, which has phase 0 and spin 1.
+		var base_phase := 0.0 if i == 0 else whirlwind_ring_phases[i - 1]
+		var spin := 1.0 if i == 0 else whirlwind_ring_spins[i - 1]
+		meshes[i].set_instance_shader_parameter(&"age_ms", age)
+		# The age loops back; the phase gives the lost spin back so the blades never jump.
+		meshes[i].set_instance_shader_parameter(&"ring_phase", base_phase + lost_s * deg_to_rad(spin_speed) * spin)
+		meshes[i].set_instance_shader_parameter(&"flicker", _flicker)
+	var c := _get_commander()
+	if c != null:
+		fx["at"] = c.global_position + Vector3.UP * whirlwind_height
+		for mesh in meshes:
+			mesh.global_position = fx.at
+		var sparks_node: CPUParticles3D = fx.get("particles")
+		if sparks_node != null:
+			sparks_node.global_position = fx.at
+	_face_whirlwind(fx)
+	return alive
+#endregion
+
+
 #region Sword Wave
-## Flies from origin along dir for distance metres at speed m/s, stopping early at a wall.
-func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: float, speed: float) -> void:
+## Flies from origin along dir for distance metres at speed m/s, stopping early at a wall. It
+## appears start_offset in front of origin, or at the wall when that is nearer.
+func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: float, speed: float,
+		start_offset := wave_start_offset) -> void:
 	var flat := Vector3(dir.x, 0.0, dir.z)
 	flat = flat.normalized() if flat.length_squared() > 0.0001 else Vector3.FORWARD
-	var start := origin + flat * wave_start_offset
-	var travel := _clear_distance(start, flat, maxf(distance - wave_start_offset, 0.0))
+	var clear: float
+	var offset: float
+	if is_equal_approx(start_offset, wave_start_offset):
+		# The plain Sword Wave: the ray starts where the wave does.
+		offset = wave_start_offset
+		clear = offset + _clear_distance(origin + flat * offset, flat, maxf(distance - offset, 0.0))
+	else:
+		# The ray runs from origin, so a wall between origin and a far start_offset still stops the wave.
+		clear = _clear_distance(origin, flat, maxf(distance, 0.0))
+		offset = minf(start_offset, clear)
+	var start := origin + flat * offset
+	var travel := maxf(clear - offset, 0.0)
 	# The shader works in wave space, where half the arc width is arc_half; s turns it into metres.
 	var arc_half: float = wave_material.get_shader_parameter(&"arc_half")
 	var scale_m := width * 0.5 / maxf(arc_half, 0.001)
@@ -351,7 +511,7 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	add_child(mesh)
 	mesh.global_basis = Basis.looking_at(flat, Vector3.UP)
 	mesh.global_position = start + Vector3.UP * wave_height
-	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
+	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail, "offset": offset,
 		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed,
 		"flat": mesh.global_basis, "floor": origin.y}
 	_face_camera(mesh, fx.flat, mesh.global_position, fx.floor, wave_max_tilt)
@@ -400,7 +560,7 @@ func _update_sword_wave(fx: Dictionary) -> bool:
 	var travelled: float = fx.speed * t
 	_face_camera(mesh, fx.flat, fx.start + fx.dir * travelled, fx.floor, wave_max_tilt)
 	# The tail grows as the wave leaves, so it never reaches back past the commander.
-	mesh.set_instance_shader_parameter(&"tail_scale", clampf((travelled + wave_start_offset) / maxf(fx.tail, 0.001), 0.0, 1.0))
+	mesh.set_instance_shader_parameter(&"tail_scale", clampf((travelled + fx.offset) / maxf(fx.tail, 0.001), 0.0, 1.0))
 	var fade := _fade_after(fx.elapsed, fx.fly_time)
 	mesh.set_instance_shader_parameter(&"fade", fade)
 	mesh.set_instance_shader_parameter(&"game_time", fx.elapsed)
@@ -503,6 +663,8 @@ func _process(delta: float) -> void:
 		match fx.kind:
 			&"whirlwind":
 				alive = _update_whirlwind(fx)
+			&"blade_tempest":
+				alive = _update_tempest(fx)
 			&"sword_wave":
 				alive = _update_sword_wave(fx)
 			&"firebomb":
