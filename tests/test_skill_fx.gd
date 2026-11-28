@@ -20,7 +20,7 @@ extends Node3D
 ##   the commander and its edge never reaches the floor
 ## - the colours follow the equipped sword: six palettes, base sword by default and for unknown swords, never
 ##   changed under an effect already flying
-## - Blade Tempest: the age maps to growing, a looping full-size spin and the unravel; the ring
+## - Blade Tempest: the sweeps fade out by the end of the channel or faster when it is cut; the ring
 ##   lasts the whole channel, follows the commander, ends in a moment when the channel is cut, and
 ##   run_started clears it; its waves start at the ring edge and stop at a wall; Sword Wave itself
 ##   still starts at wave_start_offset
@@ -76,7 +76,6 @@ func _ready() -> void:
 	await test_unknown_sword_uses_base()
 	await test_sword_change_after_readd()
 	await test_tilt_toward_low_camera()
-	test_tempest_age_mapping()
 	await test_tempest_lives_whole_channel()
 	await test_tempest_follows_commander()
 	await test_tempest_cut_ends_ring()
@@ -562,34 +561,6 @@ const TEMPEST_DURATION := 3.0
 const TEMPEST_RAMP := 0.3
 
 
-func test_tempest_age_mapping() -> void:
-	var f := func(t: float) -> float: return SkillFxManager.tempest_age_ms(t, 3.0, 0.3, 83.0, 250.0, 400.0, 123.0, 200.0)
-	assert_true(is_equal_approx(f.call(0.0), 0.0), "tempest age is 0 at the cast")
-	assert_true(is_equal_approx(f.call(0.15), 41.5), "tempest age grows linearly over the ramp")
-	assert_true(is_equal_approx(f.call(0.3), 83.0), "tempest age is form_ms at the end of the ramp")
-	assert_true(is_equal_approx(f.call(0.3 + 0.1), 183.0), "tempest age runs on past form_ms on the first pass")
-	assert_true(absf(f.call(0.3 + 0.12) - 203.0 + 77.0) < 0.5, "tempest age wraps back to the loop start after the loop end")
-	var in_loop := true
-	for i in range(400, 2700):
-		var a: float = f.call(float(i) * 0.001)
-		if a > 200.0 + 0.001 or (i > 520 and a < 123.0 - 0.001):
-			in_loop = false
-	assert_true(in_loop, "tempest age stays inside the loop window while looping")
-	assert_true(is_equal_approx(f.call(2.85), 325.0), "tempest age is halfway through the unravel in the last ramp")
-	assert_true(is_equal_approx(f.call(3.0), 400.0), "tempest age is end_ms at the end")
-	assert_true(is_equal_approx(f.call(3.5), 400.0), "tempest age stays clamped at end_ms")
-	# The blade angle (age + lost spin) never goes back, also across the jump into the unravel.
-	var last := -1.0
-	var smooth := true
-	for i in 3001:
-		var t := float(i) * 0.001
-		var v: float = f.call(t) + SkillFxManager.tempest_spin_lost_ms(t, 3.0, 0.3, 83.0, 250.0, 400.0, 123.0, 200.0)
-		if v < last - 0.001:
-			smooth = false
-		last = v
-	assert_true(smooth, "age plus lost spin only ever goes forward")
-
-
 func _tempest_cast() -> void:
 	EventBus.skill_cast.emit(TEMPEST_ID, 0, 1, _commander.global_position, WHIRLWIND_RADIUS)
 
@@ -635,13 +606,13 @@ func test_tempest_cut_ends_ring() -> void:
 
 func test_tempest_end_signal_at_normal_end() -> void:
 	_tempest_cast()
-	await TimeManager.wait_game(2.8)
+	await TimeManager.wait_game(2.9)
 	var mesh := _fx.get_effect_mesh(&"blade_tempest")
-	var before: float = mesh.get_instance_shader_parameter(&"age_ms") if mesh != null else -1.0
+	var before: float = mesh.get_instance_shader_parameter(&"fade") if mesh != null else -1.0
 	EventBus.skill_channel_ended.emit(TEMPEST_ID)
 	await _frames(2)
-	var after: float = mesh.get_instance_shader_parameter(&"age_ms") if mesh != null else -1.0
-	assert_true(after >= before, "an end signal in the last phase does not restart the unravel")
+	var after: float = mesh.get_instance_shader_parameter(&"fade") if mesh != null else 2.0
+	assert_true(before < 1.0 and after <= before, "an end signal while the sweeps fade does not restart the fade")
 	await TimeManager.wait_game(0.5)
 	await _frames(2)
 	assert_true(_fx.get_active_count(&"blade_tempest") == 0, "the ring is gone after the normal end")
