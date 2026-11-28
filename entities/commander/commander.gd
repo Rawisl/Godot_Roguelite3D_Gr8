@@ -21,9 +21,6 @@ const COMBO_HIT3_ARC_DEG: float = 240.0
 const STRIKE_RATIO_MELEE: float = 0.38
 const STRIKE_RATIO_SPIN: float = 0.45
 const ROTATION_LERP_SPEED: float = 16.0
-## Below this dot product between the way the commander moves and the way it faces, it is moving
-## backwards: the run clip plays in reverse and a dodge is a backstep while the view is locked.
-const BACKPEDAL_DOT: float = -0.3
 
 # Animation clips
 const ANIM_IDLE: StringName = &"general/Idle_A"
@@ -96,6 +93,9 @@ var _strike_timer: float = 0.0
 var _has_struck: bool = false
 var _combo_reset_timer: float = 0.0
 var _attack_strike_dir: Vector3 = Vector3.FORWARD
+## The aim direction taken when the skill started, which the model turns to for its length in the
+## locked view.
+var _skill_cast_dir: Vector3 = Vector3.FORWARD
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _debug_last_pos: Vector3
@@ -107,6 +107,7 @@ var _prev_wave_state: StringName = &""
 var _is_low_hp: bool = false
 ## True while the camera is in the Hazard Trial frame.
 var _view_locked: bool = false
+var _third_person_view: bool = false
 
 ## Every gameplay read of a commander stat goes through this block.
 var stat_block: StatBlock
@@ -139,9 +140,11 @@ func _ready() -> void:
 	EventBus.mode_changed.connect(_on_mode_changed)
 	EventBus.state_changed.connect(_on_wave_state_changed)
 	EventBus.camera_frame_changed.connect(_on_camera_frame_changed)
+	EventBus.camera_view_changed.connect(_on_camera_view_changed)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	EventBus.commander_enemy_killed.connect(_on_enemy_killed)
 	_sync_wave_state()
+	_sync_camera_view()
 	_apply_equipped_weapon()
 	_refresh_aura.call_deferred()
 
@@ -470,6 +473,7 @@ func _try_skill(slot: int) -> void:
 	if data == null:
 		return
 	is_using_skill = true
+	_skill_cast_dir = aim_dir
 	_skill_locks_movement = false
 	var anim_time: float = stats.skill_animation_time if stats else 0.5
 	_skill_timer = anim_time
@@ -523,9 +527,7 @@ func _start_dodge(camera: Camera3D) -> void:
 		var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
 		var forward := Vector3(-cam_basis.z.x, 0.0, -cam_basis.z.z).normalized()
 		_dodge_dir = (right * input.x + forward * (-input.y)).normalized()
-		# With the view locked the commander faces the camera, so dodging away from it is a backstep.
-		_is_backstep_dodge = _is_view_locked() and moves_backward(_dodge_dir, aim_dir)
-		dodge_clip = ANIM_DODGE_BACK if _is_backstep_dodge else ANIM_DODGE_FWD
+		_is_backstep_dodge = false
 	else:
 		_dodge_dir = -aim_dir
 		_is_backstep_dodge = true
@@ -589,6 +591,7 @@ func _try_battle_cry() -> void:
 
 func _start_battle_cry() -> void:
 	is_using_skill = true
+	_skill_cast_dir = aim_dir
 	_skill_locks_movement = true
 	var anim_time: float = stats.skill_animation_time if stats else 0.5
 	_skill_timer = anim_time
@@ -683,7 +686,7 @@ func _update_movement(camera: Camera3D, delta: float) -> void:
 			else:
 				var horizontal_vel := Vector2(velocity.x, velocity.z)
 				if horizontal_vel.length() > 0.1:
-					_play_run(_run_clip_speed())
+					_play_run()
 				elif not is_playing_hit:
 					if _anim_player.current_animation != ANIM_IDLE:
 						_anim_player.play(ANIM_IDLE, 0.15)
@@ -737,15 +740,21 @@ func _update_aim(camera: Camera3D) -> void:
 		aim_dir = to_target.normalized()
 
 
-## True while the camera is in the Hazard Trial chase frame, even when the cursor is free.
+## True while the camera is in the Hazard Trial frame or the third-person view is on, even
+## when the cursor is free. The lock covers the aim only: the model still faces the way it moves.
 func _is_view_locked() -> bool:
-	return _view_locked
+	return _view_locked or _third_person_view
 
 
-## The Hazard Trial chase view locks facing and aim to the camera, whether or not the
-## cursor is captured, so holding Alt to reach the Leave button does not turn the commander.
+## The Hazard Trial frame locks the aim to the camera, whether or not the cursor is captured, so
+## holding Alt to reach the Leave button does not move the aim.
 func _on_camera_frame_changed(frame: StringName) -> void:
 	_view_locked = frame == &"HAZARD_TRIAL"
+
+
+## The third-person view locks the aim to the camera the same way, in the corridor too.
+func _on_camera_view_changed(view: StringName) -> void:
+	_third_person_view = view == &"THIRD_PERSON"
 
 
 ## Locked view: the commander aims the way the camera faces, so attacks go where the view points.
@@ -770,30 +779,11 @@ func _move_facing() -> Vector3:
 	return Vector3(velocity.x, 0.0, velocity.z).normalized()
 
 
-## 1 plays the run clip forwards, -1 backwards: backwards while the view is locked and the
-## commander moves away from where it faces.
-func _run_clip_speed() -> float:
-	if _is_view_locked() and moves_backward(Vector3(velocity.x, 0.0, velocity.z), aim_dir):
-		return -1.0
-	return 1.0
-
-
-## Plays the run clip at speed. Left alone when it already runs that way; turning round only
-## flips its direction, since the clip name stays the same.
-func _play_run(speed: float) -> void:
-	if _anim_player.current_animation == ANIM_RUN \
-			and signf(_anim_player.get_playing_speed()) == signf(speed):
+## Plays the run clip forwards. Left alone when it already runs.
+func _play_run() -> void:
+	if _anim_player.current_animation == ANIM_RUN and _anim_player.get_playing_speed() > 0.0:
 		return
-	_anim_player.play(ANIM_RUN, 0.15, speed)
-
-
-## True when move_dir points away from facing by more than BACKPEDAL_DOT; flat vectors, any length.
-static func moves_backward(move_dir: Vector3, facing: Vector3) -> bool:
-	var move := Vector3(move_dir.x, 0.0, move_dir.z)
-	var face := Vector3(facing.x, 0.0, facing.z)
-	if move.length_squared() < 0.0001 or face.length_squared() < 0.0001:
-		return false
-	return move.normalized().dot(face.normalized()) < BACKPEDAL_DOT
+	_anim_player.play(ANIM_RUN, 0.15)
 
 
 ## A camera's facing laid on the ground, zero when it looks straight up or down.
@@ -803,11 +793,11 @@ static func flat_forward(basis: Basis) -> Vector3:
 
 
 func _update_model_facing(delta: float) -> void:
-	_turn_model(delta, aim_dir if _is_view_locked() else _move_facing())
+	_turn_model(delta, _move_facing())
 
 
 ## Turns the model for the action going on. free_dir is where it turns when no action sets the
-## facing: the way it moves, or the camera's facing while the view is locked; zero keeps it.
+## facing: the way it moves; zero keeps it.
 func _turn_model(delta: float, free_dir: Vector3) -> void:
 	var target_dir := Vector3.ZERO
 	var snap_instantly := false
@@ -819,7 +809,9 @@ func _turn_model(delta: float, free_dir: Vector3) -> void:
 		target_dir = aim_dir if _is_backstep_dodge else _dodge_dir
 		snap_instantly = true
 	elif is_using_skill:
-		target_dir = aim_dir
+		# The locked view keeps the direction taken at the start, so turning the camera mid-skill
+		# does not turn the model; otherwise it follows the mouse aim as before.
+		target_dir = _skill_cast_dir if _is_view_locked() else aim_dir
 		snap_instantly = false
 	elif _was_pushed:
 		target_dir = -_knockback_velocity.normalized()
@@ -1219,6 +1211,16 @@ func _sync_wave_state() -> void:
 	var index: int = wave_manager.wave_state
 	if index >= 0 and index < state_names.size():
 		_wave_state = StringName(state_names[index])
+
+
+## The camera rig may have sent its view and frame before this commander existed (a respawn in
+## the third-person view), so read the current ones instead of waiting for the next change.
+func _sync_camera_view() -> void:
+	var rig := get_tree().get_first_node_in_group(&"camera_rig")
+	if rig == null or not rig.has_method(&"get_view"):
+		return
+	_on_camera_view_changed(rig.get_view())
+	_on_camera_frame_changed(rig.get_frame())
 
 
 ## Weapon range goes into the StatBlock as a multiplier on the base sword range.

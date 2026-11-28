@@ -135,6 +135,7 @@ signal skill_channel_ended(skill_id: StringName)  # SkillRunner -> VFX, when a c
 
 #------------------Warning, sfx, audio, tutorial,...------------------#
 signal camera_frame_changed(frame: StringName)  # FRONTLINE | OVERVIEW | BOSS_INTRO | HAZARD_TRIAL
+signal camera_view_changed(view: StringName)  # CameraRig -> Commander: TOP_DOWN | THIRD_PERSON, the camera that shows the game
 signal alert_requested(tier: int, key: StringName, params: Dictionary)  # tier 1 | 2 | 3; key = locale key
 signal screen_shake_requested(intensity: float, source: StringName)
 signal sfx_requested(sound_id: StringName, position: Vector3, priority: int)

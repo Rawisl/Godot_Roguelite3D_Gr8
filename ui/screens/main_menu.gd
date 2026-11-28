@@ -13,7 +13,8 @@ var _drawer_tween: Tween
 @onready var _settings: Button = %Settings
 @onready var _account: Button = %Account
 @onready var _leaderboard: Button = %Leaderboard
-@onready var _sync_status: Control = %SyncStatus
+## The dark badge around the sync status, so its light text reads on the parchment.
+@onready var _sync_status: Control = %SyncBadge
 @onready var _account_hint: Label = %AccountHint
 @onready var _credits: Button = %Credits
 @onready var _quit: Button = %Quit

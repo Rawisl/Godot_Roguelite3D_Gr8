@@ -347,3 +347,17 @@ Vệt chém trắng theo lưỡi kiếm của 3 đòn combo (dải dựng sẵn 
 | fox_trail_mid | `#9EC7E6` | Thân vệt (`color_mid`) |
 | fox_trail_bright | `#E0F2FF` | Phần sáng gần mép lưỡi (`color_bright`) |
 | fox_trail_core | `#FFFFFF` | Lõi trắng ngay sau lưỡi kiếm (`color_core`) |
+
+Khi tường đẩy camera góc thứ ba sát chỉ huy, model chỉ huy mờ dần bằng dither (shader `toon_dither.gdshader` trên `fox_material.tres` và `commander_material.tres`, độ đục ghi bằng `ChaseCameraFade`). Không phải màu; chỉnh ở `data/config/corridor_chase_camera.tres` (hành lang) và `data/config/hazard_chase_camera.tres` (phòng Hazard).
+
+| Tên | Giá trị | Dùng cho |
+|---|---|---|
+| fox_fade_start_distance | 2,0 m | Khoảng cách camera tới tâm xoay từ đó chỉ huy bắt đầu mờ |
+| fox_fade_end_distance | 1,0 m | Khoảng cách mà chỉ huy xuống độ đục tối thiểu |
+| fox_fade_hide_distance | 0,6 m | Gần hơn khoảng này chỉ huy ẩn hẳn (từ độ đục tối thiểu ở 1,0 m xuống 0) |
+| fox_fade_min_alpha | 0,3 | Độ đục khi mờ hết cỡ |
+| fox_fade_time | 0,15 s | Thời gian đi từ rõ hẳn tới ẩn hẳn |
+| camera_free_screen_offset | 0,6 | Chỉ huy được lệch trái tâm màn hình tối đa bao nhiêu phần nửa chiều rộng khi không có tường (rộng, camera bám như cũ; `free_screen_offset`) |
+| camera_max_screen_offset | 0,15 | Mức lệch tối đa khi tường đã kéo camera sát (vị trí tự nhiên khoảng 0,13); mức cho phép co theo khoảng thoáng của camera nên camera bị kéo hết cỡ thì chỉ huy về giữa màn hình (`max_screen_offset`) |
+| camera_shoulder_pull_power | 2,0 | Vai camera co theo `khoảng thoáng ^ số mũ` khi tường kéo camera sát, nên chỉ huy nhích đều về giữa màn hình (`shoulder_pull_power`) |
+| camera_screen_offset_blend | 0,2 | Phần đầu của khoảng thoáng (từ 1 trở xuống) dùng để chuyển mượt từ mức rộng sang mức chặt (`screen_offset_blend`) |

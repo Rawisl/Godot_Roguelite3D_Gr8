@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dfevuuqslaomb"]
+
+[ext_resource type="Script" path="res://tests/test_corridor_chase_camera.gd" id="1_runner"]
+
+[node name="TestCorridorChaseCamera" type="Node3D"]
+script = ExtResource("1_runner")

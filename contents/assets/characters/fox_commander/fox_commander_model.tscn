@@ -9,6 +9,7 @@
 [ext_resource type="AnimationLibrary" uid="uid://q1g8ieqrtcwr" path="res://contents/assets/characters/fox_commander/animations/fox_move.res" id="7_mov"]
 [ext_resource type="AnimationLibrary" uid="uid://bsgparhwyojuc" path="res://contents/assets/characters/fox_commander/animations/fox_simulation.res" id="8_sim"]
 [ext_resource type="PackedScene" uid="uid://bjm0q81gv41h0" path="res://art/vfx/fox_commander/fox_slash_trails.tscn" id="9_trails"]
+[ext_resource type="AnimationLibrary" path="res://contents/assets/characters/fox_commander/animations/fox_menu.res" id="10_menu"]
 
 [node name="FoxCommanderModel" type="Node3D" unique_id=1742631941]
 
@@ -30,6 +31,7 @@ libraries/general = ExtResource("5_gen")
 libraries/melee = ExtResource("6_mel")
 libraries/move = ExtResource("7_mov")
 libraries/simulation = ExtResource("8_sim")
+libraries/menu = ExtResource("10_menu")
 autoplay = &"general/Idle_A"
 
 [node name="FoxSlashTrails" parent="." unique_id=1137688996 instance=ExtResource("9_trails")]
