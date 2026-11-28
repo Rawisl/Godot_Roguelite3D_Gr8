@@ -3,9 +3,12 @@ extends Node3D
 ## The melee clips key each ribbon's visible and trail_time, so this script never touches them.
 ## "Reduce flashing" (setting reduce_flash) hides the bright white trails through the shader's
 ## opacity instead of visible, which the clips would set back on the next hit.
+## The trails stay out of the hit flash: its overlay would draw the whole ribbon in flat white,
+## ignoring the shader's fade, so a hit during a slash showed a pale disc round the commander.
 
 
 func _ready() -> void:
+	add_to_group(HitReactionManager.NO_FLASH_GROUP)
 	_apply(GameState.get_setting(&"reduce_flash", false) == true)
 	EventBus.settings_changed.connect(_on_settings_changed)
 

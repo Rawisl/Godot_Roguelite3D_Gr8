@@ -1,10 +1,12 @@
 class_name SkillFxManager
 extends Node
 ## Visuals for the commander's active skills, one effect per EventBus.skill_cast:
-## - Whirlwind: a brush slash with streaks sweeps once round the commander at the skill radius,
-##   dust kicks up at the edge
-## - Sword Wave: a crescent with straight streaks in its tail flies from the commander along its
-##   aim, and stops early at a wall
+## - Whirlwind: two sweeps of the sword, ring-shaped trails out to the skill radius that follow
+##   the commander's sword through the spinning swing and fade when it ends; sparks fly in from
+##   the edge
+## - Sword Wave: a wide shallow crescent drawn like one Whirlwind sweep, a bright blade with a
+##   trail fading behind it and sparks streaming back from the blade; it flies from the commander
+##   along its aim, and stops early at a wall
 ## - Firebomb: a bomb arcs from the commander to the cast point, then the burn area and its
 ##   embers stay for the burn time
 ## What skill_cast carries: origin is the commander's position for Whirlwind and Sword Wave and
@@ -12,19 +14,78 @@ extends Node
 ## Sword Wave takes its direction from the commander's aim_dir.
 ## Other sizes come from the skill's SkillData in data/skills/ when it has the value, otherwise
 ## from the fallbacks here. Runs on game time: follows x2 / x3 and holds while paused.
+## Whirlwind and Sword Wave take their colours from the equipped sword (EventBus.weapon_equipped):
+## the material of the skill is cloned once per sword and recoloured from that sword's SkillPalette.
+## An effect keeps the material it was made with, so changing sword never recolours one in flight.
+## Whirlwind and Sword Wave lie flat; when the camera looks at one flatter than min_view_angle it
+## tilts up towards the camera, each at most its own max tilt. Sword Wave also rises so no corner
+## dips into the floor. Whirlwind sits at the middle of the commander and turns about its centre
+## only a few degrees, little enough that its edge never reaches the floor.
 ## Nothing is added to the commander scene.
 
 const SKILL_DIR := "res://data/skills/%s.tres"
+## Points along the crescent where Sword Wave sparks start.
+const WAVE_SPARK_POINTS := 12
+## How far across the arc the spark points reach, as a part of its half width.
+const WAVE_SPARK_SPAN := 0.9
+## The sword whose palette is used before any sword is announced and for swords with no palette.
+const BASE_WEAPON := &"sword_base"
+## skill_cast comes before the commander marks itself as using the skill, so its swing is not
+## checked for this long after the cast.
+const SWING_GRACE := 0.05
+## Rounds of tilt-then-lift; each round works the tilt out again from the last lifted spot.
+const TILT_PASSES := 6
+
+@export_group("Palettes")
+## Colours of Whirlwind and Sword Wave per sword id; tuned in art/materials/palettes/.
+@export var palettes: Dictionary = {
+	&"sword_base": preload("res://art/materials/palettes/skill_palette_sword_base.tres"),
+	&"frost": preload("res://art/materials/palettes/skill_palette_frost.tres"),
+	&"chain_lightning": preload("res://art/materials/palettes/skill_palette_chain_lightning.tres"),
+	&"burn": preload("res://art/materials/palettes/skill_palette_burn.tres"),
+	&"rampage": preload("res://art/materials/palettes/skill_palette_rampage.tres"),
+	&"swift": preload("res://art/materials/palettes/skill_palette_swift.tres"),
+}
 
 @export_group("Whirlwind")
-## Colour and blade shape are tuned in this material; radius, progress and fade are set per effect.
+## Trail shape is tuned in this material, its colours come from the palette of the equipped
+## sword; radius, sweep, fade and flicker are set per sweep.
 @export var whirlwind_material: ShaderMaterial = preload("res://art/materials/skill_whirlwind.tres")
-## Seconds for the blade to go once round.
-@export var sweep_time := 0.25
-@export var dust_color := Color("#D8CBB0")
+## Height of the blades above the floor: the middle of the commander (its capsule centre).
+@export var whirlwind_height := 0.9
+## The most the blades tilt towards a low camera, in degrees (see min_view_angle). The disc turns
+## about its centre, so its edge moves about radius x sin(this) up or down; keep that under
+## whirlwind_height so it never cuts into the floor.
+@export_range(0.0, 90.0) var whirlwind_max_tilt := 5.0
+## Sparks thrown in from the edge, how long they live, and their speed in metres per second.
+@export var whirlwind_spark_count := 15
+@export var whirlwind_spark_lifetime := 0.18
+@export var whirlwind_spark_speed_min := 0.8
+@export var whirlwind_spark_speed_max := 1.6
+## How much the sparks swirl along the spin instead of flying straight at the commander, 0..1.
+@export var whirlwind_spark_swirl := 0.6
+## The sweeps, one value per sweep in each list (the shorter list sets how many): seconds after
+## the cast it starts, where the sword is at that moment, and its size as a part of the skill
+## radius.
+@export var whirlwind_sweep_delays := PackedFloat32Array([0.0, 0.3])
+@export var whirlwind_sweep_scales := PackedFloat32Array([1.0, 1.1])
+## Seconds a new sweep takes to grow to full size, and the size it starts at as a part of it.
+@export var whirlwind_form_time := 0.15
+@export var whirlwind_start_scale := 0.35
+## Seconds the sweeps take to fade once the commander's swing ends.
+@export var whirlwind_fade_time := 0.2
+## Without a sword to follow (or a commander to say when the swing ends): how long the swing
+## lasts and how fast the sweeps turn, clockwise seen from above, in degrees per second. The
+## defaults match the commander's spinning swing.
+@export var whirlwind_swing_time := 0.5
+@export var whirlwind_spin_speed := 1800.0
+## Metres along the sword from the hand to the point the sweeps follow.
+@export var whirlwind_blade_reach := 1.0
 
 @export_group("Sword Wave")
 @export var wave_material: ShaderMaterial = preload("res://art/materials/skill_sword_wave.tres")
+## The most the wave tilts towards a low camera, in degrees, even when the camera looks up at it.
+@export_range(0.0, 90.0) var wave_max_tilt := 45.0
 ## Used while data/skills/sword_wave.tres has no width or range, or GameConfig no speed.
 @export var fallback_wave_width := 3.0
 @export var fallback_wave_distance := 4.0
@@ -35,6 +96,11 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 @export var wave_height := 0.6
 ## The wave stops where a ray at this height hits something on these layers (1 = world).
 @export_flags_3d_physics var wave_stop_mask := 1
+## Sparks per metre of wave width, and how long and how fast they fly back from the wave.
+@export var wave_spark_density := 6.0
+@export var wave_spark_lifetime := 0.25
+@export var wave_spark_speed_min := 2.0
+@export var wave_spark_speed_max := 4.5
 
 @export_group("Firebomb")
 @export var fire_material: ShaderMaterial = preload("res://art/materials/skill_fire_zone.tres")
@@ -56,9 +122,12 @@ const SKILL_DIR := "res://data/skills/%s.tres"
 @export var fade_time := 0.2
 ## Height above the floor for flat effects.
 @export var ground_lift := 0.05
+## Whirlwind and Sword Wave tilt up towards the camera when it looks at them flatter than this
+## many degrees, so a low chase camera still sees them. 0 keeps them flat.
+@export_range(0.0, 90.0) var min_view_angle := 25.0
 ## Room outside the radius for the soft edge.
 @export var ring_margin := 0.3
-## The shared particle limit (ParticleBudget). Over it, dust and embers are skipped; the
+## The shared particle limit (ParticleBudget). Over it, dust, embers and sparks are skipped; the
 ## effects themselves always play.
 var particle_budget: int:
 	get: return ParticleBudget.limit
@@ -68,7 +137,10 @@ var _effects: Array[Dictionary] = []
 var _skill_data: Dictionary = {}  # StringName -> SkillData, or null when there is no file
 var _commander: Node3D
 var _particle_mesh: SphereMesh
+var _spark_mesh: SphereMesh
 var _flicker := 1.0
+var _weapon_id := BASE_WEAPON
+var _material_cache: Dictionary = {}  # "<skill>:<weapon id>" -> ShaderMaterial
 
 
 func _ready() -> void:
@@ -85,10 +157,22 @@ func _ready() -> void:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.vertex_color_use_as_albedo = true
 	_particle_mesh.material = mat
+	# A long thin sphere, turned along the flight so each spark leaves a streak.
+	_spark_mesh = SphereMesh.new()
+	_spark_mesh.radius = 0.03
+	_spark_mesh.height = 0.3
+	_spark_mesh.radial_segments = 6
+	_spark_mesh.rings = 3
+	_spark_mesh.material = mat
 	_set_reduce_flash(GameState.get_setting(&"reduce_flash", false) == true)
 	EventBus.skill_cast.connect(_on_skill_cast)
 	EventBus.settings_changed.connect(_on_settings_changed)
 	EventBus.run_started.connect(clear)
+	EventBus.weapon_equipped.connect(_on_weapon_equipped)
+
+
+func _on_weapon_equipped(weapon_id: StringName) -> void:
+	_weapon_id = weapon_id
 
 
 func _on_skill_cast(skill_id: StringName, _slot: int, level: int, origin: Vector3, radius: float) -> void:
@@ -111,47 +195,193 @@ func _on_settings_changed(key: StringName, value: Variant) -> void:
 		_set_reduce_flash(value == true)
 
 
+## The palette of the equipped sword, the base sword's when that sword has none.
+func current_palette() -> SkillPalette:
+	var palette := palettes.get(_weapon_id) as SkillPalette
+	if palette == null:
+		palette = palettes.get(BASE_WEAPON) as SkillPalette
+	return palette
+
+
+## base cloned and coloured for the equipped sword, made once per skill and sword.
+func _skill_material(skill_id: StringName, base: ShaderMaterial) -> ShaderMaterial:
+	var palette := current_palette()
+	if palette == null:
+		return base
+	var weapon := _weapon_id if palettes.get(_weapon_id) is SkillPalette else BASE_WEAPON
+	var key := "%s:%s" % [skill_id, weapon]
+	var cached := _material_cache.get(key) as ShaderMaterial
+	if cached != null:
+		return cached
+	var material := base.duplicate() as ShaderMaterial
+	palette.apply_to(material)
+	_material_cache[key] = material
+	return material
+
+
+func _spark_color() -> Color:
+	var palette := current_palette()
+	return palette.spark if palette != null else Color.WHITE
+
+
 func _set_reduce_flash(on: bool) -> void:
 	_flicker = 0.0 if on else 1.0
 
 
 #region Whirlwind
-## start_dir is where the blade starts; it sweeps once round from there.
+## start_dir is where the sword starts when there is no sword to follow; the sweeps turn
+## clockwise from there.
 func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) -> void:
-	var mesh := _flat_mesh(whirlwind_material, radius + ring_margin)
-	mesh.global_position = origin + Vector3.UP * ground_lift
-	mesh.rotation.y = atan2(-start_dir.z, start_dir.x)
-	mesh.set_instance_shader_parameter(&"radius", radius)
-	mesh.set_instance_shader_parameter(&"progress", 0.0)
-	var fx := {"kind": &"whirlwind", "mesh": mesh, "elapsed": 0.0}
-	var count := roundi(radius * 6.0)
-	if _has_room(count):
-		var dust := _particles(count, 0.5, dust_color)
-		dust.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
-		dust.emission_ring_axis = Vector3.UP
-		dust.emission_ring_radius = radius
-		dust.emission_ring_inner_radius = radius * 0.85
-		dust.emission_ring_height = 0.0
-		dust.one_shot = true
-		dust.explosiveness = 0.6
-		dust.direction = Vector3.UP
-		dust.spread = 30.0
-		dust.initial_velocity_min = 0.6
-		dust.initial_velocity_max = 1.2
-		dust.gravity = Vector3.DOWN * 1.5
-		dust.global_position = origin + Vector3.UP * ground_lift
-		dust.emitting = true
-		fx["particles"] = dust
+	var rings: Array[MeshInstance3D] = []
+	var start_head := atan2(-start_dir.z, start_dir.x)
+	var fx := {"kind": &"whirlwind", "mesh": null, "rings": rings, "elapsed": 0.0, "radius": radius,
+		"at": origin + Vector3.UP * whirlwind_height, "start_head": start_head, "head": start_head,
+		"sweeps": [], "fade_from": -1.0, "sword": _sword_of_commander()}
+	fx.head = _whirlwind_head(fx)
+	_spawn_due_sweeps(fx)
+	if _has_room(whirlwind_spark_count):
+		fx["particles"] = _whirlwind_sparks(whirlwind_spark_count, radius, origin)
 	_effects.append(fx)
 
 
+## Number of sweeps: the shorter of the two sweep lists.
+func whirlwind_sweep_count() -> int:
+	return mini(whirlwind_sweep_delays.size(), whirlwind_sweep_scales.size())
+
+
+## Longest a Whirlwind lasts when nothing says the swing ended earlier: the swing plus the fade.
+func whirlwind_time() -> float:
+	return whirlwind_swing_time + whirlwind_fade_time
+
+
+## The node holding the commander's sword, null when there is none to follow.
+func _sword_of_commander() -> Node3D:
+	var c := _get_commander()
+	if c == null:
+		return null
+	for node in get_tree().get_nodes_in_group(&"weapon_mount"):
+		if node is Node3D and c.is_ancestor_of(node):
+			return node
+	return null
+
+
+## Angle round the centre, counter-clockwise from +X seen from above, of the point on the sword
+## the sweeps follow; without a sword, the start angle turned clockwise at whirlwind_spin_speed.
+func _whirlwind_head(fx: Dictionary) -> float:
+	var sword: Node3D = fx.sword
+	if sword != null and is_instance_valid(sword):
+		var tip := sword.global_position + sword.global_basis.y.normalized() * whirlwind_blade_reach
+		var rel: Vector3 = tip - fx.at
+		if Vector2(rel.x, rel.z).length_squared() > 0.0001:
+			return atan2(-rel.z, rel.x)
+	var spun := deg_to_rad(whirlwind_spin_speed) * minf(fx.elapsed, whirlwind_swing_time)
+	return fx.start_head - spun
+
+
+## True once the commander's swing is over, so the sweeps start to fade.
+func _swing_over(fx: Dictionary) -> bool:
+	if fx.elapsed >= whirlwind_swing_time * 2.0:
+		return true
+	var c := _get_commander()
+	if c == null or not ("is_using_skill" in c):
+		return fx.elapsed >= whirlwind_swing_time
+	return fx.elapsed > SWING_GRACE and not c.is_using_skill
+
+
+## Starts every sweep whose delay has passed, at the sword.
+func _spawn_due_sweeps(fx: Dictionary) -> void:
+	var sweeps: Array = fx.sweeps
+	while sweeps.size() < whirlwind_sweep_count() and fx.elapsed >= whirlwind_sweep_delays[sweeps.size()]:
+		var i := sweeps.size()
+		var reach: float = whirlwind_material.get_shader_parameter(&"outer_reach")
+		var mesh := _flat_mesh(_skill_material(&"whirlwind", whirlwind_material), fx.radius * reach + ring_margin)
+		mesh.global_position = fx.at
+		mesh.set_instance_shader_parameter(&"radius", fx.radius)
+		mesh.set_instance_shader_parameter(&"sweep", 0.0)
+		mesh.set_instance_shader_parameter(&"flicker", _flicker)
+		sweeps.append({"mesh": mesh, "born": whirlwind_sweep_delays[i], "size": whirlwind_sweep_scales[i], "sweep": 0.0})
+		if fx.mesh == null:
+			fx.mesh = mesh
+		else:
+			fx.rings.append(mesh)
+		_place_sweep(fx, sweeps[i])
+
+
+## Sparks start on a ring just inside the radius and fly in towards the commander, swirling the
+## way the sword turns.
+func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticles3D:
+	var sparks := _particles(count, whirlwind_spark_lifetime, _spark_color())
+	sparks.mesh = _spark_mesh
+	var points := PackedVector3Array()
+	var normals := PackedVector3Array()
+	for i in count:
+		var angle := (float(i) + randf_range(-0.3, 0.3)) / float(count) * TAU
+		var radial := Vector3(cos(angle), 0.0, -sin(angle))
+		# Clockwise seen from above, like the sword.
+		var tangent := Vector3(sin(angle), 0.0, cos(angle))
+		points.append(radial * radius * randf_range(0.9, 1.0))
+		normals.append((-radial + tangent * whirlwind_spark_swirl).normalized())
+	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_DIRECTED_POINTS
+	sparks.emission_points = points
+	sparks.emission_normals = normals
+	sparks.one_shot = true
+	sparks.explosiveness = 0.8
+	sparks.direction = Vector3(0.0, 0.0, 1.0)
+	sparks.spread = 10.0
+	sparks.initial_velocity_min = whirlwind_spark_speed_min
+	sparks.initial_velocity_max = whirlwind_spark_speed_max
+	sparks.gravity = Vector3.ZERO
+	sparks.lifetime_randomness = 0.33
+	sparks.particle_flag_align_y = true
+	sparks.global_position = origin + Vector3.UP * whirlwind_height
+	sparks.emitting = true
+	return sparks
+
+
+## Each sweep follows the sword and draws more of its trail as the sword turns clockwise; all
+## fade together once the swing is over.
 func _update_whirlwind(fx: Dictionary) -> bool:
-	var mesh: MeshInstance3D = fx.mesh
-	var t: float = fx.elapsed
-	mesh.set_instance_shader_parameter(&"progress", minf(t / maxf(sweep_time, 0.001), 1.0))
-	var fade := _fade_after(t, sweep_time)
+	_follow_sword_holder(fx)
+	var head := _whirlwind_head(fx)
+	var turned := wrapf(fx.head - head, -PI, PI)
+	fx.head = head
+	for sweep: Dictionary in fx.sweeps:
+		sweep.sweep = maxf(sweep.sweep + turned, 0.0)
+	_spawn_due_sweeps(fx)
+	if fx.fade_from < 0.0 and _swing_over(fx):
+		fx.fade_from = fx.elapsed
+	for sweep: Dictionary in fx.sweeps:
+		_place_sweep(fx, sweep)
+	return fx.fade_from < 0.0 or fx.elapsed - fx.fade_from < whirlwind_fade_time
+
+
+## Keeps the sweeps centred on the commander while it holds the sword they follow. The commander
+## can run during the swing; left at the cast point, the sword would only wobble round the centre
+## and the trail would stay a short head.
+func _follow_sword_holder(fx: Dictionary) -> void:
+	var sword: Node3D = fx.sword
+	if sword == null or not is_instance_valid(sword):
+		return
+	var c := _get_commander()
+	if c == null or not c.is_ancestor_of(sword):
+		return
+	fx.at = c.global_position + Vector3.UP * whirlwind_height
+
+
+## Turns a sweep so its head is on the sword, grows it in, fades it and tilts it to the camera.
+func _place_sweep(fx: Dictionary, sweep: Dictionary) -> void:
+	var mesh: MeshInstance3D = sweep.mesh
+	var grow := clampf((fx.elapsed - sweep.born) / maxf(whirlwind_form_time, 0.001), 0.0, 1.0)
+	var size: float = lerpf(whirlwind_start_scale, 1.0, grow) * sweep.size
+	var fade := 1.0
+	if fx.fade_from >= 0.0:
+		fade = 1.0 - clampf((fx.elapsed - fx.fade_from) / maxf(whirlwind_fade_time, 0.001), 0.0, 1.0)
+	mesh.set_instance_shader_parameter(&"sweep", sweep.sweep)
 	mesh.set_instance_shader_parameter(&"fade", fade)
-	return fade > 0.0
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	var flat := Basis(Vector3.UP, fx.head) * Basis.from_scale(Vector3.ONE * size)
+	mesh.global_basis = _view_tilt(fx.at, whirlwind_max_tilt) * flat
+	mesh.global_position = fx.at
 #endregion
 
 
@@ -162,36 +392,85 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	flat = flat.normalized() if flat.length_squared() > 0.0001 else Vector3.FORWARD
 	var start := origin + flat * wave_start_offset
 	var travel := _clear_distance(start, flat, maxf(distance - wave_start_offset, 0.0))
-	var bulge: float = wave_material.get_shader_parameter(&"bulge")
-	var tail: float = wave_material.get_shader_parameter(&"tail_length")
+	# The shader works in wave space, where half the arc width is arc_half; s turns it into metres.
+	var arc_half: float = wave_material.get_shader_parameter(&"arc_half")
+	var scale_m := width * 0.5 / maxf(arc_half, 0.001)
+	var side: float = wave_material.get_shader_parameter(&"side_extent") * scale_m
+	var front: float = wave_material.get_shader_parameter(&"front_margin") * scale_m
+	var tail: float = wave_material.get_shader_parameter(&"tail_extent") * scale_m
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(width + ring_margin, bulge + tail + ring_margin * 2.0)
-	# Local -Z is forward: the plane reaches bulge ahead of the node and the tail behind it.
-	plane.center_offset = Vector3(0.0, 0.0, (tail - bulge) * 0.5)
+	plane.size = Vector2(2.0 * side, front + tail)
+	# Local -Z is forward: the node sits on the front edge, the plane reaches front ahead of it
+	# and the tail behind it.
+	plane.center_offset = Vector3(0.0, 0.0, (tail - front) * 0.5)
 	var mesh := MeshInstance3D.new()
 	mesh.name = "SwordWave"
 	mesh.mesh = plane
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mesh.material_override = wave_material
+	mesh.material_override = _skill_material(&"sword_wave", wave_material)
 	mesh.set_instance_shader_parameter(&"half_width", width * 0.5)
 	mesh.set_instance_shader_parameter(&"tail_scale", 0.0)
 	mesh.set_instance_shader_parameter(&"fade", 1.0)
+	mesh.set_instance_shader_parameter(&"game_time", 0.0)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
 	add_child(mesh)
 	mesh.global_basis = Basis.looking_at(flat, Vector3.UP)
 	mesh.global_position = start + Vector3.UP * wave_height
-	_effects.append({"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
-		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed})
+	var fx := {"kind": &"sword_wave", "mesh": mesh, "elapsed": 0.0, "tail": tail,
+		"start": mesh.global_position, "dir": flat, "fly_time": travel / maxf(speed, 0.001), "speed": speed,
+		"flat": mesh.global_basis, "floor": origin.y}
+	_face_camera(mesh, fx.flat, mesh.global_position, fx.floor, wave_max_tilt)
+	var count := clampi(roundi(width * wave_spark_density), 8, 28)
+	if _has_room(count):
+		fx["particles"] = _wave_sparks(count, scale_m, mesh)
+	_effects.append(fx)
+
+
+## Streaks leave the blade of the crescent and fall back through its trail, following the wave.
+func _wave_sparks(count: int, scale_m: float, mesh: MeshInstance3D) -> CPUParticles3D:
+	var radius: float = wave_material.get_shader_parameter(&"arc_radius")
+	var origin_y: float = wave_material.get_shader_parameter(&"arc_origin")
+	var half: float = wave_material.get_shader_parameter(&"arc_half")
+	var sparks := _particles(count, wave_spark_lifetime, _spark_color())
+	# The same front arc as the shader. Points are measured back from the middle of the front
+	# edge, which sits at local z = 0.
+	var points := PackedVector3Array()
+	for i in WAVE_SPARK_POINTS:
+		var u := lerpf(-WAVE_SPARK_SPAN, WAVE_SPARK_SPAN, float(i) / float(WAVE_SPARK_POINTS - 1))
+		var qx := u * half
+		var front_y := origin_y + sqrt(maxf(radius * radius - qx * qx, 0.0))
+		points.append(Vector3(qx * scale_m, 0.0, (origin_y + radius - front_y) * scale_m))
+	sparks.mesh = _spark_mesh
+	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_POINTS
+	sparks.emission_points = points
+	sparks.direction = Vector3(0.0, 0.0, 1.0)
+	sparks.spread = 20.0
+	sparks.initial_velocity_min = wave_spark_speed_min
+	sparks.initial_velocity_max = wave_spark_speed_max
+	sparks.gravity = Vector3.ZERO
+	sparks.lifetime_randomness = 0.6
+	sparks.particle_flag_align_y = true
+	sparks.global_basis = mesh.global_basis
+	sparks.global_position = mesh.global_position
+	sparks.emitting = true
+	return sparks
 
 
 func _update_sword_wave(fx: Dictionary) -> bool:
 	var mesh: MeshInstance3D = fx.mesh
 	var t: float = minf(fx.elapsed, fx.fly_time)
 	var travelled: float = fx.speed * t
-	mesh.global_position = fx.start + fx.dir * travelled
+	_face_camera(mesh, fx.flat, fx.start + fx.dir * travelled, fx.floor, wave_max_tilt)
 	# The tail grows as the wave leaves, so it never reaches back past the commander.
 	mesh.set_instance_shader_parameter(&"tail_scale", clampf((travelled + wave_start_offset) / maxf(fx.tail, 0.001), 0.0, 1.0))
 	var fade := _fade_after(fx.elapsed, fx.fly_time)
 	mesh.set_instance_shader_parameter(&"fade", fade)
+	mesh.set_instance_shader_parameter(&"game_time", fx.elapsed)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	var sparks: CPUParticles3D = fx.get("particles")
+	if sparks != null and sparks.emitting:
+		sparks.global_position = mesh.global_position
+		sparks.emitting = fx.elapsed < fx.fly_time
 	return fade > 0.0
 
 
@@ -310,6 +589,54 @@ func _free_effect(fx: Dictionary) -> void:
 		var node: Node = fx.get(key)
 		if node != null and is_instance_valid(node):
 			node.queue_free()
+	for ring: MeshInstance3D in fx.get("rings", []):
+		if is_instance_valid(ring):
+			ring.queue_free()
+
+
+## Puts a flat effect mesh at `at`, tilted towards the camera (at most max_tilt degrees) and lifted
+## clear of the floor when the view grazes it. flat is its lying-flat basis, floor_y the height of
+## the floor under it. The tilt is worked out again from the lifted spot, since lifting changes how
+## the camera sees it.
+func _face_camera(mesh: MeshInstance3D, flat: Basis, at: Vector3, floor_y: float, max_tilt: float) -> void:
+	var lift := 0.0
+	var basis := flat
+	for _round in TILT_PASSES:
+		basis = _view_tilt(at + Vector3.UP * lift, max_tilt) * flat
+		lift = _floor_lift(mesh, basis, at, floor_y)
+	mesh.global_basis = basis
+	mesh.global_position = at + Vector3.UP * lift
+
+
+## The turn that leans a flat effect at `at` towards the camera until the camera sees it at
+## min_view_angle, at most max_tilt degrees; identity when it already does, or with no camera.
+func _view_tilt(at: Vector3, max_tilt: float) -> Basis:
+	if min_view_angle <= 0.0:
+		return Basis.IDENTITY
+	var cam := get_viewport().get_camera_3d() if get_viewport() != null else null
+	if cam == null:
+		return Basis.IDENTITY
+	var to_cam := cam.global_position - at
+	if cam.projection == Camera3D.PROJECTION_ORTHOGONAL:
+		to_cam = cam.global_basis.z
+	var across := Vector3(to_cam.x, 0.0, to_cam.z)
+	if across.length_squared() < 0.000001:
+		return Basis.IDENTITY
+	var need := minf(deg_to_rad(min_view_angle) - atan2(to_cam.y, across.length()), deg_to_rad(max_tilt))
+	if need <= 0.0:
+		return Basis.IDENTITY
+	# Turning about this axis leans the plane's up towards the camera.
+	return Basis(Vector3.UP.cross(across.normalized()), need)
+
+
+## How far to raise a mesh at `at` with this basis so its lowest corner stays ground_lift above
+## floor_y. 0 when it is already clear.
+func _floor_lift(mesh: MeshInstance3D, basis: Basis, at: Vector3, floor_y: float) -> float:
+	var box := mesh.get_aabb()
+	var low := INF
+	for i in 8:
+		low = minf(low, (basis * box.get_endpoint(i)).y)
+	return maxf(floor_y + ground_lift - (at.y + low), 0.0)
 
 
 ## 1 until hold seconds have passed, then down to 0 over fade_time.
@@ -399,4 +726,20 @@ func get_effect_mesh(kind: StringName) -> MeshInstance3D:
 	for i in range(_effects.size() - 1, -1, -1):
 		if _effects[i].kind == kind:
 			return _effects[i].mesh
+	return null
+
+
+## The sweeps after the first of the newest Whirlwind, empty when there is none. For tests.
+func get_whirlwind_sweeps() -> Array[MeshInstance3D]:
+	for i in range(_effects.size() - 1, -1, -1):
+		if _effects[i].kind == &"whirlwind":
+			return _effects[i].rings
+	return []
+
+
+## The particle emitter of the newest effect of that kind, null when there is none. For tests.
+func get_effect_particles(kind: StringName) -> CPUParticles3D:
+	for i in range(_effects.size() - 1, -1, -1):
+		if _effects[i].kind == kind:
+			return _effects[i].get("particles")
 	return null

@@ -1,14 +1,25 @@
 extends Node3D
 
 ## Test for the active skill visuals (SkillFxManager):
-## - Whirlwind: the sweep sits on the cast point at the skill radius, goes round once on game
-##   time (faster at x2, held while paused), then fades and frees itself
-## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall
+## - Whirlwind: the sweeps sit over the cast point at the skill radius and turn on game time
+##   (faster at x2, held while paused), the second one starts later, then they fade and free
+##   themselves with their sparks; the sparks fly in towards the commander, and reduced flashing
+##   turns the flicker off
+## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall; its
+##   plane leaves room for the glow, sparks follow the wave and stop with it, it grows on game
+##   time (held while paused), reduced flashing turns the white blade off, and the colours are
+##   the ones Whirlwind uses
 ## - Firebomb: the bomb flies first, then the burn area shows at the cast point for the burn
 ##   time; reduced flashing turns the flicker off, and the flicker is capped at 3 per second
 ## - every skill shader keeps the depth test, so walls hide the effects
-## - over the particle budget the effects still play without dust or embers
+## - over the particle budget the effects still play without sparks or embers
 ## - run_started clears everything
+## - Whirlwind and Sword Wave stay flat under a high or top-down camera and tilt towards a low one,
+##   never past their own max tilt, and stay flat when min_view_angle is 0; the wave reaches
+##   min_view_angle and stays clear of the floor, Whirlwind turns about its centre at the middle of
+##   the commander and its edge never reaches the floor
+## - the colours follow the equipped sword: six palettes, base sword by default and for unknown swords, never
+##   changed under an effect already flying
 ## Headless it runs the checks and quits. F6 in the editor runs the checks, then casts the three
 ## skills together every 2 s, each in its own spot around a wall, with buttons for the game
 ## speed and reduced flashing.
@@ -36,13 +47,31 @@ func _ready() -> void:
 	await test_whirlwind_placed()
 	await test_whirlwind_on_game_time()
 	await test_whirlwind_fades_and_frees()
+	await test_whirlwind_sparks()
+	await test_whirlwind_flicker()
+	await test_whirlwind_rings()
+	await test_whirlwind_rings_on_game_time()
+	await test_whirlwind_rings_free()
 	await test_sword_wave_flies_along_aim()
 	await test_sword_wave_stops_at_wall()
+	await test_sword_wave_plane_fits_halo()
+	await test_sword_wave_sparks()
+	await test_sword_wave_on_game_time()
+	await test_sword_wave_flicker()
 	await test_firebomb_lands_and_burns()
 	await test_firebomb_flicker()
 	test_depth_test_kept()
+	test_whirlwind_shader_rules()
+	test_sword_wave_shader_rules()
 	await test_particle_budget()
 	await test_run_started_clears()
+	test_palettes_complete()
+	await test_default_palette_is_base()
+	await test_burn_palette_on_both_skills()
+	await test_sword_change_keeps_flying_effect()
+	await test_unknown_sword_uses_base()
+	await test_sword_change_after_readd()
+	await test_tilt_toward_low_camera()
 
 	TimeManager.reset()
 	print("[skill fx] done: %d passed, %d failed" % [passes, fails])
@@ -66,30 +95,34 @@ func test_whirlwind_placed() -> void:
 	_cast(&"whirlwind", Vector3(1, 0, -2), WHIRLWIND_RADIUS)
 	await _frames(1)
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	assert_true(_fx.get_active_count(&"whirlwind") == 1, "skill_cast whirlwind adds one sweep")
-	assert_true(mesh != null and mesh.global_position.distance_to(Vector3(1, _fx.ground_lift, -2)) < 0.001,
-		"the sweep sits on the cast point, just above the floor")
+	assert_true(_fx.get_active_count(&"whirlwind") == 1, "skill_cast whirlwind adds one whirlwind")
+	assert_true(mesh != null and mesh.global_position.distance_to(Vector3(1, _fx.whirlwind_height, -2)) < 0.001,
+		"the blades sit over the cast point, at the middle of the commander")
 	assert_true(mesh != null and is_equal_approx(mesh.get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS),
-		"the sweep uses the skill radius")
+		"the blades use the skill radius")
 	var plane := mesh.mesh as PlaneMesh if mesh != null else null
 	assert_true(plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS, "the plane is wide enough for the radius")
+	var reach: float = _fx.whirlwind_material.get_shader_parameter(&"outer_reach")
+	assert_true(plane != null and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * reach, "the plane fits the glow outside the rim")
 	await _clear()
 
 
 func test_whirlwind_on_game_time() -> void:
+	# The test commander holds no sword, so the sweeps turn at whirlwind_spin_speed.
+	var per_second := deg_to_rad(_fx.whirlwind_spin_speed)
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await TimeManager.wait_game(_fx.sweep_time * 0.5)
-	assert_true(absf(_progress() - 0.5) < 0.15, "half the sweep time in, the blade is half way round")
+	await TimeManager.wait_game(0.2)
+	assert_true(absf(_sweep() - per_second * 0.2) < per_second * 0.06, "after 0.2 s of game time the sweep has turned for 0.2 s")
 	await _clear()
 
 	TimeManager.set_time_scale(2)
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await TimeManager.wait_real(_fx.sweep_time * 0.25)
-	assert_true(absf(_progress() - 0.5) < 0.2, "at x2 the blade is half way round after a quarter of the sweep time")
+	await TimeManager.wait_real(0.1)
+	assert_true(absf(_sweep() - per_second * 0.2) < per_second * 0.08, "at x2 the sweep turns for 0.2 s in 0.1 s")
 	TimeManager.request_pause(TimeManager.REASON_USER)
-	var held := _progress()
+	var held := _sweep()
 	await TimeManager.wait_real(0.2)
-	assert_true(is_equal_approx(_progress(), held), "while paused the sweep holds")
+	assert_true(is_equal_approx(_sweep(), held), "while paused the sweep holds")
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	TimeManager.set_time_scale(1)
 	await _clear()
@@ -97,12 +130,102 @@ func test_whirlwind_on_game_time() -> void:
 
 func test_whirlwind_fades_and_frees() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
-	await TimeManager.wait_game(_fx.sweep_time + _fx.fade_time * 0.5)
+	await TimeManager.wait_game(_fx.whirlwind_time() - 0.05)
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	assert_true(mesh != null and _progress() == 1.0 and mesh.get_instance_shader_parameter(&"fade") < 1.0,
-		"after one turn the sweep fades")
+	assert_true(_fx.get_active_count(&"whirlwind") == 1 and mesh != null and mesh.get_instance_shader_parameter(&"fade") < 1.0,
+		"just before the end time the sweeps are still there and fading")
+	await TimeManager.wait_game(0.3)
+	assert_true(_fx.get_active_count() == 0, "the sweeps and their sparks free themselves")
 	await _clear()
-	assert_true(_fx.get_active_count() == 0, "the sweep frees itself after the fade and the dust")
+
+
+func test_whirlwind_sparks() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var sparks := _fx.get_effect_particles(&"whirlwind")
+	assert_true(sparks != null, "the whirlwind throws sparks")
+	if sparks == null:
+		await _clear()
+		return
+	assert_true(sparks.amount == _fx.whirlwind_spark_count, "one spark per start point")
+	assert_true(sparks.emission_shape == CPUParticles3D.EMISSION_SHAPE_DIRECTED_POINTS, "the sparks leave from points with a direction")
+	var inward := sparks.emission_normals.size() == sparks.emission_points.size() and not sparks.emission_points.is_empty()
+	for i in sparks.emission_points.size():
+		inward = inward and sparks.emission_normals[i].dot(sparks.emission_points[i]) < 0.0
+	assert_true(inward, "every spark flies in towards the commander")
+	# Clockwise seen from above: the tangent at (x, z) is (-z, 0, x), the way the sword turns.
+	var with_spin := not sparks.emission_points.is_empty()
+	for i in sparks.emission_points.size():
+		var point := sparks.emission_points[i]
+		with_spin = with_spin and sparks.emission_normals[i].dot(Vector3(-point.z, 0.0, point.x)) > 0.0
+	assert_true(with_spin, "every spark swirls the way the sword turns")
+	assert_true(sparks.lifetime <= 0.18 and sparks.gravity == Vector3.ZERO and sparks.particle_flag_align_y,
+		"the sparks are short, fly straight and stretch along the flight")
+	assert_true(_fx.active_particles() > 0, "the sparks count against the particle budget while they fly")
+	await _clear()
+
+
+func test_whirlwind_flicker() -> void:
+	EventBus.settings_changed.emit(&"reduce_flash", true)
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(2)
+	var mesh := _fx.get_effect_mesh(&"whirlwind")
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 0.0,
+		"reduced flashing turns the centre burst and the extra brightness off")
+	EventBus.settings_changed.emit(&"reduce_flash", false)
+	await _frames(2)
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
+		"turning it back off brings the flicker back")
+	await _clear()
+
+
+func test_whirlwind_rings() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var wanted := _fx.whirlwind_sweep_count()
+	assert_true(wanted == 2 and _fx.get_whirlwind_sweeps().is_empty() and _whirlwind_mesh_count() == 1,
+		"right after the cast only the first of the two sweeps is there")
+	await TimeManager.wait_game(_fx.whirlwind_sweep_delays[1] + 0.05)
+	var later := _fx.get_whirlwind_sweeps()
+	var reach: float = _fx.whirlwind_material.get_shader_parameter(&"outer_reach")
+	var plane := later[0].mesh as PlaneMesh if later.size() == 1 else null
+	assert_true(later.size() == 1 and _whirlwind_mesh_count() == 2, "the second sweep starts after its delay")
+	assert_true(plane != null and is_equal_approx(later[0].get_instance_shader_parameter(&"radius"), WHIRLWIND_RADIUS)
+		and plane.size.x >= 2.0 * WHIRLWIND_RADIUS * reach, "the second sweep uses the skill radius and fits its glow")
+	await _clear()
+
+
+func test_whirlwind_rings_on_game_time() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await TimeManager.wait_game(_fx.whirlwind_sweep_delays[1] + 0.05)
+	var first := _fx.get_effect_mesh(&"whirlwind")
+	var later := _fx.get_whirlwind_sweeps()
+	var same_head := first != null and later.size() == 1 \
+		and first.global_basis.x.normalized().is_equal_approx(later[0].global_basis.x.normalized())
+	assert_true(same_head, "both sweeps keep their head on the same point of the swing")
+	TimeManager.request_pause(TimeManager.REASON_USER)
+	var held: float = later[0].get_instance_shader_parameter(&"sweep") if later.size() == 1 else -1.0
+	await TimeManager.wait_real(0.2)
+	assert_true(later.size() == 1 and is_equal_approx(later[0].get_instance_shader_parameter(&"sweep"), held),
+		"while paused the second sweep holds too")
+	TimeManager.release_pause(TimeManager.REASON_USER)
+	await _clear()
+
+
+func test_whirlwind_rings_free() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	assert_true(is_equal_approx(_fx.whirlwind_time(), _fx.whirlwind_swing_time + _fx.whirlwind_fade_time),
+		"without a commander swing the effect lasts the swing plus the fade")
+	await TimeManager.wait_game(_fx.whirlwind_sweep_delays[1] + 0.05)
+	var later := _fx.get_whirlwind_sweeps().duplicate()
+	await TimeManager.wait_game(_fx.whirlwind_time() + 0.3)
+	await _frames(2)
+	var freed := not later.is_empty()
+	for sweep in later:
+		freed = freed and (not is_instance_valid(sweep) or sweep.is_queued_for_deletion())
+	assert_true(freed, "the second sweep is freed with the first")
+	assert_true(_whirlwind_mesh_count() == 0, "no whirlwind mesh is left behind")
+	await _clear()
 
 
 func test_sword_wave_flies_along_aim() -> void:
@@ -132,6 +255,87 @@ func test_sword_wave_stops_at_wall() -> void:
 	var mesh := _fx.get_effect_mesh(&"sword_wave")
 	var travelled := _flat_distance(mesh.global_position, _commander.global_position) if mesh != null else INF
 	assert_true(travelled <= WALL_X + 0.01 and travelled > WALL_X - 0.5, "the wave stops at the wall instead of passing through it")
+	await _clear()
+
+
+func test_sword_wave_plane_fits_halo() -> void:
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	var plane := mesh.mesh as PlaneMesh if mesh != null else null
+	var arc_half: float = _fx.wave_material.get_shader_parameter(&"arc_half")
+	var scale_m: float = _fx.fallback_wave_width * 0.5 / arc_half
+	var front_margin: float = _fx.wave_material.get_shader_parameter(&"front_margin")
+	var tail_extent: float = _fx.wave_material.get_shader_parameter(&"tail_extent")
+	assert_true(plane != null and plane.size.x > _fx.fallback_wave_width,
+		"the wave plane is wider than the arc, so the glow and the fanned shards fit")
+	assert_true(plane != null and plane.size.y >= (front_margin + tail_extent) * scale_m - 0.001,
+		"the wave plane reaches in front of the front edge and back over the shards and wisps")
+	await _clear()
+
+
+func test_sword_wave_sparks() -> void:
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	var sparks := _fx.get_effect_particles(&"sword_wave")
+	assert_true(sparks != null and sparks.emitting and sparks.gravity == Vector3.ZERO and _fx.active_particles() > 0,
+		"the wave throws sparks back")
+	if sparks == null or mesh == null:
+		await _clear()
+		return
+	assert_true(sparks.particle_flag_align_y, "the wave sparks are streaks turned along their flight")
+	assert_true(sparks.lifetime <= _fx.wave_spark_lifetime, "the wave sparks are short lived")
+	# The front edge sits at local z = 0 and the wave flies towards -Z.
+	var behind_front := true
+	for point in sparks.emission_points:
+		behind_front = behind_front and point.z > 0.0
+	assert_true(behind_front, "the wave sparks start behind the front edge")
+	var start := mesh.global_position
+	var flight := (_fx.fallback_wave_distance - _fx.wave_start_offset) / _fx.fallback_wave_speed
+	await TimeManager.wait_game(flight * 0.5)
+	assert_true(sparks.global_position.distance_to(mesh.global_position) < 0.01, "the sparks follow the wave")
+	assert_true(sparks.global_position.distance_to(start) > 0.1, "the sparks have left the start point")
+	await TimeManager.wait_game(flight * 0.5 + _fx.fade_time * 0.5)
+	assert_true(not sparks.emitting and _fx.active_particles() == 0, "the sparks stop when the wave stops")
+	await _clear()
+	assert_true(_fx.get_active_count() == 0, "the wave and its sparks free themselves")
+
+
+func test_sword_wave_on_game_time() -> void:
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	if mesh == null:
+		assert_true(false, "the wave exists")
+		return
+	var t0: float = mesh.get_instance_shader_parameter(&"game_time")
+	await TimeManager.wait_game(0.05)
+	var t1: float = mesh.get_instance_shader_parameter(&"game_time")
+	assert_true(t1 > t0, "the wave grows on game time")
+	TimeManager.request_pause(TimeManager.REASON_USER)
+	await TimeManager.wait_real(0.1)
+	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the wave holds")
+	TimeManager.release_pause(TimeManager.REASON_USER)
+	await _clear()
+
+
+func test_sword_wave_flicker() -> void:
+	EventBus.settings_changed.emit(&"reduce_flash", true)
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(2)
+	var mesh := _fx.get_effect_mesh(&"sword_wave")
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 0.0,
+		"reduced flashing turns the white blade off")
+	EventBus.settings_changed.emit(&"reduce_flash", false)
+	await _frames(2)
+	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
+		"turning it back off brings the white blade back")
+	assert_true(_fx.wave_material.shader.code.contains("head_width, 0.001), xn)) * flicker"), "the white blade follows the flicker setting")
 	await _clear()
 
 
@@ -181,19 +385,49 @@ func test_depth_test_kept() -> void:
 			"%s keeps the depth test, so walls hide it" % shader.resource_path.get_file())
 
 
+func test_whirlwind_shader_rules() -> void:
+	var code := _fx.whirlwind_material.shader.code
+	assert_true(code.contains("blend_premul_alpha"), "the whirlwind blends with premultiplied alpha")
+	assert_true(not code.contains("TIME"), "the whirlwind runs on the age it is given, not on engine time")
+
+
+func test_sword_wave_shader_rules() -> void:
+	var code := _fx.wave_material.shader.code
+	assert_true(code.contains("blend_premul_alpha"), "the wave blends with premultiplied alpha")
+	assert_true(not code.contains("TIME"), "the wave runs on the game time it is given, not on engine time")
+	assert_true(not code.contains("slash_common"), "the wave shader includes nothing")
+	# The growth scaling must run before the offset to the disc centre, or the front edge drifts off the node.
+	var scale_at := code.find("q /= mix(start_scale")
+	var offset_at := code.find("q.y += arc_origin + arc_radius;")
+	assert_true(scale_at >= 0 and offset_at > scale_at, "the wave grows around its front edge, which stays on the node")
+	# The glow must be gone before the plane edge, or the plane shows as a faint rectangle.
+	var margin: float = _fx.wave_material.get_shader_parameter(&"front_margin")
+	var glow_w: float = _fx.wave_material.get_shader_parameter(&"glow_width")
+	var glow_a: float = _fx.wave_material.get_shader_parameter(&"glow_alpha")
+	assert_true(glow_a * exp(-margin / glow_w) < 0.005, "the glow is invisible at the front edge of the plane")
+	var same_colours := true
+	for color_name in [&"core_color", &"rim_color", &"band_color", &"shard_color", &"mid_color", &"tail_color"]:
+		same_colours = same_colours and _fx.wave_material.get_shader_parameter(color_name) == _fx.whirlwind_material.get_shader_parameter(color_name)
+	assert_true(same_colours, "Sword Wave and Whirlwind share the same base colours")
+
+
 func test_particle_budget() -> void:
 	var budget := _fx.particle_budget
 	_fx.particle_budget = 0
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	_cast(&"firebomb", Vector3(3, 0, 0), FIRE_RADIUS)
-	await TimeManager.wait_game(_fx.throw_time + 0.1)
-	assert_true(_fx.get_active_count() == 2, "over the budget both effects still play")
-	assert_true(_fx.active_particles() == 0, "over the budget there is no dust and no embers")
+	_cast(&"sword_wave", Vector3(0, 0, 5), 0.0)
+	# Before the wave has flown and faded out (0.175 s flight plus the fade).
+	await TimeManager.wait_game(0.15)
+	assert_true(_fx.get_active_count() == 3, "over the budget all effects still play")
+	assert_true(_fx.active_particles() == 0, "over the budget there are no embers and no sparks")
+	assert_true(_fx.get_effect_particles(&"whirlwind") == null, "over the budget the whirlwind has no sparks")
+	assert_true(_fx.get_effect_particles(&"sword_wave") == null, "over the budget the wave has no sparks")
 	_fx.clear()
 	_fx.particle_budget = budget
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	await _frames(1)
-	assert_true(_fx.active_particles() > 0, "under the budget the whirlwind kicks up dust")
+	assert_true(_fx.active_particles() > 0, "under the budget the whirlwind throws sparks")
 	_fx.clear()
 	await _frames(1)
 
@@ -201,12 +435,110 @@ func test_particle_budget() -> void:
 func test_run_started_clears() -> void:
 	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
 	_cast(&"firebomb", Vector3.ZERO, FIRE_RADIUS)
+	_cast(&"sword_wave", Vector3.ZERO, 0.0)
 	await _frames(1)
 	EventBus.run_started.emit()
 	await _frames(2)
 	assert_true(_fx.get_active_count() == 0, "run_started clears every effect")
 	var left := _fx.get_children().filter(func(n: Node) -> bool: return not n.is_queued_for_deletion())
 	assert_true(left.is_empty(), "no mesh or particle node is left behind")
+
+
+func test_palettes_complete() -> void:
+	var ids: Array[StringName] = [&"sword_base", &"frost", &"chain_lightning", &"burn", &"rampage", &"swift"]
+	var whole := true
+	var seen: Array[String] = []
+	for id in ids:
+		var palette := _fx.palettes.get(id) as SkillPalette
+		if palette == null:
+			whole = false
+			continue
+		var colours: Array[Color] = [palette.core, palette.rim, palette.band, palette.shard, palette.mid, palette.tail, palette.spark]
+		var key := ""
+		for colour in colours:
+			whole = whole and colour.a == 1.0
+			key += colour.to_html(false)
+		for other in colours.size() - 1:
+			whole = whole and colours[other] != colours[other + 1]
+		seen.append(key)
+	assert_true(whole and _fx.palettes.size() == ids.size(), "every sword has a palette of seven colours")
+	var unique := {}
+	for key in seen:
+		unique[key] = true
+	assert_true(seen.size() == ids.size() and unique.size() == ids.size(), "the six palettes differ from each other")
+
+
+func test_default_palette_is_base() -> void:
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var base := _fx.palettes[&"sword_base"] as SkillPalette
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), base), "before any sword is announced the base sword colours are used")
+	await _clear()
+
+
+func test_burn_palette_on_both_skills() -> void:
+	var burn := _fx.palettes[&"burn"] as SkillPalette
+	EventBus.weapon_equipped.emit(&"burn")
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	var ring_ok := _mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), burn)
+	for sweep in _fx.get_whirlwind_sweeps():
+		ring_ok = ring_ok and _mesh_colours_match(sweep, burn)
+	assert_true(ring_ok, "after equipping burn the Whirlwind uses the burn colours")
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"sword_wave"), burn), "after equipping burn the Sword Wave uses the burn colours")
+	var whirl_sparks := _fx.get_effect_particles(&"whirlwind")
+	var wave_sparks := _fx.get_effect_particles(&"sword_wave")
+	assert_true(whirl_sparks != null and whirl_sparks.color_ramp.get_color(0).is_equal_approx(burn.spark), "the Whirlwind sparks have the burn spark colour")
+	assert_true(wave_sparks != null and wave_sparks.color_ramp.get_color(0).is_equal_approx(burn.spark), "the Sword Wave sparks have the burn spark colour")
+	assert_true(_fx.whirlwind_material.get_shader_parameter(&"core_color") != burn.core, "the shared source material is not recoloured")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
+
+
+func test_sword_change_keeps_flying_effect() -> void:
+	var base := _fx.palettes[&"sword_base"] as SkillPalette
+	_aim(Vector3.LEFT)
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var wave := _fx.get_effect_mesh(&"sword_wave")
+	var whirl := _fx.get_effect_mesh(&"whirlwind")
+	EventBus.weapon_equipped.emit(&"swift")
+	await _frames(2)
+	assert_true(_mesh_colours_match(wave, base) and _mesh_colours_match(whirl, base), "changing sword does not recolour an effect already flying")
+	_cast(&"sword_wave", _commander.global_position, 0.0)
+	await _frames(1)
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"sword_wave"), _fx.palettes[&"swift"]), "the next cast uses the new sword colours")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
+
+
+func test_unknown_sword_uses_base() -> void:
+	var base := _fx.palettes[&"sword_base"] as SkillPalette
+	EventBus.weapon_equipped.emit(&"no_such_sword")
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), base), "a sword with no palette falls back to the base sword colours")
+	var sparks := _fx.get_effect_particles(&"whirlwind")
+	assert_true(sparks != null and sparks.color_ramp.get_color(0).is_equal_approx(base.spark), "its sparks use the base spark colour")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
+
+
+func test_sword_change_after_readd() -> void:
+	var parent := _fx.get_parent()
+	parent.remove_child(_fx)
+	parent.add_child(_fx)
+	EventBus.weapon_equipped.emit(&"swift")
+	_cast(&"whirlwind", Vector3.ZERO, WHIRLWIND_RADIUS)
+	await _frames(1)
+	var swift := _fx.palettes[&"swift"] as SkillPalette
+	assert_true(_mesh_colours_match(_fx.get_effect_mesh(&"whirlwind"), swift),
+		"a manager taken out of the tree and added back still follows the sword change")
+	EventBus.weapon_equipped.emit(&"sword_base")
+	await _clear()
 #endregion
 
 
@@ -221,9 +553,27 @@ func _aim(dir: Vector3) -> void:
 	_commander.global_basis = Basis.looking_at(dir, Vector3.UP)
 
 
-func _progress() -> float:
+func _sweep() -> float:
 	var mesh := _fx.get_effect_mesh(&"whirlwind")
-	return mesh.get_instance_shader_parameter(&"progress") if mesh != null else -1.0
+	return mesh.get_instance_shader_parameter(&"sweep") if mesh != null else -1.0
+
+
+## Meshes still alive under the manager: every Whirlwind sweep.
+func _whirlwind_mesh_count() -> int:
+	return _fx.get_children().filter(func(n: Node) -> bool: return n is MeshInstance3D and not n.is_queued_for_deletion()).size()
+
+
+## Whether the six shader colours on the mesh's material are the palette's.
+func _mesh_colours_match(mesh: MeshInstance3D, palette: SkillPalette) -> bool:
+	var material := mesh.material_override as ShaderMaterial if mesh != null else null
+	if material == null or palette == null:
+		return false
+	var want := {&"core_color": palette.core, &"rim_color": palette.rim, &"band_color": palette.band,
+		&"shard_color": palette.shard, &"mid_color": palette.mid, &"tail_color": palette.tail}
+	for key in want:
+		if not (material.get_shader_parameter(key) as Color).is_equal_approx(want[key]):
+			return false
+	return true
 
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
@@ -232,6 +582,50 @@ func _flat_distance(a: Vector3, b: Vector3) -> float:
 
 func _clear() -> void:
 	await TimeManager.wait_game(1.2)
+	await _frames(2)
+
+
+func _whirlwind_meshes() -> Array[MeshInstance3D]:
+	var meshes: Array[MeshInstance3D] = [_fx.get_effect_mesh(&"whirlwind")]
+	meshes.append_array(_fx.get_whirlwind_sweeps())
+	return meshes
+
+
+func _wave_mesh() -> Array[MeshInstance3D]:
+	var meshes: Array[MeshInstance3D] = [_fx.get_effect_mesh(&"sword_wave")]
+	return meshes
+
+
+func _tilt_deg(mesh: MeshInstance3D) -> float:
+	return rad_to_deg(mesh.global_basis.y.angle_to(Vector3.UP)) if mesh != null else INF
+
+
+func _all_flat(meshes: Array[MeshInstance3D]) -> bool:
+	for mesh in meshes:
+		if mesh == null or not mesh.global_basis.y.normalized().is_equal_approx(Vector3.UP):
+			return false
+	return true
+
+
+## Degrees between the camera's view of the mesh centre and the mesh plane.
+func _view_angle(mesh: MeshInstance3D, cam: Camera3D) -> float:
+	var to_cam := (cam.global_position - mesh.global_position).normalized()
+	return rad_to_deg(asin(absf(to_cam.dot(mesh.global_basis.y.normalized()))))
+
+
+func _lowest_corner(mesh: MeshInstance3D) -> float:
+	var box := mesh.get_aabb()
+	var low := INF
+	for i in 8:
+		low = minf(low, (mesh.global_transform * box.get_endpoint(i)).y)
+	return low
+
+
+func _cast_tilt_pair(origin: Vector3) -> void:
+	_fx.clear()
+	_aim(Vector3.FORWARD)
+	_cast(&"whirlwind", origin, WHIRLWIND_RADIUS)
+	_cast(&"sword_wave", origin, 0.0)
 	await _frames(2)
 
 
@@ -290,6 +684,73 @@ func _make_world() -> void:
 	cam.look_at(Vector3.ZERO)
 	cam.current = true
 #endregion
+
+
+## Placed after the other tests: it swaps the camera and puts the old one back at the end.
+func test_tilt_toward_low_camera() -> void:
+	var old_cam := get_viewport().get_camera_3d()
+	var origin := Vector3(-6, 0, 0)
+	var cam := Camera3D.new()
+	add_child(cam)
+	cam.current = true
+
+	cam.global_position = origin + Vector3(0, 10, 6)
+	cam.look_at(origin)
+	await _cast_tilt_pair(origin)
+	assert_true(_all_flat(_wave_mesh()) and _all_flat(_whirlwind_meshes()), "a high camera leaves both effects flat")
+
+	cam.global_position = origin + Vector3(0, 1.2, 9)
+	cam.look_at(origin + Vector3.UP * 0.6)
+	await _cast_tilt_pair(origin)
+	var wave: MeshInstance3D = _wave_mesh()[0]
+	assert_true(wave != null and not _all_flat(_wave_mesh())
+		and _view_angle(wave, cam) >= _fx.min_view_angle - 1.0,
+		"a low camera sees Sword Wave at least at min_view_angle")
+	assert_true(wave != null and _lowest_corner(wave) >= origin.y + _fx.ground_lift - 0.001,
+		"the tilted wave rises so no corner dips into the floor")
+	var rings := _whirlwind_meshes()
+	var one_disc := true
+	for ring in rings:
+		one_disc = one_disc and ring != null and ring.global_transform.is_equal_approx(rings[0].global_transform)
+	assert_true(not _all_flat(rings) and _tilt_deg(rings[0]) <= _fx.whirlwind_max_tilt + 0.5,
+		"a low camera tilts Whirlwind, at most whirlwind_max_tilt")
+	var whirl_clear := true
+	for ring in rings:
+		whirl_clear = whirl_clear and ring != null and _lowest_corner(ring) >= origin.y
+	assert_true(one_disc and rings[0].global_position.is_equal_approx(origin + Vector3.UP * _fx.whirlwind_height),
+		"the Whirlwind rings tilt together about their centre, without moving")
+	assert_true(whirl_clear, "the tilted Whirlwind never cuts into the floor")
+
+	# Looking up from near the floor, as the chase camera does at its highest pitch.
+	cam.global_position = origin + Vector3(0, 0.3, 3)
+	cam.look_at(origin + Vector3.UP * 1.6)
+	await _cast_tilt_pair(origin)
+	wave = _wave_mesh()[0]
+	assert_true(_tilt_deg(wave) <= _fx.wave_max_tilt + 0.5, "a camera below the wave never tilts it past wave_max_tilt")
+	var whirl: MeshInstance3D = _whirlwind_meshes()[0]
+	assert_true(_tilt_deg(whirl) <= _fx.whirlwind_max_tilt + 0.5
+		and whirl.global_position.is_equal_approx(origin + Vector3.UP * _fx.whirlwind_height),
+		"a camera looking up never tilts Whirlwind past whirlwind_max_tilt nor lifts it")
+
+	var angle := _fx.min_view_angle
+	_fx.min_view_angle = 0.0
+	cam.global_position = origin + Vector3(0, 1.2, 9)
+	cam.look_at(origin + Vector3.UP * 0.6)
+	await _cast_tilt_pair(origin)
+	assert_true(_all_flat(_wave_mesh()) and _all_flat(_whirlwind_meshes()),
+		"min_view_angle 0 keeps both effects flat under a low camera")
+	_fx.min_view_angle = angle
+
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.global_position = origin + Vector3.UP * 10.0
+	cam.rotation_degrees = Vector3(-90, 0, 0)
+	await _cast_tilt_pair(origin)
+	assert_true(_all_flat(_wave_mesh()) and _all_flat(_whirlwind_meshes()), "a top-down overview camera leaves both effects flat")
+
+	_fx.clear()
+	cam.queue_free()
+	if old_cam != null:
+		old_cam.current = true
 
 
 func _run_demo() -> void:

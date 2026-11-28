@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillPalette" format=3 uid="uid://bengaaats4upv"]
+
+[ext_resource type="Script" path="res://art/vfx/skill_palette.gd" id="1_pal"]
+
+[resource]
+script = ExtResource("1_pal")
+core = Color(1, 0.8941, 0.8627, 1)
+rim = Color(1, 0.5412, 0.4392, 1)
+band = Color(0.8392, 0.1176, 0.1176, 1)
+shard = Color(0.9412, 0.3529, 0.2706, 1)
+mid = Color(0.4784, 0.051, 0.051, 1)
+tail = Color(0.2, 0.0235, 0.0235, 1)
+spark = Color(1, 0.6118, 0.502, 1)
