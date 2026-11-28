@@ -10,6 +10,9 @@ const PRESET_KEYS: Array[StringName] = [&"settings.gfx.preset_low", &"settings.g
 		&"settings.gfx.preset_high", &"settings.gfx.preset_custom"]
 const SHADOW_KEYS: Array[StringName] = [&"settings.gfx.shadow_off", &"settings.gfx.shadow_low", &"settings.gfx.shadow_high"]
 const SEE_THROUGH_KEYS: Array[StringName] = [&"settings.gfx.see_through_dither", &"settings.gfx.see_through_off"]
+## Same row height and list size as the window rows built in the scene.
+const ROW_HEIGHT := 96.0
+const LIST_SIZE := Vector2(360, 76)
 
 ## Window settings changed since the last Keep, with the value to go back to.
 var _revert: Dictionary = {}
@@ -113,20 +116,24 @@ func _add_quality_rows() -> void:
 	_see_through.item_selected.connect(func(i: int) -> void:
 		EventBus.settings_changed.emit(&"see_through", QualitySettings.SEE_THROUGH_STYLES[i]))
 
-## A row like the window rows above: label on the left, a 260 px list on the right.
+## A row like the window rows above: label on the left, a list on the right, a line under it.
 func _add_row(rows: Node, label_key: StringName, items: Array) -> OptionButton:
 	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0, ROW_HEIGHT)
 	row.add_theme_constant_override(&"separation", 24)
 	var label := Label.new()
 	label.text = tr(label_key)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(label)
 	var list := OptionButton.new()
-	list.custom_minimum_size = Vector2(260, 0)
+	list.custom_minimum_size = LIST_SIZE
+	list.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	for item in items:
 		list.add_item(item)
 	row.add_child(list)
 	rows.add_child(row)
+	rows.add_child(HSeparator.new())
 	return list
 
 ## Custom is only shown, never picked: it keeps the rows as they are.

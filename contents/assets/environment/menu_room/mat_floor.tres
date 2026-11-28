@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://contents/assets/environment/menu_room/textures/floor.png" id="1_qg5w2"]
+
+[resource]
+albedo_texture = ExtResource("1_qg5w2")
+roughness = 0.85
+uv1_scale = Vector3(0.25, 0.25, 0.25)
+uv1_triplanar = true
+uv1_world_triplanar = true

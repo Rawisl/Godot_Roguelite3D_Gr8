@@ -1,0 +1,292 @@
+[gd_scene format=3 uid="uid://bu1qnijy8r2im"]
+
+[ext_resource type="Script" uid="uid://cybvtfgptiqqy" path="res://levels/menu_room/menu_room.gd" id="1_room"]
+[ext_resource type="PackedScene" uid="uid://b25d1lodndtb8" path="res://contents/assets/environment/menu_room/menu_room.glb" id="2_glb"]
+[ext_resource type="PackedScene" uid="uid://suj17yb2uyxq" path="res://contents/assets/characters/fox_commander/fox_commander_model.tscn" id="3_fox"]
+[ext_resource type="Shader" uid="uid://bdykundmeeer0" path="res://contents/assets/environment/menu_room/vignette.gdshader" id="4_vig"]
+[ext_resource type="Shader" uid="uid://d0pm3ce4yv1jl" path="res://contents/assets/environment/menu_room/light_shaft.gdshader" id="5_shaft"]
+[ext_resource type="Shader" uid="uid://cecvryiw4klmx" path="res://contents/assets/environment/menu_room/door_glare.gdshader" id="6_glare"]
+[ext_resource type="PackedScene" uid="uid://311hq27beaps" path="res://contents/assets/characters/commander/Assets/gltf/shield_round_color.gltf" id="21_shield_round_color"]
+[ext_resource type="PackedScene" uid="uid://cpmyr6f6xpnjo" path="res://contents/assets/characters/commander/Assets/gltf/shield_square_color.gltf" id="22_shield_square_color"]
+[ext_resource type="PackedScene" uid="uid://bfsb16rscaakj" path="res://contents/assets/characters/commander/Assets/gltf/shield_spikes_color.gltf" id="23_shield_spikes_color"]
+[ext_resource type="PackedScene" uid="uid://bjjjkne5a6xhs" path="res://contents/assets/characters/commander/Assets/gltf/sword_2handed.gltf" id="24_sword_2handed"]
+[ext_resource type="PackedScene" uid="uid://c5sbb3nbukete" path="res://contents/assets/characters/commander/Assets/gltf/sword_1handed.gltf" id="25_sword_1handed"]
+[ext_resource type="PackedScene" uid="uid://doi0cwbmch372" path="res://contents/assets/characters/commander/Assets/gltf/axe_2handed.gltf" id="26_axe_2handed"]
+[ext_resource type="PackedScene" uid="uid://cco21n4cr2qvq" path="res://contents/assets/characters/commander/Assets/gltf/dagger.gltf" id="28_dagger"]
+[ext_resource type="PackedScene" uid="uid://5mmhdw6q3vyr" path="res://contents/assets/characters/commander/Assets/gltf/bow_withString.gltf" id="29_bow_withString"]
+[ext_resource type="PackedScene" uid="uid://c7t7j73ffw4cw" path="res://contents/assets/characters/commander/Assets/gltf/quiver.gltf" id="30_quiver"]
+
+[sub_resource type="Environment" id="Environment_room"]
+background_mode = 1
+background_color = Color(0.01, 0.012, 0.02, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.25, 0.2, 0.16, 1)
+ambient_light_energy = 0.15
+tonemap_mode = 4
+glow_enabled = true
+glow_intensity = 0.25
+
+[sub_resource type="BoxMesh" id="BoxMesh_shaft"]
+size = Vector3(1.5, 2.6, 5.4)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shaft"]
+render_priority = 1
+shader = ExtResource("5_shaft")
+shader_parameter/beam_color = Color(1, 0.85, 0.6, 1)
+shader_parameter/intensity = 0.32
+shader_parameter/half_size = Vector3(0.75, 1.3, 2.7)
+
+[sub_resource type="QuadMesh" id="QuadMesh_outside"]
+size = Vector2(16, 12)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_outside"]
+shading_mode = 0
+albedo_color = Color(1, 0.98, 0.94, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_glare"]
+render_priority = 2
+shader = ExtResource("6_glare")
+shader_parameter/glare_color = Color(1, 0.97, 0.9, 1)
+shader_parameter/strength = 0.0
+shader_parameter/rays = 10.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_glare"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_doorbeam"]
+render_priority = 1
+shader = ExtResource("5_shaft")
+shader_parameter/beam_color = Color(1, 0.98, 0.94, 1)
+shader_parameter/intensity = 0.0
+shader_parameter/half_size = Vector3(1.1, 1.8, 3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_doorbeam"]
+size = Vector3(2.2, 3.6, 6)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vig"]
+shader = ExtResource("4_vig")
+shader_parameter/strength = 0.88
+shader_parameter/inner = 0.35
+shader_parameter/outer = 0.95
+
+[node name="MenuRoom" type="Node3D" unique_id=613261866]
+script = ExtResource("1_room")
+
+[node name="Room" parent="." unique_id=226604244 instance=ExtResource("2_glb")]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1009829804]
+environment = SubResource("Environment_room")
+
+[node name="Lights" type="Node3D" parent="." unique_id=1479085318]
+
+[node name="SunThroughWindows" type="DirectionalLight3D" parent="Lights" unique_id=938325465]
+transform = Transform3D(-0.1482, 0.5895, -0.7941, 0, 0.8029, 0.5961, 0.989, 0.0883, -0.119, -10, 9, -8)
+light_color = Color(1, 0.9, 0.75, 1)
+light_energy = 2.5
+shadow_enabled = true
+directional_shadow_max_distance = 40.0
+
+[node name="ChandelierNear" type="OmniLight3D" parent="Lights" unique_id=2087868983 groups=["flicker"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.4, -5)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 3.0
+shadow_enabled = true
+omni_range = 9.0
+
+[node name="ChandelierFar" type="OmniLight3D" parent="Lights" unique_id=1262385108 groups=["flicker"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.4, -11)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 2.4
+shadow_enabled = true
+omni_range = 9.0
+
+[node name="LampDoor" type="OmniLight3D" parent="Lights" unique_id=996629527 groups=["flicker"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, -15.2)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="LampBar" type="OmniLight3D" parent="Lights" unique_id=1836758849 groups=["flicker"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 2.2, -9)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.4
+shadow_enabled = true
+
+[node name="LampFox" type="OmniLight3D" parent="Lights" unique_id=1483179848 groups=["flicker"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.3, -3.3)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 0.25
+shadow_enabled = true
+omni_range = 3.0
+
+[node name="Shaft1" type="MeshInstance3D" parent="Lights" unique_id=387786745]
+transform = Transform3D(-0.1482, 0.5895, -0.7941, 0, 0.8029, 0.5961, 0.989, 0.0883, -0.119, -3.856, 1.641, -4.679)
+cast_shadow = 0
+mesh = SubResource("BoxMesh_shaft")
+surface_material_override/0 = SubResource("ShaderMaterial_shaft")
+
+[node name="Shaft2" type="MeshInstance3D" parent="Lights" unique_id=770650513]
+transform = Transform3D(-0.1482, 0.5895, -0.7941, 0, 0.8029, 0.5961, 0.989, 0.0883, -0.119, -3.856, 1.641, -9.479)
+cast_shadow = 0
+mesh = SubResource("BoxMesh_shaft")
+surface_material_override/0 = SubResource("ShaderMaterial_shaft")
+
+[node name="TorchLeft" type="OmniLight3D" parent="Lights" unique_id=367194963 groups=["flicker"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.152, 3.337, -6.65)
+light_color = Color(1, 0.5, 0.18, 1)
+light_energy = 1.6
+shadow_enabled = true
+omni_range = 5.5
+
+[node name="TorchBoard" type="OmniLight3D" parent="Lights" unique_id=191416297 groups=["flicker"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.45, 3.287, -15.152)
+light_color = Color(1, 0.5, 0.18, 1)
+light_energy = 1.6
+shadow_enabled = true
+omni_range = 5.5
+
+[node name="DoorGlow" type="OmniLight3D" parent="Lights" unique_id=1422641477]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, -15)
+light_color = Color(0.95, 0.97, 1, 1)
+light_energy = 0.0
+omni_range = 14.0
+
+[node name="DoorSun" type="SpotLight3D" parent="Lights" unique_id=327447351]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, -0.8524, 0.5228, 0, -0.5228, -0.8524, 0, 4.6, -19)
+light_color = Color(1, 0.96, 0.86, 1)
+light_energy = 0.0
+shadow_enabled = true
+spot_range = 16.0
+spot_attenuation = 0.6
+spot_angle = 22.0
+spot_angle_attenuation = 0.6
+
+[node name="Outside" type="MeshInstance3D" parent="." unique_id=1351046826]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -20.5)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_outside")
+surface_material_override/0 = SubResource("StandardMaterial3D_outside")
+
+[node name="DoorGlare" type="MeshInstance3D" parent="." unique_id=1851919109]
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, 0, 2, -16.8)
+material_override = SubResource("ShaderMaterial_glare")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_glare")
+
+[node name="DoorBeam" type="MeshInstance3D" parent="." unique_id=1285118854]
+transform = Transform3D(1, 0, 0, 0, -0.9781, 0.2079, 0, -0.2079, -0.9781, 0, 1.376, -12.666)
+material_override = SubResource("ShaderMaterial_doorbeam")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_doorbeam")
+
+[node name="WallWeapons" type="Node3D" parent="." unique_id=519235635]
+
+[node name="BackRSwordA" parent="WallWeapons" unique_id=948113637 instance=ExtResource("24_sword_2handed")]
+transform = Transform3D(0.9011, -0.6309, 0, 0.6309, 0.9011, 0, 0, 0, 1.1, 4.2, 2.1, -15.6)
+
+[node name="BackRSwordB" parent="WallWeapons" unique_id=1022222503 instance=ExtResource("24_sword_2handed")]
+transform = Transform3D(0.9011, 0.6309, 0, -0.6309, 0.9011, 0, 0, 0, 1.1, 2.4, 2.1, -15.6)
+
+[node name="BackRShield" parent="WallWeapons" unique_id=1317624890 instance=ExtResource("22_shield_square_color")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, 3.3, 3, -15.42)
+
+[node name="LeftShield" parent="WallWeapons" unique_id=1124739730 instance=ExtResource("21_shield_round_color")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -5.55, 3, -8.35)
+
+[node name="LeftDagger" parent="WallWeapons" unique_id=1091109087 instance=ExtResource("28_dagger")]
+transform = Transform3D(0, 0, 1, -0.342, 0.9397, 0, -0.9397, -0.342, 0, -5.64, 1.6, -8.35)
+
+[node name="LeftAxeA" parent="WallWeapons" unique_id=2025653836 instance=ExtResource("26_axe_2handed")]
+transform = Transform3D(0, 0, 1, 0.6428, 0.766, 0, -0.766, 0.6428, 0, -5.64, 2.2, -13.5)
+
+[node name="LeftAxeB" parent="WallWeapons" unique_id=1319215557 instance=ExtResource("26_axe_2handed")]
+transform = Transform3D(0, 0, -1, -0.6428, -0.766, 0, -0.766, 0.6428, 0, -5.64, 2.2, -13.5)
+
+[node name="LeftShield2" parent="WallWeapons" unique_id=962260874 instance=ExtResource("23_shield_spikes_color")]
+transform = Transform3D(0, 0, 1.05, 0, 1.05, 0, -1.05, 0, 0, -5.5, 3.1, -13.5)
+
+[node name="RightBow" parent="WallWeapons" unique_id=593809122 instance=ExtResource("29_bow_withString")]
+transform = Transform3D(0, 1.1, 0, 0, 0, 1.1, 1.1, 0, 0, 5.62, 3.4, -13.5)
+
+[node name="RightQuiver" parent="WallWeapons" unique_id=2016216951 instance=ExtResource("30_quiver")]
+transform = Transform3D(0, 0, -1.1, 0.2847, 1.0625, 0, 1.0625, -0.2847, 0, 5.6, 2.2, -12.9)
+
+[node name="RightSword" parent="WallWeapons" unique_id=1325936126 instance=ExtResource("25_sword_1handed")]
+transform = Transform3D(0, 0, -1.1, 0, -1.1, 0, -1.1, 0, 0, 5.62, 2.6, -14.1)
+
+[node name="Markers" type="Node3D" parent="." unique_id=486134498]
+
+[node name="SwordLeanGrip" type="Marker3D" parent="Markers" unique_id=267965455]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.28, -4.05)
+
+[node name="SwordLeanTip" type="Marker3D" parent="Markers" unique_id=1114964474]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.45, 0, -3.8)
+
+[node name="CoinLanding" type="Marker3D" parent="Markers" unique_id=484495397]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9, 0.008, -14.37)
+
+[node name="WalkPath" type="Node3D" parent="Markers" unique_id=515581170]
+unique_name_in_owner = true
+
+[node name="P1" type="Marker3D" parent="Markers/WalkPath" unique_id=97942518]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4, 0, -4)
+
+[node name="CoinFlip" type="Marker3D" parent="Markers/WalkPath" unique_id=903317263]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.83497614, 0, -7.3383436)
+
+[node name="P2" type="Marker3D" parent="Markers/WalkPath" unique_id=608535368]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -13.4)
+
+[node name="Door" type="Marker3D" parent="Markers/WalkPath" unique_id=626544091]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -15.6)
+
+[node name="Fox" parent="." unique_id=252608499 instance=ExtResource("3_fox")]
+transform = Transform3D(0, 0, 1.6, 0, 1.6, 0, -1.6, 0, 0, 3, 0.743, -4.42)
+
+[node name="HipGrip" type="Marker3D" parent="Fox" unique_id=68930002]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2813, 0.4625, 0.1753)
+
+[node name="UprightGrip" type="Marker3D" parent="Fox" unique_id=912990014]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3875, 0.8375, 0.075)
+
+[node name="ButtScratch" type="Marker3D" parent="Fox" unique_id=294920024]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.13, 0.3, -0.11)
+
+[node name="PocketRight" type="Marker3D" parent="Fox" unique_id=20191200]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.19, 0.26, 0.1)
+
+[node name="FlickHand" type="Marker3D" parent="Fox" unique_id=1356813590]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.62, 0.26)
+
+[node name="Vignette" type="CanvasLayer" parent="." unique_id=1055717623]
+
+[node name="Shade" type="ColorRect" parent="Vignette" unique_id=1325210504]
+material = SubResource("ShaderMaterial_vig")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Fade" type="CanvasLayer" parent="." unique_id=491850634]
+layer = 2
+
+[node name="White" type="ColorRect" parent="Fade" unique_id=582312966]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
