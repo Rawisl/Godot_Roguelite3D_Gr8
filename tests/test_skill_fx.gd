@@ -6,9 +6,9 @@ extends Node3D
 ##   themselves with their sparks; the sparks fly in towards the commander, and reduced flashing
 ##   turns the flicker off
 ## - Sword Wave: flies along the commander's aim for its distance, stops early at a wall; its
-##   plane leaves room for the glow, sparks follow the wave and stop with it, the wisps run on
-##   game time (held while paused), reduced flashing stops the wisp gaps drifting, and the
-##   colours are the ones Whirlwind uses
+##   plane leaves room for the glow, sparks follow the wave and stop with it, it grows on game
+##   time (held while paused), reduced flashing turns the white blade off, and the colours are
+##   the ones Whirlwind uses
 ## - Firebomb: the bomb flies first, then the burn area shows at the cast point for the burn
 ##   time; reduced flashing turns the flicker off, and the flicker is capped at 3 per second
 ## - every skill shader keeps the depth test, so walls hide the effects
@@ -315,10 +315,10 @@ func test_sword_wave_on_game_time() -> void:
 	var t0: float = mesh.get_instance_shader_parameter(&"game_time")
 	await TimeManager.wait_game(0.05)
 	var t1: float = mesh.get_instance_shader_parameter(&"game_time")
-	assert_true(t1 > t0, "the wisps move on game time")
+	assert_true(t1 > t0, "the wave grows on game time")
 	TimeManager.request_pause(TimeManager.REASON_USER)
 	await TimeManager.wait_real(0.1)
-	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the wisps hold")
+	assert_true(is_equal_approx(mesh.get_instance_shader_parameter(&"game_time"), t1), "while paused the wave holds")
 	TimeManager.release_pause(TimeManager.REASON_USER)
 	await _clear()
 
@@ -330,12 +330,12 @@ func test_sword_wave_flicker() -> void:
 	await _frames(2)
 	var mesh := _fx.get_effect_mesh(&"sword_wave")
 	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 0.0,
-		"reduced flashing stops the wisp gaps drifting")
+		"reduced flashing turns the white blade off")
 	EventBus.settings_changed.emit(&"reduce_flash", false)
 	await _frames(2)
 	assert_true(mesh != null and mesh.get_instance_shader_parameter(&"flicker") == 1.0,
-		"turning it back off brings the wisp drift back")
-	assert_true(_fx.wave_material.shader.code.contains("wisp_scroll * flicker"), "the wisp drift follows the flicker setting")
+		"turning it back off brings the white blade back")
+	assert_true(_fx.wave_material.shader.code.contains("head_width, 0.001), xn)) * flicker"), "the white blade follows the flicker setting")
 	await _clear()
 
 
