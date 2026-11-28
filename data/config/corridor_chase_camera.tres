@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="ChaseCameraSettings" format=3 uid="uid://dxccx6pddjfc2"]
+
+[ext_resource type="Script" path="res://systems/camera/chase_camera_settings.gd" id="1_hf1b2"]
+
+[resource]
+script = ExtResource("1_hf1b2")
+distance = 9.0
+distance_near = 6.0
+pitch_deg = -45.0
+pitch_max_deg = 30.0
+pitch_min_deg = -70.0
+far_pitch_deg = -15.0
+distance_up = 3.0
+min_height = 0.5
+shoulder_offset = 1.0
+zoom_min = 0.35
+zoom_step = 0.1
+zoom_smoothing = 0.08
+aim_tilt_deg = 10.0
+fov = 60.0
+smoothing = 0.12
+pivot_height = 1.4
+far = 1000.0
+start_yaw_deg = -90.0
+collision_mask = 9
+probe_radius = 0.3
+min_distance = 1.0
+return_time = 0.25
+release_delay = 0.15
+release_margin = 0.01
+fade_start_distance = 2.0
+fade_end_distance = 1.0
+fade_min_alpha = 0.3
+fade_time = 0.15
+free_screen_offset = 0.6
+max_screen_offset = 0.15
+screen_offset_blend = 0.2
+shoulder_pull_power = 2.0
+fade_hide_distance = 0.6
+teleport_snap_distance = 3.0
