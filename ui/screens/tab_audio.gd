@@ -12,6 +12,10 @@ const ROWS: Array[Array] = [
 	[&"volume_ui", &"settings.audio.ui"],
 ]
 
+## Same row height and control width as the rows built in the other tabs' scenes.
+const ROW_HEIGHT := 96.0
+const SLIDER_WIDTH := 360.0
+
 @onready var _rows: VBoxContainer = %Rows
 @onready var _mute: CheckButton = %MuteOnFocusLoss
 
@@ -26,21 +30,24 @@ func _ready() -> void:
 func _add_slider(key: StringName, label_key: StringName) -> void:
 	var row := HBoxContainer.new()
 	row.name = String(key)
+	row.custom_minimum_size = Vector2(0, ROW_HEIGHT)
 	row.add_theme_constant_override(&"separation", 24)
 	var label := Label.new()
 	label.text = tr(label_key)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	var slider := HSlider.new()
 	slider.name = "Slider"
-	slider.custom_minimum_size = Vector2(260, 0)
+	slider.custom_minimum_size = Vector2(SLIDER_WIDTH, 0)
 	slider.min_value = 0
 	slider.max_value = 100
 	slider.step = 5
 	slider.value = roundf(float(AudioManager.get_setting(key)) * 100.0)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var value := Label.new()
-	value.custom_minimum_size = Vector2(56, 0)
+	value.custom_minimum_size = Vector2(80, 0)
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	value.text = UiFormat.tr_fmt(&"settings.audio.percent", {"value": int(slider.value)})
 	slider.value_changed.connect(func(v: float) -> void:
 		value.text = UiFormat.tr_fmt(&"settings.audio.percent", {"value": int(v)})
@@ -49,3 +56,5 @@ func _add_slider(key: StringName, label_key: StringName) -> void:
 	row.add_child(slider)
 	row.add_child(value)
 	_rows.add_child(row)
+	# A line under every slider row; the mute switch comes last, under the last line.
+	_rows.add_child(HSeparator.new())

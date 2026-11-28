@@ -3,6 +3,9 @@ extends Node
 ## Picks towers and slots with a ray on the click layer only, so walls and faded
 ## meshes never block a click. GUI controls get the mouse first because picking
 ## runs in _unhandled_input. Also reports what is under the mouse for hover feedback.
+## Nothing is picked or hovered while the CameraRig holds the cursor captured (third-person
+## view), because the mouse position is then the middle of the screen; hold the free-cursor key
+## (Alt) to click a slot.
 
 signal selection_cleared
 signal fortress_selected
@@ -35,7 +38,7 @@ func _ready() -> void:
 ## Hover follows the same order as clicks: tower, then slot, then enemy.
 func _process(_delta: float) -> void:
 	var node: Node = null
-	if not _is_mouse_over_ui():
+	if not _is_cursor_locked() and not _is_mouse_over_ui():
 		node = pick_under_mouse()
 		if node == null:
 			node = _pick_enemy()
@@ -44,6 +47,8 @@ func _process(_delta: float) -> void:
 		hovered_changed.emit(node)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _is_cursor_locked():
+		return
 	if event.is_action_pressed(&"select") and _can_select():
 		var node := pick_under_mouse()
 		_select(node)
@@ -52,6 +57,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"cancel") and selected_slot != &"":
 		clear_selection()
 		get_viewport().set_input_as_handled()
+
+## True while the camera rig keeps the mouse captured, so the pointer is not under the player's hand.
+func _is_cursor_locked() -> bool:
+	var rig := get_tree().get_first_node_in_group(&"camera_rig") as CameraRig
+	return rig != null and rig.is_cursor_captured()
 
 func open_build_at_cursor() -> void:
 	_set_rings_visible(true)

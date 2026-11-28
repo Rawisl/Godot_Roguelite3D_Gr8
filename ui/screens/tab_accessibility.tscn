@@ -16,15 +16,16 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = 32.0
-offset_right = -32.0
-offset_bottom = -32.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 0
 
 [node name="ShakeRow" type="HBoxContainer" parent="Rows" unique_id=1820452917]
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_constants/separation = 24
 
@@ -32,16 +33,26 @@ theme_override_constants/separation = 24
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+vertical_alignment = 1
 
 [node name="Shake" type="OptionButton" parent="Rows/ShakeRow" unique_id=1149937024]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(360, 76)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Sep1" type="HSeparator" parent="Rows" unique_id=1315757201]
 layout_mode = 2
 
 [node name="ReduceFlash" type="CheckButton" parent="Rows" unique_id=377621850]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+
+[node name="Sep2" type="HSeparator" parent="Rows" unique_id=1315757202]
 layout_mode = 2
 
 [node name="HoldToggle" type="CheckButton" parent="Rows" unique_id=1851887917]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2

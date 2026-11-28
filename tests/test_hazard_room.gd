@@ -160,7 +160,7 @@ func _test_room_sky() -> void:
 	EventBus.hazard_trial_exited.emit(&"LEFT", 0, 0, 0.0, 0)
 	_check("leaving hides the sky", not sky.visible)
 	_check("the chase camera reaches beyond the sky and hands control back on exit",
-		room.chase_far > sphere.radius and chase != null
+		room.chase_camera.far > sphere.radius and chase != null
 		and get_viewport().get_camera_3d() != chase)
 
 
@@ -188,7 +188,7 @@ func _sky_reach(room: HazardRoom) -> Vector2:
 		back = maxf(back, Vector2(offset.x, offset.z).length())
 		up = maxf(up, chase.global_position.y - room.global_position.y)
 		pitch += 1.0
-	rig._orbit.pitch_deg = room.chase_pitch_deg
+	rig._orbit.pitch_deg = room.chase_camera.pitch_deg
 	rig._orbit.place(rig.global_position)
 	return Vector2(arena_radius + back, up)
 

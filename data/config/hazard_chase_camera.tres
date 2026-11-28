@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="ChaseCameraSettings" format=3 uid="uid://c57853og2oq8y"]
+
+[ext_resource type="Script" path="res://systems/camera/chase_camera_settings.gd" id="1_phv7d"]
+
+[resource]
+script = ExtResource("1_phv7d")

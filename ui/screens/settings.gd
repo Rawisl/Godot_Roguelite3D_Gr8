@@ -14,8 +14,11 @@ var is_overlay: bool = false
 @onready var _back: Button = %Back
 @onready var _title: Label = %Title
 @onready var _graphics: Control = %TabGraphics
+@onready var _background: TextureRect = %Background
 
 func _ready() -> void:
+	# Over the pause menu the frozen run shows through the dark panel instead of the forest.
+	_background.visible = not is_overlay
 	_title.text = tr(&"menu.settings")
 	for i in TAB_KEYS.size():
 		_tabs.set_tab_title(i, tr(TAB_KEYS[i]))
