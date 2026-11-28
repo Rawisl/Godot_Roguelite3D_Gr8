@@ -79,7 +79,7 @@ Tính năng và task bảo đảm nó (logic, giao diện, art, test):
 | 9 | 30 | 28 | 28 | 21 | 25 | 12h |
 | 10 | 45 | 48 | 38 | 34 | 31.5 | 18h |
 | 11 | 47 | 43 | 31 | 38 | 36.5 | 18h |
-| 12 | 18 | 18 | 18 | 18 | 18 | 18h |
+| 12 | 18 | 18 | 24 | 18 | 18 | 18h |
 | 13 | 12 | 12 | 12 | 12 | 12 | 12h |
 
 Giờ là ước lượng. Tuần 9 đến 11 đang vượt sức chứa của bảng cũ; nếu trễ thì cắt theo thứ tự: bậc model 2 và 3 của tower dùng chung model bậc 1 chỉ đổi màu; công cụ dịch chỉ sinh nhóm dữ liệu nhiều số nhất trước; phòng Hazard dùng lại một góc map; sau đó theo Phụ lục C mục 17 của SRS (Firebomb, edge-pan camera, HLT-12, bảng xếp hạng, đồng bộ tài khoản).
@@ -243,6 +243,7 @@ Quy ước nhãn Nguồn: **CŨ** (không đổi), **CŨ-SỬA** (task cũ đổ
 | W12-MH3 | Mạnh | 12 | 3 | CŨ | Sửa blocker (đệm) |
 | W12-MH4 | Mạnh | 12 | 7 | CŨ-SỬA | Kiểm thử AC3, AC4 và hồi quy Trạm hồi phục, SELL-05; chạy BL1..BL4, VC1..VC5, TU1..TU4 |
 | W12-MH5 | Mạnh | 12 | 2 | MỚI | Chạy lại runner BAL sau mọi lần chỉnh bảng cuối; chốt balance.xlsx và bộ .tres sinh ra |
+| W12-MH6 | Mạnh | 12 | 6 | MỚI | Camera góc nhìn thứ ba ở hành lang, bật tắt bằng F5 ở Frontline và Commander (CAM-20) |
 | W12-KH1 | Khang | 12 | 4 | CŨ-SỬA | QA giao diện tiếng Việt (dấu, tràn khung, LOC-03) gồm chuỗi v2.0; đo UI < 10% frame (ACP-0... |
 | W12-KH2 | Khang | 12 | 3 | CŨ | Sửa lỗi UI (đệm) |
 | W12-KH5 | Khang | 12 | 7 | CŨ | Hoàn thiện Leaderboard và Login, chạy AC tests phía giao diện, QA chữ tiếng Việt màn mới, ... |
@@ -1731,7 +1732,7 @@ Gameplay đóng băng 29/11, toàn bộ tính năng đóng băng 6/12. Tuần n�
 - Nghiệm thu: Không blocker
 - Cần xong trước: W12-KM5
 
-#### Mạnh (Tower & Build), tuần 12, 18h
+#### Mạnh (Tower & Build), tuần 12, 24h
 
 ##### W12-MH1
 - Người: Mạnh
@@ -1764,6 +1765,15 @@ Gameplay đóng băng 29/11, toàn bộ tính năng đóng băng 6/12. Tuần n�
 - Việc: Chạy lại runner BAL sau mọi lần chỉnh bảng cuối; chốt balance.xlsx và bộ .tres sinh ra
 - Nghiệm thu: BL3 pass trên bản đóng băng
 - Cần xong trước: W12-KT1
+
+##### W12-MH6
+- Người: Mạnh
+- Tuần: 12 | Giờ ước tính: 6 | Nguồn: MỚI
+- Trạng thái: Xong
+- Việc: Camera góc nhìn thứ ba ở hành lang bằng F5 ở Frontline và Commander; PREP và boss intro về camera cũ rồi trả lại lựa chọn; Hazard Trial không đổi (CAM-20)
+- Nghiệm thu: Runner test_corridor_chase_camera và các runner camera (camera_flow, camera_rig, camera_bounds, hazard_camera, boss_intro_camera) pass
+- Cần xong trước: Không
+- Ghi chú: Sửa thêm file của Kim (systems/camera/camera_rig.gd, chase_camera_settings.gd và chase_camera_fade.gd mới, levels/corridor/hazard_room.gd), của Ngọc (entities/commander/commander.gd) và của Khang (ui/world/selection_controller.gd: không hover, không chọn khi chuột bị khóa), cộng autoload/event_bus.gd (thêm signal camera_view_changed); thông số ở data/config/corridor_chase_camera.tres, phòng Hazard đọc data/config/hazard_chase_camera.tres. Cần tag @kimvux, @Rawisl và @WhoKeng trong PR.
 
 #### Khang (UI/UX & Meta), tuần 12, 18h
 

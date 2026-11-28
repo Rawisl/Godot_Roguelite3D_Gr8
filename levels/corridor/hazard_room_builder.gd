@@ -53,7 +53,7 @@ const CAMERA_SIZE := 31.0
 
 ## Sky around the island: a sphere the sky shader keeps centred on the camera. It sits between the
 ## farthest cloud ring (about 57 m from the camera at worst) and the corridor (65 m or more), so the
-## corridor never shows past the island; HazardRoom.chase_far has to reach past it.
+## corridor never shows past the island; the far plane of HazardRoom.chase_camera has to reach past it.
 const SKY_RADIUS := 60.0
 
 ## Faint cloud rings below the island: inner radius, outer radius, height. Small enough that their

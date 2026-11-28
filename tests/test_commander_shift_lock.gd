@@ -1,5 +1,6 @@
 extends Node
-## Focused regression checks for the room frame, aim and combat direction.
+## Focused regression checks for the locked view: the aim follows the camera, the model
+## follows the movement, and attacks and skills still turn it to the aim.
 
 const CommanderScene := preload("res://entities/commander/commander.tscn")
 const CommanderScript := preload("res://entities/commander/commander.gd")
@@ -26,8 +27,16 @@ func _ready() -> void:
 	_test_turn_and_attack_in_one_tick()
 	_test_turn_and_skill_in_one_tick()
 	_test_ground_and_sky_targets()
-	_test_backpedal_and_facing()
+	_test_standing_keeps_facing_when_camera_turns()
+	_test_moving_faces_the_move_direction()
+	_test_run_clip_never_plays_backwards()
+	_test_skill_facing_is_taken_at_the_start()
+	_test_top_down_skill_follows_the_aim()
+	_test_no_input_dodge_facing_holds()
+	_test_lock_from_the_third_person_view_signal()
+	_test_dodge_follows_the_move_direction()
 	_test_leave_restores_mouse_aim()
+	_test_late_commander_reads_the_view()
 	EventBus.camera_frame_changed.emit(&"OVERVIEW")
 	camera.free()
 	commander.free()
@@ -74,8 +83,10 @@ func _test_turn_and_attack_in_one_tick() -> void:
 	commander._cmd_input.register_press(&"attack")
 	commander._physics_process(0.016)
 	var expected := CommanderScript.flat_forward(camera.global_basis)
-	_check(commander.is_attacking and commander._attack_strike_dir.dot(expected) > 0.9999,
-			"a turn and attack in the same tick strike along the new camera direction")
+	var facing: float = commander._aim_pivot.rotation.y
+	_check(commander.is_attacking and commander._attack_strike_dir.dot(expected) > 0.9999
+			and absf(angle_difference(facing, atan2(expected.x, expected.z))) < deg_to_rad(1.0),
+			"a turn and attack in the same tick strike along the new camera direction and face it")
 	commander._interrupt_attack()
 
 
@@ -117,22 +128,165 @@ func _test_ground_and_sky_targets() -> void:
 			"looking above the horizon makes Firebomb land at maximum range")
 
 
-func _test_backpedal_and_facing() -> void:
+func _test_standing_keeps_facing_when_camera_turns() -> void:
+	EventBus.camera_frame_changed.emit(&"HAZARD_TRIAL")
+	commander.velocity = Vector3.ZERO
+	commander._aim_pivot.rotation.y = 1.0
+	var unchanged := true
+	var aim_follows := true
+	for yaw in [0.0, 70.0, 150.0, -110.0]:
+		_place_camera(Vector3(0, 4, 4), yaw, -35)
+		commander._update_aim(camera)
+		for i in 30:
+			commander._update_model_facing(0.016)
+		unchanged = unchanged and absf(angle_difference(commander._aim_pivot.rotation.y, 1.0)) < 0.001
+		aim_follows = aim_follows and commander.aim_dir.dot(CommanderScript.flat_forward(camera.global_basis)) > 0.9999
+	_check(unchanged and aim_follows,
+			"turning the camera while standing leaves the model's facing alone, and the aim follows the camera")
+
+
+func _test_moving_faces_the_move_direction() -> void:
 	_place_camera(Vector3(0, 4, 4), 40, -35)
+	commander._update_aim(camera)
 	var forward := CommanderScript.flat_forward(camera.global_basis)
 	var side := Vector3(camera.global_basis.x.x, 0, camera.global_basis.x.z).normalized()
+	commander._aim_pivot.rotation.y = 0.0
+	var faces_move := true
+	for direction in [side, -forward, -side]:
+		commander.velocity = direction * 6.0
+		for i in 80:
+			commander._update_model_facing(0.016)
+		var yaw: float = commander._aim_pivot.rotation.y
+		faces_move = faces_move and absf(angle_difference(yaw, atan2(direction.x, direction.z))) < deg_to_rad(1.0)
+	_check(faces_move and commander.aim_dir.dot(forward) > 0.9999,
+			"moving in the locked view faces the move direction, strafing or backwards, while the aim stays on the camera")
+	commander.velocity = Vector3.ZERO
+
+
+func _test_run_clip_never_plays_backwards() -> void:
+	_place_camera(Vector3(0, 4, 4), 40, -35)
+	var forward := CommanderScript.flat_forward(camera.global_basis)
 	commander.aim_dir = forward
 	commander.velocity = -forward * 6.0
-	_check(commander._run_clip_speed() < 0.0 and CommanderScript.moves_backward(-forward, forward),
-			"moving away from the camera uses the reverse run")
-	commander.velocity = side * 6.0
-	commander._aim_pivot.rotation.y = 0.0
-	for i in 60:
-		commander._update_model_facing(0.016)
-	var yaw: float = commander._aim_pivot.rotation.y
-	_check(absf(angle_difference(yaw, atan2(forward.x, forward.z))) < deg_to_rad(1.0),
-			"strafing with the cursor free still faces the camera")
+	commander._anim_player.play(&"advance/Dodge_Forward")
+	commander._play_run()
+	_check(commander._anim_player.current_animation == CommanderScript.ANIM_RUN
+			and commander._anim_player.get_playing_speed() > 0.0 and not commander.has_method(&"_run_clip_speed"),
+			"running away from the camera plays the run clip forwards")
 	commander.velocity = Vector3.ZERO
+
+
+func _facing_toward(direction: Vector3) -> bool:
+	return absf(angle_difference(commander._aim_pivot.rotation.y,
+			atan2(direction.x, direction.z))) < deg_to_rad(1.0)
+
+
+func _test_skill_facing_is_taken_at_the_start() -> void:
+	EventBus.camera_frame_changed.emit(&"HAZARD_TRIAL")
+	var slot: int = commander.skill_runner.set_skill_level(&"firebomb", 1)
+	commander.skill_runner.tick(60.0)
+	_place_camera(Vector3(1, 4, 4), 25, -35)
+	commander._update_aim(camera)
+	var cast_dir: Vector3 = commander.aim_dir
+	commander._aim_pivot.rotation.y = 2.0
+	commander._try_skill(slot)
+	var started: bool = commander.is_using_skill
+	for i in 80:
+		commander._turn_model(0.016, Vector3.ZERO)
+	var turned := _facing_toward(cast_dir)
+	_place_camera(Vector3(1, 4, 4), -100, -35)
+	commander._update_aim(camera)
+	for i in 80:
+		commander._turn_model(0.016, Vector3.ZERO)
+	var held: bool = _facing_toward(cast_dir) and commander.aim_dir.dot(cast_dir) < 0.9
+	commander._end_skill()
+	for i in 80:
+		commander._update_model_facing(0.016)
+	var stays := _facing_toward(cast_dir)
+	var zone := get_node_or_null("FirebombZone") as FirebombZone
+	if zone != null:
+		zone.free()
+	_check(started and turned and held and stays,
+			"a skill turns the model to the aim taken at its start, the camera turning mid-skill does not move it, and it holds after")
+
+
+func _test_top_down_skill_follows_the_aim() -> void:
+	EventBus.camera_frame_changed.emit(&"OVERVIEW")
+	EventBus.camera_view_changed.emit(&"TOP_DOWN")
+	commander.is_using_skill = true
+	commander._skill_cast_dir = Vector3.FORWARD
+	commander.aim_dir = Vector3(1, 0, 0)
+	for i in 80:
+		commander._turn_model(0.016, Vector3.ZERO)
+	var first := _facing_toward(Vector3(1, 0, 0))
+	commander.aim_dir = Vector3(0, 0, 1)
+	for i in 80:
+		commander._turn_model(0.016, Vector3.ZERO)
+	commander.is_using_skill = false
+	_check(first and _facing_toward(Vector3(0, 0, 1)),
+			"without the lock a skill still turns the model to the aim as it moves")
+
+
+func _test_no_input_dodge_facing_holds() -> void:
+	_place_camera(Vector3(0, 4, 4), 40, -35)
+	commander._update_aim(camera)
+	var aim: Vector3 = commander.aim_dir
+	commander._dodge_cooldown_timer = 0.0
+	commander._start_dodge(camera)
+	commander._turn_model(0.016, Vector3.ZERO)
+	var faces_aim: bool = _facing_toward(aim) and commander._dodge_dir.dot(-aim) > 0.999
+	commander._end_dodge()
+	_place_camera(Vector3(0, 4, 4), -70, -35)
+	commander._update_aim(camera)
+	for i in 10:
+		commander._turn_model(0.016, Vector3.ZERO)
+	var holds_after := _facing_toward(aim)
+	commander._post_action_timer = 0.0
+	for i in 40:
+		commander._update_model_facing(0.016)
+	_check(faces_aim and holds_after and _facing_toward(aim),
+			"a dodge with no move key faces the aim and keeps that facing while the commander stands still")
+	commander._dodge_cooldown_timer = 0.0
+
+
+func _test_lock_from_the_third_person_view_signal() -> void:
+	EventBus.camera_frame_changed.emit(&"OVERVIEW")
+	EventBus.camera_view_changed.emit(&"THIRD_PERSON")
+	commander.velocity = Vector3.ZERO
+	commander._aim_pivot.rotation.y = 1.0
+	var steady := true
+	for yaw in [10.0, 120.0]:
+		_place_camera(Vector3(0, 4, 4), yaw, -35)
+		commander._update_aim(camera)
+		for i in 30:
+			commander._update_model_facing(0.016)
+		steady = steady and absf(angle_difference(commander._aim_pivot.rotation.y, 1.0)) < 0.001 \
+				and commander.aim_dir.dot(CommanderScript.flat_forward(camera.global_basis)) > 0.9999
+	var locked: bool = commander._is_view_locked()
+	EventBus.camera_view_changed.emit(&"TOP_DOWN")
+	_check(locked and steady and not commander._is_view_locked(),
+			"the third-person view signal locks the aim and leaves the facing alone, like the room frame")
+
+
+func _test_dodge_follows_the_move_direction() -> void:
+	_place_camera(Vector3(0, 4, 4), 40, -35)
+	commander._update_aim(camera)
+	var forward := CommanderScript.flat_forward(camera.global_basis)
+	Input.action_press(&"move_down")
+	commander._start_dodge(camera)
+	var along_move: bool = commander._dodge_dir.dot(-forward) > 0.999 and not commander._is_backstep_dodge
+	var faces_move: bool = true
+	commander._turn_model(0.016, Vector3.ZERO)
+	faces_move = absf(angle_difference(commander._aim_pivot.rotation.y, atan2(-forward.x, -forward.z))) < deg_to_rad(1.0)
+	Input.action_release(&"move_down")
+	commander._end_dodge()
+	_check(along_move and faces_move, "a dodge with a move key goes and faces along the move direction")
+	commander._dodge_cooldown_timer = 0.0
+	commander._start_dodge(camera)
+	var fallback: bool = commander._dodge_dir.dot(-commander.aim_dir) > 0.999 and commander._is_backstep_dodge
+	commander._end_dodge()
+	commander._dodge_cooldown_timer = 0.0
+	_check(fallback, "a dodge with no move key still backsteps away from the aim")
 
 
 func _test_leave_restores_mouse_aim() -> void:
@@ -155,3 +309,25 @@ func _test_leave_restores_mouse_aim() -> void:
 			and commander.aim_point.is_finite()
 			and commander.aim_point.distance_to(hit) < 0.01,
 			"leaving the room restores the mouse ray's ground point")
+
+
+func _test_late_commander_reads_the_view() -> void:
+	EventBus.camera_frame_changed.emit(&"OVERVIEW")
+	EventBus.camera_view_changed.emit(&"TOP_DOWN")
+	var before := CommanderScene.instantiate()
+	add_child(before)
+	var unlocked_without_rig: bool = not before._is_view_locked()
+	before.free()
+	var rig := CameraRig.new()
+	rig.add_child(Camera3D.new())
+	add_child(rig)
+	EventBus.state_changed.emit(&"COMBAT")
+	rig.toggle_view()
+	var late := CommanderScene.instantiate()
+	add_child(late)
+	var locked_when_late: bool = late._is_view_locked()
+	rig.toggle_view()
+	rig.free()
+	late.free()
+	_check(unlocked_without_rig and locked_when_late and not commander._is_view_locked(),
+			"a commander spawned in the third-person view reads the view from the camera rig")

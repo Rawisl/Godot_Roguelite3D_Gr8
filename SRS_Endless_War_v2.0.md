@@ -7,7 +7,7 @@
 | Mã tài liệu | SRS-EW-2.0 |
 | Phiên bản | 2.0. Dựa trên v1.9, áp các thay đổi đã chốt trong bản xem trước `preview_srs_v2.0_hazard.md` (chốt 05/11). Sáu thay đổi lớn: (1) PREP không đếm ngược, người chơi tự bấm bắt đầu wave, bỏ gọi wave sớm và phím G; trong PREP được vào Hazard Trial một lần mỗi wave (HZT), thắng phòng được Mithril, dùng để sửa Fortress thay cho gold (MTH). (2) Vũ khí là biến thể của kiếm với 5 hiệu ứng, boss wave 5 đến 25 chắc chắn rơi một cây chưa có (WPN). (3) Xây ít chỗ hơn: 3 slot WALL và tối đa 3 công trình trên ô grid (tổng 6), lưới đất phủ cả bề ngang hành lang, bỏ no_build_lane, thêm luật cấm chặn kín đường (GRID-07); tower có cấp 1-36, đổi model ở cấp 13 và 25; bỏ di chuyển tower (MOV). (4) Mỗi run bắt đầu với 0 gold và hai trụ có sẵn (Arrow, Cannon); tutorial chạy một lần theo tài khoản. (5) Có màn thắng khi qua wave `victory_wave` (30), sau đó chơi tiếp endless. (6) Thêm 7 loại quân mới, sửa Brute, tắt va chạm giữa quân, mỗi wave tối đa 5 loại kể cả boss. Số liệu cân bằng lấy từ bảng Excel và công cụ dịch sang `.tres` (BAL). Mã bị bỏ ghi ở Phụ lục E. Bản này tự đứng được, không cần đọc kèm v1.9 |
 | Ngày phát hành | 05/11/2026 |
-| Nền tảng phát triển | Godot 4.x, 3D; camera orthographic isometric ở hành lang, perspective góc nhìn thứ ba trong Hazard Trial |
+| Nền tảng phát triển | Godot 4.x, 3D; camera orthographic isometric ở hành lang (bật thêm góc nhìn thứ ba bằng F5 ở Frontline và Commander, CAM-20), perspective góc nhìn thứ ba trong Hazard Trial |
 | Đội ngũ, thời gian | 5 người, 13 tuần: Tuần 1-12 làm tính năng (đóng băng toàn bộ tính năng 6/12), Tuần 13 (7-14/12) chỉ test, sửa lỗi, báo cáo và nộp bài (đóng băng bản nộp 14/12), 15-16/12 dự phòng, 17/12 diễn tập (mục 7.3). Tuần 1-8 đã hoàn thành theo v1.9, phần v2.0 áp dụng từ Tuần 9 |
 | Trạng thái | **Thiết kế đã duyệt:** Đã duyệt toàn bộ yêu cầu v2.0 ở mục 3 đến 7.2 cùng các quyết định Phụ lục C mục 38 đến 66 ngày 05/11. **Chưa chốt:** lịch v2.0 (mục 7.3) và phân vai v2.0 (Phụ lục B), chờ bảng phân công cập nhật. Mọi con số là giá trị khởi điểm. Số liệu cân bằng (nhân vật, tower, skill, vũ khí, quân theo wave, thưởng theo wave) chỉnh trong bảng cân bằng (mục 6.10), các tham số khác chỉnh qua Resource/GameConfig khi playtest. Chỗ v2.0 tự đặt thêm ngoài bản xem trước ghi ở Phụ lục C mục 38 đến 66 |
 
@@ -142,7 +142,7 @@ Mục 3 và 4: yêu cầu chức năng và giao diện, mỗi mục con gồm m�
 
 | **Hạng mục** | **Nội dung** |
 | --- | --- |
-| Góc nhìn | Hành lang dùng camera orthographic isometric cố định góc, nhìn ngang từ trái sang phải; Hazard Trial dùng camera góc nhìn thứ ba bám vai (CAM-16). Fortress ở cực trái, điểm spawn ở cực phải |
+| Góc nhìn | Hành lang mặc định dùng camera orthographic isometric cố định góc, nhìn ngang từ trái sang phải; ở Frontline và Commander bấm F5 để chuyển sang góc nhìn thứ ba (CAM-20); Hazard Trial dùng camera góc nhìn thứ ba bám vai (CAM-16). Fortress ở cực trái, điểm spawn ở cực phải |
 | Map | 1 map duy nhất. Tính ngẫu nhiên nằm ở nội dung wave, không ở địa hình. Người chơi học bố cục slot và tối ưu qua các run |
 | Điểm khác biệt | Người chơi tự chọn ra trận trực tiếp (rủi ro cao, thưởng cao) hoặc điều phối từ trên thành (an toàn, phụ thuộc bố trí) |
 | Trụ cột | Một vòng lặp chiều sâu: Chuẩn bị (kèm Hazard Trial tùy chọn), Chiến đấu, Tổng kết, Wave kế. Mọi thứ khác là mở rộng |
@@ -161,7 +161,7 @@ Mục 3 và 4: yêu cầu chức năng và giao diện, mỗi mục con gồm m�
 
 9. **Hồi máu chỉ có ở tiền tuyến.** Commander mode không còn regen. Trong wave, chỉ huy hồi máu bằng Lifesteal hoặc bằng Trạm hồi phục đặt trên mặt đất (hold E, đứng yên, không bị đánh). Đầu mỗi PREP vẫn hồi 35% cho cả hai chế độ (HLT, mục 3.5.7).
 
-10. Camera theo ngữ cảnh: Frontline bám nhân vật và zoom gần, Commander và PREP dịch bằng phím WASD trong giới hạn camera_bounds (CAM).
+10. Camera theo ngữ cảnh: Frontline bám nhân vật và zoom gần, Commander và PREP dịch bằng phím WASD trong giới hạn camera_bounds khi camera góc trên xuống; góc nhìn thứ ba bật bằng F5 thì WASD không dịch camera (CAM, CAM-20).
 
 11. \[MVP rút gọn] Yếu tố online: tài khoản, đồng bộ profile, bảng xếp hạng, luôn kèm chế độ chơi khách (ACCT, LBD).
 
@@ -189,7 +189,7 @@ Windows PC (mục tiêu chính), Godot 4.x, bàn phím và chuột. Gamepad là 
 | Asset | Ưu tiên low-poly có sẵn (Kenney, Quaternius), thống nhất palette và shader toon/flat. Mỗi loại tower cần 3 model theo bậc (TWR-17), mỗi vũ khí một model |
 | Dữ liệu | Toàn bộ chỉ số trong Resource hoặc CSV, không hard-code. Số liệu cân bằng sinh từ bảng Excel bằng script Python (mục 6.10) |
 | Git | Mỗi người sở hữu scene riêng, tách dữ liệu bằng Resource, tránh xung đột .tscn |
-| Camera | Hành lang giữ góc pitch, yaw cố định: Frontline bám nhân vật và zoom gần, Commander và PREP dịch bằng WASD có clamp. Hazard Trial dùng góc nhìn thứ ba bám vai, điều khiển bằng chuột (CAM-16). Zoom và kéo chuột ở hành lang là [Could] |
+| Camera | Hành lang giữ góc pitch, yaw cố định: Frontline bám nhân vật và zoom gần, Commander và PREP dịch bằng WASD có clamp. Hazard Trial dùng góc nhìn thứ ba bám vai, điều khiển bằng chuột (CAM-16). F5 bật tắt góc nhìn thứ ba ở Frontline và Commander, không ở PREP (CAM-20). Zoom và kéo chuột ở hành lang khi chưa bật góc nhìn thứ ba là [Could] |
 
 ## 2.6 Giả định và phụ thuộc
 
@@ -368,7 +368,7 @@ REWARD_PICK là \[MVP]. Không có lượt chờ (pending_picks = 0) hoặc pool
 | **Hạng mục** | **Đặc tả** |
 | --- | --- |
 | Thời lượng | Không giới hạn, không đếm ngược (WAVE-11). Wave boss cũng vậy |
-| Cho phép | Xây, nâng cấp, bán, sửa Fortress bằng Mithril (MTH-03), đổi target priority, đổi vũ khí (WPN-03), vào Hazard Trial một lần (HZT-01), dịch camera bằng WASD ở cả hai chế độ (nhân vật đứng yên, CAM-02), đổi chế độ (không cooldown, không channel). \[Should] Kích hoạt buff |
+| Cho phép | Xây, nâng cấp, bán, sửa Fortress bằng Mithril (MTH-03), đổi target priority, đổi vũ khí (WPN-03), vào Hazard Trial một lần (HZT-01), dịch camera bằng WASD ở cả hai chế độ khi camera góc trên xuống, không dịch khi góc nhìn thứ ba đang bật (nhân vật đứng yên, CAM-02, CAM-20), đổi chế độ (không cooldown, không channel). \[Should] Kích hoạt buff |
 | Không có quái | Chỉ huy và Fortress không nhận sát thương (trong Hazard Trial chỉ bản sao chỉ số của chỉ huy nhận sát thương, HZT-06). Tower hồi đầy HP ở đầu PREP (TWR-01, trừ Trạm hồi phục, HLT-08). Chỉ huy hồi prep_heal_pct (35%, cả hai chế độ, một lần khi vào PREP từ SUMMARY hoặc REWARD_PICK, không lặp lại khi ra khỏi Hazard Trial). Không dùng được Trạm hồi phục ở PREP (HLT-03) |
 | **Kết thúc** | Bấm nút **Bắt đầu wave** (HUD-19, WAVE-11) |
 | Preview | Loại quân sắp tới (tối đa 5 loại kể cả boss, SPN-14), modifier \[Should]. Wave boss: tên boss kèm nhãn "(Boss)" và vũ khí sẽ rơi nếu còn (WPN-11), hiển thị theo HUD-25; \[Should] miễn nhiễm pha 1, boss_timer, PNL-05 đầy đủ và cảnh báo BOSS-15 |
@@ -517,8 +517,8 @@ Any -> Dead
 
 ### 3.5.3 Frontline
 
-- **Di chuyển:** WASD theo trục màn hình trong COMBAT và BOSS_COMBAT; trong HAZARD_TRIAL theo trục camera (CAM-17). Chuẩn hóa vector chéo. Ở PREP WASD dịch camera (CAM-02).
-- **Aim:** ngoài Hazard Trial, raycast chuột xuống mặt phẳng ngang tại chân chỉ huy (MSE-01); ray không trúng thì giữ hướng cũ. Trong Hazard Trial, hướng đánh theo camera và điểm ngắm theo tâm màn hình (CAM-17, CAM-18).
+- **Di chuyển:** WASD theo trục màn hình trong COMBAT và BOSS_COMBAT; trong HAZARD_TRIAL và khi góc nhìn thứ ba đang bật theo trục camera (CAM-17, CAM-20). Chuẩn hóa vector chéo. Ở PREP WASD dịch camera (CAM-02).
+- **Aim:** khi góc nhìn thứ ba tắt, raycast chuột xuống mặt phẳng ngang tại chân chỉ huy (MSE-01); ray không trúng thì giữ hướng cũ. Trong Hazard Trial và khi góc nhìn thứ ba đang bật, hướng đánh theo camera và điểm ngắm theo tâm màn hình (CAM-17, CAM-18, CAM-20); mặt chỉ huy theo hướng di chuyển, chỉ quay về hướng ngắm khi đánh hoặc tung skill.
 - **Đánh thường:** combo 3 đòn, đòn 3 có knockback nhẹ 1.5 m (Brute và boss miễn). Nối đòn theo CHAR-07: không bấm trong combo_window thì combo về đòn 1. Mỗi đòn trúng tối đa sword_max_targets mục tiêu (CMB-09). Tầm và hiệu ứng theo vũ khí đang trang bị (mục 3.5.13).
 - **Dodge:** theo hướng di chuyển. Đứng yên thì lùi về sau hướng aim.
 - **Battle Cry (Q):** taunt mọi quân trong bán kính 6 m trong 4 s, chỉ huy nhận -30% sát thương trong thời gian đó. Cooldown 12 s. Dùng để tank và kéo aggro.
@@ -1973,11 +1973,12 @@ Nút Nâng cấp dùng nền xanh bạc hà với mũi tên lên. Nút Bán có 
 
 | **Hành động** | **Phím** | **Ngữ cảnh** |
 | --- | --- | --- |
-| Di chuyển | W A S D | Frontline, COMBAT, BOSS_COMBAT theo trục màn hình; HAZARD_TRIAL theo trục camera (CAM-17) |
-| Xoay camera | Di chuột | HAZARD_TRIAL khi con trỏ bị khóa (CAM-16) |
-| Zoom vào | Cuộn chuột | HAZARD_TRIAL; không zoom ra quá khoảng cách mặc định (CAM-16) |
-| Hiện con trỏ | Giữ Alt | HAZARD_TRIAL để bấm nút HUD; góc ngắm vẫn theo camera (CAM-17) |
-| Dịch camera | W A S D | Commander mode và PREP (CAM-02). Cùng phím, khác ngữ cảnh |
+| Di chuyển | W A S D | Frontline, COMBAT, BOSS_COMBAT theo trục màn hình; HAZARD_TRIAL và góc nhìn thứ ba ở hành lang theo trục camera (CAM-17, CAM-20) |
+| Bật tắt góc nhìn thứ ba | F5 | Frontline và Commander ở hành lang; không tác dụng ở PREP, BOSS_INTRO, Hazard Trial, Pause hoặc hộp thoại (CAM-20) |
+| Xoay camera | Di chuột | HAZARD_TRIAL và góc nhìn thứ ba ở hành lang, khi con trỏ bị khóa (CAM-16, CAM-20) |
+| Zoom vào | Cuộn chuột | HAZARD_TRIAL và góc nhìn thứ ba ở hành lang; không zoom ra quá khoảng cách mặc định (CAM-16, CAM-20) |
+| Hiện con trỏ | Giữ Alt | HAZARD_TRIAL và góc nhìn thứ ba ở hành lang để bấm nút HUD; góc ngắm vẫn theo camera (CAM-17, CAM-20) |
+| Dịch camera | W A S D | Commander mode và PREP khi camera góc trên xuống (CAM-02); không tác dụng khi góc nhìn thứ ba đang bật (CAM-20). Cùng phím, khác ngữ cảnh |
 | Hồi máu ở Trạm hồi phục | E (giữ) | Frontline, COMBAT, đứng yên trong tầm trạm (HLT-03) |
 | Vào Hazard Trial | E (bấm) hoặc chuột trái vào Tháp | PREP, Frontline (HZT-01). Cùng phím E với hồi máu nhưng khác ngữ cảnh |
 | Đưa camera về giữa | C | Commander mode và PREP (CAM-08) |
@@ -2000,7 +2001,7 @@ Nút Nâng cấp dùng nền xanh bạc hà với mũi tên lên. Nút Bán có 
 
 | **ID** | **Luật input** |
 | --- | --- |
-| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, character_status, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời tháp không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). Giữ Alt để hiện con trỏ trong Hazard Trial đọc theo phím vật lý, không qua InputMap (CAM-16). call_wave và relocate đã bỏ ở v2.0 |
+| INP-01 | Mọi hành động qua InputMap. Tên thống nhất: move_up, move_down, move_right, move_left, attack, dodge, battle_cry, skill_1, skill_2, skill_3, mode_switch, emergency_repair, heal_channel, hazard_enter, camera_recenter, build_toggle, character_status, upgrade, sell, show_ranges, pause, select, cancel, toggle_hud và \[Should] buff_menu. Tua nhanh, Bắt đầu wave và Rời tháp không nằm trong InputMap vì chỉ có nút HUD (HUD-14, HUD-19, HUD-22). Giữ Alt để hiện con trỏ trong Hazard Trial và F5 bật tắt góc nhìn thứ ba ở hành lang đọc theo phím vật lý, không qua InputMap (CAM-16, CAM-20). call_wave và relocate đã bỏ ở v2.0 |
 | INP-02 | Ưu tiên khi nhiều phím cùng frame: **Dodge > Skill > Attack > Mode switch > Hồi máu (E)**; nhiều skill cùng frame thì ô số nhỏ trước. Pause và HUD xử lý độc lập |
 | INP-03 | **Esc theo chuỗi:** (1) đóng hộp thoại, (2) đóng panel đang xem (từ bảng kiếm quay về bảng Chỉ huy, lần Esc kế tiếp đóng bảng Chỉ huy), (3) hủy chế độ đặt hoặc bỏ chọn, (4) mở Pause. Mỗi lần bấm một bước |
 | INP-04 | Vô hiệu ui_focus_next, ui_focus_prev trong Run. Space trong gameplay không kích hoạt nút UI còn focus: **giải phóng focus** sau mỗi lần bấm nút UI |
@@ -2013,11 +2014,11 @@ Nút Nâng cấp dùng nền xanh bạc hà với mũi tên lên. Nút Bán có 
 
 ### 4.2.2 Chuột và camera
 
-Ngoài Hazard Trial, camera orthographic với camera_pitch -45, camera_yaw 20 (giá trị khởi điểm, đọc qua Camera3D). Trong Hazard Trial dùng Camera3D perspective riêng (CAM-16).
+Mặc định ở hành lang, camera orthographic với camera_pitch -45, camera_yaw 20 (giá trị khởi điểm, đọc qua Camera3D). Trong Hazard Trial, và ở Frontline hoặc Commander khi bấm F5, dùng Camera3D perspective riêng (CAM-16, CAM-20).
 
 | **ID** | **Đặc tả** |
 | --- | --- |
-| MSE-01 | **Aim:** ngoài Hazard Trial, raycast qua con trỏ xuống mặt phẳng ngang tại độ cao chân chỉ huy; không trúng thì giữ hướng cũ. Trong Hazard Trial dùng tia qua tâm màn hình (CAM-18) |
+| MSE-01 | **Aim:** khi góc nhìn thứ ba tắt, raycast qua con trỏ xuống mặt phẳng ngang tại độ cao chân chỉ huy; không trúng thì giữ hướng cũ. Trong Hazard Trial và khi góc nhìn thứ ba đang bật dùng tia qua tâm màn hình (CAM-18, CAM-20) |
 | MSE-02 | **Chọn công trình, slot:** physics picking trên tầng pickable (collider lớn hơn mesh 20%; collider ô grid theo GRID-05), không phụ thuộc mesh bị mờ |
 | MSE-03 | Thứ tự chọn: UI > tower > Fortress > slot trống > quân địch (chỉ hover) > mặt đất |
 | MSE-04 | Biểu tượng slot và ô grid vẽ **trên cùng** (billboard, tắt depth test) ở PREP nên slot sau tường vẫn bấm được |
@@ -2026,11 +2027,11 @@ Ngoài Hazard Trial, camera orthographic với camera_pitch -45, camera_yaw 20 (
 | MSE-07 | \[Should] Con trỏ đổi hình theo ngữ cảnh (mặc định, chọn được, cấm, mục tiêu). Kích thước theo UI scale. MVP: con trỏ hệ thống mặc định |
 | MSE-08 | Camera Frontline bám chỉ huy có smoothing, zoom gần, kẹp trong camera_bounds. Commander và PREP dùng khung overview, dịch bằng phím (CAM-02). Chuyển camera 0.5 s **thời gian thực** (CAM-05) |
 | MSE-09 | \[Could] Kéo chuột giữa dịch camera |
-| MSE-10 | Con trỏ ra ngoài cửa sổ: giữ hướng aim cuối. Tùy chọn khóa con trỏ mặc định tắt ở hành lang; Hazard Trial tự khóa con trỏ, trừ khi giữ Alt, Pause hoặc mở hộp thoại (CAM-16) |
+| MSE-10 | Con trỏ ra ngoài cửa sổ: giữ hướng aim cuối. Tùy chọn khóa con trỏ mặc định tắt ở hành lang; Hazard Trial và góc nhìn thứ ba ở hành lang tự khóa con trỏ, trừ khi giữ Alt, Pause hoặc mở hộp thoại (CAM-16, CAM-20) |
 
 ### 4.2.3 Camera
 
-Ngoài Hazard Trial, các chế độ dùng Camera3D orthographic chung: góc pitch, yaw không đổi, chỉ đổi vị trí focus và size. Hazard Trial dùng Camera3D perspective riêng và bộ điều khiển orbit có thể tái sử dụng ở scene khác (CAM-16). Mọi giá trị số là khởi điểm, chốt ở tuần 1 cùng góc camera (Phụ lục C).
+Mặc định ở hành lang, các chế độ dùng Camera3D orthographic chung: góc pitch, yaw không đổi, chỉ đổi vị trí focus và size. Hazard Trial, và Frontline hoặc Commander khi bấm F5, dùng Camera3D perspective riêng và bộ điều khiển orbit có thể tái sử dụng ở scene khác (CAM-16, CAM-20). Mọi giá trị số là khởi điểm, chốt ở tuần 1 cùng góc camera (Phụ lục C).
 
 | **ID** | **Đặc tả** | **Tag** |
 | --- | --- | --- |
@@ -2041,17 +2042,18 @@ Ngoài Hazard Trial, các chế độ dùng Camera3D orthographic chung: góc pi
 | CAM-05 | **Chuyển khung.** Đổi chế độ (Tab), Recall, Deploy và vào/ra PREP: nội suy focus và size trong 0.5 s **thời gian thực** (MSE-08). Trong lúc chuyển, input dịch camera bị bỏ qua. Nội suy dùng ease-out, tắt thành cắt tức thì khi bật Giảm chuyển động (ACC-05) | MVP |
 | CAM-06 | \\[Should] **Look-ahead.** Ở Frontline focus lệch tối đa camera_lookahead (2 m) về phía con trỏ để thấy xa hơn hướng đang đánh. Tắt được trong Settings | SHOULD |
 | CAM-07 | **Không nhớ vị trí dịch.** Mỗi lần vào Commander hoặc vào PREP, camera đặt về focus mặc định: Commander lấy vị trí chỉ huy kẹp trong camera_bounds, PREP lấy giữa hành lang. Không lưu vị trí dịch qua lần chuyển hay qua wave | MVP |
-| CAM-08 | **Về giữa.** Phím C (camera_recenter) đưa focus về mặc định của CAM-07 trong 0.3 s thời gian thực. Chỉ ở Commander mode và PREP | MVP |
-| CAM-09 | **Zoom tay.** Ngoài Hazard Trial, cuộn chuột không đổi size và kéo chuột không dịch camera ở MVP. Trong Hazard Trial cuộn chuột zoom vào theo CAM-16. \[Could] Zoom bằng cuộn chuột và kéo chuột giữa ở hành lang (MSE-09), size kẹp trong [camera_size_frontline, camera_size_overview] | COULD |
+| CAM-08 | **Về giữa.** Phím C (camera_recenter) đưa focus về mặc định của CAM-07 trong 0.3 s thời gian thực. Chỉ ở Commander mode và PREP khi camera góc trên xuống; không tác dụng khi góc nhìn thứ ba đang bật (CAM-20) | MVP |
+| CAM-09 | **Zoom tay.** Khi góc nhìn thứ ba tắt, cuộn chuột không đổi size và kéo chuột không dịch camera ở MVP. Trong Hazard Trial và khi góc nhìn thứ ba ở hành lang đang bật, cuộn chuột zoom vào theo CAM-16, CAM-20. \[Could] Zoom bằng cuộn chuột và kéo chuột giữa ở hành lang (MSE-09), size kẹp trong [camera_size_frontline, camera_size_overview] | COULD |
 | CAM-10 | **Phím WASD theo ngữ cảnh.** Đổi ngữ cảnh (Tab, đổi state) xóa input đang giữ (INP-07) để không bị trôi nhân vật hay trôi camera. Trong các state khóa input (BOSS_INTRO, REWARD_PICK, hộp thoại) WASD không làm gì | MVP |
 | CAM-11 | **BOSS_INTRO.** Camera tự lia tới boss trong 4 s game time (BOSS-17) bất kể chế độ, khóa dịch tay. Hết intro camera về khung của state kế tiếp theo CAM-05 | MVP |
-| CAM-12 | **Picking và aim theo camera hiện tại.** Ngoài Hazard Trial, raycast chuột (MSE-01, MSE-02) dùng camera đang hoạt động trong frame đó, nên dịch camera không làm sai chọn slot hay hướng đánh. Trong Hazard Trial, aim dùng tia qua tâm camera (CAM-18). Xuyên thấu (MSE-05) áp theo chỉ huy, không theo focus camera | MVP |
+| CAM-12 | **Picking và aim theo camera hiện tại.** Khi góc nhìn thứ ba tắt, raycast chuột (MSE-01, MSE-02) dùng camera đang hoạt động trong frame đó, nên dịch camera không làm sai chọn slot hay hướng đánh. Trong Hazard Trial và khi góc nhìn thứ ba đang bật, aim dùng tia qua tâm camera (CAM-18, CAM-20). Xuyên thấu (MSE-05) áp theo chỉ huy, không theo focus camera | MVP |
 | CAM-13 | **Rung màn hình** (FBK-03) cộng vào vị trí camera sau khi kẹp, biên độ có trần, không đưa camera ra ngoài camera_bounds quá 0.3 m | MVP |
 | CAM-14 | **Chiếu sáng và bóng.** Camera Frontline thấy ít vùng hơn nên tắt render, animation và âm thanh vị trí của quân ngoài khung theo LOD (\\[Should], mục 3.7) nhưng **không** giảm logic AI hay tấn công | SHOULD |
 | CAM-16 \[MVP] | **Camera Hazard Trial.** Vào phòng: cắt sang Camera3D perspective riêng, FOV mặc định 60°, bám pivot cao 1.4 m trên chân chỉ huy, lệch vai phải 1 m và ngẩng tầm ngắm 10°. Yaw khởi đầu theo camera hành lang, pitch -45°; chuột bị khóa và ẩn, di chuột xoay yaw tự do và pitch kẹp [-70°, +30°]. Khoảng cách mặc định 9 m ở pitch -15°, nội suy về 6 m khi nhìn xuống -70° và 3 m khi nhìn lên +30°; camera luôn cao hơn sàn ít nhất 0.5 m. Cuộn chuột zoom vào từng nấc 10%, tối thiểu 35%, tối đa 100%, làm mượt 0.08 s thời gian thực; bật Giảm chuyển động thì đổi ngay. Tâm ngắm nhỏ ở giữa màn hình khi khóa chuột. Giữ Alt, Pause hoặc mở hộp thoại thì hiện con trỏ và ngừng xoay nhưng camera vẫn bám chỉ huy. Không dịch camera bằng WASD, C không tác dụng. Các thông số nằm ở hazard_room và được đưa cho bộ điều khiển orbit dùng chung. Rời phòng: hiện con trỏ, cắt về khung PREP mặc định (CAM-07), phát camera_frame_changed với frame HAZARD_TRIAL khi vào phòng (EVB-35) | MVP |
-| CAM-17 \[MVP] | **Chỉ huy theo camera trong Hazard Trial.** Khi góc nhìn thứ ba đang bật, kể cả khi giữ Alt và con trỏ hiện, chỉ huy quay theo hướng ngang của camera, không theo con trỏ. W tiến theo camera, A/D đi ngang, S lùi với hoạt ảnh chạy ngược; Dodge lùi dùng hoạt ảnh né lùi. Đòn đánh và skill lấy hướng camera tại frame ra đòn. Trạng thái này lấy từ camera_frame_changed, độc lập với mouse_mode. Ngoài phòng dùng điều khiển cũ | MVP |
+| CAM-17 \[MVP] | **Hướng ngắm theo camera trong góc nhìn thứ ba.** Khi góc nhìn thứ ba đang bật, kể cả khi giữ Alt và con trỏ hiện, hướng ngắm (aim) theo hướng ngang của camera, không theo con trỏ; xoay camera không làm chỉ huy quay mặt. Mặt chỉ huy theo hướng di chuyển như điều khiển thường: W tiến theo camera, A/D đi ngang, S lùi, chỉ huy quay mặt về hướng đang đi và chạy bằng hoạt ảnh chạy xuôi; đứng yên thì giữ nguyên hướng mặt. Dodge đi theo hướng di chuyển như thường; không bấm hướng thì lùi về sau hướng ngắm. Khi đánh thường, tung skill thì chỉ huy quay về hướng ngắm lấy tại lúc bắt đầu đòn hoặc skill (hướng camera tại frame đó) và giữ hướng ấy suốt hoạt ảnh, xoay camera giữa chừng không làm chỉ huy quay theo; sau đòn giữ hướng đó tới khi chỉ huy di chuyển. Trạng thái này lấy từ camera_view_changed (THIRD_PERSON hoặc TOP_DOWN), độc lập với mouse_mode. Khi góc nhìn thứ ba tắt dùng điều khiển cũ | MVP |
 | CAM-18 \[MVP] | **Điểm ngắm trong Hazard Trial.** Tính aim_point từ tia qua tâm màn hình cắt mặt phẳng ngang ở chân chỉ huy. Khi camera hướng lên trên và tia không cắt mặt phẳng, aim_point = INF; Firebomb rơi tại tầm tối đa theo hướng camera. Khi giữ Alt, hướng và điểm ngắm vẫn theo camera, không theo vị trí con trỏ; nhân vật di chuyển thì điểm ngắm được tính lại | MVP |
 | CAM-19 \[MVP] | **Nền phòng Hazard Trial.** Khối cầu bán kính 60 m bám theo camera, dùng shader unshaded, chỉ hiển thị trong phòng. Nửa dưới tạo vòng mây quanh camera, nửa trên tạo các dải mây mờ dần lên đỉnh. Vật liệu đặt ở art/materials/hazard_sky.tres | MVP |
+| CAM-20 \[MVP] | **Góc nhìn thứ ba ở hành lang.** F5 bật tắt giữa camera orthographic và góc nhìn thứ ba (cùng bộ điều khiển orbit như CAM-16) ở Frontline và Commander; không tác dụng ở PREP, BOSS_INTRO, Hazard Trial, khi Pause hoặc mở hộp thoại. Bật hoặc tắt là cắt cứng, không nội suy: bật thì camera đặt ngay sau chỉ huy, yaw khởi đầu nhìn dọc hành lang về phía quân tới, pitch và zoom về mặc định; tắt thì camera orthographic đứng ở vị trí chỉ huy (kẹp trong camera_bounds) với size đúng ngữ cảnh. Lựa chọn được nhớ: vào PREP hoặc boss intro thì tự về camera orthographic, hết thì góc nhìn thứ ba bật lại; Hazard Trial không đổi. Khi bật, WASD và C không dịch camera, Tab, Deploy và Recall không nội suy camera, chuột bị khóa như CAM-16 (giữ Alt để hiện con trỏ), chỉ huy ngắm theo tâm màn hình còn mặt vẫn quay theo hướng di chuyển (CAM-17, CAM-18). Ở Commander tâm xoay là chỉ huy ở độ cao thật. Camera phát camera_view_changed (TOP_DOWN hoặc THIRD_PERSON) khi đổi; camera_frame_changed giữ nguyên. Thông số nằm ở data/config/corridor_chase_camera.tres; F5 đọc theo phím vật lý như Alt, không qua InputMap | MVP |
 | CAM-15 | **Settings.** \\[Should] Tốc độ dịch camera (0.5x đến 2x), bật tắt edge-pan, bật tắt look-ahead. MVP dùng giá trị mặc định | SHOULD |
 
 
@@ -3091,6 +3093,7 @@ Mã bị bỏ ở v2.0 liệt kê ở Phụ lục E, không dùng lại số cho
 | **#** | **Vấn đề** | **Quyết định** |
 | --- | --- | --- |
 | 70 | Camera cố định khung phòng khó theo dõi quái quanh chỉ huy trong phòng nhỏ | Hazard Trial chuyển sang góc nhìn thứ ba khóa chuột bám vai (CAM-16 đến CAM-19), còn hành lang giữ camera orthographic |
+| 71 | Muốn dùng góc nhìn thứ ba ở hành lang như trong Hazard Trial | Camera góc thứ ba ở hành lang 25/11: F5 bật tắt ở Frontline và Commander (CAM-20); PREP và boss intro luôn về camera orthographic rồi trả lại lựa chọn; Hazard Trial không đổi |
 
 ## Phụ lục D. Nhật ký đồng bộ (so với các bản soạn Phần 1-7)
 
@@ -3196,6 +3199,7 @@ Các dòng 1 đến 53 là lịch sử đến v1.7, giữ nguyên để truy v�
 | 93 | **22/11: cập nhật camera Hazard Trial** (HZT-11, CAM-09, CAM-16 đến CAM-19, MSE-01, MSE-10, HZ7, Phụ lục C mục 39 và 70): góc nhìn thứ ba bám vai, chuột xoay, cuộn chuột zoom vào, giữ Alt để bấm HUD; chỉ huy quay và di chuyển theo camera; aim theo tâm màn hình, nền phòng là khối cầu 60 m |
 | 95 | 24/11/2026. Kịch bản wave 1-30: Bulwark ở wave 5, 15, 25 và Skeletal Centipede ở wave 10, 20, 30 (mục 3.8.2, 3.8.10, BOSS-22); lần xuất hiện của boss đếm theo từng boss thay vì wave_index / boss_wave_interval, nên Stomp x3 mở ở Bulwark wave 15 và Combo ở wave 25 (BOSS-48, test Boss 11). SCL-04 bỏ mốc người mới thua ở wave 8-12. |
 | 96 | 24/11/2026. Cân bằng XP lần 1 theo bot (balance/BALANCE_LOG.md): xp_commander_pct 1.0 lên 1.25, xp_tower_only_pct 0.5 xuống 0.4 (bảng XP mục 3.5.11, XP-06, CMD-10, FRT-03, mục 6.3, test F1, Phụ lục C mục 15). Hai giá trị nằm trong GameConfig, không sinh từ balance.xlsx. |
+| 97 | 25/11/2026. Camera góc thứ ba ở hành lang: F5 bật tắt ở Frontline và Commander (mục 2.2, 3.1, 3.2.3, MSE-01, MSE-10, mục 4.2.3, bảng phím, CAM-09, CAM-12, CAM-17, CAM-20, INP-01, Phụ lục C mục 71). Hazard Trial không đổi. Cập nhật 26/11: góc nhìn thứ ba chỉ khóa hướng ngắm, mặt chỉ huy theo hướng di chuyển (3.5.3, CAM-17, CAM-20). |
 
 ## Phụ lục E. Mã đã bỏ ở v2.0
 
