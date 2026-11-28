@@ -4,8 +4,9 @@ extends Node
 ## - Whirlwind: two sweeps of the sword, ring-shaped trails out to the skill radius that follow
 ##   the commander's sword through the spinning swing and fade when it ends; sparks fly in from
 ##   the edge
-## - Sword Wave: a wide shallow crescent with a white rim, blade shards and broken wisps trailing
-##   it flies from the commander along its aim, and stops early at a wall
+## - Sword Wave: a wide shallow crescent drawn like one Whirlwind sweep, a bright blade with a
+##   trail fading behind it and sparks streaming back from the blade; it flies from the commander
+##   along its aim, and stops early at a wall
 ## - Firebomb: a bomb arcs from the commander to the cast point, then the burn area and its
 ##   embers stay for the burn time
 ## What skill_cast carries: origin is the commander's position for Whirlwind and Sword Wave and
@@ -425,23 +426,20 @@ func play_sword_wave(origin: Vector3, dir: Vector3, width: float, distance: floa
 	_effects.append(fx)
 
 
-## Streaks leave the inner edge of the crescent and fall back along the flight line.
+## Streaks leave the blade of the crescent and fall back through its trail, following the wave.
 func _wave_sparks(count: int, scale_m: float, mesh: MeshInstance3D) -> CPUParticles3D:
 	var radius: float = wave_material.get_shader_parameter(&"arc_radius")
 	var origin_y: float = wave_material.get_shader_parameter(&"arc_origin")
-	var shift: float = wave_material.get_shader_parameter(&"inner_shift")
 	var half: float = wave_material.get_shader_parameter(&"arc_half")
-	var close: float = wave_material.get_shader_parameter(&"tip_close")
 	var sparks := _particles(count, wave_spark_lifetime, _spark_color())
-	# The same inner edge as the shader: a circle of the same radius shifted back, pushed outward
-	# towards the tips. Points are measured back from the front edge, which sits at local z = 0.
+	# The same front arc as the shader. Points are measured back from the middle of the front
+	# edge, which sits at local z = 0.
 	var points := PackedVector3Array()
 	for i in WAVE_SPARK_POINTS:
 		var u := lerpf(-WAVE_SPARK_SPAN, WAVE_SPARK_SPAN, float(i) / float(WAVE_SPARK_POINTS - 1))
 		var qx := u * half
-		var inner_r := radius + close * (1.0 - sqrt(1.0 - u * u))
-		var inner_y := origin_y - shift + sqrt(maxf(inner_r * inner_r - qx * qx, 0.0))
-		points.append(Vector3(qx * scale_m, 0.0, (origin_y + radius - inner_y) * scale_m))
+		var front_y := origin_y + sqrt(maxf(radius * radius - qx * qx, 0.0))
+		points.append(Vector3(qx * scale_m, 0.0, (origin_y + radius - front_y) * scale_m))
 	sparks.mesh = _spark_mesh
 	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_POINTS
 	sparks.emission_points = points
