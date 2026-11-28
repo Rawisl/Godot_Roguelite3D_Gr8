@@ -28,6 +28,7 @@ func _ready() -> void:
 	EventBus.reward_offer_requested.connect(_on_offer_requested)
 	EventBus.reward_pick_requested.connect(_on_pick_requested)
 	EventBus.reward_skip_requested.connect(_on_skip_requested)
+	EventBus.skill_grant_requested.connect(_on_grant_requested)
 
 func get_catalog() -> Array[SkillData]:
 	if pool == null:
@@ -80,6 +81,51 @@ func pick(card_id: StringName, _kind: StringName, _level: int) -> bool:
 	_emit_slots()
 	return true
 
+## Gives a card without using a pick (cheat panel). A slotted card goes to slot_index of its group and
+## pushes out the skill that was there; the same card in another slot moves. The level goes up by one,
+## capped at the card's maximum. Stat cards ignore slot_index. Returns {"slot_kind", "slot_index",
+## "new_level"}, {} when slot_index is out of range. picks_used stays as it is, and an open offer is
+## built again from the new state so it cannot show a card that is already in a slot.
+func grant(data: SkillData, slot_index: int) -> Dictionary:
+	if data == null:
+		return {}
+	var kind := StringName(SkillData.Kind.keys()[data.kind])
+	var new_level := mini(state.get_level(data.id) + 1, data.get_max_level())
+	if data.is_slotted():
+		var group := state.active if data.kind == SkillData.Kind.ACTIVE else state.passive
+		if slot_index < 0 or slot_index >= group.size():
+			return {}
+		var replaced := group[slot_index]
+		if replaced != &"" and replaced != data.id:
+			group[slot_index] = &""
+			state.levels.erase(replaced)
+			EventBus.skill_removed.emit(replaced, kind)
+		var old_index := group.find(data.id)
+		if old_index != -1:
+			group[old_index] = &""
+		group[slot_index] = data.id
+	else:
+		slot_index = -1
+	state.levels[data.id] = new_level
+	EventBus.skill_granted.emit(data.id, kind, new_level, slot_index)
+	_emit_slots()
+	if _offer_open:
+		_offer_open = false
+		_offer = []
+		# An empty result only tells the screen; it must not close the offer or use up the pick.
+		if has_offer():
+			offer_next()
+		else:
+			EventBus.reward_offered.emit([], REROLLS_LEFT)
+	return {"slot_kind": kind, "slot_index": slot_index, "new_level": new_level}
+
+## Looks in the reward pool first, then in the skills the runner knows that the pool does not hold.
+func find_card_data(card_id: StringName) -> SkillData:
+	for data in get_catalog() + SkillRunner.SKILLS:
+		if data != null and data.id == card_id:
+			return data
+	return null
+
 ## Counts the pick before reward_picked goes out, so listeners already see the new picks_used.
 func _close_offer() -> void:
 	state.picks_used += 1
@@ -112,6 +158,9 @@ func _on_pick_requested(card_id: StringName, kind: StringName, level: int) -> vo
 
 func _on_skip_requested() -> void:
 	skip()
+
+func _on_grant_requested(card_id: StringName, slot_index: int) -> void:
+	grant(find_card_data(card_id), slot_index)
 
 func _on_tower_built(_slot_id: StringName, type: StringName) -> void:
 	if heal_station_data != null and type == heal_station_data.id:

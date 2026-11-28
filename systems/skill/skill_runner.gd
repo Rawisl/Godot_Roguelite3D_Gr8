@@ -30,6 +30,8 @@ func _ready() -> void:
 	reset()
 	EventBus.run_started.connect(reset)
 	EventBus.reward_picked.connect(_on_reward_picked)
+	EventBus.skill_removed.connect(_on_skill_removed)
+	EventBus.skill_granted.connect(_on_skill_granted)
 	EventBus.run_ended.connect(_on_run_ended)
 
 
@@ -42,6 +44,10 @@ func _exit_tree() -> void:
 		EventBus.run_started.disconnect(reset)
 	if EventBus.reward_picked.is_connected(_on_reward_picked):
 		EventBus.reward_picked.disconnect(_on_reward_picked)
+	if EventBus.skill_removed.is_connected(_on_skill_removed):
+		EventBus.skill_removed.disconnect(_on_skill_removed)
+	if EventBus.skill_granted.is_connected(_on_skill_granted):
+		EventBus.skill_granted.disconnect(_on_skill_granted)
 
 
 ## Start of a run: empty slots, no cooldowns.
@@ -183,6 +189,51 @@ func set_skill_level(skill_id: StringName, new_level: int) -> int:
 	return slot
 
 
+## Puts an active skill into one given slot at an absolute level, for a grant outside the pick flow.
+## The slot is taken over, and a skill that sat in another slot leaves that one empty.
+func set_skill_slot(skill_id: StringName, slot: int, new_level: int) -> void:
+	var data := _find(skill_id)
+	if data == null or data.kind != SkillData.Kind.ACTIVE or not _valid_slot(slot):
+		return
+	var old_slot := state.active.find(skill_id)
+	if old_slot != -1 and old_slot != slot:
+		state.active[old_slot] = &""
+		_emit_empty_cooldown(old_slot)
+	state.active[slot] = skill_id
+	if not _cooldowns.has(skill_id):
+		_cooldowns[skill_id] = 0.0
+	state.levels[skill_id] = clampi(new_level, 1, data.get_max_level())
+	var total := data.get_value(&"cooldown", state.get_level(skill_id))
+	if _cooldowns.get(skill_id, 0.0) > total:
+		_cooldowns[skill_id] = total
+	_emit_cooldown(slot)
+
+
+## Takes a skill out of its slot: stops its channel, drops its level and cooldown.
+func remove_skill(skill_id: StringName) -> void:
+	if _channel_id == skill_id:
+		stop_channel()
+	var slot := state.active.find(skill_id)
+	if slot == -1:
+		return
+	state.active[slot] = &""
+	state.levels.erase(skill_id)
+	_cooldowns.erase(skill_id)
+	_emit_empty_cooldown(slot)
+
+
+func _on_skill_removed(card_id: StringName, slot_kind: StringName) -> void:
+	if String(slot_kind).to_upper() != "ACTIVE":
+		return
+	remove_skill(card_id)
+
+
+func _on_skill_granted(card_id: StringName, slot_kind: StringName, new_level: int, slot_index: int) -> void:
+	if String(slot_kind).to_upper() != "ACTIVE":
+		return
+	set_skill_slot(card_id, slot_index, new_level)
+
+
 func _on_run_ended(_end_type: StringName, _summary: Dictionary) -> void:
 	stop_channel()
 
@@ -216,6 +267,12 @@ func _find(skill_id: StringName) -> SkillData:
 
 func _valid_slot(slot: int) -> bool:
 	return slot >= 0 and slot < state.active.size()
+
+
+## An emptied slot shows no cooldown.
+func _emit_empty_cooldown(slot: int) -> void:
+	if _valid_slot(slot) and slot < SLOT_IDS.size():
+		EventBus.skill_cooldown_changed.emit(SLOT_IDS[slot], 0.0, 0.0)
 
 
 func _emit_cooldown(slot: int) -> void:

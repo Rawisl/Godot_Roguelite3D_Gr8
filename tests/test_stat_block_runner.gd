@@ -23,6 +23,7 @@ func _ready() -> void:
 	test_armor_cap()
 	test_card_table_levels()
 	await test_reward_picked_signal()
+	await test_grant_signals()
 	test_resource_untouched()
 	await test_commander_integration()
 	await test_lifesteal_kill_credit()
@@ -168,6 +169,25 @@ func test_reward_picked_signal() -> void:
 	await get_tree().process_frame
 	EventBus.reward_picked.emit(&"sharpness", &"PASSIVE", 3)
 	assert_near(block.get_value(&"sword_damage"), before * 1.16, "freed applier no longer listens")
+
+
+func test_grant_signals() -> void:
+	print("
+[GROUP 6b] skill_granted and skill_removed")
+	var block := StatBlock.new(_stats)
+	var applier := _new_applier(block)
+	var before := block.get_value(&"sword_damage")
+	EventBus.skill_granted.emit(&"sharpness", &"PASSIVE", 2, 0)
+	assert_near(block.get_value(&"sword_damage"), before * 1.16, "a granted stat card takes effect")
+	EventBus.skill_granted.emit(&"mastery", &"STAT", 1, -1)
+	assert_near(block.get_mul_total(&"skill_damage"), 0.16 + 0.05, "a granted stat card without a slot takes effect")
+	EventBus.skill_removed.emit(&"sharpness", &"PASSIVE")
+	assert_near(block.get_value(&"sword_damage"), before, "a removed passive loses its source")
+	assert_near(block.get_mul_total(&"skill_damage"), 0.05, "removal touches only that source")
+	applier.queue_free()
+	await get_tree().process_frame
+	EventBus.skill_granted.emit(&"sharpness", &"PASSIVE", 2, 0)
+	assert_near(block.get_value(&"sword_damage"), before, "freed applier no longer listens to grants")
 
 
 func test_resource_untouched() -> void:

@@ -29,6 +29,7 @@ const XP_TOP_UP := 0.001
 @onready var summon_option: OptionButton = %SummonOption
 @onready var summon_button: Button = %SummonButton
 @onready var skill_option: OptionButton = %SkillOption
+@onready var slot_option: OptionButton = %SlotOption
 @onready var skill_button: Button = %SkillButton
 @onready var jump_label: Label = %JumpLabel
 @onready var jump_spin: SpinBox = %JumpSpin
@@ -38,6 +39,10 @@ const XP_TOP_UP := 0.001
 var _invincible := false
 var _instant_kill := false
 var _summon_scenes: Array[PackedScene] = []
+## Ids in the skill list that are stat cards, which take no slot.
+var _stat_ids: Array[StringName] = []
+## False while the skill list was built without the reward pool.
+var _list_has_pool := false
 var _refresh_timer: Timer
 
 
@@ -71,6 +76,8 @@ func _ready() -> void:
 
 	_build_summon_list()
 	_build_skill_list()
+	_build_slot_list()
+	skill_option.item_selected.connect(_on_skill_selected)
 	EventBus.state_changed.connect(_on_state_changed)
 	EventBus.run_ended.connect(_on_run_ended)
 	refresh()
@@ -204,26 +211,21 @@ func jump_to_wave(wave: int) -> bool:
 	return true
 
 
-## Puts an active skill in the commander's slots: a new one takes the lowest empty slot at level 1,
-## an owned one goes up one level up to its maximum. Returns the slot, -1 when refused (no
-## commander, run ended, unknown skill or no free slot).
-func add_skill(skill_id: StringName) -> int:
+## Asks the reward service to give a card as if it were picked, without using a pick: it goes into
+## slot_index of its group (0..2, replacing what sits there) and levels up by one. Stat cards ignore
+## the slot. Returns false when the run has ended, otherwise true once the request is sent.
+func add_skill(skill_id: StringName, slot_index: int) -> bool:
 	var run_state := _run_state()
 	if run_state != null and run_state.is_run_ended():
-		return -1
-	var commander := get_tree().get_first_node_in_group(&"commander")
-	if commander == null:
-		return -1
-	var runner := commander.get(&"skill_runner") as SkillRunner
-	if runner == null:
-		return -1
-	return runner.set_skill_level(skill_id, runner.state.get_level(skill_id) + 1)
+		return false
+	EventBus.skill_grant_requested.emit(skill_id, slot_index)
+	return true
 
 
 ## Every control the player can click. Used to keep focus off them.
 func get_clickable_controls() -> Array[Control]:
 	return [invincible_check, heal_button, gold_button, level_button, instant_kill_check,
-		summon_option, summon_button, skill_option, skill_button, jump_spin, jump_spin.get_line_edit(), jump_button]
+		summon_option, summon_button, skill_option, slot_option, skill_button, jump_spin, jump_spin.get_line_edit(), jump_button]
 
 
 func get_summon_scenes() -> Array[PackedScene]:
@@ -232,6 +234,9 @@ func get_summon_scenes() -> Array[PackedScene]:
 
 ## Enables each control for the current wave phase and updates the hint line.
 func refresh() -> void:
+	# The reward service may enter the tree after the panel, so the list is built again once it is there.
+	if not _list_has_pool and get_tree().get_first_node_in_group(&"reward_service") != null:
+		_build_skill_list()
 	var wm := _wave_manager()
 	var run_state := _run_state()
 	var ended := run_state != null and run_state.is_run_ended()
@@ -247,6 +252,7 @@ func refresh() -> void:
 	summon_option.disabled = summon_button.disabled
 	skill_button.disabled = ended or skill_option.item_count == 0
 	skill_option.disabled = skill_button.disabled
+	slot_option.disabled = skill_button.disabled or _selected_is_stat()
 	jump_button.disabled = ended or not prep
 	jump_spin.editable = not ended and prep
 	hint_label.text = tr(_hint_key(ended, prep, combat))
@@ -281,7 +287,18 @@ func _on_skill_pressed() -> void:
 	var index := skill_option.selected
 	if index < 0 or index >= skill_option.item_count:
 		return
-	add_skill(skill_option.get_item_metadata(index))
+	add_skill(skill_option.get_item_metadata(index), maxi(slot_option.selected, 0))
+
+
+func _on_skill_selected(_index: int) -> void:
+	refresh()
+
+
+func _selected_is_stat() -> bool:
+	var index := skill_option.selected
+	if index < 0 or index >= skill_option.item_count:
+		return false
+	return _stat_ids.has(skill_option.get_item_metadata(index))
 
 
 func _on_jump_pressed() -> void:
@@ -380,13 +397,35 @@ func _build_summon_list() -> void:
 		summon_option.add_item(label)
 
 
-## Every active skill the runner offers, labelled by name with the id as item metadata.
+## Every card of the reward pool (active, passive and stat) plus the runner's skills the pool does not
+## hold, labelled by name with the id as item metadata.
 func _build_skill_list() -> void:
+	var service := get_tree().get_first_node_in_group(&"reward_service") as RewardService
+	_list_has_pool = service != null
+	var selected_id: Variant = skill_option.get_item_metadata(skill_option.selected) if skill_option.selected >= 0 else null
+	skill_option.clear()
+	_stat_ids.clear()
+	var cards: Array[SkillData] = []
+	if service != null:
+		cards.append_array(service.get_catalog())
 	for data in SkillRunner.SKILLS:
-		if data == null or data.kind != SkillData.Kind.ACTIVE:
+		if not cards.has(data):
+			cards.append(data)
+	for data in cards:
+		if data == null:
 			continue
 		skill_option.add_item(tr(data.name_key))
 		skill_option.set_item_metadata(skill_option.item_count - 1, data.id)
+		if not data.is_slotted():
+			_stat_ids.append(data.id)
+		if data.id == selected_id:
+			skill_option.select(skill_option.item_count - 1)
+
+
+## One entry per slot of a group, written 1-based.
+func _build_slot_list() -> void:
+	for i in maxi(GameConfig.skill_slots_active, GameConfig.skill_slots_passive):
+		slot_option.add_item(tr(&"debug.cheat.slot").format({"index": i + 1}))
 
 
 ## Gold from the cheat is not run income, so it stays out of the earned total.

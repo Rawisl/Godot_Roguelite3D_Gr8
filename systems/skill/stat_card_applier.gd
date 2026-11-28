@@ -13,6 +13,8 @@ func _ready() -> void:
 	if table == null:
 		push_warning("StatCardApplier has no card table, picked cards will have no effect")
 	EventBus.reward_picked.connect(_on_reward_picked)
+	EventBus.skill_granted.connect(_on_skill_granted)
+	EventBus.skill_removed.connect(_on_skill_removed)
 
 
 func apply_pick(card_id: StringName, new_level: int) -> void:
@@ -33,3 +35,13 @@ func apply_pick(card_id: StringName, new_level: int) -> void:
 
 func _on_reward_picked(card_id: StringName, _slot_kind: StringName, new_level: int) -> void:
 	apply_pick(card_id, new_level)
+
+
+func _on_skill_granted(card_id: StringName, _slot_kind: StringName, new_level: int, _slot_index: int) -> void:
+	apply_pick(card_id, new_level)
+
+
+## A card pushed out of its slot stops giving its bonus.
+func _on_skill_removed(card_id: StringName, _slot_kind: StringName) -> void:
+	if stat_block != null:
+		stat_block.clear_source(card_id)

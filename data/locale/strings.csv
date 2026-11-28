@@ -593,6 +593,7 @@ debug.cheat.add_level,+1 cấp
 debug.cheat.instant_kill,Instant kill (chỉ huy x1000 sát thương)
 debug.cheat.summon,Triệu hồi
 debug.cheat.add_skill,Thêm skill
+debug.cheat.slot,Ô {index}
 debug.cheat.jump_label,Nhảy tới đợt
 debug.cheat.jump_wave,Đi
 debug.cheat.hint_prep,Triệu hồi chỉ dùng lúc đang đánh
