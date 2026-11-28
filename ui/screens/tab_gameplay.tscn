@@ -8,13 +8,30 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="." unique_id=1356250576]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 20.0
-text = "settings.character_key"
+[node name="Rows" type="VBoxContainer" parent="." unique_id=500120671]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
 
-[node name="BuildKey" type="Label" parent="."]
-offset_left = 24.0
-offset_top = 58.0
+[node name="Label" type="Label" parent="Rows" unique_id=1356250576]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+text = "settings.character_key"
+vertical_alignment = 1
+
+[node name="Sep1" type="HSeparator" parent="Rows" unique_id=500120672]
+layout_mode = 2
+
+[node name="BuildKey" type="Label" parent="Rows" unique_id=500120673]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
 text = "settings.build_key"
+vertical_alignment = 1

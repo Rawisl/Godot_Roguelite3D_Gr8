@@ -29,6 +29,9 @@ func _ready() -> void:
 	for button: Button in [_resume, _settings, _abandon, _quit]:
 		# Hovering moves keyboard focus too, so only one button is ever highlighted.
 		button.mouse_entered.connect(button.grab_focus)
+	# Quit hangs off the board's corner, so the geometric guess would skip it.
+	_abandon.focus_neighbor_bottom = _abandon.get_path_to(_quit)
+	_quit.focus_neighbor_top = _quit.get_path_to(_abandon)
 	_resume.grab_focus()
 
 ## Esc closes Settings first, then resumes. Settings closes through its own Back, so a window
