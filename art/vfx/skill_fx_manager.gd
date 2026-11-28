@@ -1,9 +1,9 @@
 class_name SkillFxManager
 extends Node
 ## Visuals for the commander's active skills, one effect per EventBus.skill_cast:
-## - Whirlwind: a ring of three spinning blades grows to the skill radius round the commander and
-##   unravels, sparks fly in from the edge; a faster ring inside and a thinner, later ring outside
-##   make it denser
+## - Whirlwind: two sweeps of the sword, ring-shaped trails out to the skill radius that follow
+##   the commander's sword through the spinning swing and fade when it ends; sparks fly in from
+##   the edge
 ## - Sword Wave: a wide shallow crescent with a white rim, blade shards and broken wisps trailing
 ##   it flies from the commander along its aim, and stops early at a wall
 ## - Firebomb: a bomb arcs from the commander to the cast point, then the burn area and its
@@ -29,6 +29,9 @@ const WAVE_SPARK_POINTS := 12
 const WAVE_SPARK_SPAN := 0.9
 ## The sword whose palette is used before any sword is announced and for swords with no palette.
 const BASE_WEAPON := &"sword_base"
+## skill_cast comes before the commander marks itself as using the skill, so its swing is not
+## checked for this long after the cast.
+const SWING_GRACE := 0.05
 ## Rounds of tilt-then-lift; each round works the tilt out again from the last lifted spot.
 const TILT_PASSES := 6
 
@@ -44,8 +47,8 @@ const TILT_PASSES := 6
 }
 
 @export_group("Whirlwind")
-## Blade shape and timing (end_ms is the life of the effect) are tuned in this material, its
-## colours come from the palette of the equipped sword; radius, age_ms and flicker are set per effect.
+## Trail shape is tuned in this material, its colours come from the palette of the equipped
+## sword; radius, sweep, fade and flicker are set per sweep.
 @export var whirlwind_material: ShaderMaterial = preload("res://art/materials/skill_whirlwind.tres")
 ## Height of the blades above the floor: the middle of the commander (its capsule centre).
 @export var whirlwind_height := 0.9
@@ -60,15 +63,23 @@ const TILT_PASSES := 6
 @export var whirlwind_spark_speed_max := 1.6
 ## How much the sparks swirl along the spin instead of flying straight at the commander, 0..1.
 @export var whirlwind_spark_swirl := 0.6
-## Extra rings drawn with the main one, one value per ring in each list (the shortest list sets
-## the number of rings): radius as a part of the skill radius, turn offset in radians, spin speed
-## as a multiple of the material's, strength, strength of the centre glow, and start delay in ms.
-@export var whirlwind_ring_scales := PackedFloat32Array([0.7, 1.15])
-@export var whirlwind_ring_phases := PackedFloat32Array([1.0, 2.1])
-@export var whirlwind_ring_spins := PackedFloat32Array([1.3, 0.9])
-@export var whirlwind_ring_weights := PackedFloat32Array([0.7, 0.5])
-@export var whirlwind_ring_centres := PackedFloat32Array([0.0, 0.0])
-@export var whirlwind_ring_delays_ms := PackedFloat32Array([0.0, 40.0])
+## The sweeps, one value per sweep in each list (the shorter list sets how many): seconds after
+## the cast it starts, where the sword is at that moment, and its size as a part of the skill
+## radius.
+@export var whirlwind_sweep_delays := PackedFloat32Array([0.0, 0.3])
+@export var whirlwind_sweep_scales := PackedFloat32Array([1.0, 1.1])
+## Seconds a new sweep takes to grow to full size, and the size it starts at as a part of it.
+@export var whirlwind_form_time := 0.15
+@export var whirlwind_start_scale := 0.35
+## Seconds the sweeps take to fade once the commander's swing ends.
+@export var whirlwind_fade_time := 0.2
+## Without a sword to follow (or a commander to say when the swing ends): how long the swing
+## lasts and how fast the sweeps turn, clockwise seen from above, in degrees per second. The
+## defaults match the commander's spinning swing.
+@export var whirlwind_swing_time := 0.5
+@export var whirlwind_spin_speed := 1800.0
+## Metres along the sword from the hand to the point the sweeps follow.
+@export var whirlwind_blade_reach := 1.0
 
 @export_group("Sword Wave")
 @export var wave_material: ShaderMaterial = preload("res://art/materials/skill_sword_wave.tres")
@@ -217,58 +228,86 @@ func _set_reduce_flash(on: bool) -> void:
 
 
 #region Whirlwind
-## start_dir is where the main blade starts; the blades spin counter-clockwise from there.
+## start_dir is where the sword starts when there is no sword to follow; the sweeps turn
+## clockwise from there.
 func play_whirlwind(origin: Vector3, radius: float, start_dir := Vector3.RIGHT) -> void:
-	var mesh := _whirlwind_ring(origin, radius, start_dir, 1.0)
 	var rings: Array[MeshInstance3D] = []
-	for i in whirlwind_ring_count():
-		var ring := _whirlwind_ring(origin, radius, start_dir, whirlwind_ring_scales[i])
-		ring.set_instance_shader_parameter(&"ring_scale", whirlwind_ring_scales[i])
-		ring.set_instance_shader_parameter(&"ring_phase", whirlwind_ring_phases[i])
-		ring.set_instance_shader_parameter(&"ring_spin", whirlwind_ring_spins[i])
-		ring.set_instance_shader_parameter(&"ring_weight", whirlwind_ring_weights[i])
-		ring.set_instance_shader_parameter(&"ring_centre", whirlwind_ring_centres[i])
-		ring.set_instance_shader_parameter(&"ring_delay_ms", whirlwind_ring_delays_ms[i])
-		rings.append(ring)
-	var fx := {"kind": &"whirlwind", "mesh": mesh, "rings": rings, "elapsed": 0.0,
-		"flat": mesh.global_basis, "at": mesh.global_position}
+	var start_head := atan2(-start_dir.z, start_dir.x)
+	var fx := {"kind": &"whirlwind", "mesh": null, "rings": rings, "elapsed": 0.0, "radius": radius,
+		"at": origin + Vector3.UP * whirlwind_height, "start_head": start_head, "head": start_head,
+		"sweeps": [], "fade_from": -1.0, "sword": _sword_of_commander()}
+	fx.head = _whirlwind_head(fx)
+	_spawn_due_sweeps(fx)
 	if _has_room(whirlwind_spark_count):
 		fx["particles"] = _whirlwind_sparks(whirlwind_spark_count, radius, origin)
-	_face_whirlwind(fx)
 	_effects.append(fx)
 
 
-## One plane of blades, sized for a ring of radius x ring_scale.
-func _whirlwind_ring(origin: Vector3, radius: float, start_dir: Vector3, ring_scale: float) -> MeshInstance3D:
-	var wisp: float = whirlwind_material.get_shader_parameter(&"wisp_offset")
-	var mesh := _flat_mesh(_skill_material(&"whirlwind", whirlwind_material), radius * ring_scale * (wisp + 0.05) + ring_margin)
-	mesh.global_position = origin + Vector3.UP * whirlwind_height
-	mesh.rotation.y = atan2(-start_dir.z, start_dir.x)
-	mesh.set_instance_shader_parameter(&"radius", radius)
-	mesh.set_instance_shader_parameter(&"age_ms", 0.0)
-	mesh.set_instance_shader_parameter(&"flicker", _flicker)
-	return mesh
+## Number of sweeps: the shorter of the two sweep lists.
+func whirlwind_sweep_count() -> int:
+	return mini(whirlwind_sweep_delays.size(), whirlwind_sweep_scales.size())
 
 
-## Number of extra rings: the shortest of the ring lists.
-func whirlwind_ring_count() -> int:
-	return mini(mini(mini(whirlwind_ring_scales.size(), whirlwind_ring_phases.size()),
-		mini(whirlwind_ring_spins.size(), whirlwind_ring_weights.size())),
-		mini(whirlwind_ring_centres.size(), whirlwind_ring_delays_ms.size()))
-
-
-## Seconds the blades live: the material's end time plus the latest ring delay, so a late ring
-## also fades out before it is freed.
+## Longest a Whirlwind lasts when nothing says the swing ended earlier: the swing plus the fade.
 func whirlwind_time() -> float:
-	var end_ms: float = whirlwind_material.get_shader_parameter(&"end_ms")
-	var latest := 0.0
-	for i in whirlwind_ring_count():
-		latest = maxf(latest, whirlwind_ring_delays_ms[i])
-	return (end_ms + latest) * 0.001
+	return whirlwind_swing_time + whirlwind_fade_time
+
+
+## The node holding the commander's sword, null when there is none to follow.
+func _sword_of_commander() -> Node3D:
+	var c := _get_commander()
+	if c == null:
+		return null
+	for node in get_tree().get_nodes_in_group(&"weapon_mount"):
+		if node is Node3D and c.is_ancestor_of(node):
+			return node
+	return null
+
+
+## Angle round the centre, counter-clockwise from +X seen from above, of the point on the sword
+## the sweeps follow; without a sword, the start angle turned clockwise at whirlwind_spin_speed.
+func _whirlwind_head(fx: Dictionary) -> float:
+	var sword: Node3D = fx.sword
+	if sword != null and is_instance_valid(sword):
+		var tip := sword.global_position + sword.global_basis.y.normalized() * whirlwind_blade_reach
+		var rel: Vector3 = tip - fx.at
+		if Vector2(rel.x, rel.z).length_squared() > 0.0001:
+			return atan2(-rel.z, rel.x)
+	var spun := deg_to_rad(whirlwind_spin_speed) * minf(fx.elapsed, whirlwind_swing_time)
+	return fx.start_head - spun
+
+
+## True once the commander's swing is over, so the sweeps start to fade.
+func _swing_over(fx: Dictionary) -> bool:
+	if fx.elapsed >= whirlwind_swing_time * 2.0:
+		return true
+	var c := _get_commander()
+	if c == null or not ("is_using_skill" in c):
+		return fx.elapsed >= whirlwind_swing_time
+	return fx.elapsed > SWING_GRACE and not c.is_using_skill
+
+
+## Starts every sweep whose delay has passed, at the sword.
+func _spawn_due_sweeps(fx: Dictionary) -> void:
+	var sweeps: Array = fx.sweeps
+	while sweeps.size() < whirlwind_sweep_count() and fx.elapsed >= whirlwind_sweep_delays[sweeps.size()]:
+		var i := sweeps.size()
+		var reach: float = whirlwind_material.get_shader_parameter(&"outer_reach")
+		var mesh := _flat_mesh(_skill_material(&"whirlwind", whirlwind_material), fx.radius * reach + ring_margin)
+		mesh.global_position = fx.at
+		mesh.set_instance_shader_parameter(&"radius", fx.radius)
+		mesh.set_instance_shader_parameter(&"sweep", 0.0)
+		mesh.set_instance_shader_parameter(&"flicker", _flicker)
+		sweeps.append({"mesh": mesh, "born": whirlwind_sweep_delays[i], "size": whirlwind_sweep_scales[i], "sweep": 0.0})
+		if fx.mesh == null:
+			fx.mesh = mesh
+		else:
+			fx.rings.append(mesh)
+		_place_sweep(fx, sweeps[i])
 
 
 ## Sparks start on a ring just inside the radius and fly in towards the commander, swirling the
-## way the blades spin.
+## way the sword turns.
 func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticles3D:
 	var sparks := _particles(count, whirlwind_spark_lifetime, _spark_color())
 	sparks.mesh = _spark_mesh
@@ -277,8 +316,8 @@ func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticl
 	for i in count:
 		var angle := (float(i) + randf_range(-0.3, 0.3)) / float(count) * TAU
 		var radial := Vector3(cos(angle), 0.0, -sin(angle))
-		# Counter-clockwise seen from above, like the blades.
-		var tangent := Vector3(-sin(angle), 0.0, -cos(angle))
+		# Clockwise seen from above, like the sword.
+		var tangent := Vector3(sin(angle), 0.0, cos(angle))
 		points.append(radial * radius * randf_range(0.9, 1.0))
 		normals.append((-radial + tangent * whirlwind_spark_swirl).normalized())
 	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_DIRECTED_POINTS
@@ -298,25 +337,50 @@ func _whirlwind_sparks(count: int, radius: float, origin: Vector3) -> CPUParticl
 	return sparks
 
 
-## The shader fades itself out, so the effect only needs to run until its end time.
+## Each sweep follows the sword and draws more of its trail as the sword turns clockwise; all
+## fade together once the swing is over.
 func _update_whirlwind(fx: Dictionary) -> bool:
-	var age := minf(fx.elapsed, whirlwind_time())
-	var meshes: Array[MeshInstance3D] = [fx.mesh]
-	meshes.append_array(fx.rings)
-	for mesh in meshes:
-		mesh.set_instance_shader_parameter(&"age_ms", age * 1000.0)
-		mesh.set_instance_shader_parameter(&"flicker", _flicker)
-	_face_whirlwind(fx)
-	return fx.elapsed < whirlwind_time()
+	_follow_sword_holder(fx)
+	var head := _whirlwind_head(fx)
+	var turned := wrapf(fx.head - head, -PI, PI)
+	fx.head = head
+	for sweep: Dictionary in fx.sweeps:
+		sweep.sweep = maxf(sweep.sweep + turned, 0.0)
+	_spawn_due_sweeps(fx)
+	if fx.fade_from < 0.0 and _swing_over(fx):
+		fx.fade_from = fx.elapsed
+	for sweep: Dictionary in fx.sweeps:
+		_place_sweep(fx, sweep)
+	return fx.fade_from < 0.0 or fx.elapsed - fx.fade_from < whirlwind_fade_time
 
 
-## All the rings share one tilt about their centre, so they stay one disc.
-func _face_whirlwind(fx: Dictionary) -> void:
-	var meshes: Array[MeshInstance3D] = [fx.mesh]
-	meshes.append_array(fx.rings)
-	var basis: Basis = _view_tilt(fx.at, whirlwind_max_tilt) * fx.flat
-	for mesh in meshes:
-		mesh.global_basis = basis
+## Keeps the sweeps centred on the commander while it holds the sword they follow. The commander
+## can run during the swing; left at the cast point, the sword would only wobble round the centre
+## and the trail would stay a short head.
+func _follow_sword_holder(fx: Dictionary) -> void:
+	var sword: Node3D = fx.sword
+	if sword == null or not is_instance_valid(sword):
+		return
+	var c := _get_commander()
+	if c == null or not c.is_ancestor_of(sword):
+		return
+	fx.at = c.global_position + Vector3.UP * whirlwind_height
+
+
+## Turns a sweep so its head is on the sword, grows it in, fades it and tilts it to the camera.
+func _place_sweep(fx: Dictionary, sweep: Dictionary) -> void:
+	var mesh: MeshInstance3D = sweep.mesh
+	var grow := clampf((fx.elapsed - sweep.born) / maxf(whirlwind_form_time, 0.001), 0.0, 1.0)
+	var size: float = lerpf(whirlwind_start_scale, 1.0, grow) * sweep.size
+	var fade := 1.0
+	if fx.fade_from >= 0.0:
+		fade = 1.0 - clampf((fx.elapsed - fx.fade_from) / maxf(whirlwind_fade_time, 0.001), 0.0, 1.0)
+	mesh.set_instance_shader_parameter(&"sweep", sweep.sweep)
+	mesh.set_instance_shader_parameter(&"fade", fade)
+	mesh.set_instance_shader_parameter(&"flicker", _flicker)
+	var flat := Basis(Vector3.UP, fx.head) * Basis.from_scale(Vector3.ONE * size)
+	mesh.global_basis = _view_tilt(fx.at, whirlwind_max_tilt) * flat
+	mesh.global_position = fx.at
 #endregion
 
 
@@ -667,8 +731,8 @@ func get_effect_mesh(kind: StringName) -> MeshInstance3D:
 	return null
 
 
-## The extra Whirlwind rings of the newest Whirlwind, empty when there is none. For tests.
-func get_whirlwind_rings() -> Array[MeshInstance3D]:
+## The sweeps after the first of the newest Whirlwind, empty when there is none. For tests.
+func get_whirlwind_sweeps() -> Array[MeshInstance3D]:
 	for i in range(_effects.size() - 1, -1, -1):
 		if _effects[i].kind == &"whirlwind":
 			return _effects[i].rings
