@@ -1,12 +1,13 @@
-// Toon shader có dither xuyên thấu, chỉ dùng cho vật trong nhóm occluder (tower).
+// Toon shader có dither xuyên thấu, dùng cho vật trong nhóm occluder (tower) và cho model
+// chỉ huy (làm mờ khi camera góc thứ ba bị tường đẩy sát).
 // `instance uniform` chiếm một chỗ trong bộ đệm biến instance cho mỗi mesh dùng shader này,
-// nên không dùng cho nhân vật và quân địch (số lượng lớn).
+// nên chỉ chỉ huy (một instance) dùng, không dùng cho quân địch (số lượng lớn).
 shader_type spatial;
 render_mode cull_disabled;
 
 #include "res://art/shaders/toon_common.gdshaderinc"
 
-// Độ đặc của vật che, OcclusionManager chỉnh theo từng instance.
+// Độ đặc của vật che, OcclusionManager chỉnh theo từng instance (model chỉ huy: ChaseCameraFade).
 // Dither theo ma trận Bayer 8x8 (discard), không dùng alpha blend.
 instance uniform float dither_alpha : hint_range(0.0, 1.0) = 1.0;
 

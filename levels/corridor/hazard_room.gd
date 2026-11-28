@@ -22,43 +22,9 @@ extends Node3D
 @export var boss_spawn_index: int = 2
 
 @export_group("Chase camera")
-## Metres from the chase camera to its pivot above the commander at chase_far_pitch_deg.
-@export var chase_distance: float = 9.0
-## Metres from the chase camera to the pivot at the lowest pitch; the distance blends between
-## the two with the pitch.
-@export var chase_distance_near: float = 6.0
-## Downward angle of the chase camera when entering the room, in degrees.
-@export_range(-89.0, -5.0) var chase_pitch_deg: float = -45.0
-## Highest and lowest angle the mouse can tilt the chase camera to, in degrees.
-@export_range(-89.0, 60.0) var chase_pitch_max_deg: float = 30.0
-@export_range(-89.0, -5.0) var chase_pitch_min_deg: float = -70.0
-## Pitch at which the chase camera stands chase_distance away; it comes nearer below it
-## (chase_distance_near at the lowest pitch) and above it (chase_distance_up at the highest).
-@export_range(-89.0, 60.0) var chase_far_pitch_deg: float = -15.0
-## Metres from the chase camera to the pivot at the highest pitch, before the floor pulls it in.
-@export var chase_distance_up: float = 3.0
-## Lowest the chase camera goes above the floor when it looks up, in metres.
-@export var chase_min_height: float = 0.5
-## Metres the chase camera stands to the right of the pivot, over the commander's shoulder.
-@export var chase_shoulder_offset: float = 1.0
-## Nearest zoom of the mouse wheel, as a share of the normal distance; the wheel never zooms
-## out past the normal distance, so the corridor stays behind the sky.
-@export_range(0.1, 1.0) var chase_zoom_min: float = 0.35
-## Share of the normal distance one wheel notch zooms in or out.
-@export var chase_zoom_step: float = 0.1
-## Real seconds of smoothing of the wheel zoom.
-@export var chase_zoom_smoothing: float = 0.08
-## Degrees the chase camera looks above its pivot, so the commander stays this far below the
-## middle of the screen and the middle points at the ground in front of the commander.
-@export_range(0.0, 30.0) var chase_aim_tilt_deg: float = 10.0
-## Vertical field of view of the chase camera, in degrees.
-@export_range(20.0, 100.0) var chase_fov: float = 60.0
-## Real seconds of smoothing of the chase follow.
-@export var chase_smoothing: float = 0.12
-## Height above the commander's feet of the point the chase camera orbits, in metres.
-@export var chase_pivot_height: float = 1.4
-## Far plane of the chase camera; has to reach past the sky sphere.
-@export var chase_far: float = 1000.0
+## Numbers of the chase camera in the room. start_yaw_deg is not used: the camera starts at the
+## yaw of the corridor camera.
+@export var chase_camera: ChaseCameraSettings = preload("res://data/config/hazard_chase_camera.tres")
 
 @export_group("Ambience")
 ## The level's sun; without it the room keeps the level's light.
@@ -114,18 +80,11 @@ func get_camera_focus() -> Vector3:
 	return _camera_frame.global_position
 
 
-## Profile for the reusable chase orbit; the room remains the editor-facing source of its values.
+## Profile for the reusable chase orbit, from the room's chase camera resource.
 func get_chase_settings() -> Dictionary:
-	return {
-		"pitch": chase_pitch_deg, "pitch_min": chase_pitch_min_deg,
-		"pitch_max": chase_pitch_max_deg, "far_pitch": chase_far_pitch_deg,
-		"distance": chase_distance, "distance_near": chase_distance_near,
-		"distance_up": chase_distance_up, "pivot_height": chase_pivot_height,
-		"min_height": chase_min_height, "shoulder": chase_shoulder_offset,
-		"aim_tilt": chase_aim_tilt_deg, "follow_smoothing": chase_smoothing,
-		"zoom_min": chase_zoom_min, "zoom_step": chase_zoom_step,
-		"zoom_smoothing": chase_zoom_smoothing, "fov": chase_fov, "far": chase_far
-	}
+	if chase_camera == null:
+		return ChaseCameraSettings.new().get_orbit_settings()
+	return chase_camera.get_orbit_settings()
 
 
 ## True while the room light is on.
